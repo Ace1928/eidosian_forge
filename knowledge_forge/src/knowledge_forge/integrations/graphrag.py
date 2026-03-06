@@ -77,6 +77,10 @@ def _safe_ratio(numerator: float, denominator: float) -> float:
     return float(numerator) / float(denominator)
 
 
+def _clamp01(value: float) -> float:
+    return max(0.0, min(1.0, float(value)))
+
+
 class GraphRAGIntegration:
     """
     Bridge between KnowledgeForge and the external GraphRAG tool.
@@ -640,7 +644,9 @@ class GraphRAGIntegration:
                 "node_ids": detail_ids,
                 "kind": kind,
                 "artifact_path": rel_path,
-                "benchmark_gate_pass": (None if not isinstance(benchmark, dict) else bool(benchmark.get("gate_pass"))),
+                "benchmark_gate_pass": (
+                    None if not isinstance(benchmark, dict) else bool(benchmark.get("gate_pass"))
+                ),
                 "search_p95_ms": None if not isinstance(benchmark, dict) else benchmark.get("search_p95_ms"),
                 "graph_build_ms": None if not isinstance(benchmark, dict) else benchmark.get("graph_build_ms"),
                 "drift_warning_count": (
@@ -706,9 +712,7 @@ class GraphRAGIntegration:
                 if tag not in {"native_graphrag"}
             }
         )
-        avg_chars = _safe_ratio(
-            sum(len(str(getattr(node, "content", "") or "")) for node in unique_group), len(unique_group)
-        )
+        avg_chars = _safe_ratio(sum(len(str(getattr(node, "content", "") or "")) for node in unique_group), len(unique_group))
         coverage_ratio = _safe_ratio(len(unique_group), total_nodes)
         link_density = _safe_ratio(linked_neighbors, len(unique_group))
         tag_diversity = len(unique_tags)
@@ -929,6 +933,109 @@ class GraphRAGIntegration:
             "latest": latest,
         }
 
+    def _build_native_assessment(
+        self,
+        *,
+        community_reports: Dict[str, Any],
+        artifact_summary: Dict[str, Any],
+        report_trends: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        output_dir = self.root / "output"
+        output_dir.mkdir(parents=True, exist_ok=True)
+        json_path = output_dir / "native_assessment.json"
+        md_path = output_dir / "native_assessment.md"
+
+        latest_trend = report_trends.get("latest") if isinstance(report_trends.get("latest"), dict) else {}
+        report_count = int(community_reports.get("count") or 0)
+        weak_communities = int(community_reports.get("weak_communities") or 0)
+        average_quality = float(community_reports.get("average_quality_score") or 0.0)
+        average_rating = float(community_reports.get("average_rating") or 0.0)
+        benchmark_failures = int(artifact_summary.get("benchmark_failures") or 0)
+        drift_warning_artifacts = int(artifact_summary.get("drift_warning_artifacts") or 0)
+        artifact_count = int(artifact_summary.get("count") or 0)
+        quality_delta = float(latest_trend.get("quality_delta") or 0.0)
+        weak_labels = [str(item) for item in (latest_trend.get("weak_community_labels") or []) if str(item).strip()]
+        artifact_kinds = sorted(
+            str(key) for key in ((latest_trend.get("artifact_kinds") or {}) if isinstance(latest_trend, dict) else {})
+        )
+
+        report_coverage_score = _clamp01(_safe_ratio(report_count, 4))
+        artifact_health_score = _clamp01(1.0 - min(1.0, (benchmark_failures * 0.22) + (drift_warning_artifacts * 0.1)))
+        rating_score = _clamp01(_safe_ratio(average_rating, 5.0))
+        trend_score = _clamp01(0.5 + (quality_delta * 2.0))
+        final_score = _clamp01(
+            (average_quality * 0.45)
+            + (artifact_health_score * 0.25)
+            + (report_coverage_score * 0.1)
+            + (rating_score * 0.1)
+            + (trend_score * 0.1)
+        )
+
+        if benchmark_failures > 0 or final_score < 0.35:
+            status = "critical"
+        elif drift_warning_artifacts > 0 or weak_communities > 1 or final_score < 0.55:
+            status = "degraded"
+        elif final_score < 0.75:
+            status = "stable"
+        else:
+            status = "strong"
+
+        priorities: list[str] = []
+        if benchmark_failures > 0:
+            priorities.append("Clear Code Forge benchmark failures before relying on this context for autonomy.")
+        if drift_warning_artifacts > 0:
+            priorities.append("Investigate drift-warning artifacts and restore graph/code consistency.")
+        if weak_labels:
+            priorities.append(f"Reinforce weak communities: {', '.join(weak_labels[:4])}.")
+        if quality_delta < 0:
+            priorities.append("Recent quality trend is negative; run another index and inspect changed inputs.")
+        if not priorities:
+            priorities.append("Maintain current graph quality and keep assessment trends stable.")
+
+        payload = {
+            "generated_at": self._timestamp(),
+            "score": round(final_score, 4),
+            "status": status,
+            "report_count": report_count,
+            "artifact_count": artifact_count,
+            "average_quality_score": round(average_quality, 4),
+            "average_rating": round(average_rating, 4),
+            "benchmark_failures": benchmark_failures,
+            "drift_warning_artifacts": drift_warning_artifacts,
+            "quality_delta": round(quality_delta, 4),
+            "weak_community_labels": weak_labels,
+            "artifact_kinds": artifact_kinds,
+            "priorities": priorities,
+            "paths": {
+                "community_reports": str(output_dir / "native_community_reports.json"),
+                "report_trends": str(output_dir / "native_report_trends.json"),
+                "assessment_json": str(json_path),
+                "assessment_markdown": str(md_path),
+            },
+        }
+        json_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+        lines = [
+            "# Native GraphRAG Assessment",
+            "",
+            f"- Generated: {payload['generated_at']}",
+            f"- Status: {payload['status']}",
+            f"- Score: {payload['score']}",
+            f"- Average Quality: {payload['average_quality_score']}",
+            f"- Average Rating: {payload['average_rating']}",
+            f"- Benchmark Failures: {payload['benchmark_failures']}",
+            f"- Drift Warning Artifacts: {payload['drift_warning_artifacts']}",
+            f"- Quality Delta: {payload['quality_delta']}",
+            f"- Weak Communities: {', '.join(payload['weak_community_labels']) or 'none'}",
+            f"- Artifact Kinds: {', '.join(payload['artifact_kinds']) or 'none'}",
+            "",
+            "## Priorities",
+        ]
+        for item in priorities:
+            lines.append(f"- {item}")
+        md_path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
+        return payload
+
     def _native_index(self, scan_roots: List[Path]) -> Dict[str, Any]:
         bridge = self._load_bridge()
         if bridge is None or getattr(bridge, "knowledge", None) is None:
@@ -1039,6 +1146,11 @@ class GraphRAGIntegration:
             community_reports=community_reports,
             artifact_summary=artifact_summary,
         )
+        assessment = self._build_native_assessment(
+            community_reports=community_reports,
+            artifact_summary=artifact_summary,
+            report_trends=report_trends,
+        )
         self._save_native_state(state)
         knowledge.save()
 
@@ -1058,6 +1170,7 @@ class GraphRAGIntegration:
             "code_forge": code_forge,
             "community_reports": community_reports,
             "report_trends": report_trends,
+            "assessment": assessment,
         }
 
     def _local_vector_graph_query(self, query: str, method: str) -> Dict[str, Any]:
@@ -1199,9 +1312,7 @@ class GraphRAGIntegration:
         }
 
     def _artifact_summary_from_state(self, state: Dict[str, Any], *, limit: int = 10) -> Dict[str, Any]:
-        artifact_state = (
-            state.get("code_forge_artifacts") if isinstance(state.get("code_forge_artifacts"), dict) else {}
-        )
+        artifact_state = state.get("code_forge_artifacts") if isinstance(state.get("code_forge_artifacts"), dict) else {}
         rows = [row for row in artifact_state.values() if isinstance(row, dict)]
         rows.sort(key=lambda row: str(row.get("updated_at") or ""), reverse=True)
         limit = max(1, int(limit or 10))
@@ -1255,6 +1366,34 @@ class GraphRAGIntegration:
             "limit": limit,
             "latest": latest,
             "history": trimmed,
+        }
+
+    @eidosian()
+    def native_assessment_summary(self) -> Dict[str, Any]:
+        path = self.root / "output" / "native_assessment.json"
+        if not path.exists():
+            return {"generated_at": None, "score": 0.0, "status": "missing", "priorities": []}
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            return {"generated_at": None, "score": 0.0, "status": "invalid", "priorities": []}
+        if not isinstance(payload, dict):
+            return {"generated_at": None, "score": 0.0, "status": "invalid", "priorities": []}
+        return {
+            "generated_at": payload.get("generated_at"),
+            "score": float(payload.get("score") or 0.0),
+            "status": str(payload.get("status") or "missing"),
+            "report_count": int(payload.get("report_count") or 0),
+            "artifact_count": int(payload.get("artifact_count") or 0),
+            "average_quality_score": float(payload.get("average_quality_score") or 0.0),
+            "average_rating": float(payload.get("average_rating") or 0.0),
+            "benchmark_failures": int(payload.get("benchmark_failures") or 0),
+            "drift_warning_artifacts": int(payload.get("drift_warning_artifacts") or 0),
+            "quality_delta": float(payload.get("quality_delta") or 0.0),
+            "weak_community_labels": [str(item) for item in (payload.get("weak_community_labels") or [])],
+            "artifact_kinds": [str(item) for item in (payload.get("artifact_kinds") or [])],
+            "priorities": [str(item) for item in (payload.get("priorities") or [])],
+            "paths": dict(payload.get("paths") or {}),
         }
 
     @eidosian()

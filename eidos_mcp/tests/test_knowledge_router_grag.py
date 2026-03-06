@@ -96,6 +96,32 @@ def test_knowledge_router_grag_report_tools(tmp_path: Path, monkeypatch) -> None
         + "\n",
         encoding="utf-8",
     )
+    (output_dir / "native_assessment.json").write_text(
+        json.dumps(
+            {
+                "generated_at": "2026-03-06T03:07:00+00:00",
+                "score": 0.73,
+                "status": "stable",
+                "report_count": 1,
+                "artifact_count": 1,
+                "average_quality_score": 0.61,
+                "average_rating": 3.5,
+                "benchmark_failures": 0,
+                "drift_warning_artifacts": 0,
+                "quality_delta": 0.05,
+                "weak_community_labels": ["documents"],
+                "artifact_kinds": ["triage"],
+                "priorities": ["Maintain current graph quality and keep assessment trends stable."],
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     trend_payload = json.loads(knowledge.grag_trends(limit=2))
     assert trend_payload["count"] == 1
     assert trend_payload["latest"]["weak_community_labels"] == ["documents"]
+
+    assessment_payload = json.loads(knowledge.grag_assessment())
+    assert assessment_payload["status"] == "stable"
+    assert assessment_payload["score"] == 0.73

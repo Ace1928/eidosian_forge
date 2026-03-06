@@ -105,6 +105,7 @@ def test_run_graphrag_index_uses_adapter_scan_roots(tmp_path: Path, monkeypatch)
                 "scan_roots": [str(p) for p in scan_roots],
                 "community_reports": {"count": 1, "average_quality_score": 0.75},
                 "report_trends": {"entries": 1, "latest": {"average_quality_score": 0.75}},
+                "assessment": {"status": "stable", "score": 0.78, "priorities": ["Keep graph quality high."]},
             }
 
     monkeypatch.setattr(pipeline, "_build_graphrag", lambda workspace_root: FakeGraphRAG())
@@ -113,6 +114,7 @@ def test_run_graphrag_index_uses_adapter_scan_roots(tmp_path: Path, monkeypatch)
     assert result["success"] is True
     assert result["community_reports"]["average_quality_score"] == 0.75
     assert result["report_trends"]["latest"]["average_quality_score"] == 0.75
+    assert result["assessment"]["status"] == "stable"
     assert calls == [("index", [docs])]
 
 
@@ -166,7 +168,12 @@ def test_generate_living_documentation_uses_central_qwen_config(tmp_path: Path, 
         near_duplicates=2,
         drift={"added_count": 1, "removed_count": 0, "changed_count": 3},
         code_report={"run_stats": {"files_processed": 8, "units_created": 21}},
-        graphrag_result={"indexed": True, "report_summary": {"count": 1}, "trend_summary": {"entries": 1}},
+        graphrag_result={
+            "indexed": True,
+            "report_summary": {"count": 1},
+            "trend_summary": {"entries": 1},
+            "assessment_summary": {"status": "stable", "score": 0.81},
+        },
         config=pipeline.LivingDocumentationConfig(
             model="qwen3.5:2b",
             thinking_mode="on",
@@ -189,11 +196,10 @@ def test_generate_living_documentation_uses_central_qwen_config(tmp_path: Path, 
     assert captured["kwargs"]["timeout"] == 900.0
     assert captured["kwargs"]["format"]["type"] == "object"
     assert "recommended_actions" in captured["kwargs"]["format"]["required"]
+    assert '"assessment_summary": {' in captured["prompt"]
 
 
-def test_generate_living_documentation_retries_without_thinking_when_no_final_response(
-    tmp_path: Path, monkeypatch
-) -> None:
+def test_generate_living_documentation_retries_without_thinking_when_no_final_response(tmp_path: Path, monkeypatch) -> None:
     run_root = tmp_path / "run"
     run_root.mkdir(parents=True, exist_ok=True)
     seen_modes: list[str] = []
@@ -247,20 +253,12 @@ def test_run_pipeline_includes_living_documentation_manifest(tmp_path: Path, mon
     output_root.mkdir(parents=True, exist_ok=True)
     workspace_root.mkdir(parents=True, exist_ok=True)
 
-    monkeypatch.setattr(
-        pipeline,
-        "run_code_analysis",
-        lambda *args, **kwargs: {"run_stats": {}, "total_units": 0, "duplicate_group_count": 0},
-    )
+    monkeypatch.setattr(pipeline, "run_code_analysis", lambda *args, **kwargs: {"run_stats": {}, "total_units": 0, "duplicate_group_count": 0})
     monkeypatch.setattr(pipeline, "stage_repo_text_documents", lambda *args, **kwargs: [])
     monkeypatch.setattr(pipeline, "stage_memory_and_kb_documents", lambda *args, **kwargs: [])
     monkeypatch.setattr(pipeline, "group_exact_duplicates", lambda records: [])
     monkeypatch.setattr(pipeline, "detect_near_duplicates", lambda records: [])
-    monkeypatch.setattr(
-        pipeline,
-        "compare_with_previous_run",
-        lambda *args, **kwargs: {"added_count": 0, "removed_count": 0, "changed_count": 0},
-    )
+    monkeypatch.setattr(pipeline, "compare_with_previous_run", lambda *args, **kwargs: {"added_count": 0, "removed_count": 0, "changed_count": 0})
     monkeypatch.setattr(
         pipeline,
         "generate_living_documentation",
@@ -298,3 +296,4 @@ def test_run_pipeline_includes_living_documentation_manifest(tmp_path: Path, mon
     assert manifest["living_documentation"]["generated"] is True
     assert manifest["living_documentation"]["model"] == "qwen3.5:2b"
     assert manifest["living_documentation"]["thinking_mode"] == "off"
+    assert manifest["graphrag"].get("assessment_summary") in ({}, None)

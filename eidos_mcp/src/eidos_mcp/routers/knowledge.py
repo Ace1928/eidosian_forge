@@ -413,6 +413,16 @@ def grag_trends(limit: int = 10) -> str:
     return json.dumps(grag.native_trend_summary(limit=limit), indent=2)
 
 
+@tool(
+    name="grag_assessment",
+    description="Return the latest native GraphRAG assessment summary.",
+)
+@eidosian()
+def grag_assessment() -> str:
+    """Return the latest native GraphRAG assessment summary."""
+    return json.dumps(grag.native_assessment_summary(), indent=2)
+
+
 # =============================================================================
 # UNIFIED CONTEXT (Knowledge + Memory Bridge)
 # =============================================================================

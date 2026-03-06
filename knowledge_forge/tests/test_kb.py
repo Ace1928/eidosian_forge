@@ -322,6 +322,9 @@ def test_graphrag_native_reports_written_after_index(tmp_path):
     trends = grag.native_trend_summary(limit=5)
     assert trends["count"] >= 1
     assert trends["latest"]["average_quality_score"] > 0
+    assessment = grag.native_assessment_summary()
+    assert assessment["status"] in {"critical", "degraded", "stable", "strong"}
+    assert assessment["score"] > 0
     artifact_summary = grag.native_artifact_summary(limit=2)
     assert artifact_summary["count"] >= 0
     assert "artifacts" in artifact_summary
