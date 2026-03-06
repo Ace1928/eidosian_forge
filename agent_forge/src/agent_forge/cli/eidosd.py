@@ -20,6 +20,7 @@ except Exception:
 
 
 from agent_forge.consciousness import ConsciousnessKernel  # type: ignore
+from agent_forge.autonomy import AutonomySupervisor, load_supervisor_config  # type: ignore
 from agent_forge.core import db as DB  # type: ignore
 from agent_forge.core import events as E  # type: ignore
 from agent_forge.core import os_metrics as OM  # type: ignore
@@ -34,6 +35,7 @@ def run_once(
     tick_secs: float,
     cpu: OM.CpuPercent,
     kernel: ConsciousnessKernel | None = None,
+    supervisor: AutonomySupervisor | None = None,
 ) -> None:
     """Execute one beat: collect metrics, emit event, journal, and scheduler step."""
     p = OM.process_stats()
@@ -83,6 +85,24 @@ def run_once(
             DB.insert_metric(state_dir, "consciousness.emitted_events", float(kres.emitted_events))
         except Exception as exc:  # pragma: no cover - defensive runtime guard
             S.append_journal(state_dir, f"consciousness beat error: {exc}", etype="consciousness.error")
+
+    beat_count = 0
+    if kernel is not None:
+        try:
+            beat_count = int(getattr(kernel, "beat_count", 0))
+        except Exception:
+            beat_count = 0
+    if supervisor is not None:
+        try:
+            selected = supervisor.tick(beat_count=max(beat_count, 0))
+            E.append(
+                state_dir,
+                "autonomy.supervisor",
+                selected,
+                tags=["autonomy", "supervisor"],
+            )
+        except Exception as exc:  # pragma: no cover - defensive runtime guard
+            S.append_journal(state_dir, f"autonomy supervisor error: {exc}", etype="autonomy.error")
 
     # scheduler heartbeat
     SCH.STATE_DIR = state_dir
@@ -147,11 +167,20 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--max-beats", type=int, default=0, help="stop after N beats (0=inf)")
     ap.add_argument("--jitter-ms", type=int, help="jitter per beat in ms")
     ap.add_argument("--max-backoff-secs", type=float, help="maximum backoff in seconds")
+    ap.add_argument("--autonomy", action="store_true", help="enable the autonomy supervisor")
+    ap.add_argument("--no-autonomy", action="store_true", help="disable the autonomy supervisor")
+    ap.add_argument("--autonomy-config", help="path to autonomy supervisor YAML config")
+    ap.add_argument("--repo-root", default=".", help="repository root used for autonomous missions")
     args = ap.parse_args(argv)
 
     cfg = _load_cfg()
     daemon_cfg = cfg.get("daemon", {}) if isinstance(cfg.get("daemon", {}), dict) else {}
     consciousness_cfg = cfg.get("consciousness", {}) if isinstance(cfg.get("consciousness", {}), dict) else {}
+    autonomy_cfg = cfg.get("autonomy", {}) if isinstance(cfg.get("autonomy", {}), dict) else {}
+    if args.autonomy_config:
+        loaded = load_supervisor_config(args.autonomy_config)
+        if loaded:
+            autonomy_cfg = loaded.get("autonomy", loaded) if isinstance(loaded, dict) else {}
     tick_secs = float(args.tick if args.tick is not None else daemon_cfg.get("tick_secs", 5))
     jitter_ms = int(args.jitter_ms if args.jitter_ms is not None else daemon_cfg.get("jitter_ms", 0))
     max_backoff = float(
@@ -182,10 +211,23 @@ def main(argv: list[str] | None = None) -> int:
         except Exception as e:
             S.append_journal(args.state_dir, f"consciousness init error: {e}", etype="consciousness.error")
 
+    autonomy_enabled = bool(autonomy_cfg.get("enabled", False))
+    if args.autonomy:
+        autonomy_enabled = True
+    if args.no_autonomy:
+        autonomy_enabled = False
+    supervisor: AutonomySupervisor | None = None
+    if autonomy_enabled:
+        supervisor = AutonomySupervisor(
+            args.state_dir,
+            repo_root=args.repo_root,
+            config=autonomy_cfg,
+        )
+
     cpu = OM.CpuPercent()
     if args.once:
         try:
-            run_once(args.state_dir, tick_secs=tick_secs, cpu=cpu, kernel=kernel)
+            run_once(args.state_dir, tick_secs=tick_secs, cpu=cpu, kernel=kernel, supervisor=supervisor)
             return 0
         except Exception as e:
             print(f"eidosd run error: {e}", file=sys.stderr)
@@ -203,7 +245,7 @@ def main(argv: list[str] | None = None) -> int:
 
         def _beat() -> None:
             nonlocal beats
-            run_once(args.state_dir, tick_secs=tick_secs, cpu=cpu, kernel=kernel)
+            run_once(args.state_dir, tick_secs=tick_secs, cpu=cpu, kernel=kernel, supervisor=supervisor)
             beats += 1
             if beats % maint_every == 0:
                 try:

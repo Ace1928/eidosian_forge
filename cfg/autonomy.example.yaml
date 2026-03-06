@@ -1,0 +1,33 @@
+autonomy:
+  enabled: true
+  context_query: "consciousness benchmark latency memory knowledge autonomy"
+  context_limit: 6
+  query_max_tokens: 24
+  policy:
+    max_active_goals: 1
+    require_clean_git: false
+    allowed_templates:
+      - consciousness_guard
+      - hygiene
+      - lint
+  missions:
+    - id: consciousness_guard
+      title: "Autonomy: consciousness guard loop"
+      drive: "integrity"
+      template: "consciousness_guard"
+      priority: 1.0
+      cooldown_beats: 8
+      max_runs: 0
+      query: "consciousness benchmark latency memory knowledge bridge"
+      vars:
+        benchmark_ticks: "5"
+    - id: repo_hygiene
+      title: "Autonomy: repo hygiene sweep"
+      drive: "integrity"
+      template: "hygiene"
+      priority: 0.65
+      cooldown_beats: 24
+      max_runs: 0
+      query: "hygiene pytest lint integrity repo"
+      vars:
+        pytest_args: "-q"

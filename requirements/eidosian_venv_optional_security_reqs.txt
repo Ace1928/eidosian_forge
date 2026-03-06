@@ -1,0 +1,3 @@
+# Optional add-ons for heavier security/archive features that are not required
+# for the canonical autonomy/MCP/runtime validation path.
+cryptography==46.0.5

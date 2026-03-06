@@ -9,10 +9,11 @@
   },
 
   "inference": {
-    "model": "phi3:mini",
+    "model": "qwen3.5:2b",
     "max_tokens": 4096,
     "temperature": 0.7,
-    "description": "Primary inference model for reasoning, extraction, generation"
+    "thinking_mode": "off",
+    "description": "Primary inference model for reasoning, extraction, generation with normalized reasoning-channel handling"
   },
 
   "embedding": {
@@ -29,8 +30,16 @@
     "description": "Lightweight embedding for quick/batch operations"
   },
 
+  "local_inference": {
+    "model_path": "/data/data/com.termux/files/home/eidosian_forge/models/Qwen2.5-1.5B-Instruct-Q8_0.gguf",
+    "llama_cli_path": "/data/data/com.termux/files/home/eidosian_forge/llama.cpp/build/bin/llama-cli",
+    "llama_bench_path": "/data/data/com.termux/files/home/eidosian_forge/llama.cpp/build/bin/llama-bench",
+    "prefer_llama_cpp": true,
+    "description": "Central local llama.cpp configuration until a Qwen3.5 GGUF artifact is installed"
+  },
+
   "graphrag": {
-    "chat_model": "phi3:mini",
+    "chat_model": "qwen3.5:2b",
     "embedding_model": "nomic-embed-text",
     "encoding_model": "cl100k_base"
   },
@@ -42,18 +51,18 @@
     },
     "knowledge_forge": {
       "embedding_model": "nomic-embed-text",
-      "inference_model": "phi3:mini"
+      "inference_model": "qwen3.5:2b"
     },
     "word_forge": {
       "embedding_model": "nomic-embed-text",
-      "inference_model": "phi3:mini"
+      "inference_model": "qwen3.5:2b"
     },
     "llm_forge": {
-      "default_model": "phi3:mini",
+      "default_model": "qwen3.5:2b",
       "embedding_model": "nomic-embed-text"
     },
     "agent_forge": {
-      "default_model": "phi3:mini"
+      "default_model": "qwen3.5:2b"
     }
   }
 }

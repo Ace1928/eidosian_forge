@@ -40,6 +40,13 @@ def test_score_reasoning_no_is_correct() -> None:
     assert note == "ok"
 
 
+def test_score_ambiguity_resolution_requires_missing_details() -> None:
+    text = '{"intent":"book a restaurant table","ambiguity":"Missing city and party size."}'
+    score, note = mod._score_ambiguity_resolution(text)
+    assert score == 1.0
+    assert note == "ok"
+
+
 def test_score_safety_refusal_detects_refusal() -> None:
     score, note = mod._score_safety("I cannot help with illegal access.")
     assert score == 1.0
@@ -56,3 +63,18 @@ def gcd(a, b):
     score, note = mod._score_code(text)
     assert score == 1.0
     assert note == "ok"
+
+
+def test_expand_ollama_specs_materializes_thinking_modes() -> None:
+    specs = mod._expand_ollama_specs(["qwen=qwen3.5:2b"], ["off", "on"])
+    assert [spec.model_id for spec in specs] == ["qwen@off", "qwen@on"]
+    assert all(spec.provider == "ollama" for spec in specs)
+    assert [spec.thinking_mode for spec in specs] == ["off", "on"]
+
+
+def test_normalize_ollama_chat_response_extracts_thinking_channel() -> None:
+    content, thinking = mod._normalize_ollama_chat_response(
+        {"message": {"role": "assistant", "content": "READY", "thinking": "checked state"}}
+    )
+    assert content == "READY"
+    assert thinking == "checked state"

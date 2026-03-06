@@ -76,15 +76,9 @@ else
   git clone --branch "$BRANCH" "$REPO_URL" "$FORGE_ROOT"
 fi
 
-python3 -m venv "$FORGE_ROOT/eidosian_venv"
+PYTHON_BIN=python3 "$FORGE_ROOT/scripts/rebuild_eidosian_venv.sh" --force
 # shellcheck disable=SC1091
 source "$FORGE_ROOT/eidosian_venv/bin/activate"
-python -m pip install --upgrade pip wheel
-if [[ -f "$FORGE_ROOT/archive_forge/manifests/eidosian_venv_freeze_latest.txt" ]]; then
-  pip install -r "$FORGE_ROOT/archive_forge/manifests/eidosian_venv_freeze_latest.txt"
-elif [[ -f "$FORGE_ROOT/requirements.txt" ]]; then
-  pip install -r "$FORGE_ROOT/requirements.txt"
-fi
 if [[ -f "$FORGE_ROOT/eidos_mcp/pyproject.toml" ]]; then
   pip install -e "$FORGE_ROOT/eidos_mcp"
 fi

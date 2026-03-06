@@ -7,15 +7,37 @@ Ollama Forge - Python Client.
 """
 import httpx
 from typing import Dict, Any, Generator, List, Optional
-from pydantic import BaseModel
+from dataclasses import dataclass
+
+try:
+    from eidos_mcp.config.models import (
+        DEFAULT_THINKING_MODE,
+        apply_reasoning_mode,
+        normalize_chat_payload,
+        normalize_generate_payload,
+    )
+except ImportError:
+    DEFAULT_THINKING_MODE = "off"
+
+    def apply_reasoning_mode(payload: Dict[str, Any], model: str, thinking_mode: Any, explicit_think: bool = False) -> Dict[str, Any]:
+        return dict(payload)
+
+    def normalize_generate_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
+        return dict(payload)
+
+    def normalize_chat_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
+        return dict(payload)
 
 # [EIDOS] Default timeout for LLM operations - 1 hour for slow local models
 DEFAULT_LLM_TIMEOUT = 3600.0
 
-class OllamaResponse(BaseModel):
+@dataclass
+class OllamaResponse:
     model: str
-    response: str
     done: bool
+    response: str = ""
+    thinking: Optional[str] = None
+    done_reason: Optional[str] = None
     context: Optional[List[int]] = None
     total_duration: Optional[int] = None
 
@@ -25,7 +47,7 @@ class OllamaClient:
         base_url: str = get_service_url("ollama_http", default_port=11434, default_host="localhost", default_path=""),
         timeout: Optional[float] = DEFAULT_LLM_TIMEOUT,
     ):
-        self.base_url = base_url
+        self.base_url = base_url.rstrip("/")
         self.timeout = timeout
 
     @eidosian()
@@ -44,6 +66,13 @@ class OllamaClient:
             "stream": stream,
             **kwargs
         }
+        data = apply_reasoning_mode(
+            data,
+            model,
+            kwargs.get("thinking_mode", DEFAULT_THINKING_MODE),
+            explicit_think="think" in kwargs,
+        )
+        data.pop("thinking_mode", None)
         
         # Use provided timeout or default client timeout
         current_timeout = self.timeout if timeout is None else timeout
@@ -55,7 +84,7 @@ class OllamaClient:
             if stream:
                 raise NotImplementedError("Streaming not supported in simple client yet")
             
-            return OllamaResponse(**resp.json())
+            return OllamaResponse(**normalize_generate_payload(resp.json()))
 
     @eidosian()
     def chat(
@@ -88,6 +117,13 @@ class OllamaClient:
             "stream": stream,
             **kwargs
         }
+        data = apply_reasoning_mode(
+            data,
+            model,
+            kwargs.get("thinking_mode", DEFAULT_THINKING_MODE),
+            explicit_think="think" in kwargs,
+        )
+        data.pop("thinking_mode", None)
         
         if options:
             data["options"] = options
@@ -102,7 +138,7 @@ class OllamaClient:
             if stream:
                 raise NotImplementedError("Streaming not supported in simple client yet")
             
-            return resp.json()
+            return normalize_chat_payload(resp.json())
 
     @eidosian()
     def list_models(self) -> List[str]:

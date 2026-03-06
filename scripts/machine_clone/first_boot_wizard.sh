@@ -200,7 +200,7 @@ run_plan_step() {
 
   case "$id" in
     create_venv)
-      run_cmd "python3 -m venv '${FORGE_ROOT}/eidosian_venv'" || rc=$?
+      run_cmd "PYTHON_BIN=python3 '${FORGE_ROOT}/scripts/rebuild_eidosian_venv.sh' --force" || rc=$?
       ;;
     start_eidos_mcp)
       run_cmd "systemctl --user enable --now eidos-mcp.service" || rc=$?

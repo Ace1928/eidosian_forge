@@ -97,7 +97,7 @@ Schema reference:
 Judge defaults are loaded from `config/model_selection.json` (falling back to Qwen 0.5B + Llama 1B if absent).
 
 ## Multi-Domain Model Suite
-Use `model_domain_suite.py` to benchmark local models across tool calling, extraction, reasoning, coding, safety, and optional multimodal OCR.
+Use `model_domain_suite.py` to benchmark local or Ollama-hosted models across tool calling, extraction, reasoning, ambiguity handling, coding, safety, and optional multimodal OCR. Ollama runs can sweep explicit thinking modes such as `off` and `on`.
 
 ### Run (catalog-driven)
 ```bash
@@ -109,6 +109,14 @@ Use `model_domain_suite.py` to benchmark local models across tool calling, extra
 ./eidosian_venv/bin/python benchmarks/model_domain_suite.py \
   --model qwen_0_5b=models/Qwen2.5-0.5B-Instruct-Q8_0.gguf \
   --model arch_3b=models/Arch-Function-3B-Q6_K.gguf
+```
+
+### Run an Ollama reasoning sweep
+```bash
+./eidosian_venv/bin/python benchmarks/model_domain_suite.py \
+  --ollama-model qwen35=qwen3.5:2b \
+  --thinking-mode off \
+  --thinking-mode on
 ```
 
 ### Outputs

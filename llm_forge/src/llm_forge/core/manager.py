@@ -17,7 +17,7 @@ try:
     DEFAULT_INFERENCE_MODEL = model_config.inference.model
     DEFAULT_OLLAMA_URL = model_config.ollama.base_url
 except ImportError:
-    DEFAULT_INFERENCE_MODEL = "phi3:mini"
+    DEFAULT_INFERENCE_MODEL = "qwen3.5:2b"
     DEFAULT_OLLAMA_URL = get_service_url("ollama_http", default_port=11434, default_host="localhost", default_path="")
 
 

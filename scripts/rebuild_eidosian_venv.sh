@@ -5,25 +5,84 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FORGE_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 VENV_DIR="${FORGE_ROOT}/eidosian_venv"
 BACKUP_ROOT="${FORGE_ROOT}/Backups"
-PYTHON_BIN="${PYTHON_BIN:-$(command -v python3 || command -v python)}"
+
+resolve_host_python() {
+  local entry
+  local path_python=""
+
+  IFS=':' read -r -a path_entries <<<"${PATH}"
+  for entry in "${path_entries[@]}"; do
+    [[ -z "${entry}" ]] && continue
+    [[ "${entry}" == "${VENV_DIR}/bin" ]] && continue
+    if [[ -x "${entry}/python3" ]]; then
+      path_python="${entry}/python3"
+      break
+    fi
+    if [[ -x "${entry}/python" ]]; then
+      path_python="${entry}/python"
+      break
+    fi
+  done
+
+  if [[ -n "${path_python}" ]]; then
+    printf '%s\n' "${path_python}"
+  elif [[ -n "${PREFIX:-}" && -x "${PREFIX}/bin/python3" ]]; then
+    printf '%s\n' "${PREFIX}/bin/python3"
+  elif [[ -x "/usr/bin/python3" ]]; then
+    printf '%s\n' "/usr/bin/python3"
+  elif [[ -x "/usr/bin/python" ]]; then
+    printf '%s\n' "/usr/bin/python"
+  fi
+}
+
+configure_android_build_env() {
+  local detected_api=""
+  local os_name=""
+  local cargo_target_dir=""
+
+  os_name="$(uname -o 2>/dev/null || true)"
+  if [[ "${os_name}" != "Android" && -z "${TERMUX_VERSION:-}" ]]; then
+    return 0
+  fi
+
+  if [[ -z "${ANDROID_API_LEVEL:-}" ]] && command -v getprop >/dev/null 2>&1; then
+    detected_api="$(getprop ro.build.version.sdk 2>/dev/null || true)"
+    if [[ -n "${detected_api}" ]]; then
+      export ANDROID_API_LEVEL="${detected_api}"
+    fi
+  fi
+
+  export ANDROID_API_LEVEL="${ANDROID_API_LEVEL:-24}"
+  export CARGO_BUILD_JOBS="${CARGO_BUILD_JOBS:-1}"
+  cargo_target_dir="${CARGO_TARGET_DIR:-${FORGE_ROOT}/tmp/cargo-target}"
+  mkdir -p "${cargo_target_dir}"
+  export CARGO_TARGET_DIR="${cargo_target_dir}"
+  echo "Android API level: ${ANDROID_API_LEVEL}"
+  echo "Cargo build jobs: ${CARGO_BUILD_JOBS}"
+  echo "Cargo target dir: ${CARGO_TARGET_DIR}"
+}
+
+DEFAULT_PYTHON_BIN="$(resolve_host_python)"
+PYTHON_BIN="${PYTHON_BIN:-${DEFAULT_PYTHON_BIN}}"
 FORCE=0
-WITH_REQUIREMENTS=0
+WITH_REQUIREMENTS=1
 SYSTEM_SITE=0
 
 usage() {
   cat <<'EOF'
-Usage: scripts/rebuild_eidosian_venv.sh [--force] [--with-requirements] [--system-site-packages]
+Usage: scripts/rebuild_eidosian_venv.sh [--force] [--without-requirements] [--system-site-packages]
 
 Options:
-  --force              Rebuild even if venv already exists (backs up current venv first)
-  --with-requirements  Install dependencies after creating venv
+  --force                 Rebuild even if venv already exists (backs up current venv first)
+  --without-requirements  Skip dependency installation after creating venv
   --system-site-packages
-                       Create venv with access to Termux global site-packages
-  -h, --help           Show help
+                          Create venv with access to global site-packages
+  -h, --help              Show help
 
 Behavior:
   - Idempotent by default: if venv exists and --force is not set, script exits without changes.
   - Rollback-safe: when --force is used, existing venv is moved to Backups/eidosian_venv_<timestamp>.
+  - Self-contained by default: installs requirements/eidosian_venv_reqs.txt when available.
 EOF
 }
 
@@ -32,8 +91,8 @@ while [[ $# -gt 0 ]]; do
     --force)
       FORCE=1
       ;;
-    --with-requirements)
-      WITH_REQUIREMENTS=1
+    --without-requirements)
+      WITH_REQUIREMENTS=0
       ;;
     --system-site-packages)
       SYSTEM_SITE=1
@@ -56,8 +115,28 @@ if [[ -z "${PYTHON_BIN}" ]]; then
   exit 1
 fi
 
+case "${PYTHON_BIN}" in
+  "${VENV_DIR}/bin/"*)
+    if [[ -n "${DEFAULT_PYTHON_BIN}" ]]; then
+      echo "PYTHON_BIN points inside ${VENV_DIR}; falling back to host interpreter ${DEFAULT_PYTHON_BIN}" >&2
+      PYTHON_BIN="${DEFAULT_PYTHON_BIN}"
+    fi
+    ;;
+esac
+
+if [[ ! -x "${PYTHON_BIN}" ]]; then
+  echo "Python interpreter is not executable: ${PYTHON_BIN}" >&2
+  exit 1
+fi
+
 echo "Forge root: ${FORGE_ROOT}"
 echo "Python: ${PYTHON_BIN}"
+if [[ "${SYSTEM_SITE}" -eq 1 ]]; then
+  echo "Mode: shared-site-packages (not self-contained)"
+else
+  echo "Mode: self-contained"
+fi
+configure_android_build_env
 
 BACKUP_DIR=""
 if [[ -d "${VENV_DIR}" ]]; then
@@ -96,6 +175,8 @@ if [[ "${WITH_REQUIREMENTS}" -eq 1 ]]; then
   else
     echo "No requirements file found. Skipping dependency install."
   fi
+else
+  echo "Dependency installation skipped (--without-requirements)."
 fi
 
 echo "Venv rebuild complete."

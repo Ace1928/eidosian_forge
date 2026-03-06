@@ -86,6 +86,10 @@ if [[ -d "${VENV_DIR}" ]]; then
   fi
   if [[ -f "${VENV_DIR}/pyvenv.cfg" ]]; then
     echo "ok: pyvenv.cfg present"
+    if grep -q '^include-system-site-packages = true$' "${VENV_DIR}/pyvenv.cfg"; then
+      echo "warn: venv is inheriting global site-packages"
+      echo "      run: ${FORGE_ROOT}/scripts/rebuild_eidosian_venv.sh --force"
+    fi
   else
     echo "warn: pyvenv.cfg missing"
     echo "      run: ${FORGE_ROOT}/scripts/rebuild_eidosian_venv.sh --force"

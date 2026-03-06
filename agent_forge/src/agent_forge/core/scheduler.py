@@ -8,7 +8,7 @@ import random
 import signal
 import time
 from dataclasses import dataclass
-from typing import Callable
+from typing import Any, Callable, Mapping
 
 from eidosian_core import eidosian
 
@@ -93,27 +93,41 @@ def sense(ctx):  # existing hook: leave as-is if already present
 
 
 @eidosian()
-def plan(ctx, goal):
-    kind, meta = choose(goal)
-    p = add_plan(STATE_DIR, goal.id, kind, meta)
-    steps = materialize(meta["template"], goal.title, vars=meta.get("vars"))
+def create_plan_for_goal(
+    state_dir: str,
+    goal,
+    *,
+    kind: str = "htn",
+    template: str,
+    vars: Mapping[str, Any] | None = None,
+    meta: Mapping[str, Any] | None = None,
+):
+    steps = materialize(template, goal.title, vars=vars)
     retries: dict[str, int] = {}
     for s in steps:
-        add_step(STATE_DIR, p.id, s["idx"], s["name"], json.dumps(s["cmd"]), s["budget_s"], "todo")
         retries[str(s["idx"])] = 1 if "test" in s["name"] else 0
-    meta_with_retries = dict(meta)
-    meta_with_retries["retries"] = retries
-    import pathlib
-    import sqlite3
+    plan_meta = dict(meta or {})
+    plan_meta["template"] = template
+    plan_meta["vars"] = dict(vars or {})
+    plan_meta["retries"] = retries
+    p = add_plan(state_dir, goal.id, kind, plan_meta)
+    for s in steps:
+        add_step(state_dir, p.id, s["idx"], s["name"], json.dumps(s["cmd"]), s["budget_s"], "todo")
+    BUS.append(state_dir, "plan.created", {"goal_id": goal.id, "plan_id": p.id, "template": template})
+    return p
 
-    db = pathlib.Path(STATE_DIR) / "e3.sqlite"
-    conn = sqlite3.connect(db)
-    try:
-        conn.execute("UPDATE plans SET meta=? WHERE id=?", (json.dumps(meta_with_retries), p.id))
-        conn.commit()
-    finally:
-        conn.close()
-    BUS.append(STATE_DIR, "plan.created", {"goal_id": goal.id, "plan_id": p.id})
+
+@eidosian()
+def plan(ctx, goal):
+    kind, meta = choose(goal)
+    return create_plan_for_goal(
+        STATE_DIR,
+        goal,
+        kind=kind,
+        template=meta["template"],
+        vars=meta.get("vars"),
+        meta=meta,
+    )
 
 
 @eidosian()
@@ -138,7 +152,8 @@ def act(ctx, step_row):
         conn.close()
     plan = next((p for p in list_plans(STATE_DIR) if p.id == step_row.plan_id), None)
     template = plan.meta.get("template") if plan else None
-    res = run_step(STATE_DIR, step_row.id, cmd, cwd=".", budget_s=step_row.budget_s, template=template)
+    cwd = str(plan.meta.get("cwd", ".")) if plan else "."
+    res = run_step(STATE_DIR, step_row.id, cmd, cwd=cwd, budget_s=step_row.budget_s, template=template)
     BUS.append(STATE_DIR, "act.exec", {"step_id": step_row.id, "res": res})
     return res
 

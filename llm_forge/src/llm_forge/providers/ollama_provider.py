@@ -17,7 +17,7 @@ try:
     UNIFIED_EMBEDDING_MODEL = model_config.embedding.model
 except ImportError:
     # Fallback if eidos_mcp not available
-    UNIFIED_INFERENCE_MODEL = "phi3:mini"
+    UNIFIED_INFERENCE_MODEL = "qwen3.5:2b"
     UNIFIED_EMBEDDING_MODEL = "nomic-embed-text"
 
 
@@ -41,7 +41,11 @@ class OllamaProvider(LLMProvider, EmbeddingProvider):
             text=resp.response,
             tokens_used=0, 
             model_name=actual_model,
-            meta={"duration": resp.total_duration}
+            meta={
+                "duration": resp.total_duration,
+                "thinking": resp.thinking,
+                "done_reason": resp.done_reason,
+            },
         )
 
     @eidosian()

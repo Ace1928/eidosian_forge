@@ -7,6 +7,8 @@ from typing import Dict, Any, List, Optional
 from pydantic import BaseModel
 from eidosian_core import eidosian
 
+from eidos_mcp.config.models import get_model_config
+
 class BenchResult(BaseModel):
     """Parsed results from llama-bench."""
     model: str
@@ -21,7 +23,8 @@ class Benchmarker:
     """Wrapper for llama-bench to evaluate local engine performance."""
 
     def __init__(self, bin_path: Optional[Path] = None):
-        self.bin_path = bin_path or Path(__file__).resolve().parents[4] / "llm_forge/bin/llama-bench"
+        default_bin = Path(get_model_config().local_inference.llama_bench_path)
+        self.bin_path = Path(bin_path) if bin_path is not None else default_bin
 
     def _subprocess_env(self) -> dict[str, str]:
         env = os.environ.copy()

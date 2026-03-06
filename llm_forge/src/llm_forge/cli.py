@@ -81,7 +81,7 @@ class LLMForgeCLI(StandardCLI):
         )
         chat_parser.add_argument(
             "-m", "--model",
-            help="Model to use (default: phi3:mini)",
+            help="Model to use (default: centralized inference model)",
         )
         chat_parser.add_argument(
             "-t", "--temperature",
@@ -197,7 +197,7 @@ class LLMForgeCLI(StandardCLI):
     def _cmd_chat(self, args) -> None:
         """Chat with LLM."""
         try:
-            model = args.model or "phi3:mini"
+            model = args.model or self.ollama.default_model
             
             response = self.ollama.generate(
                 prompt=args.prompt,
@@ -208,12 +208,12 @@ class LLMForgeCLI(StandardCLI):
             
             result = CommandResult(
                 True,
-                response.content,
+                response.text,
                 {
                     "model": model,
                     "prompt": args.prompt,
-                    "response": response.content,
-                    "usage": response.usage if hasattr(response, "usage") else None,
+                    "response": response.text,
+                    "meta": response.meta,
                 }
             )
         except Exception as e:
@@ -260,10 +260,11 @@ class LLMForgeCLI(StandardCLI):
                     "embedding_model": model_config.embedding.model,
                     "embedding_dims": model_config.embedding.dimensions,
                     "ollama_url": model_config.ollama.base_url,
+                    "thinking_mode": model_config.inference.thinking_mode,
                 }
             except ImportError:
                 config = {
-                    "inference_model": "phi3:mini",
+                    "inference_model": "qwen3.5:2b",
                     "embedding_model": "nomic-embed-text",
                     "embedding_dims": 768,
                     "ollama_url": DEFAULT_OLLAMA_URL,
@@ -282,7 +283,7 @@ class LLMForgeCLI(StandardCLI):
     def _cmd_test(self, args) -> None:
         """Test LLM connection."""
         try:
-            model = args.model or "phi3:mini"
+            model = args.model or self.ollama.default_model
             
             response = self.ollama.generate(
                 prompt="Say 'hello' in one word.",
@@ -293,10 +294,11 @@ class LLMForgeCLI(StandardCLI):
             
             result = CommandResult(
                 True,
-                f"Connection OK - Model responded: {response.content[:50]}",
+                f"Connection OK - Model responded: {response.text[:50]}",
                 {
                     "model": model,
-                    "response": response.content,
+                    "response": response.text,
+                    "meta": response.meta,
                     "test": "passed",
                 }
             )

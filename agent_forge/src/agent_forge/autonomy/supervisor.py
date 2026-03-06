@@ -1,0 +1,393 @@
+from __future__ import annotations
+
+import json
+import os
+import re
+import subprocess
+import sys
+from pathlib import Path
+from typing import Any, Mapping
+
+from eidosian_core import eidosian
+
+from agent_forge.core import events as BUS
+from agent_forge.core import state as S
+from agent_forge.core.scheduler import create_plan_for_goal
+
+try:
+    import yaml
+except Exception:  # pragma: no cover - optional dependency
+    yaml = None
+
+_TOKEN_RE = re.compile(r"[A-Za-z0-9_.:-]+")
+
+
+def _forge_root() -> Path:
+    raw = os.environ.get("EIDOS_FORGE_DIR")
+    if raw:
+        return Path(raw).expanduser().resolve()
+    return Path(__file__).resolve().parents[4]
+
+
+def _ensure_bridge_import_path() -> None:
+    root = _forge_root()
+    for path in (root / "memory_forge" / "src", root / "knowledge_forge" / "src", root):
+        text = str(path)
+        if path.exists() and text not in sys.path:
+            sys.path.insert(0, text)
+
+
+def _to_text(value: Any) -> str:
+    if value is None:
+        return ""
+    try:
+        return str(value)
+    except Exception:
+        return ""
+
+
+def _tokenize(text: str) -> set[str]:
+    return {token.lower() for token in _TOKEN_RE.findall(text)}
+
+
+@eidosian()
+def load_supervisor_config(path: str | Path | None) -> dict[str, Any]:
+    if path is None or yaml is None:
+        return {}
+    cfg_path = Path(path)
+    if not cfg_path.exists():
+        return {}
+    try:
+        with cfg_path.open("r", encoding="utf-8") as handle:
+            data = yaml.safe_load(handle) or {}
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+class AutonomySupervisor:
+    """Policy-driven mission seeding for the long-running daemon."""
+
+    def __init__(
+        self,
+        state_dir: str | Path,
+        *,
+        repo_root: str | Path = ".",
+        config: Mapping[str, Any] | None = None,
+        bridge: Any = None,
+        memory_system: Any = None,
+    ) -> None:
+        self.state_dir = str(state_dir)
+        self.repo_root = Path(repo_root).expanduser().resolve()
+        self.config = dict(config or {})
+        self._bridge = bridge
+        self._memory_system = memory_system
+
+    def _policy(self) -> dict[str, Any]:
+        policy = self.config.get("policy", {})
+        return dict(policy) if isinstance(policy, Mapping) else {}
+
+    def _missions(self) -> list[dict[str, Any]]:
+        missions = self.config.get("missions", [])
+        if not isinstance(missions, list):
+            return []
+        out: list[dict[str, Any]] = []
+        for idx, item in enumerate(missions):
+            if not isinstance(item, Mapping):
+                continue
+            mission = dict(item)
+            mission.setdefault("id", f"mission_{idx + 1}")
+            mission.setdefault("enabled", True)
+            mission.setdefault("priority", 0.5)
+            mission.setdefault("cooldown_beats", 0)
+            mission.setdefault("max_runs", 0)
+            mission.setdefault("vars", {})
+            out.append(mission)
+        return out
+
+    def _load_bridge(self) -> tuple[Any, str]:
+        if self._bridge is not None:
+            return self._bridge, ""
+        try:
+            _ensure_bridge_import_path()
+            from knowledge_forge import KnowledgeMemoryBridge  # type: ignore
+
+            self._bridge = KnowledgeMemoryBridge()
+            return self._bridge, ""
+        except Exception as exc:  # pragma: no cover - defensive fallback
+            return None, str(exc)
+
+    def _load_memory_system(self) -> Any:
+        if self._memory_system is not None:
+            return self._memory_system
+        try:
+            _ensure_bridge_import_path()
+            from memory_forge import TieredMemorySystem  # type: ignore
+
+            self._memory_system = TieredMemorySystem()
+        except Exception:  # pragma: no cover - defensive fallback
+            self._memory_system = None
+        return self._memory_system
+
+    def _recent_context_query(self) -> str:
+        parts: list[str] = []
+        base_query = _to_text(self.config.get("context_query"))
+        if base_query:
+            parts.append(base_query)
+        for event_type in ("memory_bridge.status", "knowledge_bridge.status"):
+            for evt in BUS.iter_events(self.state_dir, limit=80):
+                if evt.get("type") != event_type:
+                    continue
+                data = evt.get("data") if isinstance(evt.get("data"), Mapping) else {}
+                parts.append(_to_text(data.get("query")))
+        if not parts:
+            parts.append("consciousness benchmark latency memory knowledge autonomy")
+        tokens: list[str] = []
+        seen: set[str] = set()
+        for part in parts:
+            for token in _TOKEN_RE.findall(part):
+                lowered = token.lower()
+                if lowered in seen:
+                    continue
+                seen.add(lowered)
+                tokens.append(lowered)
+                if len(tokens) >= int(self.config.get("query_max_tokens", 24) or 24):
+                    return " ".join(tokens)
+        return " ".join(tokens)
+
+    def _context_packet(self) -> dict[str, Any]:
+        limit = max(1, int(self.config.get("context_limit", 6) or 6))
+        query = self._recent_context_query()
+        bridge, load_error = self._load_bridge()
+        results = []
+        if bridge is not None:
+            try:
+                results = bridge.unified_search(query, limit=limit)
+            except Exception as exc:  # pragma: no cover - defensive fallback
+                load_error = str(exc)
+                results = []
+
+        context_tokens: set[str] = set()
+        hits: list[dict[str, Any]] = []
+        for result in results:
+            metadata = dict(getattr(result, "metadata", {}) or {})
+            tags = [str(tag) for tag in metadata.get("tags", [])]
+            content = _to_text(getattr(result, "content", ""))
+            context_tokens |= _tokenize(" ".join([content, " ".join(tags)]))
+            hits.append(
+                {
+                    "source": _to_text(getattr(result, "source", "")),
+                    "id": _to_text(getattr(result, "id", "")),
+                    "score": float(getattr(result, "score", 0.0) or 0.0),
+                    "content": content[:240],
+                    "tags": tags[:8],
+                }
+            )
+
+        return {
+            "query": query,
+            "load_error": load_error,
+            "hits": hits,
+            "tokens": sorted(context_tokens),
+        }
+
+    def _recent_selections(self) -> list[dict[str, Any]]:
+        rows: list[dict[str, Any]] = []
+        for evt in BUS.iter_events(self.state_dir, limit=400):
+            if evt.get("type") != "autonomy.mission_selected":
+                continue
+            data = evt.get("data") if isinstance(evt.get("data"), Mapping) else {}
+            rows.append(dict(data))
+        return rows
+
+    def _active_goals(self) -> set[str]:
+        plan_by_goal = {plan.id: plan.goal_id for plan in S.list_plans(self.state_dir)}
+        active_goal_ids: set[str] = set()
+        for step in S.list_steps(self.state_dir):
+            if step.status in {"todo", "running"}:
+                goal_id = plan_by_goal.get(step.plan_id)
+                if goal_id:
+                    active_goal_ids.add(goal_id)
+        return active_goal_ids
+
+    def _repo_dirty(self) -> bool:
+        try:
+            proc = subprocess.run(
+                ["git", "status", "--short"],
+                cwd=str(self.repo_root),
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+        except Exception:
+            return False
+        return proc.returncode == 0 and bool(proc.stdout.strip())
+
+    def _mission_history(self, mission_id: str) -> tuple[int, int]:
+        count = 0
+        last_beat = -10_000
+        for row in self._recent_selections():
+            if row.get("mission_id") != mission_id:
+                continue
+            count += 1
+            try:
+                last_beat = max(last_beat, int(row.get("beat", -10_000)))
+            except (TypeError, ValueError):
+                continue
+        return count, last_beat
+
+    def _score_mission(self, mission: Mapping[str, Any], context: Mapping[str, Any]) -> float:
+        base = float(mission.get("priority", 0.5) or 0.5)
+        query_tokens = _tokenize(_to_text(mission.get("query")) or _to_text(mission.get("title")))
+        if not query_tokens:
+            return base
+        context_tokens = set(context.get("tokens") or [])
+        overlap = len(query_tokens & context_tokens)
+        return base + (overlap / max(len(query_tokens), 1))
+
+    def _remember_selection(self, mission: Mapping[str, Any], context: Mapping[str, Any], score: float) -> None:
+        memory = self._load_memory_system()
+        if memory is None or not hasattr(memory, "remember"):
+            return
+        content = (
+            f"Autonomy supervisor selected mission {mission.get('id')}: "
+            f"{mission.get('title')} with score {score:.3f}. "
+            f"Context query: {context.get('query')}"
+        )
+        metadata = {
+            "mission_id": _to_text(mission.get("id")),
+            "template": _to_text(mission.get("template")),
+            "context_query": _to_text(context.get("query")),
+        }
+        try:
+            _ensure_bridge_import_path()
+            from memory_forge.core.interfaces import MemoryType  # type: ignore
+            from memory_forge.core.tiered_memory import MemoryNamespace, MemoryTier  # type: ignore
+
+            memory.remember(
+                content,
+                tier=MemoryTier.WORKING,
+                namespace=MemoryNamespace.TASK,
+                memory_type=MemoryType.EPISODIC,
+                importance=0.9,
+                tags={"autonomy", "supervisor", str(mission.get("id"))},
+                metadata=metadata,
+            )
+        except Exception:
+            try:
+                memory.remember(content, importance=0.9, metadata=metadata)
+            except Exception:
+                return
+
+    @eidosian()
+    def tick(self, *, beat_count: int) -> dict[str, Any]:
+        active_goal_ids = self._active_goals()
+        active_goals = [goal for goal in S.list_goals(self.state_dir) if goal.id in active_goal_ids]
+        policy = self._policy()
+        max_active_goals = max(1, int(policy.get("max_active_goals", 1) or 1))
+        allowed_templates = {str(x) for x in policy.get("allowed_templates", []) if x}
+        require_clean_git = bool(policy.get("require_clean_git", False))
+        repo_dirty = self._repo_dirty()
+        context = self._context_packet()
+
+        ctx_payload = {
+            "beat": int(beat_count),
+            "query": context.get("query"),
+            "hit_count": len(context.get("hits") or []),
+            "repo_root": str(self.repo_root),
+            "repo_dirty": repo_dirty,
+        }
+        BUS.append(self.state_dir, "autonomy.context", ctx_payload, tags=["autonomy", "context"])
+
+        if len(active_goals) >= max_active_goals:
+            payload = {
+                "status": "busy",
+                "beat": int(beat_count),
+                "active_goals": [goal.title for goal in active_goals],
+            }
+            BUS.append(self.state_dir, "autonomy.idle", payload, tags=["autonomy", "idle"])
+            return payload
+
+        candidates: list[tuple[float, dict[str, Any]]] = []
+        goal_titles = {goal.title for goal in S.list_goals(self.state_dir)}
+        for mission in self._missions():
+            if not bool(mission.get("enabled", True)):
+                continue
+            mission_id = _to_text(mission.get("id"))
+            template = _to_text(mission.get("template"))
+            title = _to_text(mission.get("title"))
+            if not template or not title:
+                continue
+
+            blocked_reason = ""
+            if allowed_templates and template not in allowed_templates:
+                blocked_reason = "template_not_allowed"
+            elif require_clean_git and repo_dirty:
+                blocked_reason = "repo_dirty"
+            elif title in goal_titles:
+                blocked_reason = "goal_exists"
+            else:
+                count, last_beat = self._mission_history(mission_id)
+                max_runs = int(mission.get("max_runs", 0) or 0)
+                cooldown = int(mission.get("cooldown_beats", 0) or 0)
+                if max_runs and count >= max_runs:
+                    blocked_reason = "max_runs_reached"
+                elif cooldown and (beat_count - last_beat) < cooldown:
+                    blocked_reason = "cooldown_active"
+
+            if blocked_reason:
+                BUS.append(
+                    self.state_dir,
+                    "autonomy.mission_blocked",
+                    {
+                        "beat": int(beat_count),
+                        "mission_id": mission_id,
+                        "template": template,
+                        "reason": blocked_reason,
+                    },
+                    tags=["autonomy", "blocked"],
+                )
+                continue
+
+            candidates.append((self._score_mission(mission, context), mission))
+
+        if not candidates:
+            payload = {"status": "idle", "beat": int(beat_count), "reason": "no_eligible_missions"}
+            BUS.append(self.state_dir, "autonomy.idle", payload, tags=["autonomy", "idle"])
+            return payload
+
+        score, mission = max(candidates, key=lambda item: item[0])
+        goal = S.add_goal(self.state_dir, _to_text(mission["title"]), _to_text(mission.get("drive", "integrity")))
+        plan = create_plan_for_goal(
+            self.state_dir,
+            goal,
+            template=_to_text(mission["template"]),
+            vars=mission.get("vars") if isinstance(mission.get("vars"), Mapping) else {},
+            meta={
+                "cwd": str(self.repo_root),
+                "mission_id": _to_text(mission.get("id")),
+                "priority": float(mission.get("priority", 0.5) or 0.5),
+                "context_query": _to_text(context.get("query")),
+                "created_by": "autonomy_supervisor",
+            },
+        )
+        payload = {
+            "status": "selected",
+            "beat": int(beat_count),
+            "mission_id": _to_text(mission.get("id")),
+            "goal_id": goal.id,
+            "plan_id": plan.id,
+            "score": round(score, 4),
+            "template": _to_text(mission.get("template")),
+            "context_query": _to_text(context.get("query")),
+            "context_hits": len(context.get("hits") or []),
+        }
+        BUS.append(self.state_dir, "autonomy.mission_selected", payload, tags=["autonomy", "selected"])
+        S.append_journal(
+            self.state_dir,
+            json.dumps(payload, sort_keys=True),
+            etype="autonomy.mission_selected",
+            tags=["autonomy", _to_text(mission.get("id"))],
+        )
+        self._remember_selection(mission, context, score)
+        return payload

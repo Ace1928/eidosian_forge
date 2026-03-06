@@ -126,6 +126,31 @@ class TestOllamaClient(unittest.TestCase):
         self.assertTrue(result.done)
 
     @patch("ollama_forge.client.httpx.Client")
+    def test_generate_defaults_reasoning_models_to_configured_thinking_mode(self, mock_client_class: Any) -> None:
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.raise_for_status = Mock()
+        mock_response.json.return_value = {
+            "model": "qwen3.5:2b",
+            "response": "READY",
+            "thinking": "internal trace",
+            "done": True,
+        }
+
+        mock_client = MagicMock()
+        mock_client.post.return_value = mock_response
+        mock_client.__enter__ = Mock(return_value=mock_client)
+        mock_client.__exit__ = Mock(return_value=False)
+        mock_client_class.return_value = mock_client
+
+        result = self.client.generate(model="qwen3.5:2b", prompt="Ping")
+
+        payload = mock_client.post.call_args.kwargs["json"]
+        self.assertIs(payload["think"], False)
+        self.assertEqual(result.response, "READY")
+        self.assertEqual(result.thinking, "internal trace")
+
+    @patch("ollama_forge.client.httpx.Client")
     def test_generate_streaming_not_implemented(self, mock_client_class: Any) -> None:
         """Test that streaming generation raises NotImplementedError."""
         mock_response = Mock()
@@ -172,6 +197,30 @@ class TestOllamaClient(unittest.TestCase):
 
         mock_client.post.assert_called_once()
         self.assertEqual(result["message"]["content"], "Hello!")
+
+    @patch("ollama_forge.client.httpx.Client")
+    def test_chat_normalizes_reasoning_channel(self, mock_client_class: Any) -> None:
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.raise_for_status = Mock()
+        mock_response.json.return_value = {
+            "model": "qwen3.5:2b",
+            "message": {"role": "assistant", "content": "", "thinking": "deliberation"},
+            "done": True,
+        }
+
+        mock_client = MagicMock()
+        mock_client.post.return_value = mock_response
+        mock_client.__enter__ = Mock(return_value=mock_client)
+        mock_client.__exit__ = Mock(return_value=False)
+        mock_client_class.return_value = mock_client
+
+        result = self.client.chat(model="qwen3.5:2b", messages=[{"role": "user", "content": "Hi"}], think=True)
+
+        payload = mock_client.post.call_args.kwargs["json"]
+        self.assertTrue(payload["think"])
+        self.assertEqual(result["message"]["thinking"], "deliberation")
+        self.assertEqual(result["response"], "")
 
     # ===== Embedding Tests =====
 

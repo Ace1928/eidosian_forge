@@ -7,11 +7,10 @@ from eidosian_core import eidosian
 from llm_forge.benchmarking.engine_bench import Benchmarker
 from llm_forge.engine.local_cli import EngineConfig, LocalCLIEngine
 
+from ..config.models import get_model_config
 from ..core import tool
 
-# Default config for local inference
-# Note: Paths should be relative to FORGE_ROOT or absolute
-DEFAULT_MODEL = "doc_forge/models/qwen2.5-1.5b-instruct-q5_k_m.gguf"
+DEFAULT_MODEL = get_model_config().local_model_path
 
 
 @tool(

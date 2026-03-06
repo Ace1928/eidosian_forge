@@ -10,7 +10,7 @@ try:
     DEFAULT_MODEL = config.inference_model
     DEFAULT_EMBEDDING_MODEL = config.embedding_model
 except ImportError:
-    DEFAULT_MODEL = "phi3:mini"
+    DEFAULT_MODEL = "qwen3.5:2b"
     DEFAULT_EMBEDDING_MODEL = "nomic-embed-text"
 
 # Chat model aliases
@@ -39,4 +39,3 @@ def get_fallback_model(preferred: str = None) -> str:
     except Exception:
         pass
     return DEFAULT_MODEL
-

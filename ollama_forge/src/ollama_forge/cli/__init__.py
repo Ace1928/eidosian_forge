@@ -27,12 +27,12 @@ def main(argv: Optional[List[str]] = None) -> int:
     
     # Chat
     chat_parser = subparsers.add_parser("chat", help="Chat with a model")
-    chat_parser.add_argument("--model", default="llama3.2:1b", help="Model to use")
+    chat_parser.add_argument("--model", default="qwen3.5:2b", help="Model to use")
     chat_parser.add_argument("prompt", nargs="?", help="Prompt")
     
     # Generate
     gen_parser = subparsers.add_parser("generate", help="Generate text")
-    gen_parser.add_argument("--model", default="llama3.2:1b", help="Model to use")
+    gen_parser.add_argument("--model", default="qwen3.5:2b", help="Model to use")
     gen_parser.add_argument("prompt", help="Prompt")
     
     # Status
@@ -80,7 +80,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         client = OllamaClient()
         try:
             result = client.generate(args.model, args.prompt)
-            print(result.content)
+            print(result.response)
         except Exception as e:
             print(f"Error: {e}")
             return 1

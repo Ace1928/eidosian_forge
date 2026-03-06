@@ -172,6 +172,29 @@ class TestChat(unittest.TestCase):
         self.assertIn("done", response)
         self.assertEqual(response["message"]["role"], "assistant")
 
+    @patch("ollama_forge.client.httpx.Client")
+    def test_chat_keeps_thinking_metadata_when_present(self, mock_client_class: Any) -> None:
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.raise_for_status = Mock()
+        mock_response.json.return_value = {
+            "model": "qwen3.5:2b",
+            "message": {"role": "assistant", "content": "Ready.", "thinking": "checked constraints"},
+            "done": True,
+        }
+
+        mock_client = MagicMock()
+        mock_client.post.return_value = mock_response
+        mock_client.__enter__ = Mock(return_value=mock_client)
+        mock_client.__exit__ = Mock(return_value=False)
+        mock_client_class.return_value = mock_client
+
+        response = self.client.chat(model="qwen3.5:2b", messages=self.test_messages.copy())
+
+        self.assertEqual(response["message"]["content"], "Ready.")
+        self.assertEqual(response["message"]["thinking"], "checked constraints")
+        self.assertEqual(response["response"], "Ready.")
+
 
 if __name__ == "__main__":
     unittest.main()

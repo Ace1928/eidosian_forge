@@ -6,12 +6,15 @@ from typing import Generator, Optional
 from .base import BaseEngine, EngineConfig
 from eidosian_core import eidosian
 
+from eidos_mcp.config.models import get_model_config
+
 class LocalCLIEngine(BaseEngine):
     """Engine using llama-completion for deterministic single-shot inference."""
 
     def __init__(self, config: EngineConfig, bin_path: Optional[Path] = None):
         super().__init__(config)
-        self.bin_path = bin_path or Path(__file__).resolve().parents[4] / "llm_forge/bin/llama-completion"
+        default_bin = Path(get_model_config().local_inference.llama_cli_path)
+        self.bin_path = Path(bin_path) if bin_path is not None else default_bin
 
     def _subprocess_env(self) -> dict[str, str]:
         env = os.environ.copy()
