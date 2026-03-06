@@ -359,6 +359,7 @@ class ModelConfig:
         max_tokens: Optional[int] = None,
         temperature: Optional[float] = None,
         system: Optional[str] = None,
+        timeout: Optional[float] = None,
         **kwargs,
     ) -> str:
         """
@@ -401,13 +402,62 @@ class ModelConfig:
         if system:
             data["system"] = system
 
-        with httpx.Client(timeout=self.ollama.timeout) as client:
+        current_timeout = self.ollama.timeout if timeout is None else timeout
+        with httpx.Client(timeout=current_timeout) as client:
             resp = client.post(url, json=data)
             resp.raise_for_status()
             return normalize_generate_payload(resp.json())["response"]
 
     @eidosian()
-    def chat(self, messages: List[Dict[str, str]], model: Optional[str] = None, **kwargs) -> str:
+    def generate_payload(
+        self,
+        prompt: str,
+        model: Optional[str] = None,
+        max_tokens: Optional[int] = None,
+        temperature: Optional[float] = None,
+        system: Optional[str] = None,
+        timeout: Optional[float] = None,
+        **kwargs,
+    ) -> Dict[str, Any]:
+        actual_model = model or self.inference.model
+        actual_max_tokens = max_tokens or self.inference.max_tokens
+        actual_temp = temperature if temperature is not None else self.inference.temperature
+
+        url = f"{self.ollama.base_url}/api/generate"
+        data = {
+            "model": actual_model,
+            "prompt": prompt,
+            "stream": False,
+            "options": {
+                "num_predict": actual_max_tokens,
+                "temperature": actual_temp,
+            },
+            **kwargs,
+        }
+        data = apply_reasoning_mode(
+            data,
+            actual_model,
+            kwargs.get("thinking_mode", self.inference.thinking_mode),
+            explicit_think="think" in kwargs,
+        )
+        data.pop("thinking_mode", None)
+        if system:
+            data["system"] = system
+
+        current_timeout = self.ollama.timeout if timeout is None else timeout
+        with httpx.Client(timeout=current_timeout) as client:
+            resp = client.post(url, json=data)
+            resp.raise_for_status()
+            return normalize_generate_payload(resp.json())
+
+    @eidosian()
+    def chat(
+        self,
+        messages: List[Dict[str, str]],
+        model: Optional[str] = None,
+        timeout: Optional[float] = None,
+        **kwargs,
+    ) -> str:
         """
         Chat completion using the inference model.
 
@@ -431,10 +481,36 @@ class ModelConfig:
         )
         data.pop("thinking_mode", None)
 
-        with httpx.Client(timeout=self.ollama.timeout) as client:
+        current_timeout = self.ollama.timeout if timeout is None else timeout
+        with httpx.Client(timeout=current_timeout) as client:
             resp = client.post(url, json=data)
             resp.raise_for_status()
             return normalize_chat_payload(resp.json())["message"]["content"]
+
+    @eidosian()
+    def chat_payload(
+        self,
+        messages: List[Dict[str, str]],
+        model: Optional[str] = None,
+        timeout: Optional[float] = None,
+        **kwargs,
+    ) -> Dict[str, Any]:
+        actual_model = model or self.inference.model
+        url = f"{self.ollama.base_url}/api/chat"
+        data = {"model": actual_model, "messages": messages, "stream": False, **kwargs}
+        data = apply_reasoning_mode(
+            data,
+            actual_model,
+            kwargs.get("thinking_mode", self.inference.thinking_mode),
+            explicit_think="think" in kwargs,
+        )
+        data.pop("thinking_mode", None)
+
+        current_timeout = self.ollama.timeout if timeout is None else timeout
+        with httpx.Client(timeout=current_timeout) as client:
+            resp = client.post(url, json=data)
+            resp.raise_for_status()
+            return normalize_chat_payload(resp.json())
 
     @eidosian()
     def is_ollama_running(self) -> bool:

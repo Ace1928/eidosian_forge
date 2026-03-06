@@ -22,6 +22,7 @@ FORGE_ROOT = Path(os.environ.get("EIDOS_FORGE_DIR", str(Path(__file__).resolve()
 for extra in (
     FORGE_ROOT / "lib",
     FORGE_ROOT / "code_forge" / "src",
+    FORGE_ROOT / "eidos_mcp" / "src",
     FORGE_ROOT / "knowledge_forge" / "src",
     FORGE_ROOT,
 ):
@@ -35,6 +36,7 @@ from code_forge.ingest.runner import IngestionRunner
 from code_forge.library.db import CodeLibraryDB
 from eidosian_core import eidosian
 from eidosian_core.ports import get_service_port
+from eidos_mcp.config.models import get_model_config
 
 from knowledge_forge import GraphRAGIntegration
 
@@ -102,6 +104,23 @@ class StagedRecord:
     chars: int
     staged_path: str
     simhash: str
+
+
+@dataclass
+class LivingDocumentationConfig:
+    enabled: bool = True
+    model: str = os.environ.get("EIDOS_LIVING_DOC_MODEL", "qwen3.5:2b")
+    thinking_mode: str = os.environ.get("EIDOS_LIVING_DOC_THINKING_MODE", "on")
+    timeout: float = float(os.environ.get("EIDOS_LIVING_DOC_TIMEOUT_SEC", "900"))
+    max_tokens: int = int(os.environ.get("EIDOS_LIVING_DOC_MAX_TOKENS", "1400"))
+    temperature: float = float(os.environ.get("EIDOS_LIVING_DOC_TEMPERATURE", "0.1"))
+
+
+LIVING_DOC_SYSTEM_PROMPT = """You are generating grounded living documentation for the Eidosian Forge.
+Use only the provided evidence. Do not invent files, benchmarks, or incidents.
+Return strict JSON with keys:
+title, summary, key_findings, risks, priorities, recommended_actions.
+"""
 
 
 def _now_utc() -> str:
@@ -682,6 +701,173 @@ def _run_graphrag_query(workspace_root: Path, query: str, method: str = "global"
     raise RuntimeError("graphrag query returned no usable output")
 
 
+def _living_doc_prompt(
+    *,
+    repo_root: Path,
+    records_total: int,
+    records_by_kind: dict[str, int],
+    exact_duplicates: int,
+    near_duplicates: int,
+    drift: dict[str, Any],
+    code_report: dict[str, Any],
+    graphrag_result: dict[str, Any],
+) -> str:
+    payload = {
+        "repo_root": str(repo_root),
+        "records_total": records_total,
+        "records_by_kind": records_by_kind,
+        "exact_duplicate_groups": exact_duplicates,
+        "near_duplicate_pairs": near_duplicates,
+        "drift": drift,
+        "code_analysis": {
+            "files_processed": ((code_report.get("run_stats") or {}).get("files_processed")),
+            "units_created": ((code_report.get("run_stats") or {}).get("units_created")),
+            "duplicate_group_count": code_report.get("duplicate_group_count"),
+            "normalized_duplicate_group_count": code_report.get("normalized_duplicate_group_count"),
+            "near_duplicate_pair_count": code_report.get("near_duplicate_pair_count"),
+            "dependency_graph_summary": code_report.get("dependency_graph_summary"),
+            "triage_label_counts": code_report.get("triage_label_counts"),
+        },
+        "graphrag": {
+            "indexed": graphrag_result.get("indexed"),
+            "report_summary": graphrag_result.get("report_summary"),
+            "trend_summary": graphrag_result.get("trend_summary"),
+            "query_count": len(graphrag_result.get("queries") or []),
+            "queries": [
+                {"query": row.get("query"), "answer": str(row.get("answer") or "")[:500]}
+                for row in (graphrag_result.get("queries") or [])[:3]
+                if isinstance(row, dict)
+            ],
+        },
+    }
+    return (
+        "Generate living documentation for the current forge state. "
+        "Focus on the most important system health signals, evidence-backed risks, and concrete next actions.\n"
+        "DATA="
+        + json.dumps(payload, ensure_ascii=True)
+    )
+
+
+def _normalize_living_doc_payload(raw: dict[str, Any], *, config: LivingDocumentationConfig) -> dict[str, Any]:
+    def _string_list(value: Any) -> list[str]:
+        if not isinstance(value, list):
+            return []
+        return [str(item).strip() for item in value if str(item).strip()]
+
+    return {
+        "title": str(raw.get("title") or "Living Knowledge Summary").strip(),
+        "summary": str(raw.get("summary") or "").strip(),
+        "key_findings": _string_list(raw.get("key_findings")),
+        "risks": _string_list(raw.get("risks")),
+        "priorities": _string_list(raw.get("priorities")),
+        "recommended_actions": _string_list(raw.get("recommended_actions")),
+        "model": config.model,
+        "thinking_mode": config.thinking_mode,
+    }
+
+
+def _render_living_doc_markdown(payload: dict[str, Any]) -> str:
+    lines = [
+        f"# {payload.get('title') or 'Living Knowledge Summary'}",
+        "",
+        f"Model: `{payload.get('model')}`",
+        f"Thinking Mode: `{payload.get('thinking_mode')}`",
+        "",
+        "## Summary",
+        str(payload.get("summary") or "").strip() or "No summary generated.",
+        "",
+        "## Key Findings",
+    ]
+    for item in payload.get("key_findings") or []:
+        lines.append(f"- {item}")
+    if not payload.get("key_findings"):
+        lines.append("- None")
+    lines.extend(["", "## Risks"])
+    for item in payload.get("risks") or []:
+        lines.append(f"- {item}")
+    if not payload.get("risks"):
+        lines.append("- None")
+    lines.extend(["", "## Priorities"])
+    for item in payload.get("priorities") or []:
+        lines.append(f"- {item}")
+    if not payload.get("priorities"):
+        lines.append("- None")
+    lines.extend(["", "## Recommended Actions"])
+    for item in payload.get("recommended_actions") or []:
+        lines.append(f"- {item}")
+    if not payload.get("recommended_actions"):
+        lines.append("- None")
+    return "\n".join(lines).rstrip() + "\n"
+
+
+@eidosian()
+def generate_living_documentation(
+    run_root: Path,
+    *,
+    repo_root: Path,
+    records_total: int,
+    records_by_kind: dict[str, int],
+    exact_duplicates: int,
+    near_duplicates: int,
+    drift: dict[str, Any],
+    code_report: dict[str, Any],
+    graphrag_result: dict[str, Any],
+    config: LivingDocumentationConfig,
+) -> dict[str, Any]:
+    if not config.enabled:
+        return {"enabled": False, "generated": False}
+
+    prompt = _living_doc_prompt(
+        repo_root=repo_root,
+        records_total=records_total,
+        records_by_kind=records_by_kind,
+        exact_duplicates=exact_duplicates,
+        near_duplicates=near_duplicates,
+        drift=drift,
+        code_report=code_report,
+        graphrag_result=graphrag_result,
+    )
+    model_config = get_model_config()
+    raw = model_config.generate_payload(
+        prompt,
+        model=config.model,
+        max_tokens=config.max_tokens,
+        temperature=config.temperature,
+        thinking_mode=config.thinking_mode,
+        timeout=config.timeout,
+        system=LIVING_DOC_SYSTEM_PROMPT,
+        format="json",
+    )
+    response_text = str(raw.get("response") or "").strip()
+    try:
+        parsed = json.loads(response_text)
+    except Exception as exc:
+        raise RuntimeError(f"living documentation generation returned non-JSON: {exc}") from exc
+    if not isinstance(parsed, dict):
+        raise RuntimeError("living documentation generation returned non-object JSON")
+
+    payload = _normalize_living_doc_payload(parsed, config=config)
+    payload["generated_at"] = _now_utc()
+    payload["response_chars"] = len(response_text)
+    payload["thinking_chars"] = len(str(raw.get("thinking") or ""))
+
+    json_path = run_root / "living_documentation_summary.json"
+    md_path = run_root / "living_documentation_summary.md"
+    json_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    md_path.write_text(_render_living_doc_markdown(payload), encoding="utf-8")
+    return {
+        "enabled": True,
+        "generated": True,
+        "json_path": str(json_path),
+        "markdown_path": str(md_path),
+        "model": config.model,
+        "thinking_mode": config.thinking_mode,
+        "thinking_chars": payload["thinking_chars"],
+        "response_chars": payload["response_chars"],
+        "title": payload["title"],
+    }
+
+
 @eidosian()
 def compare_with_previous_run(run_root: Path, records: list[StagedRecord]) -> dict[str, Any]:
     current = {r.source_path: r.sha256 for r in records}
@@ -722,6 +908,7 @@ def run_pipeline(
     run_graphrag: bool,
     queries: list[str],
     method: str,
+    living_doc_config: LivingDocumentationConfig | None = None,
 ) -> dict[str, Any]:
     run_id = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
     run_root = output_root / run_id
@@ -772,17 +959,26 @@ def run_pipeline(
             graphrag_result["llm_model"] = str(llm_model)
             graphrag_result["embed_model"] = str(embed_model)
             graphrag_result["index_result"] = index_result
-            graphrag_result["report_summary"] = (
-                index_result.get("community_reports") if isinstance(index_result, dict) else {}
-            )
-            graphrag_result["trend_summary"] = (
-                index_result.get("report_trends") if isinstance(index_result, dict) else {}
-            )
+            graphrag_result["report_summary"] = (index_result.get("community_reports") if isinstance(index_result, dict) else {})
+            graphrag_result["trend_summary"] = (index_result.get("report_trends") if isinstance(index_result, dict) else {})
             for query in queries:
                 answer = _run_graphrag_query(workspace_root, query, method="global")
                 graphrag_result["queries"].append({"query": query, "answer": answer})
         finally:
             _stop_servers(runtimes)
+
+    living_doc_result = generate_living_documentation(
+        run_root,
+        repo_root=repo_root,
+        records_total=len(records),
+        records_by_kind=dict(Counter(r.kind for r in records)),
+        exact_duplicates=len(exact_duplicates),
+        near_duplicates=len(near_duplicates),
+        drift=drift,
+        code_report=code_report,
+        graphrag_result=graphrag_result,
+        config=living_doc_config or LivingDocumentationConfig(),
+    )
 
     manifest = {
         "contract": "living_knowledge.pipeline.v1",
@@ -804,6 +1000,7 @@ def run_pipeline(
             "duplicate_group_count": code_report.get("duplicate_group_count"),
         },
         "graphrag": graphrag_result,
+        "living_documentation": living_doc_result,
         "source_hashes": {r.source_path: r.sha256 for r in records},
     }
 
@@ -843,6 +1040,33 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--query", action="append", default=[], help="GraphRAG global query (repeatable).")
     parser.add_argument("--method", choices=["fast", "standard"], default="fast", help="GraphRAG index method.")
+    parser.add_argument(
+        "--doc-model",
+        default=os.environ.get("EIDOS_LIVING_DOC_MODEL", "qwen3.5:2b"),
+        help="Living documentation synthesis model (default: qwen3.5:2b).",
+    )
+    parser.add_argument(
+        "--doc-thinking-mode",
+        default=os.environ.get("EIDOS_LIVING_DOC_THINKING_MODE", "on"),
+        help="Living documentation thinking mode: off, on, auto, low, medium, high.",
+    )
+    parser.add_argument(
+        "--doc-timeout-sec",
+        type=float,
+        default=float(os.environ.get("EIDOS_LIVING_DOC_TIMEOUT_SEC", "900")),
+        help="Living documentation generation timeout in seconds.",
+    )
+    parser.add_argument(
+        "--doc-max-tokens",
+        type=int,
+        default=int(os.environ.get("EIDOS_LIVING_DOC_MAX_TOKENS", "1400")),
+        help="Max tokens for living documentation synthesis.",
+    )
+    parser.add_argument(
+        "--skip-living-docs",
+        action="store_true",
+        help="Skip qwen-based living documentation synthesis.",
+    )
     return parser.parse_args()
 
 
@@ -864,6 +1088,13 @@ def main() -> int:
         run_graphrag=bool(args.run_graphrag),
         queries=list(args.query or []),
         method=str(args.method),
+        living_doc_config=LivingDocumentationConfig(
+            enabled=not bool(args.skip_living_docs),
+            model=str(args.doc_model),
+            thinking_mode=str(args.doc_thinking_mode),
+            timeout=float(args.doc_timeout_sec),
+            max_tokens=int(args.doc_max_tokens),
+        ),
     )
     print(json.dumps({"ok": True, "run_id": manifest["run_id"], "records_total": manifest["records_total"]}, indent=2))
     return 0

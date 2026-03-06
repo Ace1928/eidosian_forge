@@ -130,3 +130,109 @@ def test_render_graphrag_query_result_handles_local_fallback() -> None:
     assert "Knowledge node one" in rendered
     assert "Memory node one" in rendered
     assert "Graph neighbor one" in rendered
+
+
+def test_generate_living_documentation_uses_central_qwen_config(tmp_path: Path, monkeypatch) -> None:
+    run_root = tmp_path / "run"
+    run_root.mkdir(parents=True, exist_ok=True)
+    captured: dict[str, object] = {}
+
+    class FakeModelConfig:
+        def generate_payload(self, prompt: str, **kwargs):
+            captured["prompt"] = prompt
+            captured["kwargs"] = kwargs
+            return {
+                "response": json.dumps(
+                    {
+                        "title": "Living Forge Summary",
+                        "summary": "The forge is converging on a unified graph substrate.",
+                        "key_findings": ["Native GraphRAG trends are available."],
+                        "risks": ["Benchmark latency remains elevated."],
+                        "priorities": ["Stabilize the documentation loop."],
+                        "recommended_actions": ["Run a deeper quality sweep."],
+                    }
+                ),
+                "thinking": "checked trend deltas",
+            }
+
+    monkeypatch.setattr(pipeline, "get_model_config", lambda: FakeModelConfig())
+
+    result = pipeline.generate_living_documentation(
+        run_root,
+        repo_root=tmp_path,
+        records_total=12,
+        records_by_kind={"docs": 4, "code": 8},
+        exact_duplicates=1,
+        near_duplicates=2,
+        drift={"added_count": 1, "removed_count": 0, "changed_count": 3},
+        code_report={"run_stats": {"files_processed": 8, "units_created": 21}},
+        graphrag_result={"indexed": True, "report_summary": {"count": 1}, "trend_summary": {"entries": 1}},
+        config=pipeline.LivingDocumentationConfig(
+            model="qwen3.5:2b",
+            thinking_mode="on",
+            timeout=900.0,
+            max_tokens=1400,
+            temperature=0.1,
+        ),
+    )
+
+    assert result["generated"] is True
+    assert result["model"] == "qwen3.5:2b"
+    assert result["thinking_mode"] == "on"
+    assert result["thinking_chars"] == len("checked trend deltas")
+    assert (run_root / "living_documentation_summary.json").exists()
+    assert (run_root / "living_documentation_summary.md").exists()
+    assert captured["kwargs"]["model"] == "qwen3.5:2b"
+    assert captured["kwargs"]["thinking_mode"] == "on"
+    assert captured["kwargs"]["timeout"] == 900.0
+
+
+def test_run_pipeline_includes_living_documentation_manifest(tmp_path: Path, monkeypatch) -> None:
+    repo_root = tmp_path / "repo"
+    output_root = tmp_path / "output"
+    workspace_root = tmp_path / "workspace"
+    repo_root.mkdir(parents=True, exist_ok=True)
+    output_root.mkdir(parents=True, exist_ok=True)
+    workspace_root.mkdir(parents=True, exist_ok=True)
+
+    monkeypatch.setattr(pipeline, "run_code_analysis", lambda *args, **kwargs: {"run_stats": {}, "total_units": 0, "duplicate_group_count": 0})
+    monkeypatch.setattr(pipeline, "stage_repo_text_documents", lambda *args, **kwargs: [])
+    monkeypatch.setattr(pipeline, "stage_memory_and_kb_documents", lambda *args, **kwargs: [])
+    monkeypatch.setattr(pipeline, "group_exact_duplicates", lambda records: [])
+    monkeypatch.setattr(pipeline, "detect_near_duplicates", lambda records: [])
+    monkeypatch.setattr(pipeline, "compare_with_previous_run", lambda *args, **kwargs: {"added_count": 0, "removed_count": 0, "changed_count": 0})
+    monkeypatch.setattr(
+        pipeline,
+        "generate_living_documentation",
+        lambda *args, **kwargs: {
+            "enabled": True,
+            "generated": True,
+            "model": "qwen3.5:2b",
+            "thinking_mode": "off",
+            "json_path": "x.json",
+            "markdown_path": "x.md",
+        },
+    )
+
+    manifest = pipeline.run_pipeline(
+        repo_root=repo_root,
+        output_root=output_root,
+        workspace_root=workspace_root,
+        max_file_bytes=1000,
+        max_chars_per_doc=2000,
+        code_max_files=None,
+        run_graphrag=False,
+        queries=[],
+        method="fast",
+        living_doc_config=pipeline.LivingDocumentationConfig(
+            model="qwen3.5:2b",
+            thinking_mode="off",
+            timeout=900.0,
+            max_tokens=1200,
+            temperature=0.1,
+        ),
+    )
+
+    assert manifest["living_documentation"]["generated"] is True
+    assert manifest["living_documentation"]["model"] == "qwen3.5:2b"
+    assert manifest["living_documentation"]["thinking_mode"] == "off"

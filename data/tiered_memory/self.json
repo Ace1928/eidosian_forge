@@ -1892,5 +1892,33 @@
       "artifacts"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "6594a0d3-e22c-4513-9bb4-08c666036f76",
+    "content": "LESSON: The living documentation pipeline should use centralized model config directly for narrative synthesis instead of inheriting whatever runtime GraphRAG happens to use. That keeps Qwen model choice, thinking mode, timeout, and response normalization explicit and testable.\nCONTEXT: Qwen3.5-backed living documentation synthesis upgrade",
+    "created_at": "2026-03-06T16:58:00.853528",
+    "last_accessed": "2026-03-06T16:58:00.853547",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "The living documentation pipeline should use centralized model config directly for narrative synthesis instead of inheriting whatever runtime GraphRAG happens to use. That keeps Qwen model choice, thinking mode, timeout, and response normalization explicit and testable.",
+      "context": "Qwen3.5-backed living documentation synthesis upgrade",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "learning",
+      "self-improvement",
+      "model-config",
+      "qwen3.5",
+      "living-documentation",
+      "lesson",
+      "pipeline",
+      "thinking"
+    ],
+    "linked_memories": []
   }
 ]
