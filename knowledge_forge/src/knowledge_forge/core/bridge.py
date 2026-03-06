@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
 from eidosian_core import eidosian
+from eidosian_vector import build_default_embedder
 
 try:
     import fcntl
@@ -64,11 +65,13 @@ class KnowledgeMemoryBridge:
         self,
         memory_dir: Optional[Path] = None,
         kb_path: Optional[Path] = None,
+        embedder: Optional[Any] = None,
     ):
         self.memory_dir = memory_dir or DEFAULT_MEMORY_DIR
         self.kb_path = kb_path or DEFAULT_KB_PATH
         self.memory_dir.mkdir(parents=True, exist_ok=True)
 
+        self._embedder = embedder
         self._memory_system = None
         self._knowledge_forge = None
         self._thread_lock = threading.RLock()
@@ -90,7 +93,13 @@ class KnowledgeMemoryBridge:
             try:
                 from memory_forge import TieredMemorySystem
 
-                self._memory_system = TieredMemorySystem(persistence_dir=self.memory_dir)
+                if self._embedder is None:
+                    self._embedder = build_default_embedder()
+                self._memory_system = TieredMemorySystem(
+                    persistence_dir=self.memory_dir,
+                    embedder=self._embedder,
+                    vector_store_dir=self.memory_dir / "vectors",
+                )
             except ImportError as e:
                 logger.warning(f"Could not import TieredMemorySystem: {e}")
         return self._memory_system
@@ -102,7 +111,13 @@ class KnowledgeMemoryBridge:
             try:
                 from knowledge_forge import KnowledgeForge
 
-                self._knowledge_forge = KnowledgeForge(persistence_path=self.kb_path)
+                if self._embedder is None:
+                    self._embedder = build_default_embedder()
+                self._knowledge_forge = KnowledgeForge(
+                    persistence_path=self.kb_path,
+                    embedder=self._embedder,
+                    vector_store_dir=self.kb_path.parent / "kb_vectors",
+                )
             except ImportError as e:
                 logger.warning(f"Could not import KnowledgeForge: {e}")
         return self._knowledge_forge
@@ -150,7 +165,12 @@ class KnowledgeMemoryBridge:
         # Search knowledge
         if include_knowledge and self.knowledge:
             try:
-                nodes = self.knowledge.search(query)
+                if hasattr(self.knowledge, "semantic_search"):
+                    nodes = self.knowledge.semantic_search(query, limit=limit)
+                    if not nodes:
+                        nodes = self.knowledge.search(query)
+                else:
+                    nodes = self.knowledge.search(query)
                 for node in nodes[:limit]:
                     score = self._calculate_score(query, str(node.content))
                     results.append(
@@ -266,7 +286,12 @@ class KnowledgeMemoryBridge:
             return []
 
         # Search knowledge for related content
-        related = self.knowledge.search(mem.content)
+        if hasattr(self.knowledge, "semantic_search"):
+            related = self.knowledge.semantic_search(mem.content, limit=max_knowledge)
+            if not related:
+                related = self.knowledge.search(mem.content)
+        else:
+            related = self.knowledge.search(mem.content)
 
         results = []
         for node in related[:max_knowledge]:

@@ -29,6 +29,8 @@ from typing import Any, Dict, List, Optional, Protocol, Set
 from eidosian_core import eidosian
 from eidosian_core.ports import get_service_url
 
+from eidosian_vector import HNSWVectorStore
+
 from .interfaces import MemoryType
 
 try:
@@ -215,6 +217,7 @@ class TieredMemorySystem:
         self,
         persistence_dir: Optional[Path] = None,
         embedder: Optional[EmbeddingService] = None,
+        vector_store_dir: Optional[Path] = None,
     ):
         if persistence_dir is None:
             self.persistence_dir = Path("./data/tiered_memory")
@@ -228,6 +231,13 @@ class TieredMemorySystem:
         self._lock_path = self.persistence_dir / ".tiered_memory.lock"
         self._lock_handle = None
         self._lock_depth = 0
+        self.vector_store = None
+        if embedder is not None:
+            try:
+                store_dir = Path(vector_store_dir) if vector_store_dir else self.persistence_dir / "vectors"
+                self.vector_store = HNSWVectorStore(store_dir)
+            except Exception:
+                self.vector_store = None
 
         # Initialize tier storage
         self.tiers: Dict[MemoryTier, Dict[str, TieredMemoryItem]] = {tier: {} for tier in MemoryTier}
@@ -296,16 +306,36 @@ class TieredMemorySystem:
         # If we have an embedder, do semantic search
         if self.embedder:
             query_vec = self.embedder.embed_text(query)
-            scored = []
-            for item in candidates:
-                if item.embedding:
-                    score = self._cosine_similarity(query_vec, item.embedding)
-                else:
-                    # Fallback to keyword match
-                    score = self._keyword_score(query, item)
-                scored.append((score, item))
-            scored.sort(key=lambda x: x[0], reverse=True)
-            results = [item for _, item in scored[:limit]]
+            if self.vector_store and query_vec:
+                filters = {
+                    "tier": [tier.value for tier in tiers],
+                }
+                if namespaces:
+                    filters["namespace"] = [ns.value for ns in namespaces]
+                vector_hits = self.vector_store.query(query_vec, limit=max(limit * 3, limit), filters=filters)
+                seen: Set[str] = set()
+                results = []
+                for hit in vector_hits:
+                    item = self._find_memory(hit.item_id)
+                    if item is None or item.id in seen:
+                        continue
+                    if item.is_expired() or item.importance < min_importance:
+                        continue
+                    seen.add(item.id)
+                    results.append(item)
+                    if len(results) >= limit:
+                        break
+            else:
+                scored = []
+                for item in candidates:
+                    if item.embedding:
+                        score = self._cosine_similarity(query_vec, item.embedding)
+                    else:
+                        # Fallback to keyword match
+                        score = self._keyword_score(query, item)
+                    scored.append((score, item))
+                scored.sort(key=lambda x: x[0], reverse=True)
+                results = [item for _, item in scored[:limit]]
         else:
             # Keyword search fallback with scoring
             scored = []
@@ -424,6 +454,7 @@ class TieredMemorySystem:
                     self.tiers[target_tier][memory_id] = item
                     self._persist_tier(tier)
                     self._persist_tier(target_tier)
+                    self._upsert_vector_store(item)
                     return True
             return False
 
@@ -471,6 +502,8 @@ class TieredMemorySystem:
             for tier in MemoryTier:
                 expired_ids = [mid for mid, item in self.tiers[tier].items() if item.is_expired()]
                 for mid in expired_ids:
+                    if self.vector_store is not None:
+                        self.vector_store.delete(mid)
                     del self.tiers[tier][mid]
                     removed += 1
                 if expired_ids:
@@ -861,6 +894,7 @@ class TieredMemorySystem:
             if existing.embedding is None and embedding:
                 existing.embedding = embedding
             self._persist_tier(existing.tier)
+            self._upsert_vector_store(existing)
             return existing.id
 
         item = TieredMemoryItem(
@@ -876,6 +910,7 @@ class TieredMemorySystem:
         )
         self.tiers[tier][item.id] = item
         self._persist_tier(tier)
+        self._upsert_vector_store(item)
         return item.id
 
     def _find_duplicate_memory(
@@ -994,3 +1029,19 @@ class TieredMemorySystem:
         finally:
             if temp_path and temp_path.exists():
                 temp_path.unlink(missing_ok=True)
+
+    def _upsert_vector_store(self, item: TieredMemoryItem) -> None:
+        if self.vector_store is None or not item.embedding:
+            return
+        self.vector_store.upsert(
+            item.id,
+            item.embedding,
+            text=item.content,
+            metadata={
+                "tier": item.tier.value,
+                "namespace": item.namespace.value,
+                "memory_type": item.memory_type.value,
+                "importance": item.importance,
+                "tags": sorted(item.tags),
+            },
+        )

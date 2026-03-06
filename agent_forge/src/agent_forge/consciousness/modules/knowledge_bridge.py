@@ -22,8 +22,11 @@ def _forge_root() -> Path:
 def _ensure_knowledge_import_path() -> None:
     root = _forge_root()
     candidates = [
+        root / "lib",
         root / "memory_forge" / "src",
         root / "knowledge_forge" / "src",
+        root / "eidos_mcp" / "src",
+        root / "ollama_forge" / "src",
         root,
     ]
     for path in candidates:
@@ -76,11 +79,13 @@ class KnowledgeBridgeModule:
         self,
         *,
         bridge: Any = None,
+        embedder: Any = None,
         memory_dir: str | Path | None = None,
         kb_path: str | Path | None = None,
     ) -> None:
         root = _forge_root()
         self._bridge = bridge
+        self._embedder = embedder
         self.memory_dir = (
             Path(memory_dir).expanduser().resolve()
             if memory_dir is not None
@@ -111,11 +116,15 @@ class KnowledgeBridgeModule:
             return self._bridge, ""
         try:
             _ensure_knowledge_import_path()
+            from eidosian_vector import build_default_embedder  # type: ignore
             from knowledge_forge import KnowledgeMemoryBridge  # type: ignore
 
+            if self._embedder is None:
+                self._embedder = build_default_embedder()
             self._bridge = KnowledgeMemoryBridge(
                 memory_dir=self.memory_dir,
                 kb_path=self.kb_path,
+                embedder=self._embedder,
             )
             return self._bridge, ""
         except Exception as exc:  # pragma: no cover - defensive fallback

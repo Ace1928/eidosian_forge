@@ -31,7 +31,14 @@ def _forge_root() -> Path:
 
 def _ensure_bridge_import_path() -> None:
     root = _forge_root()
-    for path in (root / "memory_forge" / "src", root / "knowledge_forge" / "src", root):
+    for path in (
+        root / "lib",
+        root / "memory_forge" / "src",
+        root / "knowledge_forge" / "src",
+        root / "eidos_mcp" / "src",
+        root / "ollama_forge" / "src",
+        root,
+    ):
         text = str(path)
         if path.exists() and text not in sys.path:
             sys.path.insert(0, text)
@@ -76,12 +83,14 @@ class AutonomySupervisor:
         config: Mapping[str, Any] | None = None,
         bridge: Any = None,
         memory_system: Any = None,
+        embedder: Any = None,
     ) -> None:
         self.state_dir = str(state_dir)
         self.repo_root = Path(repo_root).expanduser().resolve()
         self.config = dict(config or {})
         self._bridge = bridge
         self._memory_system = memory_system
+        self._embedder = embedder
 
     def _policy(self) -> dict[str, Any]:
         policy = self.config.get("policy", {})
@@ -110,9 +119,12 @@ class AutonomySupervisor:
             return self._bridge, ""
         try:
             _ensure_bridge_import_path()
+            from eidosian_vector import build_default_embedder  # type: ignore
             from knowledge_forge import KnowledgeMemoryBridge  # type: ignore
 
-            self._bridge = KnowledgeMemoryBridge()
+            if self._embedder is None:
+                self._embedder = build_default_embedder()
+            self._bridge = KnowledgeMemoryBridge(embedder=self._embedder)
             return self._bridge, ""
         except Exception as exc:  # pragma: no cover - defensive fallback
             return None, str(exc)
@@ -122,9 +134,12 @@ class AutonomySupervisor:
             return self._memory_system
         try:
             _ensure_bridge_import_path()
+            from eidosian_vector import build_default_embedder  # type: ignore
             from memory_forge import TieredMemorySystem  # type: ignore
 
-            self._memory_system = TieredMemorySystem()
+            if self._embedder is None:
+                self._embedder = build_default_embedder()
+            self._memory_system = TieredMemorySystem(embedder=self._embedder)
         except Exception:  # pragma: no cover - defensive fallback
             self._memory_system = None
         return self._memory_system

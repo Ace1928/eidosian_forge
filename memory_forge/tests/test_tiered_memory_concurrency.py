@@ -2,6 +2,16 @@ from memory_forge.core.interfaces import MemoryType
 from memory_forge.core.tiered_memory import MemoryNamespace, MemoryTier, TieredMemorySystem
 
 
+class _FakeEmbedder:
+    def embed_text(self, text: str):
+        text = text.lower()
+        if "qwen" in text or "stable" in text:
+            return [1.0, 0.0, 0.0, 0.0]
+        if "latency" in text or "slow" in text:
+            return [0.0, 1.0, 0.0, 0.0]
+        return [0.0, 0.0, 1.0, 0.0]
+
+
 def test_remember_merges_duplicate_entries_across_instances(tmp_path) -> None:
     memory_a = TieredMemorySystem(persistence_dir=tmp_path)
     memory_b = TieredMemorySystem(persistence_dir=tmp_path)
@@ -30,3 +40,24 @@ def test_remember_merges_duplicate_entries_across_instances(tmp_path) -> None:
     assert len(persisted) == 1
     assert persisted[0].id == first_id
     assert persisted[0].tags == {"qwen", "stable", "termux", "default"}
+
+
+def test_recall_uses_vector_store_when_embeddings_are_available(tmp_path) -> None:
+    memory = TieredMemorySystem(persistence_dir=tmp_path, embedder=_FakeEmbedder())
+    best_id = memory.remember(
+        "Qwen stable path",
+        tier=MemoryTier.LONG_TERM,
+        namespace=MemoryNamespace.KNOWLEDGE,
+        memory_type=MemoryType.SEMANTIC,
+    )
+    memory.remember(
+        "Latency is slow today",
+        tier=MemoryTier.LONG_TERM,
+        namespace=MemoryNamespace.KNOWLEDGE,
+        memory_type=MemoryType.SEMANTIC,
+    )
+
+    results = memory.recall("stable qwen", limit=1)
+
+    assert len(results) == 1
+    assert results[0].id == best_id

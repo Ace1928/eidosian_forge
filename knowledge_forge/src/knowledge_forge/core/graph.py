@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Union
 
 from eidosian_core import eidosian
+from eidosian_vector import HNSWVectorStore
 
 try:
     import fcntl
@@ -46,16 +47,33 @@ class KnowledgeForge:
     Supports concept mapping, tagging, and pathfinding.
     """
 
-    def __init__(self, persistence_path: Optional[Union[str, Path]] = None):
+    def __init__(
+        self,
+        persistence_path: Optional[Union[str, Path]] = None,
+        *,
+        embedder: Optional[Any] = None,
+        vector_store_dir: Optional[Union[str, Path]] = None,
+    ):
         self.nodes: Dict[str, KnowledgeNode] = {}
         self.concept_map: Dict[str, List[str]] = {}
         self.persistence_path = Path(persistence_path) if persistence_path else None
+        self.embedder = embedder
         self._thread_lock = threading.RLock()
         self._lock_handle = None
         self._lock_depth = 0
-        self._lock_path = (
-            self.persistence_path.with_name(f"{self.persistence_path.name}.lock") if self.persistence_path else None
-        )
+        self._lock_path = self.persistence_path.with_name(f"{self.persistence_path.name}.lock") if self.persistence_path else None
+        self.vector_store = None
+        if self.embedder is not None:
+            try:
+                if vector_store_dir:
+                    store_dir = Path(vector_store_dir)
+                elif self.persistence_path:
+                    store_dir = self.persistence_path.parent / "kb_vectors"
+                else:
+                    store_dir = Path("./data/kb_vectors")
+                self.vector_store = HNSWVectorStore(store_dir)
+            except Exception:
+                self.vector_store = None
 
         if self.persistence_path and self.persistence_path.exists():
             self.load()
@@ -72,6 +90,7 @@ class KnowledgeForge:
         with self._mutation_lock():
             self._reload_from_disk_locked()
             node = self._upsert_node_locked(content=content, concepts=concepts, tags=tags, metadata=metadata)
+            self._upsert_vector_store(node)
             if self.persistence_path:
                 self._save_locked()
             return node
@@ -107,6 +126,8 @@ class KnowledgeForge:
                         del self.concept_map[concept]
             if self.persistence_path:
                 self._save_locked()
+            if self.vector_store is not None:
+                self.vector_store.delete(node_id)
             return True
 
     @eidosian()
@@ -168,6 +189,20 @@ class KnowledgeForge:
         results = []
         for node in self.nodes.values():
             if query.lower() in str(node.content).lower():
+                results.append(node)
+        return results
+
+    @eidosian()
+    def semantic_search(self, query: str, limit: int = 10) -> List[KnowledgeNode]:
+        if self.embedder is None or self.vector_store is None:
+            return self.search(query)[:limit]
+        query_vec = self.embedder.embed_text(query)
+        if not query_vec:
+            return self.search(query)[:limit]
+        results = []
+        for hit in self.vector_store.query(query_vec, limit=limit):
+            node = self.nodes.get(hit.item_id)
+            if node is not None:
                 results.append(node)
         return results
 
@@ -315,6 +350,21 @@ class KnowledgeForge:
         except Exception:
             self.nodes = {}
             self.concept_map = {}
+
+    def _upsert_vector_store(self, node: KnowledgeNode) -> None:
+        if self.embedder is None or self.vector_store is None:
+            return
+        vector = self.embedder.embed_text(str(node.content))
+        if not vector:
+            return
+        self.vector_store.upsert(
+            node.id,
+            vector,
+            text=str(node.content),
+            metadata={
+                "tags": sorted(node.tags),
+            },
+        )
 
     def _build_rdf_graph(self) -> Any:
         """Build an rdflib graph snapshot from the in-memory knowledge graph."""

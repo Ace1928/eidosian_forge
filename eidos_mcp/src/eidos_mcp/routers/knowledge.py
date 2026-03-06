@@ -46,7 +46,10 @@ if MemoryForge and MemoryConfig:
         ),
         embedder=_embedder,
     )
-kb = KnowledgeForge(persistence_path=FORGE_DIR / "data" / "kb.json")
+kb = KnowledgeForge(
+    persistence_path=FORGE_DIR / "data" / "kb.json",
+    embedder=_embedder,
+)
 _default_graphrag_root = FORGE_DIR / "graphrag_workspace"
 if not _default_graphrag_root.exists():
     _default_graphrag_root = FORGE_DIR / "graphrag"
@@ -128,7 +131,7 @@ def kb_add_fact(fact: str, tags: List[str]) -> str:
 @eidosian()
 def kb_search(query: str) -> str:
     """Search the knowledge graph for matching content."""
-    results = kb.search(query)
+    results = kb.semantic_search(query)
     payload = [n.to_dict() for n in results]
     return str(payload)
 

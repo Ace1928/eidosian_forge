@@ -22,8 +22,11 @@ def _forge_root() -> Path:
 def _ensure_memory_import_path() -> None:
     root = _forge_root()
     candidates = [
+        root / "lib",
         root / "memory_forge" / "src",
         root / "knowledge_forge" / "src",
+        root / "eidos_mcp" / "src",
+        root / "ollama_forge" / "src",
         root,
     ]
     for path in candidates:
@@ -136,10 +139,12 @@ class MemoryBridgeModule:
         *,
         memory_system: Any = None,
         introspector: Any = None,
+        embedder: Any = None,
         memory_dir: str | Path | None = None,
     ) -> None:
         self._memory_system = memory_system
         self._introspector = introspector
+        self._embedder = embedder
         self.memory_dir = (
             Path(memory_dir).expanduser().resolve()
             if memory_dir is not None
@@ -158,9 +163,16 @@ class MemoryBridgeModule:
             return self._memory_system, ""
         try:
             _ensure_memory_import_path()
+            from eidosian_vector import build_default_embedder  # type: ignore
             from memory_forge import TieredMemorySystem  # type: ignore
 
-            self._memory_system = TieredMemorySystem(persistence_dir=self.memory_dir)
+            if self._embedder is None:
+                self._embedder = build_default_embedder()
+            self._memory_system = TieredMemorySystem(
+                persistence_dir=self.memory_dir,
+                embedder=self._embedder,
+                vector_store_dir=self.memory_dir / "vectors",
+            )
             return self._memory_system, ""
         except Exception as exc:  # pragma: no cover - defensive runtime fallback
             return None, str(exc)
