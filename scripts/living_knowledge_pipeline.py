@@ -19,7 +19,12 @@ from typing import Any
 import yaml
 
 FORGE_ROOT = Path(os.environ.get("EIDOS_FORGE_DIR", str(Path(__file__).resolve().parents[1]))).resolve()
-for extra in (FORGE_ROOT / "lib", FORGE_ROOT / "code_forge" / "src", FORGE_ROOT / "knowledge_forge" / "src", FORGE_ROOT):
+for extra in (
+    FORGE_ROOT / "lib",
+    FORGE_ROOT / "code_forge" / "src",
+    FORGE_ROOT / "knowledge_forge" / "src",
+    FORGE_ROOT,
+):
     extra_str = str(extra)
     if extra.exists() and extra_str not in sys.path:
         sys.path.insert(0, extra_str)
@@ -30,6 +35,7 @@ from code_forge.ingest.runner import IngestionRunner
 from code_forge.library.db import CodeLibraryDB
 from eidosian_core import eidosian
 from eidosian_core.ports import get_service_port
+
 from knowledge_forge import GraphRAGIntegration
 
 SUPPORTED_TEXT_SUFFIXES = {
