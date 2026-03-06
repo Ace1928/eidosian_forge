@@ -70,3 +70,19 @@ def test_wf_build_lexicon_from_text_uses_model_payload(tmp_path: Path, monkeypat
     stats = json.loads(word_forge.wf_graph_stats())
     assert stats["nodes"] >= 2
     assert stats["edges"] >= 1
+
+
+def test_wf_build_lexicon_from_text_falls_back_when_budget_denied(tmp_path: Path, monkeypatch) -> None:
+    graph_path = tmp_path / "semantic_graph.json"
+    monkeypatch.setattr(word_forge, "SEMANTIC_GRAPH_PATH", graph_path)
+    monkeypatch.setattr(word_forge, "_graph", None)
+    monkeypatch.setattr(
+        word_forge,
+        "_generate_structured_payload",
+        lambda **_: {"_budget_denied": True, "_budget_reason": "instance_budget_exceeded", "_effective_thinking_mode": "off"},
+    )
+
+    payload = json.loads(word_forge.wf_build_lexicon_from_text("Vector retrieval uses embeddings."))
+    assert payload["status"] == "success"
+    assert payload["budget_denied"] is True
+    assert payload["budget_reason"] == "instance_budget_exceeded"

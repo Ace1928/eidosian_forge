@@ -42,9 +42,7 @@ def _now_utc() -> str:
 class ForgeRuntimeCoordinator:
     def __init__(self, status_path: str | Path | None = None) -> None:
         root = _forge_root()
-        self.status_path = (
-            Path(status_path) if status_path else root / "data" / "runtime" / "forge_coordinator_status.json"
-        )
+        self.status_path = Path(status_path) if status_path else root / "data" / "runtime" / "forge_coordinator_status.json"
         self.lock_path = self.status_path.with_suffix(self.status_path.suffix + ".lock")
         self.history_path = self.status_path.with_name("forge_runtime_trends.json")
         self._thread_lock = threading.RLock()
@@ -208,16 +206,8 @@ class ForgeRuntimeCoordinator:
             policy = metadata.get("policy") if isinstance(metadata.get("policy"), dict) else {}
             active_models = [row for row in (payload.get("active_models") or []) if isinstance(row, dict)]
             current_owner = str(payload.get("owner") or "")
-            requested_families = {
-                str(row.get("family") or "").strip().lower()
-                for row in requested_models
-                if str(row.get("family") or "").strip()
-            }
-            active_families = {
-                str(row.get("family") or "").strip().lower()
-                for row in active_models
-                if str(row.get("family") or "").strip()
-            }
+            requested_families = {str(row.get("family") or "").strip().lower() for row in requested_models if str(row.get("family") or "").strip()}
+            active_families = {str(row.get("family") or "").strip().lower() for row in active_models if str(row.get("family") or "").strip()}
             max_instances = max(1, int(policy.get("max_active_model_instances", 1) or 1))
             max_families = max(1, int(policy.get("max_active_model_families", 1) or 1))
             if allow_same_owner and current_owner and current_owner == str(owner):
@@ -229,9 +219,7 @@ class ForgeRuntimeCoordinator:
                     "max_active_model_families": max_families,
                 }
             projected_instances = len(active_models) + len(requested_models)
-            projected_families = (
-                len(active_families | requested_families) if requested_families else len(active_families)
-            )
+            projected_families = len(active_families | requested_families) if requested_families else len(active_families)
             allowed = True
             reason = "ok"
             if projected_instances > max_instances:
@@ -310,6 +298,10 @@ class ForgeRuntimeCoordinator:
                 "cycle": metadata.get("cycle"),
                 "run_id": metadata.get("run_id"),
                 "records_total": metadata.get("records_total"),
+                "consecutive_failures": metadata.get("consecutive_failures"),
+                "doc_model": metadata.get("doc_model"),
+                "doc_thinking_mode": metadata.get("doc_thinking_mode"),
+                "summary": dict(metadata.get("summary") or {}) if isinstance(metadata.get("summary"), dict) else {},
             }
         )
         history["entries"] = entries[-240:]

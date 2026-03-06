@@ -66,7 +66,6 @@ def run_memory_maintenance(
             if extra.exists() and text not in sys.path:
                 sys.path.insert(0, text)
         from eidosian_vector import build_default_embedder  # type: ignore
-
         from memory_forge import TieredMemorySystem  # type: ignore
 
         memory_dir = repo_root / "data" / "tiered_memory"
@@ -111,15 +110,11 @@ def _coordinator_budget(
 
 @eidosian()
 def _parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Run the Eidosian sequential scheduler for the living knowledge pipeline."
-    )
+    parser = argparse.ArgumentParser(description="Run the Eidosian sequential scheduler for the living knowledge pipeline.")
     parser.add_argument("--repo-root", default=str(FORGE_ROOT))
     parser.add_argument("--output-root", default=str(FORGE_ROOT / "reports" / "living_knowledge"))
     parser.add_argument("--workspace-root", default=str(FORGE_ROOT / "data" / "living_knowledge" / "workspace"))
-    parser.add_argument(
-        "--interval-sec", type=float, default=float(os.environ.get("EIDOS_SCHEDULER_INTERVAL_SEC", "1800"))
-    )
+    parser.add_argument("--interval-sec", type=float, default=float(os.environ.get("EIDOS_SCHEDULER_INTERVAL_SEC", "1800")))
     parser.add_argument("--max-file-bytes", type=int, default=2_000_000)
     parser.add_argument("--max-chars-per-doc", type=int, default=20_000)
     parser.add_argument("--code-max-files", type=int, default=0)
@@ -130,15 +125,9 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--once", action="store_true")
     parser.add_argument("--doc-model", default=os.environ.get("EIDOS_LIVING_DOC_MODEL", "qwen3.5:2b"))
     parser.add_argument("--doc-thinking-mode", default=os.environ.get("EIDOS_LIVING_DOC_THINKING_MODE", "on"))
-    parser.add_argument(
-        "--doc-timeout-sec", type=float, default=float(os.environ.get("EIDOS_LIVING_DOC_TIMEOUT_SEC", "900"))
-    )
-    parser.add_argument(
-        "--doc-max-tokens", type=int, default=int(os.environ.get("EIDOS_LIVING_DOC_MAX_TOKENS", "1400"))
-    )
-    parser.add_argument(
-        "--doc-temperature", type=float, default=float(os.environ.get("EIDOS_LIVING_DOC_TEMPERATURE", "0.1"))
-    )
+    parser.add_argument("--doc-timeout-sec", type=float, default=float(os.environ.get("EIDOS_LIVING_DOC_TIMEOUT_SEC", "900")))
+    parser.add_argument("--doc-max-tokens", type=int, default=int(os.environ.get("EIDOS_LIVING_DOC_MAX_TOKENS", "1400")))
+    parser.add_argument("--doc-temperature", type=float, default=float(os.environ.get("EIDOS_LIVING_DOC_TEMPERATURE", "0.1")))
     parser.add_argument(
         "--memory-enrichment-limit",
         type=int,
@@ -262,6 +251,7 @@ def main() -> int:
                 "interval_sec": float(args.interval_sec),
                 "doc_model": living_doc_config.model,
                 "doc_thinking_mode": living_doc_config.thinking_mode,
+                "consecutive_failures": consecutive_failures,
             },
         )
         try:
@@ -311,6 +301,7 @@ def main() -> int:
                     "memory_enrichment_limit": int(args.memory_enrichment_limit),
                     "llm_enrichment": effective_memory_llm,
                     "budget": budget["decision"],
+                    "consecutive_failures": consecutive_failures,
                 },
             )
             memory_report = run_memory_maintenance(
@@ -335,9 +326,7 @@ def main() -> int:
                     "next_run_in_seconds": float(args.interval_sec),
                     "last_run_id": manifest.get("run_id"),
                     "last_manifest_path": str(output_root / str(manifest.get("run_id")) / "manifest.json"),
-                    "latest_pipeline_status_path": str(
-                        (FORGE_ROOT / "data" / "runtime" / "living_pipeline_status.json")
-                    ),
+                    "latest_pipeline_status_path": str((FORGE_ROOT / "data" / "runtime" / "living_pipeline_status.json")),
                     "summary": {
                         "records_total": manifest.get("records_total"),
                         "records_by_kind": manifest.get("records_by_kind"),
@@ -362,6 +351,7 @@ def main() -> int:
                     "last_run_id": manifest.get("run_id"),
                     "next_run_in_seconds": float(args.interval_sec),
                     "records_total": manifest.get("records_total"),
+                    "consecutive_failures": consecutive_failures,
                     "summary": {
                         "word_forge_updated": bool((manifest.get("word_forge") or {}).get("updated")),
                         "graphrag_indexed": bool((manifest.get("graphrag") or {}).get("indexed")),
@@ -385,9 +375,7 @@ def main() -> int:
                     "last_error": str(exc),
                     "last_error_trace": traceback.format_exc(limit=12),
                     "next_run_in_seconds": float(args.interval_sec),
-                    "latest_pipeline_status_path": str(
-                        (FORGE_ROOT / "data" / "runtime" / "living_pipeline_status.json")
-                    ),
+                    "latest_pipeline_status_path": str((FORGE_ROOT / "data" / "runtime" / "living_pipeline_status.json")),
                 }
             )
             coordinator.heartbeat(
@@ -399,6 +387,7 @@ def main() -> int:
                     "cycle": cycle,
                     "consecutive_failures": consecutive_failures,
                     "last_error": str(exc),
+                    "summary": {"budget_saturated": False},
                 },
             )
             if args.once:

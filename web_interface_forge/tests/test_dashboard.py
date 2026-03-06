@@ -316,7 +316,11 @@ def test_memory_rows_support_list_based_tier_files(monkeypatch, tmp_path: Path) 
     rows = dashboard._memory_rows()
     snapshot = dashboard.get_memory_snapshot()
     graph = dashboard.get_memory_graph(limit=10)
+    detail = dashboard.get_explorer_node("memory", "community:knowledge:memory:vector")
 
     assert rows[0]["community"] == "knowledge:memory:vector"
     assert snapshot["community_count"] == 1
-    assert graph["summary"]["node_count"] == 1
+    assert graph["summary"]["node_count"] == 2
+    assert any(node.get("node_kind") == "community" for node in graph["nodes"])
+    assert detail["found"] is True
+    assert detail["node"]["member_count"] == 1

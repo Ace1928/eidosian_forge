@@ -329,16 +329,38 @@ def get_memory_graph(limit: int = 120) -> Dict[str, Any]:
             {
                 "id": node_id,
                 "label": _trim_text(row.get("content") or "", 72),
+                "content": str(row.get("content") or ""),
                 "community": str(row.get("community") or ""),
                 "tier": str(row.get("tier") or ""),
                 "namespace": str(row.get("namespace") or ""),
                 "tags": list(row.get("tags") or [])[:8],
+                "node_kind": "memory_record",
             }
         )
         community = str(row.get("community") or "")
         if community:
             by_community.setdefault(community, []).append(node_id)
-    for members in by_community.values():
+    for community, members in by_community.items():
+        community_node_id = f"community:{community}"
+        nodes.append(
+            {
+                "id": community_node_id,
+                "label": community,
+                "content": community,
+                "community": community,
+                "tier": "",
+                "namespace": "community",
+                "tags": [],
+                "node_kind": "community",
+                "member_count": len(members),
+            }
+        )
+        for member in members:
+            key = (community_node_id, member)
+            if key in seen_edges:
+                continue
+            seen_edges.add(key)
+            edges.append({"source": community_node_id, "target": member, "rel_type": "community_member"})
         for idx in range(len(members) - 1):
             key = tuple(sorted((members[idx], members[idx + 1])))
             if key in seen_edges:
@@ -349,7 +371,12 @@ def get_memory_graph(limit: int = 120) -> Dict[str, Any]:
         "available": bool(nodes),
         "nodes": nodes,
         "edges": edges,
-        "summary": {"node_count": len(nodes), "edge_count": len(edges), "community_count": len(by_community)},
+        "summary": {
+            "node_count": len(nodes),
+            "edge_count": len(edges),
+            "community_count": len(by_community),
+            "record_count": len(rows),
+        },
     }
 
 
@@ -406,7 +433,23 @@ def get_runtime_trend_summary(limit: int = 72) -> Dict[str, Any]:
     limit = max(1, int(limit))
     if ForgeRuntimeCoordinator is not None:
         try:
-            return ForgeRuntimeCoordinator(COORDINATOR_STATUS).trend_summary(limit=limit)
+            payload = ForgeRuntimeCoordinator(COORDINATOR_STATUS).trend_summary(limit=limit)
+            history = [row for row in (payload.get("history") or []) if isinstance(row, dict)]
+            payload["series"] = {
+                "active_models": [max(0, int(row.get("active_model_count") or 0)) for row in history],
+                "records_total": [max(0, int(row.get("records_total") or 0)) for row in history],
+                "memory_enriched": [
+                    max(0, int((((row.get("summary") or {}) if isinstance(row.get("summary"), dict) else {}).get("memory_enriched")) or 0))
+                    for row in history
+                ],
+                "budget_saturated": [
+                    1
+                    if bool((((row.get("summary") or {}) if isinstance(row.get("summary"), dict) else {}).get("budget_saturated")))
+                    else 0
+                    for row in history
+                ],
+            }
+            return payload
         except Exception:
             pass
     payload = get_runtime_history(limit=limit)
@@ -425,6 +468,20 @@ def get_runtime_trend_summary(limit: int = 72) -> Dict[str, Any]:
         {"task": task, "count": count}
         for task, count in sorted(task_counts.items(), key=lambda kv: (-kv[1], kv[0]))[:8]
     ]
+    series = {
+        "active_models": [max(0, int(row.get("active_model_count") or 0)) for row in history],
+        "records_total": [max(0, int(row.get("records_total") or 0)) for row in history],
+        "memory_enriched": [
+            max(0, int((((row.get("summary") or {}) if isinstance(row.get("summary"), dict) else {}).get("memory_enriched")) or 0))
+            for row in history
+        ],
+        "budget_saturated": [
+            1
+            if bool((((row.get("summary") or {}) if isinstance(row.get("summary"), dict) else {}).get("budget_saturated")))
+            else 0
+            for row in history
+        ],
+    }
     return {
         "contract": "eidos.runtime_trend_summary.v1",
         "count": len(history),
@@ -435,6 +492,7 @@ def get_runtime_trend_summary(limit: int = 72) -> Dict[str, Any]:
         "top_tasks": top_tasks,
         "latest": history[-1] if history else {},
         "history": history,
+        "series": series,
     }
 
 
@@ -923,22 +981,35 @@ def get_unified_graph(limit_per_domain: int = 80, limit_edges: int = 320) -> Dic
             continue
         add_edge(f"code:{edge.get('source')}", f"code:{edge.get('target')}", str(edge.get("rel_type") or "depends_on"), int(edge.get("weight") or 1))
 
-    for item in _memory_rows()[:limit_per_domain]:
+    memory_graph = get_memory_graph(limit=limit_per_domain)
+    for item in memory_graph.get("nodes") or []:
+        if not isinstance(item, dict):
+            continue
+        ref_id = str(item.get("id") or "")
         add_node(
             {
-                "id": f"memory:{item.get('id')}",
-                "label": _trim_text(item.get("content") or "", 56),
+                "id": f"memory:{ref_id}",
+                "label": str(item.get("label") or ref_id),
                 "domain": "memory",
-                "ref_id": str(item.get("id") or ""),
+                "ref_id": ref_id,
                 "content": str(item.get("content") or ""),
                 "tags": list(item.get("tags") or []),
                 "tier": str(item.get("tier") or ""),
                 "namespace": str(item.get("namespace") or ""),
                 "community": str(item.get("community") or ""),
-                "tokens": sorted(_token_set(item.get("content"), " ".join(item.get("tags") or []), item.get("tier"), item.get("namespace"))),
+                "node_kind": str(item.get("node_kind") or "memory_record"),
+                "tokens": sorted(
+                    _token_set(
+                        item.get("label"),
+                        item.get("content"),
+                        " ".join(item.get("tags") or []),
+                        item.get("tier"),
+                        item.get("namespace"),
+                        item.get("community"),
+                    )
+                ),
             }
         )
-    memory_graph = get_memory_graph(limit=limit_per_domain)
     for edge in memory_graph.get("edges") or []:
         if not isinstance(edge, dict):
             continue
@@ -1050,6 +1121,25 @@ def get_explorer_node(domain: str, node_id: str) -> Dict[str, Any]:
         exact = next((item for item in payload.get("terms") or [] if str(item.get("id") or "").lower() == ref_id.lower()), None)
         return {"found": bool(exact), "domain": "lexicon", "node": exact, "graph": payload}
     if domain_key == "memory":
+        if ref_id.startswith("community:"):
+            community = ref_id.split("community:", 1)[1]
+            members = [
+                {
+                    "id": row["id"],
+                    "content": _trim_text(row["content"], 220),
+                    "tier": row.get("tier"),
+                    "namespace": row.get("namespace"),
+                    "tags": row.get("tags") or [],
+                }
+                for row in _memory_rows()
+                if str(row.get("community") or "") == community
+            ]
+            return {
+                "found": bool(members),
+                "domain": "memory",
+                "node": {"id": ref_id, "community": community, "member_count": len(members), "node_kind": "community"},
+                "search": {"count": len(members), "results": members[:24], "available": True},
+            }
         payload = search_memory(ref_id, limit=24)
         exact = next((item for item in payload.get("results") or [] if str(item.get("id")) == ref_id), None)
         return {"found": bool(exact), "domain": "memory", "node": exact, "search": payload}

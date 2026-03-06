@@ -22,6 +22,7 @@ from ..core import tool
 
 FORGE_DIR = Path(os.environ.get("EIDOS_FORGE_DIR", str(FORGE_ROOT))).resolve()
 SEMANTIC_GRAPH_PATH = FORGE_DIR / "data" / "eidos_semantic_graph.json"
+COORDINATOR_STATUS_PATH = FORGE_DIR / "data" / "runtime" / "forge_coordinator_status.json"
 
 # Simple in-memory graph
 _graph: Optional[nx.Graph] = None
@@ -140,6 +141,25 @@ def _get_model_config():
         return None
 
 
+def _coordinator_budget(model: str, role: str) -> dict[str, Any]:
+    try:
+        from eidosian_runtime import ForgeRuntimeCoordinator
+
+        coordinator = ForgeRuntimeCoordinator(COORDINATOR_STATUS_PATH)
+        decision = coordinator.can_allocate(
+            owner="word_forge_router",
+            requested_models=[{"family": "ollama", "model": str(model), "role": str(role)}],
+            allow_same_owner=False,
+        )
+        return {
+            "allowed": bool(decision.get("allowed")),
+            "reason": str(decision.get("reason") or ""),
+            "decision": decision,
+        }
+    except Exception:
+        return {"allowed": True, "reason": "coordinator_unavailable", "decision": {}}
+
+
 def _generate_structured_payload(
     *,
     prompt: str,
@@ -152,11 +172,21 @@ def _generate_structured_payload(
     cfg = _get_model_config()
     if cfg is None or not getattr(cfg, "is_ollama_running", lambda: False)():
         return {}
+    model_name = str(getattr(cfg, "inference_model", "") or "qwen3.5:2b")
+    budget = _coordinator_budget(model_name, role="word_forge_enrichment")
+    if not budget.get("allowed"):
+        denied = {
+            "_budget_denied": True,
+            "_budget_reason": budget.get("reason"),
+            "_effective_thinking_mode": "off",
+        }
+        return denied
     requested_mode = str(thinking_mode or "on")
     for mode in [requested_mode, "off"] if requested_mode != "off" else ["off"]:
         try:
             payload = cfg.generate_payload(
                 prompt,
+                model=model_name,
                 system=system,
                 thinking_mode=mode,
                 timeout=timeout_sec,
@@ -508,8 +538,15 @@ def wf_enrich_term(term: str, context: str = "", thinking_mode: str = "on", time
         timeout_sec=timeout_sec,
     )
     if not payload:
+        return json.dumps({"status": "skipped", "reason": "model unavailable or returned no structured payload"}, indent=2)
+    if payload.get("_budget_denied"):
         return json.dumps(
-            {"status": "skipped", "reason": "model unavailable or returned no structured payload"}, indent=2
+            {
+                "status": "skipped",
+                "reason": "runtime budget denied",
+                "budget_reason": payload.get("_budget_reason"),
+            },
+            indent=2,
         )
 
     attributes = dict(existing)
@@ -655,6 +692,12 @@ def wf_build_lexicon_from_text(text: str, thinking_mode: str = "on", timeout_sec
     )
     if not payload:
         return wf_build_from_text(text)
+    if payload.get("_budget_denied"):
+        fallback = json.loads(wf_build_from_text(text))
+        fallback["budget_denied"] = True
+        fallback["budget_reason"] = payload.get("_budget_reason")
+        fallback["effective_thinking_mode"] = payload.get("_effective_thinking_mode")
+        return json.dumps(fallback, indent=2)
 
     nodes_added = 0
     edges_added = 0
