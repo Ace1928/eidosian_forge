@@ -34,9 +34,10 @@ from code_forge.digester.pipeline import build_duplication_index, build_repo_ind
 from code_forge.digester.schema import validate_output_dir
 from code_forge.ingest.runner import IngestionRunner
 from code_forge.library.db import CodeLibraryDB
-from eidos_mcp.config.models import get_model_config
 from eidosian_core import eidosian
+from eidosian_runtime import ForgeRuntimeCoordinator
 from eidosian_core.ports import get_service_port
+from eidos_mcp.config.models import get_model_config
 
 from knowledge_forge import GraphRAGIntegration
 
@@ -145,6 +146,7 @@ LIVING_DOC_SCHEMA: dict[str, Any] = {
 RUNTIME_DIR = FORGE_ROOT / "data" / "runtime"
 PIPELINE_STATUS_PATH = RUNTIME_DIR / "living_pipeline_status.json"
 SCHEDULER_STATUS_PATH = RUNTIME_DIR / "eidos_scheduler_status.json"
+COORDINATOR_STATUS_PATH = RUNTIME_DIR / "forge_coordinator_status.json"
 
 
 def _now_utc() -> str:
@@ -1158,8 +1160,16 @@ def run_pipeline(
     estimated_total = _prior_runtime_estimate(output_root)
     started_at = _now_utc()
     phase_timings: dict[str, float] = {}
+    coordinator = ForgeRuntimeCoordinator(COORDINATOR_STATUS_PATH)
+    coordinator_owner = f"living_pipeline:{run_id}"
 
     def _phase_start(phase_name: str) -> float:
+        active_models: list[dict[str, Any]] = []
+        if phase_name == "word_forge":
+            active_models = [{"family": "ollama", "model": "qwen3.5:2b", "role": "lexicon_enrichment"}]
+        elif phase_name == "living_documentation":
+            cfg = living_doc_config or LivingDocumentationConfig()
+            active_models = [{"family": "ollama", "model": str(cfg.model), "role": "living_documentation"}]
         _write_pipeline_status(
             state="running",
             phase=phase_name,
@@ -1175,6 +1185,13 @@ def run_pipeline(
             living_doc_result=living_doc_result,
             records_total=records_total,
             records_by_kind=records_by_kind,
+        )
+        coordinator.heartbeat(
+            owner=coordinator_owner,
+            task=phase_name,
+            state="running",
+            active_models=active_models,
+            metadata={"run_id": run_id, "phase_timings": dict(phase_timings), "records_total": records_total},
         )
         return time.monotonic()
 
@@ -1237,6 +1254,16 @@ def run_pipeline(
             _write_workspace_settings(workspace_root, llm_port=llm_port, embed_port=embed_port)
             runtimes: list[tuple[subprocess.Popen[Any], Any]] = []
             try:
+                coordinator.heartbeat(
+                    owner=coordinator_owner,
+                    task="graphrag",
+                    state="running",
+                    active_models=[
+                        {"family": "llama.cpp", "model": str(llm_model), "role": "graphrag_completion", "port": llm_port},
+                        {"family": "llama.cpp", "model": str(embed_model), "role": "graphrag_embedding", "port": embed_port},
+                    ],
+                    metadata={"run_id": run_id, "workspace_root": str(workspace_root)},
+                )
                 runtimes.append(_start_server(llm_model, llm_port, embedding=False))
                 runtimes.append(_start_server(embed_model, embed_port, embedding=True))
                 index_result = _run_graphrag_index(workspace_root, method=method, scan_roots=[workspace_input])
@@ -1292,6 +1319,13 @@ def run_pipeline(
             records_total=records_total,
             records_by_kind=records_by_kind,
             error=str(exc),
+        )
+        coordinator.heartbeat(
+            owner=coordinator_owner,
+            task="failed",
+            state="error",
+            active_models=[],
+            metadata={"run_id": run_id, "error": str(exc)},
         )
         raise
 
@@ -1350,6 +1384,13 @@ def run_pipeline(
         living_doc_result=living_doc_result,
         records_total=records_total,
         records_by_kind=records_by_kind,
+    )
+    coordinator.heartbeat(
+        owner=coordinator_owner,
+        task="completed",
+        state="idle",
+        active_models=[],
+        metadata={"run_id": run_id, "records_total": records_total, "assessment": graphrag_result.get("assessment_summary")},
     )
     return manifest
 

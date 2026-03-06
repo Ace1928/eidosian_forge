@@ -1,0 +1,646 @@
+{% extends "base.html" %}
+{% block title %}Atlas Explorer{% endblock %}
+{% block head %}
+<style>
+    .explorer-layout {
+        display: grid;
+        grid-template-columns: 360px 1fr 360px;
+        gap: 18px;
+        align-items: start;
+    }
+    .explorer-panel {
+        background: linear-gradient(180deg, rgba(25, 43, 56, 0.94), rgba(15, 24, 31, 0.96));
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 16px;
+        box-shadow: 0 18px 60px rgba(0, 0, 0, 0.18);
+    }
+    .hero {
+        margin-bottom: 18px;
+        padding: 18px;
+        border-radius: 16px;
+        background:
+            radial-gradient(circle at top right, rgba(92, 200, 255, 0.18), transparent 35%),
+            linear-gradient(135deg, rgba(22, 39, 51, 0.95), rgba(10, 17, 22, 0.98));
+        border: 1px solid var(--border);
+    }
+    .hero p {
+        color: var(--text-secondary);
+        max-width: 900px;
+        margin-bottom: 0;
+    }
+    .section-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+    .section-title h2, .section-title h3 {
+        margin: 0;
+        font-size: 1rem;
+        letter-spacing: 0.03em;
+    }
+    .toolbar {
+        display: grid;
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+    .field {
+        display: grid;
+        gap: 6px;
+    }
+    .field label {
+        font-size: 0.82rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+    .field input, .field select, .field button, textarea {
+        width: 100%;
+        box-sizing: border-box;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: rgba(7, 12, 17, 0.85);
+        color: var(--text-primary);
+        padding: 10px 12px;
+        font: inherit;
+    }
+    .field button {
+        cursor: pointer;
+        background: linear-gradient(135deg, rgba(92, 200, 255, 0.22), rgba(41, 114, 146, 0.3));
+        font-weight: 600;
+    }
+    .field button.secondary {
+        background: rgba(255, 255, 255, 0.04);
+    }
+    .field-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+    .metric {
+        padding: 12px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    .metric .value {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--accent);
+    }
+    .metric .label {
+        color: var(--text-secondary);
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+    .pill-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+    }
+    .pill {
+        padding: 5px 10px;
+        border-radius: 999px;
+        background: rgba(92, 200, 255, 0.12);
+        border: 1px solid rgba(92, 200, 255, 0.18);
+        font-size: 0.78rem;
+        color: var(--text-primary);
+    }
+    .graph-wrap {
+        min-height: 720px;
+        position: relative;
+        overflow: hidden;
+    }
+    .graph-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+    .graph-stats {
+        color: var(--text-secondary);
+        font-size: 0.84rem;
+    }
+    #graph-stage {
+        width: 100%;
+        height: 680px;
+        border-radius: 14px;
+        background:
+            radial-gradient(circle at center, rgba(92, 200, 255, 0.10), transparent 45%),
+            linear-gradient(180deg, rgba(11, 17, 22, 1), rgba(6, 9, 12, 1));
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+        font-size: 0.8rem;
+    }
+    .legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--text-secondary);
+    }
+    .legend i {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+    .results {
+        display: grid;
+        gap: 8px;
+        max-height: 360px;
+        overflow: auto;
+    }
+    .result-item {
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        background: rgba(255, 255, 255, 0.025);
+        border-radius: 12px;
+        padding: 12px;
+        cursor: pointer;
+    }
+    .result-item:hover, .result-item.active {
+        border-color: rgba(92, 200, 255, 0.45);
+        background: rgba(92, 200, 255, 0.08);
+    }
+    .result-item h4 {
+        margin: 0 0 4px 0;
+        font-size: 0.95rem;
+    }
+    .result-meta {
+        color: var(--text-secondary);
+        font-size: 0.78rem;
+        margin-bottom: 6px;
+    }
+    .detail-card {
+        display: grid;
+        gap: 10px;
+    }
+    .detail-block {
+        padding: 12px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .detail-block pre {
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-size: 0.85rem;
+        line-height: 1.45;
+    }
+    .mini-list {
+        display: grid;
+        gap: 6px;
+        max-height: 220px;
+        overflow: auto;
+    }
+    .mini-list button {
+        text-align: left;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        background: rgba(255, 255, 255, 0.025);
+        color: var(--text-primary);
+        border-radius: 10px;
+        padding: 9px 10px;
+        cursor: pointer;
+    }
+    .mini-list button:hover {
+        border-color: rgba(92, 200, 255, 0.35);
+    }
+    .status-line {
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+        margin-bottom: 10px;
+    }
+    .empty {
+        color: var(--text-secondary);
+        font-size: 0.88rem;
+    }
+    @media (max-width: 1260px) {
+        .explorer-layout {
+            grid-template-columns: 1fr;
+        }
+        .graph-wrap {
+            min-height: 560px;
+        }
+        #graph-stage {
+            height: 520px;
+        }
+    }
+</style>
+{% endblock %}
+{% block content %}
+<section class="hero">
+    <h1>Atlas Explorer</h1>
+    <p>Interactive navigation across the unified Eidosian substrate: knowledge graph, living lexicon, code library, tiered memory, and living documentation. The graph view is backed by the same runtime and storage contracts used by the scheduler, GraphRAG, and the autonomy loop.</p>
+</section>
+
+<div class="explorer-layout">
+    <section class="explorer-panel">
+        <div class="section-title">
+            <h2>Control Surface</h2>
+            <span class="pill">{{ forge_overview.get("pipeline", {}).get("pipeline", {}).get("phase", "idle") }}</span>
+        </div>
+        <div class="metrics-grid">
+            <div class="metric">
+                <div class="value" id="metric-nodes">-</div>
+                <div class="label">Unified Nodes</div>
+            </div>
+            <div class="metric">
+                <div class="value" id="metric-edges">-</div>
+                <div class="label">Unified Edges</div>
+            </div>
+            <div class="metric">
+                <div class="value">{{ forge_overview.get("memory", {}).get("count", 0) }}</div>
+                <div class="label">Memory Records</div>
+            </div>
+            <div class="metric">
+                <div class="value">{{ forge_overview.get("code_forge", {}).get("total_units", 0) }}</div>
+                <div class="label">Code Units</div>
+            </div>
+        </div>
+
+        <div class="toolbar">
+            <div class="field">
+                <label for="query">Unified Query</label>
+                <input id="query" type="text" value="graph vector runtime" placeholder="Search memory, knowledge, lexicon, code, docs">
+            </div>
+            <div class="field-row">
+                <div class="field">
+                    <label for="domain-filter">Graph Domain</label>
+                    <select id="domain-filter">
+                        <option value="all">All domains</option>
+                        <option value="knowledge">Knowledge</option>
+                        <option value="lexicon">Lexicon</option>
+                        <option value="code">Code</option>
+                        <option value="memory">Memory</option>
+                        <option value="docs">Docs</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="edge-filter">Edge Filter</label>
+                    <select id="edge-filter">
+                        <option value="all">All relations</option>
+                        <option value="knowledge_link">Knowledge links</option>
+                        <option value="lexical">Lexical links</option>
+                        <option value="depends_on">Code dependencies</option>
+                        <option value="documents_code">Doc to code</option>
+                        <option value="semantic_term">Knowledge to term</option>
+                        <option value="uses_term">Memory to term</option>
+                        <option value="mentions_term">Doc to term</option>
+                    </select>
+                </div>
+            </div>
+            <div class="field-row">
+                <div class="field">
+                    <button id="run-search">Run Unified Search</button>
+                </div>
+                <div class="field">
+                    <button id="reset-graph" class="secondary">Reset Graph</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-title">
+            <h3>Search Results</h3>
+            <span id="search-status" class="status-line">Idle</span>
+        </div>
+        <div id="results" class="results"></div>
+    </section>
+
+    <section class="explorer-panel graph-wrap">
+        <div class="graph-toolbar">
+            <div>
+                <div class="section-title" style="margin-bottom:2px;"><h2>Graph Navigation</h2></div>
+                <div class="graph-stats" id="graph-status">Loading graph substrate...</div>
+            </div>
+            <div class="pill-row">
+                <span class="pill" id="scheduler-pill">scheduler</span>
+                <span class="pill" id="pipeline-pill">pipeline</span>
+                <span class="pill" id="coordinator-pill">coordinator</span>
+            </div>
+        </div>
+        <svg id="graph-stage" viewBox="0 0 1200 680" preserveAspectRatio="xMidYMid meet"></svg>
+        <div class="legend">
+            <span><i style="background:#5cc8ff"></i>Knowledge</span>
+            <span><i style="background:#ffc857"></i>Lexicon</span>
+            <span><i style="background:#00d084"></i>Code</span>
+            <span><i style="background:#ff8fab"></i>Memory</span>
+            <span><i style="background:#9b8cff"></i>Docs</span>
+        </div>
+    </section>
+
+    <section class="explorer-panel">
+        <div class="section-title">
+            <h2>Detail Pane</h2>
+            <span class="pill" id="detail-domain">none</span>
+        </div>
+        <div id="detail" class="detail-card">
+            <div class="detail-block empty">Select a graph node or search result to inspect context, graph links, code snippets, and related records.</div>
+        </div>
+    </section>
+</div>
+
+<script>
+const DOMAIN_COLORS = {
+    knowledge: "#5cc8ff",
+    lexicon: "#ffc857",
+    code: "#00d084",
+    memory: "#ff8fab",
+    docs: "#9b8cff",
+};
+
+const stage = document.getElementById("graph-stage");
+const resultsEl = document.getElementById("results");
+const detailEl = document.getElementById("detail");
+const graphStatusEl = document.getElementById("graph-status");
+const searchStatusEl = document.getElementById("search-status");
+const detailDomainEl = document.getElementById("detail-domain");
+const queryEl = document.getElementById("query");
+const domainFilterEl = document.getElementById("domain-filter");
+const edgeFilterEl = document.getElementById("edge-filter");
+const metricNodesEl = document.getElementById("metric-nodes");
+const metricEdgesEl = document.getElementById("metric-edges");
+
+let unifiedGraph = {nodes: [], edges: [], summary: {}};
+let runtimeOverview = {{ forge_overview | tojson }};
+let activeNode = null;
+
+function escapeHtml(text) {
+    return String(text || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+}
+
+function setRuntimePills() {
+    const pipeline = runtimeOverview.pipeline?.pipeline || {};
+    const scheduler = runtimeOverview.pipeline?.scheduler || {};
+    const coordinator = runtimeOverview.coordinator || {};
+    document.getElementById("scheduler-pill").textContent = `scheduler:${scheduler.state || "unknown"}`;
+    document.getElementById("pipeline-pill").textContent = `pipeline:${pipeline.phase || pipeline.state || "unknown"}`;
+    document.getElementById("coordinator-pill").textContent = `models:${(coordinator.active_models || []).length}`;
+}
+
+function filteredGraph() {
+    const domain = domainFilterEl.value;
+    const edgeFilter = edgeFilterEl.value;
+    const visibleNodes = unifiedGraph.nodes.filter((node) => domain === "all" || node.domain === domain);
+    const visibleIds = new Set(visibleNodes.map((node) => node.id));
+    const visibleEdges = unifiedGraph.edges.filter((edge) => {
+        if (!visibleIds.has(edge.source) || !visibleIds.has(edge.target)) {
+            return false;
+        }
+        if (edgeFilter !== "all" && edge.rel_type !== edgeFilter) {
+            return false;
+        }
+        return true;
+    });
+    return {nodes: visibleNodes, edges: visibleEdges};
+}
+
+function layoutNodes(nodes) {
+    const clusters = {
+        knowledge: {x: 270, y: 170},
+        lexicon: {x: 930, y: 170},
+        code: {x: 930, y: 510},
+        memory: {x: 270, y: 510},
+        docs: {x: 600, y: 340},
+    };
+    const counts = {};
+    return nodes.map((node) => {
+        const domain = node.domain || "knowledge";
+        const cluster = clusters[domain] || clusters.knowledge;
+        const index = counts[domain] || 0;
+        counts[domain] = index + 1;
+        const angle = index * 0.67;
+        const radius = 26 + (index % 18) * 10;
+        const x = cluster.x + Math.cos(angle) * radius + ((index % 5) - 2) * 6;
+        const y = cluster.y + Math.sin(angle) * radius + ((index % 7) - 3) * 5;
+        return {...node, x, y};
+    });
+}
+
+function renderGraph() {
+    const graph = filteredGraph();
+    const laidOutNodes = layoutNodes(graph.nodes);
+    const pos = Object.fromEntries(laidOutNodes.map((node) => [node.id, node]));
+    metricNodesEl.textContent = String(laidOutNodes.length);
+    metricEdgesEl.textContent = String(graph.edges.length);
+    graphStatusEl.textContent = `${laidOutNodes.length} nodes, ${graph.edges.length} edges, domain=${domainFilterEl.value}, relation=${edgeFilterEl.value}`;
+
+    const edgeMarkup = graph.edges.map((edge) => {
+        const src = pos[edge.source];
+        const dst = pos[edge.target];
+        if (!src || !dst) {
+            return "";
+        }
+        const opacity = edge.rel_type.includes("term") ? 0.28 : 0.18;
+        return `<line x1="${src.x}" y1="${src.y}" x2="${dst.x}" y2="${dst.y}" stroke="rgba(144,171,192,${opacity})" stroke-width="${Math.min(3, 1 + Number(edge.weight || 1) * 0.15)}"></line>`;
+    }).join("");
+
+    const nodeMarkup = laidOutNodes.map((node) => {
+        const color = DOMAIN_COLORS[node.domain] || "#5cc8ff";
+        const isActive = activeNode && activeNode.id === node.id;
+        const stroke = isActive ? "#ffffff" : color;
+        const radius = isActive ? 10 : 7;
+        const label = escapeHtml(node.label || node.ref_id || node.id);
+        const refId = encodeURIComponent(String(node.ref_id || ""));
+        return `
+            <g class="graph-node" data-domain="${escapeHtml(node.domain)}" data-ref="${refId}" data-id="${escapeHtml(node.id)}" style="cursor:pointer">
+                <circle cx="${node.x}" cy="${node.y}" r="${radius}" fill="${color}" fill-opacity="0.92" stroke="${stroke}" stroke-width="${isActive ? 2.2 : 1.1}"></circle>
+                <text x="${node.x + 12}" y="${node.y + 4}" fill="#e6f4ff" font-size="11">${label}</text>
+            </g>
+        `;
+    }).join("");
+
+    stage.innerHTML = `
+        <g>
+            <text x="55" y="55" fill="rgba(144,171,192,0.9)" font-size="14">Memory</text>
+            <text x="1020" y="55" fill="rgba(144,171,192,0.9)" font-size="14">Lexicon</text>
+            <text x="1000" y="645" fill="rgba(144,171,192,0.9)" font-size="14">Code</text>
+            <text x="55" y="645" fill="rgba(144,171,192,0.9)" font-size="14">Knowledge</text>
+            <text x="560" y="90" fill="rgba(144,171,192,0.9)" font-size="14">Docs</text>
+        </g>
+        <g>${edgeMarkup}</g>
+        <g>${nodeMarkup}</g>
+    `;
+
+    stage.querySelectorAll(".graph-node").forEach((nodeEl) => {
+        nodeEl.addEventListener("click", () => {
+            const domain = nodeEl.dataset.domain;
+            const refId = decodeURIComponent(nodeEl.dataset.ref || "");
+            const match = laidOutNodes.find((node) => node.id === nodeEl.dataset.id);
+            activeNode = match || null;
+            renderGraph();
+            loadNodeDetails(domain, refId, match);
+        });
+    });
+}
+
+function resultCard(domain, row) {
+    let title = row.qualified_name || row.id || row.source || row.document || row.term || row.name || "result";
+    let detail = row.content || row.search_preview || row.definition || row.document || row.file_path || "";
+    let meta = domain;
+    if (row.unit_type) meta += ` | ${row.unit_type}`;
+    if (row.language) meta += ` | ${row.language}`;
+    if (row.tier) meta += ` | ${row.tier}`;
+    if (row.namespace) meta += ` | ${row.namespace}`;
+    if (row.doc_type) meta += ` | ${row.doc_type}`;
+    const refId = row.id || row.source || row.qualified_name || title;
+    const clickDomain = domain === "lexicon" ? "lexicon" : domain;
+    return `
+        <div class="result-item" data-domain="${escapeHtml(clickDomain)}" data-ref="${encodeURIComponent(String(refId))}">
+            <h4>${escapeHtml(title)}</h4>
+            <div class="result-meta">${escapeHtml(meta)}</div>
+            <div>${escapeHtml(detail)}</div>
+        </div>
+    `;
+}
+
+function renderResults(payload) {
+    const sections = [];
+    if ((payload.knowledge?.results || []).length) {
+        sections.push(...payload.knowledge.results.map((row) => resultCard("knowledge", row)));
+    }
+    if ((payload.lexicon?.terms || []).length) {
+        sections.push(...payload.lexicon.terms.map((row) => resultCard("lexicon", row)));
+    }
+    if ((payload.code?.results || []).length) {
+        sections.push(...payload.code.results.map((row) => resultCard("code", row)));
+    }
+    if ((payload.memory?.results || []).length) {
+        sections.push(...payload.memory.results.map((row) => resultCard("memory", row)));
+    }
+    if ((payload.docs?.results || []).length) {
+        sections.push(...payload.docs.results.map((row) => resultCard("docs", row)));
+    }
+    resultsEl.innerHTML = sections.length ? sections.join("") : '<div class="empty">No results returned.</div>';
+    resultsEl.querySelectorAll(".result-item").forEach((item) => {
+        item.addEventListener("click", () => {
+            const domain = item.dataset.domain;
+            const refId = decodeURIComponent(item.dataset.ref || "");
+            loadNodeDetails(domain, refId);
+        });
+    });
+}
+
+function renderDetailHtml(title, blocks, extraButtons = []) {
+    detailEl.innerHTML = `
+        <div class="detail-block">
+            <h3 style="margin:0 0 6px 0">${escapeHtml(title)}</h3>
+            <div class="pill-row">${extraButtons.join("")}</div>
+        </div>
+        ${blocks.join("")}
+    `;
+}
+
+async function loadNodeDetails(domain, refId, graphNode = null) {
+    detailDomainEl.textContent = domain || "unknown";
+    const resp = await fetch(`/api/explorer/node/${encodeURIComponent(domain)}/${encodeURIComponent(refId)}`);
+    const payload = await resp.json();
+    const blocks = [];
+    if (graphNode) {
+        blocks.push(`
+            <div class="detail-block">
+                <strong>Graph Node</strong>
+                <pre>${escapeHtml(JSON.stringify(graphNode, null, 2))}</pre>
+            </div>
+        `);
+    }
+    if (domain === "code" && payload.unit) {
+        const snippet = payload.snippet?.snippet || "";
+        const buttons = snippet ? ['<button id="copy-snippet">Copy Snippet</button>'] : [];
+        blocks.push(`
+            <div class="detail-block"><strong>Unit</strong><pre>${escapeHtml(JSON.stringify(payload.unit, null, 2))}</pre></div>
+            <div class="detail-block"><strong>Snippet</strong><pre id="snippet-text">${escapeHtml(snippet)}</pre></div>
+            <div class="detail-block"><strong>Parents</strong><pre>${escapeHtml(JSON.stringify(payload.parents || [], null, 2))}</pre></div>
+            <div class="detail-block"><strong>Children</strong><pre>${escapeHtml(JSON.stringify(payload.children || [], null, 2))}</pre></div>
+        `);
+        renderDetailHtml(payload.unit.qualified_name || payload.unit.name || refId, blocks, buttons);
+        const copyButton = document.getElementById("copy-snippet");
+        if (copyButton) {
+            copyButton.addEventListener("click", async () => {
+                await navigator.clipboard.writeText(snippet);
+                copyButton.textContent = "Copied";
+            });
+        }
+        return;
+    }
+    if (payload.node) {
+        blocks.push(`<div class="detail-block"><pre>${escapeHtml(JSON.stringify(payload.node, null, 2))}</pre></div>`);
+    }
+    if (payload.search) {
+        blocks.push(`<div class="detail-block"><strong>Related Results</strong><pre>${escapeHtml(JSON.stringify(payload.search, null, 2))}</pre></div>`);
+    }
+    if (payload.graph) {
+        blocks.push(`<div class="detail-block"><strong>Related Graph</strong><pre>${escapeHtml(JSON.stringify(payload.graph, null, 2))}</pre></div>`);
+    }
+    if (!blocks.length) {
+        blocks.push('<div class="detail-block empty">No detail payload was returned for this selection.</div>');
+    }
+    renderDetailHtml(refId, blocks);
+}
+
+async function runUnifiedSearch() {
+    const query = queryEl.value.trim();
+    if (!query) {
+        searchStatusEl.textContent = "Enter a query.";
+        resultsEl.innerHTML = '<div class="empty">Enter a query to search memory, knowledge, code, docs, and lexicon.</div>';
+        return;
+    }
+    searchStatusEl.textContent = `Running: ${query}`;
+    const resp = await fetch(`/api/explorer/search?query=${encodeURIComponent(query)}&limit=10`);
+    const payload = await resp.json();
+    renderResults(payload);
+    const total = (payload.memory?.count || 0) + (payload.knowledge?.count || 0) + (payload.lexicon?.count || 0) + (payload.code?.count || 0) + (payload.docs?.count || 0);
+    searchStatusEl.textContent = `${total} results across all domains`;
+}
+
+async function loadRuntime() {
+    const resp = await fetch("/api/runtime/forge");
+    runtimeOverview = await resp.json();
+    setRuntimePills();
+}
+
+async function loadUnifiedGraph() {
+    const resp = await fetch("/api/graph/unified?limit_per_domain=80&limit_edges=320");
+    unifiedGraph = await resp.json();
+    renderGraph();
+}
+
+document.getElementById("run-search").addEventListener("click", runUnifiedSearch);
+document.getElementById("reset-graph").addEventListener("click", () => {
+    activeNode = null;
+    domainFilterEl.value = "all";
+    edgeFilterEl.value = "all";
+    renderGraph();
+    detailDomainEl.textContent = "none";
+    detailEl.innerHTML = '<div class="detail-block empty">Graph selection cleared.</div>';
+});
+domainFilterEl.addEventListener("change", renderGraph);
+edgeFilterEl.addEventListener("change", renderGraph);
+queryEl.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+        runUnifiedSearch();
+    }
+});
+
+Promise.all([loadRuntime(), loadUnifiedGraph()]).then(() => runUnifiedSearch());
+</script>
+{% endblock %}

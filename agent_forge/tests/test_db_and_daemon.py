@@ -1,6 +1,7 @@
 import sqlite3
 import subprocess
 import sys
+import json
 from pathlib import Path
 
 from core import db as DB
@@ -25,7 +26,22 @@ def test_db_helpers(tmp_path: Path):
 
 def test_eidosd_once(tmp_path: Path):
     state_dir = tmp_path / "state"
-    cmd = [sys.executable, str(EIDOSD), "--state-dir", str(state_dir), "--once"]
+    repo_root = tmp_path / "repo"
+    runtime_dir = repo_root / "data" / "runtime"
+    runtime_dir.mkdir(parents=True, exist_ok=True)
+    (runtime_dir / "living_pipeline_status.json").write_text(
+        json.dumps({"state": "running", "phase": "word_forge", "eta_seconds": 42, "records_total": 9}),
+        encoding="utf-8",
+    )
+    (runtime_dir / "eidos_scheduler_status.json").write_text(
+        json.dumps({"state": "running", "current_task": "living_pipeline", "cycle": 3, "consecutive_failures": 0}),
+        encoding="utf-8",
+    )
+    (runtime_dir / "forge_coordinator_status.json").write_text(
+        json.dumps({"state": "running", "task": "word_forge", "active_models": [{"model": "qwen3.5:2b"}]}),
+        encoding="utf-8",
+    )
+    cmd = [sys.executable, str(EIDOSD), "--state-dir", str(state_dir), "--repo-root", str(repo_root), "--once"]
     res = subprocess.run(cmd, capture_output=True, text=True, cwd=str(REPO_ROOT))
     assert res.returncode == 0, res.stderr
 
@@ -35,7 +51,11 @@ def test_eidosd_once(tmp_path: Path):
     conn.close()
 
     assert E.files_count(state_dir) >= 1
-    assert len(E.iter_events(state_dir, limit=None)) >= 1
+    all_events = E.iter_events(state_dir, limit=None)
+    assert len(all_events) >= 1
+    runtime_event = next(evt for evt in all_events if evt.get("type") == "forge.runtime")
+    assert runtime_event["data"]["pipeline_phase"] == "word_forge"
+    assert runtime_event["data"]["active_model_count"] == 1
 
     journal = S.iter_journal(state_dir, limit=None)
     assert len(journal) >= 1
