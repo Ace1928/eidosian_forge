@@ -640,7 +640,9 @@ class GraphRAGIntegration:
                 "node_ids": detail_ids,
                 "kind": kind,
                 "artifact_path": rel_path,
-                "benchmark_gate_pass": (None if not isinstance(benchmark, dict) else bool(benchmark.get("gate_pass"))),
+                "benchmark_gate_pass": (
+                    None if not isinstance(benchmark, dict) else bool(benchmark.get("gate_pass"))
+                ),
                 "search_p95_ms": None if not isinstance(benchmark, dict) else benchmark.get("search_p95_ms"),
                 "graph_build_ms": None if not isinstance(benchmark, dict) else benchmark.get("graph_build_ms"),
                 "drift_warning_count": (
@@ -706,9 +708,7 @@ class GraphRAGIntegration:
                 if tag not in {"native_graphrag"}
             }
         )
-        avg_chars = _safe_ratio(
-            sum(len(str(getattr(node, "content", "") or "")) for node in unique_group), len(unique_group)
-        )
+        avg_chars = _safe_ratio(sum(len(str(getattr(node, "content", "") or "")) for node in unique_group), len(unique_group))
         coverage_ratio = _safe_ratio(len(unique_group), total_nodes)
         link_density = _safe_ratio(linked_neighbors, len(unique_group))
         tag_diversity = len(unique_tags)
@@ -866,6 +866,69 @@ class GraphRAGIntegration:
             "weak_communities": aggregate["weak_communities"],
         }
 
+    def _update_native_trends(
+        self,
+        *,
+        community_reports: Dict[str, Any],
+        artifact_summary: Dict[str, Any],
+        keep: int = 40,
+    ) -> Dict[str, Any]:
+        output_dir = self.root / "output"
+        output_dir.mkdir(parents=True, exist_ok=True)
+        trend_path = output_dir / "native_report_trends.json"
+        history: list[dict[str, Any]] = []
+        if trend_path.exists():
+            try:
+                payload = json.loads(trend_path.read_text(encoding="utf-8"))
+                rows = payload.get("history") if isinstance(payload, dict) else None
+                if isinstance(rows, list):
+                    history = [row for row in rows if isinstance(row, dict)]
+            except Exception:
+                history = []
+
+        report_payload = self._load_native_reports_payload()
+        reports = report_payload.get("reports") if isinstance(report_payload, dict) else []
+        weak_labels = [
+            str(row.get("community"))
+            for row in reports
+            if isinstance(row, dict) and str(((row.get("metrics") or {}).get("quality_band")) or "") == "weak"
+        ][:8]
+        artifact_kinds = artifact_summary.get("kinds") if isinstance(artifact_summary.get("kinds"), dict) else {}
+        latest = {
+            "generated_at": self._timestamp(),
+            "report_count": int(community_reports.get("count") or 0),
+            "average_quality_score": float(community_reports.get("average_quality_score") or 0.0),
+            "weak_communities": int(community_reports.get("weak_communities") or 0),
+            "top_community": community_reports.get("top_community"),
+            "weak_community_labels": weak_labels,
+            "artifact_count": int(artifact_summary.get("count") or 0),
+            "benchmark_failures": int(artifact_summary.get("benchmark_failures") or 0),
+            "drift_warning_artifacts": int(artifact_summary.get("drift_warning_artifacts") or 0),
+            "artifact_kinds": artifact_kinds,
+        }
+        history.append(latest)
+        history = history[-max(1, int(keep)) :]
+        previous = history[-2] if len(history) >= 2 else None
+        latest["quality_delta"] = round(
+            latest["average_quality_score"] - float((previous or {}).get("average_quality_score") or 0.0), 4
+        )
+        latest["benchmark_failure_delta"] = int(latest["benchmark_failures"]) - int(
+            (previous or {}).get("benchmark_failures") or 0
+        )
+        latest["drift_warning_delta"] = int(latest["drift_warning_artifacts"]) - int(
+            (previous or {}).get("drift_warning_artifacts") or 0
+        )
+
+        trend_path.write_text(
+            json.dumps({"generated_at": latest["generated_at"], "history": history}, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        return {
+            "path": str(trend_path),
+            "entries": len(history),
+            "latest": latest,
+        }
+
     def _native_index(self, scan_roots: List[Path]) -> Dict[str, Any]:
         bridge = self._load_bridge()
         if bridge is None or getattr(bridge, "knowledge", None) is None:
@@ -971,6 +1034,11 @@ class GraphRAGIntegration:
         word_forge = self._ingest_word_graph(knowledge, state)
         code_forge = self._ingest_code_forge_artifacts(knowledge, state, scan_roots)
         community_reports = self._build_native_community_reports(knowledge, state)
+        artifact_summary = self._artifact_summary_from_state(state, limit=12)
+        report_trends = self._update_native_trends(
+            community_reports=community_reports,
+            artifact_summary=artifact_summary,
+        )
         self._save_native_state(state)
         knowledge.save()
 
@@ -989,6 +1057,7 @@ class GraphRAGIntegration:
             "word_forge": word_forge,
             "code_forge": code_forge,
             "community_reports": community_reports,
+            "report_trends": report_trends,
         }
 
     def _local_vector_graph_query(self, query: str, method: str) -> Dict[str, Any]:
@@ -1129,12 +1198,8 @@ class GraphRAGIntegration:
             "reports": summary_reports,
         }
 
-    @eidosian()
-    def native_artifact_summary(self, limit: int = 10) -> Dict[str, Any]:
-        state = self._load_native_state()
-        artifact_state = (
-            state.get("code_forge_artifacts") if isinstance(state.get("code_forge_artifacts"), dict) else {}
-        )
+    def _artifact_summary_from_state(self, state: Dict[str, Any], *, limit: int = 10) -> Dict[str, Any]:
+        artifact_state = state.get("code_forge_artifacts") if isinstance(state.get("code_forge_artifacts"), dict) else {}
         rows = [row for row in artifact_state.values() if isinstance(row, dict)]
         rows.sort(key=lambda row: str(row.get("updated_at") or ""), reverse=True)
         limit = max(1, int(limit or 10))
@@ -1160,6 +1225,34 @@ class GraphRAGIntegration:
                 }
                 for row in rows[:limit]
             ],
+        }
+
+    @eidosian()
+    def native_artifact_summary(self, limit: int = 10) -> Dict[str, Any]:
+        state = self._load_native_state()
+        return self._artifact_summary_from_state(state, limit=limit)
+
+    @eidosian()
+    def native_trend_summary(self, limit: int = 10) -> Dict[str, Any]:
+        trend_path = self.root / "output" / "native_report_trends.json"
+        if not trend_path.exists():
+            return {"count": 0, "history": [], "latest": None}
+        try:
+            payload = json.loads(trend_path.read_text(encoding="utf-8"))
+        except Exception:
+            return {"count": 0, "history": [], "latest": None}
+        history = payload.get("history") if isinstance(payload, dict) else None
+        if not isinstance(history, list):
+            return {"count": 0, "history": [], "latest": None}
+        rows = [row for row in history if isinstance(row, dict)]
+        limit = max(1, int(limit or 10))
+        trimmed = rows[-limit:]
+        latest = trimmed[-1] if trimmed else None
+        return {
+            "count": len(rows),
+            "limit": limit,
+            "latest": latest,
+            "history": trimmed,
         }
 
     @eidosian()

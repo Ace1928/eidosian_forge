@@ -75,6 +75,23 @@ class _FakeGraphRAG:
             ][:limit],
         }
 
+    def native_trend_summary(self, limit: int = 10):
+        return {
+            "count": 1,
+            "latest": {
+                "weak_community_labels": ["code_forge"],
+                "artifact_kinds": {"code_forge_benchmark": 1},
+                "quality_delta": -0.15,
+            },
+            "history": [
+                {
+                    "weak_community_labels": ["code_forge"],
+                    "artifact_kinds": {"code_forge_benchmark": 1},
+                    "quality_delta": -0.15,
+                }
+            ][:limit],
+        }
+
 
 def test_supervisor_seeds_autonomous_mission(tmp_path: Path) -> None:
     state_dir = tmp_path / "state"
@@ -125,6 +142,7 @@ def test_supervisor_seeds_autonomous_mission(tmp_path: Path) -> None:
     selected = next(evt for evt in events if evt.get("type") == "autonomy.mission_selected")
     assert selected["data"]["report_count"] == 2
     assert selected["data"]["artifact_count"] == 1
+    assert selected["data"]["weak_communities"] == ["code_forge"]
     assert fake_memory.rows
 
 
@@ -226,6 +244,8 @@ def test_supervisor_hygiene_scoring_uses_report_and_artifact_risk(tmp_path: Path
                     "template": "hygiene",
                     "priority": 0.65,
                     "query": "repo benchmark drift artifact report",
+                    "focus_communities": ["code_forge"],
+                    "focus_artifact_kinds": ["code_forge_benchmark"],
                 },
             ],
         },
@@ -236,3 +256,4 @@ def test_supervisor_hygiene_scoring_uses_report_and_artifact_risk(tmp_path: Path
     assert payload["mission_id"] == "repo_hygiene"
     assert payload["benchmark_failures"] == 1
     assert payload["average_report_quality"] == 0.42
+    assert payload["artifact_kinds"] == ["code_forge_benchmark"]

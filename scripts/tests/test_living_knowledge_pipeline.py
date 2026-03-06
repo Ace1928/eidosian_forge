@@ -99,12 +99,20 @@ def test_run_graphrag_index_uses_adapter_scan_roots(tmp_path: Path, monkeypatch)
     class FakeGraphRAG:
         def run_incremental_index(self, scan_roots):
             calls.append(("index", list(scan_roots)))
-            return {"success": True, "mode": "native_vector_graph", "scan_roots": [str(p) for p in scan_roots]}
+            return {
+                "success": True,
+                "mode": "native_vector_graph",
+                "scan_roots": [str(p) for p in scan_roots],
+                "community_reports": {"count": 1, "average_quality_score": 0.75},
+                "report_trends": {"entries": 1, "latest": {"average_quality_score": 0.75}},
+            }
 
     monkeypatch.setattr(pipeline, "_build_graphrag", lambda workspace_root: FakeGraphRAG())
     result = pipeline._run_graphrag_index(workspace, method="global", scan_roots=[docs])
 
     assert result["success"] is True
+    assert result["community_reports"]["average_quality_score"] == 0.75
+    assert result["report_trends"]["latest"]["average_quality_score"] == 0.75
     assert calls == [("index", [docs])]
 
 

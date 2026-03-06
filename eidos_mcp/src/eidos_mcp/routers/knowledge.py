@@ -399,6 +399,20 @@ def grag_artifacts(limit: int = 10) -> str:
     return json.dumps(grag.native_artifact_summary(limit=limit), indent=2)
 
 
+@tool(
+    name="grag_trends",
+    description="Summarize native GraphRAG quality and artifact trends over recent index runs.",
+    parameters={
+        "type": "object",
+        "properties": {"limit": {"type": "integer", "description": "Maximum history rows to return (default: 10)"}},
+    },
+)
+@eidosian()
+def grag_trends(limit: int = 10) -> str:
+    """Summarize native GraphRAG trends."""
+    return json.dumps(grag.native_trend_summary(limit=limit), indent=2)
+
+
 # =============================================================================
 # UNIFIED CONTEXT (Knowledge + Memory Bridge)
 # =============================================================================

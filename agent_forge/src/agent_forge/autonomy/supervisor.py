@@ -220,6 +220,7 @@ class AutonomySupervisor:
 
         report_summary: dict[str, Any] = {}
         artifact_summary: dict[str, Any] = {}
+        trend_summary: dict[str, Any] = {}
         graphrag = self._load_graphrag()
         if graphrag is not None:
             try:
@@ -230,6 +231,10 @@ class AutonomySupervisor:
                 artifact_summary = graphrag.native_artifact_summary(limit=6) or {}
             except Exception:  # pragma: no cover - defensive fallback
                 artifact_summary = {}
+            try:
+                trend_summary = graphrag.native_trend_summary(limit=8) or {}
+            except Exception:  # pragma: no cover - defensive fallback
+                trend_summary = {}
 
         for row in report_summary.get("reports") or []:
             if not isinstance(row, Mapping):
@@ -256,6 +261,16 @@ class AutonomySupervisor:
             if int(row.get("drift_warning_count") or 0) > 0:
                 parts.append("drift warnings")
             context_tokens |= _tokenize(" ".join(parts))
+        latest_trend = trend_summary.get("latest") if isinstance(trend_summary.get("latest"), Mapping) else {}
+        if latest_trend:
+            context_tokens |= _tokenize(
+                " ".join(
+                    [
+                        " ".join(str(x) for x in latest_trend.get("weak_community_labels") or []),
+                        " ".join(str(x) for x in (latest_trend.get("artifact_kinds") or {}).keys()),
+                    ]
+                )
+            )
 
         return {
             "query": query,
@@ -264,6 +279,7 @@ class AutonomySupervisor:
             "tokens": sorted(context_tokens),
             "report_summary": report_summary,
             "artifact_summary": artifact_summary,
+            "trend_summary": trend_summary,
         }
 
     def _recent_selections(self) -> list[dict[str, Any]]:
@@ -325,10 +341,33 @@ class AutonomySupervisor:
         artifact_summary = (
             context.get("artifact_summary") if isinstance(context.get("artifact_summary"), Mapping) else {}
         )
+        trend_summary = context.get("trend_summary") if isinstance(context.get("trend_summary"), Mapping) else {}
         avg_quality = float(report_summary.get("average_quality_score") or 0.0)
         weak_communities = int(report_summary.get("weak_communities") or 0)
         benchmark_failures = int(artifact_summary.get("benchmark_failures") or 0)
         drift_warning_artifacts = int(artifact_summary.get("drift_warning_artifacts") or 0)
+        latest_trend = trend_summary.get("latest") if isinstance(trend_summary.get("latest"), Mapping) else {}
+        weak_labels = {
+            _to_text(item).lower().replace(" ", "_")
+            for item in latest_trend.get("weak_community_labels") or []
+            if _to_text(item)
+        }
+        artifact_kinds = {
+            _to_text(item).lower()
+            for item in (latest_trend.get("artifact_kinds") or {}).keys()
+            if _to_text(item)
+        }
+        focus_communities = {
+            _to_text(item).lower().replace(" ", "_")
+            for item in mission.get("focus_communities", []) or []
+            if _to_text(item)
+        }
+        focus_artifact_kinds = {
+            _to_text(item).lower()
+            for item in mission.get("focus_artifact_kinds", []) or []
+            if _to_text(item)
+        }
+        targeted_overlap = len(focus_communities & weak_labels) + len(focus_artifact_kinds & artifact_kinds)
 
         if template == "hygiene":
             score += min(1.4, benchmark_failures * 0.45 + drift_warning_artifacts * 0.25)
@@ -340,6 +379,9 @@ class AutonomySupervisor:
             score -= min(0.2, weak_communities * 0.05)
         elif template == "lint":
             score += min(0.4, benchmark_failures * 0.2)
+
+        if targeted_overlap:
+            score += min(0.6, targeted_overlap * 0.15)
 
         return score
 
@@ -394,10 +436,10 @@ class AutonomySupervisor:
             "hit_count": len(context.get("hits") or []),
             "report_count": int(((context.get("report_summary") or {}).get("count")) or 0),
             "artifact_count": int(((context.get("artifact_summary") or {}).get("count")) or 0),
-            "average_report_quality": float(
-                ((context.get("report_summary") or {}).get("average_quality_score")) or 0.0
-            ),
+            "average_report_quality": float(((context.get("report_summary") or {}).get("average_quality_score")) or 0.0),
             "benchmark_failures": int(((context.get("artifact_summary") or {}).get("benchmark_failures")) or 0),
+            "weak_communities": list((((context.get("trend_summary") or {}).get("latest")) or {}).get("weak_community_labels") or []),
+            "artifact_kinds": sorted(list(((((context.get("trend_summary") or {}).get("latest")) or {}).get("artifact_kinds") or {}).keys())),
             "repo_root": str(self.repo_root),
             "repo_dirty": repo_dirty,
         }
@@ -487,10 +529,10 @@ class AutonomySupervisor:
             "context_hits": len(context.get("hits") or []),
             "report_count": int(((context.get("report_summary") or {}).get("count")) or 0),
             "artifact_count": int(((context.get("artifact_summary") or {}).get("count")) or 0),
-            "average_report_quality": float(
-                ((context.get("report_summary") or {}).get("average_quality_score")) or 0.0
-            ),
+            "average_report_quality": float(((context.get("report_summary") or {}).get("average_quality_score")) or 0.0),
             "benchmark_failures": int(((context.get("artifact_summary") or {}).get("benchmark_failures")) or 0),
+            "weak_communities": list((((context.get("trend_summary") or {}).get("latest")) or {}).get("weak_community_labels") or []),
+            "artifact_kinds": sorted(list(((((context.get("trend_summary") or {}).get("latest")) or {}).get("artifact_kinds") or {}).keys())),
         }
         BUS.append(self.state_dir, "autonomy.mission_selected", payload, tags=["autonomy", "selected"])
         S.append_journal(

@@ -76,3 +76,26 @@ def test_knowledge_router_grag_report_tools(tmp_path: Path, monkeypatch) -> None
     artifact_payload = json.loads(knowledge.grag_artifacts(limit=2))
     assert artifact_payload["count"] == 1
     assert artifact_payload["artifacts"][0]["kind"] == "triage"
+
+    (output_dir / "native_report_trends.json").write_text(
+        json.dumps(
+            {
+                "generated_at": "2026-03-06T03:06:00+00:00",
+                "history": [
+                    {
+                        "generated_at": "2026-03-06T03:06:00+00:00",
+                        "average_quality_score": 0.61,
+                        "weak_communities": 1,
+                        "weak_community_labels": ["documents"],
+                        "artifact_kinds": {"triage": 1},
+                    }
+                ],
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    trend_payload = json.loads(knowledge.grag_trends(limit=2))
+    assert trend_payload["count"] == 1
+    assert trend_payload["latest"]["weak_community_labels"] == ["documents"]
