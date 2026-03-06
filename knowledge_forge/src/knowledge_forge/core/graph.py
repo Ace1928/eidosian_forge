@@ -61,7 +61,9 @@ class KnowledgeForge:
         self._thread_lock = threading.RLock()
         self._lock_handle = None
         self._lock_depth = 0
-        self._lock_path = self.persistence_path.with_name(f"{self.persistence_path.name}.lock") if self.persistence_path else None
+        self._lock_path = (
+            self.persistence_path.with_name(f"{self.persistence_path.name}.lock") if self.persistence_path else None
+        )
         self.vector_store = None
         if self.embedder is not None:
             try:

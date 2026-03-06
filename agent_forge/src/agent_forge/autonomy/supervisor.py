@@ -120,6 +120,7 @@ class AutonomySupervisor:
         try:
             _ensure_bridge_import_path()
             from eidosian_vector import build_default_embedder  # type: ignore
+
             from knowledge_forge import KnowledgeMemoryBridge  # type: ignore
 
             if self._embedder is None:
@@ -135,6 +136,7 @@ class AutonomySupervisor:
         try:
             _ensure_bridge_import_path()
             from eidosian_vector import build_default_embedder  # type: ignore
+
             from memory_forge import TieredMemorySystem  # type: ignore
 
             if self._embedder is None:

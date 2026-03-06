@@ -164,6 +164,7 @@ class MemoryBridgeModule:
         try:
             _ensure_memory_import_path()
             from eidosian_vector import build_default_embedder  # type: ignore
+
             from memory_forge import TieredMemorySystem  # type: ignore
 
             if self._embedder is None:

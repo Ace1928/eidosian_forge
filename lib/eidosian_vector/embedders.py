@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import hashlib
-from typing import Any, Iterable, List, Optional
+from typing import Any, List, Optional
 
 
 class HashEmbedder:

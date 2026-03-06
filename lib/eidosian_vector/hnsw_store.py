@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import os
 import sqlite3
 import threading
 from contextlib import contextmanager
@@ -72,8 +71,7 @@ class HNSWVectorStore:
 
     def _init_db(self) -> None:
         with self._connect() as conn:
-            conn.executescript(
-                """
+            conn.executescript("""
                 CREATE TABLE IF NOT EXISTS vector_items (
                     item_id TEXT PRIMARY KEY,
                     label INTEGER NOT NULL UNIQUE,
@@ -87,8 +85,7 @@ class HNSWVectorStore:
                     ON vector_items(label);
                 CREATE INDEX IF NOT EXISTS idx_vector_items_deleted
                     ON vector_items(deleted);
-                """
-            )
+                """)
 
     def _load_meta(self) -> None:
         if not self.meta_path.exists():

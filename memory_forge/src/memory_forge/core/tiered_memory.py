@@ -28,7 +28,6 @@ from typing import Any, Dict, List, Optional, Protocol, Set
 
 from eidosian_core import eidosian
 from eidosian_core.ports import get_service_url
-
 from eidosian_vector import HNSWVectorStore
 
 from .interfaces import MemoryType

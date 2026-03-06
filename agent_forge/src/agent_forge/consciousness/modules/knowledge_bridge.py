@@ -117,6 +117,7 @@ class KnowledgeBridgeModule:
         try:
             _ensure_knowledge_import_path()
             from eidosian_vector import build_default_embedder  # type: ignore
+
             from knowledge_forge import KnowledgeMemoryBridge  # type: ignore
 
             if self._embedder is None:

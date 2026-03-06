@@ -37,6 +37,8 @@ def test_add_knowledge_upserts_same_content_across_instances(tmp_path) -> None:
     assert node.tags == {"atomic", "dedup"}
     assert set(reloaded.concept_map) == {"memory", "reliability"}
     assert node.metadata["nested"] == {"safe": True, "merge": True}
+
+
 def test_semantic_search_uses_vector_index(tmp_path) -> None:
     kb = KnowledgeForge(persistence_path=tmp_path / "kb.json", embedder=_FakeEmbedder())
     expected = kb.add_knowledge("Memory vector search is enabled", tags=["memory"])
