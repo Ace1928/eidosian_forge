@@ -476,7 +476,9 @@ class GraphRAGIntegration:
             return "code_forge_benchmark"
         return str(payload.get("schema_version") or payload.get("stage") or "code_forge_artifact")
 
-    def _ingest_code_forge_artifacts(self, knowledge: Any, state: Dict[str, Any], scan_roots: List[Path]) -> Dict[str, Any]:
+    def _ingest_code_forge_artifacts(
+        self, knowledge: Any, state: Dict[str, Any], scan_roots: List[Path]
+    ) -> Dict[str, Any]:
         artifact_state = dict(state.get("code_forge_artifacts") or {})
         active_paths: set[str] = set()
         artifacts_seen = 0
@@ -552,7 +554,11 @@ class GraphRAGIntegration:
                 if isinstance(candidate_links, list):
                     unit_links = [row for row in candidate_links if isinstance(row, dict)]
             if not unit_links and path.name == "provenance_links.json":
-                gr_docs = ((payload.get("graphrag_links") or {}).get("documents")) if isinstance(payload.get("graphrag_links"), dict) else []
+                gr_docs = (
+                    ((payload.get("graphrag_links") or {}).get("documents"))
+                    if isinstance(payload.get("graphrag_links"), dict)
+                    else []
+                )
                 if isinstance(gr_docs, list):
                     unit_links = [row for row in gr_docs if isinstance(row, dict)]
 
@@ -655,13 +661,17 @@ class GraphRAGIntegration:
         node_ids: list[str] = []
         for payload in (state.get("files") or {}).values():
             if isinstance(payload, dict):
-                node_ids.extend([str(payload.get("root_node_id") or "")] + [str(x) for x in payload.get("chunk_node_ids") or []])
+                node_ids.extend(
+                    [str(payload.get("root_node_id") or "")] + [str(x) for x in payload.get("chunk_node_ids") or []]
+                )
         word_graph = state.get("word_graph") or {}
         if isinstance(word_graph, dict):
             node_ids.extend(str(x) for x in word_graph.get("node_ids") or [])
         for payload in (state.get("code_forge_artifacts") or {}).values():
             if isinstance(payload, dict):
-                node_ids.extend([str(payload.get("root_node_id") or "")] + [str(x) for x in payload.get("node_ids") or []])
+                node_ids.extend(
+                    [str(payload.get("root_node_id") or "")] + [str(x) for x in payload.get("node_ids") or []]
+                )
         return [node_id for node_id in dict.fromkeys(node_ids) if node_id]
 
     def _build_native_community_reports(self, knowledge: Any, state: Dict[str, Any]) -> Dict[str, Any]:
@@ -713,10 +723,14 @@ class GraphRAGIntegration:
                 }
             )
 
-        reports = sorted(reports, key=lambda row: (int(row.get("rating", 0)), len(row.get("node_ids", []))), reverse=True)
+        reports = sorted(
+            reports, key=lambda row: (int(row.get("rating", 0)), len(row.get("node_ids", []))), reverse=True
+        )
         json_path = output_dir / "native_community_reports.json"
         md_path = output_dir / "native_community_reports.md"
-        json_path.write_text(json.dumps({"generated_at": self._timestamp(), "reports": reports}, indent=2) + "\n", encoding="utf-8")
+        json_path.write_text(
+            json.dumps({"generated_at": self._timestamp(), "reports": reports}, indent=2) + "\n", encoding="utf-8"
+        )
 
         md_lines = ["# Native Community Reports", ""]
         for report in reports:

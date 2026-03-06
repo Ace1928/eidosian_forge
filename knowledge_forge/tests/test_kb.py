@@ -289,7 +289,9 @@ def test_graphrag_native_reports_written_after_index(tmp_path):
     workspace = tmp_path / "workspace"
     docs = workspace / "input"
     docs.mkdir(parents=True, exist_ok=True)
-    (docs / "architecture.md").write_text("Vector graph architecture links memory, code, and knowledge.", encoding="utf-8")
+    (docs / "architecture.md").write_text(
+        "Vector graph architecture links memory, code, and knowledge.", encoding="utf-8"
+    )
 
     grag = GraphRAGIntegration(
         graphrag_root=workspace,
