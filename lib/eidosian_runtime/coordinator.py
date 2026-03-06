@@ -42,9 +42,7 @@ def _now_utc() -> str:
 class ForgeRuntimeCoordinator:
     def __init__(self, status_path: str | Path | None = None) -> None:
         root = _forge_root()
-        self.status_path = (
-            Path(status_path) if status_path else root / "data" / "runtime" / "forge_coordinator_status.json"
-        )
+        self.status_path = Path(status_path) if status_path else root / "data" / "runtime" / "forge_coordinator_status.json"
         self.lock_path = self.status_path.with_suffix(self.status_path.suffix + ".lock")
         self.history_path = self.status_path.with_name("forge_runtime_trends.json")
         self._thread_lock = threading.RLock()
@@ -146,6 +144,54 @@ class ForgeRuntimeCoordinator:
             entries = payload.get("entries") if isinstance(payload.get("entries"), list) else []
             return entries[-max(1, int(limit)) :]
 
+    def trend_summary(self, limit: int = 120) -> dict[str, Any]:
+        entries = self.history(limit=max(1, int(limit)))
+        active_model_counts: list[int] = []
+        state_counts: dict[str, int] = {}
+        task_counts: dict[str, int] = {}
+        saturated = 0
+        for entry in entries:
+            if not isinstance(entry, dict):
+                continue
+            try:
+                active_model_counts.append(max(0, int(entry.get("active_model_count") or 0)))
+            except Exception:
+                active_model_counts.append(0)
+            state = str(entry.get("state") or "").strip().lower()
+            if state:
+                state_counts[state] = state_counts.get(state, 0) + 1
+            task = str(entry.get("task") or "").strip().lower()
+            if task:
+                task_counts[task] = task_counts.get(task, 0) + 1
+            policy = entry.get("policy") if isinstance(entry.get("policy"), dict) else {}
+            try:
+                max_instances = max(1, int(policy.get("max_active_model_instances", 1) or 1))
+            except Exception:
+                max_instances = 1
+            if active_model_counts[-1] >= max_instances:
+                saturated += 1
+
+        avg_models = 0.0
+        peak_models = 0
+        if active_model_counts:
+            avg_models = round(sum(active_model_counts) / len(active_model_counts), 3)
+            peak_models = max(active_model_counts)
+        top_tasks = [
+            {"task": task, "count": count}
+            for task, count in sorted(task_counts.items(), key=lambda kv: (-kv[1], kv[0]))[:8]
+        ]
+        return {
+            "contract": "eidos.runtime_trend_summary.v1",
+            "count": len(entries),
+            "average_active_models": avg_models,
+            "peak_active_models": peak_models,
+            "saturated_samples": saturated,
+            "state_counts": state_counts,
+            "top_tasks": top_tasks,
+            "latest": entries[-1] if entries else {},
+            "history": entries,
+        }
+
     def can_allocate(
         self,
         *,
@@ -160,16 +206,8 @@ class ForgeRuntimeCoordinator:
             policy = metadata.get("policy") if isinstance(metadata.get("policy"), dict) else {}
             active_models = [row for row in (payload.get("active_models") or []) if isinstance(row, dict)]
             current_owner = str(payload.get("owner") or "")
-            requested_families = {
-                str(row.get("family") or "").strip().lower()
-                for row in requested_models
-                if str(row.get("family") or "").strip()
-            }
-            active_families = {
-                str(row.get("family") or "").strip().lower()
-                for row in active_models
-                if str(row.get("family") or "").strip()
-            }
+            requested_families = {str(row.get("family") or "").strip().lower() for row in requested_models if str(row.get("family") or "").strip()}
+            active_families = {str(row.get("family") or "").strip().lower() for row in active_models if str(row.get("family") or "").strip()}
             max_instances = max(1, int(policy.get("max_active_model_instances", 1) or 1))
             max_families = max(1, int(policy.get("max_active_model_families", 1) or 1))
             if allow_same_owner and current_owner and current_owner == str(owner):
@@ -181,9 +219,7 @@ class ForgeRuntimeCoordinator:
                     "max_active_model_families": max_families,
                 }
             projected_instances = len(active_models) + len(requested_models)
-            projected_families = (
-                len(active_families | requested_families) if requested_families else len(active_families)
-            )
+            projected_families = len(active_families | requested_families) if requested_families else len(active_families)
             allowed = True
             reason = "ok"
             if projected_instances > max_instances:

@@ -34,10 +34,10 @@ from code_forge.digester.pipeline import build_duplication_index, build_repo_ind
 from code_forge.digester.schema import validate_output_dir
 from code_forge.ingest.runner import IngestionRunner
 from code_forge.library.db import CodeLibraryDB
-from eidos_mcp.config.models import get_model_config
 from eidosian_core import eidosian
-from eidosian_core.ports import get_service_port
 from eidosian_runtime import ForgeRuntimeCoordinator
+from eidosian_core.ports import get_service_port
+from eidos_mcp.config.models import get_model_config
 
 from knowledge_forge import GraphRAGIntegration
 
@@ -1163,6 +1163,19 @@ def run_pipeline(
     coordinator = ForgeRuntimeCoordinator(COORDINATOR_STATUS_PATH)
     coordinator_owner = f"living_pipeline:{run_id}"
 
+    def _phase_budget(requested_models: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+        requested_models = [row for row in (requested_models or []) if isinstance(row, dict)]
+        decision = coordinator.can_allocate(
+            owner=coordinator_owner,
+            requested_models=requested_models,
+            allow_same_owner=True,
+        )
+        return {
+            "decision": decision,
+            "requested_models": requested_models,
+            "saturated": not bool(decision.get("allowed")),
+        }
+
     def _phase_start(phase_name: str) -> float:
         active_models: list[dict[str, Any]] = []
         if phase_name == "word_forge":
@@ -1235,12 +1248,17 @@ def run_pipeline(
             shutil.copy2(src, dest)
         _phase_done("staging", phase_started)
 
+        word_budget = _phase_budget([{"family": "ollama", "model": "qwen3.5:2b", "role": "lexicon_enrichment"}])
         phase_started = _phase_start("word_forge")
-        word_forge_result = build_word_forge_lexicon(records, repo_root=repo_root, thinking_mode="on")
+        word_forge_result = build_word_forge_lexicon(
+            records,
+            repo_root=repo_root,
+            thinking_mode="off" if word_budget["saturated"] else "on",
+        )
+        word_forge_result["budget"] = word_budget
         _phase_done("word_forge", phase_started)
 
         if run_graphrag:
-            phase_started = _phase_start("graphrag")
             llm_port = get_service_port("graphrag_llm", default=8081, env_keys=("EIDOS_GRAPHRAG_LLM_PORT",))
             embed_port = get_service_port("graphrag_embedding", default=8082, env_keys=("EIDOS_GRAPHRAG_EMBED_PORT",))
             llm_fallback = _pick_sweep_model(repo_root, repo_root / "models" / "Qwen2.5-0.5B-Instruct-Q8_0.gguf")
@@ -1253,51 +1271,67 @@ def run_pipeline(
             )
             _write_workspace_settings(workspace_root, llm_port=llm_port, embed_port=embed_port)
             runtimes: list[tuple[subprocess.Popen[Any], Any]] = []
+            graphrag_budget = _phase_budget(
+                [
+                    {"family": "llama.cpp", "model": str(llm_model), "role": "graphrag_completion", "port": llm_port},
+                    {"family": "llama.cpp", "model": str(embed_model), "role": "graphrag_embedding", "port": embed_port},
+                ]
+            )
+            phase_started = _phase_start("graphrag")
             try:
-                coordinator.heartbeat(
-                    owner=coordinator_owner,
-                    task="graphrag",
-                    state="running",
-                    active_models=[
-                        {
-                            "family": "llama.cpp",
-                            "model": str(llm_model),
-                            "role": "graphrag_completion",
-                            "port": llm_port,
-                        },
-                        {
-                            "family": "llama.cpp",
-                            "model": str(embed_model),
-                            "role": "graphrag_embedding",
-                            "port": embed_port,
-                        },
-                    ],
-                    metadata={"run_id": run_id, "workspace_root": str(workspace_root)},
-                )
-                runtimes.append(_start_server(llm_model, llm_port, embedding=False))
-                runtimes.append(_start_server(embed_model, embed_port, embedding=True))
-                index_result = _run_graphrag_index(workspace_root, method=method, scan_roots=[workspace_input])
-                graphrag_result["indexed"] = True
-                graphrag_result["llm_model"] = str(llm_model)
-                graphrag_result["embed_model"] = str(embed_model)
-                graphrag_result["index_result"] = index_result
-                graphrag_result["report_summary"] = (
-                    index_result.get("community_reports") if isinstance(index_result, dict) else {}
-                )
-                graphrag_result["trend_summary"] = (
-                    index_result.get("report_trends") if isinstance(index_result, dict) else {}
-                )
-                graphrag_result["assessment_summary"] = (
-                    index_result.get("assessment") if isinstance(index_result, dict) else {}
-                )
-                for query in queries:
-                    answer = _run_graphrag_query(workspace_root, query, method="global")
-                    graphrag_result["queries"].append({"query": query, "answer": answer})
+                graphrag_result["budget"] = graphrag_budget
+                if graphrag_budget["saturated"]:
+                    graphrag_result["indexed"] = False
+                    graphrag_result["skipped"] = True
+                    graphrag_result["skip_reason"] = str((graphrag_budget["decision"] or {}).get("reason") or "budget_denied")
+                else:
+                    coordinator.heartbeat(
+                        owner=coordinator_owner,
+                        task="graphrag",
+                        state="running",
+                        active_models=[
+                            {"family": "llama.cpp", "model": str(llm_model), "role": "graphrag_completion", "port": llm_port},
+                            {"family": "llama.cpp", "model": str(embed_model), "role": "graphrag_embedding", "port": embed_port},
+                        ],
+                        metadata={"run_id": run_id, "workspace_root": str(workspace_root)},
+                    )
+                    runtimes.append(_start_server(llm_model, llm_port, embedding=False))
+                    runtimes.append(_start_server(embed_model, embed_port, embedding=True))
+                    index_result = _run_graphrag_index(workspace_root, method=method, scan_roots=[workspace_input])
+                    graphrag_result["indexed"] = True
+                    graphrag_result["llm_model"] = str(llm_model)
+                    graphrag_result["embed_model"] = str(embed_model)
+                    graphrag_result["index_result"] = index_result
+                    graphrag_result["report_summary"] = (
+                        index_result.get("community_reports") if isinstance(index_result, dict) else {}
+                    )
+                    graphrag_result["trend_summary"] = (
+                        index_result.get("report_trends") if isinstance(index_result, dict) else {}
+                    )
+                    graphrag_result["assessment_summary"] = (
+                        index_result.get("assessment") if isinstance(index_result, dict) else {}
+                    )
+                    for query in queries:
+                        answer = _run_graphrag_query(workspace_root, query, method="global")
+                        graphrag_result["queries"].append({"query": query, "answer": answer})
             finally:
                 _stop_servers(runtimes)
             _phase_done("graphrag", phase_started)
 
+        living_doc_budget = _phase_budget(
+            [{"family": "ollama", "model": str((living_doc_config or LivingDocumentationConfig()).model), "role": "living_documentation"}]
+        )
         phase_started = _phase_start("living_documentation")
+        effective_doc_config = living_doc_config or LivingDocumentationConfig()
+        if living_doc_budget["saturated"]:
+            effective_doc_config = LivingDocumentationConfig(
+                enabled=effective_doc_config.enabled,
+                model=effective_doc_config.model,
+                thinking_mode="off",
+                timeout=effective_doc_config.timeout,
+                max_tokens=effective_doc_config.max_tokens,
+                temperature=effective_doc_config.temperature,
+            )
         living_doc_result = generate_living_documentation(
             run_root,
             repo_root=repo_root,
@@ -1309,8 +1343,9 @@ def run_pipeline(
             code_report=code_report,
             graphrag_result=graphrag_result,
             word_forge_result=word_forge_result,
-            config=living_doc_config or LivingDocumentationConfig(),
+            config=effective_doc_config,
         )
+        living_doc_result["budget"] = living_doc_budget
         _phase_done("living_documentation", phase_started)
     except Exception as exc:
         _write_pipeline_status(
@@ -1400,11 +1435,7 @@ def run_pipeline(
         task="completed",
         state="idle",
         active_models=[],
-        metadata={
-            "run_id": run_id,
-            "records_total": records_total,
-            "assessment": graphrag_result.get("assessment_summary"),
-        },
+        metadata={"run_id": run_id, "records_total": records_total, "assessment": graphrag_result.get("assessment_summary")},
     )
     return manifest
 

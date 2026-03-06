@@ -326,6 +326,29 @@
                     <button id="toggle-pin" class="secondary">Pin Selection</button>
                 </div>
             </div>
+            <div class="field-row">
+                <div class="field">
+                    <label for="session-name">Session Name</label>
+                    <input id="session-name" type="text" value="atlas-default" placeholder="atlas-session-name">
+                </div>
+                <div class="field">
+                    <label for="session-select">Saved Session</label>
+                    <select id="session-select">
+                        <option value="">Select a saved session</option>
+                    </select>
+                </div>
+            </div>
+            <div class="field-row">
+                <div class="field">
+                    <button id="save-session">Save Session</button>
+                </div>
+                <div class="field">
+                    <button id="load-session" class="secondary">Load Session</button>
+                </div>
+                <div class="field">
+                    <button id="delete-session" class="secondary">Delete Session</button>
+                </div>
+            </div>
         </div>
 
         <div class="section-title">
@@ -338,6 +361,12 @@
             <span id="history-status" class="status-line">Loading</span>
         </div>
         <div id="runtime-history" class="mini-list"></div>
+        <div class="section-title" style="margin-top:16px;">
+            <h3>Runtime Trends</h3>
+            <span id="trend-status" class="status-line">Loading</span>
+        </div>
+        <svg id="runtime-trend-chart" viewBox="0 0 520 120" preserveAspectRatio="none" style="width:100%;height:120px;border:1px solid rgba(144,171,192,0.16);border-radius:16px;background:rgba(5,10,18,0.72);"></svg>
+        <div id="runtime-trend-summary" class="mini-list"></div>
     </section>
 
     <section class="explorer-panel graph-wrap">
@@ -395,14 +424,23 @@ const metricNodesEl = document.getElementById("metric-nodes");
 const metricEdgesEl = document.getElementById("metric-edges");
 const historyStatusEl = document.getElementById("history-status");
 const runtimeHistoryEl = document.getElementById("runtime-history");
+const trendStatusEl = document.getElementById("trend-status");
+const runtimeTrendChartEl = document.getElementById("runtime-trend-chart");
+const runtimeTrendSummaryEl = document.getElementById("runtime-trend-summary");
 const neighborDepthEl = document.getElementById("neighbor-depth");
 const togglePinEl = document.getElementById("toggle-pin");
+const sessionNameEl = document.getElementById("session-name");
+const sessionSelectEl = document.getElementById("session-select");
+const saveSessionEl = document.getElementById("save-session");
+const loadSessionEl = document.getElementById("load-session");
+const deleteSessionEl = document.getElementById("delete-session");
 
 let unifiedGraph = {nodes: [], edges: [], summary: {}};
 let runtimeOverview = {{ forge_overview | tojson }};
 let activeNode = null;
 let graphOverride = null;
 let pinnedNodes = new Set();
+let runtimeTrends = {history: [], latest: {}, top_tasks: []};
 
 function escapeHtml(text) {
     return String(text || "")
@@ -517,6 +555,52 @@ function renderGraph() {
             loadNodeDetails(domain, refId, match);
         });
     });
+}
+
+function sessionPayload() {
+    return {
+        id: sessionNameEl.value.trim() || "atlas-default",
+        name: sessionNameEl.value.trim() || "atlas-default",
+        query: queryEl.value.trim(),
+        domain_filter: domainFilterEl.value,
+        edge_filter: edgeFilterEl.value,
+        neighbor_depth: Number(neighborDepthEl.value || "2"),
+        active_node_id: activeNode?.id || "",
+        pinned_nodes: Array.from(pinnedNodes),
+        graph_override: graphOverride || {nodes: [], edges: [], summary: {}},
+    };
+}
+
+function applySession(payload) {
+    const session = payload?.session || payload;
+    if (!session) {
+        return;
+    }
+    queryEl.value = session.query || "";
+    domainFilterEl.value = session.domain_filter || "all";
+    edgeFilterEl.value = session.edge_filter || "all";
+    neighborDepthEl.value = String(session.neighbor_depth || 2);
+    sessionNameEl.value = session.name || session.id || "atlas-default";
+    pinnedNodes = new Set((session.pinned_nodes || []).map((item) => String(item)));
+    graphOverride = session.graph_override || null;
+    const focusId = String(session.active_node_id || "");
+    const sourceGraph = graphOverride || unifiedGraph;
+    activeNode = (sourceGraph.nodes || []).find((node) => node.id === focusId) || null;
+    renderGraph();
+    if (activeNode) {
+        loadNodeDetails(activeNode.domain, activeNode.ref_id, activeNode);
+    }
+}
+
+function renderSessionOptions(payload) {
+    const sessions = payload.sessions || [];
+    const current = sessionSelectEl.value;
+    sessionSelectEl.innerHTML = ['<option value="">Select a saved session</option>'].concat(
+        sessions.map((row) => `<option value="${escapeHtml(row.id)}">${escapeHtml(row.name || row.id)} (${row.node_count || 0}n/${row.edge_count || 0}e)</option>`)
+    ).join("");
+    if (current && sessions.some((row) => row.id === current)) {
+        sessionSelectEl.value = current;
+    }
 }
 
 function resultCard(domain, row) {
@@ -697,6 +781,91 @@ async function loadRuntimeHistory() {
     `).join("") : '<div class="empty">No runtime history available.</div>';
 }
 
+function renderRuntimeTrendChart(payload) {
+    runtimeTrends = payload || {history: [], latest: {}, top_tasks: []};
+    const rows = Array.isArray(payload?.history) ? payload.history.slice(-24) : [];
+    trendStatusEl.textContent = `${rows.length} samples | avg models=${Number(payload?.average_active_models || 0).toFixed(2)} | peak=${payload?.peak_active_models || 0}`;
+    if (!rows.length) {
+        runtimeTrendChartEl.innerHTML = '<text x="24" y="64" fill="rgba(144,171,192,0.82)" font-size="14">No runtime trend data available.</text>';
+        runtimeTrendSummaryEl.innerHTML = '<div class="empty">No trend summary available.</div>';
+        return;
+    }
+    const maxModels = Math.max(1, ...rows.map((row) => Number(row.active_model_count || 0)));
+    const points = rows.map((row, index) => {
+        const x = 24 + (index * (472 / Math.max(1, rows.length - 1)));
+        const y = 96 - ((Number(row.active_model_count || 0) / maxModels) * 72);
+        return `${x},${y}`;
+    }).join(" ");
+    const markers = rows.map((row, index) => {
+        const x = 24 + (index * (472 / Math.max(1, rows.length - 1)));
+        const y = 96 - ((Number(row.active_model_count || 0) / maxModels) * 72);
+        return `<circle cx="${x}" cy="${y}" r="3.2" fill="${row.state === "error" ? "#ff8fab" : "#5cc8ff"}"></circle>`;
+    }).join("");
+    runtimeTrendChartEl.innerHTML = `
+        <line x1="24" y1="96" x2="496" y2="96" stroke="rgba(144,171,192,0.24)" stroke-width="1"></line>
+        <line x1="24" y1="24" x2="24" y2="96" stroke="rgba(144,171,192,0.24)" stroke-width="1"></line>
+        <polyline points="${points}" fill="none" stroke="#5cc8ff" stroke-width="2.4"></polyline>
+        ${markers}
+        <text x="26" y="18" fill="rgba(144,171,192,0.82)" font-size="11">active models</text>
+        <text x="458" y="112" fill="rgba(144,171,192,0.82)" font-size="11">recent</text>
+    `;
+    const topTasks = (payload?.top_tasks || []).slice(0, 4).map((row) => `
+        <button type="button">
+            <strong>${escapeHtml(row.task || "idle")}</strong><br>
+            <span style="color:var(--text-secondary)">${escapeHtml(String(row.count || 0))} samples</span>
+        </button>
+    `).join("");
+    runtimeTrendSummaryEl.innerHTML = topTasks || '<div class="empty">No trend summary available.</div>';
+}
+
+async function loadRuntimeTrends() {
+    const resp = await fetch("/api/runtime/trends?limit=24");
+    const payload = await resp.json();
+    renderRuntimeTrendChart(payload);
+}
+
+async function loadSessions() {
+    const resp = await fetch("/api/explorer/sessions?limit=24");
+    const payload = await resp.json();
+    renderSessionOptions(payload);
+}
+
+async function saveSession() {
+    const resp = await fetch("/api/explorer/session", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(sessionPayload()),
+    });
+    const payload = await resp.json();
+    if (payload.saved) {
+        sessionSelectEl.value = payload.session.id;
+        sessionNameEl.value = payload.session.name || payload.session.id;
+        await loadSessions();
+    }
+}
+
+async function loadSelectedSession() {
+    const id = sessionSelectEl.value.trim();
+    if (!id) {
+        return;
+    }
+    const resp = await fetch(`/api/explorer/session/${encodeURIComponent(id)}`);
+    const payload = await resp.json();
+    if (payload.found) {
+        applySession(payload);
+    }
+}
+
+async function deleteSelectedSession() {
+    const id = sessionSelectEl.value.trim();
+    if (!id) {
+        return;
+    }
+    await fetch(`/api/explorer/session/${encodeURIComponent(id)}`, {method: "DELETE"});
+    sessionSelectEl.value = "";
+    await loadSessions();
+}
+
 async function loadUnifiedGraph() {
     const resp = await fetch("/api/graph/unified?limit_per_domain=80&limit_edges=320");
     unifiedGraph = await resp.json();
@@ -727,6 +896,15 @@ togglePinEl.addEventListener("click", () => {
     pinnedNodes = next;
     renderGraph();
 });
+saveSessionEl.addEventListener("click", saveSession);
+loadSessionEl.addEventListener("click", loadSelectedSession);
+deleteSessionEl.addEventListener("click", deleteSelectedSession);
+sessionSelectEl.addEventListener("change", () => {
+    const selected = sessionSelectEl.selectedOptions[0];
+    if (selected && sessionSelectEl.value) {
+        sessionNameEl.value = selected.textContent.split(" (")[0];
+    }
+});
 domainFilterEl.addEventListener("change", renderGraph);
 edgeFilterEl.addEventListener("change", renderGraph);
 queryEl.addEventListener("keydown", (event) => {
@@ -735,7 +913,8 @@ queryEl.addEventListener("keydown", (event) => {
     }
 });
 
-Promise.all([loadRuntime(), loadUnifiedGraph()]).then(() => runUnifiedSearch());
+Promise.all([loadRuntime(), loadUnifiedGraph(), loadSessions()]).then(() => runUnifiedSearch());
 loadRuntimeHistory();
+loadRuntimeTrends();
 </script>
 {% endblock %}

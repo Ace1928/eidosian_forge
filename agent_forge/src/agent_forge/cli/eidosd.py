@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 from pathlib import Path as _P
 
 from eidosian_core import eidosian
+from eidosian_runtime import ForgeRuntimeCoordinator
 
 try:
     import yaml
@@ -50,6 +51,16 @@ def _runtime_snapshot(repo_root: str | _P) -> dict:
         "scheduler": scheduler,
         "coordinator": coordinator,
     }
+
+
+def _runtime_trends(repo_root: str | _P, limit: int = 24) -> dict:
+    root = _P(repo_root).expanduser().resolve()
+    runtime_dir = root / "data" / "runtime"
+    coordinator_path = runtime_dir / "forge_coordinator_status.json"
+    try:
+        return ForgeRuntimeCoordinator(coordinator_path).trend_summary(limit=max(1, int(limit)))
+    except Exception:
+        return {"count": 0, "average_active_models": 0.0, "peak_active_models": 0, "saturated_samples": 0, "history": []}
 
 
 @eidosian()
@@ -95,6 +106,7 @@ def run_once(
     E.append(state_dir, "daemon.beat", payload, tags=["daemon", "beat"])
     S.append_journal(state_dir, "daemon.beat", etype="daemon.beat")
     runtime = _runtime_snapshot(repo_root)
+    runtime_trends = _runtime_trends(repo_root, limit=24)
     scheduler = runtime.get("scheduler") if isinstance(runtime.get("scheduler"), dict) else {}
     pipeline = runtime.get("pipeline") if isinstance(runtime.get("pipeline"), dict) else {}
     coordinator = runtime.get("coordinator") if isinstance(runtime.get("coordinator"), dict) else {}
@@ -109,6 +121,9 @@ def run_once(
         "coordinator_task": str(coordinator.get("task") or ""),
         "active_model_count": len(active_models),
         "active_models": active_models,
+        "runtime_average_active_models": runtime_trends.get("average_active_models"),
+        "runtime_peak_active_models": runtime_trends.get("peak_active_models"),
+        "runtime_saturated_samples": runtime_trends.get("saturated_samples"),
     }
     E.append(state_dir, "forge.runtime", runtime_payload, tags=["runtime", "forge"])
     if runtime_payload["active_model_count"] is not None:
@@ -118,6 +133,9 @@ def run_once(
         ("forge.runtime.scheduler_cycle", scheduler.get("cycle")),
         ("forge.runtime.scheduler_failures", scheduler.get("consecutive_failures")),
         ("forge.runtime.records_total", pipeline.get("records_total")),
+        ("forge.runtime.average_active_models", runtime_trends.get("average_active_models")),
+        ("forge.runtime.peak_active_models", runtime_trends.get("peak_active_models")),
+        ("forge.runtime.saturated_samples", runtime_trends.get("saturated_samples")),
     ):
         try:
             if raw is not None:
@@ -282,14 +300,7 @@ def main(argv: list[str] | None = None) -> int:
     cpu = OM.CpuPercent()
     if args.once:
         try:
-            run_once(
-                args.state_dir,
-                repo_root=args.repo_root,
-                tick_secs=tick_secs,
-                cpu=cpu,
-                kernel=kernel,
-                supervisor=supervisor,
-            )
+            run_once(args.state_dir, repo_root=args.repo_root, tick_secs=tick_secs, cpu=cpu, kernel=kernel, supervisor=supervisor)
             return 0
         except Exception as e:
             print(f"eidosd run error: {e}", file=sys.stderr)
@@ -307,14 +318,7 @@ def main(argv: list[str] | None = None) -> int:
 
         def _beat() -> None:
             nonlocal beats
-            run_once(
-                args.state_dir,
-                repo_root=args.repo_root,
-                tick_secs=tick_secs,
-                cpu=cpu,
-                kernel=kernel,
-                supervisor=supervisor,
-            )
+            run_once(args.state_dir, repo_root=args.repo_root, tick_secs=tick_secs, cpu=cpu, kernel=kernel, supervisor=supervisor)
             beats += 1
             if beats % maint_every == 0:
                 try:

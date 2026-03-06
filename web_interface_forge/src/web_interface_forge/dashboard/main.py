@@ -4,7 +4,7 @@ import json
 import logging
 import os
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -38,6 +38,7 @@ RUNTIME_DIR = FORGE_ROOT / "data" / "runtime"
 PIPELINE_STATUS = RUNTIME_DIR / "living_pipeline_status.json"
 SCHEDULER_STATUS = RUNTIME_DIR / "eidos_scheduler_status.json"
 COORDINATOR_STATUS = RUNTIME_DIR / "forge_coordinator_status.json"
+ATLAS_SESSION_PATH = RUNTIME_DIR / "atlas_explorer_sessions.json"
 WORD_GRAPH_PATH = FORGE_ROOT / "data" / "eidos_semantic_graph.json"
 KB_PATH = FORGE_ROOT / "data" / "kb.json"
 MEMORY_DIR = FORGE_ROOT / "data" / "tiered_memory"
@@ -401,6 +402,135 @@ def get_runtime_history(limit: int = 24) -> Dict[str, Any]:
     }
 
 
+def get_runtime_trend_summary(limit: int = 72) -> Dict[str, Any]:
+    limit = max(1, int(limit))
+    if ForgeRuntimeCoordinator is not None:
+        try:
+            return ForgeRuntimeCoordinator(COORDINATOR_STATUS).trend_summary(limit=limit)
+        except Exception:
+            pass
+    payload = get_runtime_history(limit=limit)
+    history = [row for row in (payload.get("history") or []) if isinstance(row, dict)]
+    active_counts = [max(0, int(row.get("active_model_count") or 0)) for row in history]
+    state_counts: Dict[str, int] = {}
+    task_counts: Dict[str, int] = {}
+    for row in history:
+        state = str(row.get("state") or "").strip().lower()
+        task = str(row.get("task") or "").strip().lower()
+        if state:
+            state_counts[state] = state_counts.get(state, 0) + 1
+        if task:
+            task_counts[task] = task_counts.get(task, 0) + 1
+    top_tasks = [
+        {"task": task, "count": count}
+        for task, count in sorted(task_counts.items(), key=lambda kv: (-kv[1], kv[0]))[:8]
+    ]
+    return {
+        "contract": "eidos.runtime_trend_summary.v1",
+        "count": len(history),
+        "average_active_models": round(sum(active_counts) / len(active_counts), 3) if active_counts else 0.0,
+        "peak_active_models": max(active_counts) if active_counts else 0,
+        "saturated_samples": 0,
+        "state_counts": state_counts,
+        "top_tasks": top_tasks,
+        "latest": history[-1] if history else {},
+        "history": history,
+    }
+
+
+def _read_session_store() -> Dict[str, Any]:
+    payload = _read_json_dict(ATLAS_SESSION_PATH)
+    payload.setdefault("contract", "eidos.atlas_sessions.v1")
+    payload.setdefault("sessions", [])
+    sessions = payload.get("sessions")
+    if not isinstance(sessions, list):
+        payload["sessions"] = []
+    return payload
+
+
+def _write_session_store(payload: Dict[str, Any]) -> None:
+    ATLAS_SESSION_PATH.parent.mkdir(parents=True, exist_ok=True)
+    ATLAS_SESSION_PATH.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+
+def list_explorer_sessions(limit: int = 24) -> Dict[str, Any]:
+    payload = _read_session_store()
+    rows = [row for row in (payload.get("sessions") or []) if isinstance(row, dict)]
+    rows.sort(key=lambda row: str(row.get("updated_at") or ""), reverse=True)
+    trimmed = rows[: max(1, int(limit))]
+    return {
+        "contract": payload.get("contract"),
+        "count": len(trimmed),
+        "sessions": [
+            {
+                "id": row.get("id"),
+                "name": row.get("name"),
+                "updated_at": row.get("updated_at"),
+                "query": row.get("query"),
+                "domain_filter": row.get("domain_filter"),
+                "edge_filter": row.get("edge_filter"),
+                "pinned_count": len(row.get("pinned_nodes") or []),
+                "node_count": len(((row.get("graph_override") or {}).get("nodes")) or []),
+                "edge_count": len(((row.get("graph_override") or {}).get("edges")) or []),
+            }
+            for row in trimmed
+        ],
+    }
+
+
+def get_explorer_session(session_id: str) -> Dict[str, Any]:
+    ref = str(session_id or "").strip()
+    if not ref:
+        return {"found": False}
+    payload = _read_session_store()
+    for row in payload.get("sessions") or []:
+        if isinstance(row, dict) and str(row.get("id") or "") == ref:
+            return {"found": True, "session": row}
+    return {"found": False}
+
+
+def save_explorer_session(raw: Dict[str, Any]) -> Dict[str, Any]:
+    now = datetime.now(timezone.utc).isoformat()
+    session_id = str(raw.get("id") or raw.get("name") or f"atlas-{now}").strip().replace(" ", "_")
+    name = str(raw.get("name") or session_id).strip() or session_id
+    graph_override = raw.get("graph_override") if isinstance(raw.get("graph_override"), dict) else {}
+    payload = _read_session_store()
+    session = {
+        "id": session_id,
+        "name": name,
+        "updated_at": now,
+        "query": str(raw.get("query") or "").strip(),
+        "domain_filter": str(raw.get("domain_filter") or "all").strip() or "all",
+        "edge_filter": str(raw.get("edge_filter") or "all").strip() or "all",
+        "neighbor_depth": max(1, int(raw.get("neighbor_depth") or 1)),
+        "active_node_id": str(raw.get("active_node_id") or "").strip(),
+        "pinned_nodes": [str(item) for item in (raw.get("pinned_nodes") or []) if str(item).strip()][:240],
+        "graph_override": {
+            "nodes": [row for row in (graph_override.get("nodes") or []) if isinstance(row, dict)][:800],
+            "edges": [row for row in (graph_override.get("edges") or []) if isinstance(row, dict)][:1600],
+            "summary": graph_override.get("summary") if isinstance(graph_override.get("summary"), dict) else {},
+        },
+    }
+    sessions = [row for row in (payload.get("sessions") or []) if isinstance(row, dict) and str(row.get("id") or "") != session_id]
+    sessions.insert(0, session)
+    payload["sessions"] = sessions[:32]
+    _write_session_store(payload)
+    return {"saved": True, "session": session, "count": len(payload["sessions"])}
+
+
+def delete_explorer_session(session_id: str) -> Dict[str, Any]:
+    ref = str(session_id or "").strip()
+    payload = _read_session_store()
+    original = len(payload.get("sessions") or [])
+    payload["sessions"] = [
+        row for row in (payload.get("sessions") or []) if isinstance(row, dict) and str(row.get("id") or "") != ref
+    ]
+    changed = len(payload["sessions"]) != original
+    if changed:
+        _write_session_store(payload)
+    return {"deleted": changed, "count": len(payload.get("sessions") or [])}
+
+
 
 def get_word_forge_snapshot() -> Dict[str, Any]:
     payload = _word_graph_payload()
@@ -489,6 +619,7 @@ def get_forge_overview() -> Dict[str, Any]:
         "documents": get_doc_snapshot(),
         "pipeline": get_pipeline_snapshot(),
         "coordinator": get_runtime_coordinator(),
+        "runtime_trends": get_runtime_trend_summary(limit=48),
         "word_forge": get_word_forge_snapshot(),
         "code_forge": get_code_library_snapshot(),
         "knowledge": get_knowledge_snapshot(),
@@ -1079,6 +1210,11 @@ async def api_runtime_history(limit: int = 24):
     return JSONResponse(get_runtime_history(limit=max(1, int(limit))))
 
 
+@app.get("/api/runtime/trends")
+async def api_runtime_trends(limit: int = 72):
+    return JSONResponse(get_runtime_trend_summary(limit=max(1, int(limit))))
+
+
 @app.get("/api/graph/overview")
 async def api_graph_overview():
     return {
@@ -1121,6 +1257,29 @@ async def api_explorer_node(domain: str, node_id: str):
 @app.get("/api/explorer/neighbors/{domain}/{node_id:path}")
 async def api_explorer_neighbors(domain: str, node_id: str, limit: int = 20, depth: int = 1):
     return JSONResponse(get_graph_neighbors(domain, node_id, limit=max(1, int(limit)), depth=max(1, int(depth))))
+
+
+@app.get("/api/explorer/sessions")
+async def api_explorer_sessions(limit: int = 24):
+    return JSONResponse(list_explorer_sessions(limit=max(1, int(limit))))
+
+
+@app.get("/api/explorer/session/{session_id}")
+async def api_explorer_session(session_id: str):
+    return JSONResponse(get_explorer_session(session_id))
+
+
+@app.post("/api/explorer/session")
+async def api_explorer_session_save(request: Request):
+    payload = await request.json()
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=400, detail="JSON object required")
+    return JSONResponse(save_explorer_session(payload))
+
+
+@app.delete("/api/explorer/session/{session_id}")
+async def api_explorer_session_delete(session_id: str):
+    return JSONResponse(delete_explorer_session(session_id))
 
 
 @app.get("/api/memory/search")

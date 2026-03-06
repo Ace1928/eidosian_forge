@@ -1,7 +1,7 @@
-import json
 import sqlite3
 import subprocess
 import sys
+import json
 from pathlib import Path
 
 from core import db as DB
@@ -41,6 +41,18 @@ def test_eidosd_once(tmp_path: Path):
         json.dumps({"state": "running", "task": "word_forge", "active_models": [{"model": "qwen3.5:2b"}]}),
         encoding="utf-8",
     )
+    (runtime_dir / "forge_runtime_trends.json").write_text(
+        json.dumps(
+            {
+                "contract": "eidos.runtime_trends.v1",
+                "entries": [
+                    {"task": "word_forge", "state": "running", "active_model_count": 1, "policy": {"max_active_model_instances": 2}},
+                    {"task": "sleep", "state": "idle", "active_model_count": 0, "policy": {"max_active_model_instances": 2}},
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
     cmd = [sys.executable, str(EIDOSD), "--state-dir", str(state_dir), "--repo-root", str(repo_root), "--once"]
     res = subprocess.run(cmd, capture_output=True, text=True, cwd=str(REPO_ROOT))
     assert res.returncode == 0, res.stderr
@@ -56,6 +68,8 @@ def test_eidosd_once(tmp_path: Path):
     runtime_event = next(evt for evt in all_events if evt.get("type") == "forge.runtime")
     assert runtime_event["data"]["pipeline_phase"] == "word_forge"
     assert runtime_event["data"]["active_model_count"] == 1
+    assert runtime_event["data"]["runtime_peak_active_models"] == 1
+    assert runtime_event["data"]["runtime_average_active_models"] == 0.5
 
     journal = S.iter_journal(state_dir, limit=None)
     assert len(journal) >= 1

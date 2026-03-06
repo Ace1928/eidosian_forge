@@ -133,6 +133,21 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
     )
     monkeypatch.setattr(
         dashboard,
+        "get_runtime_trend_summary",
+        lambda limit=72: {
+            "count": 2,
+            "average_active_models": 0.5,
+            "peak_active_models": 1,
+            "saturated_samples": 0,
+            "top_tasks": [{"task": "word_forge", "count": 1}],
+            "history": [
+                {"task": "word_forge", "state": "running", "active_model_count": 1},
+                {"task": "sleep", "state": "idle", "active_model_count": 0},
+            ],
+        },
+    )
+    monkeypatch.setattr(
+        dashboard,
         "get_memory_snapshot",
         lambda: {
             "count": 3,
@@ -191,6 +206,7 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
             "summary": {"node_count": 1, "edge_count": 0, "depth": depth},
         },
     )
+    monkeypatch.setattr(dashboard, "ATLAS_SESSION_PATH", data_runtime / "atlas_explorer_sessions.json")
 
     with TestClient(dashboard.app) as client:
         resp = client.get("/api/doc/status")
@@ -212,6 +228,8 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         assert coordinator_payload["task"] == "living_documentation"
         history_payload = client.get("/api/runtime/history").json()
         assert history_payload["count"] >= 1
+        trend_payload = client.get("/api/runtime/trends").json()
+        assert trend_payload["peak_active_models"] == 1
 
         graph_payload = client.get("/api/graph/search?query=graph").json()
         assert graph_payload["count"] == 1
@@ -241,6 +259,27 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         neighbor_payload = client.get("/api/explorer/neighbors/knowledge/k1").json()
         assert neighbor_payload["summary"]["node_count"] == 1
         assert neighbor_payload["summary"]["depth"] == 1
+        save_payload = client.post(
+            "/api/explorer/session",
+            json={
+                "id": "atlas-runtime",
+                "name": "atlas-runtime",
+                "query": "graph runtime",
+                "domain_filter": "knowledge",
+                "edge_filter": "all",
+                "neighbor_depth": 2,
+                "pinned_nodes": ["knowledge:k1"],
+                "graph_override": {"nodes": [{"id": "knowledge:k1", "domain": "knowledge"}], "edges": [], "summary": {}},
+            },
+        ).json()
+        assert save_payload["saved"] is True
+        sessions_payload = client.get("/api/explorer/sessions").json()
+        assert sessions_payload["count"] == 1
+        session_payload = client.get("/api/explorer/session/atlas-runtime").json()
+        assert session_payload["found"] is True
+        assert session_payload["session"]["query"] == "graph runtime"
+        delete_payload = client.delete("/api/explorer/session/atlas-runtime").json()
+        assert delete_payload["deleted"] is True
 
 
 def test_browse_blocks_path_traversal() -> None:
