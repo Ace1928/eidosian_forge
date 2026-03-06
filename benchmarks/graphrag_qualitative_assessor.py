@@ -232,13 +232,88 @@ def _require_pandas():
     return pd
 
 
+def _load_native_reports(output_dir: Path) -> dict[str, Any] | None:
+    path = output_dir / "native_community_reports.json"
+    if not path.exists():
+        return None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    if not isinstance(payload, dict):
+        return None
+    reports = payload.get("reports")
+    if not isinstance(reports, list):
+        return None
+    aggregate = payload.get("aggregate") if isinstance(payload.get("aggregate"), dict) else {}
+    return {
+        "generated_at": payload.get("generated_at"),
+        "aggregate": aggregate,
+        "reports": [row for row in reports if isinstance(row, dict)],
+        "path": str(path),
+    }
+
+
+def _extract_expected_entity_hits_from_texts(texts: Iterable[str]) -> list[str]:
+    joined = "\n".join(str(text or "").upper() for text in texts)
+    return sorted({token for token in EXPECTED_ENTITIES if token in joined})
+
+
+def _average_native_link_density(reports: list[dict[str, Any]]) -> float:
+    values: list[float] = []
+    for row in reports:
+        metrics = row.get("metrics") if isinstance(row.get("metrics"), dict) else {}
+        try:
+            values.append(float(metrics.get("link_density") or 0.0))
+        except Exception:
+            continue
+    return _safe_ratio(sum(values), len(values))
+
+
+def _load_native_artifacts(output_dir: Path, artifacts: dict[str, Any]) -> bool:
+    payload = _load_native_reports(output_dir)
+    if not payload:
+        return False
+    reports = payload.get("reports") or []
+    texts: list[str] = []
+    placeholder = False
+    node_ids: set[str] = set()
+    for row in reports:
+        title = str(row.get("title") or "")
+        summary = str(row.get("summary") or "")
+        findings = row.get("findings")
+        if not isinstance(findings, list):
+            findings = []
+        joined_findings = " ".join(str(item) for item in findings)
+        combined = " ".join(part for part in (title, summary, joined_findings) if part).lower()
+        texts.append(combined)
+        if any(marker in combined for marker in PLACEHOLDER_MARKERS):
+            placeholder = True
+        row_node_ids = row.get("node_ids")
+        if isinstance(row_node_ids, list):
+            node_ids.update(str(item) for item in row_node_ids if str(item).strip())
+
+    aggregate = payload.get("aggregate") if isinstance(payload.get("aggregate"), dict) else {}
+    artifacts["artifact_mode"] = "native_json"
+    artifacts["native_reports_path"] = payload.get("path")
+    artifacts["community_reports_count"] = int(len(reports))
+    artifacts["community_reports_placeholder"] = placeholder
+    artifacts["community_summaries"] = [str(row.get("summary") or "") for row in reports[:5]]
+    artifacts["expected_entity_hits"] = _extract_expected_entity_hits_from_texts(texts)
+    artifacts["entities_count"] = len(node_ids)
+    artifacts["relationships_count"] = 0
+    artifacts["native_average_quality_score"] = _to_float(aggregate.get("average_quality_score"), default=0.0)
+    artifacts["native_average_link_density"] = _average_native_link_density(reports)
+    return True
+
+
 def load_artifacts(workspace_root: Path, metrics_path: Path | None) -> dict[str, Any]:
-    pd = _require_pandas()
     output_dir = workspace_root / "output"
     stats_path = output_dir / "stats.json"
     entities_path = output_dir / "entities.parquet"
     relationships_path = output_dir / "relationships.parquet"
     community_reports_path = output_dir / "community_reports.parquet"
+    native_reports_path = output_dir / "native_community_reports.json"
 
     artifacts: dict[str, Any] = {
         "workspace_root": str(workspace_root),
@@ -248,40 +323,55 @@ def load_artifacts(workspace_root: Path, metrics_path: Path | None) -> dict[str,
             "entities": str(entities_path),
             "relationships": str(relationships_path),
             "community_reports": str(community_reports_path),
+            "native_community_reports": str(native_reports_path),
         },
         "missing_files": [],
+        "artifact_mode": "missing",
     }
-
-    for name, path in (
-        ("stats", stats_path),
-        ("entities", entities_path),
-        ("relationships", relationships_path),
-        ("community_reports", community_reports_path),
-    ):
-        if not path.exists():
-            artifacts["missing_files"].append(name)
 
     if stats_path.exists():
         artifacts["stats"] = json.loads(stats_path.read_text())
-
-    if entities_path.exists():
-        entities_df = pd.read_parquet(entities_path)
-        artifacts["entities_count"] = int(len(entities_df))
-        titles = [str(v).upper() for v in entities_df.get("title", [])]
-        artifacts["entity_titles"] = titles
-        artifacts["expected_entity_hits"] = sorted({token for token in EXPECTED_ENTITIES if any(token in t for t in titles)})
     else:
-        artifacts["entities_count"] = 0
-        artifacts["entity_titles"] = []
-        artifacts["expected_entity_hits"] = []
+        artifacts["missing_files"].append("stats")
 
-    if relationships_path.exists():
-        relationships_df = pd.read_parquet(relationships_path)
-        artifacts["relationships_count"] = int(len(relationships_df))
-    else:
-        artifacts["relationships_count"] = 0
+    artifacts["entities_count"] = 0
+    artifacts["entity_titles"] = []
+    artifacts["expected_entity_hits"] = []
+    artifacts["relationships_count"] = 0
+    artifacts["community_reports_count"] = 0
+    artifacts["community_reports_placeholder"] = True
+    artifacts["community_summaries"] = []
+    artifacts["native_average_quality_score"] = 0.0
+    artifacts["native_average_link_density"] = 0.0
 
-    if community_reports_path.exists():
+    native_loaded = _load_native_artifacts(output_dir, artifacts)
+    if native_loaded:
+        if not native_reports_path.exists():
+            artifacts["missing_files"].append("native_community_reports")
+        if not entities_path.exists():
+            artifacts["missing_files"].append("entities")
+        if not relationships_path.exists():
+            artifacts["missing_files"].append("relationships")
+    elif community_reports_path.exists():
+        pd = _require_pandas()
+        artifacts["artifact_mode"] = "parquet"
+        if entities_path.exists():
+            entities_df = pd.read_parquet(entities_path)
+            artifacts["entities_count"] = int(len(entities_df))
+            titles = [str(v).upper() for v in entities_df.get("title", [])]
+            artifacts["entity_titles"] = titles
+            artifacts["expected_entity_hits"] = sorted(
+                {token for token in EXPECTED_ENTITIES if any(token in t for t in titles)}
+            )
+        else:
+            artifacts["missing_files"].append("entities")
+
+        if relationships_path.exists():
+            relationships_df = pd.read_parquet(relationships_path)
+            artifacts["relationships_count"] = int(len(relationships_df))
+        else:
+            artifacts["missing_files"].append("relationships")
+
         reports_df = pd.read_parquet(community_reports_path)
         artifacts["community_reports_count"] = int(len(reports_df))
         summaries = [str(v).lower() for v in reports_df.get("summary", [])]
@@ -290,9 +380,7 @@ def load_artifacts(workspace_root: Path, metrics_path: Path | None) -> dict[str,
         )
         artifacts["community_summaries"] = [str(v) for v in reports_df.get("summary", [])][:5]
     else:
-        artifacts["community_reports_count"] = 0
-        artifacts["community_reports_placeholder"] = True
-        artifacts["community_summaries"] = []
+        artifacts["missing_files"].append("community_reports")
 
     artifacts["bench_metrics_path"] = str(metrics_path) if metrics_path else None
     artifacts["bench_metrics"] = {}
@@ -315,19 +403,27 @@ def deterministic_scores(artifacts: dict[str, Any]) -> dict[str, float]:
     workflows = stats.get("workflows") or {}
     completed_workflows = [wf for wf in EXPECTED_WORKFLOWS if wf in workflows]
 
-    pipeline_integrity = _clamp01(1.0 - _safe_ratio(len(artifacts.get("missing_files", [])), 4))
+    required_total = 2 if artifacts.get("artifact_mode") == "native_json" else 4
+    pipeline_integrity = _clamp01(1.0 - _safe_ratio(len(artifacts.get("missing_files", [])), required_total))
     workflow_completeness = _clamp01(_safe_ratio(len(completed_workflows), len(EXPECTED_WORKFLOWS)))
     entity_coverage = _clamp01(_safe_ratio(len(artifacts.get("expected_entity_hits", [])), len(EXPECTED_ENTITIES)))
 
     entities_count = max(1, int(artifacts.get("entities_count", 0)))
     relationships_count = int(artifacts.get("relationships_count", 0))
     relationship_density = _clamp01(_safe_ratio(relationships_count, entities_count * 6))
+    if artifacts.get("artifact_mode") == "native_json" and relationships_count <= 0:
+        relationship_density = _clamp01(_to_float(artifacts.get("native_average_link_density"), 0.0) / 4.0)
 
     community_reports_count = int(artifacts.get("community_reports_count", 0))
     placeholder = bool(artifacts.get("community_reports_placeholder", True))
     community_report_quality = 0.0
     if community_reports_count > 0:
-        community_report_quality = 0.35 if placeholder else 0.9
+        if placeholder:
+            community_report_quality = 0.35
+        elif artifacts.get("artifact_mode") == "native_json":
+            community_report_quality = _clamp01(_to_float(artifacts.get("native_average_quality_score"), 0.0))
+        else:
+            community_report_quality = 0.9
 
     query_output = (artifacts.get("query_output") or "").strip()
     query_answer_quality = 0.1 if not query_output else 0.65

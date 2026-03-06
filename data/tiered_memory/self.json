@@ -2006,5 +2006,35 @@
       "venv"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "9bf9aa21-b979-424b-ae6a-c8d728d1f2e9",
+    "content": "LESSON: Prefer native GraphRAG JSON artifacts such as native_community_reports.json as the primary report contract in benchmark and qualitative-assessment paths; keep parquet/pandas as an optional compatibility path only, because the forge venv may not have a working pandas/parquet stack on Termux Python 3.13.\nCONTEXT: GraphRAG benchmark/report hardening on Termux Python 3.13",
+    "created_at": "2026-03-06T19:18:42.561052",
+    "last_accessed": "2026-03-06T19:18:42.561067",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "Prefer native GraphRAG JSON artifacts such as native_community_reports.json as the primary report contract in benchmark and qualitative-assessment paths; keep parquet/pandas as an optional compatibility path only, because the forge venv may not have a working pandas/parquet stack on Termux Python 3.13.",
+      "context": "GraphRAG benchmark/report hardening on Termux Python 3.13",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "learning",
+      "robustness",
+      "parquet",
+      "self-improvement",
+      "graphrag",
+      "python313",
+      "json",
+      "lesson",
+      "termux",
+      "benchmarks"
+    ],
+    "linked_memories": []
   }
 ]
