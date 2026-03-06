@@ -53,7 +53,9 @@ class KnowledgeForge:
         self._thread_lock = threading.RLock()
         self._lock_handle = None
         self._lock_depth = 0
-        self._lock_path = self.persistence_path.with_name(f"{self.persistence_path.name}.lock") if self.persistence_path else None
+        self._lock_path = (
+            self.persistence_path.with_name(f"{self.persistence_path.name}.lock") if self.persistence_path else None
+        )
 
         if self.persistence_path and self.persistence_path.exists():
             self.load()
@@ -308,8 +310,7 @@ class KnowledgeForge:
                 node.tags = set(n_data.get("metadata", {}).get("tags", []))
                 self.nodes[node.id] = node
             self.concept_map = {
-                concept: list(dict.fromkeys(node_ids))
-                for concept, node_ids in data.get("concept_map", {}).items()
+                concept: list(dict.fromkeys(node_ids)) for concept, node_ids in data.get("concept_map", {}).items()
             }
         except Exception:
             self.nodes = {}

@@ -27,4 +27,3 @@ def test_add_knowledge_upserts_same_content_across_instances(tmp_path) -> None:
     assert node.tags == {"atomic", "dedup"}
     assert set(reloaded.concept_map) == {"memory", "reliability"}
     assert node.metadata["nested"] == {"safe": True, "merge": True}
-
