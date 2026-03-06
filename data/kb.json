@@ -59,8 +59,8 @@
         "tags": [
           "mcp",
           "consciousness",
-          "termux",
-          "autotune"
+          "autotune",
+          "termux"
         ]
       },
       "links": []
@@ -72,8 +72,8 @@
         "tags": [
           "mcp",
           "consciousness",
-          "termux",
-          "autotune"
+          "autotune",
+          "termux"
         ]
       },
       "links": []
@@ -85,8 +85,8 @@
         "tags": [
           "mcp",
           "consciousness",
-          "termux",
-          "autotune"
+          "autotune",
+          "termux"
         ]
       },
       "links": []
@@ -201,8 +201,8 @@
       "metadata": {
         "tags": [
           "consciousness",
-          "autotune",
-          "optimization"
+          "optimization",
+          "autotune"
         ]
       },
       "links": []
@@ -212,10 +212,10 @@
       "content": "Attention and workspace competition now adapt online from gw.reaction_trace reward signals.",
       "metadata": {
         "tags": [
-          "attention",
           "learning",
-          "consciousness",
-          "competition"
+          "competition",
+          "attention",
+          "consciousness"
         ]
       },
       "links": []
@@ -225,9 +225,9 @@
       "content": "Operational rule: execute project python checks through eidosian_venv in Termux for deterministic dependency context.",
       "metadata": {
         "tags": [
-          "operations",
+          "validation",
           "termux",
-          "validation"
+          "operations"
         ]
       },
       "links": []
@@ -289,10 +289,10 @@
       "content": "Consciousness runtime now exposes adversarial red-team campaigns via eidctl and MCP, with persisted bench.red_team_result reports and latest-report resources.",
       "metadata": {
         "tags": [
-          "mcp",
-          "consciousness",
           "cli",
-          "red-team"
+          "red-team",
+          "mcp",
+          "consciousness"
         ]
       },
       "links": []
@@ -303,9 +303,9 @@
       "metadata": {
         "tags": [
           "tasks",
+          "validation",
           "consciousness",
-          "bench",
-          "validation"
+          "bench"
         ]
       },
       "links": []
@@ -367,11 +367,11 @@
       "content": "Full benchmark interfaces now accept red-team controls: run_red_team, red_team_quick, red_team_max_scenarios, and red_team_seed across CLI and MCP.",
       "metadata": {
         "tags": [
-          "cli",
+          "red-team",
           "benchmark",
-          "mcp",
           "consciousness",
-          "red-team"
+          "mcp",
+          "cli"
         ]
       },
       "links": []
@@ -381,10 +381,10 @@
       "content": "Integrated benchmark report schema includes red_team section, red_team_score, and red-team gate results for regression-safe runtime decisions.",
       "metadata": {
         "tags": [
-          "consciousness",
-          "gates",
           "benchmark",
-          "schema"
+          "schema",
+          "gates",
+          "consciousness"
         ]
       },
       "links": []
@@ -394,10 +394,10 @@
       "content": "eidos_mcp full integration test harness restores kb/memory files after execution to keep repository state stable across reruns.",
       "metadata": {
         "tags": [
-          "operations",
-          "mcp",
+          "testing",
           "hardening",
-          "testing"
+          "mcp",
+          "operations"
         ]
       },
       "links": []
@@ -407,10 +407,10 @@
       "content": "Autotune commit-path now enforces quick red-team adversarial thresholds before overlay persistence, with explicit rollback reasons for unavailable campaigns and failed robustness gates.",
       "metadata": {
         "tags": [
-          "consciousness",
-          "termux",
           "red-team",
-          "autotune"
+          "consciousness",
+          "autotune",
+          "termux"
         ]
       },
       "links": []
@@ -420,10 +420,10 @@
       "content": "Consciousness bench trial snapshots and guardrail counters now derive from EventIndex buckets, including GW winner counts via broadcasts_by_kind and per-type counters via by_type.",
       "metadata": {
         "tags": [
-          "consciousness",
           "termux",
           "benchmark",
-          "index"
+          "index",
+          "consciousness"
         ]
       },
       "links": []
@@ -433,9 +433,9 @@
       "content": "Workflow security-audit.yml now inventories Dependabot alerts and can enforce optional critical/high severity gates while always artifacting JSON/log outputs.",
       "metadata": {
         "tags": [
+          "workflow",
           "dependabot",
-          "security",
-          "workflow"
+          "security"
         ]
       },
       "links": []
@@ -445,10 +445,10 @@
       "content": "security-audit workflow now maintains a Security Dependency Delta Report issue using baseline markers and closes it automatically when high/critical risk clears.",
       "metadata": {
         "tags": [
+          "issues",
           "dependabot",
-          "security",
           "workflow",
-          "issues"
+          "security"
         ]
       },
       "links": []
@@ -458,9 +458,9 @@
       "content": "workflow-action-pin-audit.yml now enforces lock-based GitHub Action drift policy using audit_data/workflow_action_lock.json and rejects mutable refs.",
       "metadata": {
         "tags": [
+          "security",
           "actions",
           "lock",
-          "security",
           "workflow"
         ]
       },
@@ -471,10 +471,10 @@
       "content": "security-audit workflow now builds remediation batches from Dependabot summaries and synchronizes keyed remediation issues automatically via scripts/dependabot_remediation_plan.py and scripts/sync_security_remediation_issues.py.",
       "metadata": {
         "tags": [
+          "remediation",
           "dependabot",
-          "security",
           "workflow",
-          "remediation"
+          "security"
         ]
       },
       "links": []
@@ -484,11 +484,11 @@
       "content": "Security hardening capability: scripts/dependabot_autopatch_requirements.py builds deterministic pip pin updates from Dependabot raw alerts (first_patched_version), supports dry-run/write, and preserves rollback via timestamped backups plus structured JSON/Markdown reports.",
       "metadata": {
         "tags": [
-          "pip",
-          "phase17",
-          "dependabot",
-          "termux",
           "security",
+          "dependabot",
+          "pip",
+          "termux",
+          "phase17",
           "automation"
         ],
         "source": "phase17_autopatch_execution",
@@ -501,11 +501,11 @@
       "content": "No-fix advisory mitigation playbook established: when Dependabot lacks first_patched_version, reduce direct dependency surface where imports are absent (ecdsa/keras) and apply explicit version escapes when vulnerable range bounds are known (orjson > 3.11.4).",
       "metadata": {
         "tags": [
-          "phase17",
-          "advisory",
+          "no-fix",
           "mitigation",
           "security",
-          "no-fix"
+          "advisory",
+          "phase17"
         ],
         "source": "phase17_iteration2_no_fix_mitigation",
         "updated_at": "2026-02-16T23:10:55Z"
@@ -517,11 +517,11 @@
       "content": "Phase 17 closure fact: end-to-end automated remediation loop achieved zero open Dependabot alerts and closed outstanding remediation batch issues in Ace1928/eidosian_forge.",
       "metadata": {
         "tags": [
-          "phase17",
-          "dependabot",
-          "closure",
           "security",
-          "automation"
+          "dependabot",
+          "phase17",
+          "automation",
+          "closure"
         ],
         "source": "phase17_final_closure",
         "updated_at": "2026-02-16T23:27:34Z"
@@ -533,11 +533,11 @@
       "content": "Phase 18 capability: consciousness runtime now enforces module watchdog quarantine/recovery and payload truncation safety envelopes with explicit telemetry for observability-driven hardening.",
       "metadata": {
         "tags": [
-          "phase18",
           "payload-safety",
+          "watchdog",
           "consciousness",
-          "hardening",
-          "watchdog"
+          "phase18",
+          "hardening"
         ],
         "source": "phase18_runtime_hardening",
         "updated_at": "2026-02-16T23:43:19Z"
@@ -549,13 +549,13 @@
       "content": "Phase 18 completion capability: runtime health now surfaces watchdog and payload-safety state across `eidctl` and MCP (`consciousness_kernel_status`), and payload/event-pressure stress benchmarks are first-class with CI trend aggregation.",
       "metadata": {
         "tags": [
-          "phase18",
           "ci",
           "payload-safety",
-          "mcp",
-          "stress-benchmark",
+          "watchdog",
           "consciousness",
-          "watchdog"
+          "stress-benchmark",
+          "phase18",
+          "mcp"
         ],
         "source": "phase18_status_stress_completion",
         "updated_at": "2026-02-17T00:24:46Z"
@@ -567,10 +567,10 @@
       "content": "Consciousness runtime status path is now side-effect-free: `ConsciousnessTrialRunner.status()` reads watchdog/payload health via `ConsciousnessKernel.read_runtime_health(...)` from persisted state instead of constructing a live kernel instance.",
       "metadata": {
         "tags": [
-          "status",
-          "phase18",
-          "consciousness",
           "side-effect-free",
+          "consciousness",
+          "phase18",
+          "status",
           "hardening"
         ],
         "source": "phase18_status_side_effect_fix",
@@ -583,12 +583,12 @@
       "content": "Phase 19 parity control added a deterministic Linux audit matrix runner that now drives both local parity smoke checks and CI artifact generation, reducing Termux/Linux drift risk.",
       "metadata": {
         "tags": [
-          "linux-parity",
-          "phase19",
           "ci",
-          "termux",
+          "audit-matrix",
           "consciousness",
-          "audit-matrix"
+          "termux",
+          "phase19",
+          "linux-parity"
         ],
         "source": "phase19_linux_audit_matrix",
         "updated_at": "2026-02-17T01:44:44Z"
@@ -601,11 +601,11 @@
       "metadata": {
         "tags": [
           "observability",
-          "ci-gate",
-          "trend",
           "phase20",
+          "trend",
+          "consciousness",
           "linux-audit",
-          "consciousness"
+          "ci-gate"
         ],
         "source": "phase20_audit_observability_gate",
         "updated_at": "2026-02-17T02:10:00Z"
@@ -617,11 +617,11 @@
       "content": "Phase 21 event-fabric hardening introduced first-class event identity (`event_id`, `ts_ms`) and marker-bounded bench capture (`bench.trial_start` to `bench.trial_end`) to improve deterministic causal-window artifact extraction.",
       "metadata": {
         "tags": [
-          "event-fabric",
           "trial-capture",
-          "phase21",
+          "event-fabric",
           "consciousness",
-          "causal-trace"
+          "causal-trace",
+          "phase21"
         ],
         "source": "phase21_event_fabric_trial_capture",
         "updated_at": "2026-02-17T02:19:15Z"
@@ -635,8 +635,8 @@
         "tags": [
           "phase22",
           "provenance",
-          "consciousness",
           "replay-manifest",
+          "consciousness",
           "bench"
         ],
         "source": "phase22_trial_provenance_replay",
@@ -649,11 +649,11 @@
       "content": "Phase 23 documentation hardening introduced automated repository directory coverage via `scripts/generate_directory_atlas.py`, producing `docs/DIRECTORY_ATLAS.md` (linked depth-limited map) and `docs/DIRECTORY_INDEX_FULL.txt` (complete recursive index), validated with dedicated script tests and consciousness benchmark/stress runs.",
       "metadata": {
         "tags": [
-          "directory-atlas",
           "documentation",
-          "phase23",
           "benchmarks",
-          "consciousness"
+          "consciousness",
+          "phase23",
+          "directory-atlas"
         ],
         "source": "phase23_repo_docs_hardening",
         "updated_at": "2026-02-17T03:24:01Z"
@@ -667,8 +667,8 @@
         "tags": [
           "documentation",
           "ci",
-          "phase24",
           "determinism",
+          "phase24",
           "operations"
         ]
       },
@@ -679,8 +679,8 @@
       "content": "Refactor Forge provides AST-based code transformations including identifier renaming and docstring removal.",
       "metadata": {
         "tags": [
-          "refactor",
-          "code-intelligence"
+          "code-intelligence",
+          "refactor"
         ]
       },
       "links": []
@@ -690,11 +690,11 @@
       "content": "GraphRAG qualitative assessment contract v1 combines deterministic pipeline metrics with federated local-model judge consensus and guardrail capping when placeholder community reports are detected.",
       "metadata": {
         "tags": [
-          "benchmark",
-          "quality",
-          "assessment",
           "graphrag",
-          "schema"
+          "assessment",
+          "benchmark",
+          "schema",
+          "quality"
         ]
       },
       "links": []
@@ -704,9 +704,9 @@
       "content": "GraphRAG benchmark script now includes strict output-quality gates: placeholder detection, schema checks, relevance checks, and non-informative answer rejection.",
       "metadata": {
         "tags": [
+          "graphrag",
           "quality-gate",
           "benchmark",
-          "graphrag",
           "termux"
         ]
       },
@@ -717,10 +717,10 @@
       "content": "Defaulting EIDOS_MCP_STATELESS_HTTP=1 in eidos_mcp/run_server.sh resolved repeated stale-session MCP transport failures in this Termux workflow.",
       "metadata": {
         "tags": [
-          "stability",
-          "eidos_mcp",
+          "transport",
           "termux",
-          "transport"
+          "stability",
+          "eidos_mcp"
         ]
       },
       "links": []
@@ -730,11 +730,11 @@
       "content": "Eidosian Forge now has a canonical port registry document and machine-readable config (docs/PORT_REGISTRY.md + config/ports.json) used as fallback defaults by service scripts and key runtime modules.",
       "metadata": {
         "tags": [
-          "termux",
-          "services",
-          "ports",
           "infrastructure",
-          "configuration"
+          "ports",
+          "configuration",
+          "services",
+          "termux"
         ]
       },
       "links": []
@@ -745,9 +745,9 @@
       "metadata": {
         "tags": [
           "config",
-          "operations",
           "ports",
-          "termux"
+          "termux",
+          "operations"
         ]
       },
       "links": []
@@ -757,9 +757,9 @@
       "content": "Latest GraphRAG sweep selected models/Qwen2.5-0.5B-Instruct-Q8_0.gguf as best available local model under strict quality gates (federated judge score 0.8801, rank A).",
       "metadata": {
         "tags": [
-          "model-selection",
           "quality-gate",
           "benchmark",
+          "model-selection",
           "graphrag"
         ]
       },
@@ -783,10 +783,10 @@
       "content": "GraphRAG evaluator now rejects pathological all-zero judge outputs when deterministic evidence indicates high-confidence pipeline/query quality; aggregate now reports judge_total/judge_valid/judge_rejected.",
       "metadata": {
         "tags": [
-          "robustness",
           "evaluation",
-          "graphrag",
-          "quality"
+          "quality",
+          "robustness",
+          "graphrag"
         ]
       },
       "links": []
@@ -796,11 +796,11 @@
       "content": "Model catalog now defines local <=3B candidates with profile tags (core/toolcalling/graphrag/multimodal) and supports companion mmproj artifacts for multimodal GGUF models.",
       "metadata": {
         "tags": [
-          "termux",
-          "catalog",
           "graphrag",
           "models",
-          "multimodal"
+          "catalog",
+          "multimodal",
+          "termux"
         ]
       },
       "links": []
@@ -810,10 +810,10 @@
       "content": "GraphRAG strict quality gates in this environment currently favor Qwen2.5-0.5B-Instruct over Qwen2.5-1.5B for the default benchmark prompt and settings; Qwen1.5 can fail community report generation when placeholders are disabled.",
       "metadata": {
         "tags": [
-          "model-selection",
-          "termux",
           "graphrag",
-          "quality-gates"
+          "model-selection",
+          "quality-gates",
+          "termux"
         ]
       },
       "links": []
@@ -824,9 +824,9 @@
       "metadata": {
         "tags": [
           "commit",
-          "eidosian_forge",
-          "models",
           "benchmarking",
+          "models",
+          "eidosian_forge",
           "automation"
         ]
       },
@@ -837,11 +837,11 @@
       "content": "Code Forge now supports deterministic archive digestion artifacts (repo_index.json, duplication_index.json, triage.json/csv/md, archive_digester_summary.json) and exposes this workflow through CLI commands catalog, triage-report, and digest.",
       "metadata": {
         "tags": [
-          "archive_digester",
-          "code_forge",
-          "knowledge_graph",
           "graphrag",
-          "triage"
+          "triage",
+          "code_forge",
+          "archive_digester",
+          "knowledge_graph"
         ]
       },
       "links": []
@@ -852,10 +852,10 @@
       "metadata": {
         "tags": [
           "commit",
-          "archive_digester",
-          "code_forge",
           "integration",
-          "pipeline"
+          "pipeline",
+          "code_forge",
+          "archive_digester"
         ]
       },
       "links": []
@@ -865,11 +865,11 @@
       "content": "Code Forge includes a benchmark harness with baseline-aware regression gates and a canonical migration planner producing migration_map.json and shim staging from triage outputs.",
       "metadata": {
         "tags": [
-          "regression_gate",
           "migration_map",
-          "code_forge",
+          "regression_gate",
           "benchmark",
-          "canonicalization"
+          "canonicalization",
+          "code_forge"
         ]
       },
       "links": []
@@ -880,11 +880,11 @@
       "metadata": {
         "tags": [
           "commit",
-          "code_forge",
-          "benchmark",
           "production",
-          "dependency_graph",
-          "canonicalization"
+          "benchmark",
+          "canonicalization",
+          "code_forge",
+          "dependency_graph"
         ]
       },
       "links": []
@@ -894,9 +894,9 @@
       "content": "Code Forge now enforces strict artifact contracts across repo_index, duplication_index (including structural clones), dependency_graph, triage, triage_audit, and archive_digester_summary outputs.",
       "metadata": {
         "tags": [
-          "code_forge",
           "triage_audit",
           "artifact_schema",
+          "code_forge",
           "validation",
           "structural_clone"
         ]
@@ -909,11 +909,11 @@
       "metadata": {
         "tags": [
           "commit",
-          "code_forge",
           "structural_duplicates",
+          "triage",
+          "code_forge",
           "validation",
-          "hardening",
-          "triage"
+          "hardening"
         ]
       },
       "links": []
@@ -923,8 +923,8 @@
       "content": "Code Forge now has a drift intelligence stage with immutable history snapshots and a CLI command for run-over-run metric drift reporting.",
       "metadata": {
         "tags": [
-          "digester",
           "drift",
+          "digester",
           "code_forge",
           "artifact-validation"
         ]
@@ -936,11 +936,11 @@
       "content": "Agent Forge now includes a RAC-AP validation report pipeline that computes reliability, nomological correlations, discriminant controls, and security-boundary scores from benchmark/trial/red-team artifacts.",
       "metadata": {
         "tags": [
-          "rac_ap",
           "agent_forge",
           "consciousness",
-          "validation",
-          "research"
+          "rac_ap",
+          "research",
+          "validation"
         ]
       },
       "links": []
@@ -950,12 +950,12 @@
       "content": "Agent Forge now includes RAC-AP protocol tooling: schema-compatible protocol validation, pre-registration manifest generation, and interventional validity scoring integrated into consciousness validation reports.",
       "metadata": {
         "tags": [
-          "rac-ap",
           "agent_forge",
           "protocol",
+          "intervention",
+          "rac-ap",
           "consciousness",
-          "validation",
-          "intervention"
+          "validation"
         ]
       },
       "links": []
@@ -965,10 +965,10 @@
       "content": "Main branch now includes RAC-AP protocol schema management and interventional validity scoring in consciousness validation (pushed in commit 8338941faa).",
       "metadata": {
         "tags": [
-          "rac-ap",
-          "git",
           "agent_forge",
+          "rac-ap",
           "consciousness",
+          "git",
           "validation"
         ]
       },
@@ -979,12 +979,12 @@
       "content": "Code Forge digest integration exports now use active run scoping with fallback to latest effective source-root run, preserving meaningful Knowledge Forge and GraphRAG exports during idempotent no-op ingestion cycles.",
       "metadata": {
         "tags": [
-          "run_scoping",
-          "code_forge",
           "knowledge_forge",
-          "integration",
           "idempotency",
-          "graphrag"
+          "graphrag",
+          "integration",
+          "code_forge",
+          "run_scoping"
         ]
       },
       "links": []
@@ -994,11 +994,11 @@
       "content": "Code Forge regeneration pipeline now enforces managed-scope pruning during apply, enabling idempotent project roundtrip without deleting unmanaged files; validated on sms_forge cycle06 with full test parity.",
       "metadata": {
         "tags": [
-          "code_forge",
           "roundtrip",
           "regeneration",
-          "idempotent",
-          "sms_forge"
+          "code_forge",
+          "sms_forge",
+          "idempotent"
         ]
       },
       "links": []
@@ -1008,11 +1008,11 @@
       "content": "Code Forge now emits provenance_links.json and graphrag_export_manifest.json; MCP exposes provenance query via code_forge_provenance tool, enabling cross-forge lineage queries from code units to knowledge nodes and GraphRAG documents.",
       "metadata": {
         "tags": [
-          "code_forge",
           "knowledge_forge",
+          "graphrag",
           "provenance",
           "mcp",
-          "graphrag"
+          "code_forge"
         ]
       },
       "links": []
@@ -1022,11 +1022,11 @@
       "content": "GitHub workflow action lock now tracks gitleaks/gitleaks-action@v2 and passes enforce-lock policy with zero drift/unlocked/mutable refs.",
       "metadata": {
         "tags": [
-          "gitleaks",
+          "github-actions",
           "ci",
           "security",
-          "workflow-lock",
-          "github-actions"
+          "gitleaks",
+          "workflow-lock"
         ]
       },
       "links": []
@@ -1037,10 +1037,10 @@
       "metadata": {
         "tags": [
           "remediation",
-          "dependabot",
-          "security",
           "pypdf",
-          "requirements"
+          "requirements",
+          "security",
+          "dependabot"
         ]
       },
       "links": []
@@ -1050,10 +1050,10 @@
       "content": "Current upstream vulnerability banner reports 10 Dependabot alerts (3 critical, 6 moderate, 1 low) after latest push; remediation should continue beyond pypdf pin update.",
       "metadata": {
         "tags": [
+          "triage",
           "dependabot",
-          "security",
           "backlog",
-          "triage"
+          "security"
         ]
       },
       "links": []
@@ -1063,11 +1063,11 @@
       "content": "Termux Chroma stability is validated after rebuilding chroma-hnswlib and hnswlib from source with HNSWLIB_NO_NATIVE=1; memory_forge chroma tests pass end-to-end.",
       "metadata": {
         "tags": [
+          "memory_forge",
           "chroma",
           "hnswlib",
           "termux",
-          "validation",
-          "memory_forge"
+          "validation"
         ]
       },
       "links": []
@@ -1078,10 +1078,10 @@
       "metadata": {
         "tags": [
           "ci",
-          "lint",
-          "reliability",
           "format",
-          "workflows"
+          "reliability",
+          "workflows",
+          "lint"
         ]
       },
       "links": []
@@ -1091,10 +1091,10 @@
       "content": "Directory Atlas Drift Guard workflow now installs pytest before running scripts/tests/test_generate_directory_atlas.py, preventing module-not-found failures on clean GitHub runners.",
       "metadata": {
         "tags": [
-          "pytest",
-          "atlas",
           "workflow",
-          "ci"
+          "ci",
+          "atlas",
+          "pytest"
         ]
       },
       "links": []
@@ -1104,10 +1104,10 @@
       "content": "Security dependency workflow failure root cause: mis-indented heredoc Python blocks in .github/workflows/security-audit.yml caused shell syntax error. Fixed by YAML-safe indentation that preserves shell heredoc termination semantics.",
       "metadata": {
         "tags": [
-          "workflow",
-          "bugfix",
+          "github-actions",
           "security-audit",
-          "github-actions"
+          "workflow",
+          "bugfix"
         ]
       },
       "links": []
@@ -1118,8 +1118,8 @@
       "metadata": {
         "tags": [
           "monorepo",
-          "ci",
           "governance",
+          "ci",
           "formatting"
         ]
       },
@@ -1130,11 +1130,11 @@
       "content": "CI-style monorepo test execution in eidosian_forge requires forge-local script path resolution in subprocess-based tests; absolute paths derived from Path(__file__).resolve().parents[1] eliminate cwd-sensitive failures on GitHub Actions and Termux.",
       "metadata": {
         "tags": [
+          "github-actions",
           "ci",
-          "termux",
-          "path-resolution",
           "testing",
-          "github-actions"
+          "path-resolution",
+          "termux"
         ]
       },
       "links": []
@@ -1144,11 +1144,11 @@
       "content": "Code Forge provenance schema now includes memory_links, enabling cross-forge lineage queries across artifact->memory->knowledge->GraphRAG surfaces with deterministic IDs.",
       "metadata": {
         "tags": [
-          "code_forge",
-          "provenance",
-          "knowledge",
           "graphrag",
-          "memory"
+          "provenance",
+          "code_forge",
+          "memory",
+          "knowledge"
         ]
       },
       "links": []
@@ -1158,10 +1158,10 @@
       "content": "MCP code_forge_provenance now reports memory_link_count in addition to artifact_count, knowledge_link_count, and graphrag_link_count, enabling direct cross-forge lineage inspection from MCP clients.",
       "metadata": {
         "tags": [
-          "provenance",
+          "memory_links",
           "eidos_mcp",
-          "code_forge",
-          "memory_links"
+          "provenance",
+          "code_forge"
         ]
       },
       "links": []
@@ -1171,11 +1171,11 @@
       "content": "Commit ea59a0f5bd fixes Eidosian Universal CI failures by adding lib/eidosian_core/ports.py, adding lib/tests/test_ports.py, and expanding CI test dependencies to include numpy/httpx/pandas/pyarrow/psutil/pyyaml/huggingface_hub.",
       "metadata": {
         "tags": [
+          "github-actions",
           "ci",
-          "regression-fix",
-          "ports",
           "dependencies",
-          "github-actions"
+          "ports",
+          "regression-fix"
         ]
       },
       "links": []
@@ -1185,10 +1185,10 @@
       "content": "Commit cdbf0d08af resolves prior Eidosian Universal CI failing test groups by restoring eidos_mcp llm/refactor exports, pyfiglet renderText alias behavior, pyparticles numba compatibility imports, glyph_forge cv2-absent fallback rendering, and CI jinja2 dependency for Moltbook UI tests.",
       "metadata": {
         "tags": [
-          "stability",
-          "ci",
           "regression-fix",
-          "eidosian_forge"
+          "eidosian_forge",
+          "ci",
+          "stability"
         ]
       },
       "links": []
@@ -1198,10 +1198,10 @@
       "content": "Eidosian Universal CI regression bundle fixed in commit 6346d73611 with deterministic guards for eidos_mcp compatibility exports, game_forge sparse interaction fallback, glyph_forge batch input typing, moltbook CLI module invocation context, and figlet compatibility assertion variance.",
       "metadata": {
         "tags": [
-          "stability",
+          "eidosian_forge",
           "ci",
-          "qa",
-          "eidosian_forge"
+          "stability",
+          "qa"
         ]
       },
       "links": []
@@ -1211,10 +1211,10 @@
       "content": "CI hardening pattern: prefer robust cross-platform assertions in compat tests and strict type guards at public parser boundaries to avoid environment-dependent regressions.",
       "metadata": {
         "tags": [
-          "cross-platform",
-          "ci",
           "testing",
-          "defensive-programming"
+          "ci",
+          "defensive-programming",
+          "cross-platform"
         ]
       },
       "links": []
@@ -1224,10 +1224,10 @@
       "content": "Operational testing contract for eidosian_forge: invoke tests via eidosian_venv interpreter (`python -m pytest`) to avoid plugin/path drift from system pytest in Termux.",
       "metadata": {
         "tags": [
-          "reliability",
-          "termux",
+          "venv",
           "testing",
-          "venv"
+          "reliability",
+          "termux"
         ]
       },
       "links": []
@@ -1238,10 +1238,10 @@
       "metadata": {
         "tags": [
           "ci",
-          "glyph_forge",
-          "mocks",
           "reliability",
-          "testing"
+          "mocks",
+          "testing",
+          "glyph_forge"
         ]
       },
       "links": []
@@ -1251,11 +1251,11 @@
       "content": "Code Forge now emits provenance_registry.json for digester and roundtrip pipelines, including unit-level joins (knowledge/memory/GraphRAG) and optional benchmark/drift summaries; eidos_mcp code_forge_provenance supports unit-level filtering and benchmark inclusion.",
       "metadata": {
         "tags": [
-          "code_forge",
           "knowledge_forge",
+          "graphrag",
           "provenance",
           "mcp",
-          "graphrag"
+          "code_forge"
         ]
       },
       "links": []
@@ -1268,8 +1268,8 @@
           "ci",
           "figlet_forge",
           "docs",
-          "gitignore",
-          "maintenance"
+          "maintenance",
+          "gitignore"
         ]
       },
       "links": []
@@ -1280,10 +1280,10 @@
       "metadata": {
         "tags": [
           "knowledge_forge",
-          "compatibility",
+          "graphrag",
           "integration",
           "mcp",
-          "graphrag"
+          "compatibility"
         ]
       },
       "links": []
@@ -1293,11 +1293,11 @@
       "content": "Cross-forge interop hardening added GraphRAG CLI compatibility in knowledge_forge (primary python -m graphrag subcommand invocation with legacy fallback) and MCP router root resolution via EIDOS_GRAPHRAG_ROOT -> graphrag_workspace -> graphrag fallback.",
       "metadata": {
         "tags": [
+          "interop",
           "knowledge_forge",
-          "eidos_mcp",
-          "compatibility",
           "graphrag",
-          "interop"
+          "compatibility",
+          "eidos_mcp"
         ]
       },
       "links": []
@@ -1307,12 +1307,12 @@
       "content": "Commit e3f3bd3293 hardened forge interoperability by adding GraphRAG timeout-guarded execution and MCP GraphRAG root precedence, with full cross-forge validation tests and benchmark pass.",
       "metadata": {
         "tags": [
-          "commit",
-          "knowledge_forge",
-          "eidos_mcp",
-          "validation",
           "interop",
-          "graphrag"
+          "knowledge_forge",
+          "commit",
+          "graphrag",
+          "eidos_mcp",
+          "validation"
         ]
       },
       "links": []
@@ -1323,10 +1323,10 @@
       "metadata": {
         "tags": [
           "observability",
-          "cli",
-          "code_forge",
+          "evaluation",
           "schema",
-          "evaluation"
+          "code_forge",
+          "cli"
         ]
       },
       "links": []
@@ -1337,9 +1337,9 @@
       "metadata": {
         "tags": [
           "observability",
-          "code_forge",
           "replay",
           "schema",
+          "code_forge",
           "eval_os"
         ]
       },
@@ -1350,11 +1350,11 @@
       "content": "Eidosian Universal CI run 22256896857 failed only in glyph_forge due ffmpeg discovery in test_extract_playlist_stitches_audio; fixed by mocking extractors.shutil.which for ffmpeg in test code and pushed in commit 1cdb3d31a5.",
       "metadata": {
         "tags": [
+          "github-actions",
           "ci",
-          "glyph_forge",
-          "ffmpeg",
           "testing",
-          "github-actions"
+          "glyph_forge",
+          "ffmpeg"
         ]
       },
       "links": []
@@ -1364,11 +1364,11 @@
       "content": "Universal CI run 22257241042 succeeded end-to-end after glyph_forge ffmpeg test isolation fix; pytest async loop scope now pinned to function in both root pytest.ini and agent_forge/pytest.ini to remove loop-scope deprecation drift.",
       "metadata": {
         "tags": [
-          "stability",
+          "ci",
           "pytest",
           "agent_forge",
-          "ci",
-          "glyph_forge"
+          "glyph_forge",
+          "stability"
         ]
       },
       "links": []
@@ -1378,11 +1378,11 @@
       "content": "linux_audit_matrix now treats mkey as optional forge by default and uses MCP quick-probe timeout floors (initialize>=30s, call>=12s) to avoid false-negative audit failures on Termux.",
       "metadata": {
         "tags": [
-          "stability",
           "ci",
-          "termux",
+          "mcp",
           "linux_audit",
-          "mcp"
+          "termux",
+          "stability"
         ]
       },
       "links": []
@@ -1392,11 +1392,11 @@
       "content": "Consciousness Linux Parity GitHub Actions run 22265310795 succeeded after setting EIDOS_AUDIT_OPTIONAL_FORGES=mkey,llm,erais,glyph,word in parity smoke workflow.",
       "metadata": {
         "tags": [
+          "github-actions",
+          "audit-gate",
           "ci",
           "consciousness",
-          "audit-gate",
-          "parity",
-          "github-actions"
+          "parity"
         ]
       },
       "links": []
@@ -1406,12 +1406,12 @@
       "content": "Eidosian Universal CI test job now enforces per-forge timeout controls and includes OpenCV headless dependency to improve deterministic cross-forge test coverage and prevent stuck runs.",
       "metadata": {
         "tags": [
-          "stability",
+          "ci",
           "pytest",
           "universal",
-          "ci",
+          "opencv",
           "workflow",
-          "opencv"
+          "stability"
         ]
       },
       "links": []
@@ -1421,11 +1421,11 @@
       "content": "Directory atlas generation in tracked mode must filter README links against tracked file set, otherwise local runtime files cause CI drift false positives.",
       "metadata": {
         "tags": [
-          "atlas",
           "ci",
-          "docs",
+          "git-tracked",
+          "atlas",
           "determinism",
-          "git-tracked"
+          "docs"
         ]
       },
       "links": []
@@ -1435,12 +1435,12 @@
       "content": "CI drift guards should validate generated docs against tracked git scope, not local filesystem state, to remain deterministic across Termux and GitHub runners.",
       "metadata": {
         "tags": [
-          "atlas",
+          "github-actions",
           "ci",
-          "termux",
-          "docs",
+          "atlas",
           "determinism",
-          "github-actions"
+          "docs",
+          "termux"
         ]
       },
       "links": []
@@ -1465,8 +1465,8 @@
       "metadata": {
         "tags": [
           "diagnostics_forge",
-          "observability",
           "cli",
+          "observability",
           "todo-completion"
         ]
       },
@@ -1478,8 +1478,8 @@
       "metadata": {
         "tags": [
           "diagnostics_forge",
-          "observability",
           "cli",
+          "observability",
           "prometheus"
         ]
       },
@@ -1490,10 +1490,10 @@
       "content": "eidos_mcp runtime configuration is now centralized via eidos_mcp.config.runtime with GIS namespace mcp.* and environment variable override precedence.",
       "metadata": {
         "tags": [
-          "eidos_mcp",
-          "runtime",
+          "configuration",
           "gis",
-          "configuration"
+          "eidos_mcp",
+          "runtime"
         ]
       },
       "links": []
@@ -1505,8 +1505,8 @@
         "tags": [
           "tiered_memory",
           "cli",
-          "compression",
-          "memory_forge"
+          "memory_forge",
+          "compression"
         ]
       },
       "links": []
@@ -1517,9 +1517,9 @@
       "metadata": {
         "tags": [
           "rdflib",
-          "interoperability",
+          "knowledge_forge",
           "rdf",
-          "knowledge_forge"
+          "interoperability"
         ]
       },
       "links": []
@@ -1530,9 +1530,9 @@
       "metadata": {
         "tags": [
           "rac-ap",
+          "consciousness",
           "eidos_mcp",
           "tooling",
-          "consciousness",
           "validation"
         ]
       },
@@ -1544,9 +1544,9 @@
       "metadata": {
         "tags": [
           "agent_forge",
-          "consciousness",
           "security-gates",
-          "validation"
+          "validation",
+          "consciousness"
         ]
       },
       "links": []
@@ -1559,8 +1559,8 @@
           "agent_forge",
           "protocol",
           "consciousness",
-          "validation",
-          "drift"
+          "drift",
+          "validation"
         ]
       },
       "links": []
@@ -1570,10 +1570,10 @@
       "content": "knowledge_forge now supports interactive pyvis graph export via KnowledgeForge.visualize_pyvis and CLI `knowledge-forge visualize`.",
       "metadata": {
         "tags": [
-          "graph-visualization",
-          "pyvis",
           "cli",
-          "knowledge_forge"
+          "knowledge_forge",
+          "graph-visualization",
+          "pyvis"
         ]
       },
       "links": []
@@ -1583,10 +1583,10 @@
       "content": "ChatMock remains in projects/src/chatmock; promotion to a dedicated Forge is deferred until API stability, CI/security readiness, and migration criteria are met.",
       "metadata": {
         "tags": [
-          "eidos_mcp",
           "governance",
+          "architecture-decision",
           "chatmock",
-          "architecture-decision"
+          "eidos_mcp"
         ]
       },
       "links": []
@@ -1596,10 +1596,10 @@
       "content": "Agent Forge now supports importing external benchmark JSON payloads into standardized consciousness benchmark reports via `eidctl consciousness import-benchmark` and ExternalBenchmarkImporter.",
       "metadata": {
         "tags": [
-          "cli",
-          "benchmark",
           "agent_forge",
+          "benchmark",
           "consciousness",
+          "cli",
           "adapter"
         ]
       },
@@ -1610,11 +1610,11 @@
       "content": "Consciousness validator now supports trend extraction and HTML dashboard export via `validation_trends`, surfaced in CLI as `eidctl consciousness validation-trends`.",
       "metadata": {
         "tags": [
-          "cli",
           "agent_forge",
+          "dashboard",
           "consciousness",
-          "validation",
-          "dashboard"
+          "cli",
+          "validation"
         ]
       },
       "links": []
@@ -1624,10 +1624,10 @@
       "content": "`eidctl consciousness import-benchmark` parser was repaired after rebase corruption and validated with passing tests.",
       "metadata": {
         "tags": [
-          "rebase",
-          "cli",
           "agent_forge",
+          "rebase",
           "consciousness",
+          "cli",
           "bugfix"
         ]
       },
@@ -1638,11 +1638,11 @@
       "content": "Code Forge TODO critical item for source-scoped coverage enforcement is implemented via CI workflow fail-under gates and documented local test command.",
       "metadata": {
         "tags": [
-          "code_forge",
           "documentation",
-          "todo",
           "ci",
-          "coverage"
+          "coverage",
+          "code_forge",
+          "todo"
         ]
       },
       "links": []
@@ -1652,11 +1652,11 @@
       "content": "Code Forge roundtrip artifacts now include signature envelopes and validation logic to detect tampering via payload hash and digest checks.",
       "metadata": {
         "tags": [
-          "code_forge",
-          "tamper-detection",
           "roundtrip",
+          "signature",
+          "tamper-detection",
           "security",
-          "signature"
+          "code_forge"
         ]
       },
       "links": []
@@ -1667,10 +1667,10 @@
       "metadata": {
         "tags": [
           "observability",
+          "traces",
           "code_forge",
           "otlp",
-          "eval",
-          "traces"
+          "eval"
         ]
       },
       "links": []
@@ -1680,11 +1680,11 @@
       "content": "Code Forge roundtrip parity hashing now supports parallel file hashing for larger trees, controlled by `EIDOS_CODE_FORGE_HASH_WORKERS`, with determinism validated against single-thread mode.",
       "metadata": {
         "tags": [
-          "code_forge",
-          "parallelism",
           "performance",
           "roundtrip",
-          "hashing"
+          "code_forge",
+          "hashing",
+          "parallelism"
         ]
       },
       "links": []
@@ -1694,10 +1694,10 @@
       "content": "Crawl Forge extraction now uses BeautifulSoup parsing for title/meta description/link extraction with HTTP-only deduped links; regex extraction path removed.",
       "metadata": {
         "tags": [
-          "crawl_forge",
-          "html-parsing",
           "todo-complete",
-          "quality"
+          "quality",
+          "crawl_forge",
+          "html-parsing"
         ]
       },
       "links": []
@@ -1707,10 +1707,10 @@
       "content": "Code Forge digest and triage-report CLI now accept --profile-trace, enabling runtime hot-path aware triage classification and reporting.",
       "metadata": {
         "tags": [
+          "triage",
           "cli",
           "profiling",
-          "code_forge",
-          "triage"
+          "code_forge"
         ]
       },
       "links": []
@@ -1721,10 +1721,10 @@
       "metadata": {
         "tags": [
           "cache",
-          "crawl_forge",
+          "reliability",
           "robots",
-          "termux",
-          "reliability"
+          "crawl_forge",
+          "termux"
         ]
       },
       "links": []
@@ -1734,11 +1734,11 @@
       "content": "Code Forge now exposes a parser adapter extension point for non-Python analysis and includes a built-in optional TreeSitterAdapter auto-discovery path.",
       "metadata": {
         "tags": [
-          "code_forge",
-          "parser",
-          "architecture",
           "extensibility",
-          "tree-sitter"
+          "code_forge",
+          "architecture",
+          "tree-sitter",
+          "parser"
         ]
       },
       "links": []
@@ -1748,10 +1748,10 @@
       "content": "Code Forge digester schema now validates optional archive_reduction_plan.json artifact as part of output contract checks.",
       "metadata": {
         "tags": [
-          "code_forge",
           "artifacts",
+          "schema",
           "validation",
-          "schema"
+          "code_forge"
         ]
       },
       "links": []
@@ -1761,11 +1761,11 @@
       "content": "Code Forge now supports archive_reduction_plan artifacts with candidate buckets for delete/extract/refactor/quarantine generated from triage labels.",
       "metadata": {
         "tags": [
-          "code_forge",
           "artifacts",
+          "triage",
+          "code_forge",
           "archive",
-          "planning",
-          "triage"
+          "planning"
         ]
       },
       "links": []
@@ -1775,11 +1775,11 @@
       "content": "Code Forge CLI includes `dashboard` command for static triage+duplication visualization and `archive-reduction-plan` for candidate action planning.",
       "metadata": {
         "tags": [
-          "cli",
-          "code_forge",
-          "planning",
+          "triage",
           "dashboard",
-          "triage"
+          "code_forge",
+          "cli",
+          "planning"
         ]
       },
       "links": []
@@ -1789,10 +1789,10 @@
       "content": "Code Forge now supports operational vector indexing through code_vectors with hash128_v1 embeddings and backend-selectable semantic search (text, vector, hybrid).",
       "metadata": {
         "tags": [
-          "semantic_search",
+          "vector_index",
           "sqlite",
-          "code_forge",
-          "vector_index"
+          "semantic_search",
+          "code_forge"
         ]
       },
       "links": []
@@ -1802,11 +1802,11 @@
       "content": "Knowledge Forge now includes optional OWL/RDFS reasoning via reason_owl + reason_rdf_graph and CLI command `reason-owl`, with tests in knowledge_forge/tests/test_owl_reasoning.py.",
       "metadata": {
         "tags": [
-          "cli",
+          "reasoning",
           "knowledge_forge",
-          "owl",
           "tests",
-          "reasoning"
+          "cli",
+          "owl"
         ]
       },
       "links": []
@@ -1817,9 +1817,9 @@
       "metadata": {
         "tags": [
           "check_mcp",
-          "eidos_mcp",
           "diagnostics",
-          "testing"
+          "testing",
+          "eidos_mcp"
         ]
       },
       "links": []
@@ -1829,10 +1829,10 @@
       "content": "eidos_mcp routers/tika now returns structured JSON fallback payloads when Tika is unavailable, allowing tika_cache_stats and related tool tests to pass without a local Tika runtime.",
       "metadata": {
         "tags": [
-          "tika",
-          "eidos_mcp",
+          "ci",
           "fallback",
-          "ci"
+          "eidos_mcp",
+          "tika"
         ]
       },
       "links": []
@@ -1842,10 +1842,10 @@
       "content": "MCP compatibility contract now includes tool-level discovery endpoints `mcp_list_tools` and `mcp_list_resources` in the plugins router; tests validate transactional and safe-mode behavior for file/shell/venv tools.",
       "metadata": {
         "tags": [
-          "mcp",
           "compatibility",
           "tool-discovery",
-          "test-contract"
+          "test-contract",
+          "mcp"
         ]
       },
       "links": []
@@ -1855,11 +1855,11 @@
       "content": "Eidosian Atlas is now registered in the central port registry (service key eidos_atlas_dashboard, port 8936) and Doc Forge root endpoint redirects to Atlas for unified documentation observability.",
       "metadata": {
         "tags": [
-          "atlas",
+          "dashboard",
           "integration",
+          "atlas",
           "ports",
-          "doc_forge",
-          "dashboard"
+          "doc_forge"
         ]
       },
       "links": []
@@ -1870,11 +1870,11 @@
       "metadata": {
         "tags": [
           "commit",
-          "atlas",
-          "termux",
           "web_interface_forge",
+          "testing",
+          "atlas",
           "doc_forge",
-          "testing"
+          "termux"
         ]
       },
       "links": []
@@ -1884,11 +1884,11 @@
       "content": "Model selection for Doc Forge and GraphRAG is now a canonical contract in config/model_selection.json sourced from a full 9-model federated sweep; default embedding model is nomic-embed-text-v1.5.Q4_K_M.",
       "metadata": {
         "tags": [
-          "model-selection",
           "graphrag",
-          "contract",
+          "embedding",
+          "model-selection",
           "doc-forge",
-          "embedding"
+          "contract"
         ]
       },
       "links": []
@@ -1898,11 +1898,11 @@
       "content": "Commit 5c83fe688e standardized model-selection contract propagation and documentation; GraphRAG/Doc Forge default models now resolve from config/model_selection.json with validated no-timeout sweep provenance.",
       "metadata": {
         "tags": [
-          "provenance",
-          "git",
-          "model-selection",
           "graphrag",
-          "doc-forge"
+          "provenance",
+          "model-selection",
+          "doc-forge",
+          "git"
         ]
       },
       "links": []
@@ -1913,12 +1913,12 @@
       "metadata": {
         "tags": [
           "domain:www.alibabacloud.com",
-          "source:web",
-          "qwen3.5",
-          "upgrade",
           "reference",
           "official",
-          "chunk:1/4"
+          "chunk:1/4",
+          "qwen3.5",
+          "upgrade",
+          "source:web"
         ]
       },
       "links": []
@@ -1929,12 +1929,12 @@
       "metadata": {
         "tags": [
           "domain:www.alibabacloud.com",
-          "source:web",
-          "qwen3.5",
-          "upgrade",
           "reference",
           "official",
-          "chunk:2/4"
+          "chunk:2/4",
+          "qwen3.5",
+          "upgrade",
+          "source:web"
         ]
       },
       "links": []
@@ -1945,12 +1945,12 @@
       "metadata": {
         "tags": [
           "domain:www.alibabacloud.com",
-          "source:web",
+          "reference",
+          "chunk:3/4",
+          "official",
           "qwen3.5",
           "upgrade",
-          "reference",
-          "official",
-          "chunk:3/4"
+          "source:web"
         ]
       },
       "links": []
@@ -1961,12 +1961,12 @@
       "metadata": {
         "tags": [
           "domain:www.alibabacloud.com",
-          "source:web",
-          "qwen3.5",
-          "upgrade",
           "reference",
           "official",
-          "chunk:4/4"
+          "chunk:4/4",
+          "qwen3.5",
+          "upgrade",
+          "source:web"
         ]
       },
       "links": []
@@ -1977,13 +1977,13 @@
       "metadata": {
         "tags": [
           "domain:ollama.com",
-          "source:web",
-          "qwen3.5",
-          "ollama",
-          "upgrade",
           "reference",
           "official",
-          "chunk:1/44"
+          "chunk:1/44",
+          "source:web",
+          "qwen3.5",
+          "upgrade",
+          "ollama"
         ]
       },
       "links": []
@@ -1994,13 +1994,13 @@
       "metadata": {
         "tags": [
           "domain:ollama.com",
-          "source:web",
-          "qwen3.5",
-          "ollama",
-          "upgrade",
           "reference",
           "official",
-          "chunk:2/44"
+          "source:web",
+          "chunk:2/44",
+          "qwen3.5",
+          "upgrade",
+          "ollama"
         ]
       },
       "links": []
@@ -2011,13 +2011,13 @@
       "metadata": {
         "tags": [
           "domain:ollama.com",
-          "source:web",
-          "qwen3.5",
-          "ollama",
-          "upgrade",
           "reference",
           "official",
-          "chunk:3/44"
+          "source:web",
+          "chunk:3/44",
+          "qwen3.5",
+          "upgrade",
+          "ollama"
         ]
       },
       "links": []
@@ -2028,13 +2028,13 @@
       "metadata": {
         "tags": [
           "domain:ollama.com",
-          "source:web",
-          "qwen3.5",
-          "ollama",
-          "upgrade",
           "reference",
           "official",
-          "chunk:4/44"
+          "chunk:4/44",
+          "source:web",
+          "qwen3.5",
+          "upgrade",
+          "ollama"
         ]
       },
       "links": []
@@ -2045,13 +2045,13 @@
       "metadata": {
         "tags": [
           "domain:ollama.com",
-          "source:web",
-          "qwen3.5",
-          "ollama",
-          "upgrade",
           "reference",
           "official",
-          "chunk:5/44"
+          "source:web",
+          "chunk:5/44",
+          "qwen3.5",
+          "upgrade",
+          "ollama"
         ]
       },
       "links": []
@@ -2062,13 +2062,13 @@
       "metadata": {
         "tags": [
           "domain:ollama.com",
-          "source:web",
-          "qwen3.5",
-          "ollama",
-          "upgrade",
           "reference",
           "official",
-          "chunk:6/44"
+          "chunk:6/44",
+          "source:web",
+          "qwen3.5",
+          "upgrade",
+          "ollama"
         ]
       },
       "links": []
@@ -2079,13 +2079,13 @@
       "metadata": {
         "tags": [
           "domain:ollama.com",
-          "source:web",
-          "qwen3.5",
-          "ollama",
-          "upgrade",
           "reference",
           "official",
-          "chunk:7/44"
+          "source:web",
+          "chunk:7/44",
+          "qwen3.5",
+          "upgrade",
+          "ollama"
         ]
       },
       "links": []
@@ -2096,13 +2096,13 @@
       "metadata": {
         "tags": [
           "domain:ollama.com",
-          "source:web",
-          "qwen3.5",
-          "ollama",
-          "upgrade",
+          "chunk:8/44",
           "reference",
           "official",
-          "chunk:8/44"
+          "source:web",
+          "qwen3.5",
+          "upgrade",
+          "ollama"
         ]
       },
       "links": []
@@ -2113,13 +2113,13 @@
       "metadata": {
         "tags": [
           "domain:ollama.com",
-          "source:web",
-          "qwen3.5",
-          "ollama",
-          "upgrade",
           "reference",
           "official",
-          "chunk:9/44"
+          "chunk:9/44",
+          "source:web",
+          "qwen3.5",
+          "upgrade",
+          "ollama"
         ]
       },
       "links": []
@@ -2130,13 +2130,13 @@
       "metadata": {
         "tags": [
           "domain:ollama.com",
-          "chunk:10/44",
+          "reference",
+          "official",
           "source:web",
           "qwen3.5",
-          "ollama",
+          "chunk:10/44",
           "upgrade",
-          "reference",
-          "official"
+          "ollama"
         ]
       },
       "links": []
@@ -2147,13 +2147,13 @@
       "metadata": {
         "tags": [
           "domain:ollama.com",
+          "reference",
+          "official",
           "chunk:11/44",
           "source:web",
           "qwen3.5",
-          "ollama",
           "upgrade",
-          "reference",
-          "official"
+          "ollama"
         ]
       },
       "links": []
@@ -2164,13 +2164,13 @@
       "metadata": {
         "tags": [
           "domain:ollama.com",
-          "chunk:12/44",
-          "source:web",
-          "qwen3.5",
-          "ollama",
-          "upgrade",
           "reference",
-          "official"
+          "official",
+          "source:web",
+          "chunk:12/44",
+          "qwen3.5",
+          "upgrade",
+          "ollama"
         ]
       },
       "links": []
@@ -2181,13 +2181,13 @@
       "metadata": {
         "tags": [
           "domain:ollama.com",
-          "chunk:13/44",
+          "reference",
+          "official",
           "source:web",
           "qwen3.5",
-          "ollama",
           "upgrade",
-          "reference",
-          "official"
+          "ollama",
+          "chunk:13/44"
         ]
       },
       "links": []
@@ -2198,13 +2198,13 @@
       "metadata": {
         "tags": [
           "domain:ollama.com",
+          "reference",
+          "official",
           "chunk:14/44",
           "source:web",
           "qwen3.5",
-          "ollama",
           "upgrade",
-          "reference",
-          "official"
+          "ollama"
         ]
       },
       "links": []
@@ -2215,13 +2215,13 @@
       "metadata": {
         "tags": [
           "domain:ollama.com",
-          "chunk:15/44",
+          "reference",
+          "official",
           "source:web",
           "qwen3.5",
-          "ollama",
           "upgrade",
-          "reference",
-          "official"
+          "chunk:15/44",
+          "ollama"
         ]
       },
       "links": []
@@ -2233,12 +2233,12 @@
         "tags": [
           "domain:ollama.com",
           "chunk:16/44",
+          "official",
+          "reference",
           "source:web",
           "qwen3.5",
-          "ollama",
           "upgrade",
-          "reference",
-          "official"
+          "ollama"
         ]
       },
       "links": []
@@ -2249,13 +2249,13 @@
       "metadata": {
         "tags": [
           "domain:ollama.com",
-          "chunk:17/44",
-          "source:web",
-          "qwen3.5",
-          "ollama",
-          "upgrade",
           "reference",
-          "official"
+          "official",
+          "source:web",
+          "chunk:17/44",
+          "qwen3.5",
+          "upgrade",
+          "ollama"
         ]
       },
       "links": []
@@ -2266,13 +2266,13 @@
       "metadata": {
         "tags": [
           "domain:ollama.com",
+          "reference",
+          "official",
           "chunk:18/44",
           "source:web",
           "qwen3.5",
-          "ollama",
           "upgrade",
-          "reference",
-          "official"
+          "ollama"
         ]
       },
       "links": []
@@ -2283,13 +2283,13 @@
       "metadata": {
         "tags": [
           "domain:ollama.com",
+          "official",
+          "reference",
           "chunk:19/44",
           "source:web",
           "qwen3.5",
-          "ollama",
           "upgrade",
-          "reference",
-          "official"
+          "ollama"
         ]
       },
       "links": []
@@ -2300,13 +2300,13 @@
       "metadata": {
         "tags": [
           "domain:ollama.com",
-          "chunk:20/44",
-          "source:web",
-          "qwen3.5",
-          "ollama",
-          "upgrade",
           "reference",
-          "official"
+          "official",
+          "source:web",
+          "chunk:20/44",
+          "qwen3.5",
+          "upgrade",
+          "ollama"
         ]
       },
       "links": []
@@ -2317,13 +2317,13 @@
       "metadata": {
         "tags": [
           "domain:ollama.com",
-          "chunk:21/44",
+          "reference",
+          "official",
           "source:web",
           "qwen3.5",
-          "ollama",
           "upgrade",
-          "reference",
-          "official"
+          "ollama",
+          "chunk:21/44"
         ]
       },
       "links": []
@@ -2333,14 +2333,14 @@
       "content": "12px;text-align:center;border-bottom:1px solid #f0f0f0\">74.0</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">Seal-0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">45.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">47.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">45.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">46.9</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">57.4</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">46.9</td> </tr> <tr><td colspan=\"7\" style=\"padding:8px 12px;font-weight:600;color:#7c3aed;border-bottom:1px solid #e5e7eb;background:#faf5ff\">Multilingualism</td></tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">MMMLU</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">89.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">90.1</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">90.6</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">84.4</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">86.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">88.5</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">MMLU-ProX</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">83.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">85.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">87.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">78.5</td> <td",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
-          "chunk:22/44",
-          "source:web",
           "qwen3.5",
-          "ollama",
-          "upgrade",
+          "domain:ollama.com",
           "reference",
-          "official"
+          "official",
+          "source:web",
+          "chunk:22/44",
+          "upgrade",
+          "ollama"
         ]
       },
       "links": []
@@ -2351,13 +2351,13 @@
       "metadata": {
         "tags": [
           "domain:ollama.com",
-          "chunk:23/44",
-          "source:web",
-          "qwen3.5",
-          "ollama",
-          "upgrade",
           "reference",
-          "official"
+          "official",
+          "source:web",
+          "chunk:23/44",
+          "qwen3.5",
+          "upgrade",
+          "ollama"
         ]
       },
       "links": []
@@ -2368,13 +2368,13 @@
       "metadata": {
         "tags": [
           "domain:ollama.com",
-          "chunk:24/44",
-          "source:web",
-          "qwen3.5",
-          "ollama",
-          "upgrade",
           "reference",
-          "official"
+          "official",
+          "source:web",
+          "chunk:24/44",
+          "qwen3.5",
+          "upgrade",
+          "ollama"
         ]
       },
       "links": []
@@ -2385,13 +2385,13 @@
       "metadata": {
         "tags": [
           "domain:ollama.com",
+          "reference",
+          "official",
           "chunk:25/44",
           "source:web",
           "qwen3.5",
-          "ollama",
           "upgrade",
-          "reference",
-          "official"
+          "ollama"
         ]
       },
       "links": []
@@ -2402,13 +2402,13 @@
       "metadata": {
         "tags": [
           "domain:ollama.com",
-          "chunk:26/44",
-          "source:web",
-          "qwen3.5",
-          "ollama",
-          "upgrade",
           "reference",
-          "official"
+          "official",
+          "source:web",
+          "chunk:26/44",
+          "qwen3.5",
+          "upgrade",
+          "ollama"
         ]
       },
       "links": []
@@ -2419,13 +2419,13 @@
       "metadata": {
         "tags": [
           "domain:ollama.com",
-          "chunk:27/44",
+          "reference",
+          "official",
           "source:web",
           "qwen3.5",
-          "ollama",
+          "chunk:27/44",
           "upgrade",
-          "reference",
-          "official"
+          "ollama"
         ]
       },
       "links": []
@@ -2436,13 +2436,13 @@
       "metadata": {
         "tags": [
           "domain:ollama.com",
-          "chunk:28/44",
-          "source:web",
-          "qwen3.5",
-          "ollama",
-          "upgrade",
           "reference",
-          "official"
+          "official",
+          "source:web",
+          "chunk:28/44",
+          "qwen3.5",
+          "upgrade",
+          "ollama"
         ]
       },
       "links": []
@@ -2453,13 +2453,13 @@
       "metadata": {
         "tags": [
           "domain:ollama.com",
-          "chunk:29/44",
-          "source:web",
-          "qwen3.5",
-          "ollama",
-          "upgrade",
           "reference",
-          "official"
+          "official",
+          "source:web",
+          "chunk:29/44",
+          "qwen3.5",
+          "upgrade",
+          "ollama"
         ]
       },
       "links": []
@@ -2470,13 +2470,13 @@
       "metadata": {
         "tags": [
           "domain:ollama.com",
+          "reference",
+          "official",
           "chunk:30/44",
           "source:web",
           "qwen3.5",
-          "ollama",
           "upgrade",
-          "reference",
-          "official"
+          "ollama"
         ]
       },
       "links": []
@@ -2487,13 +2487,13 @@
       "metadata": {
         "tags": [
           "domain:ollama.com",
-          "chunk:31/44",
-          "source:web",
-          "qwen3.5",
-          "ollama",
-          "upgrade",
           "reference",
-          "official"
+          "official",
+          "source:web",
+          "chunk:31/44",
+          "qwen3.5",
+          "upgrade",
+          "ollama"
         ]
       },
       "links": []
@@ -2504,13 +2504,13 @@
       "metadata": {
         "tags": [
           "domain:ollama.com",
-          "chunk:32/44",
+          "reference",
+          "official",
           "source:web",
           "qwen3.5",
-          "ollama",
+          "chunk:32/44",
           "upgrade",
-          "reference",
-          "official"
+          "ollama"
         ]
       },
       "links": []
@@ -2521,13 +2521,13 @@
       "metadata": {
         "tags": [
           "domain:ollama.com",
-          "chunk:33/44",
+          "reference",
+          "official",
           "source:web",
           "qwen3.5",
-          "ollama",
           "upgrade",
-          "reference",
-          "official"
+          "chunk:33/44",
+          "ollama"
         ]
       },
       "links": []
@@ -2538,13 +2538,13 @@
       "metadata": {
         "tags": [
           "domain:ollama.com",
-          "chunk:34/44",
-          "source:web",
-          "qwen3.5",
-          "ollama",
-          "upgrade",
           "reference",
-          "official"
+          "official",
+          "source:web",
+          "chunk:34/44",
+          "qwen3.5",
+          "upgrade",
+          "ollama"
         ]
       },
       "links": []
@@ -2555,13 +2555,13 @@
       "metadata": {
         "tags": [
           "domain:ollama.com",
-          "chunk:35/44",
-          "source:web",
-          "qwen3.5",
-          "ollama",
-          "upgrade",
           "reference",
-          "official"
+          "official",
+          "source:web",
+          "chunk:35/44",
+          "qwen3.5",
+          "upgrade",
+          "ollama"
         ]
       },
       "links": []
@@ -2572,13 +2572,13 @@
       "metadata": {
         "tags": [
           "domain:ollama.com",
-          "chunk:36/44",
+          "reference",
+          "official",
           "source:web",
           "qwen3.5",
-          "ollama",
           "upgrade",
-          "reference",
-          "official"
+          "chunk:36/44",
+          "ollama"
         ]
       },
       "links": []
@@ -2589,13 +2589,13 @@
       "metadata": {
         "tags": [
           "domain:ollama.com",
-          "chunk:37/44",
-          "source:web",
-          "qwen3.5",
-          "ollama",
-          "upgrade",
           "reference",
-          "official"
+          "official",
+          "source:web",
+          "chunk:37/44",
+          "qwen3.5",
+          "upgrade",
+          "ollama"
         ]
       },
       "links": []
@@ -2606,13 +2606,13 @@
       "metadata": {
         "tags": [
           "domain:ollama.com",
+          "reference",
+          "official",
           "chunk:38/44",
           "source:web",
           "qwen3.5",
-          "ollama",
           "upgrade",
-          "reference",
-          "official"
+          "ollama"
         ]
       },
       "links": []
@@ -2623,13 +2623,13 @@
       "metadata": {
         "tags": [
           "domain:ollama.com",
-          "chunk:39/44",
+          "reference",
+          "official",
           "source:web",
           "qwen3.5",
-          "ollama",
           "upgrade",
-          "reference",
-          "official"
+          "chunk:39/44",
+          "ollama"
         ]
       },
       "links": []
@@ -2640,13 +2640,13 @@
       "metadata": {
         "tags": [
           "domain:ollama.com",
+          "reference",
+          "official",
           "chunk:40/44",
           "source:web",
           "qwen3.5",
-          "ollama",
           "upgrade",
-          "reference",
-          "official"
+          "ollama"
         ]
       },
       "links": []
@@ -2657,13 +2657,13 @@
       "metadata": {
         "tags": [
           "domain:ollama.com",
+          "reference",
           "chunk:41/44",
+          "official",
           "source:web",
           "qwen3.5",
-          "ollama",
           "upgrade",
-          "reference",
-          "official"
+          "ollama"
         ]
       },
       "links": []
@@ -2673,14 +2673,14 @@
       "content": "style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">66.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">--</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">38.1</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">63.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">62.2</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">AndroidWorld</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">--</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">--</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">--</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">63.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">--</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">66.8</td> </tr> <tr><td colspan=\"7\" style=\"padding:8px 12px;font-weight:600;color:#7c3aed;border-bottom:1px solid #e5e7eb;background:#faf5ff\">Medical VQA</td></tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">SLAKE</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">76.9</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">76.4</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">81.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">54.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">81.6</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">79.9</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">PMC-VQA</td> <td",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
-          "chunk:42/44",
-          "source:web",
           "qwen3.5",
-          "ollama",
-          "upgrade",
+          "domain:ollama.com",
           "reference",
-          "official"
+          "official",
+          "source:web",
+          "chunk:42/44",
+          "upgrade",
+          "ollama"
         ]
       },
       "links": []
@@ -2691,13 +2691,13 @@
       "metadata": {
         "tags": [
           "domain:ollama.com",
+          "reference",
+          "official",
           "chunk:43/44",
           "source:web",
           "qwen3.5",
-          "ollama",
           "upgrade",
-          "reference",
-          "official"
+          "ollama"
         ]
       },
       "links": []
@@ -2708,13 +2708,13 @@
       "metadata": {
         "tags": [
           "domain:ollama.com",
-          "chunk:44/44",
-          "source:web",
-          "qwen3.5",
-          "ollama",
-          "upgrade",
           "reference",
-          "official"
+          "official",
+          "source:web",
+          "chunk:44/44",
+          "qwen3.5",
+          "upgrade",
+          "ollama"
         ]
       },
       "links": []

@@ -1,0 +1,7 @@
+{
+  "dim": 16,
+  "space": "cosine",
+  "max_elements": 1024,
+  "ef_construction": 200,
+  "M": 16
+}
