@@ -34,10 +34,10 @@ from code_forge.digester.pipeline import build_duplication_index, build_repo_ind
 from code_forge.digester.schema import validate_output_dir
 from code_forge.ingest.runner import IngestionRunner
 from code_forge.library.db import CodeLibraryDB
-from eidosian_core import eidosian
-from eidosian_runtime import ForgeRuntimeCoordinator
-from eidosian_core.ports import get_service_port
 from eidos_mcp.config.models import get_model_config
+from eidosian_core import eidosian
+from eidosian_core.ports import get_service_port
+from eidosian_runtime import ForgeRuntimeCoordinator
 
 from knowledge_forge import GraphRAGIntegration
 
@@ -1534,7 +1534,12 @@ def run_pipeline(
                 if native_only
                 else [
                     {"family": "llama.cpp", "model": str(llm_model), "role": "graphrag_completion", "port": llm_port},
-                    {"family": "llama.cpp", "model": str(embed_model), "role": "graphrag_embedding", "port": embed_port},
+                    {
+                        "family": "llama.cpp",
+                        "model": str(embed_model),
+                        "role": "graphrag_embedding",
+                        "port": embed_port,
+                    },
                 ]
             )
             graphrag_budget = _phase_budget(graphrag_budget_models)
@@ -1544,7 +1549,9 @@ def run_pipeline(
                 if graphrag_budget["saturated"]:
                     graphrag_result["indexed"] = False
                     graphrag_result["skipped"] = True
-                    graphrag_result["skip_reason"] = str((graphrag_budget["decision"] or {}).get("reason") or "budget_denied")
+                    graphrag_result["skip_reason"] = str(
+                        (graphrag_budget["decision"] or {}).get("reason") or "budget_denied"
+                    )
                 else:
                     coordinator.heartbeat(
                         owner=coordinator_owner,
@@ -1579,7 +1586,13 @@ def run_pipeline(
             _phase_done("graphrag", phase_started)
 
         living_doc_budget = _phase_budget(
-            [{"family": "ollama", "model": str((living_doc_config or LivingDocumentationConfig()).model), "role": "living_documentation"}]
+            [
+                {
+                    "family": "ollama",
+                    "model": str((living_doc_config or LivingDocumentationConfig()).model),
+                    "role": "living_documentation",
+                }
+            ]
         )
         phase_started = _phase_start("living_documentation")
         effective_doc_config = living_doc_config or LivingDocumentationConfig()
@@ -1631,9 +1644,15 @@ def run_pipeline(
             if post_ingest.get("indexed") and isinstance(post_ingest.get("index_result"), dict):
                 index_result = dict(post_ingest["index_result"])
                 graphrag_result["post_ingest"] = post_ingest
-                graphrag_result["report_summary"] = index_result.get("community_reports", graphrag_result.get("report_summary"))
-                graphrag_result["trend_summary"] = index_result.get("report_trends", graphrag_result.get("trend_summary"))
-                graphrag_result["assessment_summary"] = index_result.get("assessment", graphrag_result.get("assessment_summary"))
+                graphrag_result["report_summary"] = index_result.get(
+                    "community_reports", graphrag_result.get("report_summary")
+                )
+                graphrag_result["trend_summary"] = index_result.get(
+                    "report_trends", graphrag_result.get("trend_summary")
+                )
+                graphrag_result["assessment_summary"] = index_result.get(
+                    "assessment", graphrag_result.get("assessment_summary")
+                )
         _phase_done("living_documentation", phase_started)
     except Exception as exc:
         _write_pipeline_status(
@@ -1726,7 +1745,11 @@ def run_pipeline(
         task="completed",
         state="idle",
         active_models=[],
-        metadata={"run_id": run_id, "records_total": records_total, "assessment": graphrag_result.get("assessment_summary")},
+        metadata={
+            "run_id": run_id,
+            "records_total": records_total,
+            "assessment": graphrag_result.get("assessment_summary"),
+        },
     )
     return manifest
 

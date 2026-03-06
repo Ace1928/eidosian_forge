@@ -95,9 +95,13 @@ class FederatedJudge:
         if get_model_config is None:
             raise RuntimeError("model contract unavailable")
         model_config = get_model_config()
-        requested_model = str(
-            os.environ.get("EIDOS_DOC_FORGE_INFERENCE_MODEL", "").strip() or getattr(model_config, "inference_model", "")
-        ).strip() or "qwen3.5:2b"
+        requested_model = (
+            str(
+                os.environ.get("EIDOS_DOC_FORGE_INFERENCE_MODEL", "").strip()
+                or getattr(model_config, "inference_model", "")
+            ).strip()
+            or "qwen3.5:2b"
+        )
         requested_mode = str(os.environ.get("EIDOS_DOC_FORGE_THINKING_MODE", "on")).strip() or "on"
         timeout = float(os.environ.get("EIDOS_DOC_FORGE_TIMEOUT_SEC", "900"))
         last_error: Exception | None = None
