@@ -43,7 +43,9 @@ class GraphRAGIntegration:
         self.kb_path = (
             Path(kb_path).expanduser().resolve()
             if kb_path is not None
-            else Path(os.environ.get("EIDOS_KNOWLEDGE_PATH", str(forge_root / "data" / "kb.json"))).expanduser().resolve()
+            else Path(os.environ.get("EIDOS_KNOWLEDGE_PATH", str(forge_root / "data" / "kb.json")))
+            .expanduser()
+            .resolve()
         )
         timeout_raw = os.environ.get("EIDOS_GRAPHRAG_TIMEOUT_SEC", "900")
         try:

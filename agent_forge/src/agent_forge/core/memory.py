@@ -114,6 +114,7 @@ class MemorySystem:
         try:
             _ensure_tiered_import_path()
             from eidosian_vector import build_default_embedder  # type: ignore
+
             from memory_forge import TieredMemorySystem  # type: ignore
 
             self._tiered_memory_system = TieredMemorySystem(
