@@ -146,6 +146,21 @@ class AutonomySupervisor:
             self._memory_system = None
         return self._memory_system
 
+    def _load_graphrag(self) -> Any:
+        try:
+            _ensure_bridge_import_path()
+            from knowledge_forge import GraphRAGIntegration  # type: ignore
+
+            return GraphRAGIntegration(graphrag_root=self.repo_root / "graphrag_workspace")
+        except Exception:
+            try:
+                _ensure_bridge_import_path()
+                from knowledge_forge import GraphRAGIntegration  # type: ignore
+
+                return GraphRAGIntegration(graphrag_root=self.repo_root / "graphrag")
+            except Exception:
+                return None
+
     def _recent_context_query(self) -> str:
         parts: list[str] = []
         base_query = _to_text(self.config.get("context_query"))
@@ -201,11 +216,50 @@ class AutonomySupervisor:
                 }
             )
 
+        report_summary = {"count": 0, "reports": []}
+        artifact_summary = {"count": 0, "items": []}
+        grag = self._load_graphrag()
+        if grag is not None:
+            try:
+                report_summary = grag.native_report_summary(limit=3)
+            except Exception:
+                report_summary = {"count": 0, "reports": []}
+            try:
+                artifact_summary = grag.native_artifact_summary(limit=5)
+            except Exception:
+                artifact_summary = {"count": 0, "items": []}
+
+        for report in report_summary.get("reports") or []:
+            if not isinstance(report, Mapping):
+                continue
+            context_tokens |= _tokenize(
+                " ".join(
+                    [
+                        _to_text(report.get("community")),
+                        _to_text(report.get("title")),
+                        _to_text(report.get("summary")),
+                    ]
+                )
+            )
+        for item in artifact_summary.get("items") or []:
+            if not isinstance(item, Mapping):
+                continue
+            context_tokens |= _tokenize(
+                " ".join(
+                    [
+                        _to_text(item.get("kind")),
+                        _to_text(item.get("artifact_path")),
+                    ]
+                )
+            )
+
         return {
             "query": query,
             "load_error": load_error,
             "hits": hits,
             "tokens": sorted(context_tokens),
+            "report_summary": report_summary,
+            "artifact_summary": artifact_summary,
         }
 
     def _recent_selections(self) -> list[dict[str, Any]]:
@@ -311,6 +365,8 @@ class AutonomySupervisor:
             "beat": int(beat_count),
             "query": context.get("query"),
             "hit_count": len(context.get("hits") or []),
+            "report_count": int((context.get("report_summary") or {}).get("count") or 0),
+            "artifact_count": int((context.get("artifact_summary") or {}).get("count") or 0),
             "repo_root": str(self.repo_root),
             "repo_dirty": repo_dirty,
         }
@@ -398,6 +454,8 @@ class AutonomySupervisor:
             "template": _to_text(mission.get("template")),
             "context_query": _to_text(context.get("query")),
             "context_hits": len(context.get("hits") or []),
+            "report_count": int((context.get("report_summary") or {}).get("count") or 0),
+            "artifact_count": int((context.get("artifact_summary") or {}).get("count") or 0),
         }
         BUS.append(self.state_dir, "autonomy.mission_selected", payload, tags=["autonomy", "selected"])
         S.append_journal(

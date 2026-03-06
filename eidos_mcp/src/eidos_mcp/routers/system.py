@@ -24,12 +24,20 @@ from ..transactions import (
 ensure_forge_import("diagnostics_forge")
 ensure_forge_import("file_forge")
 
-from diagnostics_forge.core import DiagnosticsForge
+try:
+    from diagnostics_forge.core import DiagnosticsForge
+except Exception:  # pragma: no cover - optional runtime dependency
+    DiagnosticsForge = None
 from file_forge.core import FileForge
 
 from ..core import tool
 
-diag = DiagnosticsForge(service_name="mcp_system")
+class _NullDiagnostics:
+    def log_event(self, *args, **kwargs) -> None:
+        return None
+
+
+diag = DiagnosticsForge(service_name="mcp_system") if DiagnosticsForge is not None else _NullDiagnostics()
 file_forge = FileForge()
 
 FORGE_DIR = Path(os.environ.get("EIDOS_FORGE_DIR", str(FORGE_ROOT))).resolve()

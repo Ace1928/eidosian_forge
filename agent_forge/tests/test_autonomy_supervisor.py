@@ -40,6 +40,31 @@ class _FakeMemory:
         return "mem-1"
 
 
+class _FakeGraphRAG:
+    def native_report_summary(self, limit: int = 5):
+        return {
+            "count": 2,
+            "reports": [
+                {
+                    "community": "code_forge",
+                    "title": "Code Forge Community",
+                    "summary": "benchmark drift triage coverage",
+                }
+            ][:limit],
+        }
+
+    def native_artifact_summary(self, limit: int = 10):
+        return {
+            "count": 1,
+            "items": [
+                {
+                    "kind": "code_forge_provenance_registry",
+                    "artifact_path": "data/code_forge/cycle/run_001/provenance_registry.json",
+                }
+            ][:limit],
+        }
+
+
 def test_supervisor_seeds_autonomous_mission(tmp_path: Path) -> None:
     state_dir = tmp_path / "state"
     repo_root = tmp_path / "repo"
@@ -151,3 +176,28 @@ def test_scheduler_act_uses_plan_cwd(tmp_path: Path, monkeypatch) -> None:
     assert result["status"] == "ok"
     assert captured["cwd"] == str(work_dir.resolve())
     assert captured["template"] == "lint"
+
+
+def test_supervisor_context_includes_native_report_and_artifact_tokens(tmp_path: Path, monkeypatch) -> None:
+    state_dir = tmp_path / "state"
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    S.migrate(state_dir)
+
+    supervisor = AutonomySupervisor(
+        state_dir,
+        repo_root=repo_root,
+        bridge=_FakeBridge(),
+        memory_system=_FakeMemory(),
+        config={"context_query": "benchmark drift triage"},
+    )
+    monkeypatch.setattr(supervisor, "_load_graphrag", lambda: _FakeGraphRAG())
+
+    packet = supervisor._context_packet()
+
+    assert packet["report_summary"]["count"] == 2
+    assert packet["artifact_summary"]["count"] == 1
+    tokens = set(packet["tokens"])
+    assert "benchmark" in tokens
+    assert "triage" in tokens
+    assert "provenance_registry.json" in tokens
