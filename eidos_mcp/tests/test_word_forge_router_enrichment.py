@@ -79,7 +79,11 @@ def test_wf_build_lexicon_from_text_falls_back_when_budget_denied(tmp_path: Path
     monkeypatch.setattr(
         word_forge,
         "_generate_structured_payload",
-        lambda **_: {"_budget_denied": True, "_budget_reason": "instance_budget_exceeded", "_effective_thinking_mode": "off"},
+        lambda **_: {
+            "_budget_denied": True,
+            "_budget_reason": "instance_budget_exceeded",
+            "_effective_thinking_mode": "off",
+        },
     )
 
     payload = json.loads(word_forge.wf_build_lexicon_from_text("Vector retrieval uses embeddings."))

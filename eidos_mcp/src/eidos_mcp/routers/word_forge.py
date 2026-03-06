@@ -538,7 +538,9 @@ def wf_enrich_term(term: str, context: str = "", thinking_mode: str = "on", time
         timeout_sec=timeout_sec,
     )
     if not payload:
-        return json.dumps({"status": "skipped", "reason": "model unavailable or returned no structured payload"}, indent=2)
+        return json.dumps(
+            {"status": "skipped", "reason": "model unavailable or returned no structured payload"}, indent=2
+        )
     if payload.get("_budget_denied"):
         return json.dumps(
             {
