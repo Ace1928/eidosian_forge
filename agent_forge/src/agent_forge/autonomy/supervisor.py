@@ -304,7 +304,11 @@ class AutonomySupervisor:
             _to_text(pipeline.get("phase")),
             _to_text(coordinator.get("state")),
             _to_text(coordinator.get("task")),
-            " ".join(_to_text(item.get("model")) for item in (coordinator.get("active_models") or []) if isinstance(item, Mapping)),
+            " ".join(
+                _to_text(item.get("model"))
+                for item in (coordinator.get("active_models") or [])
+                if isinstance(item, Mapping)
+            ),
         ]
         context_tokens |= _tokenize(" ".join(part for part in runtime_parts if part))
 
@@ -390,9 +394,7 @@ class AutonomySupervisor:
             if _to_text(item)
         }
         artifact_kinds = {
-            _to_text(item).lower()
-            for item in (latest_trend.get("artifact_kinds") or {}).keys()
-            if _to_text(item)
+            _to_text(item).lower() for item in (latest_trend.get("artifact_kinds") or {}).keys() if _to_text(item)
         }
         focus_communities = {
             _to_text(item).lower().replace(" ", "_")
@@ -400,9 +402,7 @@ class AutonomySupervisor:
             if _to_text(item)
         }
         focus_artifact_kinds = {
-            _to_text(item).lower()
-            for item in mission.get("focus_artifact_kinds", []) or []
-            if _to_text(item)
+            _to_text(item).lower() for item in mission.get("focus_artifact_kinds", []) or [] if _to_text(item)
         }
         targeted_overlap = len(focus_communities & weak_labels) + len(focus_artifact_kinds & artifact_kinds)
         runtime = context.get("runtime") if isinstance(context.get("runtime"), Mapping) else {}
@@ -489,17 +489,25 @@ class AutonomySupervisor:
             "hit_count": len(context.get("hits") or []),
             "report_count": int(((context.get("report_summary") or {}).get("count")) or 0),
             "artifact_count": int(((context.get("artifact_summary") or {}).get("count")) or 0),
-            "average_report_quality": float(((context.get("report_summary") or {}).get("average_quality_score")) or 0.0),
+            "average_report_quality": float(
+                ((context.get("report_summary") or {}).get("average_quality_score")) or 0.0
+            ),
             "benchmark_failures": int(((context.get("artifact_summary") or {}).get("benchmark_failures")) or 0),
-            "weak_communities": list((((context.get("trend_summary") or {}).get("latest")) or {}).get("weak_community_labels") or []),
-            "artifact_kinds": sorted(list(((((context.get("trend_summary") or {}).get("latest")) or {}).get("artifact_kinds") or {}).keys())),
+            "weak_communities": list(
+                (((context.get("trend_summary") or {}).get("latest")) or {}).get("weak_community_labels") or []
+            ),
+            "artifact_kinds": sorted(
+                list(((((context.get("trend_summary") or {}).get("latest")) or {}).get("artifact_kinds") or {}).keys())
+            ),
             "repo_root": str(self.repo_root),
             "repo_dirty": repo_dirty,
             "scheduler_state": _to_text((((context.get("runtime") or {}).get("scheduler")) or {}).get("state")),
             "pipeline_state": _to_text((((context.get("runtime") or {}).get("pipeline")) or {}).get("state")),
             "pipeline_phase": _to_text((((context.get("runtime") or {}).get("pipeline")) or {}).get("phase")),
             "coordinator_state": _to_text((((context.get("runtime") or {}).get("coordinator")) or {}).get("state")),
-            "active_model_count": len(((((context.get("runtime") or {}).get("coordinator")) or {}).get("active_models")) or []),
+            "active_model_count": len(
+                ((((context.get("runtime") or {}).get("coordinator")) or {}).get("active_models")) or []
+            ),
         }
         BUS.append(self.state_dir, "autonomy.context", ctx_payload, tags=["autonomy", "context"])
 
@@ -587,13 +595,21 @@ class AutonomySupervisor:
             "context_hits": len(context.get("hits") or []),
             "report_count": int(((context.get("report_summary") or {}).get("count")) or 0),
             "artifact_count": int(((context.get("artifact_summary") or {}).get("count")) or 0),
-            "average_report_quality": float(((context.get("report_summary") or {}).get("average_quality_score")) or 0.0),
+            "average_report_quality": float(
+                ((context.get("report_summary") or {}).get("average_quality_score")) or 0.0
+            ),
             "benchmark_failures": int(((context.get("artifact_summary") or {}).get("benchmark_failures")) or 0),
-            "weak_communities": list((((context.get("trend_summary") or {}).get("latest")) or {}).get("weak_community_labels") or []),
-            "artifact_kinds": sorted(list(((((context.get("trend_summary") or {}).get("latest")) or {}).get("artifact_kinds") or {}).keys())),
+            "weak_communities": list(
+                (((context.get("trend_summary") or {}).get("latest")) or {}).get("weak_community_labels") or []
+            ),
+            "artifact_kinds": sorted(
+                list(((((context.get("trend_summary") or {}).get("latest")) or {}).get("artifact_kinds") or {}).keys())
+            ),
             "scheduler_state": _to_text((((context.get("runtime") or {}).get("scheduler")) or {}).get("state")),
             "pipeline_phase": _to_text((((context.get("runtime") or {}).get("pipeline")) or {}).get("phase")),
-            "active_model_count": len(((((context.get("runtime") or {}).get("coordinator")) or {}).get("active_models")) or []),
+            "active_model_count": len(
+                ((((context.get("runtime") or {}).get("coordinator")) or {}).get("active_models")) or []
+            ),
         }
         BUS.append(self.state_dir, "autonomy.mission_selected", payload, tags=["autonomy", "selected"])
         S.append_journal(

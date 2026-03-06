@@ -42,7 +42,9 @@ def _now_utc() -> str:
 class ForgeRuntimeCoordinator:
     def __init__(self, status_path: str | Path | None = None) -> None:
         root = _forge_root()
-        self.status_path = Path(status_path) if status_path else root / "data" / "runtime" / "forge_coordinator_status.json"
+        self.status_path = (
+            Path(status_path) if status_path else root / "data" / "runtime" / "forge_coordinator_status.json"
+        )
         self.lock_path = self.status_path.with_suffix(self.status_path.suffix + ".lock")
         self._thread_lock = threading.RLock()
         self._lock_handle = None

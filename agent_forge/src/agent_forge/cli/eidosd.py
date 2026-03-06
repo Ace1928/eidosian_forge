@@ -282,7 +282,14 @@ def main(argv: list[str] | None = None) -> int:
     cpu = OM.CpuPercent()
     if args.once:
         try:
-            run_once(args.state_dir, repo_root=args.repo_root, tick_secs=tick_secs, cpu=cpu, kernel=kernel, supervisor=supervisor)
+            run_once(
+                args.state_dir,
+                repo_root=args.repo_root,
+                tick_secs=tick_secs,
+                cpu=cpu,
+                kernel=kernel,
+                supervisor=supervisor,
+            )
             return 0
         except Exception as e:
             print(f"eidosd run error: {e}", file=sys.stderr)
@@ -300,7 +307,14 @@ def main(argv: list[str] | None = None) -> int:
 
         def _beat() -> None:
             nonlocal beats
-            run_once(args.state_dir, repo_root=args.repo_root, tick_secs=tick_secs, cpu=cpu, kernel=kernel, supervisor=supervisor)
+            run_once(
+                args.state_dir,
+                repo_root=args.repo_root,
+                tick_secs=tick_secs,
+                cpu=cpu,
+                kernel=kernel,
+                supervisor=supervisor,
+            )
             beats += 1
             if beats % maint_every == 0:
                 try:

@@ -34,10 +34,10 @@ from code_forge.digester.pipeline import build_duplication_index, build_repo_ind
 from code_forge.digester.schema import validate_output_dir
 from code_forge.ingest.runner import IngestionRunner
 from code_forge.library.db import CodeLibraryDB
-from eidosian_core import eidosian
-from eidosian_runtime import ForgeRuntimeCoordinator
-from eidosian_core.ports import get_service_port
 from eidos_mcp.config.models import get_model_config
+from eidosian_core import eidosian
+from eidosian_core.ports import get_service_port
+from eidosian_runtime import ForgeRuntimeCoordinator
 
 from knowledge_forge import GraphRAGIntegration
 
@@ -1259,8 +1259,18 @@ def run_pipeline(
                     task="graphrag",
                     state="running",
                     active_models=[
-                        {"family": "llama.cpp", "model": str(llm_model), "role": "graphrag_completion", "port": llm_port},
-                        {"family": "llama.cpp", "model": str(embed_model), "role": "graphrag_embedding", "port": embed_port},
+                        {
+                            "family": "llama.cpp",
+                            "model": str(llm_model),
+                            "role": "graphrag_completion",
+                            "port": llm_port,
+                        },
+                        {
+                            "family": "llama.cpp",
+                            "model": str(embed_model),
+                            "role": "graphrag_embedding",
+                            "port": embed_port,
+                        },
                     ],
                     metadata={"run_id": run_id, "workspace_root": str(workspace_root)},
                 )
@@ -1390,7 +1400,11 @@ def run_pipeline(
         task="completed",
         state="idle",
         active_models=[],
-        metadata={"run_id": run_id, "records_total": records_total, "assessment": graphrag_result.get("assessment_summary")},
+        metadata={
+            "run_id": run_id,
+            "records_total": records_total,
+            "assessment": graphrag_result.get("assessment_summary"),
+        },
     )
     return manifest
 
