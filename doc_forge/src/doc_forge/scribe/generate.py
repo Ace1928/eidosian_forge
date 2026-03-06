@@ -1,11 +1,17 @@
 from __future__ import annotations
 
 import fcntl
+import os
 from typing import Any
 
 import requests
 
 from .config import ScribeConfig
+
+try:
+    from eidos_mcp.config.models import get_model_config
+except Exception:
+    get_model_config = None
 
 try:
     from eidosian_runtime import ForgeRuntimeCoordinator
@@ -46,10 +52,74 @@ class DocGenerator:
         if not bool(decision.get("allowed")):
             raise RuntimeError(str(decision.get("reason") or "runtime budget denied"))
 
-    def _call_model(self, prompt: str, temperature: float = 0.2, stop: list[str] | None = None) -> str:
+    def _extract_completion_text(self, payload: Any) -> str:
+        if not isinstance(payload, dict):
+            return ""
+        content = payload.get("content")
+        if isinstance(content, str) and content.strip():
+            return content.strip()
+        choices = payload.get("choices")
+        if isinstance(choices, list):
+            for choice in choices:
+                if not isinstance(choice, dict):
+                    continue
+                text = choice.get("text")
+                if isinstance(text, str) and text.strip():
+                    return text.strip()
+                message = choice.get("message")
+                if isinstance(message, dict):
+                    message_text = message.get("content")
+                    if isinstance(message_text, str) and message_text.strip():
+                        return message_text.strip()
+        response = payload.get("response")
+        if isinstance(response, str):
+            return response.strip()
+        return ""
+
+    def _call_model_contract(self, prompt: str, temperature: float, max_tokens: int | None = None) -> str:
+        if get_model_config is None:
+            raise RuntimeError("model contract unavailable")
+        model_config = get_model_config()
+        requested_model = str(
+            os.environ.get("EIDOS_DOC_FORGE_INFERENCE_MODEL", "").strip() or getattr(model_config, "inference_model", "")
+        ).strip() or "qwen3.5:2b"
+        requested_mode = str(os.environ.get("EIDOS_DOC_FORGE_THINKING_MODE", "on")).strip() or "on"
+        timeout = float(os.environ.get("EIDOS_DOC_FORGE_TIMEOUT_SEC", "900"))
+        last_error: Exception | None = None
+        for mode in [requested_mode, "off"] if requested_mode.lower() != "off" else [requested_mode]:
+            try:
+                payload = model_config.generate_payload(
+                    prompt,
+                    model=requested_model,
+                    max_tokens=max_tokens or self.cfg.llm_n_predict,
+                    temperature=temperature,
+                    thinking_mode=mode,
+                    timeout=timeout,
+                )
+            except Exception as exc:
+                last_error = exc
+                continue
+            content = self._extract_completion_text(payload)
+            if content:
+                return content
+            if str(payload.get("thinking") or "").strip():
+                last_error = RuntimeError(f"no final response returned for thinking_mode={mode}")
+                continue
+            last_error = RuntimeError(f"empty response returned for thinking_mode={mode}")
+        if last_error is not None:
+            raise last_error
+        raise RuntimeError("model contract returned no completion")
+
+    def _call_model(
+        self,
+        prompt: str,
+        temperature: float = 0.2,
+        stop: list[str] | None = None,
+        max_tokens: int | None = None,
+    ) -> str:
         payload = {
             "prompt": prompt,
-            "n_predict": self.cfg.llm_n_predict,
+            "n_predict": max_tokens or self.cfg.llm_n_predict,
             "temperature": temperature,
             "stop": stop or ["<|im_end|>", "</s>"],
             "stream": False,
@@ -75,9 +145,14 @@ class DocGenerator:
                         ],
                         metadata={"completion_url": self.cfg.completion_url},
                     )
+                if not self.cfg.enable_managed_llm:
+                    try:
+                        return self._call_model_contract(prompt, temperature, max_tokens=max_tokens)
+                    except Exception:
+                        pass
                 resp = requests.post(self.cfg.completion_url, json=payload, timeout=240)
                 resp.raise_for_status()
-                return (resp.json().get("content") or "").strip()
+                return self._extract_completion_text(resp.json())
             finally:
                 if self._coordinator is not None:
                     self._coordinator.heartbeat(
@@ -92,18 +167,18 @@ class DocGenerator:
     def generate(self, rel_path: str, source_text: str, metadata: dict[str, Any]) -> str:
         # Phase 1: Planning (Chain of Thought)
         plan_prompt = self._build_plan_prompt(rel_path, source_text, metadata)
-        plan = self._call_model(plan_prompt, temperature=0.4)
+        plan = self._call_model(plan_prompt, temperature=0.4, max_tokens=320)
 
         # Phase 2: Drafting
         draft_prompt = self._build_draft_prompt(rel_path, source_text, metadata, plan)
-        draft = self._call_model(draft_prompt, temperature=0.2)
+        draft = self._call_model(draft_prompt, temperature=0.2, max_tokens=min(self.cfg.llm_n_predict, 1400))
 
         try:
             return self._normalize(draft)
         except ValueError:
             # Retry once with stricter instructions
             retry_prompt = draft_prompt + "\n\nCRITICAL: Ensure all required headings are present and exact."
-            draft = self._call_model(retry_prompt, temperature=0.1)
+            draft = self._call_model(retry_prompt, temperature=0.1, max_tokens=min(self.cfg.llm_n_predict, 1400))
             return self._normalize(draft)
 
     def _build_plan_prompt(self, rel_path: str, source_text: str, metadata: dict[str, Any]) -> str:

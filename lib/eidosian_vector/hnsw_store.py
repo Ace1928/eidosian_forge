@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 import threading
 from contextlib import contextmanager
@@ -114,6 +115,21 @@ class HNSWVectorStore:
             ),
             encoding="utf-8",
         )
+
+    def reset(self, *, dim: Optional[int] = None) -> None:
+        with self._lock():
+            self._index = None
+            self.dim = int(dim) if dim else None
+            for path in (self.index_path, self.meta_path, self.sqlite_path):
+                try:
+                    if path.exists():
+                        os.remove(path)
+                except FileNotFoundError:
+                    pass
+            self._init_db()
+            if self.dim is not None:
+                self._load_index()
+                self._save_meta()
 
     def _load_index(self) -> None:
         if self.dim is None:

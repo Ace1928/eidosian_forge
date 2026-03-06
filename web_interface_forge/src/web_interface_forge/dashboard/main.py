@@ -40,11 +40,13 @@ SCHEDULER_STATUS = RUNTIME_DIR / "eidos_scheduler_status.json"
 COORDINATOR_STATUS = RUNTIME_DIR / "forge_coordinator_status.json"
 ATLAS_SESSION_PATH = RUNTIME_DIR / "atlas_explorer_sessions.json"
 MEMORY_TRENDS_PATH = RUNTIME_DIR / "memory_health_trends.json"
+LEXICON_QUEUE_PATH = RUNTIME_DIR / "word_forge_lexicon_queue.json"
 WORD_GRAPH_PATH = FORGE_ROOT / "data" / "eidos_semantic_graph.json"
 KB_PATH = FORGE_ROOT / "data" / "kb.json"
 MEMORY_DIR = FORGE_ROOT / "data" / "tiered_memory"
 CODE_DB_PATH = FORGE_ROOT / "data" / "code_forge" / "library.sqlite"
 GRAPHRAG_ROOT = (FORGE_ROOT / "graphrag_workspace") if (FORGE_ROOT / "graphrag_workspace").exists() else (FORGE_ROOT / "graphrag")
+LIVING_REPORTS_ROOT = FORGE_ROOT / "reports" / "living_knowledge"
 TEMPLATES_DIR = Path(__file__).parent / "templates"
 STATIC_DIR = Path(__file__).parent / "static"
 STATIC_DIR.mkdir(parents=True, exist_ok=True)
@@ -210,6 +212,20 @@ def get_doc_snapshot() -> Dict[str, Any]:
     }
 
 
+def _latest_living_manifest() -> Dict[str, Any]:
+    latest_marker = LIVING_REPORTS_ROOT / "latest_run"
+    if latest_marker.exists():
+        run_id = latest_marker.read_text(encoding="utf-8").strip()
+        if run_id:
+            candidate = LIVING_REPORTS_ROOT / run_id / "manifest.json"
+            if candidate.exists():
+                return _read_json_dict(candidate)
+    manifests = sorted(LIVING_REPORTS_ROOT.glob("*/manifest.json"))
+    if not manifests:
+        return {}
+    return _read_json_dict(manifests[-1])
+
+
 
 def get_pipeline_snapshot() -> Dict[str, Any]:
     pipeline = _read_json_dict(PIPELINE_STATUS)
@@ -219,7 +235,71 @@ def get_pipeline_snapshot() -> Dict[str, Any]:
         "pipeline": pipeline,
         "scheduler": scheduler,
         "coordinator": coordinator,
+        "latest_manifest": _latest_living_manifest(),
         "available": bool(pipeline or scheduler or coordinator),
+    }
+
+
+def get_lexicon_queue_snapshot(limit: int = 16) -> Dict[str, Any]:
+    payload = _read_json_dict(LEXICON_QUEUE_PATH)
+    items = [row for row in (payload.get("items") or []) if isinstance(row, dict)]
+    counts: Dict[str, int] = {}
+    for row in items:
+        status = str(row.get("status") or "unknown")
+        counts[status] = counts.get(status, 0) + 1
+    items.sort(key=lambda row: (-int(row.get("occurrences") or 0), str(row.get("term") or "")))
+    return {
+        "available": LEXICON_QUEUE_PATH.exists(),
+        "path": str(LEXICON_QUEUE_PATH),
+        "queue_size": len(items),
+        "counts": counts,
+        "items": [
+            {
+                "term": row.get("term"),
+                "status": row.get("status"),
+                "occurrences": row.get("occurrences"),
+                "sources": list(row.get("sources") or [])[:4],
+                "updated_at": row.get("updated_at"),
+            }
+            for row in items[: max(1, int(limit))]
+        ],
+    }
+
+
+def get_doc_fusion_snapshot() -> Dict[str, Any]:
+    manifest = _latest_living_manifest()
+    doc_forge = manifest.get("doc_forge") if isinstance(manifest.get("doc_forge"), dict) else {}
+    living_doc = manifest.get("living_documentation") if isinstance(manifest.get("living_documentation"), dict) else {}
+    graphrag = manifest.get("graphrag") if isinstance(manifest.get("graphrag"), dict) else {}
+    post_ingest = living_doc.get("post_ingest") if isinstance(living_doc.get("post_ingest"), dict) else {}
+    lexicon_queue = living_doc.get("lexicon_queue") if isinstance(living_doc.get("lexicon_queue"), dict) else {}
+    return {
+        "available": bool(manifest),
+        "run_id": manifest.get("run_id"),
+        "doc_forge": {
+            "enabled": bool(doc_forge.get("enabled")),
+            "processed": int(doc_forge.get("processed") or 0),
+            "approved": int(doc_forge.get("approved") or 0),
+            "errors": int(doc_forge.get("errors") or 0),
+        },
+        "living_documentation": {
+            "generated": bool(living_doc.get("generated")),
+            "title": living_doc.get("title"),
+            "effective_thinking_mode": living_doc.get("effective_thinking_mode"),
+        },
+        "post_ingest": {
+            "indexed": bool(post_ingest.get("indexed")),
+            "documents": int(post_ingest.get("documents") or 0),
+            "scan_root": post_ingest.get("scan_root"),
+        },
+        "lexicon_queue": {
+            "queued": int(lexicon_queue.get("queued") or 0),
+            "processed": int(lexicon_queue.get("processed") or 0),
+        },
+        "graphrag": {
+            "indexed": bool(graphrag.get("indexed")),
+            "assessment_summary": graphrag.get("assessment_summary") if isinstance(graphrag.get("assessment_summary"), dict) else {},
+        },
     }
 
 
@@ -701,10 +781,12 @@ def get_forge_overview() -> Dict[str, Any]:
         "coordinator": get_runtime_coordinator(),
         "runtime_trends": get_runtime_trend_summary(limit=48),
         "word_forge": get_word_forge_snapshot(),
+        "lexicon_queue": get_lexicon_queue_snapshot(limit=12),
         "code_forge": get_code_library_snapshot(),
         "knowledge": get_knowledge_snapshot(),
         "memory": get_memory_snapshot(),
         "memory_trends": get_memory_trend_summary(limit=48),
+        "doc_fusion": get_doc_fusion_snapshot(),
     }
 
 
@@ -1436,6 +1518,16 @@ async def api_lexicon_graph(limit: int = 120):
         "edges": list(payload["edges"])[: max(1, int(limit)) * 4],
         "summary": get_word_forge_snapshot(),
     }
+
+
+@app.get("/api/lexicon/queue")
+async def api_lexicon_queue(limit: int = 16):
+    return JSONResponse(get_lexicon_queue_snapshot(limit=max(1, int(limit))))
+
+
+@app.get("/api/docs/fusion")
+async def api_docs_fusion():
+    return JSONResponse(get_doc_fusion_snapshot())
 
 
 @app.get("/api/code/search")

@@ -25,3 +25,15 @@ def test_state_persistence(temp_forge_root):
 
     status = json.loads(status_p.read_text())
     assert status["processed"] == 10
+
+
+def test_state_loader_resets_invalid_runtime_payload(temp_forge_root):
+    state_p = temp_forge_root / "state.json"
+    status_p = temp_forge_root / "status.json"
+    index_p = temp_forge_root / "index.json"
+    state_p.write_text("[]", encoding="utf-8")
+
+    state = ProcessorState(state_p, status_p, index_p)
+
+    assert state.get("status") == "initializing"
+    assert state.get("processed") == 0

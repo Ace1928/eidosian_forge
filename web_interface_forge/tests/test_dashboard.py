@@ -54,6 +54,32 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(dashboard, "DOC_STATUS", runtime / "processor_status.json")
     monkeypatch.setattr(dashboard, "PIPELINE_STATUS", data_runtime / "living_pipeline_status.json")
     monkeypatch.setattr(dashboard, "SCHEDULER_STATUS", data_runtime / "eidos_scheduler_status.json")
+    monkeypatch.setattr(dashboard, "LEXICON_QUEUE_PATH", data_runtime / "word_forge_lexicon_queue.json")
+    monkeypatch.setattr(dashboard, "LIVING_REPORTS_ROOT", tmp_path / "reports" / "living_knowledge")
+    monkeypatch.setattr(
+        dashboard,
+        "get_lexicon_queue_snapshot",
+        lambda limit=16: {
+            "available": True,
+            "path": str(data_runtime / "word_forge_lexicon_queue.json"),
+            "queue_size": 2,
+            "counts": {"queued": 1, "enriched": 1},
+            "items": [{"term": "vector", "status": "queued", "occurrences": 3, "sources": ["docs:foo"], "updated_at": "2026-03-07T00:00:00+00:00"}],
+        },
+    )
+    monkeypatch.setattr(
+        dashboard,
+        "get_doc_fusion_snapshot",
+        lambda: {
+            "available": True,
+            "run_id": "20260307_000000",
+            "doc_forge": {"enabled": True, "processed": 2, "approved": 2, "errors": 0},
+            "living_documentation": {"generated": True, "title": "Living Summary", "effective_thinking_mode": "off"},
+            "post_ingest": {"indexed": True, "documents": 1, "scan_root": "/tmp/scan"},
+            "lexicon_queue": {"queued": 2, "processed": 1},
+            "graphrag": {"indexed": True, "assessment_summary": {"status": "stable"}},
+        },
+    )
     monkeypatch.setattr(
         dashboard,
         "get_forge_overview",
@@ -66,12 +92,16 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
                 "scheduler": {"state": "idle", "cycle": 3, "consecutive_failures": 0},
             },
             "word_forge": {"term_count": 2, "edge_count": 1, "sample_terms": [{"term": "vector"}]},
+            "lexicon_queue": dashboard.get_lexicon_queue_snapshot(),
             "code_forge": {"total_units": 4},
             "knowledge": {
                 "node_count": 3,
                 "assessment_summary": {"status": "stable", "score": 0.72, "weak_community_labels": []},
                 "report_summary": {"top_community": "documents"},
             },
+            "memory": dashboard.get_memory_snapshot(),
+            "memory_trends": dashboard.get_memory_trend_summary(),
+            "doc_fusion": dashboard.get_doc_fusion_snapshot(),
         },
     )
     monkeypatch.setattr(
@@ -234,6 +264,8 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         explore_html = client.get("/explore").text
         assert "Atlas Explorer" in explore_html
         assert "Unified Query" in explore_html
+        assert "Lexicon Queue" in explore_html
+        assert "Doc Fusion" in explore_html
 
         runtime_payload = client.get("/api/runtime/forge").json()
         assert runtime_payload["pipeline"]["pipeline"]["phase"] == "word_forge"
@@ -251,6 +283,10 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
 
         lexicon_payload = client.get("/api/lexicon/search?query=vector").json()
         assert lexicon_payload["terms"][0]["id"] == "vector"
+        lexicon_queue_payload = client.get("/api/lexicon/queue").json()
+        assert lexicon_queue_payload["queue_size"] == 2
+        doc_fusion_payload = client.get("/api/docs/fusion").json()
+        assert doc_fusion_payload["post_ingest"]["indexed"] is True
 
         code_payload = client.get("/api/code/search?query=fn").json()
         assert code_payload["results"][0]["qualified_name"] == "pkg.mod.fn"

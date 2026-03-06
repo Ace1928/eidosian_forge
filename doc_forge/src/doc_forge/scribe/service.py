@@ -166,6 +166,19 @@ class DocProcessor:
 
     def _is_excluded(self, path: Path) -> bool:
         resolved = path.resolve()
+        source_root = self.cfg.source_root.resolve()
+        forge_root = self.cfg.forge_root.resolve()
+        scoped_scan = source_root != forge_root
+        if scoped_scan:
+            try:
+                rel = resolved.relative_to(source_root)
+            except Exception:
+                rel = None
+            if rel is not None:
+                for part in rel.parts:
+                    if part in {".git", "__pycache__", ".pytest_cache", "node_modules", "eidos_mcp_backup"}:
+                        return True
+                return False
         for prefix in self.excluded_prefixes:
             try:
                 resolved.relative_to(prefix)
@@ -231,15 +244,11 @@ class DocProcessor:
         except Exception as exc:
             return {"queued": False, "error": str(exc)}
         try:
-            queued_markdown = json.loads(
-                wf_router.wf_queue_terms_from_text(markdown[:6000], source=f"doc_forge:{source}")
-            )
+            queued_markdown = json.loads(wf_router.wf_queue_terms_from_text(markdown[:6000], source=f"doc_forge:{source}"))
         except Exception as exc:
             return {"queued": False, "error": str(exc)}
         try:
-            queued_source = json.loads(
-                wf_router.wf_queue_terms_from_text(source_text[:6000], source=f"source:{source}")
-            )
+            queued_source = json.loads(wf_router.wf_queue_terms_from_text(source_text[:6000], source=f"source:{source}"))
         except Exception:
             queued_source = {"status": "error"}
         return {
@@ -289,9 +298,7 @@ class DocProcessor:
             stage_path.write_text(markdown, encoding="utf-8")
             self.state.update("last_staged", rel_key)
 
-            scorecard = self.judges.evaluate(
-                markdown=markdown, source_text=source_text, rel_path=rel_key, metadata=metadata
-            )
+            scorecard = self.judges.evaluate(markdown=markdown, source_text=source_text, rel_path=rel_key, metadata=metadata)
             atomic_write_json(judgment_path, scorecard)
 
             quality = float(scorecard.get("aggregate_score", 0.0))
@@ -394,11 +401,11 @@ class DocProcessor:
     def process_pending(self, max_documents: int | None = None) -> dict[str, Any]:
         self.state.update("status", "running")
         self.state.persist()
-        if not self.cfg.dry_run and not self.model_server.is_ready():
+        if not self.cfg.dry_run and self.cfg.enable_managed_llm and not self.model_server.is_ready():
             self.model_server.start()
         pending = self._pending_documents()
         if max_documents is not None and max_documents > 0:
-            pending = pending[:max_documents]
+            pending = pending[: max_documents]
         if not pending:
             self.state.update("status", "idle")
             self.state.persist()
