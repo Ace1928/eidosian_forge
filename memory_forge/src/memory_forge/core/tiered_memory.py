@@ -15,7 +15,11 @@ relevance, importance, and access patterns.
 from __future__ import annotations
 
 import json
+import os
+import tempfile
+import threading
 import uuid
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
@@ -26,6 +30,11 @@ from eidosian_core import eidosian
 from eidosian_core.ports import get_service_url
 
 from .interfaces import MemoryType
+
+try:
+    import fcntl
+except ImportError:  # pragma: no cover - non-POSIX fallback
+    fcntl = None
 
 
 class MemoryTier(str, Enum):
@@ -215,6 +224,10 @@ class TieredMemorySystem:
             self.persistence_dir = persistence_dir
         self.persistence_dir.mkdir(parents=True, exist_ok=True)
         self.embedder = embedder
+        self._thread_lock = threading.RLock()
+        self._lock_path = self.persistence_dir / ".tiered_memory.lock"
+        self._lock_handle = None
+        self._lock_depth = 0
 
         # Initialize tier storage
         self.tiers: Dict[MemoryTier, Dict[str, TieredMemoryItem]] = {tier: {} for tier in MemoryTier}
@@ -240,22 +253,18 @@ class TieredMemorySystem:
                 embedding = self.embedder.embed_text(content)
             except Exception:
                 pass
-
-        item = TieredMemoryItem(
-            content=content,
-            tier=tier,
-            namespace=namespace,
-            memory_type=memory_type,
-            importance=importance,
-            embedding=embedding,
-            ttl_seconds=self.TIER_TTL.get(tier),
-            tags=tags or set(),
-            metadata=metadata or {},
-        )
-
-        self.tiers[tier][item.id] = item
-        self._persist_tier(tier)
-        return item.id
+        with self._mutation_lock():
+            self._reload_from_disk_locked()
+            return self._remember_locked(
+                content=content,
+                tier=tier,
+                namespace=namespace,
+                memory_type=memory_type,
+                importance=importance,
+                tags=tags,
+                metadata=metadata,
+                embedding=embedding,
+            )
 
     @eidosian()
     def recall(
@@ -405,16 +414,18 @@ class TieredMemorySystem:
     @eidosian()
     def promote(self, memory_id: str, target_tier: MemoryTier) -> bool:
         """Manually promote a memory to a higher tier."""
-        for tier in MemoryTier:
-            if memory_id in self.tiers[tier]:
-                item = self.tiers[tier].pop(memory_id)
-                item.tier = target_tier
-                item.ttl_seconds = self.TIER_TTL.get(target_tier)
-                self.tiers[target_tier][memory_id] = item
-                self._persist_tier(tier)
-                self._persist_tier(target_tier)
-                return True
-        return False
+        with self._mutation_lock():
+            self._reload_from_disk_locked()
+            for tier in MemoryTier:
+                if memory_id in self.tiers[tier]:
+                    item = self.tiers[tier].pop(memory_id)
+                    item.tier = target_tier
+                    item.ttl_seconds = self.TIER_TTL.get(target_tier)
+                    self.tiers[target_tier][memory_id] = item
+                    self._persist_tier(tier)
+                    self._persist_tier(target_tier)
+                    return True
+            return False
 
     @eidosian()
     def demote(self, memory_id: str, target_tier: MemoryTier) -> bool:
@@ -424,16 +435,18 @@ class TieredMemorySystem:
     @eidosian()
     def link_memories(self, memory_id_a: str, memory_id_b: str) -> bool:
         """Create bidirectional links between memories."""
-        item_a = self._find_memory(memory_id_a)
-        item_b = self._find_memory(memory_id_b)
+        with self._mutation_lock():
+            self._reload_from_disk_locked()
+            item_a = self._find_memory(memory_id_a)
+            item_b = self._find_memory(memory_id_b)
 
-        if item_a and item_b:
-            item_a.linked_memories.add(memory_id_b)
-            item_b.linked_memories.add(memory_id_a)
-            self._persist_tier(item_a.tier)
-            self._persist_tier(item_b.tier)
-            return True
-        return False
+            if item_a and item_b:
+                item_a.linked_memories.add(memory_id_b)
+                item_b.linked_memories.add(memory_id_a)
+                self._persist_tier(item_a.tier)
+                self._persist_tier(item_b.tier)
+                return True
+            return False
 
     @eidosian()
     def get_related(self, memory_id: str) -> List[TieredMemoryItem]:
@@ -452,15 +465,17 @@ class TieredMemorySystem:
     @eidosian()
     def cleanup_expired(self) -> int:
         """Remove expired memories. Returns count of removed items."""
-        removed = 0
-        for tier in MemoryTier:
-            expired_ids = [mid for mid, item in self.tiers[tier].items() if item.is_expired()]
-            for mid in expired_ids:
-                del self.tiers[tier][mid]
-                removed += 1
-            if expired_ids:
-                self._persist_tier(tier)
-        return removed
+        with self._mutation_lock():
+            self._reload_from_disk_locked()
+            removed = 0
+            for tier in MemoryTier:
+                expired_ids = [mid for mid, item in self.tiers[tier].items() if item.is_expired()]
+                for mid in expired_ids:
+                    del self.tiers[tier][mid]
+                    removed += 1
+                if expired_ids:
+                    self._persist_tier(tier)
+            return removed
 
     @eidosian()
     def semantic_compress_old_memories(
@@ -482,6 +497,26 @@ class TieredMemorySystem:
         older_than_days = max(0, int(older_than_days))
         min_cluster_size = max(2, int(min_cluster_size))
         max_clusters = max(1, int(max_clusters))
+
+        with self._mutation_lock():
+            self._merge_disk_state_locked()
+            return self._semantic_compress_old_memories_locked(
+                older_than_days=older_than_days,
+                similarity_threshold=similarity_threshold,
+                min_cluster_size=min_cluster_size,
+                max_clusters=max_clusters,
+                dry_run=dry_run,
+            )
+
+    def _semantic_compress_old_memories_locked(
+        self,
+        older_than_days: int,
+        similarity_threshold: float,
+        min_cluster_size: int,
+        max_clusters: int,
+        dry_run: bool,
+    ) -> Dict[str, Any]:
+        """Compression implementation that assumes the persistence lock is held."""
 
         cutoff = datetime.now() - timedelta(days=older_than_days)
         candidates: List[TieredMemoryItem] = []
@@ -553,7 +588,7 @@ class TieredMemorySystem:
             for member in cluster:
                 summary_tags.update({tag for tag in member.tags if tag})
 
-            summary_id = self.remember(
+            summary_id = self._remember_locked(
                 content=summary_content,
                 tier=MemoryTier.LONG_TERM,
                 namespace=MemoryNamespace.KNOWLEDGE,
@@ -569,6 +604,7 @@ class TieredMemorySystem:
                     "similarity_threshold": similarity_threshold,
                     "compressed_at": datetime.now().isoformat(),
                 },
+                embedding=None,
             )
             summaries_created += 1
 
@@ -730,25 +766,231 @@ class TieredMemorySystem:
         """Save a specific tier to disk."""
         path = self.persistence_dir / f"{tier.value}.json"
         data = [item.to_dict() for item in self.tiers[tier].values()]
-        with open(path, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2)
+        self._atomic_write_json(path, data)
 
     def _load(self) -> None:
         """Load all tiers from disk."""
-        for tier in MemoryTier:
-            path = self.persistence_dir / f"{tier.value}.json"
-            if path.exists():
-                try:
-                    with open(path, "r", encoding="utf-8") as f:
-                        data = json.load(f)
-                    for item_data in data:
-                        item = TieredMemoryItem.from_dict(item_data)
-                        self.tiers[tier][item.id] = item
-                except Exception:
-                    pass
+        self.tiers = self._read_all_tiers()
 
     @eidosian()
     def save_all(self) -> None:
         """Persist all tiers to disk."""
+        with self._mutation_lock():
+            self._merge_disk_state_locked()
+            for tier in MemoryTier:
+                self._persist_tier(tier)
+
+    @contextmanager
+    def _mutation_lock(self):
+        with self._thread_lock:
+            if self._lock_depth == 0:
+                self._lock_path.parent.mkdir(parents=True, exist_ok=True)
+                self._lock_handle = open(self._lock_path, "a+", encoding="utf-8")
+                if fcntl is not None:
+                    fcntl.flock(self._lock_handle.fileno(), fcntl.LOCK_EX)
+            self._lock_depth += 1
+        try:
+            yield
+        finally:
+            with self._thread_lock:
+                self._lock_depth -= 1
+                if self._lock_depth == 0 and self._lock_handle is not None:
+                    if fcntl is not None:
+                        fcntl.flock(self._lock_handle.fileno(), fcntl.LOCK_UN)
+                    self._lock_handle.close()
+                    self._lock_handle = None
+
+    def _read_all_tiers(self) -> Dict[MemoryTier, Dict[str, TieredMemoryItem]]:
+        tiers: Dict[MemoryTier, Dict[str, TieredMemoryItem]] = {tier: {} for tier in MemoryTier}
         for tier in MemoryTier:
-            self._persist_tier(tier)
+            path = self.persistence_dir / f"{tier.value}.json"
+            if not path.exists():
+                continue
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                for item_data in data:
+                    item = TieredMemoryItem.from_dict(item_data)
+                    tiers[tier][item.id] = item
+            except Exception:
+                continue
+        return tiers
+
+    def _reload_from_disk_locked(self) -> None:
+        self.tiers = self._read_all_tiers()
+
+    def _merge_disk_state_locked(self) -> None:
+        disk_tiers = self._read_all_tiers()
+        merged: Dict[MemoryTier, Dict[str, TieredMemoryItem]] = {tier: {} for tier in MemoryTier}
+        for tier in MemoryTier:
+            merged[tier].update(disk_tiers[tier])
+            for item_id, local_item in self.tiers[tier].items():
+                disk_item = merged[tier].get(item_id)
+                if disk_item is None:
+                    merged[tier][item_id] = local_item
+                else:
+                    merged[tier][item_id] = self._merge_items(disk_item, local_item)
+        self.tiers = merged
+
+    def _remember_locked(
+        self,
+        content: str,
+        tier: MemoryTier,
+        namespace: MemoryNamespace,
+        memory_type: MemoryType,
+        importance: float,
+        tags: Optional[Set[str]],
+        metadata: Optional[Dict[str, Any]],
+        embedding: Optional[List[float]],
+    ) -> str:
+        """Store or merge a memory while holding the persistence lock."""
+        normalized_tags = set(tags or set())
+        normalized_metadata = dict(metadata or {})
+        existing = self._find_duplicate_memory(
+            content=content,
+            tier=tier,
+            namespace=namespace,
+            memory_type=memory_type,
+            metadata=normalized_metadata,
+        )
+        if existing is not None:
+            existing.tags.update(normalized_tags)
+            existing.metadata = self._merge_metadata(existing.metadata, normalized_metadata)
+            existing.importance = max(existing.importance, importance)
+            existing.last_accessed = datetime.now()
+            if existing.embedding is None and embedding:
+                existing.embedding = embedding
+            self._persist_tier(existing.tier)
+            return existing.id
+
+        item = TieredMemoryItem(
+            content=content,
+            tier=tier,
+            namespace=namespace,
+            memory_type=memory_type,
+            importance=importance,
+            embedding=embedding,
+            ttl_seconds=self.TIER_TTL.get(tier),
+            tags=normalized_tags,
+            metadata=normalized_metadata,
+        )
+        self.tiers[tier][item.id] = item
+        self._persist_tier(tier)
+        return item.id
+
+    def _find_duplicate_memory(
+        self,
+        content: str,
+        tier: MemoryTier,
+        namespace: MemoryNamespace,
+        memory_type: MemoryType,
+        metadata: Dict[str, Any],
+    ) -> Optional[TieredMemoryItem]:
+        signature = self._memory_signature(
+            content=content,
+            tier=tier,
+            namespace=namespace,
+            memory_type=memory_type,
+            metadata=metadata,
+        )
+        for item in self.tiers[tier].values():
+            if (
+                self._memory_signature(
+                    content=item.content,
+                    tier=item.tier,
+                    namespace=item.namespace,
+                    memory_type=item.memory_type,
+                    metadata=item.metadata,
+                )
+                == signature
+            ):
+                return item
+        return None
+
+    def _memory_signature(
+        self,
+        content: str,
+        tier: MemoryTier,
+        namespace: MemoryNamespace,
+        memory_type: MemoryType,
+        metadata: Dict[str, Any],
+    ) -> str:
+        return json.dumps(
+            {
+                "content": content.strip(),
+                "tier": tier.value,
+                "namespace": namespace.value,
+                "memory_type": memory_type.value,
+                "metadata": self._normalize_json_value(metadata),
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+
+    def _merge_items(self, disk_item: TieredMemoryItem, local_item: TieredMemoryItem) -> TieredMemoryItem:
+        merged = TieredMemoryItem(
+            id=local_item.id,
+            content=local_item.content or disk_item.content,
+            created_at=min(disk_item.created_at, local_item.created_at),
+            last_accessed=max(disk_item.last_accessed, local_item.last_accessed),
+            access_count=max(disk_item.access_count, local_item.access_count),
+            tier=local_item.tier,
+            namespace=local_item.namespace,
+            memory_type=local_item.memory_type,
+            embedding=local_item.embedding or disk_item.embedding,
+            metadata=self._merge_metadata(disk_item.metadata, local_item.metadata),
+            importance=max(disk_item.importance, local_item.importance),
+            ttl_seconds=local_item.ttl_seconds if local_item.ttl_seconds is not None else disk_item.ttl_seconds,
+            tags=set(disk_item.tags) | set(local_item.tags),
+            linked_memories=set(disk_item.linked_memories) | set(local_item.linked_memories),
+        )
+        return merged
+
+    def _merge_metadata(self, base: Dict[str, Any], incoming: Dict[str, Any]) -> Dict[str, Any]:
+        merged = dict(base)
+        for key, value in incoming.items():
+            if key not in merged:
+                merged[key] = value
+                continue
+            existing = merged[key]
+            if isinstance(existing, dict) and isinstance(value, dict):
+                merged[key] = self._merge_metadata(existing, value)
+            elif isinstance(existing, list) and isinstance(value, list):
+                merged[key] = list(dict.fromkeys(existing + value))
+            elif isinstance(existing, set) and isinstance(value, set):
+                merged[key] = sorted(existing | value)
+            elif existing in (None, "", []):
+                merged[key] = value
+            elif value not in (None, "", []):
+                merged[key] = value
+        return merged
+
+    def _normalize_json_value(self, value: Any) -> Any:
+        if isinstance(value, dict):
+            return {key: self._normalize_json_value(val) for key, val in sorted(value.items())}
+        if isinstance(value, set):
+            return [self._normalize_json_value(val) for val in sorted(value)]
+        if isinstance(value, (list, tuple)):
+            return [self._normalize_json_value(val) for val in value]
+        return value
+
+    def _atomic_write_json(self, path: Path, data: Any) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        temp_path = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                "w",
+                encoding="utf-8",
+                dir=path.parent,
+                prefix=f".{path.name}.",
+                suffix=".tmp",
+                delete=False,
+            ) as handle:
+                json.dump(data, handle, indent=2)
+                handle.flush()
+                os.fsync(handle.fileno())
+                temp_path = Path(handle.name)
+            os.replace(temp_path, path)
+        finally:
+            if temp_path and temp_path.exists():
+                temp_path.unlink(missing_ok=True)

@@ -13,12 +13,12 @@
     "ttl_seconds": null,
     "tags": [
       "triage",
-      "knowledge_forge",
       "dedup",
-      "digester",
-      "semantic_search",
+      "knowledge_forge",
       "code_forge",
-      "graphrag"
+      "graphrag",
+      "digester",
+      "semantic_search"
     ],
     "linked_memories": []
   },
@@ -36,11 +36,11 @@
     "ttl_seconds": null,
     "tags": [
       "production",
-      "push",
       "tests",
       "code_forge",
+      "archive_digester",
       "commit",
-      "archive_digester"
+      "push"
     ],
     "linked_memories": []
   },
@@ -57,10 +57,10 @@
     "importance": 0.9,
     "ttl_seconds": null,
     "tags": [
-      "quality",
-      "assessment",
+      "graphrag",
       "benchmark",
-      "graphrag"
+      "quality",
+      "assessment"
     ],
     "linked_memories": []
   },
@@ -78,10 +78,10 @@
     "ttl_seconds": null,
     "tags": [
       "multimodal",
+      "tool-calling",
       "benchmark",
-      "models",
       "judges",
-      "tool-calling"
+      "models"
     ],
     "linked_memories": []
   },
@@ -98,11 +98,11 @@
     "importance": 0.96,
     "ttl_seconds": null,
     "tags": [
-      "artifact_validation",
-      "push",
+      "triage_audit",
       "tests",
       "code_forge",
-      "triage_audit"
+      "artifact_validation",
+      "push"
     ],
     "linked_memories": []
   },
@@ -119,10 +119,10 @@
     "importance": 0.88,
     "ttl_seconds": null,
     "tags": [
-      "termux",
-      "code_forge",
+      "drift",
       "benchmark",
-      "drift"
+      "code_forge",
+      "termux"
     ],
     "linked_memories": []
   },
@@ -139,12 +139,12 @@
     "importance": 0.95,
     "ttl_seconds": null,
     "tags": [
-      "canonicalization",
-      "production",
-      "benchmark",
-      "code_forge",
+      "regression",
       "dependency_graph",
-      "regression"
+      "canonicalization",
+      "code_forge",
+      "production",
+      "benchmark"
     ],
     "linked_memories": []
   },
@@ -161,12 +161,12 @@
     "importance": 0.96,
     "ttl_seconds": null,
     "tags": [
-      "regression_gate",
       "canonical_plan",
-      "benchmark",
-      "push",
-      "code_forge",
       "dependency_graph",
+      "code_forge",
+      "benchmark",
+      "regression_gate",
+      "push",
       "phase_complete"
     ],
     "linked_memories": []
@@ -184,12 +184,12 @@
     "importance": 0.97,
     "ttl_seconds": null,
     "tags": [
-      "schema_validation",
-      "termux",
+      "triage_audit",
       "benchmark_gate",
       "structural_duplicates",
       "code_forge",
-      "triage_audit"
+      "termux",
+      "schema_validation"
     ],
     "linked_memories": []
   },
@@ -206,14 +206,14 @@
     "importance": 0.95,
     "ttl_seconds": null,
     "tags": [
-      "roundtrip",
-      "knowledge_forge",
       "integration",
-      "parity",
-      "code_forge",
       "regeneration",
-      "graphrag",
-      "audit_forge"
+      "knowledge_forge",
+      "parity",
+      "roundtrip",
+      "code_forge",
+      "audit_forge",
+      "graphrag"
     ],
     "linked_memories": []
   },
@@ -230,13 +230,13 @@
     "importance": 0.96,
     "ttl_seconds": null,
     "tags": [
-      "roundtrip",
-      "termux",
-      "tests",
-      "parity",
-      "code_forge",
       "regeneration",
-      "sms_forge"
+      "sms_forge",
+      "parity",
+      "tests",
+      "roundtrip",
+      "code_forge",
+      "termux"
     ],
     "linked_memories": []
   },
@@ -253,11 +253,11 @@
     "importance": 0.95,
     "ttl_seconds": null,
     "tags": [
-      "security",
-      "data-governance",
-      "code_forge",
+      "gitleaks",
       "eidos_mcp",
-      "gitleaks"
+      "code_forge",
+      "security",
+      "data-governance"
     ],
     "linked_memories": []
   },
@@ -274,11 +274,11 @@
     "importance": 0.95,
     "ttl_seconds": null,
     "tags": [
+      "chroma",
       "ci",
       "termux",
-      "chroma",
-      "git",
-      "commit"
+      "commit",
+      "git"
     ],
     "linked_memories": []
   },
@@ -297,9 +297,9 @@
     "tags": [
       "knowledge_forge",
       "tests",
+      "interop",
       "mcp",
-      "graphrag",
-      "interop"
+      "graphrag"
     ],
     "linked_memories": []
   },
@@ -316,10 +316,10 @@
     "importance": 0.9,
     "ttl_seconds": null,
     "tags": [
-      "figlet_forge",
       "testing",
       "moltbook_forge",
       "termux",
+      "figlet_forge",
       "compatibility"
     ],
     "linked_memories": []
@@ -337,12 +337,12 @@
     "importance": 0.92,
     "ttl_seconds": null,
     "tags": [
-      "ci",
-      "stability",
-      "tests",
-      "workflow",
       "documentation",
-      "regression"
+      "workflow",
+      "regression",
+      "tests",
+      "ci",
+      "stability"
     ],
     "linked_memories": []
   },
@@ -360,9 +360,9 @@
     "ttl_seconds": null,
     "tags": [
       "ci",
-      "venv",
       "termux",
       "pytest",
+      "venv",
       "audit"
     ],
     "linked_memories": []
@@ -383,11 +383,11 @@
       "memory_forge",
       "knowledge_forge",
       "tests",
+      "interop",
       "mcp",
       "code_forge",
       "graphrag",
-      "word_forge",
-      "interop"
+      "word_forge"
     ],
     "linked_memories": []
   },
@@ -404,13 +404,13 @@
     "importance": 0.98,
     "ttl_seconds": null,
     "tags": [
-      "staleness",
-      "tests",
-      "eval_os",
-      "observability",
-      "code_forge",
       "taskbank",
-      "replay"
+      "tests",
+      "replay",
+      "code_forge",
+      "staleness",
+      "eval_os",
+      "observability"
     ],
     "linked_memories": []
   },
@@ -427,9 +427,9 @@
     "importance": 0.92,
     "ttl_seconds": null,
     "tags": [
-      "code_forge",
-      "crawl_forge",
       "todo",
+      "crawl_forge",
+      "code_forge",
       "tests"
     ],
     "linked_memories": []
@@ -447,10 +447,10 @@
     "importance": 0.94,
     "ttl_seconds": null,
     "tags": [
-      "termux",
-      "rebase",
       "validation",
-      "git"
+      "git",
+      "rebase",
+      "termux"
     ],
     "linked_memories": []
   },
@@ -467,12 +467,12 @@
     "importance": 0.87,
     "ttl_seconds": null,
     "tags": [
-      "cli",
-      "termux",
-      "benchmark",
-      "consciousness",
       "adapter",
-      "agent_forge"
+      "cli",
+      "consciousness",
+      "termux",
+      "agent_forge",
+      "benchmark"
     ],
     "linked_memories": []
   },
@@ -489,12 +489,12 @@
     "importance": 0.88,
     "ttl_seconds": null,
     "tags": [
-      "todo",
-      "termux",
-      "benchmark",
-      "dashboard",
       "validation",
-      "agent_forge"
+      "dashboard",
+      "todo",
+      "agent_forge",
+      "termux",
+      "benchmark"
     ],
     "linked_memories": []
   },
@@ -511,11 +511,34 @@
     "importance": 0.84,
     "ttl_seconds": null,
     "tags": [
-      "ci",
-      "quality-gate",
       "workflow",
+      "quality-gate",
+      "coverage",
       "code_forge",
-      "coverage"
+      "ci"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "c68ff231-7561-4ab2-a7e1-2fa76e276044",
+    "content": "Autonomy supervisor selected mission consciousness_guard: Autonomy: consciousness guard loop with score 1.500. Context query: consciousness benchmark latency memory knowledge autonomy percept daemon.beat drive novelty_hunger pred_err sense.percept simulated intero.drive daemon created autonomous continuation that monitors screen for idle states",
+    "created_at": "2026-03-06T10:22:23.782031",
+    "last_accessed": "2026-03-06T11:10:01.780032",
+    "access_count": 1,
+    "tier": "long_term",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {
+      "mission_id": "consciousness_guard",
+      "template": "consciousness_guard",
+      "context_query": "consciousness benchmark latency memory knowledge autonomy percept daemon.beat drive novelty_hunger pred_err sense.percept simulated intero.drive daemon created autonomous continuation that monitors screen for idle states"
+    },
+    "importance": 0.9,
+    "ttl_seconds": null,
+    "tags": [
+      "autonomy",
+      "consciousness_guard",
+      "supervisor"
     ],
     "linked_memories": []
   }

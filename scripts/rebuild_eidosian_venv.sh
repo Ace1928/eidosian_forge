@@ -54,11 +54,19 @@ configure_android_build_env() {
 
   export ANDROID_API_LEVEL="${ANDROID_API_LEVEL:-24}"
   export CARGO_BUILD_JOBS="${CARGO_BUILD_JOBS:-1}"
+  export MAX_JOBS="${MAX_JOBS:-1}"
+  export CMAKE_BUILD_PARALLEL_LEVEL="${CMAKE_BUILD_PARALLEL_LEVEL:-1}"
+  export NPY_NUM_BUILD_JOBS="${NPY_NUM_BUILD_JOBS:-1}"
+  export NINJAFLAGS="${NINJAFLAGS:--j1}"
   cargo_target_dir="${CARGO_TARGET_DIR:-${FORGE_ROOT}/tmp/cargo-target}"
   mkdir -p "${cargo_target_dir}"
   export CARGO_TARGET_DIR="${cargo_target_dir}"
   echo "Android API level: ${ANDROID_API_LEVEL}"
   echo "Cargo build jobs: ${CARGO_BUILD_JOBS}"
+  echo "Generic build jobs: ${MAX_JOBS}"
+  echo "CMake parallel level: ${CMAKE_BUILD_PARALLEL_LEVEL}"
+  echo "NumPy build jobs: ${NPY_NUM_BUILD_JOBS}"
+  echo "Ninja flags: ${NINJAFLAGS}"
   echo "Cargo target dir: ${CARGO_TARGET_DIR}"
 }
 
@@ -177,6 +185,16 @@ if [[ "${WITH_REQUIREMENTS}" -eq 1 ]]; then
   fi
 else
   echo "Dependency installation skipped (--without-requirements)."
+fi
+
+if [[ "${SYSTEM_SITE}" -ne 1 ]]; then
+  os_name="$(uname -o 2>/dev/null || true)"
+  if [[ "${os_name}" == "Android" || -n "${TERMUX_VERSION:-}" ]]; then
+    if [[ -x "${FORGE_ROOT}/scripts/vendor_termux_python_packages.sh" ]]; then
+      echo "Vendoring selected Termux native Python packages into ${VENV_DIR}"
+      "${FORGE_ROOT}/scripts/vendor_termux_python_packages.sh"
+    fi
+  fi
 fi
 
 echo "Venv rebuild complete."

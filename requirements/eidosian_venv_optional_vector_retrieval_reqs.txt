@@ -1,0 +1,4 @@
+# Optional vector retrieval stack.
+# Deliberately excluded from the canonical Termux runtime because chromadb
+# currently requires onnxruntime wheels that PyPI does not publish for Android.
+chromadb==1.3.5

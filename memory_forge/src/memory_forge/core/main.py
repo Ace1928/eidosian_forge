@@ -14,7 +14,6 @@ try:
 except ModuleNotFoundError as exc:
     ChromaBackend = None
     _CHROMA_IMPORT_ERROR = exc
-from ..backends.json_store import JsonBackend
 from .config import MemoryConfig
 
 
@@ -37,6 +36,8 @@ class MemoryForge:
                 self.config.episodic.connection_string,
             )
         elif self.config.episodic.type == "json":
+            from ..backends.json_store import JsonBackend
+
             self.episodic = JsonBackend(self.config.episodic.connection_string)
         else:
             raise ValueError(f"Unknown backend type: {self.config.episodic.type}")

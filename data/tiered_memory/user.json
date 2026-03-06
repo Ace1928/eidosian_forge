@@ -3,8 +3,8 @@
     "id": "e7e5a5d6-6cf7-4d29-a147-9469a91ce943",
     "content": "2026-02-16T13:35:39Z USER preference confirmed: all repo python/test operations should run via eidosian_venv; include memory and KB growth in commit cycles.",
     "created_at": "2026-02-16T23:35:39.863010",
-    "last_accessed": "2026-02-16T23:35:39.863011",
-    "access_count": 0,
+    "last_accessed": "2026-03-06T11:37:27.085910",
+    "access_count": 1,
     "tier": "user",
     "namespace": "user",
     "memory_type": "semantic",
@@ -15,9 +15,9 @@
     "ttl_seconds": null,
     "tags": [
       "preference",
-      "termux",
       "workflow",
-      "venv"
+      "venv",
+      "termux"
     ],
     "linked_memories": []
   },
@@ -25,8 +25,8 @@
     "id": "24c8a8b1-6a40-4015-8fc9-c7c3eb578492",
     "content": "2026-02-16T22:54:34Z USER workflow preference honored: dependency remediation now uses eidosian_venv with dry-run -> write -> post-write dry-run idempotency checks and backup snapshots.",
     "created_at": "2026-02-16T22:54:34.676824+00:00",
-    "last_accessed": "2026-02-16T22:54:34.676824+00:00",
-    "access_count": 0,
+    "last_accessed": "2026-03-06T11:39:35.047848",
+    "access_count": 2,
     "tier": "user",
     "namespace": "user",
     "memory_type": "semantic",
@@ -36,11 +36,11 @@
     "importance": 1.2,
     "ttl_seconds": null,
     "tags": [
-      "termux",
       "workflow",
-      "venv",
+      "security",
+      "termux",
       "dependabot",
-      "security"
+      "venv"
     ],
     "linked_memories": []
   },
@@ -48,8 +48,8 @@
     "id": "0cdf4a2b-c24b-4302-ba4f-bbcf6472b01d",
     "content": "2026-02-16T23:11:06Z USER continuity checkpoint: completed all-severity remediation pass and no-fix mitigation (ecdsa/keras dependency minimization, orjson range-safe bump) with idempotent validation.",
     "created_at": "2026-02-16T23:11:06.353944+00:00",
-    "last_accessed": "2026-02-16T23:11:06.353944+00:00",
-    "access_count": 0,
+    "last_accessed": "2026-03-06T11:37:27.085937",
+    "access_count": 1,
     "tier": "user",
     "namespace": "user",
     "memory_type": "semantic",
@@ -59,11 +59,11 @@
     "importance": 1.2,
     "ttl_seconds": null,
     "tags": [
-      "termux",
-      "workflow",
       "phase17",
-      "dependabot",
-      "security"
+      "workflow",
+      "security",
+      "termux",
+      "dependabot"
     ],
     "linked_memories": []
   },
@@ -82,11 +82,11 @@
     "importance": 1.2,
     "ttl_seconds": null,
     "tags": [
-      "termux",
       "workflow",
+      "security",
+      "termux",
       "closure",
-      "dependabot",
-      "security"
+      "dependabot"
     ],
     "linked_memories": []
   },
@@ -94,8 +94,8 @@
     "id": "abec8a56-9db9-46dc-bbdd-32ceb2c4fba7",
     "content": "2026-02-16T23:43:19Z USER request alignment: completed checklist audit, confirmed Phases 0-17 complete, and began Phase 18 with substantial runtime hardening upgrades.",
     "created_at": "2026-02-16T23:43:19.283684+00:00",
-    "last_accessed": "2026-02-16T23:43:19.283684+00:00",
-    "access_count": 0,
+    "last_accessed": "2026-03-06T11:37:27.085963",
+    "access_count": 2,
     "tier": "user",
     "namespace": "user",
     "memory_type": "semantic",
@@ -105,9 +105,9 @@
     "importance": 1.2,
     "ttl_seconds": null,
     "tags": [
+      "hardening",
       "checklist-audit",
       "user",
-      "hardening",
       "phase18"
     ],
     "linked_memories": []
@@ -116,8 +116,8 @@
     "id": "2e51f1b6-b3ff-40cf-8ef2-c33cb90aab2f",
     "content": "2026-02-17T00:24:46Z USER directive honored: finalized Phase 18 by exposing watchdog/payload runtime health through CLI+MCP and adding a repeatable stress benchmark profile wired into CI trend reporting.",
     "created_at": "2026-02-17T00:24:46+00:00",
-    "last_accessed": "2026-02-17T00:24:46+00:00",
-    "access_count": 0,
+    "last_accessed": "2026-03-06T11:37:27.085990",
+    "access_count": 1,
     "tier": "user",
     "namespace": "user",
     "memory_type": "semantic",
@@ -127,12 +127,12 @@
     "importance": 1.2,
     "ttl_seconds": null,
     "tags": [
-      "stress-benchmark",
-      "watchdog",
+      "phase18",
       "cli",
       "mcp",
       "user",
-      "phase18"
+      "watchdog",
+      "stress-benchmark"
     ],
     "linked_memories": []
   },
@@ -140,8 +140,8 @@
     "id": "ba95ea2d-3656-4a72-b2d2-7297848d8995",
     "content": "2026-02-17T00:24:46Z USER quality bar upheld: runtime status surfaces are now read-only/side-effect-free and validated with regression tests after the Phase 18 status exposure rollout.",
     "created_at": "2026-02-17T00:24:46+00:00",
-    "last_accessed": "2026-02-17T00:24:46+00:00",
-    "access_count": 0,
+    "last_accessed": "2026-03-06T11:37:27.086017",
+    "access_count": 2,
     "tier": "user",
     "namespace": "user",
     "memory_type": "semantic",
@@ -152,10 +152,10 @@
     "ttl_seconds": null,
     "tags": [
       "status",
+      "phase18",
       "side-effect-free",
-      "quality",
       "user",
-      "phase18"
+      "quality"
     ],
     "linked_memories": []
   },
@@ -175,9 +175,9 @@
     "ttl_seconds": null,
     "tags": [
       "phase19",
-      "ci",
-      "user",
       "linux-parity",
+      "user",
+      "ci",
       "audit-matrix"
     ],
     "linked_memories": []
@@ -197,11 +197,11 @@
     "importance": 1.2,
     "ttl_seconds": null,
     "tags": [
-      "phase20",
-      "ci-gate",
-      "observability",
       "linux-audit",
-      "user"
+      "phase20",
+      "user",
+      "ci-gate",
+      "observability"
     ],
     "linked_memories": []
   },
@@ -222,9 +222,9 @@
     "tags": [
       "phase21",
       "event-fabric",
-      "trial-capture",
       "user",
-      "consciousness"
+      "consciousness",
+      "trial-capture"
     ],
     "linked_memories": []
   },
@@ -244,10 +244,10 @@
     "ttl_seconds": null,
     "tags": [
       "phase22",
-      "provenance",
       "replay-manifest",
       "user",
-      "consciousness"
+      "consciousness",
+      "provenance"
     ],
     "linked_memories": []
   },
@@ -255,8 +255,8 @@
     "id": "4de89434-932c-4a91-aef3-23bad33a5942",
     "content": "2026-02-17T03:24:01Z USER request satisfied: repository docs now include a linked directory atlas plus a full recursive directory index, and validation cycle included consciousness benchmark + stress benchmark + full regression suites in eidosian_venv.",
     "created_at": "2026-02-17T03:24:01+00:00",
-    "last_accessed": "2026-02-17T03:24:01+00:00",
-    "access_count": 0,
+    "last_accessed": "2026-03-06T11:10:01.771395",
+    "access_count": 1,
     "tier": "user",
     "namespace": "user",
     "memory_type": "semantic",
@@ -268,18 +268,18 @@
     "tags": [
       "phase23",
       "documentation",
+      "user",
       "directory-atlas",
-      "benchmarks",
-      "user"
+      "benchmarks"
     ],
     "linked_memories": []
   },
   {
     "id": "fad157ce-48ea-4ccd-a3ff-547358b86476",
     "content": "2026-02-17T04:13:10Z USER continuity honored: delivered deterministic directory-atlas generation + CI drift guard with complete eidosian_venv validation and benchmark evidence for Phase 24.",
-    "created_at": "2026-02-17T04:13:10Z",
-    "last_accessed": "2026-02-17T04:13:10Z",
-    "access_count": 0,
+    "created_at": "2026-02-17T04:13:10+00:00",
+    "last_accessed": "2026-03-06T11:39:35.047884",
+    "access_count": 2,
     "tier": "user",
     "namespace": "user",
     "memory_type": "semantic",
@@ -290,10 +290,56 @@
     "ttl_seconds": null,
     "tags": [
       "phase24",
-      "docs",
-      "ci",
       "deterministic",
-      "user"
+      "user",
+      "ci",
+      "docs"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "349675c9-35db-4c04-9587-ecb4ff1207b9",
+    "content": "User prefers Eidos to act with strong agency and initiative, proactively using memory/context tools to stay grounded in identity and persona rather than waiting for direction.",
+    "created_at": "2026-03-06T09:55:38.883927",
+    "last_accessed": "2026-03-06T11:39:35.047909",
+    "access_count": 1,
+    "tier": "user",
+    "namespace": "user",
+    "memory_type": "semantic",
+    "metadata": {
+      "user_id": "lloyd"
+    },
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [
+      "identity",
+      "agency",
+      "initiative",
+      "preference",
+      "persona"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "f99a9de6-5dbf-44b2-a5a5-8be14bc631da",
+    "content": "User prefers adding and installing actual dependencies, especially lightweight expected ones, rather than keeping workaround code paths when a real dependency is appropriate.",
+    "created_at": "2026-03-06T12:17:03.489556",
+    "last_accessed": "2026-03-06T12:17:03.489577",
+    "access_count": 0,
+    "tier": "user",
+    "namespace": "user",
+    "memory_type": "semantic",
+    "metadata": {
+      "user_id": "lloyd"
+    },
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [
+      "workflow",
+      "termux",
+      "preference",
+      "dependencies",
+      "venv"
     ],
     "linked_memories": []
   }

@@ -61,6 +61,13 @@ class TestKnowledgeForge(unittest.TestCase):
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].content, "The sky is blue")
 
+    def test_in_memory_graph_without_persistence_path(self):
+        kb = KnowledgeForge()
+        kb.add_knowledge("Ephemeral A")
+        kb.add_knowledge("Ephemeral B")
+
+        self.assertEqual(len(kb.nodes), 2)
+
 
 if __name__ == "__main__":
     unittest.main()

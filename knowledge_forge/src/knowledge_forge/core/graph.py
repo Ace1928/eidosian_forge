@@ -1,10 +1,19 @@
 import json
+import os
+import tempfile
+import threading
 import uuid
 from collections import deque
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Union
 
 from eidosian_core import eidosian
+
+try:
+    import fcntl
+except ImportError:  # pragma: no cover - non-POSIX fallback
+    fcntl = None
 
 
 class KnowledgeNode:
@@ -41,6 +50,10 @@ class KnowledgeForge:
         self.nodes: Dict[str, KnowledgeNode] = {}
         self.concept_map: Dict[str, List[str]] = {}
         self.persistence_path = Path(persistence_path) if persistence_path else None
+        self._thread_lock = threading.RLock()
+        self._lock_handle = None
+        self._lock_depth = 0
+        self._lock_path = self.persistence_path.with_name(f"{self.persistence_path.name}.lock") if self.persistence_path else None
 
         if self.persistence_path and self.persistence_path.exists():
             self.load()
@@ -54,49 +67,45 @@ class KnowledgeForge:
         metadata: Optional[Dict[str, Any]] = None,
     ) -> KnowledgeNode:
         """Add a node, map concepts/tags, and persist."""
-        node = KnowledgeNode(content, metadata)
-        if tags:
-            node.tags.update(tags)
-        self.nodes[node.id] = node
-
-        if concepts:
-            for concept in concepts:
-                if concept not in self.concept_map:
-                    self.concept_map[concept] = []
-                self.concept_map[concept].append(node.id)
-
-        if self.persistence_path:
-            self.save()
-        return node
+        with self._mutation_lock():
+            self._reload_from_disk_locked()
+            node = self._upsert_node_locked(content=content, concepts=concepts, tags=tags, metadata=metadata)
+            if self.persistence_path:
+                self._save_locked()
+            return node
 
     @eidosian()
     def link_nodes(self, node_id_a: str, node_id_b: str):
         """Bidirectional link creation."""
-        if node_id_a in self.nodes and node_id_b in self.nodes:
-            self.nodes[node_id_a].add_link(node_id_b)
-            self.nodes[node_id_b].add_link(node_id_a)
-            if self.persistence_path:
-                self.save()
+        with self._mutation_lock():
+            self._reload_from_disk_locked()
+            if node_id_a in self.nodes and node_id_b in self.nodes:
+                self.nodes[node_id_a].add_link(node_id_b)
+                self.nodes[node_id_b].add_link(node_id_a)
+                if self.persistence_path:
+                    self._save_locked()
 
     @eidosian()
     def delete_node(self, node_id: str) -> bool:
         """Delete a node and remove all references."""
-        if node_id not in self.nodes:
-            return False
-        del self.nodes[node_id]
-        for node in self.nodes.values():
-            if node_id in node.links:
-                node.links.discard(node_id)
-        for concept, node_ids in list(self.concept_map.items()):
-            if node_id in node_ids:
-                filtered = [nid for nid in node_ids if nid != node_id]
-                if filtered:
-                    self.concept_map[concept] = filtered
-                else:
-                    del self.concept_map[concept]
-        if self.persistence_path:
-            self.save()
-        return True
+        with self._mutation_lock():
+            self._reload_from_disk_locked()
+            if node_id not in self.nodes:
+                return False
+            del self.nodes[node_id]
+            for node in self.nodes.values():
+                if node_id in node.links:
+                    node.links.discard(node_id)
+            for concept, node_ids in list(self.concept_map.items()):
+                if node_id in node_ids:
+                    filtered = [nid for nid in node_ids if nid != node_id]
+                    if filtered:
+                        self.concept_map[concept] = filtered
+                    else:
+                        del self.concept_map[concept]
+            if self.persistence_path:
+                self._save_locked()
+            return True
 
     @eidosian()
     def get_by_tag(self, tag: str) -> List[KnowledgeNode]:
@@ -143,25 +152,14 @@ class KnowledgeForge:
     @eidosian()
     def save(self):
         """Persist graph to disk."""
-        data = {"nodes": {nid: n.to_dict() for nid, n in self.nodes.items()}, "concept_map": self.concept_map}
-        with open(self.persistence_path, "w") as f:
-            json.dump(data, f, indent=2)
+        with self._mutation_lock():
+            self._save_locked()
 
     @eidosian()
     def load(self):
         """Load graph from disk."""
-        try:
-            with open(self.persistence_path, "r") as f:
-                data = json.load(f)
-                for nid, n_data in data.get("nodes", {}).items():
-                    node = KnowledgeNode(n_data["content"], n_data["metadata"])
-                    node.id = n_data["id"]
-                    node.links = set(n_data["links"])
-                    node.tags = set(n_data["metadata"].get("tags", []))
-                    self.nodes[node.id] = node
-                self.concept_map = data.get("concept_map", {})
-        except Exception:
-            pass
+        with self._mutation_lock():
+            self._reload_from_disk_locked()
 
     @eidosian()
     def search(self, query: str) -> List[KnowledgeNode]:
@@ -184,6 +182,138 @@ class KnowledgeForge:
             "concept_count": len(self.concept_map),
             "concepts": list(self.concept_map.keys()),
         }
+
+    @contextmanager
+    def _mutation_lock(self):
+        if self._lock_path is None:
+            yield
+            return
+        with self._thread_lock:
+            if self._lock_depth == 0:
+                self._lock_path.parent.mkdir(parents=True, exist_ok=True)
+                self._lock_handle = open(self._lock_path, "a+", encoding="utf-8")
+                if fcntl is not None:
+                    fcntl.flock(self._lock_handle.fileno(), fcntl.LOCK_EX)
+            self._lock_depth += 1
+        try:
+            yield
+        finally:
+            with self._thread_lock:
+                self._lock_depth -= 1
+                if self._lock_depth == 0 and self._lock_handle is not None:
+                    if fcntl is not None:
+                        fcntl.flock(self._lock_handle.fileno(), fcntl.LOCK_UN)
+                    self._lock_handle.close()
+                    self._lock_handle = None
+
+    def _upsert_node_locked(
+        self,
+        content: Any,
+        concepts: Optional[List[str]],
+        tags: Optional[List[str]],
+        metadata: Optional[Dict[str, Any]],
+    ) -> KnowledgeNode:
+        existing = self._find_existing_node(content)
+        if existing is not None:
+            if tags:
+                existing.tags.update(tags)
+            existing.metadata = self._merge_metadata(existing.metadata, metadata or {})
+            for concept in concepts or []:
+                bucket = self.concept_map.setdefault(concept, [])
+                if existing.id not in bucket:
+                    bucket.append(existing.id)
+            return existing
+
+        node = KnowledgeNode(content, metadata)
+        if tags:
+            node.tags.update(tags)
+        self.nodes[node.id] = node
+        for concept in concepts or []:
+            bucket = self.concept_map.setdefault(concept, [])
+            if node.id not in bucket:
+                bucket.append(node.id)
+        return node
+
+    def _find_existing_node(self, content: Any) -> Optional[KnowledgeNode]:
+        normalized = self._normalize_content(content)
+        for node in self.nodes.values():
+            if self._normalize_content(node.content) == normalized:
+                return node
+        return None
+
+    def _normalize_content(self, content: Any) -> str:
+        return str(content).strip().lower()
+
+    def _merge_metadata(self, base: Dict[str, Any], incoming: Dict[str, Any]) -> Dict[str, Any]:
+        merged = dict(base or {})
+        for key, value in (incoming or {}).items():
+            if key not in merged:
+                merged[key] = value
+                continue
+            existing = merged[key]
+            if isinstance(existing, dict) and isinstance(value, dict):
+                merged[key] = self._merge_metadata(existing, value)
+            elif isinstance(existing, list) and isinstance(value, list):
+                merged[key] = list(dict.fromkeys(existing + value))
+            elif existing in (None, "", []):
+                merged[key] = value
+            elif value not in (None, "", []):
+                merged[key] = value
+        return merged
+
+    def _serialize(self) -> Dict[str, Any]:
+        return {
+            "nodes": {nid: n.to_dict() for nid, n in self.nodes.items()},
+            "concept_map": {concept: list(dict.fromkeys(node_ids)) for concept, node_ids in self.concept_map.items()},
+        }
+
+    def _save_locked(self):
+        if self.persistence_path is None:
+            return
+        self.persistence_path.parent.mkdir(parents=True, exist_ok=True)
+        data = self._serialize()
+        temp_path = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                "w",
+                encoding="utf-8",
+                dir=self.persistence_path.parent,
+                prefix=f".{self.persistence_path.name}.",
+                suffix=".tmp",
+                delete=False,
+            ) as handle:
+                json.dump(data, handle, indent=2)
+                handle.flush()
+                os.fsync(handle.fileno())
+                temp_path = Path(handle.name)
+            os.replace(temp_path, self.persistence_path)
+        finally:
+            if temp_path and temp_path.exists():
+                temp_path.unlink(missing_ok=True)
+
+    def _reload_from_disk_locked(self):
+        if not self.persistence_path:
+            return
+        self.nodes = {}
+        self.concept_map = {}
+        if not self.persistence_path.exists():
+            return
+        try:
+            with open(self.persistence_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            for n_data in data.get("nodes", {}).values():
+                node = KnowledgeNode(n_data["content"], n_data["metadata"])
+                node.id = n_data["id"]
+                node.links = set(n_data.get("links", []))
+                node.tags = set(n_data.get("metadata", {}).get("tags", []))
+                self.nodes[node.id] = node
+            self.concept_map = {
+                concept: list(dict.fromkeys(node_ids))
+                for concept, node_ids in data.get("concept_map", {}).items()
+            }
+        except Exception:
+            self.nodes = {}
+            self.concept_map = {}
 
     def _build_rdf_graph(self) -> Any:
         """Build an rdflib graph snapshot from the in-memory knowledge graph."""

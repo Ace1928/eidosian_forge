@@ -13,12 +13,20 @@ from __future__ import annotations
 import json
 import logging
 import os
+import tempfile
+import threading
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
 from eidosian_core import eidosian
+
+try:
+    import fcntl
+except ImportError:  # pragma: no cover - non-POSIX fallback
+    fcntl = None
 
 logger = logging.getLogger(__name__)
 
@@ -59,9 +67,15 @@ class KnowledgeMemoryBridge:
     ):
         self.memory_dir = memory_dir or DEFAULT_MEMORY_DIR
         self.kb_path = kb_path or DEFAULT_KB_PATH
+        self.memory_dir.mkdir(parents=True, exist_ok=True)
 
         self._memory_system = None
         self._knowledge_forge = None
+        self._thread_lock = threading.RLock()
+        self._lock_handle = None
+        self._lock_depth = 0
+        self._xref_path = self.memory_dir / "knowledge_xref.json"
+        self._lock_path = self.memory_dir / "knowledge_xref.json.lock"
 
         # Cross-reference maps
         self.memory_to_knowledge: Dict[str, Set[str]] = {}  # memory_id -> knowledge_ids
@@ -166,18 +180,19 @@ class KnowledgeMemoryBridge:
         knowledge_id: str,
     ) -> bool:
         """Create a cross-reference link between memory and knowledge node."""
-        # Update memory → knowledge map
-        if memory_id not in self.memory_to_knowledge:
-            self.memory_to_knowledge[memory_id] = set()
-        self.memory_to_knowledge[memory_id].add(knowledge_id)
+        with self._xref_lock():
+            self._load_xref_locked()
 
-        # Update knowledge → memory map
-        if knowledge_id not in self.knowledge_to_memory:
-            self.knowledge_to_memory[knowledge_id] = set()
-        self.knowledge_to_memory[knowledge_id].add(memory_id)
+            if memory_id not in self.memory_to_knowledge:
+                self.memory_to_knowledge[memory_id] = set()
+            self.memory_to_knowledge[memory_id].add(knowledge_id)
 
-        self._save_xref()
-        return True
+            if knowledge_id not in self.knowledge_to_memory:
+                self.knowledge_to_memory[knowledge_id] = set()
+            self.knowledge_to_memory[knowledge_id].add(memory_id)
+
+            self._save_xref_locked()
+            return True
 
     @eidosian()
     def promote_memory_to_knowledge(
@@ -354,28 +369,78 @@ class KnowledgeMemoryBridge:
 
     def _load_xref(self) -> None:
         """Load cross-reference maps from disk."""
-        xref_path = self.memory_dir / "knowledge_xref.json"
-        if xref_path.exists():
-            try:
-                with open(xref_path) as f:
-                    data = json.load(f)
-                self.memory_to_knowledge = {k: set(v) for k, v in data.get("memory_to_knowledge", {}).items()}
-                self.knowledge_to_memory = {k: set(v) for k, v in data.get("knowledge_to_memory", {}).items()}
-            except Exception as e:
-                logger.warning(f"Failed to load xref: {e}")
+        with self._xref_lock():
+            self._load_xref_locked()
 
     def _save_xref(self) -> None:
         """Save cross-reference maps to disk."""
-        xref_path = self.memory_dir / "knowledge_xref.json"
+        with self._xref_lock():
+            self._load_xref_locked()
+            self._save_xref_locked()
+
+    @contextmanager
+    def _xref_lock(self):
+        with self._thread_lock:
+            if self._lock_depth == 0:
+                self._lock_path.parent.mkdir(parents=True, exist_ok=True)
+                self._lock_handle = open(self._lock_path, "a+", encoding="utf-8")
+                if fcntl is not None:
+                    fcntl.flock(self._lock_handle.fileno(), fcntl.LOCK_EX)
+            self._lock_depth += 1
+        try:
+            yield
+        finally:
+            with self._thread_lock:
+                self._lock_depth -= 1
+                if self._lock_depth == 0 and self._lock_handle is not None:
+                    if fcntl is not None:
+                        fcntl.flock(self._lock_handle.fileno(), fcntl.LOCK_UN)
+                    self._lock_handle.close()
+                    self._lock_handle = None
+
+    def _load_xref_locked(self) -> None:
+        if not self._xref_path.exists():
+            self.memory_to_knowledge = {}
+            self.knowledge_to_memory = {}
+            return
+        try:
+            with open(self._xref_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            self.memory_to_knowledge = {k: set(v) for k, v in data.get("memory_to_knowledge", {}).items()}
+            self.knowledge_to_memory = {k: set(v) for k, v in data.get("knowledge_to_memory", {}).items()}
+        except Exception as e:
+            logger.warning(f"Failed to load xref: {e}")
+            self.memory_to_knowledge = {}
+            self.knowledge_to_memory = {}
+
+    def _save_xref_locked(self) -> None:
         try:
             data = {
-                "memory_to_knowledge": {k: list(v) for k, v in self.memory_to_knowledge.items()},
-                "knowledge_to_memory": {k: list(v) for k, v in self.knowledge_to_memory.items()},
+                "memory_to_knowledge": {k: sorted(v) for k, v in self.memory_to_knowledge.items()},
+                "knowledge_to_memory": {k: sorted(v) for k, v in self.knowledge_to_memory.items()},
             }
-            with open(xref_path, "w") as f:
-                json.dump(data, f, indent=2)
+            temp_path = None
+            with tempfile.NamedTemporaryFile(
+                "w",
+                encoding="utf-8",
+                dir=self.memory_dir,
+                prefix=f".{self._xref_path.name}.",
+                suffix=".tmp",
+                delete=False,
+            ) as handle:
+                json.dump(data, handle, indent=2)
+                handle.flush()
+                os.fsync(handle.fileno())
+                temp_path = Path(handle.name)
+            os.replace(temp_path, self._xref_path)
         except Exception as e:
             logger.warning(f"Failed to save xref: {e}")
+        finally:
+            try:
+                if "temp_path" in locals() and temp_path and temp_path.exists():
+                    temp_path.unlink(missing_ok=True)
+            except Exception:
+                pass
 
 
 # Convenience function

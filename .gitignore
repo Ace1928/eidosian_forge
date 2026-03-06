@@ -91,6 +91,11 @@ data/eidosian_lore.txt
 data/**/cache/
 data/**/tmp/
 data/**/events/
+data/**/*.lock
+data/**/.tiered_memory.lock
+data/**/knowledge_xref.json.lock
+!data/tiered_memory/*.json
+!data/tiered_memory/knowledge_xref.json
 data/**/*.sqlite
 data/**/*.sqlite-shm
 data/**/*.sqlite-wal

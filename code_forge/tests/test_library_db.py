@@ -13,6 +13,16 @@ def test_add_text_dedup(tmp_path: Path) -> None:
     assert db.get_text(content_hash_1) == "print('hello')\n"
 
 
+def test_sqlite_connection_uses_wal_and_busy_timeout(tmp_path: Path) -> None:
+    db = CodeLibraryDB(tmp_path / "library.sqlite")
+    with db._connect() as conn:
+        journal_mode = conn.execute("PRAGMA journal_mode").fetchone()[0]
+        busy_timeout = conn.execute("PRAGMA busy_timeout").fetchone()[0]
+
+    assert str(journal_mode).lower() == "wal"
+    assert int(busy_timeout) >= 30000
+
+
 def test_add_unit_roundtrip(tmp_path: Path) -> None:
     db = CodeLibraryDB(tmp_path / "library.sqlite")
     content_hash = db.add_text("def add(a, b):\n    return a + b\n")
