@@ -152,3 +152,36 @@ def test_aggregate_includes_judge_rejection_counts() -> None:
     assert agg["judge_total"] == 2
     assert agg["judge_valid"] == 1
     assert agg["judge_rejected"] == 1
+
+
+def test_normalize_judge_payload_requires_verdict_and_risk_array() -> None:
+    payload = mod._normalize_judge_payload(
+        {
+            "scores": {
+                "factuality": 1.2,
+                "grounding": 0.8,
+                "coherence": 0.7,
+                "usefulness": 0.9,
+                "risk_awareness": -1,
+            },
+            "verdict": "Grounded and useful.",
+            "risks": ["latency drift", ""],
+        }
+    )
+    assert payload is not None
+    assert payload["scores"]["factuality"] == 1.0
+    assert payload["scores"]["risk_awareness"] == 0.0
+    assert payload["risks"] == ["latency drift"]
+
+    assert mod._normalize_judge_payload({"scores": {}, "verdict": "", "risks": []}) is None
+    assert mod._normalize_judge_payload({"scores": {}, "verdict": "ok", "risks": "bad"}) is None
+
+
+def test_judge_prompt_embeds_schema() -> None:
+    prompt = mod._judge_prompt(
+        {"entities_count": 1, "relationships_count": 2, "community_reports_placeholder": False, "expected_entity_hits": [], "query_output": "ok"},
+        {"pipeline_integrity": 1.0},
+        [],
+    )
+    assert '"required": ["scores", "verdict", "risks"]' in prompt
+    assert "risk_awareness" in prompt

@@ -23,8 +23,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
-import pandas as pd
-
 DEFAULT_WORKSPACE_ROOT = Path("data/graphrag_test/workspace")
 DEFAULT_REPORT_DIR = Path("reports/graphrag")
 DEFAULT_SCHEMA_PATH = Path("benchmarks/schemas/graphrag_qualitative_assessment.schema.json")
@@ -73,6 +71,25 @@ EXPECTED_WORKFLOWS = [
 EXPECTED_ENTITIES = ["ALARIC", "SERAPHINA", "KAEL", "MALAKAR", "CRYSTAL", "WHISPERING CAVES", "EIDOS"]
 PLACEHOLDER_MARKERS = ["auto-generated placeholder", "fallback generated"]
 CONTRACT_VERSION = "graphrag.qualitative.assessment.v1"
+JUDGE_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "scores": {
+            "type": "object",
+            "properties": {
+                "factuality": {"type": "number"},
+                "grounding": {"type": "number"},
+                "coherence": {"type": "number"},
+                "usefulness": {"type": "number"},
+                "risk_awareness": {"type": "number"},
+            },
+            "required": ["factuality", "grounding", "coherence", "usefulness", "risk_awareness"],
+        },
+        "verdict": {"type": "string"},
+        "risks": {"type": "array", "items": {"type": "string"}},
+    },
+    "required": ["scores", "verdict", "risks"],
+}
 
 
 def _registry_port(service_key: str, fallback: int) -> int:
@@ -162,6 +179,27 @@ def _extract_json_fragment(text: str) -> dict[str, Any] | None:
         return None
 
 
+def _normalize_judge_payload(payload: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not isinstance(payload, dict):
+        return None
+    scores = payload.get("scores") if isinstance(payload.get("scores"), dict) else {}
+    normalized_scores = {
+        "factuality": _clamp01(_to_float(scores.get("factuality"), 0.0)),
+        "grounding": _clamp01(_to_float(scores.get("grounding"), 0.0)),
+        "coherence": _clamp01(_to_float(scores.get("coherence"), 0.0)),
+        "usefulness": _clamp01(_to_float(scores.get("usefulness"), 0.0)),
+        "risk_awareness": _clamp01(_to_float(scores.get("risk_awareness"), 0.0)),
+    }
+    risks = payload.get("risks")
+    if not isinstance(risks, list):
+        return None
+    normalized_risks = [str(item).strip() for item in risks if str(item).strip()]
+    verdict = str(payload.get("verdict") or "").strip()
+    if not verdict:
+        return None
+    return {"scores": normalized_scores, "verdict": verdict, "risks": normalized_risks}
+
+
 def _find_latest_metrics(report_dir: Path) -> Path | None:
     candidates = sorted(report_dir.glob("bench_metrics_*.json"))
     return candidates[-1] if candidates else None
@@ -184,7 +222,18 @@ def _to_float(value: Any, default: float = 0.0) -> float:
         return default
 
 
+def _require_pandas():
+    try:
+        import pandas as pd  # type: ignore
+    except Exception as exc:
+        raise RuntimeError(
+            "pandas is required to load GraphRAG parquet artifacts in this environment"
+        ) from exc
+    return pd
+
+
 def load_artifacts(workspace_root: Path, metrics_path: Path | None) -> dict[str, Any]:
+    pd = _require_pandas()
     output_dir = workspace_root / "output"
     stats_path = output_dir / "stats.json"
     entities_path = output_dir / "entities.parquet"
@@ -438,9 +487,9 @@ def _judge_prompt(artifacts: dict[str, Any], deterministic: dict[str, float], st
         "stage_scores": stage_scores,
     }
     return (
-        "Assess GraphRAG output quality. Return ONLY strict JSON with keys: "
-        "scores (factuality, grounding, coherence, usefulness, risk_awareness each 0..1), "
-        "verdict (one short sentence), and risks (array of short strings).\n"
+        "Assess GraphRAG output quality. Return ONLY strict JSON matching this schema:\n"
+        f"{json.dumps(JUDGE_SCHEMA, ensure_ascii=True)}\n"
+        "Scores must each be within 0..1. Verdict must be one short sentence. Risks must be short strings.\n"
         "Do not use markdown.\n"
         f"DATA:\n{json.dumps(payload, ensure_ascii=True)}"
     )
@@ -477,7 +526,7 @@ def run_judges(
                 .get("message", {})
                 .get("content", "")
             )
-            parsed = _extract_json_fragment(text)
+            parsed = _normalize_judge_payload(_extract_json_fragment(text))
             if parsed is None:
                 raise ValueError("judge returned non-JSON content")
         except Exception as exc:
