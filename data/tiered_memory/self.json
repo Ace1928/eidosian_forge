@@ -1949,5 +1949,33 @@
       "thinking"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "c5894947-1c9b-42f5-8ffe-c15ef615d869",
+    "content": "LESSON: For quality-first long-form Qwen synthesis, prefer an explicit JSON schema in the Ollama `format` field rather than plain `json` mode. That reduces malformed output risk and makes fallback handling more effective when thinking-on responses are verbose.\nCONTEXT: Living documentation schema hardening for qwen3.5:2b",
+    "created_at": "2026-03-06T18:52:55.822502",
+    "last_accessed": "2026-03-06T18:52:55.822513",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "For quality-first long-form Qwen synthesis, prefer an explicit JSON schema in the Ollama `format` field rather than plain `json` mode. That reduces malformed output risk and makes fallback handling more effective when thinking-on responses are verbose.",
+      "context": "Living documentation schema hardening for qwen3.5:2b",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "learning",
+      "json-schema",
+      "self-improvement",
+      "qwen3.5",
+      "ollama",
+      "structured-output",
+      "living-documentation",
+      "lesson"
+    ],
+    "linked_memories": []
   }
 ]

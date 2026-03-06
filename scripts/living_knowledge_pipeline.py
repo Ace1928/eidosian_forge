@@ -34,9 +34,9 @@ from code_forge.digester.pipeline import build_duplication_index, build_repo_ind
 from code_forge.digester.schema import validate_output_dir
 from code_forge.ingest.runner import IngestionRunner
 from code_forge.library.db import CodeLibraryDB
-from eidos_mcp.config.models import get_model_config
 from eidosian_core import eidosian
 from eidosian_core.ports import get_service_port
+from eidos_mcp.config.models import get_model_config
 
 from knowledge_forge import GraphRAGIntegration
 
@@ -121,6 +121,26 @@ Use only the provided evidence. Do not invent files, benchmarks, or incidents.
 Return strict JSON with keys:
 title, summary, key_findings, risks, priorities, recommended_actions.
 """
+
+LIVING_DOC_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "title": {"type": "string"},
+        "summary": {"type": "string"},
+        "key_findings": {"type": "array", "items": {"type": "string"}},
+        "risks": {"type": "array", "items": {"type": "string"}},
+        "priorities": {"type": "array", "items": {"type": "string"}},
+        "recommended_actions": {"type": "array", "items": {"type": "string"}},
+    },
+    "required": [
+        "title",
+        "summary",
+        "key_findings",
+        "risks",
+        "priorities",
+        "recommended_actions",
+    ],
+}
 
 
 def _now_utc() -> str:
@@ -742,8 +762,11 @@ def _living_doc_prompt(
     }
     return (
         "Generate living documentation for the current forge state. "
-        "Focus on the most important system health signals, evidence-backed risks, and concrete next actions.\n"
-        "DATA=" + json.dumps(payload, ensure_ascii=True)
+        "Focus on the most important system health signals, evidence-backed risks, and concrete next actions. "
+        "Respond with JSON matching this schema:\n"
+        + json.dumps(LIVING_DOC_SCHEMA, ensure_ascii=True)
+        + "\nDATA="
+        + json.dumps(payload, ensure_ascii=True)
     )
 
 
@@ -802,7 +825,7 @@ def _invoke_living_doc_model(prompt: str, config: LivingDocumentationConfig) -> 
                 thinking_mode=mode,
                 timeout=config.timeout,
                 system=LIVING_DOC_SYSTEM_PROMPT,
-                format="json",
+                format=LIVING_DOC_SCHEMA,
             )
         except Exception as exc:
             last_error = exc
@@ -1005,12 +1028,8 @@ def run_pipeline(
             graphrag_result["llm_model"] = str(llm_model)
             graphrag_result["embed_model"] = str(embed_model)
             graphrag_result["index_result"] = index_result
-            graphrag_result["report_summary"] = (
-                index_result.get("community_reports") if isinstance(index_result, dict) else {}
-            )
-            graphrag_result["trend_summary"] = (
-                index_result.get("report_trends") if isinstance(index_result, dict) else {}
-            )
+            graphrag_result["report_summary"] = (index_result.get("community_reports") if isinstance(index_result, dict) else {})
+            graphrag_result["trend_summary"] = (index_result.get("report_trends") if isinstance(index_result, dict) else {})
             for query in queries:
                 answer = _run_graphrag_query(workspace_root, query, method="global")
                 graphrag_result["queries"].append({"query": query, "answer": answer})

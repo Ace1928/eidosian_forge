@@ -95,7 +95,8 @@ Every run also executes a documentation synthesis pass using centralized model c
 
 This stage is separate from external GraphRAG runtime selection. The goal is to ensure the living
 documentation contract always uses the centralized Ollama-backed inference path with explicit
-thinking control, even if GraphRAG indexing itself is using a different local runtime.
+thinking control and a strict JSON schema, even if GraphRAG indexing itself is using a different
+local runtime.
 
 ## Usage
 
