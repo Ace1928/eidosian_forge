@@ -280,7 +280,9 @@ class ModelConfig:
             self.ollama = OllamaConfig(
                 base_url=data.get("ollama", {}).get("base_url", DEFAULT_OLLAMA_BASE_URL),
                 api_v1_url=data.get("ollama", {}).get("api_v1_url", DEFAULT_OLLAMA_API_V1_URL),
-                embedding_base_url=data.get("ollama", {}).get("embedding_base_url", DEFAULT_OLLAMA_EMBEDDING_BASE_URL),
+                embedding_base_url=data.get("ollama", {}).get(
+                    "embedding_base_url", DEFAULT_OLLAMA_EMBEDDING_BASE_URL
+                ),
             )
             self.inference = InferenceConfig(
                 model=data.get("inference", {}).get("model", DEFAULT_INFERENCE_MODEL),

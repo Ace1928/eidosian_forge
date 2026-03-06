@@ -394,9 +394,7 @@ class AutonomySupervisor:
             "hit_count": len(context.get("hits") or []),
             "report_count": int(((context.get("report_summary") or {}).get("count")) or 0),
             "artifact_count": int(((context.get("artifact_summary") or {}).get("count")) or 0),
-            "average_report_quality": float(
-                ((context.get("report_summary") or {}).get("average_quality_score")) or 0.0
-            ),
+            "average_report_quality": float(((context.get("report_summary") or {}).get("average_quality_score")) or 0.0),
             "benchmark_failures": int(((context.get("artifact_summary") or {}).get("benchmark_failures")) or 0),
             "repo_root": str(self.repo_root),
             "repo_dirty": repo_dirty,
@@ -487,9 +485,7 @@ class AutonomySupervisor:
             "context_hits": len(context.get("hits") or []),
             "report_count": int(((context.get("report_summary") or {}).get("count")) or 0),
             "artifact_count": int(((context.get("artifact_summary") or {}).get("count")) or 0),
-            "average_report_quality": float(
-                ((context.get("report_summary") or {}).get("average_quality_score")) or 0.0
-            ),
+            "average_report_quality": float(((context.get("report_summary") or {}).get("average_quality_score")) or 0.0),
             "benchmark_failures": int(((context.get("artifact_summary") or {}).get("benchmark_failures")) or 0),
         }
         BUS.append(self.state_dir, "autonomy.mission_selected", payload, tags=["autonomy", "selected"])

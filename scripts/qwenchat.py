@@ -53,9 +53,7 @@ def _eta_hint() -> tuple[str, float | None]:
 
 
 def _wait_message(decision: dict[str, Any], coordinator_payload: dict[str, Any]) -> str:
-    owner = str(
-        decision.get("exclusive_owner") or decision.get("active_owner") or coordinator_payload.get("owner") or ""
-    ).strip()
+    owner = str(decision.get("exclusive_owner") or decision.get("active_owner") or coordinator_payload.get("owner") or "").strip()
     task = str(coordinator_payload.get("task") or "current task").strip()
     label, eta = _eta_hint()
     task_label = label or task or "current task"
@@ -106,9 +104,7 @@ def acquire_chat_lease(
         time.sleep(max(1.0, float(poll_interval)))
 
 
-def _heartbeat_loop(
-    coordinator: ForgeRuntimeCoordinator, *, owner: str, model: str, stop_event: threading.Event
-) -> None:
+def _heartbeat_loop(coordinator: ForgeRuntimeCoordinator, *, owner: str, model: str, stop_event: threading.Event) -> None:
     requested_models = [{"family": "ollama", "model": model, "role": "interactive_chat"}]
     while not stop_event.wait(5.0):
         coordinator.heartbeat(
@@ -143,9 +139,7 @@ def main() -> int:
     )
     heartbeat.start()
 
-    base_url = get_service_url("ollama_qwen_http", default_port=8938, default_host="127.0.0.1", default_path="").rstrip(
-        "/"
-    )
+    base_url = get_service_url("ollama_qwen_http", default_port=8938, default_host="127.0.0.1", default_path="").rstrip("/")
     env = os.environ.copy()
     env["OLLAMA_HOST"] = base_url
     print(f"[qwenchat] using {base_url} model={args.model}", file=sys.stderr)

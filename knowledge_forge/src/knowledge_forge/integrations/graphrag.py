@@ -640,7 +640,9 @@ class GraphRAGIntegration:
                 "node_ids": detail_ids,
                 "kind": kind,
                 "artifact_path": rel_path,
-                "benchmark_gate_pass": (None if not isinstance(benchmark, dict) else bool(benchmark.get("gate_pass"))),
+                "benchmark_gate_pass": (
+                    None if not isinstance(benchmark, dict) else bool(benchmark.get("gate_pass"))
+                ),
                 "search_p95_ms": None if not isinstance(benchmark, dict) else benchmark.get("search_p95_ms"),
                 "graph_build_ms": None if not isinstance(benchmark, dict) else benchmark.get("graph_build_ms"),
                 "drift_warning_count": (
@@ -706,9 +708,7 @@ class GraphRAGIntegration:
                 if tag not in {"native_graphrag"}
             }
         )
-        avg_chars = _safe_ratio(
-            sum(len(str(getattr(node, "content", "") or "")) for node in unique_group), len(unique_group)
-        )
+        avg_chars = _safe_ratio(sum(len(str(getattr(node, "content", "") or "")) for node in unique_group), len(unique_group))
         coverage_ratio = _safe_ratio(len(unique_group), total_nodes)
         link_density = _safe_ratio(linked_neighbors, len(unique_group))
         tag_diversity = len(unique_tags)
@@ -1132,9 +1132,7 @@ class GraphRAGIntegration:
     @eidosian()
     def native_artifact_summary(self, limit: int = 10) -> Dict[str, Any]:
         state = self._load_native_state()
-        artifact_state = (
-            state.get("code_forge_artifacts") if isinstance(state.get("code_forge_artifacts"), dict) else {}
-        )
+        artifact_state = state.get("code_forge_artifacts") if isinstance(state.get("code_forge_artifacts"), dict) else {}
         rows = [row for row in artifact_state.values() if isinstance(row, dict)]
         rows.sort(key=lambda row: str(row.get("updated_at") or ""), reverse=True)
         limit = max(1, int(limit or 10))
