@@ -1,0 +1,764 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+ 
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+
+
+
+
+
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Apache Tika &#x2013; Getting Started with Apache Tika</title>
+    <style type="text/css" media="all">
+      @import url("../css/site.css");
+    </style>
+    <link rel="icon" type="image/png" href="../tikaNoText16.png" />
+  </head>
+  <body>
+    <div id="body">
+      <div id="banner">
+        <a href="https://tika.apache.org" id="bannerLeft" title="Apache Tika"
+          ><img src="https://tika.apache.org/tika.png" alt="Apache Tika"
+                width="292" height="100"/></a>
+        <a href="https://www.apache.org/" id="bannerRight"
+           title="The Apache Software Foundation"
+          ><img src="https://tika.apache.org/asf-logo.jpg" alt="The Apache Software Foundation"
+                width="190" height="100"/></a>
+      </div>
+      <div id="content">
+        <!-- Licensed to the Apache Software Foundation (ASF) under one or more --><!-- contributor license agreements.  See the NOTICE file distributed with --><!-- this work for additional information regarding copyright ownership. --><!-- The ASF licenses this file to You under the Apache License, Version 2.0 --><!-- (the "License"); you may not use this file except in compliance with --><!-- the License.  You may obtain a copy of the License at --><!--  --><!-- http://www.apache.org/licenses/LICENSE-2.0 --><!--  --><!-- Unless required by applicable law or agreed to in writing, software --><!-- distributed under the License is distributed on an "AS IS" BASIS, --><!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. --><!-- See the License for the specific language governing permissions and --><!-- limitations under the License. --><div class="section">
+<h2><a name="Getting_Started_with_Apache_Tika"></a>Getting Started with Apache Tika</h2>
+<p>This document describes how to build Apache Tika from sources and how to start using Tika in an application.</p></div>
+<div class="section">
+<h2><a name="Getting_and_building_the_sources"></a>Getting and building the sources</h2>
+<p>To build Tika from sources you first need to either <a href="../download.html">download</a> a source release or <a href="../contribute.html#Source_Code">checkout</a> the latest sources from version control.</p>
+<p>Once you have the sources, you can build them using the <a class="externalLink" href="http://maven.apache.org/">Maven 2</a> build system. Executing the following command in the base directory will build the sources and install the resulting artifacts in your local Maven repository.</p>
+<div>
+<pre>mvn install</pre></div>
+<p>If you want to build only the app or the server with the standard parsers, you can save time with:</p>
+<div>
+<pre>mvn install -am -pl :tika-app</pre></div>
+<p>Or:</p>
+<div>
+<pre>mvn install -am -pl :tika-server-standard</pre></div>
+<p>See the Maven documentation for more information about the available build options.</p>
+<p>Note that you need Java 8 or higher to build Tika. For a full build, you'll also need to have Docker installed.</p></div>
+<div class="section">
+<h2><a name="Build_artifacts"></a>Build artifacts</h2>
+<p>The Tika build consists of a number of components and produces the following main binaries:</p>
+<dl>
+<dt>tika-core/target/tika-core-*.jar</dt>
+<dd> Tika core library. Contains the core interfaces and classes of Tika, but none of the parser implementations.</dd>
+<dt>tika-parsers/tika-parsers-standard/tika-parsers-standard-package/target/tika-parsers-standard-package-*.jar</dt>
+<dd> Tika parsers. Collection of classes that implement the Tika Parser interface based on various external parser libraries. This includes the most commonly used parsers. Users may want to add <tt>tika-parser-sqlite3-package</tt> and <tt>tika-parser-scientific-package</tt> or other parser modules.</dd>
+<dt>tika-app/target/tika-app-*.jar</dt>
+<dd> Tika application. Combines the above components and the standard parser libraries into a single runnable jar with a GUI and a command line interface.</dd>
+<dt>tika-server/tika-server-standard/target/tika-server-standard-*.jar</dt>
+<dd> Tika JAX-RS REST application. This is a Jetty web server running Tika REST services with the parsers in tika-parsers-standard-package as described in <a class="externalLink" href="https://cwiki.apache.org/confluence/display/TIKA/TikaServer">this page</a>.</dd>
+<dt>tika-bundles/tika-bundle-standard/target/tika-bundle-standard-*.jar</dt>
+<dd> Tika bundle. An OSGi bundle that combines tika-parsers with non-OSGified parser libraries to make them easy to deploy in an OSGi environment.</dd>
+<dt>tika-eval/tika-eval-app/target/tika-eval-app-*.jar</dt>
+<dd> Tika eval module. Commandline tool to assess the output of Tika or compare the output of two different versions of Tika or other text extraction packages.</dd></dl></div>
+<div class="section">
+<h2><a name="Using_Tika_as_a_Maven_dependency"></a>Using Tika as a Maven dependency</h2>
+<p>The core library, <tt>tika-core</tt>, contains the key interfaces and classes of Tika and can be used by itself if you don't need the full set of parsers from the <tt> tika-parsers </tt> component. The tika-core dependency looks like this:</p>
+<div>
+<pre>  &lt;dependency&gt;
+    &lt;groupId&gt;org.apache.tika&lt;/groupId&gt;
+    &lt;artifactId&gt;tika-core&lt;/artifactId&gt;
+    &lt;version&gt;3.2.0&lt;/version&gt;
+  &lt;/dependency&gt;</pre></div>
+<p>If you want to use Tika to parse documents (instead of simply detecting document types, etc.), you'll want to add a dependency on at least <tt> tika-parsers-standard-package </tt>:</p>
+<div>
+<pre>  &lt;dependency&gt;
+    &lt;groupId&gt;org.apache.tika&lt;/groupId&gt;
+    &lt;artifactId&gt;tika-parsers-standard-package&lt;/artifactId&gt;
+    &lt;version&gt;3.2.0&lt;/version&gt;
+  &lt;/dependency&gt;</pre></div>
+<p>Note that adding this dependency will introduce a number of transitive dependencies to your project. You need to make sure that these dependencies won't conflict with your existing project dependencies. You can use the following command in the tika-parsers-standard-package directory to get a full listing of all the dependencies.</p>
+<div>
+<pre>$ mvn dependency:tree | grep :compile</pre></div>
+<p>You may also want to add one or more of the following dependencies:</p>
+<div>
+<pre>  &lt;dependency&gt;
+    &lt;groupId&gt;org.apache.tika&lt;/groupId&gt;
+    &lt;artifactId&gt;tika-parser-sqlite3-package&lt;/artifactId&gt;
+    &lt;version&gt;3.2.0&lt;/version&gt;
+  &lt;/dependency&gt;
+  &lt;dependency&gt;
+    &lt;groupId&gt;org.apache.tika&lt;/groupId&gt;
+    &lt;artifactId&gt;tika-parser-scientific-package&lt;/artifactId&gt;
+    &lt;version&gt;3.2.0&lt;/version&gt;
+  &lt;/dependency&gt;</pre></div>
+<p>You may also consider adding dependencies on modules under the <tt>tika-parsers-ml</tt> module.</p></div>
+<div class="section">
+<h2><a name="Using_Tika_in_a_Gradle-built_project"></a>Using Tika in a Gradle-built project</h2>
+<p>To add a dependency on Apache Tika to your Gradle built project, including the full set of parsers, you should depend on the <tt> tika-core </tt> artifact and the <tt> tika-parsers-standard-package </tt> artifact:</p>
+<div>
+<pre>dependencies {
+    runtime 'org.apache.tika:tika-core:3.2.0'
+    runtime 'org.apache.tika:tika-parsers-standard-package:3.2.0'
+}</pre></div></div>
+<div class="section">
+<h2><a name="Using_Tika_in_an_Ant_project"></a>Using Tika in an Ant project</h2>
+<p>If you are using <a class="externalLink" href="http://ant.apache.org/ivy/">Apache Ivy</a> as your dependency manager tool with Ant, then to include Tika with the full set of parsers, you should depend on the <tt> tika-parsers </tt> artifact like this:</p>
+<div>
+<pre>    &lt;dependencies&gt;
+        &lt;dependency org=&quot;org.apache.tika&quot; name=&quot;tika-core&quot; rev=&quot;3.2.0&quot;/&gt;
+        &lt;dependency org=&quot;org.apache.tika&quot; name=&quot;tika-parsers-standard-package&quot; rev=&quot;3.2.0&quot;/&gt;
+    &lt;/dependencies&gt;</pre></div>
+<p>Otherwise, probably the easiest way to use Tika is to include the full <tt> tika-app </tt> jar on your classpath. For just core functionality, you can add the <tt> tika-core </tt> jar, but be aware that the full set of parsers have a large number of dependencies which must be included which is very fiddly to do by hand with Ant! To include Tika in your Ant project, you should do something like:</p>
+<div>
+<pre>&lt;classpath&gt;
+  ... &lt;!-- your other classpath entries --&gt;
+
+  &lt;!-- either: Tika Core only, no parsers --&gt;
+  &lt;pathelement location=&quot;path/to/tika-core-3.2.0.jar&quot;/&gt;
+  &lt;!-- or: Tika with all Parsers--&gt;
+  &lt;pathelement location=&quot;path/to/tika-app-3.2.0.jar&quot;/&gt;
+
+&lt;/classpath&gt;</pre></div></div>
+<div class="section">
+<h2><a name="Using_Tika_as_a_command_line_utility"></a>Using Tika as a command line utility</h2>
+<p>The Tika application jar (tika-app-*.jar) can be used as a command line utility for extracting text content and metadata from all sorts of files. This runnable jar contains all the dependencies it needs, so you don't need to worry about classpath settings to run it.</p>
+<p>The usage instructions are shown below.</p>
+<div>
+<pre>usage: java -jar tika-app.jar [option...] [file|port...]
+
+Options:
+    -?  or --help          Print this usage message
+    -v  or --verbose       Print debug level messages
+    -V  or --version       Print the Apache Tika version number
+
+    -g  or --gui           Start the Apache Tika GUI
+    -s  or --server        Start the Apache Tika server
+    -f  or --fork          Use Fork Mode for out-of-process extraction
+
+    --config=&lt;tika-config.xml&gt;
+        TikaConfig file. Must be specified before -g, -s, -f or the dump-x-config !
+    --dump-minimal-config  Print minimal TikaConfig
+    --dump-current-config  Print current TikaConfig
+    --dump-static-config   Print static config
+    --dump-static-full-config  Print static explicit config
+
+    -x  or --xml           Output XHTML content (default)
+    -h  or --html          Output HTML content
+    -t  or --text          Output plain text content
+    -T  or --text-main     Output plain text content (main content only)
+    -m  or --metadata      Output only metadata
+    -j  or --json          Output metadata in JSON
+    -y  or --xmp           Output metadata in XMP
+    -J  or --jsonRecursive Output metadata and content from all
+                           embedded files (choose content type
+                           with -x, -h, -t or -m; default is -x)
+    -l  or --language      Output only language
+    -d  or --detect        Detect document type
+           --digest=X      Include digest X (md2, md5, sha1,
+                               sha256, sha384, sha512
+    -eX or --encoding=X    Use output encoding X
+    -pX or --password=X    Use document password X
+    -z  or --extract       Extract all attachements into current directory
+    --extract-dir=&lt;dir&gt;    Specify target directory for -z
+    -r  or --pretty-print  For JSON, XML and XHTML outputs, adds newlines and
+                           whitespace, for better readability
+
+    --list-parsers
+         List the available document parsers
+    --list-parser-details
+         List the available document parsers and their supported mime types
+    --list-parser-details-apt
+         List the available document parsers and their supported mime types in apt format.
+    --list-detectors
+         List the available document detectors
+    --list-met-models
+         List the available metadata models, and their supported keys
+    --list-supported-types
+         List all known media types and related information
+
+
+    --compare-file-magic=&lt;dir&gt;
+         Compares Tika's known media types to the File(1) tool's magic directory
+
+Description:
+    Apache Tika will parse the file(s) specified on the
+    command line and output the extracted text content
+    or metadata to standard output.
+
+    Instead of a file name you can also specify the URL
+    of a document to be parsed.
+
+    If no file name or URL is specified (or the special
+    name &quot;-&quot; is used), then the standard input stream
+    is parsed. If no arguments were given and no input
+    data is available, the GUI is started instead.
+
+- GUI mode
+
+    Use the &quot;--gui&quot; (or &quot;-g&quot;) option to start the
+    Apache Tika GUI. You can drag and drop files from
+    a normal file explorer to the GUI window to extract
+    text content and metadata from the files.
+
+- Batch mode
+
+    Simplest method.
+    Specify two directories as args with no other args:
+         java -jar tika-app.jar &lt;inputDirectory&gt; &lt;outputDirectory&gt;
+
+
+Batch Options:
+    -i  or --inputDir          Input directory
+    -o  or --outputDir         Output directory
+    -numConsumers              Number of processing threads
+    -bc                        Batch config file
+    -maxRestarts               Maximum number of times the
+                               watchdog process will restart the child process.
+    -timeoutThresholdMillis    Number of milliseconds allowed to a parse
+                               before the process is killed and restarted
+    -fileList                  List of files to process, with
+                               paths relative to the input directory
+    -includeFilePat            Regular expression to determine which
+                               files to process, e.g. &quot;(?i)\.pdf&quot;
+    -excludeFilePat            Regular expression to determine which
+                               files to avoid processing, e.g. &quot;(?i)\.pdf&quot;
+    -maxFileSizeBytes          Skip files longer than this value
+
+    Control the type of output with -x, -h, -t and/or -J.
+
+    To modify child process jvm args, prepend &quot;J&quot; as in:
+    -JXmx4g or -JDlog4j.configuration=file:log4j.xml.
+</pre></div>
+<p>You can also use the jar as a component in a Unix pipeline or as an external tool in many scripting languages.</p>
+<div>
+<pre># Check if an Internet resource contains a specific keyword
+curl http://.../document.doc \
+  | java -jar tika-app.jar --text \
+  | grep -q keyword</pre></div></div>
+<div class="section">
+<h2><a name="Wrappers"></a>Wrappers</h2>
+<p>Several wrappers are available to use Tika in another programming language, such as <a class="externalLink" href="https://github.com/aviks/Taro.jl">Julia</a> or <a class="externalLink" href="https://github.com/chrismattmann/tika-python">Python</a>.</p></div>
+      </div>
+      <div id="sidebar">
+        <div id="navigation">
+                    <h5>Apache Tika</h5>
+            <ul>
+              
+    <li class="none">
+                    <a href="../index.html">Introduction</a>
+          </li>
+              
+    <li class="none">
+                    <a href="../download.html">Download</a>
+          </li>
+              
+    <li class="none">
+                    <a href="../contribute.html">Contribute</a>
+          </li>
+              
+    <li class="none">
+                    <a href="../mail-lists.html">Mailing Lists</a>
+          </li>
+              
+    <li class="none">
+                    <a href="https://cwiki.apache.org/confluence/display/tika" class="externalLink">Tika Wiki</a>
+          </li>
+              
+    <li class="none">
+                    <a href="https://cwiki.apache.org/confluence/display/TIKA/TikaServer" class="externalLink">Tika Server Wiki</a>
+          </li>
+              
+    <li class="none">
+                    <a href="https://issues.apache.org/jira/browse/TIKA" class="externalLink">Issue Tracker</a>
+          </li>
+              
+    <li class="none">
+                    <a href="../security-model.html">Security Model</a>
+          </li>
+              
+    <li class="none">
+                    <a href="../security.html">Security</a>
+          </li>
+              
+    <li class="none">
+                    <a href="https://cwiki.apache.org/confluence/display/TIKA/Support" class="externalLink">Tika Support</a>
+          </li>
+          </ul>
+              <h5>Documentation</h5>
+            <ul>
+              
+          
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="expanded">
+                    <a href="../3.2.3/index.html">Apache Tika 3.2.3</a>
+                  <ul>
+                  
+    <li class="none">
+                    <a href="../3.2.3/gettingstarted.html">Getting Started</a>
+          </li>
+                  
+    <li class="none">
+                    <a href="../3.2.3/formats.html">Supported Formats</a>
+          </li>
+                  
+    <li class="none">
+                    <a href="../3.2.3/parser.html">Parser API</a>
+          </li>
+                  
+    <li class="none">
+                    <a href="../3.2.3/parser_guide.html">Parser 5min Quick Start Guide</a>
+          </li>
+                  
+    <li class="none">
+                    <a href="../3.2.3/detection.html">Content and Language Detection</a>
+          </li>
+                  
+    <li class="none">
+                    <a href="../3.2.3/configuring.html">Configuring Tika</a>
+          </li>
+                  
+    <li class="none">
+                    <a href="../3.2.3/examples.html">Usage Examples</a>
+          </li>
+                  
+    <li class="none">
+                    <a href="../3.2.3/api/">API Documentation</a>
+          </li>
+              </ul>
+        </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../3.2.2/index.html">Apache Tika 3.2.2</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../3.2.1/index.html">Apache Tika 3.2.1</a>
+                </li>
+              
+                
+                          
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+            <li class="expanded">
+                    <a href="../3.2.0/index.html">Apache Tika 3.2.0</a>
+                  <ul>
+                  
+    <li class="none">
+              <strong>Getting Started</strong>
+        </li>
+                  
+    <li class="none">
+                    <a href="../3.2.0/formats.html">Supported Formats</a>
+          </li>
+                  
+    <li class="none">
+                    <a href="../3.2.0/parser.html">Parser API</a>
+          </li>
+                  
+    <li class="none">
+                    <a href="../3.2.0/parser_guide.html">Parser 5min Quick Start Guide</a>
+          </li>
+                  
+    <li class="none">
+                    <a href="../3.2.0/detection.html">Content and Language Detection</a>
+          </li>
+                  
+    <li class="none">
+                    <a href="../3.2.0/configuring.html">Configuring Tika</a>
+          </li>
+                  
+    <li class="none">
+                    <a href="../3.2.0/examples.html">Usage Examples</a>
+          </li>
+                  
+    <li class="none">
+                    <a href="../3.2.0/api/">API Documentation</a>
+          </li>
+              </ul>
+        </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../3.1.0/index.html">Apache Tika 3.1.0</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../3.0.0/index.html">Apache Tika 3.0.0</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../3.0.0-BETA2/index.html">Apache Tika 3.0.0-BETA2</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../3.0.0-BETA/index.html">Apache Tika 3.0.0-BETA</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../2.9.4/index.html">Apache Tika 2.9.4</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../2.9.3/index.html">Apache Tika 2.9.3</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../2.9.2/index.html">Apache Tika 2.9.2</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../2.9.1/index.html">Apache Tika 2.9.1</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../2.9.0/index.html">Apache Tika 2.9.0</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../2.8.0/index.html">Apache Tika 2.8.0</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../2.7.0/index.html">Apache Tika 2.7.0</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../2.6.0/index.html">Apache Tika 2.6.0</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../2.5.0/index.html">Apache Tika 2.5.0</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../2.4.1/index.html">Apache Tika 2.4.1</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../2.4.0/index.html">Apache Tika 2.4.0</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../2.3.0/index.html">Apache Tika 2.3.0</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../2.2.1/index.html">Apache Tika 2.2.1</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../2.2.0/index.html">Apache Tika 2.2.0</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../2.1.0/index.html">Apache Tika 2.1.0</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../2.0.0/index.html">Apache Tika 2.0.0</a>
+                </li>
+          </ul>
+              <h5>The Apache Software Foundation</h5>
+            <ul>
+              
+    <li class="none">
+                    <a href="https://www.apache.org/foundation/" class="externalLink">About</a>
+          </li>
+              
+    <li class="none">
+                    <a href="https://www.apache.org/licenses/" class="externalLink">License</a>
+          </li>
+              
+    <li class="none">
+                    <a href="https://www.apache.org/security/" class="externalLink">Security</a>
+          </li>
+              
+    <li class="none">
+                    <a href="https://www.apache.org/foundation/sponsorship.html" class="externalLink">Sponsorship</a>
+          </li>
+              
+    <li class="none">
+                    <a href="https://www.apache.org/foundation/thanks.html" class="externalLink">Thanks</a>
+          </li>
+          </ul>
+      
+
+
+          <div id="bookpromo">
+            <h5>Books about Tika</h5>
+            <p>
+              <a href="http://manning.com/mattmann/" title="Tika in Action"
+                ><img src="../mattmann_cover150.jpg"
+                      width="150" height="186"/></a>
+            </p>
+          </div>
+        </div>
+      </div>
+      <div id="footer">
+        <p>
+          Copyright &#169; 2025
+          <a href="https://www.apache.org/">The Apache Software Foundation</a>.
+          Site powered by <a href="https://maven.apache.org/">Apache Maven</a>. 
+           <br/>
+          Apache Tika, Tika, Apache, the Apache feather logo, and the Apache
+          Tika project logo are trademarks of The Apache Software Foundation.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

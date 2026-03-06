@@ -118,6 +118,34 @@ def test_run_graphrag_index_uses_adapter_scan_roots(tmp_path: Path, monkeypatch)
     assert calls == [("index", [docs])]
 
 
+def test_build_word_forge_lexicon_uses_router(tmp_path: Path, monkeypatch) -> None:
+    from eidos_mcp.routers import word_forge as wf_router
+
+    stage_dir = tmp_path / "stage"
+    stage_dir.mkdir(parents=True, exist_ok=True)
+    doc_path = stage_dir / "doc.txt"
+    doc_path.write_text("Vector graphs link memory and knowledge.", encoding="utf-8")
+    record = pipeline.StagedRecord(
+        doc_id="r1",
+        source_path="doc.txt",
+        kind="docs",
+        sha256="abc",
+        bytes=10,
+        chars=40,
+        staged_path=str(doc_path),
+        simhash="0000000000000001",
+    )
+
+    monkeypatch.setattr(wf_router, "wf_build_lexicon_from_text", lambda text, thinking_mode="on": json.dumps({"status": "success", "nodes_added": 2, "edges_added": 1}))
+    monkeypatch.setattr(wf_router, "wf_graph_stats", lambda: json.dumps({"nodes": 2, "edges": 1}))
+
+    result = pipeline.build_word_forge_lexicon([record], repo_root=tmp_path, thinking_mode="on")
+    assert result["enabled"] is True
+    assert result["updated"] is True
+    assert result["build_result"]["nodes_added"] == 2
+    assert result["stats"]["nodes"] == 2
+
+
 def test_render_graphrag_query_result_handles_local_fallback() -> None:
     rendered = pipeline._render_graphrag_query_result(
         {
@@ -174,6 +202,7 @@ def test_generate_living_documentation_uses_central_qwen_config(tmp_path: Path, 
             "trend_summary": {"entries": 1},
             "assessment_summary": {"status": "stable", "score": 0.81},
         },
+        word_forge_result={"enabled": True, "updated": True, "stats": {"nodes": 2, "edges": 1}},
         config=pipeline.LivingDocumentationConfig(
             model="qwen3.5:2b",
             thinking_mode="on",
@@ -197,11 +226,10 @@ def test_generate_living_documentation_uses_central_qwen_config(tmp_path: Path, 
     assert captured["kwargs"]["format"]["type"] == "object"
     assert "recommended_actions" in captured["kwargs"]["format"]["required"]
     assert '"assessment_summary": {' in captured["prompt"]
+    assert '"word_forge": {' in captured["prompt"]
 
 
-def test_generate_living_documentation_retries_without_thinking_when_no_final_response(
-    tmp_path: Path, monkeypatch
-) -> None:
+def test_generate_living_documentation_retries_without_thinking_when_no_final_response(tmp_path: Path, monkeypatch) -> None:
     run_root = tmp_path / "run"
     run_root.mkdir(parents=True, exist_ok=True)
     seen_modes: list[str] = []
@@ -238,6 +266,7 @@ def test_generate_living_documentation_retries_without_thinking_when_no_final_re
         drift={"added_count": 0, "removed_count": 0, "changed_count": 1},
         code_report={"run_stats": {}},
         graphrag_result={"indexed": False},
+        word_forge_result={"enabled": True, "updated": False, "stats": {"nodes": 1, "edges": 0}},
         config=pipeline.LivingDocumentationConfig(model="qwen3.5:2b", thinking_mode="on"),
     )
 
@@ -255,20 +284,12 @@ def test_run_pipeline_includes_living_documentation_manifest(tmp_path: Path, mon
     output_root.mkdir(parents=True, exist_ok=True)
     workspace_root.mkdir(parents=True, exist_ok=True)
 
-    monkeypatch.setattr(
-        pipeline,
-        "run_code_analysis",
-        lambda *args, **kwargs: {"run_stats": {}, "total_units": 0, "duplicate_group_count": 0},
-    )
+    monkeypatch.setattr(pipeline, "run_code_analysis", lambda *args, **kwargs: {"run_stats": {}, "total_units": 0, "duplicate_group_count": 0})
     monkeypatch.setattr(pipeline, "stage_repo_text_documents", lambda *args, **kwargs: [])
     monkeypatch.setattr(pipeline, "stage_memory_and_kb_documents", lambda *args, **kwargs: [])
     monkeypatch.setattr(pipeline, "group_exact_duplicates", lambda records: [])
     monkeypatch.setattr(pipeline, "detect_near_duplicates", lambda records: [])
-    monkeypatch.setattr(
-        pipeline,
-        "compare_with_previous_run",
-        lambda *args, **kwargs: {"added_count": 0, "removed_count": 0, "changed_count": 0},
-    )
+    monkeypatch.setattr(pipeline, "compare_with_previous_run", lambda *args, **kwargs: {"added_count": 0, "removed_count": 0, "changed_count": 0})
     monkeypatch.setattr(
         pipeline,
         "generate_living_documentation",
@@ -282,6 +303,11 @@ def test_run_pipeline_includes_living_documentation_manifest(tmp_path: Path, mon
             "json_path": "x.json",
             "markdown_path": "x.md",
         },
+    )
+    monkeypatch.setattr(
+        pipeline,
+        "build_word_forge_lexicon",
+        lambda *args, **kwargs: {"enabled": True, "updated": True, "stats": {"nodes": 3, "edges": 2}},
     )
 
     manifest = pipeline.run_pipeline(
@@ -306,4 +332,5 @@ def test_run_pipeline_includes_living_documentation_manifest(tmp_path: Path, mon
     assert manifest["living_documentation"]["generated"] is True
     assert manifest["living_documentation"]["model"] == "qwen3.5:2b"
     assert manifest["living_documentation"]["thinking_mode"] == "off"
+    assert manifest["word_forge"]["stats"]["nodes"] == 3
     assert manifest["graphrag"].get("assessment_summary") in ({}, None)

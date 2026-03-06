@@ -34,9 +34,9 @@ from code_forge.digester.pipeline import build_duplication_index, build_repo_ind
 from code_forge.digester.schema import validate_output_dir
 from code_forge.ingest.runner import IngestionRunner
 from code_forge.library.db import CodeLibraryDB
-from eidos_mcp.config.models import get_model_config
 from eidosian_core import eidosian
 from eidosian_core.ports import get_service_port
+from eidos_mcp.config.models import get_model_config
 
 from knowledge_forge import GraphRAGIntegration
 
@@ -462,10 +462,27 @@ def run_code_analysis(
     duplication_index = build_duplication_index(db, digester_dir, limit_groups=200, near_limit=200)
     triage = build_triage_report(db, repo_index, duplication_index, digester_dir)
     dependency_graph = db.module_dependency_graph(rel_types=["imports", "calls", "uses"], limit_edges=20000)
-    (digester_dir / "dependency_graph.json").write_text(
+    dependency_graph_path = digester_dir / "code_forge_dependency_graph.json"
+    dependency_graph_path.write_text(
         json.dumps(dependency_graph, indent=2) + "\n",
         encoding="utf-8",
     )
+    unit_catalog = {
+        "generated_at": _now_utc(),
+        "total_units": total_units,
+        "units": list(db.iter_units(limit=500)),
+    }
+    unit_catalog_path = digester_dir / "code_forge_unit_catalog.json"
+    unit_catalog_path.write_text(json.dumps(unit_catalog, indent=2) + "\n", encoding="utf-8")
+    search_examples = {
+        "generated_at": _now_utc(),
+        "queries": {
+            query: db.semantic_search(query, limit=5, backend="hybrid", min_score=0.0)
+            for query in ("graph", "memory", "vector", "autonomy", "code forge")
+        },
+    }
+    search_examples_path = digester_dir / "code_forge_search_examples.json"
+    search_examples_path.write_text(json.dumps(search_examples, indent=2) + "\n", encoding="utf-8")
 
     code_report = {
         "generated_at": _now_utc(),
@@ -485,7 +502,9 @@ def run_code_analysis(
         "duplication_index_path": str(digester_dir / "duplication_index.json"),
         "triage_path": str(digester_dir / "triage.json"),
         "triage_label_counts": triage.get("label_counts", {}),
-        "dependency_graph_path": str(digester_dir / "dependency_graph.json"),
+        "dependency_graph_path": str(dependency_graph_path),
+        "unit_catalog_path": str(unit_catalog_path),
+        "search_examples_path": str(search_examples_path),
         "dependency_graph_summary": dependency_graph.get("summary", {}),
         "relationship_counts": db.relationship_counts(),
         "artifact_validation": validate_output_dir(digester_dir),
@@ -493,6 +512,52 @@ def run_code_analysis(
     report_path = report_dir / "code_analysis_report.json"
     report_path.write_text(json.dumps(code_report, indent=2) + "\n", encoding="utf-8")
     return code_report
+
+
+@eidosian()
+def build_word_forge_lexicon(
+    records: list[StagedRecord],
+    *,
+    repo_root: Path,
+    thinking_mode: str = "on",
+    max_chars: int = 6000,
+) -> dict[str, Any]:
+    try:
+        from eidos_mcp.routers import word_forge as wf_router
+    except Exception as exc:
+        return {"enabled": False, "error": str(exc)}
+
+    text_parts: list[str] = []
+    for rec in records:
+        if rec.kind not in {"docs", "knowledge", "memory", "config", "code"}:
+            continue
+        try:
+            snippet = Path(rec.staged_path).read_text(encoding="utf-8", errors="ignore").strip()
+        except Exception:
+            continue
+        if not snippet:
+            continue
+        text_parts.append(snippet[:1500])
+        if sum(len(part) for part in text_parts) >= max_chars:
+            break
+
+    if not text_parts:
+        try:
+            stats = json.loads(wf_router.wf_graph_stats())
+        except Exception:
+            stats = {}
+        return {"enabled": True, "updated": False, "stats": stats}
+
+    combined = "\n\n".join(text_parts)[:max_chars]
+    build_result = json.loads(wf_router.wf_build_lexicon_from_text(combined, thinking_mode=thinking_mode))
+    stats = json.loads(wf_router.wf_graph_stats())
+    return {
+        "enabled": True,
+        "updated": str(build_result.get("status")) == "success",
+        "build_result": build_result,
+        "stats": stats,
+        "graph_path": str(repo_root / "data" / "eidos_semantic_graph.json"),
+    }
 
 
 def _pick_sweep_model(repo_root: Path, fallback: Path) -> Path:
@@ -731,6 +796,7 @@ def _living_doc_prompt(
     drift: dict[str, Any],
     code_report: dict[str, Any],
     graphrag_result: dict[str, Any],
+    word_forge_result: dict[str, Any],
 ) -> str:
     payload = {
         "repo_root": str(repo_root),
@@ -747,7 +813,10 @@ def _living_doc_prompt(
             "near_duplicate_pair_count": code_report.get("near_duplicate_pair_count"),
             "dependency_graph_summary": code_report.get("dependency_graph_summary"),
             "triage_label_counts": code_report.get("triage_label_counts"),
+            "unit_catalog_path": code_report.get("unit_catalog_path"),
+            "search_examples_path": code_report.get("search_examples_path"),
         },
+        "word_forge": word_forge_result,
         "graphrag": {
             "indexed": graphrag_result.get("indexed"),
             "report_summary": graphrag_result.get("report_summary"),
@@ -891,6 +960,7 @@ def generate_living_documentation(
     drift: dict[str, Any],
     code_report: dict[str, Any],
     graphrag_result: dict[str, Any],
+    word_forge_result: dict[str, Any],
     config: LivingDocumentationConfig,
 ) -> dict[str, Any]:
     if not config.enabled:
@@ -905,6 +975,7 @@ def generate_living_documentation(
         drift=drift,
         code_report=code_report,
         graphrag_result=graphrag_result,
+        word_forge_result=word_forge_result,
     )
     raw, effective_thinking_mode, fallback_used = _invoke_living_doc_model(prompt, config)
     response_text = str(raw.get("response") or "").strip()
@@ -1008,6 +1079,7 @@ def run_pipeline(
         shutil.copy2(src, dest)
 
     graphrag_result: dict[str, Any] = {"indexed": False, "queries": []}
+    word_forge_result = build_word_forge_lexicon(records, repo_root=repo_root, thinking_mode="on")
     if run_graphrag:
         llm_port = get_service_port("graphrag_llm", default=8081, env_keys=("EIDOS_GRAPHRAG_LLM_PORT",))
         embed_port = get_service_port("graphrag_embedding", default=8082, env_keys=("EIDOS_GRAPHRAG_EMBED_PORT",))
@@ -1029,15 +1101,9 @@ def run_pipeline(
             graphrag_result["llm_model"] = str(llm_model)
             graphrag_result["embed_model"] = str(embed_model)
             graphrag_result["index_result"] = index_result
-            graphrag_result["report_summary"] = (
-                index_result.get("community_reports") if isinstance(index_result, dict) else {}
-            )
-            graphrag_result["trend_summary"] = (
-                index_result.get("report_trends") if isinstance(index_result, dict) else {}
-            )
-            graphrag_result["assessment_summary"] = (
-                index_result.get("assessment") if isinstance(index_result, dict) else {}
-            )
+            graphrag_result["report_summary"] = (index_result.get("community_reports") if isinstance(index_result, dict) else {})
+            graphrag_result["trend_summary"] = (index_result.get("report_trends") if isinstance(index_result, dict) else {})
+            graphrag_result["assessment_summary"] = (index_result.get("assessment") if isinstance(index_result, dict) else {})
             for query in queries:
                 answer = _run_graphrag_query(workspace_root, query, method="global")
                 graphrag_result["queries"].append({"query": query, "answer": answer})
@@ -1054,6 +1120,7 @@ def run_pipeline(
         drift=drift,
         code_report=code_report,
         graphrag_result=graphrag_result,
+        word_forge_result=word_forge_result,
         config=living_doc_config or LivingDocumentationConfig(),
     )
 
@@ -1076,6 +1143,7 @@ def run_pipeline(
             "total_units": code_report.get("total_units"),
             "duplicate_group_count": code_report.get("duplicate_group_count"),
         },
+        "word_forge": word_forge_result,
         "graphrag": graphrag_result,
         "living_documentation": living_doc_result,
         "source_hashes": {r.source_path: r.sha256 for r in records},

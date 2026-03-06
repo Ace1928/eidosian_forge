@@ -7,6 +7,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
 from collections import Counter
@@ -62,6 +63,18 @@ EXCLUDE_SEGMENTS = {
 DEFAULT_CHUNK_CHARS = 1200
 DEFAULT_CHUNK_OVERLAP = 200
 MAX_NATIVE_REPORTS = 8
+COMMUNITY_REPORT_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "title": {"type": "string"},
+        "summary": {"type": "string"},
+        "rating": {"type": "integer"},
+        "rating_explanation": {"type": "string"},
+        "tags": {"type": "array", "items": {"type": "string"}},
+        "findings": {"type": "array", "items": {"type": "string"}},
+    },
+    "required": ["title", "summary", "rating", "rating_explanation", "tags", "findings"],
+}
 
 
 def _forge_root() -> Path:
@@ -79,6 +92,25 @@ def _safe_ratio(numerator: float, denominator: float) -> float:
 
 def _clamp01(value: float) -> float:
     return max(0.0, min(1.0, float(value)))
+
+
+def _extract_json_fragment(text: str) -> Dict[str, Any] | None:
+    candidate = str(text or "").strip()
+    if not candidate:
+        return None
+    try:
+        payload = json.loads(candidate)
+        return payload if isinstance(payload, dict) else None
+    except Exception:
+        pass
+    match = re.search(r"\{.*\}", candidate, flags=re.DOTALL)
+    if not match:
+        return None
+    try:
+        payload = json.loads(match.group(0))
+        return payload if isinstance(payload, dict) else None
+    except Exception:
+        return None
 
 
 class GraphRAGIntegration:
@@ -233,6 +265,50 @@ class GraphRAGIntegration:
             self._bridge = None
         return self._bridge
 
+    def _model_config(self) -> Any:
+        try:
+            from eidos_mcp.config.models import get_model_config
+
+            return get_model_config()
+        except Exception:
+            return None
+
+    def _generate_structured_payload(
+        self,
+        *,
+        prompt: str,
+        system: str,
+        schema: Dict[str, Any],
+        model: str | None = None,
+        thinking_mode: str = "on",
+        timeout: float | None = None,
+        max_tokens: int = 800,
+        temperature: float = 0.1,
+    ) -> Dict[str, Any]:
+        model_config = self._model_config()
+        if model_config is None or not getattr(model_config, "is_ollama_running", lambda: False)():
+            return {}
+        requested_mode = str(thinking_mode or "on")
+        for mode in [requested_mode, "off"] if requested_mode != "off" else ["off"]:
+            try:
+                payload = model_config.generate_payload(
+                    prompt,
+                    system=system,
+                    model=model,
+                    thinking_mode=mode,
+                    timeout=timeout or 900.0,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    format=schema,
+                )
+            except Exception:
+                continue
+            parsed = _extract_json_fragment(str(payload.get("response") or ""))
+            if parsed:
+                parsed["_effective_thinking_mode"] = mode
+                return parsed
+        return {}
+
     def _load_native_state(self) -> Dict[str, Any]:
         if not self.native_state_path.exists():
             return {"files": {}, "word_graph": {}}
@@ -361,6 +437,12 @@ class GraphRAGIntegration:
                 lines.append(f"Part of speech: {attributes['pos']}")
             if attributes.get("source"):
                 lines.append(f"Source: {attributes['source']}")
+            for field_name in ("aliases", "domains", "examples"):
+                value = attributes.get(field_name)
+                if isinstance(value, list) and value:
+                    joined = ", ".join(str(item) for item in value[:8] if str(item).strip())
+                    if joined:
+                        lines.append(f"{field_name.title()}: {joined}")
             content = "\n".join(lines)
             metadata = {
                 "source": "word_forge",
@@ -403,6 +485,136 @@ class GraphRAGIntegration:
         summary["term_nodes"] = len(created_node_ids)
         summary["relationships"] = relationships
         return summary
+
+    def _iter_memory_files(self) -> Iterable[Path]:
+        base = Path(self.memory_dir).expanduser().resolve()
+        if not base.exists():
+            return []
+        files: list[Path] = []
+        for path in sorted(base.glob("*.json")):
+            if path.name.startswith(".") or path.name.endswith(".lock") or path.name == "knowledge_xref.json":
+                continue
+            files.append(path)
+        return files
+
+    def _extract_memory_records(self, payload: Any) -> list[dict[str, Any]]:
+        rows: list[dict[str, Any]] = []
+
+        def emit(item: Any, *, tier_name: str, namespace_name: str = "memory") -> None:
+            if not isinstance(item, dict):
+                return
+            content = str(item.get("content") or "").strip()
+            if not content:
+                return
+            row = {
+                "id": str(item.get("id") or item.get("key") or hashlib.sha256(content.encode("utf-8")).hexdigest()[:12]),
+                "content": content,
+                "tier": str(item.get("tier") or tier_name),
+                "namespace": str(item.get("namespace") or namespace_name),
+                "importance": item.get("importance"),
+                "tags": [str(tag) for tag in (item.get("tags") or []) if str(tag).strip()],
+                "metadata": dict(item.get("metadata") or {}),
+            }
+            rows.append(row)
+
+        if isinstance(payload, dict):
+            for tier_name, value in payload.items():
+                if isinstance(value, list):
+                    for item in value:
+                        emit(item, tier_name=str(tier_name))
+                elif isinstance(value, dict):
+                    emit(value, tier_name=str(tier_name))
+        elif isinstance(payload, list):
+            for item in payload:
+                emit(item, tier_name="memory")
+        return rows
+
+    def _ingest_memory_tiers(self, knowledge: Any, state: Dict[str, Any]) -> Dict[str, Any]:
+        memory_state = dict(state.get("memory_files") or {})
+        active_paths: set[str] = set()
+        files_seen = 0
+        records_indexed = 0
+        files_unchanged = 0
+        files_removed = 0
+        deleted_nodes = 0
+
+        for path in self._iter_memory_files():
+            files_seen += 1
+            source_key = str(path)
+            active_paths.add(source_key)
+            digest = self._sha256_file(path)
+            prior = dict(memory_state.get(source_key) or {})
+            if prior.get("sha256") == digest:
+                files_unchanged += 1
+                records_indexed += int(prior.get("record_count") or 0)
+                continue
+
+            if prior:
+                deleted_nodes += self._delete_recorded_nodes(knowledge, list(prior.get("node_ids") or []))
+
+            try:
+                payload = json.loads(path.read_text(encoding="utf-8"))
+            except Exception:
+                memory_state.pop(source_key, None)
+                continue
+            rows = self._extract_memory_records(payload)
+            if not rows:
+                memory_state[source_key] = {
+                    "sha256": digest,
+                    "node_ids": [],
+                    "record_count": 0,
+                    "updated_at": self._timestamp(),
+                }
+                continue
+
+            rel_path = os.path.relpath(path, _forge_root())
+            node_ids: list[str] = []
+            for row in rows:
+                tier = str(row.get("tier") or "memory")
+                namespace = str(row.get("namespace") or "memory")
+                metadata = {
+                    "source": "memory_forge",
+                    "kind": "memory_record",
+                    "memory_file": rel_path,
+                    "memory_id": row.get("id"),
+                    "tier": tier,
+                    "namespace": namespace,
+                    "importance": row.get("importance"),
+                    "source_paths": [str(path)],
+                    **dict(row.get("metadata") or {}),
+                }
+                tags = ["memory", tier, namespace] + list(row.get("tags") or [])
+                node = knowledge.add_knowledge(
+                    content=f"Memory [{tier}/{namespace}]: {row['content']}",
+                    concepts=[row["id"]],
+                    tags=tags,
+                    metadata=metadata,
+                )
+                node_ids.append(node.id)
+                records_indexed += 1
+
+            memory_state[source_key] = {
+                "sha256": digest,
+                "node_ids": node_ids,
+                "record_count": len(node_ids),
+                "updated_at": self._timestamp(),
+                "memory_file": rel_path,
+            }
+
+        for stale_path in sorted(set(memory_state.keys()) - active_paths):
+            prior = dict(memory_state.get(stale_path) or {})
+            deleted_nodes += self._delete_recorded_nodes(knowledge, list(prior.get("node_ids") or []))
+            memory_state.pop(stale_path, None)
+            files_removed += 1
+
+        state["memory_files"] = memory_state
+        return {
+            "files_seen": files_seen,
+            "records_indexed": records_indexed,
+            "files_unchanged": files_unchanged,
+            "files_removed": files_removed,
+            "deleted_nodes": deleted_nodes,
+        }
 
     def _timestamp(self) -> str:
         try:
@@ -644,7 +856,9 @@ class GraphRAGIntegration:
                 "node_ids": detail_ids,
                 "kind": kind,
                 "artifact_path": rel_path,
-                "benchmark_gate_pass": (None if not isinstance(benchmark, dict) else bool(benchmark.get("gate_pass"))),
+                "benchmark_gate_pass": (
+                    None if not isinstance(benchmark, dict) else bool(benchmark.get("gate_pass"))
+                ),
                 "search_p95_ms": None if not isinstance(benchmark, dict) else benchmark.get("search_p95_ms"),
                 "graph_build_ms": None if not isinstance(benchmark, dict) else benchmark.get("graph_build_ms"),
                 "drift_warning_count": (
@@ -683,6 +897,9 @@ class GraphRAGIntegration:
                 node_ids.extend(
                     [str(payload.get("root_node_id") or "")] + [str(x) for x in payload.get("chunk_node_ids") or []]
                 )
+        for payload in (state.get("memory_files") or {}).values():
+            if isinstance(payload, dict):
+                node_ids.extend(str(x) for x in (payload.get("node_ids") or []))
         word_graph = state.get("word_graph") or {}
         if isinstance(word_graph, dict):
             node_ids.extend(str(x) for x in word_graph.get("node_ids") or [])
@@ -710,9 +927,7 @@ class GraphRAGIntegration:
                 if tag not in {"native_graphrag"}
             }
         )
-        avg_chars = _safe_ratio(
-            sum(len(str(getattr(node, "content", "") or "")) for node in unique_group), len(unique_group)
-        )
+        avg_chars = _safe_ratio(sum(len(str(getattr(node, "content", "") or "")) for node in unique_group), len(unique_group))
         coverage_ratio = _safe_ratio(len(unique_group), total_nodes)
         link_density = _safe_ratio(linked_neighbors, len(unique_group))
         tag_diversity = len(unique_tags)
@@ -749,6 +964,7 @@ class GraphRAGIntegration:
 
         buckets: dict[str, list[Any]] = {
             "documents": [node for node in nodes if "document_chunk" in node.tags or "document_root" in node.tags],
+            "memory": [node for node in nodes if "memory" in node.tags],
             "lexicon": [node for node in nodes if "word_forge" in node.tags or "lexicon" in node.tags],
             "code_forge": [node for node in nodes if "code_forge" in node.tags or "artifact" in node.tags],
         }
@@ -786,14 +1002,51 @@ class GraphRAGIntegration:
                 linked_neighbors=linked_neighbors,
                 findings=findings,
             )
+            report_tags = sorted(
+                {
+                    str(tag)
+                    for node in unique_group[:12]
+                    for tag in (getattr(node, "tags", set()) or set())
+                    if str(tag).strip() and tag not in {"native_graphrag", "document_root", "document_chunk"}
+                }
+            )[:8]
+            llm_payload = self._generate_structured_payload(
+                prompt=(
+                    f"Community: {community}\n"
+                    f"Metrics: {json.dumps(metrics, ensure_ascii=True)}\n"
+                    f"Tags: {', '.join(report_tags)}\n"
+                    f"Evidence:\n- " + "\n- ".join(findings[:5])
+                ),
+                system=(
+                    "You are naming and tagging a GraphRAG community report for the Eidosian Forge. "
+                    "Use only the provided evidence. Return strict JSON."
+                ),
+                schema=COMMUNITY_REPORT_SCHEMA,
+                thinking_mode="on",
+                timeout=900.0,
+                max_tokens=700,
+                temperature=0.1,
+            )
+            enriched_tags = [str(tag).strip() for tag in llm_payload.get("tags", []) if str(tag).strip()] if llm_payload else []
+            merged_tags = sorted(dict.fromkeys(report_tags + enriched_tags))
+            base_rating = min(5, max(1, len(unique_group) // 2 + (1 if linked_neighbors else 0)))
+            rating = min(5, max(1, int(llm_payload.get("rating", base_rating) if llm_payload else base_rating)))
             reports.append(
                 {
                     "community": community,
-                    "title": f"{community.replace('_', ' ').title()} Community",
-                    "summary": f"{len(unique_group)} nodes with {linked_neighbors} linked neighbor references",
+                    "title": str(llm_payload.get("title") or f"{community.replace('_', ' ').title()} Community"),
+                    "summary": str(
+                        llm_payload.get("summary") or f"{len(unique_group)} nodes with {linked_neighbors} linked neighbor references"
+                    ),
                     "rating": rating,
-                    "rating_explanation": "Higher scores reflect denser linked context and broader coverage.",
-                    "findings": findings,
+                    "rating_explanation": str(
+                        llm_payload.get("rating_explanation")
+                        or "Higher scores reflect denser linked context and broader coverage."
+                    ),
+                    "findings": [str(item).strip() for item in (llm_payload.get("findings") or findings) if str(item).strip()][:5],
+                    "tags": merged_tags,
+                    "llm_enriched": bool(llm_payload),
+                    "effective_thinking_mode": llm_payload.get("_effective_thinking_mode") if llm_payload else None,
                     "node_ids": [node.id for node in unique_group[:25]],
                     "metrics": metrics,
                 }
@@ -1138,6 +1391,7 @@ class GraphRAGIntegration:
             files_removed += 1
 
         state["files"] = file_state
+        memory_summary = self._ingest_memory_tiers(knowledge, state)
         word_forge = self._ingest_word_graph(knowledge, state)
         code_forge = self._ingest_code_forge_artifacts(knowledge, state, scan_roots)
         community_reports = self._build_native_community_reports(knowledge, state)
@@ -1166,6 +1420,7 @@ class GraphRAGIntegration:
             "deleted_nodes": deleted_nodes,
             "document_nodes": document_nodes,
             "chunk_nodes": chunk_nodes,
+            "memory": memory_summary,
             "word_forge": word_forge,
             "code_forge": code_forge,
             "community_reports": community_reports,
@@ -1312,9 +1567,7 @@ class GraphRAGIntegration:
         }
 
     def _artifact_summary_from_state(self, state: Dict[str, Any], *, limit: int = 10) -> Dict[str, Any]:
-        artifact_state = (
-            state.get("code_forge_artifacts") if isinstance(state.get("code_forge_artifacts"), dict) else {}
-        )
+        artifact_state = state.get("code_forge_artifacts") if isinstance(state.get("code_forge_artifacts"), dict) else {}
         rows = [row for row in artifact_state.values() if isinstance(row, dict)]
         rows.sort(key=lambda row: str(row.get("updated_at") or ""), reverse=True)
         limit = max(1, int(limit or 10))

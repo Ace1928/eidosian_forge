@@ -10,8 +10,9 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 import networkx as nx
 from eidosian_core import eidosian
@@ -24,6 +25,59 @@ SEMANTIC_GRAPH_PATH = FORGE_DIR / "data" / "eidos_semantic_graph.json"
 
 # Simple in-memory graph
 _graph: Optional[nx.Graph] = None
+TERM_ENRICH_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "definition": {"type": "string"},
+        "pos": {"type": "string"},
+        "aliases": {"type": "array", "items": {"type": "string"}},
+        "domains": {"type": "array", "items": {"type": "string"}},
+        "related_terms": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "term": {"type": "string"},
+                    "relation_type": {"type": "string"},
+                    "weight": {"type": "number"},
+                },
+                "required": ["term", "relation_type", "weight"],
+            },
+        },
+    },
+    "required": ["definition", "pos", "aliases", "domains", "related_terms"],
+}
+TEXT_LEXICON_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "terms": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "term": {"type": "string"},
+                    "definition": {"type": "string"},
+                    "pos": {"type": "string"},
+                    "domains": {"type": "array", "items": {"type": "string"}},
+                    "related_terms": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "term": {"type": "string"},
+                                "relation_type": {"type": "string"},
+                                "weight": {"type": "number"},
+                            },
+                            "required": ["term", "relation_type", "weight"],
+                        },
+                    },
+                },
+                "required": ["term", "definition", "pos", "domains", "related_terms"],
+            },
+        }
+    },
+    "required": ["terms"],
+}
 
 
 def _get_graph() -> nx.Graph:
@@ -56,6 +110,67 @@ def _save_graph() -> None:
         "edges": [{"source": u, "target": v, **graph.edges[u, v]} for u, v in graph.edges()],
     }
     SEMANTIC_GRAPH_PATH.write_text(json.dumps(data, indent=2))
+
+
+def _extract_json_fragment(text: str) -> Dict[str, Any] | None:
+    candidate = str(text or "").strip()
+    if not candidate:
+        return None
+    try:
+        payload = json.loads(candidate)
+        return payload if isinstance(payload, dict) else None
+    except Exception:
+        pass
+    match = re.search(r"\{.*\}", candidate, flags=re.DOTALL)
+    if not match:
+        return None
+    try:
+        payload = json.loads(match.group(0))
+        return payload if isinstance(payload, dict) else None
+    except Exception:
+        return None
+
+
+def _get_model_config():
+    try:
+        from eidos_mcp.config.models import get_model_config
+
+        return get_model_config()
+    except Exception:
+        return None
+
+
+def _generate_structured_payload(
+    *,
+    prompt: str,
+    system: str,
+    schema: Dict[str, Any],
+    thinking_mode: str = "on",
+    timeout_sec: float = 900.0,
+    max_tokens: int = 700,
+) -> Dict[str, Any]:
+    cfg = _get_model_config()
+    if cfg is None or not getattr(cfg, "is_ollama_running", lambda: False)():
+        return {}
+    requested_mode = str(thinking_mode or "on")
+    for mode in [requested_mode, "off"] if requested_mode != "off" else ["off"]:
+        try:
+            payload = cfg.generate_payload(
+                prompt,
+                system=system,
+                thinking_mode=mode,
+                timeout=timeout_sec,
+                max_tokens=max_tokens,
+                temperature=0.1,
+                format=schema,
+            )
+        except Exception:
+            continue
+        parsed = _extract_json_fragment(str(payload.get("response") or ""))
+        if parsed:
+            parsed["_effective_thinking_mode"] = mode
+            return parsed
+    return {}
 
 
 # =============================================================================
@@ -361,6 +476,82 @@ def wf_save_graph() -> str:
 
 
 @tool(
+    name="wf_enrich_term",
+    description="Use the configured reasoning model to enrich a Word Forge term with definitions and relationships.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "term": {"type": "string", "description": "The term to enrich"},
+            "context": {"type": "string", "description": "Optional grounding context"},
+            "thinking_mode": {"type": "string", "description": "Reasoning mode (default: on)"},
+            "timeout_sec": {"type": "number", "description": "Timeout in seconds (default: 900)"},
+        },
+        "required": ["term"],
+    },
+)
+@eidosian()
+def wf_enrich_term(term: str, context: str = "", thinking_mode: str = "on", timeout_sec: float = 900.0) -> str:
+    graph = _get_graph()
+    existing = dict(graph.nodes[term]) if graph.has_node(term) else {}
+    payload = _generate_structured_payload(
+        prompt=(
+            f"Term: {term}\n"
+            f"Existing attributes: {json.dumps(existing, ensure_ascii=True)}\n"
+            f"Context: {context[:2000]}"
+        ),
+        system=(
+            "You are enriching a lexical graph entry for the Eidosian Forge. "
+            "Use only grounded lexical knowledge and the provided context. Return strict JSON."
+        ),
+        schema=TERM_ENRICH_SCHEMA,
+        thinking_mode=thinking_mode,
+        timeout_sec=timeout_sec,
+    )
+    if not payload:
+        return json.dumps({"status": "skipped", "reason": "model unavailable or returned no structured payload"}, indent=2)
+
+    attributes = dict(existing)
+    for key in ("definition", "pos"):
+        if str(payload.get(key) or "").strip():
+            attributes[key] = str(payload.get(key)).strip()
+    for key in ("aliases", "domains"):
+        value = payload.get(key)
+        if isinstance(value, list):
+            attributes[key] = [str(item).strip() for item in value if str(item).strip()]
+    attributes["source"] = "llm_enrichment"
+    attributes["effective_thinking_mode"] = payload.get("_effective_thinking_mode")
+
+    graph.add_node(term, **attributes)
+    created_edges = 0
+    for row in payload.get("related_terms", []) or []:
+        if not isinstance(row, dict):
+            continue
+        other = str(row.get("term") or "").strip()
+        rel_type = str(row.get("relation_type") or "related").strip() or "related"
+        if not other:
+            continue
+        if not graph.has_node(other):
+            graph.add_node(other, source="llm_enrichment")
+        graph.add_edge(term, other, type=rel_type, weight=float(row.get("weight") or 0.5))
+        created_edges += 1
+
+    _save_graph()
+    return json.dumps(
+        {
+            "status": "success",
+            "term": term,
+            "definition": attributes.get("definition"),
+            "pos": attributes.get("pos"),
+            "aliases": attributes.get("aliases", []),
+            "domains": attributes.get("domains", []),
+            "relationships_added": created_edges,
+            "effective_thinking_mode": payload.get("_effective_thinking_mode"),
+        },
+        indent=2,
+    )
+
+
+@tool(
     name="wf_build_from_text",
     description="Build semantic relationships from a text passage.",
     parameters={
@@ -428,6 +619,82 @@ def wf_build_from_text(text: str, min_word_length: int = 4) -> str:
             "edges_added": edges_added,
             "total_nodes": graph.number_of_nodes(),
             "total_edges": graph.number_of_edges(),
+        },
+        indent=2,
+    )
+
+
+@tool(
+    name="wf_build_lexicon_from_text",
+    description="Use the configured reasoning model to extract enriched lexical terms and relationships from text.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "text": {"type": "string", "description": "Grounding text"},
+            "thinking_mode": {"type": "string", "description": "Reasoning mode (default: on)"},
+            "timeout_sec": {"type": "number", "description": "Timeout in seconds (default: 900)"},
+        },
+        "required": ["text"],
+    },
+)
+@eidosian()
+def wf_build_lexicon_from_text(text: str, thinking_mode: str = "on", timeout_sec: float = 900.0) -> str:
+    graph = _get_graph()
+    payload = _generate_structured_payload(
+        prompt=text[:6000],
+        system=(
+            "Extract a compact lexical graph from the provided text for the Eidosian Forge. "
+            "Return terms, short grounded definitions, domains, and weighted semantic relationships as strict JSON."
+        ),
+        schema=TEXT_LEXICON_SCHEMA,
+        thinking_mode=thinking_mode,
+        timeout_sec=timeout_sec,
+        max_tokens=1200,
+    )
+    if not payload:
+        return wf_build_from_text(text)
+
+    nodes_added = 0
+    edges_added = 0
+    for item in payload.get("terms", []) or []:
+        if not isinstance(item, dict):
+            continue
+        term = str(item.get("term") or "").strip().lower()
+        if not term:
+            continue
+        attrs = {
+            "definition": str(item.get("definition") or "").strip(),
+            "pos": str(item.get("pos") or "").strip(),
+            "domains": [str(x).strip() for x in (item.get("domains") or []) if str(x).strip()],
+            "source": "llm_text_extraction",
+            "effective_thinking_mode": payload.get("_effective_thinking_mode"),
+        }
+        if not graph.has_node(term):
+            nodes_added += 1
+        graph.add_node(term, **attrs)
+        for rel in item.get("related_terms", []) or []:
+            if not isinstance(rel, dict):
+                continue
+            other = str(rel.get("term") or "").strip().lower()
+            rel_type = str(rel.get("relation_type") or "related").strip() or "related"
+            if not other:
+                continue
+            if not graph.has_node(other):
+                graph.add_node(other, source="llm_text_extraction")
+                nodes_added += 1
+            if not graph.has_edge(term, other):
+                edges_added += 1
+            graph.add_edge(term, other, type=rel_type, weight=float(rel.get("weight") or 0.5))
+
+    _save_graph()
+    return json.dumps(
+        {
+            "status": "success",
+            "nodes_added": nodes_added,
+            "edges_added": edges_added,
+            "total_nodes": graph.number_of_nodes(),
+            "total_edges": graph.number_of_edges(),
+            "effective_thinking_mode": payload.get("_effective_thinking_mode"),
         },
         indent=2,
     )

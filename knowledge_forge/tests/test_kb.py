@@ -219,11 +219,29 @@ def test_graphrag_incremental_index_native_fallback_ingests_docs_and_word_graph(
         """.strip(),
         encoding="utf-8",
     )
+    memory_dir = tmp_path / "memory"
+    memory_dir.mkdir(parents=True, exist_ok=True)
+    (memory_dir / "self.json").write_text(
+        json.dumps(
+            {
+                "self": [
+                    {
+                        "id": "m1",
+                        "content": "Eidos prefers strong agency and robust vector memory integration.",
+                        "tier": "self",
+                        "namespace": "eidos",
+                        "tags": ["identity", "agency"],
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
 
     grag = GraphRAGIntegration(
         graphrag_root=workspace,
         kb_path=tmp_path / "kb.json",
-        memory_dir=tmp_path / "memory",
+        memory_dir=memory_dir,
         word_graph_path=word_graph,
     )
     with patch("knowledge_forge.integrations.graphrag.subprocess.run") as run_mock:
@@ -233,19 +251,36 @@ def test_graphrag_incremental_index_native_fallback_ingests_docs_and_word_graph(
             stdout="",
             stderr="graphrag not installed",
         )
-        result = grag.run_incremental_index([docs, artifact_dir])
+        with patch.object(
+            GraphRAGIntegration,
+            "_generate_structured_payload",
+            return_value={
+                "title": "Agency Memory Community",
+                "summary": "Memory, lexicon, and code artifacts cluster around agency.",
+                "rating": 4,
+                "rating_explanation": "The linked evidence is coherent.",
+                "tags": ["agency", "memory"],
+                "findings": ["Agency memory connects to vector indexing."],
+                "_effective_thinking_mode": "on",
+            },
+        ):
+            result = grag.run_incremental_index([docs, artifact_dir])
 
     assert result["success"] is True
     assert result["mode"] == "native_vector_graph"
     assert result["external_success"] is False
     assert result["files_indexed"] >= 1
+    assert result["memory"]["records_indexed"] >= 1
     assert result["word_forge"]["term_nodes"] == 2
     assert result["word_forge"]["relationships"] == 1
     assert result["code_forge"]["artifacts_indexed"] >= 1
     assert result["community_reports"]["count"] >= 3
+    assert result["community_reports"]["top_community"] is not None
+    assert result["assessment"]["status"] in {"critical", "degraded", "stable", "strong"}
 
     knowledge = KnowledgeForge(persistence_path=tmp_path / "kb.json")
     assert knowledge.search("Eidos uses a unified vector graph index.")
+    assert knowledge.search("Eidos prefers strong agency and robust vector memory integration.")
     word_hits = knowledge.search("Word Forge term: autonomy")
     assert word_hits
     related = knowledge.get_related_nodes(word_hits[0].id)
@@ -274,9 +309,22 @@ def test_graphrag_incremental_index_removes_stale_native_documents(tmp_path):
             stdout="",
             stderr="graphrag not installed",
         )
-        first = grag.run_incremental_index([docs])
-        doc_path.unlink()
-        second = grag.run_incremental_index([docs])
+        with patch.object(
+            GraphRAGIntegration,
+            "_generate_structured_payload",
+            return_value={
+                "title": "Memory Community",
+                "summary": "A compact native report.",
+                "rating": 3,
+                "rating_explanation": "Grounded local output.",
+                "tags": ["memory"],
+                "findings": ["persistent graph memory"],
+                "_effective_thinking_mode": "off",
+            },
+        ):
+            first = grag.run_incremental_index([docs])
+            doc_path.unlink()
+            second = grag.run_incremental_index([docs])
 
     assert first["files_indexed"] == 1
     assert second["files_removed"] == 1
@@ -306,7 +354,20 @@ def test_graphrag_native_reports_written_after_index(tmp_path):
             stdout="",
             stderr="graphrag not installed",
         )
-        result = grag.run_incremental_index([docs])
+        with patch.object(
+            GraphRAGIntegration,
+            "_generate_structured_payload",
+            return_value={
+                "title": "Documents Community",
+                "summary": "Native report for architecture docs.",
+                "rating": 4,
+                "rating_explanation": "Linked evidence is strong.",
+                "tags": ["architecture", "vector"],
+                "findings": ["Vector graph architecture links memory, code, and knowledge."],
+                "_effective_thinking_mode": "off",
+            },
+        ):
+            result = grag.run_incremental_index([docs])
 
     reports = result["community_reports"]
     assert reports["count"] >= 1
