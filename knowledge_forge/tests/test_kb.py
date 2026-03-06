@@ -310,7 +310,15 @@ def test_graphrag_native_reports_written_after_index(tmp_path):
 
     reports = result["community_reports"]
     assert reports["count"] >= 1
+    assert reports["average_quality_score"] > 0
     assert Path(reports["json_path"]).exists()
     assert Path(reports["markdown_path"]).exists()
     payload = json.loads(Path(reports["json_path"]).read_text(encoding="utf-8"))
+    assert payload["aggregate"]["average_quality_score"] > 0
     assert payload["reports"]
+    summary = grag.native_report_summary(limit=2)
+    assert summary["count"] >= 1
+    assert summary["average_quality_score"] > 0
+    artifact_summary = grag.native_artifact_summary(limit=2)
+    assert artifact_summary["count"] >= 0
+    assert "artifacts" in artifact_summary

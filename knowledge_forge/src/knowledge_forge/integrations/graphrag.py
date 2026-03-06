@@ -71,6 +71,12 @@ def _forge_root() -> Path:
     return Path(__file__).resolve().parents[4]
 
 
+def _safe_ratio(numerator: float, denominator: float) -> float:
+    if denominator <= 0:
+        return 0.0
+    return float(numerator) / float(denominator)
+
+
 class GraphRAGIntegration:
     """
     Bridge between KnowledgeForge and the external GraphRAG tool.
@@ -634,6 +640,17 @@ class GraphRAGIntegration:
                 "node_ids": detail_ids,
                 "kind": kind,
                 "artifact_path": rel_path,
+                "benchmark_gate_pass": (
+                    None if not isinstance(benchmark, dict) else bool(benchmark.get("gate_pass"))
+                ),
+                "search_p95_ms": None if not isinstance(benchmark, dict) else benchmark.get("search_p95_ms"),
+                "graph_build_ms": None if not isinstance(benchmark, dict) else benchmark.get("graph_build_ms"),
+                "drift_warning_count": (
+                    0
+                    if not isinstance(drift, dict) or drift.get("warning_count") is None
+                    else int(drift.get("warning_count") or 0)
+                ),
+                "unit_link_count": len(unit_links),
                 "updated_at": self._timestamp(),
             }
             artifacts_indexed += 1
@@ -674,6 +691,52 @@ class GraphRAGIntegration:
                 )
         return [node_id for node_id in dict.fromkeys(node_ids) if node_id]
 
+    def _score_native_report(
+        self,
+        *,
+        community: str,
+        total_nodes: int,
+        unique_group: list[Any],
+        linked_neighbors: int,
+        findings: list[str],
+    ) -> dict[str, Any]:
+        unique_tags = sorted(
+            {
+                str(tag)
+                for node in unique_group
+                for tag in getattr(node, "tags", set()) or set()
+                if tag not in {"native_graphrag"}
+            }
+        )
+        avg_chars = _safe_ratio(sum(len(str(getattr(node, "content", "") or "")) for node in unique_group), len(unique_group))
+        coverage_ratio = _safe_ratio(len(unique_group), total_nodes)
+        link_density = _safe_ratio(linked_neighbors, len(unique_group))
+        tag_diversity = len(unique_tags)
+        evidence_score = min(1.0, _safe_ratio(len(findings), 5))
+        quality_score = min(
+            1.0,
+            (coverage_ratio * 0.35)
+            + (min(1.0, link_density / 4.0) * 0.25)
+            + (min(1.0, tag_diversity / 8.0) * 0.2)
+            + (min(1.0, avg_chars / 240.0) * 0.1)
+            + (evidence_score * 0.1),
+        )
+        if quality_score >= 0.75:
+            quality_band = "strong"
+        elif quality_score >= 0.45:
+            quality_band = "moderate"
+        else:
+            quality_band = "weak"
+        return {
+            "community": community,
+            "coverage_ratio": round(coverage_ratio, 4),
+            "link_density": round(link_density, 4),
+            "tag_diversity": tag_diversity,
+            "avg_content_chars": round(avg_chars, 2),
+            "quality_score": round(quality_score, 4),
+            "quality_band": quality_band,
+        }
+
     def _build_native_community_reports(self, knowledge: Any, state: Dict[str, Any]) -> Dict[str, Any]:
         output_dir = self.root / "output"
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -697,6 +760,7 @@ class GraphRAGIntegration:
                 buckets.setdefault(tag, group)
 
         reports: list[dict[str, Any]] = []
+        total_nodes = len(nodes)
         for community, group in buckets.items():
             if not group:
                 continue
@@ -711,6 +775,13 @@ class GraphRAGIntegration:
                 findings.append(content)
                 linked_neighbors += len(knowledge.get_related_nodes(node.id))
             rating = min(5, max(1, len(unique_group) // 2 + (1 if linked_neighbors else 0)))
+            metrics = self._score_native_report(
+                community=community,
+                total_nodes=total_nodes,
+                unique_group=unique_group,
+                linked_neighbors=linked_neighbors,
+                findings=findings,
+            )
             reports.append(
                 {
                     "community": community,
@@ -720,24 +791,67 @@ class GraphRAGIntegration:
                     "rating_explanation": "Higher scores reflect denser linked context and broader coverage.",
                     "findings": findings,
                     "node_ids": [node.id for node in unique_group[:25]],
+                    "metrics": metrics,
                 }
             )
 
         reports = sorted(
-            reports, key=lambda row: (int(row.get("rating", 0)), len(row.get("node_ids", []))), reverse=True
+            reports,
+            key=lambda row: (
+                float(((row.get("metrics") or {}).get("quality_score")) or 0.0),
+                int(row.get("rating", 0)),
+                len(row.get("node_ids", [])),
+            ),
+            reverse=True,
         )
         json_path = output_dir / "native_community_reports.json"
         md_path = output_dir / "native_community_reports.md"
+        aggregate = {
+            "total_nodes": total_nodes,
+            "average_rating": round(
+                _safe_ratio(sum(int(row.get("rating", 0) or 0) for row in reports), len(reports)),
+                4,
+            ),
+            "average_quality_score": round(
+                _safe_ratio(
+                    sum(float(((row.get("metrics") or {}).get("quality_score")) or 0.0) for row in reports),
+                    len(reports),
+                ),
+                4,
+            ),
+            "weak_communities": sum(
+                1 for row in reports if str(((row.get("metrics") or {}).get("quality_band")) or "") == "weak"
+            ),
+            "top_community": reports[0]["community"] if reports else None,
+        }
         json_path.write_text(
-            json.dumps({"generated_at": self._timestamp(), "reports": reports}, indent=2) + "\n", encoding="utf-8"
+            json.dumps(
+                {
+                    "generated_at": self._timestamp(),
+                    "aggregate": aggregate,
+                    "reports": reports,
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
         )
 
         md_lines = ["# Native Community Reports", ""]
+        if reports:
+            md_lines.append(f"- Average Quality Score: {aggregate['average_quality_score']}")
+            md_lines.append(f"- Average Rating: {aggregate['average_rating']}")
+            md_lines.append(f"- Weak Communities: {aggregate['weak_communities']}")
+            md_lines.append("")
         for report in reports:
             md_lines.append(f"## {report['title']}")
             md_lines.append(f"- Community: {report['community']}")
             md_lines.append(f"- Rating: {report['rating']}")
             md_lines.append(f"- Summary: {report['summary']}")
+            metrics = report.get("metrics") or {}
+            md_lines.append(
+                f"- Quality: {metrics.get('quality_score')} ({metrics.get('quality_band')}, density={metrics.get('link_density')})"
+            )
             md_lines.append("- Findings:")
             for finding in report["findings"]:
                 md_lines.append(f"  - {finding}")
@@ -747,73 +861,9 @@ class GraphRAGIntegration:
             "count": len(reports),
             "json_path": str(json_path),
             "markdown_path": str(md_path),
-            "top_community": reports[0]["community"] if reports else None,
-        }
-
-    def _load_native_reports_payload(self) -> Dict[str, Any]:
-        path = self.root / "output" / "native_community_reports.json"
-        if not path.exists():
-            return {"generated_at": None, "reports": [], "path": str(path)}
-        try:
-            payload = json.loads(path.read_text(encoding="utf-8"))
-        except Exception:
-            return {"generated_at": None, "reports": [], "path": str(path)}
-        if not isinstance(payload, dict):
-            return {"generated_at": None, "reports": [], "path": str(path)}
-        payload["path"] = str(path)
-        if not isinstance(payload.get("reports"), list):
-            payload["reports"] = []
-        return payload
-
-    @eidosian()
-    def native_report_summary(self, limit: int = 5) -> Dict[str, Any]:
-        payload = self._load_native_reports_payload()
-        reports = [row for row in payload.get("reports", []) if isinstance(row, dict)]
-        max_reports = max(1, int(limit or 5))
-        summaries: list[dict[str, Any]] = []
-        for row in reports[:max_reports]:
-            summaries.append(
-                {
-                    "community": row.get("community"),
-                    "title": row.get("title"),
-                    "rating": row.get("rating"),
-                    "summary": row.get("summary"),
-                    "finding_count": len(row.get("findings") or []),
-                    "node_count": len(row.get("node_ids") or []),
-                }
-            )
-        return {
-            "generated_at": payload.get("generated_at"),
-            "path": payload.get("path"),
-            "count": len(reports),
-            "reports": summaries,
-        }
-
-    @eidosian()
-    def native_artifact_summary(self, limit: int = 10) -> Dict[str, Any]:
-        state = self._load_native_state()
-        artifacts = [value for value in (state.get("code_forge_artifacts") or {}).values() if isinstance(value, dict)]
-        items = sorted(
-            artifacts,
-            key=lambda row: str(row.get("updated_at") or ""),
-            reverse=True,
-        )
-        max_items = max(1, int(limit or 10))
-        summary_items = [
-            {
-                "kind": row.get("kind"),
-                "artifact_path": row.get("artifact_path"),
-                "updated_at": row.get("updated_at"),
-                "detail_node_count": len(row.get("node_ids") or []),
-            }
-            for row in items[:max_items]
-        ]
-        kind_counts = Counter(str(row.get("kind") or "unknown") for row in artifacts)
-        return {
-            "count": len(artifacts),
-            "kinds": dict(sorted(kind_counts.items())),
-            "items": summary_items,
-            "state_path": str(self.native_state_path),
+            "top_community": aggregate["top_community"],
+            "average_quality_score": aggregate["average_quality_score"],
+            "weak_communities": aggregate["weak_communities"],
         }
 
     def _native_index(self, scan_roots: List[Path]) -> Dict[str, Any]:
@@ -1027,6 +1077,88 @@ class GraphRAGIntegration:
         merged["graph_neighbors"] = list(local.get("graph_neighbors") or [])
         merged["graph_paths"] = list(local.get("graph_paths") or [])
         return merged
+
+    def _load_native_reports_payload(self) -> Dict[str, Any]:
+        path = self.root / "output" / "native_community_reports.json"
+        if not path.exists():
+            return {"generated_at": None, "aggregate": {}, "reports": []}
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            return {"generated_at": None, "aggregate": {}, "reports": []}
+        if not isinstance(payload, dict):
+            return {"generated_at": None, "aggregate": {}, "reports": []}
+        aggregate = payload.get("aggregate") if isinstance(payload.get("aggregate"), dict) else {}
+        reports = payload.get("reports") if isinstance(payload.get("reports"), list) else []
+        return {
+            "generated_at": payload.get("generated_at"),
+            "aggregate": aggregate,
+            "reports": [row for row in reports if isinstance(row, dict)],
+        }
+
+    @eidosian()
+    def native_report_summary(self, limit: int = 5) -> Dict[str, Any]:
+        payload = self._load_native_reports_payload()
+        reports = payload.get("reports") or []
+        limit = max(1, int(limit or 5))
+        summary_reports = []
+        for row in reports[:limit]:
+            metrics = row.get("metrics") if isinstance(row.get("metrics"), dict) else {}
+            summary_reports.append(
+                {
+                    "community": row.get("community"),
+                    "title": row.get("title"),
+                    "summary": row.get("summary"),
+                    "rating": row.get("rating"),
+                    "quality_score": metrics.get("quality_score"),
+                    "quality_band": metrics.get("quality_band"),
+                    "coverage_ratio": metrics.get("coverage_ratio"),
+                    "link_density": metrics.get("link_density"),
+                    "finding_count": len(row.get("findings") or []),
+                }
+            )
+        aggregate = payload.get("aggregate") if isinstance(payload.get("aggregate"), dict) else {}
+        return {
+            "generated_at": payload.get("generated_at"),
+            "count": len(reports),
+            "limit": limit,
+            "top_community": aggregate.get("top_community"),
+            "average_quality_score": float(aggregate.get("average_quality_score") or 0.0),
+            "average_rating": float(aggregate.get("average_rating") or 0.0),
+            "weak_communities": int(aggregate.get("weak_communities") or 0),
+            "reports": summary_reports,
+        }
+
+    @eidosian()
+    def native_artifact_summary(self, limit: int = 10) -> Dict[str, Any]:
+        state = self._load_native_state()
+        artifact_state = state.get("code_forge_artifacts") if isinstance(state.get("code_forge_artifacts"), dict) else {}
+        rows = [row for row in artifact_state.values() if isinstance(row, dict)]
+        rows.sort(key=lambda row: str(row.get("updated_at") or ""), reverse=True)
+        limit = max(1, int(limit or 10))
+        by_kind = Counter(str(row.get("kind") or "unknown") for row in rows)
+        benchmark_failures = sum(1 for row in rows if row.get("benchmark_gate_pass") is False)
+        drift_warning_artifacts = sum(1 for row in rows if int(row.get("drift_warning_count") or 0) > 0)
+        return {
+            "count": len(rows),
+            "limit": limit,
+            "kinds": dict(sorted(by_kind.items())),
+            "benchmark_failures": benchmark_failures,
+            "drift_warning_artifacts": drift_warning_artifacts,
+            "artifacts": [
+                {
+                    "artifact_path": row.get("artifact_path"),
+                    "kind": row.get("kind"),
+                    "updated_at": row.get("updated_at"),
+                    "benchmark_gate_pass": row.get("benchmark_gate_pass"),
+                    "search_p95_ms": row.get("search_p95_ms"),
+                    "graph_build_ms": row.get("graph_build_ms"),
+                    "drift_warning_count": int(row.get("drift_warning_count") or 0),
+                    "unit_link_count": int(row.get("unit_link_count") or 0),
+                }
+                for row in rows[:limit]
+            ],
+        }
 
     @eidosian()
     def run_incremental_index(self, scan_roots: List[Path]) -> Dict[str, Any]:

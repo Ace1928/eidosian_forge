@@ -108,25 +108,34 @@ def test_code_forge_provenance_unit_filter(tmp_path: Path, monkeypatch) -> None:
     assert empty["count"] == 0
 
 
-def test_code_forge_artifact_summary_reads_native_graphrag(monkeypatch, tmp_path: Path) -> None:
-    class _FakeGraphRAG:
-        def __init__(self, graphrag_root):
-            self.root = graphrag_root
-
-        def native_artifact_summary(self, limit: int = 10):
-            return {
-                "count": 1,
-                "items": [
-                    {
-                        "kind": "code_forge_provenance_registry",
-                        "artifact_path": "data/code_forge/cycle/run_001/provenance_registry.json",
+def test_code_forge_artifact_summary_reads_native_graphrag(tmp_path: Path, monkeypatch) -> None:
+    forge_root = tmp_path / "forge"
+    workspace = forge_root / "graphrag_workspace"
+    workspace.mkdir(parents=True, exist_ok=True)
+    (workspace / "native_graphrag_state.json").write_text(
+        json.dumps(
+            {
+                "files": {},
+                "word_graph": {},
+                "code_forge_artifacts": {
+                    "artifact_1": {
+                        "artifact_path": "reports/code_forge/benchmark.json",
+                        "kind": "code_forge_benchmark",
+                        "benchmark_gate_pass": False,
+                        "drift_warning_count": 2,
+                        "updated_at": "2026-03-06T03:00:00+00:00",
                     }
-                ][:limit],
-            }
+                },
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
 
-    monkeypatch.setattr(code, "FORGE_DIR", tmp_path.resolve())
-    monkeypatch.setattr("knowledge_forge.integrations.graphrag.GraphRAGIntegration", _FakeGraphRAG)
-
-    payload = json.loads(code.code_forge_artifact_summary(limit=1))
+    monkeypatch.setattr(code, "FORGE_DIR", forge_root.resolve())
+    payload = json.loads(code.code_forge_artifact_summary())
     assert payload["count"] == 1
-    assert payload["items"][0]["kind"] == "code_forge_provenance_registry"
+    assert payload["benchmark_failures"] == 1
+    assert payload["drift_warning_artifacts"] == 1
+    assert payload["artifacts"][0]["kind"] == "code_forge_benchmark"

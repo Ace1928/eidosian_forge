@@ -44,11 +44,18 @@ class _FakeGraphRAG:
     def native_report_summary(self, limit: int = 5):
         return {
             "count": 2,
+            "average_quality_score": 0.42,
+            "average_rating": 3.0,
+            "weak_communities": 1,
+            "top_community": "code_forge",
             "reports": [
                 {
                     "community": "code_forge",
                     "title": "Code Forge Community",
-                    "summary": "benchmark drift triage coverage",
+                    "summary": "2 nodes with benchmark failure evidence",
+                    "rating": 3,
+                    "quality_score": 0.42,
+                    "quality_band": "weak",
                 }
             ][:limit],
         }
@@ -56,10 +63,14 @@ class _FakeGraphRAG:
     def native_artifact_summary(self, limit: int = 10):
         return {
             "count": 1,
-            "items": [
+            "benchmark_failures": 1,
+            "drift_warning_artifacts": 1,
+            "artifacts": [
                 {
-                    "kind": "code_forge_provenance_registry",
-                    "artifact_path": "data/code_forge/cycle/run_001/provenance_registry.json",
+                    "artifact_path": "reports/code_forge/benchmark.json",
+                    "kind": "code_forge_benchmark",
+                    "benchmark_gate_pass": False,
+                    "drift_warning_count": 2,
                 }
             ][:limit],
         }
@@ -77,6 +88,7 @@ def test_supervisor_seeds_autonomous_mission(tmp_path: Path) -> None:
         repo_root=repo_root,
         bridge=_FakeBridge(),
         memory_system=fake_memory,
+        graphrag=_FakeGraphRAG(),
         config={
             "enabled": True,
             "context_query": "consciousness latency benchmark",
@@ -110,6 +122,9 @@ def test_supervisor_seeds_autonomous_mission(tmp_path: Path) -> None:
     assert plans[0].meta["template"] == "consciousness_guard"
     assert plans[0].meta["cwd"] == str(repo_root.resolve())
     assert any(evt.get("type") == "autonomy.mission_selected" for evt in events)
+    selected = next(evt for evt in events if evt.get("type") == "autonomy.mission_selected")
+    assert selected["data"]["report_count"] == 2
+    assert selected["data"]["artifact_count"] == 1
     assert fake_memory.rows
 
 
@@ -124,6 +139,7 @@ def test_supervisor_blocks_disallowed_template(tmp_path: Path) -> None:
         repo_root=repo_root,
         bridge=_FakeBridge(),
         memory_system=_FakeMemory(),
+        graphrag=_FakeGraphRAG(),
         config={
             "enabled": True,
             "policy": {"max_active_goals": 1, "allowed_templates": ["hygiene"]},
@@ -178,7 +194,7 @@ def test_scheduler_act_uses_plan_cwd(tmp_path: Path, monkeypatch) -> None:
     assert captured["template"] == "lint"
 
 
-def test_supervisor_context_includes_native_report_and_artifact_tokens(tmp_path: Path, monkeypatch) -> None:
+def test_supervisor_hygiene_scoring_uses_report_and_artifact_risk(tmp_path: Path) -> None:
     state_dir = tmp_path / "state"
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
@@ -189,15 +205,34 @@ def test_supervisor_context_includes_native_report_and_artifact_tokens(tmp_path:
         repo_root=repo_root,
         bridge=_FakeBridge(),
         memory_system=_FakeMemory(),
-        config={"context_query": "benchmark drift triage"},
+        graphrag=_FakeGraphRAG(),
+        config={
+            "enabled": True,
+            "context_query": "repo benchmark drift artifact report",
+            "policy": {"max_active_goals": 1, "allowed_templates": ["hygiene", "consciousness_guard"]},
+            "missions": [
+                {
+                    "id": "consciousness_guard",
+                    "title": "Autonomy: consciousness guard loop",
+                    "drive": "integrity",
+                    "template": "consciousness_guard",
+                    "priority": 1.0,
+                    "query": "consciousness memory knowledge",
+                },
+                {
+                    "id": "repo_hygiene",
+                    "title": "Autonomy: repo hygiene sweep",
+                    "drive": "integrity",
+                    "template": "hygiene",
+                    "priority": 0.65,
+                    "query": "repo benchmark drift artifact report",
+                },
+            ],
+        },
     )
-    monkeypatch.setattr(supervisor, "_load_graphrag", lambda: _FakeGraphRAG())
 
-    packet = supervisor._context_packet()
+    payload = supervisor.tick(beat_count=2)
 
-    assert packet["report_summary"]["count"] == 2
-    assert packet["artifact_summary"]["count"] == 1
-    tokens = set(packet["tokens"])
-    assert "benchmark" in tokens
-    assert "triage" in tokens
-    assert "provenance_registry.json" in tokens
+    assert payload["mission_id"] == "repo_hygiene"
+    assert payload["benchmark_failures"] == 1
+    assert payload["average_report_quality"] == 0.42

@@ -83,6 +83,7 @@ class AutonomySupervisor:
         config: Mapping[str, Any] | None = None,
         bridge: Any = None,
         memory_system: Any = None,
+        graphrag: Any = None,
         embedder: Any = None,
     ) -> None:
         self.state_dir = str(state_dir)
@@ -90,6 +91,7 @@ class AutonomySupervisor:
         self.config = dict(config or {})
         self._bridge = bridge
         self._memory_system = memory_system
+        self._graphrag = graphrag
         self._embedder = embedder
 
     def _policy(self) -> dict[str, Any]:
@@ -147,19 +149,19 @@ class AutonomySupervisor:
         return self._memory_system
 
     def _load_graphrag(self) -> Any:
+        if self._graphrag is not None:
+            return self._graphrag
         try:
             _ensure_bridge_import_path()
-            from knowledge_forge import GraphRAGIntegration  # type: ignore
+            from knowledge_forge.integrations.graphrag import GraphRAGIntegration  # type: ignore
 
-            return GraphRAGIntegration(graphrag_root=self.repo_root / "graphrag_workspace")
-        except Exception:
-            try:
-                _ensure_bridge_import_path()
-                from knowledge_forge import GraphRAGIntegration  # type: ignore
-
-                return GraphRAGIntegration(graphrag_root=self.repo_root / "graphrag")
-            except Exception:
-                return None
+            root = self.repo_root / "graphrag_workspace"
+            if not root.exists():
+                root = self.repo_root / "graphrag"
+            self._graphrag = GraphRAGIntegration(graphrag_root=root)
+        except Exception:  # pragma: no cover - defensive fallback
+            self._graphrag = None
+        return self._graphrag
 
     def _recent_context_query(self) -> str:
         parts: list[str] = []
@@ -216,42 +218,44 @@ class AutonomySupervisor:
                 }
             )
 
-        report_summary = {"count": 0, "reports": []}
-        artifact_summary = {"count": 0, "items": []}
-        grag = self._load_graphrag()
-        if grag is not None:
+        report_summary: dict[str, Any] = {}
+        artifact_summary: dict[str, Any] = {}
+        graphrag = self._load_graphrag()
+        if graphrag is not None:
             try:
-                report_summary = grag.native_report_summary(limit=3)
-            except Exception:
-                report_summary = {"count": 0, "reports": []}
+                report_summary = graphrag.native_report_summary(limit=4) or {}
+            except Exception:  # pragma: no cover - defensive fallback
+                report_summary = {}
             try:
-                artifact_summary = grag.native_artifact_summary(limit=5)
-            except Exception:
-                artifact_summary = {"count": 0, "items": []}
+                artifact_summary = graphrag.native_artifact_summary(limit=6) or {}
+            except Exception:  # pragma: no cover - defensive fallback
+                artifact_summary = {}
 
-        for report in report_summary.get("reports") or []:
-            if not isinstance(report, Mapping):
+        for row in report_summary.get("reports") or []:
+            if not isinstance(row, Mapping):
                 continue
             context_tokens |= _tokenize(
                 " ".join(
                     [
-                        _to_text(report.get("community")),
-                        _to_text(report.get("title")),
-                        _to_text(report.get("summary")),
+                        _to_text(row.get("community")),
+                        _to_text(row.get("title")),
+                        _to_text(row.get("summary")),
+                        _to_text(row.get("quality_band")),
                     ]
                 )
             )
-        for item in artifact_summary.get("items") or []:
-            if not isinstance(item, Mapping):
+        for row in artifact_summary.get("artifacts") or []:
+            if not isinstance(row, Mapping):
                 continue
-            context_tokens |= _tokenize(
-                " ".join(
-                    [
-                        _to_text(item.get("kind")),
-                        _to_text(item.get("artifact_path")),
-                    ]
-                )
-            )
+            parts = [
+                _to_text(row.get("artifact_path")),
+                _to_text(row.get("kind")),
+            ]
+            if row.get("benchmark_gate_pass") is False:
+                parts.append("benchmark failure gate fail")
+            if int(row.get("drift_warning_count") or 0) > 0:
+                parts.append("drift warnings")
+            context_tokens |= _tokenize(" ".join(parts))
 
         return {
             "query": query,
@@ -314,7 +318,30 @@ class AutonomySupervisor:
             return base
         context_tokens = set(context.get("tokens") or [])
         overlap = len(query_tokens & context_tokens)
-        return base + (overlap / max(len(query_tokens), 1))
+        score = base + (overlap / max(len(query_tokens), 1))
+
+        template = _to_text(mission.get("template")).lower()
+        report_summary = context.get("report_summary") if isinstance(context.get("report_summary"), Mapping) else {}
+        artifact_summary = (
+            context.get("artifact_summary") if isinstance(context.get("artifact_summary"), Mapping) else {}
+        )
+        avg_quality = float(report_summary.get("average_quality_score") or 0.0)
+        weak_communities = int(report_summary.get("weak_communities") or 0)
+        benchmark_failures = int(artifact_summary.get("benchmark_failures") or 0)
+        drift_warning_artifacts = int(artifact_summary.get("drift_warning_artifacts") or 0)
+
+        if template == "hygiene":
+            score += min(1.4, benchmark_failures * 0.45 + drift_warning_artifacts * 0.25)
+            if avg_quality and avg_quality < 0.75:
+                score += min(0.45, 0.75 - avg_quality)
+        elif template == "consciousness_guard":
+            if avg_quality >= 0.7:
+                score += min(0.25, avg_quality * 0.25)
+            score -= min(0.2, weak_communities * 0.05)
+        elif template == "lint":
+            score += min(0.4, benchmark_failures * 0.2)
+
+        return score
 
     def _remember_selection(self, mission: Mapping[str, Any], context: Mapping[str, Any], score: float) -> None:
         memory = self._load_memory_system()
@@ -365,8 +392,10 @@ class AutonomySupervisor:
             "beat": int(beat_count),
             "query": context.get("query"),
             "hit_count": len(context.get("hits") or []),
-            "report_count": int((context.get("report_summary") or {}).get("count") or 0),
-            "artifact_count": int((context.get("artifact_summary") or {}).get("count") or 0),
+            "report_count": int(((context.get("report_summary") or {}).get("count")) or 0),
+            "artifact_count": int(((context.get("artifact_summary") or {}).get("count")) or 0),
+            "average_report_quality": float(((context.get("report_summary") or {}).get("average_quality_score")) or 0.0),
+            "benchmark_failures": int(((context.get("artifact_summary") or {}).get("benchmark_failures")) or 0),
             "repo_root": str(self.repo_root),
             "repo_dirty": repo_dirty,
         }
@@ -454,8 +483,10 @@ class AutonomySupervisor:
             "template": _to_text(mission.get("template")),
             "context_query": _to_text(context.get("query")),
             "context_hits": len(context.get("hits") or []),
-            "report_count": int((context.get("report_summary") or {}).get("count") or 0),
-            "artifact_count": int((context.get("artifact_summary") or {}).get("count") or 0),
+            "report_count": int(((context.get("report_summary") or {}).get("count")) or 0),
+            "artifact_count": int(((context.get("artifact_summary") or {}).get("count")) or 0),
+            "average_report_quality": float(((context.get("report_summary") or {}).get("average_quality_score")) or 0.0),
+            "benchmark_failures": int(((context.get("artifact_summary") or {}).get("benchmark_failures")) or 0),
         }
         BUS.append(self.state_dir, "autonomy.mission_selected", payload, tags=["autonomy", "selected"])
         S.append_journal(

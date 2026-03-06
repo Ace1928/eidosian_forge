@@ -350,33 +350,52 @@ def grag_query_local(query: str) -> str:
 
 @tool(
     name="grag_reports",
-    description="Read native GraphRAG community report summaries from the shared local vector+graph substrate.",
+    description="Summarize native GraphRAG community reports.",
     parameters={
         "type": "object",
-        "properties": {
-            "limit": {"type": "integer", "description": "Maximum reports to return (default: 5)"},
-        },
+        "properties": {"limit": {"type": "integer", "description": "Maximum reports to return (default: 5)"}},
     },
 )
 @eidosian()
 def grag_reports(limit: int = 5) -> str:
-    """Return native GraphRAG community report summaries."""
+    """Summarize native GraphRAG reports."""
     return json.dumps(grag.native_report_summary(limit=limit), indent=2)
 
 
 @tool(
-    name="grag_artifacts",
-    description="Read native GraphRAG Code Forge artifact summaries from the shared local vector+graph substrate.",
+    name="grag_report_quality",
+    description="Return aggregate native GraphRAG report quality metrics.",
     parameters={
         "type": "object",
-        "properties": {
-            "limit": {"type": "integer", "description": "Maximum artifacts to return (default: 10)"},
-        },
+        "properties": {"limit": {"type": "integer", "description": "Maximum reports to inspect (default: 8)"}},
+    },
+)
+@eidosian()
+def grag_report_quality(limit: int = 8) -> str:
+    """Return native GraphRAG report quality metrics."""
+    payload = grag.native_report_summary(limit=limit)
+    metrics = {
+        "generated_at": payload.get("generated_at"),
+        "count": payload.get("count"),
+        "average_quality_score": payload.get("average_quality_score"),
+        "average_rating": payload.get("average_rating"),
+        "weak_communities": payload.get("weak_communities"),
+        "top_community": payload.get("top_community"),
+    }
+    return json.dumps(metrics, indent=2)
+
+
+@tool(
+    name="grag_artifacts",
+    description="Summarize native GraphRAG indexed Code Forge artifacts.",
+    parameters={
+        "type": "object",
+        "properties": {"limit": {"type": "integer", "description": "Maximum artifacts to return (default: 10)"}},
     },
 )
 @eidosian()
 def grag_artifacts(limit: int = 10) -> str:
-    """Return native GraphRAG artifact summaries."""
+    """Summarize native GraphRAG artifact state."""
     return json.dumps(grag.native_artifact_summary(limit=limit), indent=2)
 
 

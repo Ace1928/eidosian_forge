@@ -1,6 +1,6 @@
 autonomy:
   enabled: true
-  context_query: "consciousness benchmark latency memory knowledge autonomy"
+  context_query: "consciousness benchmark latency memory knowledge autonomy graphrag report artifact drift"
   context_limit: 6
   query_max_tokens: 24
   policy:
@@ -28,6 +28,6 @@ autonomy:
       priority: 0.65
       cooldown_beats: 24
       max_runs: 0
-      query: "hygiene pytest lint integrity repo"
+      query: "hygiene pytest lint integrity repo benchmark drift artifact report"
       vars:
         pytest_args: "-q"

@@ -391,26 +391,23 @@ def code_forge_provenance(
 
 @tool(
     name="code_forge_artifact_summary",
-    description="Summarize native GraphRAG-ingested Code Forge artifacts available in the shared graph/vector substrate.",
+    description="Summarize native GraphRAG indexed Code Forge artifacts and benchmark/drift health.",
     parameters={
         "type": "object",
-        "properties": {
-            "limit": {
-                "type": "integer",
-                "description": "Maximum artifacts to return (default: 10)",
-            }
-        },
+        "properties": {"limit": {"type": "integer", "description": "Maximum artifacts to return (default: 10)"}},
     },
 )
 @eidosian()
 def code_forge_artifact_summary(limit: int = 10) -> str:
+    """Summarize Code Forge artifacts through the native GraphRAG state."""
     try:
         from knowledge_forge.integrations.graphrag import GraphRAGIntegration
+    except ImportError:
+        ensure_forge_import("knowledge_forge")
+        from knowledge_forge.integrations.graphrag import GraphRAGIntegration
 
-        grag_root = FORGE_DIR / "graphrag_workspace"
-        if not grag_root.exists():
-            grag_root = FORGE_DIR / "graphrag"
-        payload = GraphRAGIntegration(graphrag_root=grag_root).native_artifact_summary(limit=limit)
-        return json.dumps(payload, indent=2)
-    except Exception as exc:
-        return json.dumps({"count": 0, "items": [], "error": str(exc)}, indent=2)
+    graphrag_root = FORGE_DIR / "graphrag_workspace"
+    if not graphrag_root.exists():
+        graphrag_root = FORGE_DIR / "graphrag"
+    grag = GraphRAGIntegration(graphrag_root=graphrag_root)
+    return json.dumps(grag.native_artifact_summary(limit=limit), indent=2)

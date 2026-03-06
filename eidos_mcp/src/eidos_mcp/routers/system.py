@@ -24,11 +24,12 @@ from ..transactions import (
 ensure_forge_import("diagnostics_forge")
 ensure_forge_import("file_forge")
 
+from file_forge.core import FileForge
+
 try:
     from diagnostics_forge.core import DiagnosticsForge
-except Exception:  # pragma: no cover - optional runtime dependency
+except Exception:  # pragma: no cover - optional diagnostics dependency
     DiagnosticsForge = None
-from file_forge.core import FileForge
 
 from ..core import tool
 
