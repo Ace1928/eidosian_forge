@@ -118,8 +118,23 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
     )
     monkeypatch.setattr(
         dashboard,
+        "get_memory_snapshot",
+        lambda: {
+            "count": 3,
+            "tiers": {"working": 1, "long_term": 2},
+            "namespaces": {"knowledge": 2, "task": 1},
+            "community_count": 1,
+            "top_communities": [{"community": "knowledge:runtime:qwen", "count": 2}],
+        },
+    )
+    monkeypatch.setattr(
+        dashboard,
         "search_memory",
-        lambda query, limit=12: {"query": query, "count": 1, "results": [{"id": "mem-1", "content": "memory hit", "tier": "working"}]},
+        lambda query, limit=12: {
+            "query": query,
+            "count": 1,
+            "results": [{"id": "mem-1", "content": "memory hit", "tier": "working", "community": "knowledge:runtime:qwen"}],
+        },
     )
     monkeypatch.setattr(
         dashboard,
@@ -139,6 +154,11 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
             "edges": [],
             "summary": {"node_count": 1, "edge_count": 0},
         },
+    )
+    monkeypatch.setattr(
+        dashboard,
+        "get_memory_graph",
+        lambda limit=120: {"available": True, "nodes": [{"id": "mem-1"}], "edges": [], "summary": {"node_count": 1, "edge_count": 0, "community_count": 1}},
     )
     monkeypatch.setattr(
         dashboard,
@@ -180,8 +200,12 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         assert unit_payload["unit"]["id"] == "u1"
         memory_payload = client.get("/api/memory/search?query=memory").json()
         assert memory_payload["count"] == 1
+        memory_community_payload = client.get("/api/memory/communities").json()
+        assert memory_community_payload["community_count"] == 1
         docs_payload = client.get("/api/docs/search?query=foo").json()
         assert docs_payload["results"][0]["source"] == "foo/bar.py"
+        memory_graph_payload = client.get("/api/graph/memory").json()
+        assert memory_graph_payload["summary"]["community_count"] == 1
         explorer_payload = client.get("/api/explorer/search?query=graph").json()
         assert explorer_payload["memory"]["count"] == 1
         node_payload = client.get("/api/explorer/node/knowledge/k1").json()
@@ -201,3 +225,28 @@ def test_health_endpoint() -> None:
         payload = resp.json()
         assert payload["status"] == "ok"
         assert payload["service"] == "eidos_atlas"
+
+
+def test_memory_rows_support_list_based_tier_files(monkeypatch, tmp_path: Path) -> None:
+    memory_dir = tmp_path / "tiered_memory"
+    _write_json(
+        memory_dir / "long_term.json",
+        [
+            {
+                "id": "mem-1",
+                "content": "Vector-native memory record",
+                "tier": "long_term",
+                "namespace": "knowledge",
+                "tags": ["vector", "memory"],
+                "metadata": {"community": "knowledge:memory:vector"},
+            }
+        ],
+    )
+    monkeypatch.setattr(dashboard, "MEMORY_DIR", memory_dir)
+    rows = dashboard._memory_rows()
+    snapshot = dashboard.get_memory_snapshot()
+    graph = dashboard.get_memory_graph(limit=10)
+
+    assert rows[0]["community"] == "knowledge:memory:vector"
+    assert snapshot["community_count"] == 1
+    assert graph["summary"]["node_count"] == 1

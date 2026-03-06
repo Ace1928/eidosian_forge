@@ -155,6 +155,9 @@ class KnowledgeMemoryBridge:
                                 "namespace": mem.namespace.value,
                                 "tags": list(mem.tags),
                                 "importance": mem.importance,
+                                "community": mem.metadata.get("community"),
+                                "keywords": list(mem.metadata.get("keywords") or []),
+                                "domains": list(mem.metadata.get("domains") or []),
                             },
                             linked_ids=list(self.memory_to_knowledge.get(mem.id, set())),
                         )
@@ -192,6 +195,15 @@ class KnowledgeMemoryBridge:
         # Sort by score
         results.sort(key=lambda r: r.score, reverse=True)
         return results[:limit]
+
+    @eidosian()
+    def memory_community_summary(self, limit: int = 20) -> Dict[str, Any]:
+        if not self.memory or not hasattr(self.memory, "community_summary"):
+            return {"count": 0, "communities": []}
+        try:
+            return self.memory.community_summary(limit=limit)
+        except Exception:
+            return {"count": 0, "communities": []}
 
     @eidosian()
     def link_memory_to_knowledge(

@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sys
 import time
 import traceback
 from pathlib import Path
@@ -11,6 +12,11 @@ from typing import Any
 
 from eidosian_core import eidosian
 from eidosian_runtime import ForgeRuntimeCoordinator
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
 from living_knowledge_pipeline import (
     COORDINATOR_STATUS_PATH,
     FORGE_ROOT,
@@ -41,16 +47,55 @@ def _default_queries() -> list[str]:
 
 
 @eidosian()
+def run_memory_maintenance(
+    repo_root: Path,
+    *,
+    enrichment_limit: int,
+    use_llm: bool,
+) -> dict[str, Any]:
+    try:
+        import sys
+
+        for extra in (
+            repo_root / "lib",
+            repo_root / "memory_forge" / "src",
+            repo_root / "eidos_mcp" / "src",
+            repo_root,
+        ):
+            text = str(extra)
+            if extra.exists() and text not in sys.path:
+                sys.path.insert(0, text)
+        from eidosian_vector import build_default_embedder  # type: ignore
+        from memory_forge import TieredMemorySystem  # type: ignore
+
+        memory_dir = repo_root / "data" / "tiered_memory"
+        memory = TieredMemorySystem(
+            persistence_dir=memory_dir,
+            embedder=build_default_embedder(),
+            vector_store_dir=memory_dir / "vectors",
+            llm_enrichment=use_llm,
+        )
+        enrich_report = memory.enrich_all_memories(limit=enrichment_limit, use_llm=use_llm)
+        reindex_report = memory.reindex_vector_store(limit=enrichment_limit if enrichment_limit > 0 else 0)
+        community_summary = memory.community_summary(limit=8)
+        return {
+            "available": True,
+            "memory_dir": str(memory_dir),
+            "enrich_report": enrich_report,
+            "reindex_report": reindex_report,
+            "community_summary": community_summary,
+        }
+    except Exception as exc:
+        return {"available": False, "error": str(exc)}
+
+
+@eidosian()
 def _parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Run the Eidosian sequential scheduler for the living knowledge pipeline."
-    )
+    parser = argparse.ArgumentParser(description="Run the Eidosian sequential scheduler for the living knowledge pipeline.")
     parser.add_argument("--repo-root", default=str(FORGE_ROOT))
     parser.add_argument("--output-root", default=str(FORGE_ROOT / "reports" / "living_knowledge"))
     parser.add_argument("--workspace-root", default=str(FORGE_ROOT / "data" / "living_knowledge" / "workspace"))
-    parser.add_argument(
-        "--interval-sec", type=float, default=float(os.environ.get("EIDOS_SCHEDULER_INTERVAL_SEC", "1800"))
-    )
+    parser.add_argument("--interval-sec", type=float, default=float(os.environ.get("EIDOS_SCHEDULER_INTERVAL_SEC", "1800")))
     parser.add_argument("--max-file-bytes", type=int, default=2_000_000)
     parser.add_argument("--max-chars-per-doc", type=int, default=20_000)
     parser.add_argument("--code-max-files", type=int, default=0)
@@ -61,15 +106,15 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--once", action="store_true")
     parser.add_argument("--doc-model", default=os.environ.get("EIDOS_LIVING_DOC_MODEL", "qwen3.5:2b"))
     parser.add_argument("--doc-thinking-mode", default=os.environ.get("EIDOS_LIVING_DOC_THINKING_MODE", "on"))
+    parser.add_argument("--doc-timeout-sec", type=float, default=float(os.environ.get("EIDOS_LIVING_DOC_TIMEOUT_SEC", "900")))
+    parser.add_argument("--doc-max-tokens", type=int, default=int(os.environ.get("EIDOS_LIVING_DOC_MAX_TOKENS", "1400")))
+    parser.add_argument("--doc-temperature", type=float, default=float(os.environ.get("EIDOS_LIVING_DOC_TEMPERATURE", "0.1")))
     parser.add_argument(
-        "--doc-timeout-sec", type=float, default=float(os.environ.get("EIDOS_LIVING_DOC_TIMEOUT_SEC", "900"))
+        "--memory-enrichment-limit",
+        type=int,
+        default=int(os.environ.get("EIDOS_MEMORY_ENRICHMENT_LIMIT", "48")),
     )
-    parser.add_argument(
-        "--doc-max-tokens", type=int, default=int(os.environ.get("EIDOS_LIVING_DOC_MAX_TOKENS", "1400"))
-    )
-    parser.add_argument(
-        "--doc-temperature", type=float, default=float(os.environ.get("EIDOS_LIVING_DOC_TEMPERATURE", "0.1"))
-    )
+    parser.add_argument("--memory-llm-enrichment", action="store_true")
     return parser.parse_args()
 
 
@@ -91,6 +136,7 @@ def main() -> int:
         temperature=float(args.doc_temperature),
     )
     coordinator = ForgeRuntimeCoordinator(COORDINATOR_STATUS_PATH)
+    memory_llm_enrichment = bool(args.memory_llm_enrichment)
 
     cycle = 0
     consecutive_failures = 0
@@ -152,6 +198,13 @@ def main() -> int:
                     "enabled": True,
                 },
                 {
+                    "id": "memory_enrichment",
+                    "kind": "memory_maintenance",
+                    "enabled": True,
+                    "model": living_doc_config.model if memory_llm_enrichment else "",
+                    "thinking_mode": living_doc_config.thinking_mode if memory_llm_enrichment else "off",
+                },
+                {
                     "id": "atlas_dashboard",
                     "kind": "ui",
                     "enabled": True,
@@ -163,6 +216,8 @@ def main() -> int:
                 "prefer_sequential_llm_tasks": True,
                 "shared_embedding_contract": "eidos.embedding.default",
                 "shared_vector_contract": "eidos.vector.hnsw",
+                "memory_enrichment_limit": int(args.memory_enrichment_limit),
+                "memory_llm_enrichment": memory_llm_enrichment,
                 "doc_model": living_doc_config.model,
                 "doc_thinking_mode": living_doc_config.thinking_mode,
             },
@@ -192,6 +247,26 @@ def main() -> int:
                 method=str(args.method),
                 living_doc_config=living_doc_config,
             )
+            coordinator.heartbeat(
+                owner="eidos_scheduler",
+                task="memory_enrichment",
+                state="running",
+                active_models=(
+                    [{"family": "ollama", "model": living_doc_config.model, "role": "memory_enrichment"}]
+                    if memory_llm_enrichment
+                    else []
+                ),
+                metadata={
+                    "cycle": cycle,
+                    "memory_enrichment_limit": int(args.memory_enrichment_limit),
+                    "llm_enrichment": memory_llm_enrichment,
+                },
+            )
+            memory_report = run_memory_maintenance(
+                repo_root,
+                enrichment_limit=int(args.memory_enrichment_limit),
+                use_llm=memory_llm_enrichment,
+            )
             elapsed = round(max(0.0, time.monotonic() - start_monotonic), 3)
             consecutive_failures = 0
             _write_scheduler_status(
@@ -209,9 +284,7 @@ def main() -> int:
                     "next_run_in_seconds": float(args.interval_sec),
                     "last_run_id": manifest.get("run_id"),
                     "last_manifest_path": str(output_root / str(manifest.get("run_id")) / "manifest.json"),
-                    "latest_pipeline_status_path": str(
-                        (FORGE_ROOT / "data" / "runtime" / "living_pipeline_status.json")
-                    ),
+                    "latest_pipeline_status_path": str((FORGE_ROOT / "data" / "runtime" / "living_pipeline_status.json")),
                     "summary": {
                         "records_total": manifest.get("records_total"),
                         "records_by_kind": manifest.get("records_by_kind"),
@@ -221,6 +294,7 @@ def main() -> int:
                             "assessment_summary": (manifest.get("graphrag") or {}).get("assessment_summary"),
                         },
                         "living_documentation": manifest.get("living_documentation"),
+                        "memory": memory_report,
                     },
                 }
             )
@@ -237,6 +311,7 @@ def main() -> int:
                     "summary": {
                         "word_forge_updated": bool((manifest.get("word_forge") or {}).get("updated")),
                         "graphrag_indexed": bool((manifest.get("graphrag") or {}).get("indexed")),
+                        "memory_enriched": int(((memory_report.get("enrich_report") or {}).get("updated")) or 0),
                     },
                 },
             )
@@ -255,9 +330,7 @@ def main() -> int:
                     "last_error": str(exc),
                     "last_error_trace": traceback.format_exc(limit=12),
                     "next_run_in_seconds": float(args.interval_sec),
-                    "latest_pipeline_status_path": str(
-                        (FORGE_ROOT / "data" / "runtime" / "living_pipeline_status.json")
-                    ),
+                    "latest_pipeline_status_path": str((FORGE_ROOT / "data" / "runtime" / "living_pipeline_status.json")),
                 }
             )
             coordinator.heartbeat(

@@ -102,6 +102,9 @@ def _parse_memory_stats(stats: Any) -> dict[str, Any]:
         "avg_importance": float(getattr(stats, "avg_importance", 0.0) or 0.0),
         "avg_access_count": float(getattr(stats, "avg_access_count", 0.0) or 0.0),
         "top_tags": list(getattr(stats, "top_tags", []) or []),
+        "vector_count": _safe_int(getattr(stats, "vector_count", 0), default=0),
+        "community_count": _safe_int(getattr(stats, "community_count", 0), default=0),
+        "top_communities": list(getattr(stats, "top_communities", []) or []),
     }
 
 

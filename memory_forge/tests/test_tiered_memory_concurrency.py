@@ -39,7 +39,8 @@ def test_remember_merges_duplicate_entries_across_instances(tmp_path) -> None:
     persisted = list(reloaded.tiers[MemoryTier.LONG_TERM].values())
     assert len(persisted) == 1
     assert persisted[0].id == first_id
-    assert persisted[0].tags == {"qwen", "stable", "termux", "default"}
+    assert {"qwen", "stable", "termux", "default"}.issubset(persisted[0].tags)
+    assert persisted[0].metadata["community"].startswith("knowledge:")
 
 
 def test_recall_uses_vector_store_when_embeddings_are_available(tmp_path) -> None:
@@ -61,3 +62,30 @@ def test_recall_uses_vector_store_when_embeddings_are_available(tmp_path) -> Non
 
     assert len(results) == 1
     assert results[0].id == best_id
+
+
+def test_memory_enrichment_adds_community_metadata_and_reindex(tmp_path) -> None:
+    memory = TieredMemorySystem(persistence_dir=tmp_path, embedder=_FakeEmbedder())
+    mem_id = memory.remember(
+        "Qwen scheduler runtime memory graph integration for Termux dashboard.",
+        tier=MemoryTier.LONG_TERM,
+        namespace=MemoryNamespace.KNOWLEDGE,
+        memory_type=MemoryType.SEMANTIC,
+    )
+
+    item = memory._find_memory(mem_id)
+    assert item is not None
+    assert item.metadata["community"].startswith("knowledge:")
+    assert "runtime" in item.metadata["domains"]
+    assert item.embedding
+
+    report = memory.reindex_vector_store()
+    assert report["reindexed"] >= 1
+    assert report["vector_count"] >= 1
+
+    summary = memory.community_summary(limit=5)
+    assert summary["count"] >= 1
+    assert summary["communities"][0]["count"] >= 1
+
+    graph = memory.memory_graph(limit=10)
+    assert graph["summary"]["node_count"] >= 1

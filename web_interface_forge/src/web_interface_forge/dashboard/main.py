@@ -230,6 +230,25 @@ def _memory_rows() -> list[dict[str, Any]]:
             continue
         payload = _read_json(path, {})
         namespace = path.stem
+        if isinstance(payload, list):
+            for item in payload:
+                if not isinstance(item, dict):
+                    continue
+                content = str(item.get("content") or "").strip()
+                if not content:
+                    continue
+                rows.append(
+                    {
+                        "id": str(item.get("id") or item.get("key") or f"{namespace}:{len(rows)+1}"),
+                        "content": content,
+                        "tier": str(item.get("tier") or namespace),
+                        "namespace": str(item.get("namespace") or namespace),
+                        "tags": [str(tag) for tag in (item.get("tags") or []) if str(tag).strip()],
+                        "community": str((item.get("metadata") or {}).get("community") or ""),
+                        "file": str(path),
+                    }
+                )
+            continue
         if isinstance(payload, dict):
             for tier_name, value in payload.items():
                 if isinstance(value, list):
@@ -246,6 +265,7 @@ def _memory_rows() -> list[dict[str, Any]]:
                                 "tier": str(item.get("tier") or tier_name),
                                 "namespace": str(item.get("namespace") or namespace),
                                 "tags": [str(tag) for tag in (item.get("tags") or []) if str(tag).strip()],
+                                "community": str((item.get("metadata") or {}).get("community") or ""),
                                 "file": str(path),
                             }
                         )
@@ -260,6 +280,7 @@ def _memory_rows() -> list[dict[str, Any]]:
                             "tier": str(value.get("tier") or tier_name),
                             "namespace": str(value.get("namespace") or namespace),
                             "tags": [str(tag) for tag in (value.get("tags") or []) if str(tag).strip()],
+                            "community": str((value.get("metadata") or {}).get("community") or ""),
                             "file": str(path),
                         }
                     )
@@ -269,6 +290,66 @@ def _memory_rows() -> list[dict[str, Any]]:
 def _doc_rows(limit: int = 200) -> list[dict[str, Any]]:
     payload = get_doc_snapshot()
     return [row for row in payload.get("recent_docs", []) if isinstance(row, dict)][: max(1, int(limit))]
+
+
+def get_memory_snapshot() -> Dict[str, Any]:
+    rows = _memory_rows()
+    communities: Dict[str, int] = {}
+    tiers: Dict[str, int] = {}
+    namespaces: Dict[str, int] = {}
+    for row in rows:
+        tiers[str(row.get("tier") or "")] = tiers.get(str(row.get("tier") or ""), 0) + 1
+        namespaces[str(row.get("namespace") or "")] = namespaces.get(str(row.get("namespace") or ""), 0) + 1
+        community = str(row.get("community") or "")
+        if community:
+            communities[community] = communities.get(community, 0) + 1
+    top_communities = [
+        {"community": name, "count": count}
+        for name, count in sorted(communities.items(), key=lambda kv: (-kv[1], kv[0]))[:8]
+    ]
+    return {
+        "count": len(rows),
+        "tiers": tiers,
+        "namespaces": namespaces,
+        "community_count": len(communities),
+        "top_communities": top_communities,
+    }
+
+
+def get_memory_graph(limit: int = 120) -> Dict[str, Any]:
+    rows = _memory_rows()[: max(1, int(limit))]
+    nodes = []
+    edges = []
+    seen_edges: set[tuple[str, str]] = set()
+    by_community: Dict[str, list[str]] = {}
+    for row in rows:
+        node_id = str(row.get("id") or "")
+        nodes.append(
+            {
+                "id": node_id,
+                "label": _trim_text(row.get("content") or "", 72),
+                "community": str(row.get("community") or ""),
+                "tier": str(row.get("tier") or ""),
+                "namespace": str(row.get("namespace") or ""),
+                "tags": list(row.get("tags") or [])[:8],
+            }
+        )
+        community = str(row.get("community") or "")
+        if community:
+            by_community.setdefault(community, []).append(node_id)
+    for members in by_community.values():
+        for idx in range(len(members) - 1):
+            key = tuple(sorted((members[idx], members[idx + 1])))
+            if key in seen_edges:
+                continue
+            seen_edges.add(key)
+            edges.append({"source": members[idx], "target": members[idx + 1], "rel_type": "community"})
+    return {
+        "available": bool(nodes),
+        "nodes": nodes,
+        "edges": edges,
+        "summary": {"node_count": len(nodes), "edge_count": len(edges), "community_count": len(by_community)},
+    }
 
 
 def get_runtime_coordinator() -> Dict[str, Any]:
@@ -374,7 +455,7 @@ def get_forge_overview() -> Dict[str, Any]:
         "word_forge": get_word_forge_snapshot(),
         "code_forge": get_code_library_snapshot(),
         "knowledge": get_knowledge_snapshot(),
-        "memory": {"count": len(_memory_rows())},
+        "memory": get_memory_snapshot(),
     }
 
 
@@ -685,9 +766,15 @@ def get_unified_graph(limit_per_domain: int = 80, limit_edges: int = 320) -> Dic
                 "tags": list(item.get("tags") or []),
                 "tier": str(item.get("tier") or ""),
                 "namespace": str(item.get("namespace") or ""),
+                "community": str(item.get("community") or ""),
                 "tokens": sorted(_token_set(item.get("content"), " ".join(item.get("tags") or []), item.get("tier"), item.get("namespace"))),
             }
         )
+    memory_graph = get_memory_graph(limit=limit_per_domain)
+    for edge in memory_graph.get("edges") or []:
+        if not isinstance(edge, dict):
+            continue
+        add_edge(f"memory:{edge.get('source')}", f"memory:{edge.get('target')}", str(edge.get("rel_type") or "community"))
 
     for item in _doc_rows(limit=limit_per_domain):
         source = str(item.get("source") or item.get("document") or "").strip()
@@ -910,7 +997,8 @@ async def api_graph_overview():
         "unified_graph": get_unified_graph(limit_per_domain=60, limit_edges=240),
         "code_graph": get_code_graph(limit_edges=300),
         "lexicon": get_word_forge_snapshot(),
-        "memory": {"count": len(_memory_rows())},
+        "memory": get_memory_snapshot(),
+        "memory_graph": get_memory_graph(limit=120),
         "coordinator": get_runtime_coordinator(),
     }
 
@@ -943,6 +1031,18 @@ async def api_explorer_node(domain: str, node_id: str):
 @app.get("/api/memory/search")
 async def api_memory_search(query: str = Query(""), limit: int = 12):
     return JSONResponse(search_memory(query, limit=max(1, int(limit))))
+
+
+@app.get("/api/memory/communities")
+async def api_memory_communities(limit: int = 20):
+    payload = get_memory_snapshot()
+    payload["top_communities"] = list(payload.get("top_communities") or [])[: max(1, int(limit))]
+    return JSONResponse(payload)
+
+
+@app.get("/api/graph/memory")
+async def api_graph_memory(limit: int = 120):
+    return JSONResponse(get_memory_graph(limit=max(1, int(limit))))
 
 
 @app.get("/api/docs/search")

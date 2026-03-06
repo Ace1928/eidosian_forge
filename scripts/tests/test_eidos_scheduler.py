@@ -39,6 +39,16 @@ def test_scheduler_once_writes_status(tmp_path: Path, monkeypatch) -> None:
     )
     monkeypatch.setattr(
         scheduler,
+        "run_memory_maintenance",
+        lambda repo_root, enrichment_limit, use_llm: {
+            "available": True,
+            "enrich_report": {"updated": 3},
+            "reindex_report": {"reindexed": 4, "vector_count": 4},
+            "community_summary": {"count": 2},
+        },
+    )
+    monkeypatch.setattr(
+        scheduler,
         "_parse_args",
         lambda: type(
             "Args",
@@ -61,6 +71,8 @@ def test_scheduler_once_writes_status(tmp_path: Path, monkeypatch) -> None:
                 "doc_timeout_sec": 900.0,
                 "doc_max_tokens": 1400,
                 "doc_temperature": 0.1,
+                "memory_enrichment_limit": 48,
+                "memory_llm_enrichment": False,
             },
         )(),
     )
@@ -70,4 +82,5 @@ def test_scheduler_once_writes_status(tmp_path: Path, monkeypatch) -> None:
     payload = json.loads((runtime_dir / "scheduler.json").read_text(encoding="utf-8"))
     assert payload["state"] == "idle"
     assert payload["summary"]["records_total"] == 5
+    assert payload["summary"]["memory"]["enrich_report"]["updated"] == 3
     assert payload["doc_model"] == "qwen3.5:2b"
