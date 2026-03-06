@@ -594,7 +594,9 @@ def wf_enrich_term(term: str, context: str = "", thinking_mode: str = "on", time
         timeout_sec=timeout_sec,
     )
     if not payload:
-        return json.dumps({"status": "skipped", "reason": "model unavailable or returned no structured payload"}, indent=2)
+        return json.dumps(
+            {"status": "skipped", "reason": "model unavailable or returned no structured payload"}, indent=2
+        )
     if payload.get("_budget_denied"):
         return json.dumps(
             {
@@ -848,12 +850,17 @@ def wf_queue_terms_from_text(text: str, source: str = "", limit: int = 32) -> st
             item["sources"].append(source)
         excerpt = str(text or "").strip().replace("\n", " ")[:240]
         if excerpt and excerpt not in item["contexts"]:
-            item["contexts"] = (item.get("contexts") or [])[:3] + ([excerpt] if excerpt not in (item.get("contexts") or []) else [])
+            item["contexts"] = (item.get("contexts") or [])[:3] + (
+                [excerpt] if excerpt not in (item.get("contexts") or []) else []
+            )
             item["contexts"] = item["contexts"][:4]
         item["occurrences"] = int(item.get("occurrences") or 0) + 1
         item["status"] = "queued"
         item["updated_at"] = _now_iso()
-    queue["items"] = sorted(items, key=lambda row: (str(row.get("status") or ""), -int(row.get("occurrences") or 0), str(row.get("term") or "")))
+    queue["items"] = sorted(
+        items,
+        key=lambda row: (str(row.get("status") or ""), -int(row.get("occurrences") or 0), str(row.get("term") or "")),
+    )
     _write_lexicon_queue(queue)
     return json.dumps(
         {
