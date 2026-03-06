@@ -58,9 +58,9 @@
       "metadata": {
         "tags": [
           "mcp",
+          "termux",
           "consciousness",
-          "autotune",
-          "termux"
+          "autotune"
         ]
       },
       "links": []
@@ -71,9 +71,9 @@
       "metadata": {
         "tags": [
           "mcp",
+          "termux",
           "consciousness",
-          "autotune",
-          "termux"
+          "autotune"
         ]
       },
       "links": []
@@ -84,9 +84,9 @@
       "metadata": {
         "tags": [
           "mcp",
+          "termux",
           "consciousness",
-          "autotune",
-          "termux"
+          "autotune"
         ]
       },
       "links": []
@@ -200,9 +200,9 @@
       "content": "Autotune now supports bayes_pareto acquisition with Pareto frontier tracking and objective history persistence.",
       "metadata": {
         "tags": [
-          "consciousness",
+          "autotune",
           "optimization",
-          "autotune"
+          "consciousness"
         ]
       },
       "links": []
@@ -212,10 +212,10 @@
       "content": "Attention and workspace competition now adapt online from gw.reaction_trace reward signals.",
       "metadata": {
         "tags": [
-          "learning",
           "competition",
           "attention",
-          "consciousness"
+          "consciousness",
+          "learning"
         ]
       },
       "links": []
@@ -225,9 +225,9 @@
       "content": "Operational rule: execute project python checks through eidosian_venv in Termux for deterministic dependency context.",
       "metadata": {
         "tags": [
+          "operations",
           "validation",
-          "termux",
-          "operations"
+          "termux"
         ]
       },
       "links": []
@@ -289,9 +289,9 @@
       "content": "Consciousness runtime now exposes adversarial red-team campaigns via eidctl and MCP, with persisted bench.red_team_result reports and latest-report resources.",
       "metadata": {
         "tags": [
-          "cli",
           "red-team",
           "mcp",
+          "cli",
           "consciousness"
         ]
       },
@@ -303,9 +303,9 @@
       "metadata": {
         "tags": [
           "tasks",
+          "bench",
           "validation",
-          "consciousness",
-          "bench"
+          "consciousness"
         ]
       },
       "links": []
@@ -367,11 +367,11 @@
       "content": "Full benchmark interfaces now accept red-team controls: run_red_team, red_team_quick, red_team_max_scenarios, and red_team_seed across CLI and MCP.",
       "metadata": {
         "tags": [
-          "red-team",
-          "benchmark",
-          "consciousness",
+          "cli",
           "mcp",
-          "cli"
+          "consciousness",
+          "red-team",
+          "benchmark"
         ]
       },
       "links": []
@@ -381,8 +381,8 @@
       "content": "Integrated benchmark report schema includes red_team section, red_team_score, and red-team gate results for regression-safe runtime decisions.",
       "metadata": {
         "tags": [
-          "benchmark",
           "schema",
+          "benchmark",
           "gates",
           "consciousness"
         ]
@@ -394,10 +394,10 @@
       "content": "eidos_mcp full integration test harness restores kb/memory files after execution to keep repository state stable across reruns.",
       "metadata": {
         "tags": [
+          "operations",
           "testing",
-          "hardening",
           "mcp",
-          "operations"
+          "hardening"
         ]
       },
       "links": []
@@ -409,8 +409,8 @@
         "tags": [
           "red-team",
           "consciousness",
-          "autotune",
-          "termux"
+          "termux",
+          "autotune"
         ]
       },
       "links": []
@@ -420,10 +420,10 @@
       "content": "Consciousness bench trial snapshots and guardrail counters now derive from EventIndex buckets, including GW winner counts via broadcasts_by_kind and per-type counters via by_type.",
       "metadata": {
         "tags": [
-          "termux",
           "benchmark",
-          "index",
-          "consciousness"
+          "termux",
+          "consciousness",
+          "index"
         ]
       },
       "links": []
@@ -433,9 +433,9 @@
       "content": "Workflow security-audit.yml now inventories Dependabot alerts and can enforce optional critical/high severity gates while always artifacting JSON/log outputs.",
       "metadata": {
         "tags": [
+          "security",
           "workflow",
-          "dependabot",
-          "security"
+          "dependabot"
         ]
       },
       "links": []
@@ -445,10 +445,10 @@
       "content": "security-audit workflow now maintains a Security Dependency Delta Report issue using baseline markers and closes it automatically when high/critical risk clears.",
       "metadata": {
         "tags": [
-          "issues",
-          "dependabot",
+          "security",
           "workflow",
-          "security"
+          "issues",
+          "dependabot"
         ]
       },
       "links": []
@@ -458,10 +458,10 @@
       "content": "workflow-action-pin-audit.yml now enforces lock-based GitHub Action drift policy using audit_data/workflow_action_lock.json and rejects mutable refs.",
       "metadata": {
         "tags": [
-          "security",
           "actions",
-          "lock",
-          "workflow"
+          "security",
+          "workflow",
+          "lock"
         ]
       },
       "links": []
@@ -471,10 +471,10 @@
       "content": "security-audit workflow now builds remediation batches from Dependabot summaries and synchronizes keyed remediation issues automatically via scripts/dependabot_remediation_plan.py and scripts/sync_security_remediation_issues.py.",
       "metadata": {
         "tags": [
-          "remediation",
-          "dependabot",
+          "security",
           "workflow",
-          "security"
+          "remediation",
+          "dependabot"
         ]
       },
       "links": []
@@ -484,12 +484,12 @@
       "content": "Security hardening capability: scripts/dependabot_autopatch_requirements.py builds deterministic pip pin updates from Dependabot raw alerts (first_patched_version), supports dry-run/write, and preserves rollback via timestamped backups plus structured JSON/Markdown reports.",
       "metadata": {
         "tags": [
-          "security",
-          "dependabot",
-          "pip",
           "termux",
+          "pip",
           "phase17",
-          "automation"
+          "automation",
+          "dependabot",
+          "security"
         ],
         "source": "phase17_autopatch_execution",
         "updated_at": "2026-02-16T22:54:34Z"
@@ -502,10 +502,10 @@
       "metadata": {
         "tags": [
           "no-fix",
-          "mitigation",
-          "security",
           "advisory",
-          "phase17"
+          "mitigation",
+          "phase17",
+          "security"
         ],
         "source": "phase17_iteration2_no_fix_mitigation",
         "updated_at": "2026-02-16T23:10:55Z"
@@ -517,11 +517,11 @@
       "content": "Phase 17 closure fact: end-to-end automated remediation loop achieved zero open Dependabot alerts and closed outstanding remediation batch issues in Ace1928/eidosian_forge.",
       "metadata": {
         "tags": [
-          "security",
-          "dependabot",
           "phase17",
+          "dependabot",
           "automation",
-          "closure"
+          "closure",
+          "security"
         ],
         "source": "phase17_final_closure",
         "updated_at": "2026-02-16T23:27:34Z"
@@ -533,11 +533,11 @@
       "content": "Phase 18 capability: consciousness runtime now enforces module watchdog quarantine/recovery and payload truncation safety envelopes with explicit telemetry for observability-driven hardening.",
       "metadata": {
         "tags": [
-          "payload-safety",
-          "watchdog",
           "consciousness",
+          "hardening",
           "phase18",
-          "hardening"
+          "payload-safety",
+          "watchdog"
         ],
         "source": "phase18_runtime_hardening",
         "updated_at": "2026-02-16T23:43:19Z"
@@ -549,13 +549,13 @@
       "content": "Phase 18 completion capability: runtime health now surfaces watchdog and payload-safety state across `eidctl` and MCP (`consciousness_kernel_status`), and payload/event-pressure stress benchmarks are first-class with CI trend aggregation.",
       "metadata": {
         "tags": [
+          "mcp",
+          "consciousness",
+          "phase18",
+          "stress-benchmark",
           "ci",
           "payload-safety",
-          "watchdog",
-          "consciousness",
-          "stress-benchmark",
-          "phase18",
-          "mcp"
+          "watchdog"
         ],
         "source": "phase18_status_stress_completion",
         "updated_at": "2026-02-17T00:24:46Z"
@@ -569,9 +569,9 @@
         "tags": [
           "side-effect-free",
           "consciousness",
+          "hardening",
           "phase18",
-          "status",
-          "hardening"
+          "status"
         ],
         "source": "phase18_status_side_effect_fix",
         "updated_at": "2026-02-17T00:24:46Z"
@@ -583,12 +583,12 @@
       "content": "Phase 19 parity control added a deterministic Linux audit matrix runner that now drives both local parity smoke checks and CI artifact generation, reducing Termux/Linux drift risk.",
       "metadata": {
         "tags": [
-          "ci",
-          "audit-matrix",
           "consciousness",
+          "linux-parity",
           "termux",
           "phase19",
-          "linux-parity"
+          "ci",
+          "audit-matrix"
         ],
         "source": "phase19_linux_audit_matrix",
         "updated_at": "2026-02-17T01:44:44Z"
@@ -600,11 +600,11 @@
       "content": "Phase 20 observability hardened Linux parity by integrating linux_audit reports into trend analytics and enforcing latest_fail_count == 0 as a CI gate in the consciousness parity workflow.",
       "metadata": {
         "tags": [
-          "observability",
-          "phase20",
-          "trend",
-          "consciousness",
           "linux-audit",
+          "consciousness",
+          "trend",
+          "phase20",
+          "observability",
           "ci-gate"
         ],
         "source": "phase20_audit_observability_gate",
@@ -617,11 +617,11 @@
       "content": "Phase 21 event-fabric hardening introduced first-class event identity (`event_id`, `ts_ms`) and marker-bounded bench capture (`bench.trial_start` to `bench.trial_end`) to improve deterministic causal-window artifact extraction.",
       "metadata": {
         "tags": [
-          "trial-capture",
-          "event-fabric",
+          "phase21",
           "consciousness",
           "causal-trace",
-          "phase21"
+          "trial-capture",
+          "event-fabric"
         ],
         "source": "phase21_event_fabric_trial_capture",
         "updated_at": "2026-02-17T02:19:15Z"
@@ -633,11 +633,11 @@
       "content": "Phase 22 provenance hardening added replay-grade trial artifacts (`module_state_snapshot.json`, `replay_manifest.json`) and report-level capture digest/event-id coverage metadata, enabling deterministic post-run validation across environments.",
       "metadata": {
         "tags": [
-          "phase22",
-          "provenance",
           "replay-manifest",
           "consciousness",
-          "bench"
+          "provenance",
+          "bench",
+          "phase22"
         ],
         "source": "phase22_trial_provenance_replay",
         "updated_at": "2026-02-17T02:33:24Z"
@@ -649,11 +649,11 @@
       "content": "Phase 23 documentation hardening introduced automated repository directory coverage via `scripts/generate_directory_atlas.py`, producing `docs/DIRECTORY_ATLAS.md` (linked depth-limited map) and `docs/DIRECTORY_INDEX_FULL.txt` (complete recursive index), validated with dedicated script tests and consciousness benchmark/stress runs.",
       "metadata": {
         "tags": [
-          "documentation",
-          "benchmarks",
           "consciousness",
+          "documentation",
+          "directory-atlas",
           "phase23",
-          "directory-atlas"
+          "benchmarks"
         ],
         "source": "phase23_repo_docs_hardening",
         "updated_at": "2026-02-17T03:24:01Z"
@@ -665,11 +665,11 @@
       "content": "Directory atlas generation is now deterministic by default with scope-aware controls and CI drift enforcement workflow.",
       "metadata": {
         "tags": [
+          "phase24",
+          "operations",
           "documentation",
           "ci",
-          "determinism",
-          "phase24",
-          "operations"
+          "determinism"
         ]
       },
       "links": []
@@ -679,8 +679,8 @@
       "content": "Refactor Forge provides AST-based code transformations including identifier renaming and docstring removal.",
       "metadata": {
         "tags": [
-          "code-intelligence",
-          "refactor"
+          "refactor",
+          "code-intelligence"
         ]
       },
       "links": []
@@ -690,11 +690,11 @@
       "content": "GraphRAG qualitative assessment contract v1 combines deterministic pipeline metrics with federated local-model judge consensus and guardrail capping when placeholder community reports are detected.",
       "metadata": {
         "tags": [
-          "graphrag",
-          "assessment",
-          "benchmark",
           "schema",
-          "quality"
+          "assessment",
+          "quality",
+          "graphrag",
+          "benchmark"
         ]
       },
       "links": []
@@ -706,8 +706,8 @@
         "tags": [
           "graphrag",
           "quality-gate",
-          "benchmark",
-          "termux"
+          "termux",
+          "benchmark"
         ]
       },
       "links": []
@@ -717,10 +717,10 @@
       "content": "Defaulting EIDOS_MCP_STATELESS_HTTP=1 in eidos_mcp/run_server.sh resolved repeated stale-session MCP transport failures in this Termux workflow.",
       "metadata": {
         "tags": [
-          "transport",
-          "termux",
+          "eidos_mcp",
           "stability",
-          "eidos_mcp"
+          "termux",
+          "transport"
         ]
       },
       "links": []
@@ -730,11 +730,11 @@
       "content": "Eidosian Forge now has a canonical port registry document and machine-readable config (docs/PORT_REGISTRY.md + config/ports.json) used as fallback defaults by service scripts and key runtime modules.",
       "metadata": {
         "tags": [
-          "infrastructure",
-          "ports",
-          "configuration",
           "services",
-          "termux"
+          "infrastructure",
+          "termux",
+          "ports",
+          "configuration"
         ]
       },
       "links": []
@@ -745,9 +745,9 @@
       "metadata": {
         "tags": [
           "config",
-          "ports",
+          "operations",
           "termux",
-          "operations"
+          "ports"
         ]
       },
       "links": []
@@ -757,10 +757,10 @@
       "content": "Latest GraphRAG sweep selected models/Qwen2.5-0.5B-Instruct-Q8_0.gguf as best available local model under strict quality gates (federated judge score 0.8801, rank A).",
       "metadata": {
         "tags": [
+          "graphrag",
           "quality-gate",
-          "benchmark",
           "model-selection",
-          "graphrag"
+          "benchmark"
         ]
       },
       "links": []
@@ -771,8 +771,8 @@
       "metadata": {
         "tags": [
           "living-knowledge",
-          "pipeline",
           "code-forge",
+          "pipeline",
           "graphrag"
         ]
       },
@@ -783,10 +783,10 @@
       "content": "GraphRAG evaluator now rejects pathological all-zero judge outputs when deterministic evidence indicates high-confidence pipeline/query quality; aggregate now reports judge_total/judge_valid/judge_rejected.",
       "metadata": {
         "tags": [
-          "evaluation",
-          "quality",
+          "graphrag",
           "robustness",
-          "graphrag"
+          "quality",
+          "evaluation"
         ]
       },
       "links": []
@@ -797,10 +797,10 @@
       "metadata": {
         "tags": [
           "graphrag",
+          "termux",
           "models",
           "catalog",
-          "multimodal",
-          "termux"
+          "multimodal"
         ]
       },
       "links": []
@@ -811,9 +811,9 @@
       "metadata": {
         "tags": [
           "graphrag",
-          "model-selection",
+          "termux",
           "quality-gates",
-          "termux"
+          "model-selection"
         ]
       },
       "links": []
@@ -823,11 +823,11 @@
       "content": "Commit a5873193ae introduces curated <=3B model catalog plus automated downloader and multi-domain benchmark suite with optional multimodal OCR task and judge aggregation.",
       "metadata": {
         "tags": [
-          "commit",
+          "eidosian_forge",
           "benchmarking",
           "models",
-          "eidosian_forge",
-          "automation"
+          "automation",
+          "commit"
         ]
       },
       "links": []
@@ -837,11 +837,11 @@
       "content": "Code Forge now supports deterministic archive digestion artifacts (repo_index.json, duplication_index.json, triage.json/csv/md, archive_digester_summary.json) and exposes this workflow through CLI commands catalog, triage-report, and digest.",
       "metadata": {
         "tags": [
-          "graphrag",
           "triage",
+          "knowledge_graph",
+          "graphrag",
           "code_forge",
-          "archive_digester",
-          "knowledge_graph"
+          "archive_digester"
         ]
       },
       "links": []
@@ -851,10 +851,10 @@
       "content": "Commit dedb968da9 introduces Code Forge Archive Digester v1 with deterministic intake, duplication, triage artifacts, and CLI orchestration integrated into living_knowledge_pipeline.",
       "metadata": {
         "tags": [
-          "commit",
-          "integration",
           "pipeline",
           "code_forge",
+          "integration",
+          "commit",
           "archive_digester"
         ]
       },
@@ -865,11 +865,11 @@
       "content": "Code Forge includes a benchmark harness with baseline-aware regression gates and a canonical migration planner producing migration_map.json and shim staging from triage outputs.",
       "metadata": {
         "tags": [
-          "migration_map",
           "regression_gate",
-          "benchmark",
+          "migration_map",
+          "code_forge",
           "canonicalization",
-          "code_forge"
+          "benchmark"
         ]
       },
       "links": []
@@ -879,12 +879,12 @@
       "content": "Commit f911629d49 upgrades Code Forge with imports/calls/uses edge ingestion, dependency graph artifacts, baseline-aware benchmark gating, and canonical migration planning with compatibility shim staging.",
       "metadata": {
         "tags": [
-          "commit",
-          "production",
-          "benchmark",
-          "canonicalization",
+          "dependency_graph",
           "code_forge",
-          "dependency_graph"
+          "production",
+          "canonicalization",
+          "commit",
+          "benchmark"
         ]
       },
       "links": []
@@ -894,11 +894,11 @@
       "content": "Code Forge now enforces strict artifact contracts across repo_index, duplication_index (including structural clones), dependency_graph, triage, triage_audit, and archive_digester_summary outputs.",
       "metadata": {
         "tags": [
-          "triage_audit",
+          "structural_clone",
+          "validation",
           "artifact_schema",
           "code_forge",
-          "validation",
-          "structural_clone"
+          "triage_audit"
         ]
       },
       "links": []
@@ -908,12 +908,12 @@
       "content": "Commit 16aca8e692 hardens Code Forge with structural duplication indexing, confidence-based triage audit contracts, and strict output validation tooling.",
       "metadata": {
         "tags": [
-          "commit",
           "structural_duplicates",
+          "validation",
+          "hardening",
           "triage",
           "code_forge",
-          "validation",
-          "hardening"
+          "commit"
         ]
       },
       "links": []
@@ -924,9 +924,9 @@
       "metadata": {
         "tags": [
           "drift",
+          "artifact-validation",
           "digester",
-          "code_forge",
-          "artifact-validation"
+          "code_forge"
         ]
       },
       "links": []
@@ -936,11 +936,11 @@
       "content": "Agent Forge now includes a RAC-AP validation report pipeline that computes reliability, nomological correlations, discriminant controls, and security-boundary scores from benchmark/trial/red-team artifacts.",
       "metadata": {
         "tags": [
-          "agent_forge",
+          "validation",
           "consciousness",
+          "agent_forge",
           "rac_ap",
-          "research",
-          "validation"
+          "research"
         ]
       },
       "links": []
@@ -950,12 +950,12 @@
       "content": "Agent Forge now includes RAC-AP protocol tooling: schema-compatible protocol validation, pre-registration manifest generation, and interventional validity scoring integrated into consciousness validation reports.",
       "metadata": {
         "tags": [
-          "agent_forge",
-          "protocol",
-          "intervention",
-          "rac-ap",
+          "validation",
           "consciousness",
-          "validation"
+          "agent_forge",
+          "rac-ap",
+          "intervention",
+          "protocol"
         ]
       },
       "links": []
@@ -965,11 +965,11 @@
       "content": "Main branch now includes RAC-AP protocol schema management and interventional validity scoring in consciousness validation (pushed in commit 8338941faa).",
       "metadata": {
         "tags": [
+          "validation",
+          "consciousness",
           "agent_forge",
           "rac-ap",
-          "consciousness",
-          "git",
-          "validation"
+          "git"
         ]
       },
       "links": []
@@ -980,11 +980,11 @@
       "metadata": {
         "tags": [
           "knowledge_forge",
-          "idempotency",
+          "run_scoping",
           "graphrag",
-          "integration",
           "code_forge",
-          "run_scoping"
+          "integration",
+          "idempotency"
         ]
       },
       "links": []
@@ -994,11 +994,11 @@
       "content": "Code Forge regeneration pipeline now enforces managed-scope pruning during apply, enabling idempotent project roundtrip without deleting unmanaged files; validated on sms_forge cycle06 with full test parity.",
       "metadata": {
         "tags": [
-          "roundtrip",
+          "idempotent",
+          "sms_forge",
           "regeneration",
           "code_forge",
-          "sms_forge",
-          "idempotent"
+          "roundtrip"
         ]
       },
       "links": []
@@ -1008,10 +1008,10 @@
       "content": "Code Forge now emits provenance_links.json and graphrag_export_manifest.json; MCP exposes provenance query via code_forge_provenance tool, enabling cross-forge lineage queries from code units to knowledge nodes and GraphRAG documents.",
       "metadata": {
         "tags": [
+          "mcp",
+          "provenance",
           "knowledge_forge",
           "graphrag",
-          "provenance",
-          "mcp",
           "code_forge"
         ]
       },
@@ -1022,10 +1022,10 @@
       "content": "GitHub workflow action lock now tracks gitleaks/gitleaks-action@v2 and passes enforce-lock policy with zero drift/unlocked/mutable refs.",
       "metadata": {
         "tags": [
+          "gitleaks",
           "github-actions",
           "ci",
           "security",
-          "gitleaks",
           "workflow-lock"
         ]
       },
@@ -1036,11 +1036,11 @@
       "content": "Security remediation applied: requirements/eidos_venv_reqs.txt now pins pypdf==6.7.1 per Dependabot autopatch for open moderate alerts.",
       "metadata": {
         "tags": [
-          "remediation",
-          "pypdf",
           "requirements",
-          "security",
-          "dependabot"
+          "pypdf",
+          "remediation",
+          "dependabot",
+          "security"
         ]
       },
       "links": []
@@ -1051,9 +1051,9 @@
       "metadata": {
         "tags": [
           "triage",
-          "dependabot",
           "backlog",
-          "security"
+          "security",
+          "dependabot"
         ]
       },
       "links": []
@@ -1063,11 +1063,11 @@
       "content": "Termux Chroma stability is validated after rebuilding chroma-hnswlib and hnswlib from source with HNSWLIB_NO_NATIVE=1; memory_forge chroma tests pass end-to-end.",
       "metadata": {
         "tags": [
-          "memory_forge",
-          "chroma",
           "hnswlib",
+          "validation",
           "termux",
-          "validation"
+          "memory_forge",
+          "chroma"
         ]
       },
       "links": []
@@ -1077,11 +1077,11 @@
       "content": "CI/Lint/Format workflows now scope Python checks to active forge directories and TypeScript Prettier checks to ts/tsx/js/jsx files, reducing monorepo timeout and LFS-json parse failures.",
       "metadata": {
         "tags": [
-          "ci",
           "format",
+          "lint",
+          "ci",
           "reliability",
-          "workflows",
-          "lint"
+          "workflows"
         ]
       },
       "links": []
@@ -1091,9 +1091,9 @@
       "content": "Directory Atlas Drift Guard workflow now installs pytest before running scripts/tests/test_generate_directory_atlas.py, preventing module-not-found failures on clean GitHub runners.",
       "metadata": {
         "tags": [
-          "workflow",
           "ci",
           "atlas",
+          "workflow",
           "pytest"
         ]
       },
@@ -1104,9 +1104,9 @@
       "content": "Security dependency workflow failure root cause: mis-indented heredoc Python blocks in .github/workflows/security-audit.yml caused shell syntax error. Fixed by YAML-safe indentation that preserves shell heredoc termination semantics.",
       "metadata": {
         "tags": [
-          "github-actions",
           "security-audit",
           "workflow",
+          "github-actions",
           "bugfix"
         ]
       },
@@ -1117,10 +1117,10 @@
       "content": "Universal CI format-check was failing due pre-existing parse/format debt across unrelated directories; remediation set formatting checks non-blocking while preserving visibility through warnings and summaries.",
       "metadata": {
         "tags": [
-          "monorepo",
           "governance",
+          "formatting",
           "ci",
-          "formatting"
+          "monorepo"
         ]
       },
       "links": []
@@ -1130,11 +1130,11 @@
       "content": "CI-style monorepo test execution in eidosian_forge requires forge-local script path resolution in subprocess-based tests; absolute paths derived from Path(__file__).resolve().parents[1] eliminate cwd-sensitive failures on GitHub Actions and Termux.",
       "metadata": {
         "tags": [
-          "github-actions",
-          "ci",
           "testing",
+          "termux",
           "path-resolution",
-          "termux"
+          "github-actions",
+          "ci"
         ]
       },
       "links": []
@@ -1144,11 +1144,11 @@
       "content": "Code Forge provenance schema now includes memory_links, enabling cross-forge lineage queries across artifact->memory->knowledge->GraphRAG surfaces with deterministic IDs.",
       "metadata": {
         "tags": [
-          "graphrag",
           "provenance",
+          "graphrag",
+          "knowledge",
           "code_forge",
-          "memory",
-          "knowledge"
+          "memory"
         ]
       },
       "links": []
@@ -1158,9 +1158,9 @@
       "content": "MCP code_forge_provenance now reports memory_link_count in addition to artifact_count, knowledge_link_count, and graphrag_link_count, enabling direct cross-forge lineage inspection from MCP clients.",
       "metadata": {
         "tags": [
-          "memory_links",
           "eidos_mcp",
           "provenance",
+          "memory_links",
           "code_forge"
         ]
       },
@@ -1171,11 +1171,11 @@
       "content": "Commit ea59a0f5bd fixes Eidosian Universal CI failures by adding lib/eidosian_core/ports.py, adding lib/tests/test_ports.py, and expanding CI test dependencies to include numpy/httpx/pandas/pyarrow/psutil/pyyaml/huggingface_hub.",
       "metadata": {
         "tags": [
-          "github-actions",
-          "ci",
           "dependencies",
+          "regression-fix",
+          "github-actions",
           "ports",
-          "regression-fix"
+          "ci"
         ]
       },
       "links": []
@@ -1185,10 +1185,10 @@
       "content": "Commit cdbf0d08af resolves prior Eidosian Universal CI failing test groups by restoring eidos_mcp llm/refactor exports, pyfiglet renderText alias behavior, pyparticles numba compatibility imports, glyph_forge cv2-absent fallback rendering, and CI jinja2 dependency for Moltbook UI tests.",
       "metadata": {
         "tags": [
-          "regression-fix",
           "eidosian_forge",
+          "stability",
           "ci",
-          "stability"
+          "regression-fix"
         ]
       },
       "links": []
@@ -1198,10 +1198,10 @@
       "content": "Eidosian Universal CI regression bundle fixed in commit 6346d73611 with deterministic guards for eidos_mcp compatibility exports, game_forge sparse interaction fallback, glyph_forge batch input typing, moltbook CLI module invocation context, and figlet compatibility assertion variance.",
       "metadata": {
         "tags": [
+          "qa",
           "eidosian_forge",
-          "ci",
           "stability",
-          "qa"
+          "ci"
         ]
       },
       "links": []
@@ -1211,10 +1211,10 @@
       "content": "CI hardening pattern: prefer robust cross-platform assertions in compat tests and strict type guards at public parser boundaries to avoid environment-dependent regressions.",
       "metadata": {
         "tags": [
-          "testing",
-          "ci",
           "defensive-programming",
-          "cross-platform"
+          "cross-platform",
+          "testing",
+          "ci"
         ]
       },
       "links": []
@@ -1224,10 +1224,10 @@
       "content": "Operational testing contract for eidosian_forge: invoke tests via eidosian_venv interpreter (`python -m pytest`) to avoid plugin/path drift from system pytest in Termux.",
       "metadata": {
         "tags": [
-          "venv",
           "testing",
-          "reliability",
-          "termux"
+          "termux",
+          "venv",
+          "reliability"
         ]
       },
       "links": []
@@ -1237,10 +1237,10 @@
       "content": "Cross-platform test reliability pattern: make dependency checks injectable/mocked in CLI tests (e.g., shutil.which for ffmpeg), and ensure process fakes implement context-manager + communicate semantics to avoid third-party import breakage.",
       "metadata": {
         "tags": [
+          "testing",
+          "mocks",
           "ci",
           "reliability",
-          "mocks",
-          "testing",
           "glyph_forge"
         ]
       },
@@ -1251,10 +1251,10 @@
       "content": "Code Forge now emits provenance_registry.json for digester and roundtrip pipelines, including unit-level joins (knowledge/memory/GraphRAG) and optional benchmark/drift summaries; eidos_mcp code_forge_provenance supports unit-level filtering and benchmark inclusion.",
       "metadata": {
         "tags": [
+          "mcp",
+          "provenance",
           "knowledge_forge",
           "graphrag",
-          "provenance",
-          "mcp",
           "code_forge"
         ]
       },
@@ -1265,11 +1265,11 @@
       "content": "Repository docs and ignore policy were refreshed during figlet compatibility cycle: deterministic directory atlas regenerated and local CI/test artifact paths added to .gitignore (.coverage, .tmp_test, reports/ci/*.log, reports/local_test_audit/).",
       "metadata": {
         "tags": [
-          "ci",
-          "figlet_forge",
-          "docs",
           "maintenance",
-          "gitignore"
+          "figlet_forge",
+          "ci",
+          "gitignore",
+          "docs"
         ]
       },
       "links": []
@@ -1279,10 +1279,10 @@
       "content": "MCP knowledge router now resolves GraphRAG root using EIDOS_GRAPHRAG_ROOT override, defaulting to graphrag_workspace and falling back to graphrag. GraphRAG integration commands now use python -m graphrag <subcommand> with legacy fallback support.",
       "metadata": {
         "tags": [
+          "mcp",
           "knowledge_forge",
           "graphrag",
           "integration",
-          "mcp",
           "compatibility"
         ]
       },
@@ -1307,12 +1307,12 @@
       "content": "Commit e3f3bd3293 hardened forge interoperability by adding GraphRAG timeout-guarded execution and MCP GraphRAG root precedence, with full cross-forge validation tests and benchmark pass.",
       "metadata": {
         "tags": [
+          "validation",
           "interop",
           "knowledge_forge",
-          "commit",
           "graphrag",
           "eidos_mcp",
-          "validation"
+          "commit"
         ]
       },
       "links": []
@@ -1322,11 +1322,11 @@
       "content": "Code Forge now includes eval OS modules (contracts/tracing/replay/runner/staleness/scoring) with CLI entrypoints and schema versioning for reproducible ablation runs.",
       "metadata": {
         "tags": [
-          "observability",
-          "evaluation",
           "schema",
-          "code_forge",
-          "cli"
+          "evaluation",
+          "cli",
+          "observability",
+          "code_forge"
         ]
       },
       "links": []
@@ -1336,11 +1336,11 @@
       "content": "Code Forge eval harness now supports deterministic replay across separate output directories via configurable replay_store_path (CLI: --replay-store), with run summary including replay_store_path metadata.",
       "metadata": {
         "tags": [
-          "observability",
-          "replay",
           "schema",
+          "eval_os",
+          "observability",
           "code_forge",
-          "eval_os"
+          "replay"
         ]
       },
       "links": []
@@ -1350,9 +1350,9 @@
       "content": "Eidosian Universal CI run 22256896857 failed only in glyph_forge due ffmpeg discovery in test_extract_playlist_stitches_audio; fixed by mocking extractors.shutil.which for ffmpeg in test code and pushed in commit 1cdb3d31a5.",
       "metadata": {
         "tags": [
+          "testing",
           "github-actions",
           "ci",
-          "testing",
           "glyph_forge",
           "ffmpeg"
         ]
@@ -1364,9 +1364,9 @@
       "content": "Universal CI run 22257241042 succeeded end-to-end after glyph_forge ffmpeg test isolation fix; pytest async loop scope now pinned to function in both root pytest.ini and agent_forge/pytest.ini to remove loop-scope deprecation drift.",
       "metadata": {
         "tags": [
+          "agent_forge",
           "ci",
           "pytest",
-          "agent_forge",
           "glyph_forge",
           "stability"
         ]
@@ -1378,11 +1378,11 @@
       "content": "linux_audit_matrix now treats mkey as optional forge by default and uses MCP quick-probe timeout floors (initialize>=30s, call>=12s) to avoid false-negative audit failures on Termux.",
       "metadata": {
         "tags": [
-          "ci",
           "mcp",
-          "linux_audit",
           "termux",
-          "stability"
+          "ci",
+          "stability",
+          "linux_audit"
         ]
       },
       "links": []
@@ -1392,11 +1392,11 @@
       "content": "Consciousness Linux Parity GitHub Actions run 22265310795 succeeded after setting EIDOS_AUDIT_OPTIONAL_FORGES=mkey,llm,erais,glyph,word in parity smoke workflow.",
       "metadata": {
         "tags": [
-          "github-actions",
-          "audit-gate",
-          "ci",
           "consciousness",
-          "parity"
+          "github-actions",
+          "parity",
+          "ci",
+          "audit-gate"
         ]
       },
       "links": []
@@ -1406,10 +1406,10 @@
       "content": "Eidosian Universal CI test job now enforces per-forge timeout controls and includes OpenCV headless dependency to improve deterministic cross-forge test coverage and prevent stuck runs.",
       "metadata": {
         "tags": [
+          "opencv",
+          "universal",
           "ci",
           "pytest",
-          "universal",
-          "opencv",
           "workflow",
           "stability"
         ]
@@ -1421,9 +1421,9 @@
       "content": "Directory atlas generation in tracked mode must filter README links against tracked file set, otherwise local runtime files cause CI drift false positives.",
       "metadata": {
         "tags": [
-          "ci",
           "git-tracked",
           "atlas",
+          "ci",
           "determinism",
           "docs"
         ]
@@ -1435,12 +1435,12 @@
       "content": "CI drift guards should validate generated docs against tracked git scope, not local filesystem state, to remain deterministic across Termux and GitHub runners.",
       "metadata": {
         "tags": [
+          "atlas",
+          "termux",
           "github-actions",
           "ci",
-          "atlas",
           "determinism",
-          "docs",
-          "termux"
+          "docs"
         ]
       },
       "links": []
@@ -1451,10 +1451,10 @@
       "metadata": {
         "tags": [
           "type_forge",
-          "eidos_mcp",
-          "persistence",
+          "schema-registry",
           "gis_forge",
-          "schema-registry"
+          "persistence",
+          "eidos_mcp"
         ]
       },
       "links": []
@@ -1464,10 +1464,10 @@
       "content": "Diagnostics Forge CLI now supports a dashboard subcommand that renders metrics JSON summaries in a sortable terminal table and supports raw JSON output.",
       "metadata": {
         "tags": [
+          "todo-completion",
           "diagnostics_forge",
           "cli",
-          "observability",
-          "todo-completion"
+          "observability"
         ]
       },
       "links": []
@@ -1490,9 +1490,9 @@
       "content": "eidos_mcp runtime configuration is now centralized via eidos_mcp.config.runtime with GIS namespace mcp.* and environment variable override precedence.",
       "metadata": {
         "tags": [
-          "configuration",
-          "gis",
           "eidos_mcp",
+          "gis",
+          "configuration",
           "runtime"
         ]
       },
@@ -1503,10 +1503,10 @@
       "content": "memory_forge now supports CLI semantic compression command with dry-run and clustering controls for old memory consolidation.",
       "metadata": {
         "tags": [
-          "tiered_memory",
           "cli",
           "memory_forge",
-          "compression"
+          "compression",
+          "tiered_memory"
         ]
       },
       "links": []
@@ -1516,10 +1516,10 @@
       "content": "knowledge_forge now supports RDF serialization/deserialization via rdflib with non-lossy node IDs, concepts, tags, and links persisted across roundtrip.",
       "metadata": {
         "tags": [
-          "rdflib",
           "knowledge_forge",
           "rdf",
-          "interoperability"
+          "interoperability",
+          "rdflib"
         ]
       },
       "links": []
@@ -1529,11 +1529,11 @@
       "content": "eidos_mcp exposes RAC-AP construct validation via consciousness_construct_validate, consciousness_construct_latest, and eidos://consciousness/construct-latest.",
       "metadata": {
         "tags": [
-          "rac-ap",
+          "validation",
           "consciousness",
+          "rac-ap",
           "eidos_mcp",
-          "tooling",
-          "validation"
+          "tooling"
         ]
       },
       "links": []
@@ -1543,9 +1543,9 @@
       "content": "RAC-AP validator supports explicit security_required mode, enabling hard gate failure when security boundary evidence is absent or weak.",
       "metadata": {
         "tags": [
-          "agent_forge",
-          "security-gates",
           "validation",
+          "security-gates",
+          "agent_forge",
           "consciousness"
         ]
       },
@@ -1556,11 +1556,11 @@
       "content": "Consciousness construct validation now includes protocol threshold drift analysis over latest validation reports with configurable delta threshold.",
       "metadata": {
         "tags": [
+          "validation",
+          "consciousness",
           "agent_forge",
           "protocol",
-          "consciousness",
-          "drift",
-          "validation"
+          "drift"
         ]
       },
       "links": []
@@ -1570,8 +1570,8 @@
       "content": "knowledge_forge now supports interactive pyvis graph export via KnowledgeForge.visualize_pyvis and CLI `knowledge-forge visualize`.",
       "metadata": {
         "tags": [
-          "cli",
           "knowledge_forge",
+          "cli",
           "graph-visualization",
           "pyvis"
         ]
@@ -1583,8 +1583,8 @@
       "content": "ChatMock remains in projects/src/chatmock; promotion to a dedicated Forge is deferred until API stability, CI/security readiness, and migration criteria are met.",
       "metadata": {
         "tags": [
-          "governance",
           "architecture-decision",
+          "governance",
           "chatmock",
           "eidos_mcp"
         ]
@@ -1596,11 +1596,11 @@
       "content": "Agent Forge now supports importing external benchmark JSON payloads into standardized consciousness benchmark reports via `eidctl consciousness import-benchmark` and ExternalBenchmarkImporter.",
       "metadata": {
         "tags": [
-          "agent_forge",
-          "benchmark",
-          "consciousness",
           "cli",
-          "adapter"
+          "consciousness",
+          "agent_forge",
+          "adapter",
+          "benchmark"
         ]
       },
       "links": []
@@ -1610,11 +1610,11 @@
       "content": "Consciousness validator now supports trend extraction and HTML dashboard export via `validation_trends`, surfaced in CLI as `eidctl consciousness validation-trends`.",
       "metadata": {
         "tags": [
-          "agent_forge",
           "dashboard",
-          "consciousness",
+          "validation",
           "cli",
-          "validation"
+          "consciousness",
+          "agent_forge"
         ]
       },
       "links": []
@@ -1624,11 +1624,11 @@
       "content": "`eidctl consciousness import-benchmark` parser was repaired after rebase corruption and validated with passing tests.",
       "metadata": {
         "tags": [
-          "agent_forge",
-          "rebase",
-          "consciousness",
           "cli",
-          "bugfix"
+          "consciousness",
+          "agent_forge",
+          "bugfix",
+          "rebase"
         ]
       },
       "links": []
@@ -1638,11 +1638,11 @@
       "content": "Code Forge TODO critical item for source-scoped coverage enforcement is implemented via CI workflow fail-under gates and documented local test command.",
       "metadata": {
         "tags": [
-          "documentation",
-          "ci",
+          "todo",
           "coverage",
+          "documentation",
           "code_forge",
-          "todo"
+          "ci"
         ]
       },
       "links": []
@@ -1652,11 +1652,11 @@
       "content": "Code Forge roundtrip artifacts now include signature envelopes and validation logic to detect tampering via payload hash and digest checks.",
       "metadata": {
         "tags": [
-          "roundtrip",
           "signature",
           "tamper-detection",
-          "security",
-          "code_forge"
+          "code_forge",
+          "roundtrip",
+          "security"
         ]
       },
       "links": []
@@ -1666,11 +1666,11 @@
       "content": "Code Forge eval OS exports traces to OTLP backends via configurable endpoint/service/headers and records exporter status in run artifacts and summary stats.",
       "metadata": {
         "tags": [
-          "observability",
-          "traces",
-          "code_forge",
           "otlp",
-          "eval"
+          "observability",
+          "code_forge",
+          "eval",
+          "traces"
         ]
       },
       "links": []
@@ -1680,11 +1680,11 @@
       "content": "Code Forge roundtrip parity hashing now supports parallel file hashing for larger trees, controlled by `EIDOS_CODE_FORGE_HASH_WORKERS`, with determinism validated against single-thread mode.",
       "metadata": {
         "tags": [
-          "performance",
-          "roundtrip",
-          "code_forge",
           "hashing",
-          "parallelism"
+          "code_forge",
+          "roundtrip",
+          "parallelism",
+          "performance"
         ]
       },
       "links": []
@@ -1695,9 +1695,9 @@
       "metadata": {
         "tags": [
           "todo-complete",
-          "quality",
           "crawl_forge",
-          "html-parsing"
+          "html-parsing",
+          "quality"
         ]
       },
       "links": []
@@ -1708,8 +1708,8 @@
       "metadata": {
         "tags": [
           "triage",
-          "cli",
           "profiling",
+          "cli",
           "code_forge"
         ]
       },
@@ -1720,11 +1720,11 @@
       "content": "Crawl Forge now includes TTL-based robots and HTTP page caching plus cache_stats telemetry in status output.",
       "metadata": {
         "tags": [
-          "cache",
-          "reliability",
           "robots",
+          "termux",
+          "cache",
           "crawl_forge",
-          "termux"
+          "reliability"
         ]
       },
       "links": []
@@ -1735,9 +1735,9 @@
       "metadata": {
         "tags": [
           "extensibility",
+          "tree-sitter",
           "code_forge",
           "architecture",
-          "tree-sitter",
           "parser"
         ]
       },
@@ -1748,8 +1748,8 @@
       "content": "Code Forge digester schema now validates optional archive_reduction_plan.json artifact as part of output contract checks.",
       "metadata": {
         "tags": [
-          "artifacts",
           "schema",
+          "artifacts",
           "validation",
           "code_forge"
         ]
@@ -1761,9 +1761,9 @@
       "content": "Code Forge now supports archive_reduction_plan artifacts with candidate buckets for delete/extract/refactor/quarantine generated from triage labels.",
       "metadata": {
         "tags": [
-          "artifacts",
           "triage",
           "code_forge",
+          "artifacts",
           "archive",
           "planning"
         ]
@@ -1775,10 +1775,10 @@
       "content": "Code Forge CLI includes `dashboard` command for static triage+duplication visualization and `archive-reduction-plan` for candidate action planning.",
       "metadata": {
         "tags": [
-          "triage",
           "dashboard",
-          "code_forge",
           "cli",
+          "triage",
+          "code_forge",
           "planning"
         ]
       },
@@ -1803,10 +1803,10 @@
       "metadata": {
         "tags": [
           "reasoning",
-          "knowledge_forge",
-          "tests",
           "cli",
-          "owl"
+          "knowledge_forge",
+          "owl",
+          "tests"
         ]
       },
       "links": []
@@ -1816,10 +1816,10 @@
       "content": "`eidos_mcp.check_mcp` now emits structured diagnostics with component_checks, supports --smoke-test and --strict, and is covered by eidos_mcp/tests/test_check_mcp.py.",
       "metadata": {
         "tags": [
+          "eidos_mcp",
           "check_mcp",
-          "diagnostics",
           "testing",
-          "eidos_mcp"
+          "diagnostics"
         ]
       },
       "links": []
@@ -1829,10 +1829,10 @@
       "content": "eidos_mcp routers/tika now returns structured JSON fallback payloads when Tika is unavailable, allowing tika_cache_stats and related tool tests to pass without a local Tika runtime.",
       "metadata": {
         "tags": [
-          "ci",
-          "fallback",
           "eidos_mcp",
-          "tika"
+          "tika",
+          "ci",
+          "fallback"
         ]
       },
       "links": []
@@ -1844,8 +1844,8 @@
         "tags": [
           "compatibility",
           "tool-discovery",
-          "test-contract",
-          "mcp"
+          "mcp",
+          "test-contract"
         ]
       },
       "links": []
@@ -1856,10 +1856,10 @@
       "metadata": {
         "tags": [
           "dashboard",
-          "integration",
+          "doc_forge",
           "atlas",
           "ports",
-          "doc_forge"
+          "integration"
         ]
       },
       "links": []
@@ -1869,12 +1869,12 @@
       "content": "Commit 8ebb4b4d8a stabilizes Doc Forge + Atlas integration with new modular scribe package, dashboard APIs, and termux service manager health orchestration; tests pass for scribe/dashboard/bench sweep suites.",
       "metadata": {
         "tags": [
-          "commit",
-          "web_interface_forge",
           "testing",
-          "atlas",
           "doc_forge",
-          "termux"
+          "atlas",
+          "termux",
+          "commit",
+          "web_interface_forge"
         ]
       },
       "links": []
@@ -1886,9 +1886,9 @@
         "tags": [
           "graphrag",
           "embedding",
+          "contract",
           "model-selection",
-          "doc-forge",
-          "contract"
+          "doc-forge"
         ]
       },
       "links": []
@@ -1898,11 +1898,11 @@
       "content": "Commit 5c83fe688e standardized model-selection contract propagation and documentation; GraphRAG/Doc Forge default models now resolve from config/model_selection.json with validated no-timeout sweep provenance.",
       "metadata": {
         "tags": [
-          "graphrag",
           "provenance",
+          "graphrag",
+          "git",
           "model-selection",
-          "doc-forge",
-          "git"
+          "doc-forge"
         ]
       },
       "links": []
@@ -1913,12 +1913,12 @@
       "metadata": {
         "tags": [
           "domain:www.alibabacloud.com",
-          "reference",
-          "official",
-          "chunk:1/4",
           "qwen3.5",
           "upgrade",
-          "source:web"
+          "chunk:1/4",
+          "source:web",
+          "official",
+          "reference"
         ]
       },
       "links": []
@@ -1929,12 +1929,12 @@
       "metadata": {
         "tags": [
           "domain:www.alibabacloud.com",
-          "reference",
-          "official",
           "chunk:2/4",
           "qwen3.5",
           "upgrade",
-          "source:web"
+          "source:web",
+          "official",
+          "reference"
         ]
       },
       "links": []
@@ -1945,12 +1945,12 @@
       "metadata": {
         "tags": [
           "domain:www.alibabacloud.com",
-          "reference",
-          "chunk:3/4",
-          "official",
           "qwen3.5",
           "upgrade",
-          "source:web"
+          "chunk:3/4",
+          "source:web",
+          "official",
+          "reference"
         ]
       },
       "links": []
@@ -1960,13 +1960,13 @@
       "content": "I can help with questions and solutions.",
       "metadata": {
         "tags": [
-          "domain:www.alibabacloud.com",
-          "reference",
-          "official",
           "chunk:4/4",
+          "domain:www.alibabacloud.com",
           "qwen3.5",
           "upgrade",
-          "source:web"
+          "source:web",
+          "official",
+          "reference"
         ]
       },
       "links": []
@@ -1976,13 +1976,13 @@
       "content": "qwen3.5\n\n\n      \n\n  \n    \n      \n    \n    \n    \n    \n      Models\n      Docs\n      Pricing\n    \n\n\n    \n    \n      \n        \n\n  \n  \n    \n      \n    \n  \n  \n\n\n\n\n\n\n\n\n      \n\n    \n\n    \n    \n      \n        Sign in\n        Download\n      \n    \n\n    \n    \n    \n      \n      \n        \n          \n        \n      \n      \n        \n          \n        \n      \n      \n      \n        \n          \n\n          \n          Models\n          Download\n          Docs\n          Pricing\n\n          \n          Sign in\n          \n\n          \n        \n\n      \n\n    \n\n  \n\n\n\n    \n\n\t\n    \n        \n            \n                \n                \n                    qwen3.5\n                \n                    \n                    \n            \n\n        \n\n    \n\n    \n      \n          \n              \n                \n                  \n                    \n                  \n                  576K\n                  \u00a0Downloads\n                \n              \n              \n                  \n                      \n                          \n                      \n                      Updated\u00a0\n                      3 days ago\n                  \n              \n          \n\n      \n\n      \n          \n              \n                \n                    Qwen 3.5 is a family of open-source multimodal models that delivers exceptional utility and performance.\n                \n              \n              \n          \n\n          \n              \n                  Qwen 3.5 is a family of open-source multimodal models that delivers exceptional utility and performance.\n                  \n                      \n                          Cancel",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
           "reference",
-          "official",
           "chunk:1/44",
-          "source:web",
+          "domain:ollama.com",
           "qwen3.5",
           "upgrade",
+          "source:web",
+          "official",
           "ollama"
         ]
       },
@@ -1993,13 +1993,13 @@
       "content": "vision\n          \n          \n          \n              tools\n          \n          \n              thinking\n          \n          \n          \n              cloud\n          \n          \n              0.8b\n          \n              2b\n          \n              4b\n          \n              9b\n          \n              27b\n          \n              35b\n          \n              122b\n          \n      \n\n    \n\n  \n\n\t\n  \n    \n\n\n\n  \n    \n      \n        CLI\n        \n        \n        cURL\n        Python\n        JavaScript\n        \n      \n\n      Documentation \n      Documentation \n    \n\n    \n      \n        \n          \n            \n          \n          \n            \n          \n        \n      \n\n\n      \nollama run qwen3.5\n\n      \n\n\n      \n      \n\ncurl http://localhost:11434/api/chat \\\n  -d '{\n    \"model\": \"qwen3.5\",\n    \"messages\": [{\"role\": \"user\", \"content\": \"Hello!\"}]\n  }'\n\n\n      \n\n      \n\nfrom ollama import chat\n\nresponse = chat(\n    model='qwen3.5',\n    messages=[{'role': 'user', 'content': 'Hello!'}],\n)\nprint(response.message.content)\n\n\n      \n\n\n      \n\nimport ollama from 'ollama'\n\nconst response = await ollama.chat({\n  model: 'qwen3.5',\n  messages: [{role: 'user', content: 'Hello!'}],\n})\nconsole.log(response.message.content)\n\n\n      \n\n      \n    \n\n  \n\n\n\n\n\n  Applications\n\n  \n    \n      \n        \n          \n          \n            Claude Code\n            ollama launch claude --model qwen3.5\n          \n\n        \n\n        \n        \n          \n            \n          \n          \n            \n          \n        \n      \n\n      \n        \n          \n          \n            Codex\n            ollama launch codex --model qwen3.5\n          \n\n        \n\n        \n        \n          \n            \n          \n          \n            \n          \n        \n      \n\n      \n        \n          \n          \n            OpenCode\n            ollama launch opencode --model qwen3.5",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
           "reference",
-          "official",
-          "source:web",
-          "chunk:2/44",
+          "domain:ollama.com",
           "qwen3.5",
           "upgrade",
+          "source:web",
+          "chunk:2/44",
+          "official",
           "ollama"
         ]
       },
@@ -2010,14 +2010,14 @@
       "content": "OpenClaw\n            ollama launch openclaw --model qwen3.5\n          \n\n        \n\n        \n        \n          \n            \n          \n          \n            \n          \n        \n      \n\n    \n\n  \n\n\n\n\n\n\n    \n      \n        \n\n  \n    Models\n\n    View all \u2192\n  \n\n  \n    \n      \n        Name\n\n        30 models\n\n        Size\n\n        Context\n\n        Input\n\n      \n\n      \n        \n        \n          \n            qwen3.5:latest\n\n            \n          \n          6.6GB \u00b7 256K context window \u00b7 Text, Image \u00b7 3 days ago\n\n        \n        \n        \n          \n            \n            qwen3.5:latest\n            \n            \n            \n            \n              \n                \n              \n              \n                \n              \n            \n          \n          \n          6.6GB\n\n          \n          256K\n\n          \n            Text, Image\n          \n\n        \n\n      \n        \n        \n          \n            qwen3.5:0.8b\n\n            \n          \n          1.0GB \u00b7 256K context window \u00b7 Text, Image \u00b7 3 days ago\n\n        \n        \n        \n          \n            \n            qwen3.5:0.8b\n            \n            \n            \n            \n              \n                \n              \n              \n                \n              \n            \n          \n          \n          1.0GB\n\n          \n          256K\n\n          \n            Text, Image\n          \n\n        \n\n      \n        \n        \n          \n            qwen3.5:2b\n\n            \n          \n          2.7GB \u00b7 256K context window \u00b7 Text, Image \u00b7 3 days ago\n\n        \n        \n        \n          \n            \n            qwen3.5:2b\n            \n            \n            \n            \n              \n                \n              \n              \n                \n              \n            \n          \n          \n          2.7GB\n\n          \n          256K",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
           "reference",
-          "official",
-          "source:web",
-          "chunk:3/44",
+          "domain:ollama.com",
           "qwen3.5",
           "upgrade",
-          "ollama"
+          "source:web",
+          "official",
+          "ollama",
+          "chunk:3/44"
         ]
       },
       "links": []
@@ -2027,13 +2027,13 @@
       "content": "Text, Image\n          \n\n        \n\n      \n        \n        \n          \n            qwen3.5:4b\n\n            \n          \n          3.4GB \u00b7 256K context window \u00b7 Text, Image \u00b7 3 days ago\n\n        \n        \n        \n          \n            \n            qwen3.5:4b\n            \n            \n            \n            \n              \n                \n              \n              \n                \n              \n            \n          \n          \n          3.4GB\n\n          \n          256K\n\n          \n            Text, Image\n          \n\n        \n\n      \n        \n        \n          \n            qwen3.5:9b\n\n            \n            latest\n            \n          \n          6.6GB \u00b7 256K context window \u00b7 Text, Image \u00b7 3 days ago\n\n        \n        \n        \n          \n            \n            qwen3.5:9b\n            \n            \n            latest\n            \n            \n            \n              \n                \n              \n              \n                \n              \n            \n          \n          \n          6.6GB\n\n          \n          256K\n\n          \n            Text, Image\n          \n\n        \n\n      \n        \n        \n          \n            qwen3.5:27b\n\n            \n          \n          17GB \u00b7 256K context window \u00b7 Text, Image \u00b7 3 days ago\n\n        \n        \n        \n          \n            \n            qwen3.5:27b\n            \n            \n            \n            \n              \n                \n              \n              \n                \n              \n            \n          \n          \n          17GB\n\n          \n          256K\n\n          \n            Text, Image\n          \n\n        \n\n      \n        \n        \n          \n            qwen3.5:35b\n\n            \n          \n          24GB \u00b7 256K context window \u00b7 Text, Image \u00b7 3 days ago",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
-          "reference",
-          "official",
           "chunk:4/44",
-          "source:web",
+          "reference",
+          "domain:ollama.com",
           "qwen3.5",
           "upgrade",
+          "source:web",
+          "official",
           "ollama"
         ]
       },
@@ -2044,13 +2044,13 @@
       "content": "qwen3.5:35b\n            \n            \n            \n            \n              \n                \n              \n              \n                \n              \n            \n          \n          \n          24GB\n\n          \n          256K\n\n          \n            Text, Image\n          \n\n        \n\n      \n        \n        \n          \n            qwen3.5:122b\n\n            \n          \n          81GB \u00b7 256K context window \u00b7 Text, Image \u00b7 1 week ago\n\n        \n        \n        \n          \n            \n            qwen3.5:122b\n            \n            \n            \n            \n              \n                \n              \n              \n                \n              \n            \n          \n          \n          81GB\n\n          \n          256K\n\n          \n            Text, Image\n          \n\n        \n\n      \n        \n        \n          \n            qwen3.5:cloud\n\n            \n          \n          256K context window \u00b7 Text \u00b7 2 weeks ago\n\n        \n        \n        \n          \n            \n            qwen3.5:cloud\n            \n            \n            \n            \n              \n                \n              \n              \n                \n              \n            \n          \n          \n          -\n\n          \n          256K\n\n          \n            Text\n          \n\n        \n\n      \n        \n        \n          \n            qwen3.5:397b-cloud\n\n            \n          \n          256K context window \u00b7 Text, Image \u00b7 2 weeks ago\n\n        \n        \n        \n          \n            \n            qwen3.5:397b-cloud\n            \n            \n            \n            \n              \n                \n              \n              \n                \n              \n            \n          \n          \n          -\n\n          \n          256K\n\n          \n            Text, Image\n          \n\n        \n\n      \n    \n\n  \n\n\n\n      \n    \n  \n\n  \n  \n    \n      Readme",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
           "reference",
-          "official",
-          "source:web",
-          "chunk:5/44",
+          "domain:ollama.com",
           "qwen3.5",
           "upgrade",
+          "source:web",
+          "chunk:5/44",
+          "official",
           "ollama"
         ]
       },
@@ -2061,13 +2061,13 @@
       "content": "Over recent months, we have intensified our focus on developing foundation models that deliver exceptional utility and performance. Qwen3.5 represents a significant leap forward, integrating breakthroughs in multimodal learning, architectural efficiency, reinforcement learning scale, and global accessibility to empower developers and enterprises with unprecedented capability and efficiency.\n\n\nHighlights\n\n\nQwen3.5 features the following enhancement:\n\n\n\tUnified Vision-Language Foundation: Early fusion training on multimodal tokens achieves cross-generational parity with Qwen3 and outperforms Qwen3-VL models across reasoning, coding, agents, and visual understanding benchmarks.\n\n\tEfficient Hybrid Architecture: Gated Delta Networks combined with sparse Mixture-of-Experts deliver high-throughput inference with minimal latency and cost overhead.\n\n\tScalable RL Generalization: Reinforcement learning scaled across million-agent environments with progressively complex task distributions for robust real-world adaptability.\n\n\tGlobal Linguistic Coverage: Expanded support to 201 languages and dialects, enabling inclusive, worldwide deployment with nuanced cultural and regional understanding.\n\n\tNext-Generation Training Infrastructure: Near-100% multimodal training efficiency compared to text-only training and asynchronous RL frameworks supporting massive-scale agent scaffolds and environment orchestration.\n\n\n\n\nBenchmarks\n\n\n\n\n\nLanguage",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
           "reference",
-          "official",
-          "chunk:6/44",
-          "source:web",
+          "domain:ollama.com",
           "qwen3.5",
           "upgrade",
+          "source:web",
+          "chunk:6/44",
+          "official",
           "ollama"
         ]
       },
@@ -2078,13 +2078,13 @@
       "content": "GPT5.2\tClaude 4.5 Opus\tGemini-3 Pro\tQwen3-Max-Thinking\tK2.5-1T-A32B\tQwen3.5-397B-A17B\n\tKnowledge\n\tMMLU-Pro\t87.4\t89.5\t89.8\t85.7\t87.1\t87.8\n\tMMLU-Redux\t95.0\t95.6\t95.9\t92.8\t94.5\t94.9\n\tSuperGPQA\t67.9\t70.6\t74.0\t67.3\t69.2\t70.4\n\tC-Eval\t90.5\t92.2\t93.4\t93.7\t94.0\t93.0\n\tInstruction Following\n\tIFEval\t94.8\t90.9\t93.5\t93.4\t93.9\t92.6\n\tIFBench\t75.4\t58.0\t70.4\t70.9\t70.2\t76.5\n\tMultiChallenge\t57.9\t54.2\t64.2\t63.3\t62.7\t67.6\n\tLong Context\n\tAA-LCR\t72.7\t74.0\t70.7\t68.7\t70.0\t68.7\n\tLongBench v2\t54.5\t64.4\t68.2\t60.6\t61.0\t63.2\n\tSTEM\n\tGPQA\t92.4\t87.0\t91.9\t87.4\t87.6\t88.4\n\tHLE\t35.5\t30.8\t37.5\t30.2\t30.1\t28.7\n\tHLE-Verified\u00b9\t43.3\t38.8\t48\t37.6\t--\t37.6\n\tReasoning\n\tLiveCodeBench v6\t87.7\t84.8\t90.7\t85.9\t85.0\t83.6\n\tHMMT Feb 25\t99.4\t92.9\t97.3\t98.0\t95.4\t94.8\n\tHMMT Nov 25\t100\t93.3\t93.3\t94.7\t91.1\t92.7\n\tIMOAnswerBench\t86.3\t84.0\t83.3\t83.9\t81.8\t80.9\n\tAIME26\t96.7\t93.3\t90.6\t93.3\t93.3\t91.3\n\tGeneral Agent\n\tBFCL-V4\t63.1\t77.5\t72.5\t67.7\t68.3\t72.9\n\tTAU2-Bench\t87.1\t91.6\t85.4\t84.6\t77.0\t86.7\n\tVITA-Bench\t38.2\t56.3\t51.6\t40.9\t41.9\t49.7\n\tDeepPlanning\t44.6\t33.9\t23.3\t28.7\t14.5\t34.3\n\tTool Decathlon\t43.8\t43.5\t36.4\t18.8\t27.8\t38.3\n\tMCP-Mark\t57.5\t42.3\t53.9\t33.5\t29.5\t46.1\n\tSearch Agent\u00b3\n\tHLE w/ tool\t45.5\t43.4\t45.8\t49.8\t50.2\t48.3\n\tBrowseComp\t65.8\t67.8\t59.2\t53.9\t--/74.9\t69.0/78.6\n\tBrowseComp-zh\t76.1\t62.4\t66.8\t60.9\t--\t70.3\n\tWideSearch\t76.8\t76.4\t68.0\t57.9\t72.7\t74.0\n\tSeal-0\t45.0\t47.7\t45.5\t46.9\t57.4\t46.9\n\tMultilingualism\n\tMMMLU\t89.5\t90.1\t90.6\t84.4\t86.0\t88.5\n\tMMLU-ProX\t83.7\t85.7\t87.7\t78.5\t82.3\t84.7\n\tNOVA-63\t54.6\t56.7\t56.7\t54.2\t56.0\t59.1\n\tINCLUDE\t87.5\t86.2\t90.5\t82.3\t83.3\t85.6\n\tGlobal PIQA\t90.9\t91.6\t93.2\t86.0\t89.3\t89.8\n\tPolyMATH\t62.5\t79.0\t81.6\t64.7\t43.1\t73.3\n\tWMT24++\t78.8\t79.7\t80.7\t77.6\t77.6\t78.9\n\tMAXIFE\t88.4\t79.2\t87.5\t84.0\t72.8\t88.2\n\tCoding Agent\n\tSWE-bench Verified\t80.0\t80.9\t76.2\t75.3\t76.8\t76.2\n\tSWE-bench Multilingual\t72.0\t77.5\t65.0\t66.7\t73.0\t69.3\n\tSecCodeBench\t68.7\t68.6\t62.4\t57.5\t61.3\t68.3\n\tTerminal Bench 2\t54.0\t59.3\t54.2\t22.5\t50.8\t52.5",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
           "reference",
-          "official",
-          "source:web",
           "chunk:7/44",
+          "domain:ollama.com",
           "qwen3.5",
           "upgrade",
+          "source:web",
+          "official",
           "ollama"
         ]
       },
@@ -2095,13 +2095,13 @@
       "content": "* HLE-Verified: a verified and revised version of Humanity\u2019s Last Exam (HLE), accompanied by a transparent, component-wise verification protocol and a fine-grained error taxonomy. We open-source the dataset at https://huggingface.co/datasets/skylenage/HLE-Verified.\n\n* TAU2-Bench: we follow the official setup except for the airline domain, where all models are evaluated by applying the fixes proposed in the Claude Opus 4.5 system card.\n\n* MCPMark: GitHub MCP server uses v0.30.3 from api.githubcopilot.com; Playwright tool responses are truncated at 32k tokens.\n\n* Search Agent: most search agents built on our model adopt a simple context-folding strategy(256k): once the cumulative Tool Response length reaches a preset threshold, earlier Tool Responses are pruned from the history to keep the context within limits.\n\n* BrowseComp: we tested two strategies, simple context-folding achieved a score of 69.0, while using the same discard-all strategy as DeepSeek-V3.2 and Kimi K2.5 achieved 78.6.\n\n* WideSearch: we use a 256k context window without any context management.\n\n* MMLU-ProX: we report the averaged accuracy on 29 languages.\n\n* WMT24++: a harder subset of WMT24 after difficulty labeling and rebalancing; we report the averaged scores on 55 languages using XCOMET-XXL.\n\n* MAXIFE: we report the accuracy on English + multilingual original prompts (totally 23 settings).\n\n* Empty cells (--) indicate scores not yet available or not applicable.\n\n\n\n\n\n\n\nVision Language",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
-          "chunk:8/44",
           "reference",
-          "official",
-          "source:web",
+          "domain:ollama.com",
           "qwen3.5",
           "upgrade",
+          "source:web",
+          "chunk:8/44",
+          "official",
           "ollama"
         ]
       },
@@ -2112,13 +2112,13 @@
       "content": "GPT5.2\tClaude 4.5 Opus\tGemini-3 Pro\tQwen3-VL-235B-A22B\tK2.5-1T-A32B\tQwen3.5-397B-A17B\n\tSTEM and Puzzle\n\tMMMU\t86.7\t80.7\t87.2\t80.6\t84.3\t85.0\n\tMMMU-Pro\t79.5\t70.6\t81.0\t69.3\t78.5\t79.0\n\tMathVision\t83.0\t74.3\t86.6\t74.6\t84.2\t88.6\n\tMathvista(mini)\t83.1\t80.0\t87.9\t85.8\t90.1\t90.3\n\tWe-Math\t79.0\t70.0\t86.9\t74.8\t84.7\t87.9\n\tDynaMath\t86.8\t79.7\t85.1\t82.8\t84.4\t86.3\n\tZEROBench\t9\t3\t10\t4\t9\t12\n\tZEROBench_sub\t33.2\t28.4\t39.0\t28.4\t33.5\t41.0\n\tBabyVision\t34.4\t14.2\t49.7\t22.2\t36.5\t52.3\u204443.3\n\tGeneral VQA\n\tRealWorldQA\t83.3\t77.0\t83.3\t81.3\t81.0\t83.9\n\tMMStar\t77.1\t73.2\t83.1\t78.7\t80.5\t83.8\n\tHallusionBench\t65.2\t64.1\t68.6\t66.7\t69.8\t71.4\n\tMMBenchEN-DEV-v1.1\t88.2\t89.2\t93.7\t89.7\t94.2\t93.7\n\tSimpleVQA\t55.8\t65.7\t73.2\t61.3\t71.2\t67.1\n\tText Recognition and Document Understanding\n\tOmniDocBench1.5\t85.7\t87.7\t88.5\t84.5\t88.8\t90.8\n\tCharXiv(RQ)\t82.1\t68.5\t81.4\t66.1\t77.5\t80.8\n\tMMLongBench-Doc\t\u2013\t61.9\t60.5\t56.2\t58.5\t61.5\n\tCC-OCR\t70.3\t76.9\t79.0\t81.5\t79.7\t82.0\n\tAI2D_TEST\t92.2\t87.7\t94.1\t89.2\t90.8\t93.9\n\tOCRBench\t80.7\t85.8\t90.4\t87.5\t92.3\t93.1\n\tSpatial Intelligence\n\tERQA\t59.8\t46.8\t70.5\t52.5\t\u2013\t67.5\n\tCountBench\t91.9\t90.6\t97.3\t93.7\t94.1\t97.2\n\tRefCOCO(avg)\t\u2013\t\u2013\t84.1\t91.1\t87.8\t92.3\n\tODInW13\t\u2013\t\u2013\t46.3\t43.2\t\u2013\t47.0\n\tEmbSpatialBench\t81.3\t75.7\t61.2\t84.3\t77.4\t84.5\n\tRefSpatialBench\t\u2013\t\u2013\t65.5\t69.9\t\u2013\t73.6\n\tLingoQA\t68.8\t78.8\t72.8\t66.8\t68.2\t81.6\n\tV*\t75.9\t67.0\t88.0\t85.9\t77.0\t95.8\u204491.1\n\tHypersim\t\u2013\t\u2013\t\u2013\t11.0\t\u2013\t12.5\n\tSUNRGBD\t\u2013\t\u2013\t\u2013\t34.9\t\u2013\t38.3\n\tNuscene\t\u2013\t\u2013\t\u2013\t13.9\t\u2013\t16.0\n\tVideo Understanding\n\tVideoMME(w sub.)\t86\t77.6\t88.4\t83.8\t87.4\t87.5\n\tVideoMME(w/o sub.)\t85.8\t81.4\t87.7\t79.0\t83.2\t83.7\n\tVideoMMMU\t85.9\t84.4\t87.6\t80.0\t86.6\t84.7\n\tMLVU (M-Avg)\t85.6\t81.7\t83.0\t83.8\t85.0\t86.7\n\tMVBench\t78.1\t67.2\t74.1\t75.2\t73.5\t77.6\n\tLVBench\t73.7\t57.3\t76.2\t63.6\t75.9\t75.5\n\tMMVU\t80.8\t77.3\t77.5\t71.1\t80.4\t75.4\n\tVisual Agent\n\tScreenSpot Pro\t\u2013\t45.7\t72.7\t62.0\t\u2013\t65.6\n\tOSWorld-Verified\t38.2\t66.3\t\u2013\t38.1\t63.3\t62.2\n\tAndroidWorld\t\u2013\t\u2013\t\u2013\t63.7\t\u2013\t66.8\n\tMedical VQA\n\tSLAKE\t76.9\t76.4\t81.3\t54.7\t81.6\t79.9\n\tPMC-VQA\t58.9\t59.9\t62.3\t41.2\t63.3\t64.2\n\tMedXpertQA-MM\t73.3\t63.6\t76.0\t47.6\t65.3\t70.0",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
           "reference",
-          "official",
           "chunk:9/44",
-          "source:web",
+          "domain:ollama.com",
           "qwen3.5",
           "upgrade",
+          "source:web",
+          "official",
           "ollama"
         ]
       },
@@ -2129,13 +2129,13 @@
       "content": "* MathVision\uff1aour model\u2019s score is evaluated using a fixed prompt, e.g., \u201cPlease reason step by step, and put your final answer within \\boxed{}.\u201d For other models, we report the higher score between runs with and without the \\boxed{} formatting.\n\n* BabyVision: our model\u2019s score is reported with CI (Code Interpreter) enabled; without CI, the result is 43.3.\n\n* V*: our model\u2019s score is reported with CI (Code Interpreter) enabled; without CI, the result is 91.1.\n\n* Empty cells (--) indicate scores not yet available or not applicable.\n\n\n\n\n\n\n\n\n        \n      \n\n    \n\n    \n      \n      \n        \n          \n            \n              Write\n              Preview\n            \n            \n              \n                \n                  \n                    \n                      \n                    \n                  \n                  \n                    \n                      \n                    \n                  \n                  \n                    \n                      \n                    \n                  \n                \n\n                \n                  \n                    \n                      \n                    \n                  \n                  \n                    \n                      \n                    \n                  \n                \n\n              \n              \n                \n                  \n                    \n                  \n                  \n                \n              \n\n            \n\n          \n          \n            \n<img src=\"/assets/library/qwen3.5/b6074711-2930-4f09-93b7-4f65ae7a3576\" width=\"360\" />\n\nOver recent months, we have intensified our focus on developing foundation models that deliver exceptional utility and performance. Qwen3.5 represents a significant leap forward, integrating breakthroughs in multimodal learning, architectural efficiency, reinforcement learning scale, and global accessibility to empower developers and enterprises with unprecedented capability and efficiency.\n\n## Highlights",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
           "reference",
-          "official",
-          "source:web",
+          "domain:ollama.com",
           "qwen3.5",
-          "chunk:10/44",
           "upgrade",
+          "chunk:10/44",
+          "source:web",
+          "official",
           "ollama"
         ]
       },
@@ -2146,13 +2146,13 @@
       "content": "Qwen3.5 features the following enhancement:\n\n- **Unified Vision-Language Foundation**: Early fusion training on multimodal tokens achieves cross-generational parity with Qwen3 and outperforms Qwen3-VL models across reasoning, coding, agents, and visual understanding benchmarks.\n\n- **Efficient Hybrid Architecture**: Gated Delta Networks combined with sparse Mixture-of-Experts deliver high-throughput inference with minimal latency and cost overhead.\n\n- **Scalable RL Generalization**: Reinforcement learning scaled across million-agent environments with progressively complex task distributions for robust real-world adaptability.\n\n- **Global Linguistic Coverage**: Expanded support to 201 languages and dialects, enabling inclusive, worldwide deployment with nuanced cultural and regional understanding.\n\n- **Next-Generation Training Infrastructure**: Near-100% multimodal training efficiency compared to text-only training and asynchronous RL frameworks supporting massive-scale agent scaffolds and environment orchestration. \n\n## Benchmarks\n\n![benchmark](/assets/library/qwen3.5/1c5d9a27-97b2-4d6d-a1b1-d326259acae5)\n\n### Language",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
           "reference",
-          "official",
-          "chunk:11/44",
-          "source:web",
+          "domain:ollama.com",
           "qwen3.5",
           "upgrade",
+          "source:web",
+          "chunk:11/44",
+          "official",
           "ollama"
         ]
       },
@@ -2163,13 +2163,13 @@
       "content": "<div style=\"font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#1a1a2e;max-width:900px;margin:0 auto;padding:16px 0\"> <table style=\"width:100%;border-collapse:collapse;font-size:13px\"> <thead><tr> <th style=\"padding:10px 12px;text-align:left;font-weight:600;border-bottom:2px solid #7c3aed;color:#4c1d95\"></th> <th style=\"padding:10px 12px;text-align:center;font-weight:500;border-bottom:2px solid #7c3aed;color:#4c1d95;font-size: 14px;\">GPT5.2</th> <th style=\"padding:10px 12px;text-align:center;font-weight:500;border-bottom:2px solid #7c3aed;color:#4c1d95;font-size: 14px;\">Claude 4.5 Opus</th> <th style=\"padding:10px 12px;text-align:center;font-weight:500;border-bottom:2px solid #7c3aed;color:#4c1d95;font-size: 14px;\">Gemini-3 Pro</th> <th style=\"padding:10px 12px;text-align:center;font-weight:500;border-bottom:2px solid #7c3aed;color:#4c1d95;font-size: 14px;\">Qwen3-Max-Thinking</th> <th style=\"padding:10px 12px;text-align:center;font-weight:500;border-bottom:2px solid #7c3aed;color:#4c1d95;font-size: 14px;\">K2.5-1T-A32B</th> <th style=\"padding:10px 12px;text-align:center;font-weight:500;border-bottom:2px solid #7c3aed;color:#4c1d95;font-size: 14px;\">Qwen3.5-397B-A17B</th> </tr></thead> <tbody> <tr><td colspan=\"7\" style=\"padding:8px 12px;font-weight:600;color:#7c3aed;border-bottom:1px solid #e5e7eb;background:#faf5ff\">Knowledge</td></tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">MMLU-Pro</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">87.4</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">89.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">89.8</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">85.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">87.1</td> <td style=\"padding:7px",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
           "reference",
-          "official",
-          "source:web",
-          "chunk:12/44",
+          "domain:ollama.com",
           "qwen3.5",
           "upgrade",
+          "source:web",
+          "chunk:12/44",
+          "official",
           "ollama"
         ]
       },
@@ -2180,14 +2180,14 @@
       "content": "12px;text-align:center;border-bottom:1px solid #f0f0f0\">87.8</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">MMLU-Redux</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">95.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">95.6</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">95.9</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">92.8</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">94.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">94.9</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">SuperGPQA</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">67.9</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">70.6</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">74.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">67.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">69.2</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">70.4</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">C-Eval</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">90.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">92.2</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">93.4</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">93.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">94.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
           "reference",
-          "official",
-          "source:web",
+          "domain:ollama.com",
           "qwen3.5",
           "upgrade",
-          "ollama",
-          "chunk:13/44"
+          "source:web",
+          "chunk:13/44",
+          "official",
+          "ollama"
         ]
       },
       "links": []
@@ -2197,13 +2197,13 @@
       "content": "#f0f0f0\">93.0</td> </tr> <tr><td colspan=\"7\" style=\"padding:8px 12px;font-weight:600;color:#7c3aed;border-bottom:1px solid #e5e7eb;background:#faf5ff\">Instruction Following</td></tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">IFEval</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">94.8</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">90.9</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">93.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">93.4</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">93.9</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">92.6</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">IFBench</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">75.4</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">58.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">70.4</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">70.9</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">70.2</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">76.5</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">MultiChallenge</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">57.9</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">54.2</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">64.2</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">63.3</td> <td style=\"padding:7px",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
           "reference",
-          "official",
-          "chunk:14/44",
-          "source:web",
+          "domain:ollama.com",
           "qwen3.5",
           "upgrade",
+          "source:web",
+          "official",
+          "chunk:14/44",
           "ollama"
         ]
       },
@@ -2214,13 +2214,13 @@
       "content": "12px;text-align:center;border-bottom:1px solid #f0f0f0\">62.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">67.6</td> </tr> <tr><td colspan=\"7\" style=\"padding:8px 12px;font-weight:600;color:#7c3aed;border-bottom:1px solid #e5e7eb;background:#faf5ff\">Long Context</td></tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">AA-LCR</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">72.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">74.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">70.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">68.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">70.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">68.7</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">LongBench v2</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">54.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">64.4</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">68.2</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">60.6</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">61.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">63.2</td> </tr> <tr><td colspan=\"7\" style=\"padding:8px 12px;font-weight:600;color:#7c3aed;border-bottom:1px solid #e5e7eb;background:#faf5ff\">STEM</td></tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">GPQA</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">92.4</td> <td style=\"padding:7px",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
           "reference",
-          "official",
-          "source:web",
+          "domain:ollama.com",
           "qwen3.5",
           "upgrade",
+          "source:web",
           "chunk:15/44",
+          "official",
           "ollama"
         ]
       },
@@ -2231,13 +2231,13 @@
       "content": "12px;text-align:center;border-bottom:1px solid #f0f0f0\">87.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">91.9</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">87.4</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">87.6</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">88.4</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">HLE</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">35.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">30.8</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">37.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">30.2</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">30.1</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">28.7</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">HLE-Verified\u00b9</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">43.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">38.8</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">48</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">37.6</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">--</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">37.6</td> </tr> <tr><td colspan=\"7\" style=\"padding:8px 12px;font-weight:600;color:#7c3aed;border-bottom:1px solid #e5e7eb;background:#faf5ff\">Reasoning</td></tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">LiveCodeBench v6</td> <td",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
           "chunk:16/44",
-          "official",
           "reference",
-          "source:web",
+          "domain:ollama.com",
           "qwen3.5",
           "upgrade",
+          "source:web",
+          "official",
           "ollama"
         ]
       },
@@ -2248,13 +2248,13 @@
       "content": "style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">87.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">84.8</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">90.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">85.9</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">85.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">83.6</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">HMMT Feb 25</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">99.4</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">92.9</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">97.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">98.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">95.4</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">94.8</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">HMMT Nov 25</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">100</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">93.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">93.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">94.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">91.1</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">92.7</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">IMOAnswerBench</td> <td style=\"padding:7px",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
           "reference",
-          "official",
-          "source:web",
           "chunk:17/44",
+          "domain:ollama.com",
           "qwen3.5",
           "upgrade",
+          "source:web",
+          "official",
           "ollama"
         ]
       },
@@ -2265,13 +2265,13 @@
       "content": "12px;text-align:center;border-bottom:1px solid #f0f0f0\">86.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">84.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">83.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">83.9</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">81.8</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">80.9</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">AIME26</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">96.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">93.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">90.6</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">93.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">93.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">91.3</td> </tr> <tr><td colspan=\"7\" style=\"padding:8px 12px;font-weight:600;color:#7c3aed;border-bottom:1px solid #e5e7eb;background:#faf5ff\">General Agent</td></tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">BFCL-V4</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">63.1</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">77.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">72.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">67.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">68.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">72.9</td> </tr> <tr> <td style=\"padding:7px",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
-          "reference",
-          "official",
           "chunk:18/44",
-          "source:web",
+          "reference",
+          "domain:ollama.com",
           "qwen3.5",
           "upgrade",
+          "source:web",
+          "official",
           "ollama"
         ]
       },
@@ -2282,13 +2282,13 @@
       "content": "12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">TAU2-Bench</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">87.1</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">91.6</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">85.4</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">84.6</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">77.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">86.7</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">VITA-Bench</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">38.2</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">56.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">51.6</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">40.9</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">41.9</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">49.7</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">DeepPlanning</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">44.6</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">33.9</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">23.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">28.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">14.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">34.3</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
-          "official",
           "reference",
-          "chunk:19/44",
-          "source:web",
+          "domain:ollama.com",
           "qwen3.5",
           "upgrade",
+          "chunk:19/44",
+          "source:web",
+          "official",
           "ollama"
         ]
       },
@@ -2299,13 +2299,13 @@
       "content": "solid #f0f0f0;color:#444\">Tool Decathlon</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">43.8</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">43.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">36.4</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">18.8</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">27.8</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">38.3</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">MCP-Mark</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">57.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">42.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">53.9</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">33.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">29.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">46.1</td> </tr> <tr><td colspan=\"7\" style=\"padding:8px 12px;font-weight:600;color:#7c3aed;border-bottom:1px solid #e5e7eb;background:#faf5ff\">Search Agent\u00b3</td></tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">HLE w/ tool</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">45.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">43.4</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">45.8</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">49.8</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">50.2</td> <td style=\"padding:7px",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
-          "reference",
-          "official",
-          "source:web",
           "chunk:20/44",
+          "reference",
+          "domain:ollama.com",
           "qwen3.5",
           "upgrade",
+          "source:web",
+          "official",
           "ollama"
         ]
       },
@@ -2316,14 +2316,14 @@
       "content": "12px;text-align:center;border-bottom:1px solid #f0f0f0\">48.3</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">BrowseComp</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">65.8</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">67.8</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">59.2</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">53.9</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">--/74.9</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">69.0/78.6</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">BrowseComp-zh</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">76.1</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">62.4</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">66.8</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">60.9</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">--</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">70.3</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">WideSearch</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">76.8</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">76.4</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">68.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">57.9</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">72.7</td> <td style=\"padding:7px",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
           "reference",
-          "official",
-          "source:web",
+          "domain:ollama.com",
           "qwen3.5",
           "upgrade",
-          "ollama",
-          "chunk:21/44"
+          "source:web",
+          "chunk:21/44",
+          "official",
+          "ollama"
         ]
       },
       "links": []
@@ -2333,13 +2333,13 @@
       "content": "12px;text-align:center;border-bottom:1px solid #f0f0f0\">74.0</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">Seal-0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">45.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">47.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">45.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">46.9</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">57.4</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">46.9</td> </tr> <tr><td colspan=\"7\" style=\"padding:8px 12px;font-weight:600;color:#7c3aed;border-bottom:1px solid #e5e7eb;background:#faf5ff\">Multilingualism</td></tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">MMMLU</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">89.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">90.1</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">90.6</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">84.4</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">86.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">88.5</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">MMLU-ProX</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">83.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">85.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">87.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">78.5</td> <td",
       "metadata": {
         "tags": [
-          "qwen3.5",
-          "domain:ollama.com",
           "reference",
-          "official",
-          "source:web",
-          "chunk:22/44",
+          "domain:ollama.com",
+          "qwen3.5",
           "upgrade",
+          "chunk:22/44",
+          "source:web",
+          "official",
           "ollama"
         ]
       },
@@ -2350,13 +2350,13 @@
       "content": "style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">82.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">84.7</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">NOVA-63</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">54.6</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">56.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">56.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">54.2</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">56.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">59.1</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">INCLUDE</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">87.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">86.2</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">90.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">82.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">83.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">85.6</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">Global PIQA</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">90.9</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">91.6</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">93.2</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">86.0</td> <td style=\"padding:7px",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
           "reference",
-          "official",
-          "source:web",
-          "chunk:23/44",
+          "domain:ollama.com",
           "qwen3.5",
           "upgrade",
+          "source:web",
+          "chunk:23/44",
+          "official",
           "ollama"
         ]
       },
@@ -2367,13 +2367,13 @@
       "content": "12px;text-align:center;border-bottom:1px solid #f0f0f0\">89.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">89.8</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">PolyMATH</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">62.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">79.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">81.6</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">64.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">43.1</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">73.3</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">WMT24++</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">78.8</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">79.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">80.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">77.6</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">77.6</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">78.9</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">MAXIFE</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">88.4</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">79.2</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">87.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">84.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
           "reference",
-          "official",
-          "source:web",
-          "chunk:24/44",
+          "domain:ollama.com",
           "qwen3.5",
           "upgrade",
+          "source:web",
+          "official",
+          "chunk:24/44",
           "ollama"
         ]
       },
@@ -2384,13 +2384,13 @@
       "content": "#f0f0f0\">72.8</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">88.2</td> </tr> <tr><td colspan=\"7\" style=\"padding:8px 12px;font-weight:600;color:#7c3aed;border-bottom:1px solid #e5e7eb;background:#faf5ff\">Coding Agent</td></tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">SWE-bench Verified</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">80.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">80.9</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">76.2</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">75.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">76.8</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">76.2</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">SWE-bench Multilingual</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">72.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">77.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">65.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">66.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">73.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">69.3</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">SecCodeBench</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">68.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">68.6</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">62.4</td> <td style=\"padding:7px",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
           "reference",
-          "official",
           "chunk:25/44",
-          "source:web",
           "qwen3.5",
+          "domain:ollama.com",
           "upgrade",
+          "source:web",
+          "official",
           "ollama"
         ]
       },
@@ -2401,13 +2401,13 @@
       "content": "12px;text-align:center;border-bottom:1px solid #f0f0f0\">57.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">61.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">68.3</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">Terminal Bench 2</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">54.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">59.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">54.2</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">22.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">50.8</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">52.5</td> </tr> </tbody> </table>",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
           "reference",
-          "official",
-          "source:web",
-          "chunk:26/44",
+          "domain:ollama.com",
           "qwen3.5",
           "upgrade",
+          "source:web",
+          "chunk:26/44",
+          "official",
           "ollama"
         ]
       },
@@ -2418,13 +2418,13 @@
       "content": "<p style=\"margin-top:12px;font-size:11px;color:#888\">\n* HLE-Verified: a verified and revised version of Humanity\u2019s Last Exam (HLE), accompanied by a transparent, component-wise verification protocol and a fine-grained error taxonomy. We open-source the dataset at https://huggingface.co/datasets/skylenage/HLE-Verified.<br>\n* TAU2-Bench: we follow the official setup except for the airline domain, where all models are evaluated by applying the fixes proposed in the Claude Opus 4.5 system card.<br>\n* MCPMark: GitHub MCP server uses v0.30.3 from api.githubcopilot.com; Playwright tool responses are truncated at 32k tokens.<br>\n* Search Agent: most search agents built on our model adopt a simple context-folding strategy(256k): once the cumulative Tool Response length reaches a preset threshold, earlier Tool Responses are pruned from the history to keep the context within limits.<br>\n* BrowseComp: we tested two strategies, simple context-folding achieved a score of 69.0, while using the same discard-all strategy as DeepSeek-V3.2 and Kimi K2.5 achieved 78.6.<br>\n* WideSearch: we use a 256k context window without any context management.<br>\n* MMLU-ProX: we report the averaged accuracy on 29 languages.<br>\n* WMT24++: a harder subset of WMT24 after difficulty labeling and rebalancing; we report the averaged scores on 55 languages using XCOMET-XXL.<br>\n* MAXIFE: we report the accuracy on English + multilingual original prompts (totally 23 settings).<br>\n* Empty cells (--) indicate scores not yet available or not applicable.<br>\n</p>\n\n</div>\n\n### Vision Language",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
           "reference",
-          "official",
-          "source:web",
+          "domain:ollama.com",
           "qwen3.5",
-          "chunk:27/44",
           "upgrade",
+          "chunk:27/44",
+          "source:web",
+          "official",
           "ollama"
         ]
       },
@@ -2435,13 +2435,13 @@
       "content": "<div style=\"font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#1a1a2e;max-width:900px;margin:0 auto;padding:16px 0\"> <table style=\"width:100%;border-collapse:collapse;font-size:13px\"> <thead><tr> <th style=\"padding:10px 12px;text-align:left;font-weight:600;border-bottom:2px solid #7c3aed;color:#4c1d95\"></th> <th style=\"padding:10px 12px;text-align:center;font-weight:500;border-bottom:2px solid #7c3aed;color:#4c1d95;font-size: 14px;\">GPT5.2</th> <th style=\"padding:10px 12px;text-align:center;font-weight:500;border-bottom:2px solid #7c3aed;color:#4c1d95;font-size: 14px;\">Claude 4.5 Opus</th> <th style=\"padding:10px 12px;text-align:center;font-weight:500;border-bottom:2px solid #7c3aed;color:#4c1d95;font-size: 14px;\">Gemini-3 Pro</th> <th style=\"padding:10px 12px;text-align:center;font-weight:500;border-bottom:2px solid #7c3aed;color:#4c1d95;font-size: 14px;\">Qwen3-VL-235B-A22B</th> <th style=\"padding:10px 12px;text-align:center;font-weight:500;border-bottom:2px solid #7c3aed;color:#4c1d95;font-size: 14px;\">K2.5-1T-A32B</th> <th style=\"padding:10px 12px;text-align:center;font-weight:500;border-bottom:2px solid #7c3aed;color:#4c1d95;font-size: 14px;\">Qwen3.5-397B-A17B</th> </tr></thead> <tbody> <tr><td colspan=\"7\" style=\"padding:8px 12px;font-weight:600;color:#7c3aed;border-bottom:1px solid #e5e7eb;background:#faf5ff\">STEM and Puzzle</td></tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">MMMU</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">86.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">80.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">87.2</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">80.6</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">84.3</td> <td style=\"padding:7px",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
-          "reference",
-          "official",
-          "source:web",
           "chunk:28/44",
+          "reference",
+          "domain:ollama.com",
           "qwen3.5",
           "upgrade",
+          "source:web",
+          "official",
           "ollama"
         ]
       },
@@ -2452,13 +2452,13 @@
       "content": "12px;text-align:center;border-bottom:1px solid #f0f0f0\">85.0</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">MMMU-Pro</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">79.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">70.6</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">81.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">69.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">78.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">79.0</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">MathVision</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">83.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">74.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">86.6</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">74.6</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">84.2</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">88.6</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">Mathvista(mini)</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">83.1</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">80.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">87.9</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">85.8</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">90.1</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
-          "reference",
-          "official",
-          "source:web",
           "chunk:29/44",
+          "reference",
+          "domain:ollama.com",
           "qwen3.5",
           "upgrade",
+          "source:web",
+          "official",
           "ollama"
         ]
       },
@@ -2469,13 +2469,13 @@
       "content": "solid #f0f0f0\">90.3</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">We-Math</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">79.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">70.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">86.9</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">74.8</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">84.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">87.9</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">DynaMath</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">86.8</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">79.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">85.1</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">82.8</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">84.4</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">86.3</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">ZEROBench</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">9</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">10</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">4</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">9</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">12</td> </tr> <tr> <td style=\"padding:7px",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
           "reference",
-          "official",
-          "chunk:30/44",
-          "source:web",
+          "domain:ollama.com",
           "qwen3.5",
+          "chunk:30/44",
           "upgrade",
+          "source:web",
+          "official",
           "ollama"
         ]
       },
@@ -2486,13 +2486,13 @@
       "content": "12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">ZEROBench_sub</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">33.2</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">28.4</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">39.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">28.4</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">33.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">41.0</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">BabyVision</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">34.4</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">14.2</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">49.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">22.2</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">36.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">52.3/43.3</td> </tr> <tr><td colspan=\"7\" style=\"padding:8px 12px;font-weight:600;color:#7c3aed;border-bottom:1px solid #e5e7eb;background:#faf5ff\">General VQA</td></tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">RealWorldQA</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">83.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">77.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">83.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">81.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">81.0</td> <td",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
           "reference",
-          "official",
-          "source:web",
-          "chunk:31/44",
+          "domain:ollama.com",
           "qwen3.5",
           "upgrade",
+          "source:web",
+          "chunk:31/44",
+          "official",
           "ollama"
         ]
       },
@@ -2503,13 +2503,13 @@
       "content": "style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">83.9</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">MMStar</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">77.1</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">73.2</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">83.1</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">78.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">80.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">83.8</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">HallusionBench</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">65.2</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">64.1</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">68.6</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">66.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">69.8</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">71.4</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">MMBench<sub><small>EN-DEV-v1.1</small></sub></td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">88.2</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">89.2</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">93.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">89.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">94.2</td> <td",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
           "reference",
-          "official",
-          "source:web",
+          "domain:ollama.com",
           "qwen3.5",
-          "chunk:32/44",
           "upgrade",
+          "source:web",
+          "chunk:32/44",
+          "official",
           "ollama"
         ]
       },
@@ -2520,13 +2520,13 @@
       "content": "style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">93.7</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">SimpleVQA</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">55.8</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">65.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">73.2</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">61.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">71.2</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">67.1</td> </tr> <tr><td colspan=\"7\" style=\"padding:8px 12px;font-weight:600;color:#7c3aed;border-bottom:1px solid #e5e7eb;background:#faf5ff\">Text Recognition and Document Understanding</td></tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">OmniDocBench1.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">85.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">87.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">88.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">84.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">88.8</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">90.8</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">CharXiv(RQ)</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">82.1</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">68.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">81.4</td> <td style=\"padding:7px",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
           "reference",
-          "official",
-          "source:web",
+          "domain:ollama.com",
           "qwen3.5",
-          "upgrade",
           "chunk:33/44",
+          "upgrade",
+          "source:web",
+          "official",
           "ollama"
         ]
       },
@@ -2537,13 +2537,13 @@
       "content": "12px;text-align:center;border-bottom:1px solid #f0f0f0\">66.1</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">77.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">80.8</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">MMLongBench-Doc</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">--</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">61.9</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">60.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">56.2</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">58.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">61.5</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">CC-OCR</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">70.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">76.9</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">79.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">81.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">79.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">82.0</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">AI2D_TEST</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">92.2</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">87.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">94.1</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
           "reference",
-          "official",
-          "source:web",
-          "chunk:34/44",
+          "domain:ollama.com",
           "qwen3.5",
           "upgrade",
+          "source:web",
+          "chunk:34/44",
+          "official",
           "ollama"
         ]
       },
@@ -2554,13 +2554,13 @@
       "content": "#f0f0f0\">89.2</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">90.8</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">93.9</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">OCRBench</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">80.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">85.8</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">90.4</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">87.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">92.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">93.1</td> </tr> <tr><td colspan=\"7\" style=\"padding:8px 12px;font-weight:600;color:#7c3aed;border-bottom:1px solid #e5e7eb;background:#faf5ff\">Spatial Intelligence</td></tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">ERQA</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">59.8</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">46.8</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">70.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">52.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">--</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">67.5</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">CountBench</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">91.9</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">90.6</td> <td style=\"padding:7px",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
           "reference",
-          "official",
-          "source:web",
-          "chunk:35/44",
+          "domain:ollama.com",
           "qwen3.5",
           "upgrade",
+          "chunk:35/44",
+          "source:web",
+          "official",
           "ollama"
         ]
       },
@@ -2571,13 +2571,13 @@
       "content": "12px;text-align:center;border-bottom:1px solid #f0f0f0\">97.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">93.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">94.1</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">97.2</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">RefCOCO(avg)</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">--</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">--</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">84.1</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">91.1</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">87.8</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">92.3</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">ODInW13</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">--</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">--</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">46.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">43.2</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">--</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">47.0</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">EmbSpatialBench</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">81.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">75.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
           "reference",
-          "official",
-          "source:web",
+          "chunk:36/44",
+          "domain:ollama.com",
           "qwen3.5",
           "upgrade",
-          "chunk:36/44",
+          "source:web",
+          "official",
           "ollama"
         ]
       },
@@ -2588,13 +2588,13 @@
       "content": "#f0f0f0\">61.2</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">84.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">77.4</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">84.5</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">RefSpatialBench</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">--</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">--</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">65.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">69.9</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">--</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">73.6</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">LingoQA</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">68.8</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">78.8</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">72.8</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">66.8</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">68.2</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">81.6</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">V*</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">75.9</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">67.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">88.0</td> <td style=\"padding:7px",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
-          "reference",
-          "official",
-          "source:web",
           "chunk:37/44",
+          "reference",
+          "domain:ollama.com",
           "qwen3.5",
           "upgrade",
+          "source:web",
+          "official",
           "ollama"
         ]
       },
@@ -2605,13 +2605,13 @@
       "content": "12px;text-align:center;border-bottom:1px solid #f0f0f0\">85.9</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">77.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">95.8/91.1</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">Hypersim</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">--</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">--</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">--</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">11.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">--</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">12.5</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">SUNRGBD</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">--</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">--</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">--</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">34.9</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">--</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">38.3</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">Nuscene</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">--</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">--</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">--</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">13.9</td> <td",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
           "reference",
-          "official",
           "chunk:38/44",
-          "source:web",
+          "domain:ollama.com",
           "qwen3.5",
           "upgrade",
+          "source:web",
+          "official",
           "ollama"
         ]
       },
@@ -2622,12 +2622,12 @@
       "content": "style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">--</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">16.0</td> </tr> <tr><td colspan=\"7\" style=\"padding:8px 12px;font-weight:600;color:#7c3aed;border-bottom:1px solid #e5e7eb;background:#faf5ff\">Video Understanding</td></tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">VideoMME<sub><small>(w sub.)</sub></small></td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">86</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">77.6</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">88.4</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">83.8</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">87.4</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">87.5</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">VideoMME<sub><small>(w/o sub.)</sub></small></td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">85.8</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">81.4</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">87.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">79.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">83.2</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">83.7</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">VideoMMMU</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">85.9</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">84.4</td> <td",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
           "reference",
-          "official",
-          "source:web",
+          "domain:ollama.com",
           "qwen3.5",
           "upgrade",
+          "source:web",
+          "official",
           "chunk:39/44",
           "ollama"
         ]
@@ -2639,13 +2639,13 @@
       "content": "style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">87.6</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">80.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">86.6</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">84.7</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">MLVU (M-Avg)</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">85.6</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">81.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">83.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">83.8</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">85.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">86.7</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">MVBench</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">78.1</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">67.2</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">74.1</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">75.2</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">73.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">77.6</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">LVBench</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">73.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">57.3</td> <td style=\"padding:7px",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
           "reference",
-          "official",
-          "chunk:40/44",
-          "source:web",
+          "domain:ollama.com",
           "qwen3.5",
           "upgrade",
+          "source:web",
+          "official",
+          "chunk:40/44",
           "ollama"
         ]
       },
@@ -2656,13 +2656,13 @@
       "content": "12px;text-align:center;border-bottom:1px solid #f0f0f0\">76.2</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">63.6</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">75.9</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">75.5</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">MMVU</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">80.8</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">77.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">77.5</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">71.1</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">80.4</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">75.4</td> </tr> <tr><td colspan=\"7\" style=\"padding:8px 12px;font-weight:600;color:#7c3aed;border-bottom:1px solid #e5e7eb;background:#faf5ff\">Visual Agent</td></tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">ScreenSpot Pro</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">--</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">45.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">72.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">62.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">--</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">65.6</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">OSWorld-Verified</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">38.2</td> <td",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
           "reference",
           "chunk:41/44",
-          "official",
-          "source:web",
+          "domain:ollama.com",
           "qwen3.5",
           "upgrade",
+          "source:web",
+          "official",
           "ollama"
         ]
       },
@@ -2673,13 +2673,13 @@
       "content": "style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">66.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">--</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">38.1</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">63.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">62.2</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">AndroidWorld</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">--</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">--</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">--</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">63.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">--</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">66.8</td> </tr> <tr><td colspan=\"7\" style=\"padding:8px 12px;font-weight:600;color:#7c3aed;border-bottom:1px solid #e5e7eb;background:#faf5ff\">Medical VQA</td></tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">SLAKE</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">76.9</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">76.4</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">81.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">54.7</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">81.6</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">79.9</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">PMC-VQA</td> <td",
       "metadata": {
         "tags": [
-          "qwen3.5",
-          "domain:ollama.com",
           "reference",
-          "official",
+          "domain:ollama.com",
+          "qwen3.5",
+          "upgrade",
           "source:web",
           "chunk:42/44",
-          "upgrade",
+          "official",
           "ollama"
         ]
       },
@@ -2690,13 +2690,13 @@
       "content": "style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">58.9</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">59.9</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">62.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">41.2</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">63.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">64.2</td> </tr> <tr> <td style=\"padding:7px 12px;padding-left:20px;border-bottom:1px solid #f0f0f0;color:#444\">MedXpertQA-MM</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">73.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">63.6</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">76.0</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">47.6</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">65.3</td> <td style=\"padding:7px 12px;text-align:center;border-bottom:1px solid #f0f0f0\">70.0</td> </tr> </tbody> </table> <p style=\"margin-top:12px;font-size:11px;color:#888\">\n* MathVision\uff1aour model\u2019s score is evaluated using a fixed prompt, e.g., \u201cPlease reason step by step, and put your final answer within \\boxed{}.\u201d For other models, we report the higher score between runs with and without the \\boxed{} formatting.<br>\n* BabyVision: our model\u2019s score is reported with CI (Code Interpreter) enabled; without CI, the result is 43.3.<br>\n* V*: our model\u2019s score is reported with CI (Code Interpreter) enabled; without CI, the result is 91.1.<br>\n* Empty cells (--) indicate scores not yet available or not applicable.<br>\n</p>\n\n</div>\n            \n              \n                Paste, drop or click to upload images (.png, .jpeg, .jpg, .svg, .gif)",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
           "reference",
-          "official",
           "chunk:43/44",
-          "source:web",
+          "domain:ollama.com",
           "qwen3.5",
           "upgrade",
+          "source:web",
+          "official",
           "ollama"
         ]
       },
@@ -2707,14 +2707,14 @@
       "content": "\u00a9 2026 Ollama\n\n      \n        Download\n        Blog\n        Docs\n        GitHub\n        Discord\n        X (Twitter)\n        Contact\n      \n\n    \n\n  \n\n  \n    \n      \t\n          Blog\n        \n\t\n          Download\n        \n\t\n          Docs\n        \n\n\n      \t\n          GitHub\n        \n\t\n          Discord\n        \n\t\n          X (Twitter)\n        \n\t\n          Meetups\n        \n\n\n      \n        \u00a9 2026 Ollama Inc.",
       "metadata": {
         "tags": [
-          "domain:ollama.com",
           "reference",
-          "official",
-          "source:web",
-          "chunk:44/44",
+          "domain:ollama.com",
           "qwen3.5",
           "upgrade",
-          "ollama"
+          "source:web",
+          "official",
+          "ollama",
+          "chunk:44/44"
         ]
       },
       "links": []
