@@ -136,7 +136,11 @@ def test_build_word_forge_lexicon_uses_router(tmp_path: Path, monkeypatch) -> No
         simhash="0000000000000001",
     )
 
-    monkeypatch.setattr(wf_router, "wf_build_lexicon_from_text", lambda text, thinking_mode="on": json.dumps({"status": "success", "nodes_added": 2, "edges_added": 1}))
+    monkeypatch.setattr(
+        wf_router,
+        "wf_build_lexicon_from_text",
+        lambda text, thinking_mode="on": json.dumps({"status": "success", "nodes_added": 2, "edges_added": 1}),
+    )
     monkeypatch.setattr(wf_router, "wf_graph_stats", lambda: json.dumps({"nodes": 2, "edges": 1}))
 
     result = pipeline.build_word_forge_lexicon([record], repo_root=tmp_path, thinking_mode="on")
@@ -229,7 +233,9 @@ def test_generate_living_documentation_uses_central_qwen_config(tmp_path: Path, 
     assert '"word_forge": {' in captured["prompt"]
 
 
-def test_generate_living_documentation_retries_without_thinking_when_no_final_response(tmp_path: Path, monkeypatch) -> None:
+def test_generate_living_documentation_retries_without_thinking_when_no_final_response(
+    tmp_path: Path, monkeypatch
+) -> None:
     run_root = tmp_path / "run"
     run_root.mkdir(parents=True, exist_ok=True)
     seen_modes: list[str] = []
@@ -288,12 +294,20 @@ def test_run_pipeline_includes_living_documentation_manifest(tmp_path: Path, mon
     monkeypatch.setattr(pipeline, "RUNTIME_DIR", runtime_dir)
     monkeypatch.setattr(pipeline, "PIPELINE_STATUS_PATH", runtime_dir / "living_pipeline_status.json")
 
-    monkeypatch.setattr(pipeline, "run_code_analysis", lambda *args, **kwargs: {"run_stats": {}, "total_units": 0, "duplicate_group_count": 0})
+    monkeypatch.setattr(
+        pipeline,
+        "run_code_analysis",
+        lambda *args, **kwargs: {"run_stats": {}, "total_units": 0, "duplicate_group_count": 0},
+    )
     monkeypatch.setattr(pipeline, "stage_repo_text_documents", lambda *args, **kwargs: [])
     monkeypatch.setattr(pipeline, "stage_memory_and_kb_documents", lambda *args, **kwargs: [])
     monkeypatch.setattr(pipeline, "group_exact_duplicates", lambda records: [])
     monkeypatch.setattr(pipeline, "detect_near_duplicates", lambda records: [])
-    monkeypatch.setattr(pipeline, "compare_with_previous_run", lambda *args, **kwargs: {"added_count": 0, "removed_count": 0, "changed_count": 0})
+    monkeypatch.setattr(
+        pipeline,
+        "compare_with_previous_run",
+        lambda *args, **kwargs: {"added_count": 0, "removed_count": 0, "changed_count": 0},
+    )
     monkeypatch.setattr(
         pipeline,
         "generate_living_documentation",
@@ -376,12 +390,20 @@ def test_run_pipeline_degrades_phase_models_when_coordinator_denies_budget(tmp_p
             return kwargs
 
     monkeypatch.setattr(pipeline, "ForgeRuntimeCoordinator", FakeCoordinator)
-    monkeypatch.setattr(pipeline, "run_code_analysis", lambda *args, **kwargs: {"run_stats": {}, "total_units": 0, "duplicate_group_count": 0})
+    monkeypatch.setattr(
+        pipeline,
+        "run_code_analysis",
+        lambda *args, **kwargs: {"run_stats": {}, "total_units": 0, "duplicate_group_count": 0},
+    )
     monkeypatch.setattr(pipeline, "stage_repo_text_documents", lambda *args, **kwargs: [])
     monkeypatch.setattr(pipeline, "stage_memory_and_kb_documents", lambda *args, **kwargs: [])
     monkeypatch.setattr(pipeline, "group_exact_duplicates", lambda records: [])
     monkeypatch.setattr(pipeline, "detect_near_duplicates", lambda records: [])
-    monkeypatch.setattr(pipeline, "compare_with_previous_run", lambda *args, **kwargs: {"added_count": 0, "removed_count": 0, "changed_count": 0})
+    monkeypatch.setattr(
+        pipeline,
+        "compare_with_previous_run",
+        lambda *args, **kwargs: {"added_count": 0, "removed_count": 0, "changed_count": 0},
+    )
 
     captured: dict[str, object] = {}
 

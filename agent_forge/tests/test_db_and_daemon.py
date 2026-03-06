@@ -1,7 +1,7 @@
+import json
 import sqlite3
 import subprocess
 import sys
-import json
 from pathlib import Path
 
 from core import db as DB
@@ -46,8 +46,18 @@ def test_eidosd_once(tmp_path: Path):
             {
                 "contract": "eidos.runtime_trends.v1",
                 "entries": [
-                    {"task": "word_forge", "state": "running", "active_model_count": 1, "policy": {"max_active_model_instances": 2}},
-                    {"task": "sleep", "state": "idle", "active_model_count": 0, "policy": {"max_active_model_instances": 2}},
+                    {
+                        "task": "word_forge",
+                        "state": "running",
+                        "active_model_count": 1,
+                        "policy": {"max_active_model_instances": 2},
+                    },
+                    {
+                        "task": "sleep",
+                        "state": "idle",
+                        "active_model_count": 0,
+                        "policy": {"max_active_model_instances": 2},
+                    },
                 ],
             }
         ),
