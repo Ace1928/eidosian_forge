@@ -4,17 +4,34 @@ from eidosian_core import eidosian
 Agent Capabilities (Tools).
 Integration with other Forges.
 """
+import os
 from pathlib import Path
 from typing import Any, Callable, Dict
 
 from code_forge.analyzer.python_analyzer import CodeAnalyzer
 from code_forge.librarian.core import CodeLibrarian
+from code_forge.library.db import CodeLibraryDB
+
+
+def _forge_root() -> Path:
+    raw = os.environ.get("EIDOS_FORGE_DIR")
+    if raw:
+        return Path(raw).expanduser().resolve()
+    return Path(__file__).resolve().parents[4]
 
 
 class Capabilities:
-    def __init__(self):
+    def __init__(
+        self,
+        *,
+        repo_root: str | Path | None = None,
+        library_db: CodeLibraryDB | None = None,
+        librarian: CodeLibrarian | None = None,
+    ):
+        self.repo_root = Path(repo_root).expanduser().resolve() if repo_root is not None else _forge_root()
         self.code_analyzer = CodeAnalyzer()
-        self.librarian = CodeLibrarian(Path("./data/code_lib.json"))
+        self.library_db = library_db or CodeLibraryDB(self.repo_root / "data" / "code_forge" / "library.sqlite")
+        self.librarian = librarian or CodeLibrarian(self.repo_root / "data" / "code_lib.json")
 
     @eidosian()
     def analyze_code(self, file_path: str) -> Dict[str, Any]:
@@ -24,8 +41,19 @@ class Capabilities:
         return self.code_analyzer.analyze_file(p)
 
     @eidosian()
-    def search_code(self, query: str) -> list:
-        return self.librarian.search(query)
+    def search_code(self, query: str, *, limit: int = 10, backend: str = "hybrid") -> list:
+        text = str(query or "").strip()
+        if not text:
+            return []
+        try:
+            return self.library_db.semantic_search(
+                text,
+                limit=max(1, int(limit)),
+                backend=str(backend or "hybrid"),
+                min_score=0.01,
+            )
+        except Exception:
+            return self.librarian.search(text)[: max(1, int(limit))]
 
     @eidosian()
     def get_tool_map(self) -> Dict[str, Callable]:
