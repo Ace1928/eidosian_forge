@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 
 {% block title %}Dashboard | Eidosian Atlas{% endblock %}
@@ -15,20 +14,28 @@
         margin-bottom: 20px;
         padding: 12px;
         border: 1px solid var(--border);
-        border-radius: 8px;
-        background: linear-gradient(90deg, rgba(92,200,255,0.08), rgba(22,39,51,0.8));
+        border-radius: 10px;
+        background: linear-gradient(90deg, rgba(92,200,255,0.10), rgba(18,35,46,0.92));
         backdrop-filter: blur(2px);
     }
-    .live-item {
-        font-size: 0.85rem;
-        color: var(--text-secondary);
+    .live-item { font-size: 0.85rem; color: var(--text-secondary); }
+    .live-item strong { display: block; color: var(--text-primary); font-size: 1rem; margin-top: 2px; }
+    .subgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+    .mini-stat { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .mini-stat:last-child { border-bottom: 0; }
+    .mini-stat span { color: var(--text-secondary); }
+    .mini-stat strong { color: var(--text-primary); }
+    .search-shell { display: grid; grid-template-columns: minmax(180px, 220px) 1fr auto; gap: 10px; align-items: center; margin-bottom: 12px; }
+    .search-shell input {
+        width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border);
+        background: #0d161f; color: var(--text-primary);
     }
-    .live-item strong {
-        display: block;
-        color: var(--text-primary);
-        font-size: 1rem;
-        margin-top: 2px;
+    .search-shell button {
+        padding: 10px 14px; border-radius: 8px; border: 1px solid var(--accent); background: transparent; color: var(--accent); cursor: pointer;
     }
+    .search-results { min-height: 80px; background: #0d161f; border: 1px solid var(--border); border-radius: 8px; padding: 12px; white-space: pre-wrap; }
+    .chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .chip { padding: 4px 10px; border: 1px solid var(--border); border-radius: 999px; color: var(--text-secondary); font-size: 0.82rem; }
 </style>
 {% endblock %}
 
@@ -39,8 +46,8 @@
     <div class="live-item">Remaining<strong id="live-remaining">{{ doc_status.get('remaining', 0) }}</strong></div>
     <div class="live-item">Avg Score<strong id="live-score">{{ "%.3f"|format(doc_status.get('average_quality_score', 0.0)) }}</strong></div>
     <div class="live-item">Avg Seconds/Doc<strong id="live-avg-sec">{{ "%.2f"|format(doc_status.get('average_seconds_per_document', 0.0)) }}</strong></div>
-    <div class="live-item">ETA (s)<strong id="live-eta">{{ doc_status.get('eta_seconds', 'n/a') }}</strong></div>
-    <div class="live-item">Last Approved<strong id="live-approved">{{ doc_status.get('last_approved', 'n/a') }}</strong></div>
+    <div class="live-item">ETA (s)<strong id="live-eta">{{ forge_overview.pipeline.pipeline.get('eta_seconds', doc_status.get('eta_seconds', 'n/a')) }}</strong></div>
+    <div class="live-item">Pipeline<strong id="live-phase">{{ forge_overview.pipeline.pipeline.get('phase', 'idle') }}</strong></div>
     <div class="live-item">Indexed Docs<strong id="live-indexed">{{ doc_index_count }}</strong></div>
 </div>
 
@@ -56,66 +63,180 @@
         <div class="stat-label">{{ sys_stats.get('ram_used_gb', 0) }} / {{ sys_stats.get('ram_total_gb', 0) }} GB</div>
     </div>
     <div class="card">
-        <h3>Disk Usage</h3>
-        <div class="stat-value">{{ sys_stats.get('disk_percent', 0) }}%</div>
-        <div class="stat-label">{{ sys_stats.get('disk_free_gb', 0) }} GB Free</div>
+        <h3>Knowledge Graph</h3>
+        <div class="stat-value">{{ forge_overview.knowledge.get('node_count', 0) }}</div>
+        <div class="stat-label">Nodes</div>
     </div>
     <div class="card">
-        <h3>Forge Status</h3>
-        <div class="stat-value">{{ forge_status.get('doc_forge', 'unknown')|upper }}</div>
-        <div class="stat-label">Doc Forge</div>
+        <h3>Code Library</h3>
+        <div class="stat-value">{{ forge_overview.code_forge.get('total_units', 0) }}</div>
+        <div class="stat-label">Indexed Units</div>
     </div>
 </div>
 
-<div class="card">
-    <h3>Recent Documents</h3>
-    {% if recent_docs %}
-    <table>
-        <thead>
-            <tr>
-                <th>Source</th>
-                <th>Score</th>
-                <th>Type</th>
-                <th>Updated</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for doc in recent_docs %}
-            <tr>
-                <td><a href="/browse/{{ doc.get('document', '') }}">{{ doc.get('source', 'Unknown') }}</a></td>
-                <td>{{ "%.2f"|format(doc.get('score', 0)) }}</td>
-                <td>{{ doc.get('doc_type', 'unknown') }}</td>
-                <td>{{ doc.get('updated_at', '')[:16].replace('T', ' ') }}</td>
-            </tr>
+<div class="subgrid">
+    <div class="card">
+        <h3>Scheduler</h3>
+        <div class="mini-stat"><span>State</span><strong>{{ forge_overview.pipeline.scheduler.get('state', 'unknown') }}</strong></div>
+        <div class="mini-stat"><span>Current Task</span><strong>{{ forge_overview.pipeline.scheduler.get('current_task', 'n/a') }}</strong></div>
+        <div class="mini-stat"><span>Cycle</span><strong>{{ forge_overview.pipeline.scheduler.get('cycle', 0) }}</strong></div>
+        <div class="mini-stat"><span>Failures</span><strong>{{ forge_overview.pipeline.scheduler.get('consecutive_failures', 0) }}</strong></div>
+    </div>
+    <div class="card">
+        <h3>Living Pipeline</h3>
+        <div class="mini-stat"><span>Phase</span><strong>{{ forge_overview.pipeline.pipeline.get('phase', 'unknown') }}</strong></div>
+        <div class="mini-stat"><span>Elapsed</span><strong>{{ forge_overview.pipeline.pipeline.get('elapsed_seconds', 'n/a') }}</strong></div>
+        <div class="mini-stat"><span>Records</span><strong>{{ forge_overview.pipeline.pipeline.get('records_total', 0) }}</strong></div>
+        <div class="mini-stat"><span>ETA</span><strong>{{ forge_overview.pipeline.pipeline.get('eta_seconds', 'n/a') }}</strong></div>
+    </div>
+    <div class="card">
+        <h3>Lexicon</h3>
+        <div class="mini-stat"><span>Terms</span><strong>{{ forge_overview.word_forge.get('term_count', 0) }}</strong></div>
+        <div class="mini-stat"><span>Edges</span><strong>{{ forge_overview.word_forge.get('edge_count', 0) }}</strong></div>
+        <div class="chip-row">
+            {% for item in forge_overview.word_forge.get('sample_terms', [])[:5] %}
+            <div class="chip">{{ item.get('term', '') }}</div>
             {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-    <p>No recent documents found or index unavailable.</p>
-    {% endif %}
+        </div>
+    </div>
+    <div class="card">
+        <h3>GraphRAG Assessment</h3>
+        <div class="mini-stat"><span>Status</span><strong>{{ forge_overview.knowledge.get('assessment_summary', {}).get('status', 'unknown') }}</strong></div>
+        <div class="mini-stat"><span>Score</span><strong>{{ forge_overview.knowledge.get('assessment_summary', {}).get('score', 'n/a') }}</strong></div>
+        <div class="mini-stat"><span>Weak Communities</span><strong>{{ forge_overview.knowledge.get('assessment_summary', {}).get('weak_community_labels', [])|length }}</strong></div>
+        <div class="mini-stat"><span>Top Community</span><strong>{{ forge_overview.knowledge.get('report_summary', {}).get('top_community', 'n/a') }}</strong></div>
+    </div>
+</div>
+
+<div class="subgrid">
+    <div class="card">
+        <h3>Knowledge Search</h3>
+        <div class="search-shell">
+            <input id="graph-query" placeholder="Search knowledge graph" value="autonomy" />
+            <div></div>
+            <button onclick="runGraphSearch()">Search</button>
+        </div>
+        <div id="graph-results" class="search-results">Waiting for query.</div>
+    </div>
+    <div class="card">
+        <h3>Lexicon Search</h3>
+        <div class="search-shell">
+            <input id="lexicon-query" placeholder="Search lexicon" value="vector" />
+            <div></div>
+            <button onclick="runLexiconSearch()">Search</button>
+        </div>
+        <div id="lexicon-results" class="search-results">Waiting for query.</div>
+    </div>
+</div>
+
+<div class="subgrid">
+    <div class="card">
+        <h3>Code Search</h3>
+        <div class="search-shell">
+            <input id="code-query" placeholder="Search code library" value="graph" />
+            <div></div>
+            <button onclick="runCodeSearch()">Search</button>
+        </div>
+        <div id="code-results" class="search-results">Waiting for query.</div>
+    </div>
+    <div class="card">
+        <h3>Recent Documents</h3>
+        {% if recent_docs %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Source</th>
+                    <th>Score</th>
+                    <th>Type</th>
+                    <th>Updated</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for doc in recent_docs %}
+                <tr>
+                    <td><a href="/browse/{{ doc.get('document', '') }}">{{ doc.get('source', 'Unknown') }}</a></td>
+                    <td>{{ "%.2f"|format(doc.get('score', 0)) }}</td>
+                    <td>{{ doc.get('doc_type', 'unknown') }}</td>
+                    <td>{{ doc.get('updated_at', '')[:16].replace('T', ' ') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No recent documents found or index unavailable.</p>
+        {% endif %}
+    </div>
 </div>
 
 <script>
 async function refreshDocStatus() {
     try {
-        const res = await fetch("/api/doc/status", {cache: "no-store"});
+        const res = await fetch('/api/runtime/forge', {cache: 'no-store'});
         if (!res.ok) return;
         const data = await res.json();
-        const status = data.status || {};
-        document.getElementById("live-model").textContent = status.model || "n/a";
-        document.getElementById("live-processed").textContent = status.processed ?? 0;
-        document.getElementById("live-remaining").textContent = status.remaining ?? 0;
-        const score = Number(status.average_quality_score ?? 0);
-        document.getElementById("live-score").textContent = score.toFixed(3);
-        const avgSec = Number(status.average_seconds_per_document ?? 0);
-        document.getElementById("live-avg-sec").textContent = avgSec.toFixed(2);
-        document.getElementById("live-eta").textContent = status.eta_seconds ?? "n/a";
-        document.getElementById("live-approved").textContent = status.last_approved || "n/a";
-        document.getElementById("live-indexed").textContent = data.index_count ?? 0;
+        const doc = (data.documents || {}).status || {};
+        const pipeline = (data.pipeline || {}).pipeline || {};
+        document.getElementById('live-model').textContent = doc.model || 'n/a';
+        document.getElementById('live-processed').textContent = doc.processed ?? 0;
+        document.getElementById('live-remaining').textContent = doc.remaining ?? 0;
+        document.getElementById('live-score').textContent = Number(doc.average_quality_score ?? 0).toFixed(3);
+        document.getElementById('live-avg-sec').textContent = Number(doc.average_seconds_per_document ?? 0).toFixed(2);
+        document.getElementById('live-eta').textContent = pipeline.eta_seconds ?? doc.eta_seconds ?? 'n/a';
+        document.getElementById('live-phase').textContent = pipeline.phase || 'idle';
+        document.getElementById('live-indexed').textContent = (data.documents || {}).index_count ?? 0;
     } catch (err) {
-        // Keep existing values on fetch errors.
     }
 }
+
+async function runGraphSearch() {
+    const query = document.getElementById('graph-query').value.trim();
+    const box = document.getElementById('graph-results');
+    box.textContent = 'Searching...';
+    try {
+        const res = await fetch(`/api/graph/search?query=${encodeURIComponent(query)}`);
+        const data = await res.json();
+        const lines = (data.results || []).map((row) => `- ${row.id}: ${row.content}`);
+        box.textContent = lines.length ? lines.join('\n') : 'No results.';
+    } catch (err) {
+        box.textContent = 'Search failed.';
+    }
+}
+
+async function runLexiconSearch() {
+    const query = document.getElementById('lexicon-query').value.trim();
+    const box = document.getElementById('lexicon-results');
+    box.textContent = 'Searching...';
+    try {
+        const res = await fetch(`/api/lexicon/search?query=${encodeURIComponent(query)}`);
+        const data = await res.json();
+        const lines = (data.terms || []).map((row) => `- ${row.id || row.term || 'term'}: ${row.definition || ''}`);
+        box.textContent = lines.length ? lines.join('\n') : 'No results.';
+    } catch (err) {
+        box.textContent = 'Search failed.';
+    }
+}
+
+async function runCodeSearch() {
+    const query = document.getElementById('code-query').value.trim();
+    const box = document.getElementById('code-results');
+    box.textContent = 'Searching...';
+    try {
+        const res = await fetch(`/api/code/search?query=${encodeURIComponent(query)}`);
+        const data = await res.json();
+        const rows = data.results || [];
+        const lines = rows.map((row) => `- ${row.qualified_name || row.name} [${row.unit_type}] ${row.file_path}\n  ${row.search_preview || ''}`);
+        box.textContent = lines.length ? lines.join('\n') : 'No results.';
+    } catch (err) {
+        box.textContent = 'Search failed.';
+    }
+}
+
 setInterval(refreshDocStatus, 5000);
+window.addEventListener('load', () => {
+    refreshDocStatus();
+    runGraphSearch();
+    runLexiconSearch();
+    runCodeSearch();
+});
 </script>
 {% endblock %}

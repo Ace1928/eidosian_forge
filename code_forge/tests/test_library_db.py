@@ -318,3 +318,46 @@ def test_semantic_search_empty_query_is_safe(tmp_path: Path) -> None:
 
     matches = db.semantic_search("", limit=5)
     assert isinstance(matches, list)
+
+
+def test_render_snippet_and_unit_context(tmp_path: Path, monkeypatch) -> None:
+    repo_root = tmp_path / "forge"
+    src_dir = repo_root / "src"
+    src_dir.mkdir(parents=True, exist_ok=True)
+    source_path = src_dir / "math.py"
+    source_path.write_text(
+        "def add(a, b):\n"
+        "    total = a + b\n"
+        "    return total\n"
+        "\n"
+        "def sub(a, b):\n"
+        "    return a - b\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("EIDOS_FORGE_DIR", str(repo_root))
+
+    db = CodeLibraryDB(repo_root / "data" / "code_forge" / "library.sqlite")
+    content_hash = db.add_text(source_path.read_text(encoding="utf-8"))
+    module_id = db.add_unit(CodeUnit(unit_type="module", name="math", qualified_name="src.math", file_path="src/math.py"))
+    fn_id = db.add_unit(
+        CodeUnit(
+            unit_type="function",
+            name="add",
+            qualified_name="src.math.add",
+            file_path="src/math.py",
+            line_start=1,
+            line_end=3,
+            content_hash=content_hash,
+        )
+    )
+    db.add_relationship(module_id, fn_id, "contains")
+
+    snippet = db.render_snippet(fn_id, context_lines=0)
+    assert snippet["found"] is True
+    assert "def add(a, b):" in snippet["snippet"]
+    assert "def sub(a, b):" not in snippet["snippet"]
+
+    context = db.unit_context(fn_id, context_lines=1)
+    assert context["found"] is True
+    assert context["unit"]["qualified_name"] == "src.math.add"
+    assert context["parents"][0]["qualified_name"] == "src.math"

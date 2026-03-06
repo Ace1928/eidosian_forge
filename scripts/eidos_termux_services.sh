@@ -10,9 +10,11 @@ SHELL_COUNT_FILE="${RUN_DIR}/.interactive_shell_count"
 MCP_PID_FILE="${RUN_DIR}/eidos_mcp.pid"
 DOC_PID_FILE="${RUN_DIR}/doc_forge.pid"
 ATLAS_PID_FILE="${RUN_DIR}/eidos_atlas.pid"
+SCHEDULER_PID_FILE="${RUN_DIR}/eidos_scheduler.pid"
 MCP_LOG_FILE="${FORGE_ROOT}/doc_forge/mcp_server.log"
 DOC_LOG_FILE="${FORGE_ROOT}/doc_forge/orchestrator.log"
 ATLAS_LOG_FILE="${FORGE_ROOT}/web_interface_forge/eidos_atlas.log"
+SCHEDULER_LOG_FILE="${FORGE_ROOT}/logs/eidos_scheduler.log"
 
 _registry_port_default() {
     local service="$1"
@@ -37,6 +39,7 @@ ATLAS_HEALTH_URL="${EIDOS_ATLAS_HEALTH_URL:-http://127.0.0.1:${ATLAS_PORT}/healt
 
 ENABLE_DOC_FORGE_AUTOSTART="${EIDOS_ENABLE_DOC_FORGE_AUTOSTART:-1}"
 ENABLE_ATLAS_AUTOSTART="${EIDOS_ENABLE_ATLAS_AUTOSTART:-1}"
+ENABLE_SCHEDULER_AUTOSTART="${EIDOS_ENABLE_SCHEDULER_AUTOSTART:-1}"
 
 mkdir -p "${RUN_DIR}"
 
@@ -253,6 +256,9 @@ case "${cmd}" in
         if _is_truthy "${ENABLE_ATLAS_AUTOSTART}" && [ -x "${FORGE_ROOT}/web_interface_forge/scripts/run_dashboard.sh" ]; then
             _start_service "Eidos Atlas Dashboard" "${FORGE_ROOT}/web_interface_forge/scripts/run_dashboard.sh" "${ATLAS_PID_FILE}" "${ATLAS_LOG_FILE}" "${ATLAS_PORT}" "web_interface_forge/scripts/run_dashboard.sh" || true
         fi
+        if _is_truthy "${ENABLE_SCHEDULER_AUTOSTART}" && [ -x "${FORGE_ROOT}/scripts/eidos_scheduler.py" ]; then
+            _start_service "Eidos Scheduler" "${FORGE_ROOT}/scripts/run_eidos_scheduler.sh" "${SCHEDULER_PID_FILE}" "${SCHEDULER_LOG_FILE}" "" "scripts/run_eidos_scheduler.sh" || true
+        fi
 
         if ! _wait_http_ok "${MCP_HEALTH_URL}" 15; then
             _log "warning: MCP health check failed at ${MCP_HEALTH_URL}."
@@ -264,6 +270,7 @@ case "${cmd}" in
             _stop_service "Eidos MCP Server" "${MCP_PID_FILE}" "eidos_mcp/run_server.sh"
             _stop_service "Eidos Documentation Forge" "${DOC_PID_FILE}" "doc_forge/scripts/run_forge.sh"
             _stop_service "Eidos Atlas Dashboard" "${ATLAS_PID_FILE}" "web_interface_forge/scripts/run_dashboard.sh"
+            _stop_service "Eidos Scheduler" "${SCHEDULER_PID_FILE}" "scripts/run_eidos_scheduler.sh"
         fi
         ;;
     start)
@@ -280,6 +287,9 @@ case "${cmd}" in
                 _log "warning: Atlas Dashboard health check failed at ${ATLAS_HEALTH_URL}."
             }
         fi
+        if _is_truthy "${ENABLE_SCHEDULER_AUTOSTART}" && [ -x "${FORGE_ROOT}/scripts/eidos_scheduler.py" ]; then
+            _start_service "Eidos Scheduler" "${FORGE_ROOT}/scripts/run_eidos_scheduler.sh" "${SCHEDULER_PID_FILE}" "${SCHEDULER_LOG_FILE}" "" "scripts/run_eidos_scheduler.sh"
+        fi
 
         _wait_http_ok "${MCP_HEALTH_URL}" 15 || {
             _log "warning: MCP health check failed at ${MCP_HEALTH_URL}."
@@ -290,6 +300,7 @@ case "${cmd}" in
         _stop_service "Eidos MCP Server" "${MCP_PID_FILE}" "eidos_mcp/run_server.sh"
         _stop_service "Eidos Documentation Forge" "${DOC_PID_FILE}" "doc_forge/scripts/run_forge.sh"
         _stop_service "Eidos Atlas Dashboard" "${ATLAS_PID_FILE}" "web_interface_forge/scripts/run_dashboard.sh"
+        _stop_service "Eidos Scheduler" "${SCHEDULER_PID_FILE}" "scripts/run_eidos_scheduler.sh"
         ;;
     restart)
         "$0" stop
@@ -299,6 +310,7 @@ case "${cmd}" in
         _status_service "Eidos MCP Server" "${MCP_PID_FILE}" "${MCP_PORT}" "eidos_mcp/run_server.sh" "${MCP_HEALTH_URL}"
         _status_service "Eidos Documentation Forge" "${DOC_PID_FILE}" "${DOC_PORT}" "doc_forge/scripts/run_forge.sh" "${DOC_HEALTH_URL}"
         _status_service "Eidos Atlas Dashboard" "${ATLAS_PID_FILE}" "${ATLAS_PORT}" "web_interface_forge/scripts/run_dashboard.sh" "${ATLAS_HEALTH_URL}"
+        _status_service "Eidos Scheduler" "${SCHEDULER_PID_FILE}" "" "scripts/run_eidos_scheduler.sh"
         printf 'Interactive shell refcount: %s\n' "$(_read_count)"
         ;;
     *)

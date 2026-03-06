@@ -34,9 +34,9 @@ from code_forge.digester.pipeline import build_duplication_index, build_repo_ind
 from code_forge.digester.schema import validate_output_dir
 from code_forge.ingest.runner import IngestionRunner
 from code_forge.library.db import CodeLibraryDB
-from eidos_mcp.config.models import get_model_config
 from eidosian_core import eidosian
 from eidosian_core.ports import get_service_port
+from eidos_mcp.config.models import get_model_config
 
 from knowledge_forge import GraphRAGIntegration
 
@@ -142,9 +142,106 @@ LIVING_DOC_SCHEMA: dict[str, Any] = {
     ],
 }
 
+RUNTIME_DIR = FORGE_ROOT / "data" / "runtime"
+PIPELINE_STATUS_PATH = RUNTIME_DIR / "living_pipeline_status.json"
+SCHEDULER_STATUS_PATH = RUNTIME_DIR / "eidos_scheduler_status.json"
+
 
 def _now_utc() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _read_json_file(path: Path, default: Any) -> Any:
+    if not path.exists():
+        return default
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return default
+    return payload
+
+
+def _latest_manifest_path(output_root: Path) -> Path | None:
+    latest_marker = output_root / "latest_run"
+    if latest_marker.exists():
+        run_id = latest_marker.read_text(encoding="utf-8").strip()
+        if run_id:
+            candidate = output_root / run_id / "manifest.json"
+            if candidate.exists():
+                return candidate
+    manifests = sorted(output_root.glob("*/manifest.json"))
+    return manifests[-1] if manifests else None
+
+
+def _prior_runtime_estimate(output_root: Path) -> float | None:
+    manifest_path = _latest_manifest_path(output_root)
+    if manifest_path is None:
+        return None
+    payload = _read_json_file(manifest_path, {})
+    runtime = payload.get("runtime") if isinstance(payload, dict) else None
+    if isinstance(runtime, dict):
+        total = runtime.get("total_elapsed_seconds")
+        if isinstance(total, (int, float)) and total > 0:
+            return float(total)
+    return None
+
+
+def _write_pipeline_status(
+    *,
+    state: str,
+    phase: str,
+    run_id: str,
+    started_at: str,
+    output_root: Path,
+    workspace_root: Path,
+    phase_timings: dict[str, float],
+    estimated_total_seconds: float | None,
+    code_report: dict[str, Any] | None = None,
+    word_forge_result: dict[str, Any] | None = None,
+    graphrag_result: dict[str, Any] | None = None,
+    living_doc_result: dict[str, Any] | None = None,
+    records_total: int | None = None,
+    records_by_kind: dict[str, int] | None = None,
+    error: str | None = None,
+) -> dict[str, Any]:
+    RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
+    elapsed_seconds = round(sum(max(0.0, float(v)) for v in phase_timings.values()), 3)
+    eta_seconds = None
+    if estimated_total_seconds and estimated_total_seconds > 0:
+        eta_seconds = round(max(0.0, float(estimated_total_seconds) - elapsed_seconds), 3)
+    payload = {
+        "contract": "living_knowledge.pipeline_status.v1",
+        "run_id": run_id,
+        "state": state,
+        "phase": phase,
+        "started_at": started_at,
+        "updated_at": _now_utc(),
+        "elapsed_seconds": elapsed_seconds,
+        "eta_seconds": eta_seconds,
+        "output_root": str(output_root),
+        "workspace_root": str(workspace_root),
+        "phase_timings": dict(phase_timings),
+        "records_total": int(records_total or 0),
+        "records_by_kind": dict(records_by_kind or {}),
+        "code_analysis": {
+            "files_processed": ((code_report or {}).get("run_stats") or {}).get("files_processed"),
+            "units_created": ((code_report or {}).get("run_stats") or {}).get("units_created"),
+            "total_units": (code_report or {}).get("total_units"),
+            "relationship_counts": (code_report or {}).get("relationship_counts"),
+            "dependency_graph_summary": (code_report or {}).get("dependency_graph_summary"),
+        },
+        "word_forge": word_forge_result or {},
+        "graphrag": {
+            "indexed": bool((graphrag_result or {}).get("indexed")),
+            "report_summary": (graphrag_result or {}).get("report_summary"),
+            "trend_summary": (graphrag_result or {}).get("trend_summary"),
+            "assessment_summary": (graphrag_result or {}).get("assessment_summary"),
+        },
+        "living_documentation": living_doc_result or {},
+        "error": str(error or ""),
+    }
+    PIPELINE_STATUS_PATH.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    return payload
 
 
 def _sha256_text(text: str) -> str:
@@ -1058,77 +1155,145 @@ def run_pipeline(
     if stage_dir.exists():
         shutil.rmtree(stage_dir)
     stage_dir.mkdir(parents=True, exist_ok=True)
+    estimated_total = _prior_runtime_estimate(output_root)
+    started_at = _now_utc()
+    phase_timings: dict[str, float] = {}
 
-    code_report = run_code_analysis(repo_root, run_root, max_files=code_max_files)
-    repo_records = stage_repo_text_documents(repo_root, stage_dir, max_file_bytes, max_chars_per_doc)
-    memory_records = stage_memory_and_kb_documents(repo_root, stage_dir, max_chars_per_doc)
-    records = repo_records + memory_records
-
-    exact_duplicates = group_exact_duplicates(records)
-    near_duplicates = detect_near_duplicates(records)
-    drift = compare_with_previous_run(run_root, records)
-
-    workspace_input = workspace_root / "input"
-    if workspace_input.exists():
-        shutil.rmtree(workspace_input)
-    workspace_input.mkdir(parents=True, exist_ok=True)
-    for rec in records:
-        src = Path(rec.staged_path)
-        dest = workspace_input / src.relative_to(stage_dir)
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(src, dest)
-
-    graphrag_result: dict[str, Any] = {"indexed": False, "queries": []}
-    word_forge_result = build_word_forge_lexicon(records, repo_root=repo_root, thinking_mode="on")
-    if run_graphrag:
-        llm_port = get_service_port("graphrag_llm", default=8081, env_keys=("EIDOS_GRAPHRAG_LLM_PORT",))
-        embed_port = get_service_port("graphrag_embedding", default=8082, env_keys=("EIDOS_GRAPHRAG_EMBED_PORT",))
-        llm_fallback = _pick_sweep_model(repo_root, repo_root / "models" / "Qwen2.5-0.5B-Instruct-Q8_0.gguf")
-        llm_model = _pick_selected_model(repo_root, "graphrag", "completion_model", llm_fallback)
-        embed_model = _pick_selected_model(
-            repo_root,
-            "graphrag",
-            "embedding_model",
-            repo_root / "models" / "nomic-embed-text-v1.5.Q4_K_M.gguf",
+    def _phase_start(phase_name: str) -> float:
+        _write_pipeline_status(
+            state="running",
+            phase=phase_name,
+            run_id=run_id,
+            started_at=started_at,
+            output_root=output_root,
+            workspace_root=workspace_root,
+            phase_timings=phase_timings,
+            estimated_total_seconds=estimated_total,
+            code_report=code_report,
+            word_forge_result=word_forge_result,
+            graphrag_result=graphrag_result,
+            living_doc_result=living_doc_result,
+            records_total=records_total,
+            records_by_kind=records_by_kind,
         )
-        _write_workspace_settings(workspace_root, llm_port=llm_port, embed_port=embed_port)
-        runtimes: list[tuple[subprocess.Popen[Any], Any]] = []
-        try:
-            runtimes.append(_start_server(llm_model, llm_port, embedding=False))
-            runtimes.append(_start_server(embed_model, embed_port, embedding=True))
-            index_result = _run_graphrag_index(workspace_root, method=method, scan_roots=[workspace_input])
-            graphrag_result["indexed"] = True
-            graphrag_result["llm_model"] = str(llm_model)
-            graphrag_result["embed_model"] = str(embed_model)
-            graphrag_result["index_result"] = index_result
-            graphrag_result["report_summary"] = (
-                index_result.get("community_reports") if isinstance(index_result, dict) else {}
-            )
-            graphrag_result["trend_summary"] = (
-                index_result.get("report_trends") if isinstance(index_result, dict) else {}
-            )
-            graphrag_result["assessment_summary"] = (
-                index_result.get("assessment") if isinstance(index_result, dict) else {}
-            )
-            for query in queries:
-                answer = _run_graphrag_query(workspace_root, query, method="global")
-                graphrag_result["queries"].append({"query": query, "answer": answer})
-        finally:
-            _stop_servers(runtimes)
+        return time.monotonic()
 
-    living_doc_result = generate_living_documentation(
-        run_root,
-        repo_root=repo_root,
-        records_total=len(records),
-        records_by_kind=dict(Counter(r.kind for r in records)),
-        exact_duplicates=len(exact_duplicates),
-        near_duplicates=len(near_duplicates),
-        drift=drift,
-        code_report=code_report,
-        graphrag_result=graphrag_result,
-        word_forge_result=word_forge_result,
-        config=living_doc_config or LivingDocumentationConfig(),
-    )
+    def _phase_done(phase_name: str, started: float) -> None:
+        phase_timings[phase_name] = round(max(0.0, time.monotonic() - started), 3)
+
+    code_report: dict[str, Any] = {}
+    word_forge_result: dict[str, Any] = {}
+    graphrag_result: dict[str, Any] = {"indexed": False, "queries": []}
+    living_doc_result: dict[str, Any] = {}
+    records: list[StagedRecord] = []
+    records_by_kind: dict[str, int] = {}
+    records_total = 0
+    exact_duplicates: list[dict[str, Any]] = []
+    near_duplicates: list[dict[str, Any]] = []
+    drift: dict[str, Any] = {}
+
+    try:
+        phase_started = _phase_start("code_analysis")
+        code_report = run_code_analysis(repo_root, run_root, max_files=code_max_files)
+        _phase_done("code_analysis", phase_started)
+
+        phase_started = _phase_start("staging")
+        repo_records = stage_repo_text_documents(repo_root, stage_dir, max_file_bytes, max_chars_per_doc)
+        memory_records = stage_memory_and_kb_documents(repo_root, stage_dir, max_chars_per_doc)
+        records = repo_records + memory_records
+        records_total = len(records)
+        records_by_kind = dict(Counter(r.kind for r in records))
+        exact_duplicates = group_exact_duplicates(records)
+        near_duplicates = detect_near_duplicates(records)
+        drift = compare_with_previous_run(run_root, records)
+
+        workspace_input = workspace_root / "input"
+        if workspace_input.exists():
+            shutil.rmtree(workspace_input)
+        workspace_input.mkdir(parents=True, exist_ok=True)
+        for rec in records:
+            src = Path(rec.staged_path)
+            dest = workspace_input / src.relative_to(stage_dir)
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src, dest)
+        _phase_done("staging", phase_started)
+
+        phase_started = _phase_start("word_forge")
+        word_forge_result = build_word_forge_lexicon(records, repo_root=repo_root, thinking_mode="on")
+        _phase_done("word_forge", phase_started)
+
+        if run_graphrag:
+            phase_started = _phase_start("graphrag")
+            llm_port = get_service_port("graphrag_llm", default=8081, env_keys=("EIDOS_GRAPHRAG_LLM_PORT",))
+            embed_port = get_service_port("graphrag_embedding", default=8082, env_keys=("EIDOS_GRAPHRAG_EMBED_PORT",))
+            llm_fallback = _pick_sweep_model(repo_root, repo_root / "models" / "Qwen2.5-0.5B-Instruct-Q8_0.gguf")
+            llm_model = _pick_selected_model(repo_root, "graphrag", "completion_model", llm_fallback)
+            embed_model = _pick_selected_model(
+                repo_root,
+                "graphrag",
+                "embedding_model",
+                repo_root / "models" / "nomic-embed-text-v1.5.Q4_K_M.gguf",
+            )
+            _write_workspace_settings(workspace_root, llm_port=llm_port, embed_port=embed_port)
+            runtimes: list[tuple[subprocess.Popen[Any], Any]] = []
+            try:
+                runtimes.append(_start_server(llm_model, llm_port, embedding=False))
+                runtimes.append(_start_server(embed_model, embed_port, embedding=True))
+                index_result = _run_graphrag_index(workspace_root, method=method, scan_roots=[workspace_input])
+                graphrag_result["indexed"] = True
+                graphrag_result["llm_model"] = str(llm_model)
+                graphrag_result["embed_model"] = str(embed_model)
+                graphrag_result["index_result"] = index_result
+                graphrag_result["report_summary"] = (
+                    index_result.get("community_reports") if isinstance(index_result, dict) else {}
+                )
+                graphrag_result["trend_summary"] = (
+                    index_result.get("report_trends") if isinstance(index_result, dict) else {}
+                )
+                graphrag_result["assessment_summary"] = (
+                    index_result.get("assessment") if isinstance(index_result, dict) else {}
+                )
+                for query in queries:
+                    answer = _run_graphrag_query(workspace_root, query, method="global")
+                    graphrag_result["queries"].append({"query": query, "answer": answer})
+            finally:
+                _stop_servers(runtimes)
+            _phase_done("graphrag", phase_started)
+
+        phase_started = _phase_start("living_documentation")
+        living_doc_result = generate_living_documentation(
+            run_root,
+            repo_root=repo_root,
+            records_total=records_total,
+            records_by_kind=records_by_kind,
+            exact_duplicates=len(exact_duplicates),
+            near_duplicates=len(near_duplicates),
+            drift=drift,
+            code_report=code_report,
+            graphrag_result=graphrag_result,
+            word_forge_result=word_forge_result,
+            config=living_doc_config or LivingDocumentationConfig(),
+        )
+        _phase_done("living_documentation", phase_started)
+    except Exception as exc:
+        _write_pipeline_status(
+            state="failed",
+            phase="failed",
+            run_id=run_id,
+            started_at=started_at,
+            output_root=output_root,
+            workspace_root=workspace_root,
+            phase_timings=phase_timings,
+            estimated_total_seconds=estimated_total,
+            code_report=code_report,
+            word_forge_result=word_forge_result,
+            graphrag_result=graphrag_result,
+            living_doc_result=living_doc_result,
+            records_total=records_total,
+            records_by_kind=records_by_kind,
+            error=str(exc),
+        )
+        raise
 
     manifest = {
         "contract": "living_knowledge.pipeline.v1",
@@ -1152,6 +1317,12 @@ def run_pipeline(
         "word_forge": word_forge_result,
         "graphrag": graphrag_result,
         "living_documentation": living_doc_result,
+        "runtime": {
+            "status_path": str(PIPELINE_STATUS_PATH),
+            "total_elapsed_seconds": round(sum(phase_timings.values()), 3),
+            "phase_timings": dict(phase_timings),
+            "estimated_total_seconds": estimated_total,
+        },
         "source_hashes": {r.source_path: r.sha256 for r in records},
     }
 
@@ -1164,6 +1335,22 @@ def run_pipeline(
     (run_root / "duplicates_near.json").write_text(json.dumps(near_duplicates, indent=2) + "\n", encoding="utf-8")
     (run_root / "drift.json").write_text(json.dumps(drift, indent=2) + "\n", encoding="utf-8")
     (output_root / "latest_run").write_text(run_id + "\n", encoding="utf-8")
+    _write_pipeline_status(
+        state="completed",
+        phase="completed",
+        run_id=run_id,
+        started_at=started_at,
+        output_root=output_root,
+        workspace_root=workspace_root,
+        phase_timings=phase_timings,
+        estimated_total_seconds=estimated_total,
+        code_report=code_report,
+        word_forge_result=word_forge_result,
+        graphrag_result=graphrag_result,
+        living_doc_result=living_doc_result,
+        records_total=records_total,
+        records_by_kind=records_by_kind,
+    )
     return manifest
 
 

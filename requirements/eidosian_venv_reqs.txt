@@ -7,6 +7,7 @@ durationpy==0.10
 fastapi==0.128.0
 httpx==0.28.1
 httpx-sse==0.4.3
+Markdown==3.8.1
 mcp==1.25.0
 networkx==3.6
 nltk==3.9.3
@@ -14,6 +15,7 @@ openai==1.68.2
 owlrl==7.1.4
 overrides==7.7.0
 packaging==25.0
+psutil==7.2.2
 pydantic==2.12.5
 pydantic-settings==2.12.0
 pyvis==0.3.2
