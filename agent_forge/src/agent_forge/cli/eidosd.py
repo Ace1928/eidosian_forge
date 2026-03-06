@@ -60,13 +60,17 @@ def _runtime_trends(repo_root: str | _P, limit: int = 24) -> dict:
     try:
         return ForgeRuntimeCoordinator(coordinator_path).trend_summary(limit=max(1, int(limit)))
     except Exception:
-        return {
-            "count": 0,
-            "average_active_models": 0.0,
-            "peak_active_models": 0,
-            "saturated_samples": 0,
-            "history": [],
-        }
+        return {"count": 0, "average_active_models": 0.0, "peak_active_models": 0, "saturated_samples": 0, "history": []}
+
+
+def _memory_trends(repo_root: str | _P, limit: int = 24) -> dict:
+    root = _P(repo_root).expanduser().resolve()
+    runtime_dir = root / "data" / "runtime"
+    path = runtime_dir / "memory_health_trends.json"
+    payload = _read_json_dict(path)
+    entries = [row for row in (payload.get("entries") or []) if isinstance(row, dict)][-max(1, int(limit)) :]
+    latest = entries[-1] if entries else {}
+    return {"count": len(entries), "latest": latest}
 
 
 @eidosian()
@@ -113,6 +117,7 @@ def run_once(
     S.append_journal(state_dir, "daemon.beat", etype="daemon.beat")
     runtime = _runtime_snapshot(repo_root)
     runtime_trends = _runtime_trends(repo_root, limit=24)
+    memory_trends = _memory_trends(repo_root, limit=24)
     scheduler = runtime.get("scheduler") if isinstance(runtime.get("scheduler"), dict) else {}
     pipeline = runtime.get("pipeline") if isinstance(runtime.get("pipeline"), dict) else {}
     coordinator = runtime.get("coordinator") if isinstance(runtime.get("coordinator"), dict) else {}
@@ -130,6 +135,8 @@ def run_once(
         "runtime_average_active_models": runtime_trends.get("average_active_models"),
         "runtime_peak_active_models": runtime_trends.get("peak_active_models"),
         "runtime_saturated_samples": runtime_trends.get("saturated_samples"),
+        "memory_vector_count": memory_trends.get("latest", {}).get("vector_count"),
+        "memory_community_count": memory_trends.get("latest", {}).get("community_count"),
     }
     E.append(state_dir, "forge.runtime", runtime_payload, tags=["runtime", "forge"])
     if runtime_payload["active_model_count"] is not None:
@@ -142,6 +149,8 @@ def run_once(
         ("forge.runtime.average_active_models", runtime_trends.get("average_active_models")),
         ("forge.runtime.peak_active_models", runtime_trends.get("peak_active_models")),
         ("forge.runtime.saturated_samples", runtime_trends.get("saturated_samples")),
+        ("forge.runtime.memory_vector_count", memory_trends.get("latest", {}).get("vector_count")),
+        ("forge.runtime.memory_community_count", memory_trends.get("latest", {}).get("community_count")),
     ):
         try:
             if raw is not None:
@@ -306,14 +315,7 @@ def main(argv: list[str] | None = None) -> int:
     cpu = OM.CpuPercent()
     if args.once:
         try:
-            run_once(
-                args.state_dir,
-                repo_root=args.repo_root,
-                tick_secs=tick_secs,
-                cpu=cpu,
-                kernel=kernel,
-                supervisor=supervisor,
-            )
+            run_once(args.state_dir, repo_root=args.repo_root, tick_secs=tick_secs, cpu=cpu, kernel=kernel, supervisor=supervisor)
             return 0
         except Exception as e:
             print(f"eidosd run error: {e}", file=sys.stderr)
@@ -331,14 +333,7 @@ def main(argv: list[str] | None = None) -> int:
 
         def _beat() -> None:
             nonlocal beats
-            run_once(
-                args.state_dir,
-                repo_root=args.repo_root,
-                tick_secs=tick_secs,
-                cpu=cpu,
-                kernel=kernel,
-                supervisor=supervisor,
-            )
+            run_once(args.state_dir, repo_root=args.repo_root, tick_secs=tick_secs, cpu=cpu, kernel=kernel, supervisor=supervisor)
             beats += 1
             if beats % maint_every == 0:
                 try:

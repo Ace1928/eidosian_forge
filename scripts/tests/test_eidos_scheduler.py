@@ -25,6 +25,7 @@ def test_scheduler_once_writes_status(tmp_path: Path, monkeypatch) -> None:
     runtime_dir = tmp_path / "runtime"
     runtime_dir.mkdir(parents=True, exist_ok=True)
     monkeypatch.setattr(scheduler, "SCHEDULER_STATUS_PATH", runtime_dir / "scheduler.json")
+    monkeypatch.setattr(scheduler, "MEMORY_TREND_PATH", runtime_dir / "memory_health_trends.json")
     monkeypatch.setattr(
         scheduler,
         "run_pipeline",
@@ -84,12 +85,16 @@ def test_scheduler_once_writes_status(tmp_path: Path, monkeypatch) -> None:
     assert payload["summary"]["records_total"] == 5
     assert payload["summary"]["memory"]["enrich_report"]["updated"] == 3
     assert payload["doc_model"] == "qwen3.5:2b"
+    trend_payload = json.loads((runtime_dir / "memory_health_trends.json").read_text(encoding="utf-8"))
+    assert trend_payload["entries"][-1]["vector_count"] == 4
+    assert trend_payload["entries"][-1]["community_count"] == 2
 
 
 def test_scheduler_degrades_model_heavy_work_when_budget_is_saturated(tmp_path: Path, monkeypatch) -> None:
     runtime_dir = tmp_path / "runtime"
     runtime_dir.mkdir(parents=True, exist_ok=True)
     monkeypatch.setattr(scheduler, "SCHEDULER_STATUS_PATH", runtime_dir / "scheduler.json")
+    monkeypatch.setattr(scheduler, "MEMORY_TREND_PATH", runtime_dir / "memory_health_trends.json")
     captured: dict[str, object] = {}
 
     def _run_pipeline(**kwargs):

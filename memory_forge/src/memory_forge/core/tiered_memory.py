@@ -247,9 +247,7 @@ class TieredMemorySystem:
             else str(os.environ.get("EIDOS_MEMORY_LLM_ENRICHMENT", "")).strip().lower() in {"1", "true", "on", "yes"}
         )
         self.llm_model = llm_model or str(os.environ.get("EIDOS_MEMORY_LLM_MODEL", "qwen3.5:2b")).strip()
-        self.llm_thinking_mode = (
-            str(os.environ.get("EIDOS_MEMORY_LLM_THINKING_MODE", llm_thinking_mode or "on")).strip() or "on"
-        )
+        self.llm_thinking_mode = str(os.environ.get("EIDOS_MEMORY_LLM_THINKING_MODE", llm_thinking_mode or "on")).strip() or "on"
         self._thread_lock = threading.RLock()
         self._lock_path = self.persistence_dir / ".tiered_memory.lock"
         self._lock_handle = None
@@ -919,9 +917,7 @@ class TieredMemorySystem:
         if bool(self.llm_enrichment if use_llm is None else use_llm):
             llm_metadata = self._llm_enrichment(item)
             if llm_metadata:
-                llm_tags = {
-                    self._normalize_tag(tag) for tag in llm_metadata.get("tags") or [] if self._normalize_tag(tag)
-                }
+                llm_tags = {self._normalize_tag(tag) for tag in llm_metadata.get("tags") or [] if self._normalize_tag(tag)}
                 enriched_tags.update(llm_tags)
                 enriched_metadata = self._merge_metadata(enriched_metadata, llm_metadata)
                 enriched_metadata["tag_origin"] = "llm_assisted"
@@ -947,7 +943,10 @@ class TieredMemorySystem:
         tags = {
             self._normalize_tag(tag)
             for tag in (
-                list(item.tags) + keywords + domains + [item.tier.value, item.namespace.value, item.memory_type.value]
+                list(item.tags)
+                + keywords
+                + domains
+                + [item.tier.value, item.namespace.value, item.memory_type.value]
             )
             if self._normalize_tag(tag)
         }
@@ -968,8 +967,20 @@ class TieredMemorySystem:
     def _llm_enrichment(self, item: TieredMemoryItem) -> Dict[str, Any]:
         try:
             from eidos_mcp.config.models import ModelConfig
+            from eidosian_runtime import ForgeRuntimeCoordinator
         except Exception:
             return {}
+        try:
+            coordinator = ForgeRuntimeCoordinator(FORGE_ROOT / "data" / "runtime" / "forge_coordinator_status.json")
+            decision = coordinator.can_allocate(
+                owner="memory_forge_enrichment",
+                requested_models=[{"family": "ollama", "model": self.llm_model, "role": "memory_enrichment"}],
+                allow_same_owner=False,
+            )
+            if not bool(decision.get("allowed")):
+                return {}
+        except Exception:
+            pass
         schema = {
             "type": "object",
             "properties": {
@@ -1048,9 +1059,7 @@ class TieredMemorySystem:
     def _community_label(self, namespace: MemoryNamespace, domains: List[str], keywords: List[str]) -> str:
         primary_domain = domains[0] if domains else "general"
         secondary = keywords[0] if keywords else primary_domain
-        return f"{self._normalize_tag(namespace.value)}:{self._normalize_tag(primary_domain)}:{self._normalize_tag(secondary)}".strip(
-            ":"
-        )
+        return f"{self._normalize_tag(namespace.value)}:{self._normalize_tag(primary_domain)}:{self._normalize_tag(secondary)}".strip(":")
 
     def _normalize_tag(self, value: Any) -> str:
         text = str(value or "").strip().lower()

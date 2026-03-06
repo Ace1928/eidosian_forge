@@ -350,6 +350,11 @@
                 </div>
             </div>
         </div>
+        <div class="section-title" style="margin-top:12px;">
+            <h3>Session Preview</h3>
+            <span id="session-status" class="status-line">No session selected</span>
+        </div>
+        <div id="session-preview" class="mini-list"></div>
 
         <div class="section-title">
             <h3>Search Results</h3>
@@ -367,6 +372,11 @@
         </div>
         <svg id="runtime-trend-chart" viewBox="0 0 520 120" preserveAspectRatio="none" style="width:100%;height:120px;border:1px solid rgba(144,171,192,0.16);border-radius:16px;background:rgba(5,10,18,0.72);"></svg>
         <div id="runtime-trend-summary" class="mini-list"></div>
+        <div class="section-title" style="margin-top:16px;">
+            <h3>Memory Trends</h3>
+            <span id="memory-trend-status" class="status-line">Loading</span>
+        </div>
+        <div id="memory-trend-summary" class="mini-list"></div>
     </section>
 
     <section class="explorer-panel graph-wrap">
@@ -427,6 +437,8 @@ const runtimeHistoryEl = document.getElementById("runtime-history");
 const trendStatusEl = document.getElementById("trend-status");
 const runtimeTrendChartEl = document.getElementById("runtime-trend-chart");
 const runtimeTrendSummaryEl = document.getElementById("runtime-trend-summary");
+const memoryTrendStatusEl = document.getElementById("memory-trend-status");
+const memoryTrendSummaryEl = document.getElementById("memory-trend-summary");
 const neighborDepthEl = document.getElementById("neighbor-depth");
 const togglePinEl = document.getElementById("toggle-pin");
 const sessionNameEl = document.getElementById("session-name");
@@ -434,6 +446,8 @@ const sessionSelectEl = document.getElementById("session-select");
 const saveSessionEl = document.getElementById("save-session");
 const loadSessionEl = document.getElementById("load-session");
 const deleteSessionEl = document.getElementById("delete-session");
+const sessionStatusEl = document.getElementById("session-status");
+const sessionPreviewEl = document.getElementById("session-preview");
 
 let unifiedGraph = {nodes: [], edges: [], summary: {}};
 let runtimeOverview = {{ forge_overview | tojson }};
@@ -441,6 +455,7 @@ let activeNode = null;
 let graphOverride = null;
 let pinnedNodes = new Set();
 let runtimeTrends = {history: [], latest: {}, top_tasks: []};
+let memoryTrends = {history: [], latest: {}, series: {}};
 
 function escapeHtml(text) {
     return String(text || "")
@@ -586,6 +601,12 @@ function applySession(payload) {
     const focusId = String(session.active_node_id || "");
     const sourceGraph = graphOverride || unifiedGraph;
     activeNode = (sourceGraph.nodes || []).find((node) => node.id === focusId) || null;
+    sessionStatusEl.textContent = session.name || session.id || "session loaded";
+    sessionPreviewEl.innerHTML = `
+        <button type="button"><strong>${escapeHtml(session.name || session.id || "atlas-default")}</strong><br><span style="color:var(--text-secondary)">query=${escapeHtml(session.query || "") || "none"}</span></button>
+        <button type="button"><strong>filters</strong><br><span style="color:var(--text-secondary)">${escapeHtml(session.domain_filter || "all")} / ${escapeHtml(session.edge_filter || "all")}</span></button>
+        <button type="button"><strong>pins</strong><br><span style="color:var(--text-secondary)">${escapeHtml(String((session.pinned_nodes || []).length))} pinned</span></button>
+    `;
     renderGraph();
     if (activeNode) {
         loadNodeDetails(activeNode.domain, activeNode.ref_id, activeNode);
@@ -845,6 +866,31 @@ async function loadRuntimeTrends() {
     renderRuntimeTrendChart(payload);
 }
 
+function renderMemoryTrendSummary(payload) {
+    memoryTrends = payload || {history: [], latest: {}, series: {}};
+    const latest = payload?.latest || {};
+    memoryTrendStatusEl.textContent = `${payload?.count || 0} samples | vectors=${latest.vector_count || 0} | communities=${latest.community_count || 0}`;
+    const rows = [
+        {title: "Vectors", value: latest.vector_count || 0},
+        {title: "Communities", value: latest.community_count || 0},
+        {title: "Enriched", value: latest.memory_enriched || 0},
+        {title: "Reindexed", value: latest.reindexed || 0},
+        {title: "Budget", value: latest.budget_saturated ? "saturated" : "ok"},
+    ];
+    memoryTrendSummaryEl.innerHTML = rows.map((row) => `
+        <button type="button">
+            <strong>${escapeHtml(String(row.title))}</strong><br>
+            <span style="color:var(--text-secondary)">${escapeHtml(String(row.value))}</span>
+        </button>
+    `).join("");
+}
+
+async function loadMemoryTrends() {
+    const resp = await fetch("/api/memory/trends?limit=24");
+    const payload = await resp.json();
+    renderMemoryTrendSummary(payload);
+}
+
 async function loadSessions() {
     const resp = await fetch("/api/explorer/sessions?limit=24");
     const payload = await resp.json();
@@ -938,5 +984,6 @@ queryEl.addEventListener("keydown", (event) => {
 Promise.all([loadRuntime(), loadUnifiedGraph(), loadSessions()]).then(() => runUnifiedSearch());
 loadRuntimeHistory();
 loadRuntimeTrends();
+loadMemoryTrends();
 </script>
 {% endblock %}

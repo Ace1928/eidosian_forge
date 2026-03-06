@@ -159,6 +159,19 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
     )
     monkeypatch.setattr(
         dashboard,
+        "get_memory_trend_summary",
+        lambda limit=72: {
+            "count": 2,
+            "latest": {"vector_count": 5, "community_count": 2, "memory_enriched": 3, "reindexed": 4, "budget_saturated": False},
+            "history": [
+                {"vector_count": 4, "community_count": 1, "memory_enriched": 2, "reindexed": 4, "budget_saturated": False},
+                {"vector_count": 5, "community_count": 2, "memory_enriched": 3, "reindexed": 4, "budget_saturated": False},
+            ],
+            "series": {"vector_count": [4, 5], "community_count": [1, 2], "memory_enriched": [2, 3], "reindexed": [4, 4], "budget_saturated": [0, 0]},
+        },
+    )
+    monkeypatch.setattr(
+        dashboard,
         "search_memory",
         lambda query, limit=12: {
             "query": query,
@@ -248,6 +261,8 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         assert memory_payload["count"] == 1
         memory_community_payload = client.get("/api/memory/communities").json()
         assert memory_community_payload["community_count"] == 1
+        memory_trend_payload = client.get("/api/memory/trends").json()
+        assert memory_trend_payload["latest"]["vector_count"] == 5
         docs_payload = client.get("/api/docs/search?query=foo").json()
         assert docs_payload["results"][0]["source"] == "foo/bar.py"
         memory_graph_payload = client.get("/api/graph/memory").json()

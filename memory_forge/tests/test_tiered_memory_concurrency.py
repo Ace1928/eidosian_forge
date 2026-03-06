@@ -1,3 +1,6 @@
+import sys
+import types
+
 from memory_forge.core.interfaces import MemoryType
 from memory_forge.core.tiered_memory import MemoryNamespace, MemoryTier, TieredMemorySystem
 
@@ -89,3 +92,35 @@ def test_memory_enrichment_adds_community_metadata_and_reindex(tmp_path) -> None
 
     graph = memory.memory_graph(limit=10)
     assert graph["summary"]["node_count"] >= 1
+
+
+def test_llm_enrichment_respects_runtime_budget_gate(tmp_path, monkeypatch) -> None:
+    class _DeniedCoordinator:
+        def __init__(self, *_args, **_kwargs) -> None:
+            pass
+
+        def can_allocate(self, **_kwargs):
+            return {"allowed": False, "reason": "instance_budget_exceeded"}
+
+    class _FakeModelConfig:
+        def generate_payload(self, *args, **kwargs):
+            raise AssertionError("Model call should not occur when coordinator denies budget")
+
+    monkeypatch.setitem(sys.modules, "eidosian_runtime", types.SimpleNamespace(ForgeRuntimeCoordinator=_DeniedCoordinator))
+    monkeypatch.setitem(sys.modules, "eidos_mcp.config.models", types.SimpleNamespace(ModelConfig=_FakeModelConfig))
+
+    memory = TieredMemorySystem(
+        persistence_dir=tmp_path,
+        embedder=_FakeEmbedder(),
+        llm_enrichment=True,
+        llm_model="qwen3.5:2b",
+    )
+    mem_id = memory.remember(
+        "Autonomous runtime memory enrichment should defer when the coordinator budget is saturated.",
+        tier=MemoryTier.LONG_TERM,
+        namespace=MemoryNamespace.KNOWLEDGE,
+        memory_type=MemoryType.SEMANTIC,
+    )
+    item = memory._find_memory(mem_id)
+    assert item is not None
+    assert memory._llm_enrichment(item) == {}

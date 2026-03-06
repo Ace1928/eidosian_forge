@@ -39,6 +39,7 @@ PIPELINE_STATUS = RUNTIME_DIR / "living_pipeline_status.json"
 SCHEDULER_STATUS = RUNTIME_DIR / "eidos_scheduler_status.json"
 COORDINATOR_STATUS = RUNTIME_DIR / "forge_coordinator_status.json"
 ATLAS_SESSION_PATH = RUNTIME_DIR / "atlas_explorer_sessions.json"
+MEMORY_TRENDS_PATH = RUNTIME_DIR / "memory_health_trends.json"
 WORD_GRAPH_PATH = FORGE_ROOT / "data" / "eidos_semantic_graph.json"
 KB_PATH = FORGE_ROOT / "data" / "kb.json"
 MEMORY_DIR = FORGE_ROOT / "data" / "tiered_memory"
@@ -496,6 +497,27 @@ def get_runtime_trend_summary(limit: int = 72) -> Dict[str, Any]:
     }
 
 
+def get_memory_trend_summary(limit: int = 72) -> Dict[str, Any]:
+    payload = _read_json_dict(MEMORY_TRENDS_PATH)
+    entries = [row for row in (payload.get("entries") or []) if isinstance(row, dict)][-max(1, int(limit)) :]
+    if not entries:
+        return {"contract": "eidos.memory_health_trend_summary.v1", "count": 0, "history": [], "latest": {}, "series": {}}
+    series = {
+        "vector_count": [max(0, int(row.get("vector_count") or 0)) for row in entries],
+        "community_count": [max(0, int(row.get("community_count") or 0)) for row in entries],
+        "memory_enriched": [max(0, int(row.get("memory_enriched") or 0)) for row in entries],
+        "reindexed": [max(0, int(row.get("reindexed") or 0)) for row in entries],
+        "budget_saturated": [1 if bool(row.get("budget_saturated")) else 0 for row in entries],
+    }
+    return {
+        "contract": "eidos.memory_health_trend_summary.v1",
+        "count": len(entries),
+        "latest": entries[-1],
+        "history": entries,
+        "series": series,
+    }
+
+
 def _read_session_store() -> Dict[str, Any]:
     payload = _read_json_dict(ATLAS_SESSION_PATH)
     payload.setdefault("contract", "eidos.atlas_sessions.v1")
@@ -682,6 +704,7 @@ def get_forge_overview() -> Dict[str, Any]:
         "code_forge": get_code_library_snapshot(),
         "knowledge": get_knowledge_snapshot(),
         "memory": get_memory_snapshot(),
+        "memory_trends": get_memory_trend_summary(limit=48),
     }
 
 
@@ -1382,6 +1405,11 @@ async def api_memory_communities(limit: int = 20):
     payload = get_memory_snapshot()
     payload["top_communities"] = list(payload.get("top_communities") or [])[: max(1, int(limit))]
     return JSONResponse(payload)
+
+
+@app.get("/api/memory/trends")
+async def api_memory_trends(limit: int = 72):
+    return JSONResponse(get_memory_trend_summary(limit=max(1, int(limit))))
 
 
 @app.get("/api/graph/memory")
