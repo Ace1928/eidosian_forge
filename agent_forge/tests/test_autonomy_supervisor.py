@@ -281,6 +281,19 @@ def test_supervisor_runtime_context_penalizes_model_heavy_mission(tmp_path: Path
             "active_models": [{"model": "qwen3.5:2b", "role": "doc_writer"}],
         },
     )
+    E.append(
+        state_dir,
+        "memory_bridge.status",
+        {
+            "available": True,
+            "query": "memory community runtime",
+            "stats": {
+                "vector_count": 3,
+                "community_count": 2,
+                "top_communities": [("knowledge:runtime:qwen", 2), ("task:workspace:agent", 1)],
+            },
+        },
+    )
 
     supervisor = AutonomySupervisor(
         state_dir,
@@ -324,5 +337,7 @@ def test_supervisor_runtime_context_penalizes_model_heavy_mission(tmp_path: Path
     assert payload["scheduler_state"] == "running"
     assert payload["pipeline_phase"] == "living_documentation"
     assert payload["active_model_count"] == 1
+    assert payload["memory_community_count"] == 2
+    assert payload["top_memory_communities"] == ["knowledge:runtime:qwen", "task:workspace:agent"]
     assert ctx["data"]["coordinator_state"] == "running"
     assert ctx["data"]["pipeline_phase"] == "living_documentation"

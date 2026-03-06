@@ -304,13 +304,23 @@ class AutonomySupervisor:
             _to_text(pipeline.get("phase")),
             _to_text(coordinator.get("state")),
             _to_text(coordinator.get("task")),
-            " ".join(
-                _to_text(item.get("model"))
-                for item in (coordinator.get("active_models") or [])
-                if isinstance(item, Mapping)
-            ),
+            " ".join(_to_text(item.get("model")) for item in (coordinator.get("active_models") or []) if isinstance(item, Mapping)),
         ]
         context_tokens |= _tokenize(" ".join(part for part in runtime_parts if part))
+        memory_status = {}
+        for evt in BUS.iter_events(self.state_dir, limit=120):
+            if evt.get("type") != "memory_bridge.status":
+                continue
+            data = evt.get("data") if isinstance(evt.get("data"), Mapping) else {}
+            memory_status = dict(data)
+        memory_stats = memory_status.get("stats") if isinstance(memory_status.get("stats"), Mapping) else {}
+        top_memory_communities = []
+        for row in memory_stats.get("top_communities") or []:
+            if isinstance(row, (list, tuple)) and row:
+                top_memory_communities.append(_to_text(row[0]))
+            elif isinstance(row, Mapping):
+                top_memory_communities.append(_to_text(row.get("community")))
+        context_tokens |= _tokenize(" ".join(top_memory_communities + [str(x) for x in memory_stats.get("top_tags") or []]))
 
         return {
             "query": query,
@@ -321,6 +331,7 @@ class AutonomySupervisor:
             "artifact_summary": artifact_summary,
             "trend_summary": trend_summary,
             "runtime": runtime,
+            "memory_status": memory_status,
         }
 
     def _recent_selections(self) -> list[dict[str, Any]]:
@@ -394,7 +405,9 @@ class AutonomySupervisor:
             if _to_text(item)
         }
         artifact_kinds = {
-            _to_text(item).lower() for item in (latest_trend.get("artifact_kinds") or {}).keys() if _to_text(item)
+            _to_text(item).lower()
+            for item in (latest_trend.get("artifact_kinds") or {}).keys()
+            if _to_text(item)
         }
         focus_communities = {
             _to_text(item).lower().replace(" ", "_")
@@ -402,7 +415,9 @@ class AutonomySupervisor:
             if _to_text(item)
         }
         focus_artifact_kinds = {
-            _to_text(item).lower() for item in mission.get("focus_artifact_kinds", []) or [] if _to_text(item)
+            _to_text(item).lower()
+            for item in mission.get("focus_artifact_kinds", []) or []
+            if _to_text(item)
         }
         targeted_overlap = len(focus_communities & weak_labels) + len(focus_artifact_kinds & artifact_kinds)
         runtime = context.get("runtime") if isinstance(context.get("runtime"), Mapping) else {}
@@ -414,6 +429,20 @@ class AutonomySupervisor:
         pipeline_phase = _to_text(pipeline.get("phase")).lower()
         coordinator_state = _to_text(coordinator.get("state")).lower()
         active_models = list(coordinator.get("active_models") or [])
+        memory_status = context.get("memory_status") if isinstance(context.get("memory_status"), Mapping) else {}
+        memory_stats = memory_status.get("stats") if isinstance(memory_status.get("stats"), Mapping) else {}
+        vector_count = int(memory_stats.get("vector_count") or 0)
+        community_count = int(memory_stats.get("community_count") or 0)
+        top_memory_communities = {
+            _to_text(item[0] if isinstance(item, (list, tuple)) and item else item.get("community") if isinstance(item, Mapping) else item).lower()
+            for item in memory_stats.get("top_communities") or []
+            if _to_text(item[0] if isinstance(item, (list, tuple)) and item else item.get("community") if isinstance(item, Mapping) else item)
+        }
+        focus_memory_communities = {
+            _to_text(item).lower()
+            for item in mission.get("focus_memory_communities", []) or []
+            if _to_text(item)
+        }
         is_model_heavy = template in {"consciousness_guard"} or bool(mission.get("requires_llm", False))
         if scheduler_state == "error" or pipeline_state == "failed" or coordinator_state == "error":
             score += 0.5 if template == "hygiene" else 0.1
@@ -421,6 +450,12 @@ class AutonomySupervisor:
             score -= 0.35
         if scheduler_state == "running" and template == "hygiene":
             score += 0.15
+        if template == "hygiene" and (vector_count == 0 or community_count == 0):
+            score += 0.35
+        if template == "consciousness_guard" and vector_count > 0 and community_count > 0:
+            score += 0.2
+        if focus_memory_communities:
+            score += min(0.45, 0.15 * len(focus_memory_communities & top_memory_communities))
 
         if template == "hygiene":
             score += min(1.4, benchmark_failures * 0.45 + drift_warning_artifacts * 0.25)
@@ -489,25 +524,22 @@ class AutonomySupervisor:
             "hit_count": len(context.get("hits") or []),
             "report_count": int(((context.get("report_summary") or {}).get("count")) or 0),
             "artifact_count": int(((context.get("artifact_summary") or {}).get("count")) or 0),
-            "average_report_quality": float(
-                ((context.get("report_summary") or {}).get("average_quality_score")) or 0.0
-            ),
+            "average_report_quality": float(((context.get("report_summary") or {}).get("average_quality_score")) or 0.0),
             "benchmark_failures": int(((context.get("artifact_summary") or {}).get("benchmark_failures")) or 0),
-            "weak_communities": list(
-                (((context.get("trend_summary") or {}).get("latest")) or {}).get("weak_community_labels") or []
-            ),
-            "artifact_kinds": sorted(
-                list(((((context.get("trend_summary") or {}).get("latest")) or {}).get("artifact_kinds") or {}).keys())
-            ),
+            "weak_communities": list((((context.get("trend_summary") or {}).get("latest")) or {}).get("weak_community_labels") or []),
+            "artifact_kinds": sorted(list(((((context.get("trend_summary") or {}).get("latest")) or {}).get("artifact_kinds") or {}).keys())),
+            "memory_community_count": int(((((context.get("memory_status") or {}).get("stats")) or {}).get("community_count")) or 0),
+            "top_memory_communities": [
+                _to_text(item[0] if isinstance(item, (list, tuple)) and item else item.get("community") if isinstance(item, Mapping) else item)
+                for item in ((((context.get("memory_status") or {}).get("stats")) or {}).get("top_communities") or [])
+            ],
             "repo_root": str(self.repo_root),
             "repo_dirty": repo_dirty,
             "scheduler_state": _to_text((((context.get("runtime") or {}).get("scheduler")) or {}).get("state")),
             "pipeline_state": _to_text((((context.get("runtime") or {}).get("pipeline")) or {}).get("state")),
             "pipeline_phase": _to_text((((context.get("runtime") or {}).get("pipeline")) or {}).get("phase")),
             "coordinator_state": _to_text((((context.get("runtime") or {}).get("coordinator")) or {}).get("state")),
-            "active_model_count": len(
-                ((((context.get("runtime") or {}).get("coordinator")) or {}).get("active_models")) or []
-            ),
+            "active_model_count": len(((((context.get("runtime") or {}).get("coordinator")) or {}).get("active_models")) or []),
         }
         BUS.append(self.state_dir, "autonomy.context", ctx_payload, tags=["autonomy", "context"])
 
@@ -595,21 +627,18 @@ class AutonomySupervisor:
             "context_hits": len(context.get("hits") or []),
             "report_count": int(((context.get("report_summary") or {}).get("count")) or 0),
             "artifact_count": int(((context.get("artifact_summary") or {}).get("count")) or 0),
-            "average_report_quality": float(
-                ((context.get("report_summary") or {}).get("average_quality_score")) or 0.0
-            ),
+            "average_report_quality": float(((context.get("report_summary") or {}).get("average_quality_score")) or 0.0),
             "benchmark_failures": int(((context.get("artifact_summary") or {}).get("benchmark_failures")) or 0),
-            "weak_communities": list(
-                (((context.get("trend_summary") or {}).get("latest")) or {}).get("weak_community_labels") or []
-            ),
-            "artifact_kinds": sorted(
-                list(((((context.get("trend_summary") or {}).get("latest")) or {}).get("artifact_kinds") or {}).keys())
-            ),
+            "weak_communities": list((((context.get("trend_summary") or {}).get("latest")) or {}).get("weak_community_labels") or []),
+            "artifact_kinds": sorted(list(((((context.get("trend_summary") or {}).get("latest")) or {}).get("artifact_kinds") or {}).keys())),
+            "memory_community_count": int(((((context.get("memory_status") or {}).get("stats")) or {}).get("community_count")) or 0),
+            "top_memory_communities": [
+                _to_text(item[0] if isinstance(item, (list, tuple)) and item else item.get("community") if isinstance(item, Mapping) else item)
+                for item in ((((context.get("memory_status") or {}).get("stats")) or {}).get("top_communities") or [])
+            ],
             "scheduler_state": _to_text((((context.get("runtime") or {}).get("scheduler")) or {}).get("state")),
             "pipeline_phase": _to_text((((context.get("runtime") or {}).get("pipeline")) or {}).get("phase")),
-            "active_model_count": len(
-                ((((context.get("runtime") or {}).get("coordinator")) or {}).get("active_models")) or []
-            ),
+            "active_model_count": len(((((context.get("runtime") or {}).get("coordinator")) or {}).get("active_models")) or []),
         }
         BUS.append(self.state_dir, "autonomy.mission_selected", payload, tags=["autonomy", "selected"])
         S.append_journal(

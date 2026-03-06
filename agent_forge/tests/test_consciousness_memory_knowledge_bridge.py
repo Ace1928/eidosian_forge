@@ -60,6 +60,9 @@ class _FakeIntrospector:
             avg_importance=0.8,
             avg_access_count=0.2,
             top_tags=[("agent", 1), ("knowledge", 1)],
+            vector_count=2,
+            community_count=1,
+            top_communities=[("task:workspace:agent", 2)],
         )
 
     def analyze_patterns(self) -> list[dict[str, Any]]:
@@ -153,9 +156,15 @@ def test_memory_bridge_emits_recall_and_broadcast(tmp_path: Path) -> None:
     all_events = events.iter_events(base, limit=None)
     assert any(evt.get("type") == "mem.recall" for evt in all_events)
     assert any(evt.get("type") == "memory_bridge.status" for evt in all_events)
+    assert any(evt.get("type") == "mem.communities" for evt in all_events)
     assert any(
         evt.get("type") == "workspace.broadcast"
         and (((evt.get("data") or {}).get("payload") or {}).get("kind") == "MEMORY")
+        for evt in all_events
+    )
+    assert any(
+        evt.get("type") == "workspace.broadcast"
+        and (((evt.get("data") or {}).get("payload") or {}).get("kind") == "MEMORY_COMMUNITIES")
         for evt in all_events
     )
 

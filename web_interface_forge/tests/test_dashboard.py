@@ -114,7 +114,13 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(
         dashboard,
         "get_runtime_coordinator",
-        lambda: {"available": True, "state": "running", "task": "living_documentation", "active_models": [{"model": "qwen3.5:2b"}]},
+        lambda: {
+            "available": True,
+            "state": "running",
+            "task": "living_documentation",
+            "active_models": [{"model": "qwen3.5:2b"}],
+            "history": [{"task": "word_forge", "state": "running", "active_model_count": 1}],
+        },
     )
     monkeypatch.setattr(
         dashboard,
@@ -165,6 +171,17 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         "get_explorer_node",
         lambda domain, node_id: {"found": True, "domain": domain, "node": {"id": node_id, "content": "detail"}},
     )
+    monkeypatch.setattr(
+        dashboard,
+        "get_graph_neighbors",
+        lambda domain, node_id, limit=20: {
+            "found": True,
+            "focus_id": f"{domain}:{node_id}",
+            "nodes": [{"id": f"{domain}:{node_id}", "domain": domain}],
+            "edges": [],
+            "summary": {"node_count": 1, "edge_count": 0},
+        },
+    )
 
     with TestClient(dashboard.app) as client:
         resp = client.get("/api/doc/status")
@@ -184,6 +201,8 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         assert runtime_payload["pipeline"]["pipeline"]["phase"] == "word_forge"
         coordinator_payload = client.get("/api/runtime/coordinator").json()
         assert coordinator_payload["task"] == "living_documentation"
+        history_payload = client.get("/api/runtime/history").json()
+        assert history_payload["count"] >= 1
 
         graph_payload = client.get("/api/graph/search?query=graph").json()
         assert graph_payload["count"] == 1
@@ -210,6 +229,8 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         assert explorer_payload["memory"]["count"] == 1
         node_payload = client.get("/api/explorer/node/knowledge/k1").json()
         assert node_payload["node"]["id"] == "k1"
+        neighbor_payload = client.get("/api/explorer/neighbors/knowledge/k1").json()
+        assert neighbor_payload["summary"]["node_count"] == 1
 
 
 def test_browse_blocks_path_traversal() -> None:

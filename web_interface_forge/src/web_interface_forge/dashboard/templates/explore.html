@@ -320,6 +320,11 @@
             <span id="search-status" class="status-line">Idle</span>
         </div>
         <div id="results" class="results"></div>
+        <div class="section-title" style="margin-top:16px;">
+            <h3>Runtime History</h3>
+            <span id="history-status" class="status-line">Loading</span>
+        </div>
+        <div id="runtime-history" class="mini-list"></div>
     </section>
 
     <section class="explorer-panel graph-wrap">
@@ -375,10 +380,13 @@ const domainFilterEl = document.getElementById("domain-filter");
 const edgeFilterEl = document.getElementById("edge-filter");
 const metricNodesEl = document.getElementById("metric-nodes");
 const metricEdgesEl = document.getElementById("metric-edges");
+const historyStatusEl = document.getElementById("history-status");
+const runtimeHistoryEl = document.getElementById("runtime-history");
 
 let unifiedGraph = {nodes: [], edges: [], summary: {}};
 let runtimeOverview = {{ forge_overview | tojson }};
 let activeNode = null;
+let graphOverride = null;
 
 function escapeHtml(text) {
     return String(text || "")
@@ -398,11 +406,12 @@ function setRuntimePills() {
 }
 
 function filteredGraph() {
+    const sourceGraph = graphOverride || unifiedGraph;
     const domain = domainFilterEl.value;
     const edgeFilter = edgeFilterEl.value;
-    const visibleNodes = unifiedGraph.nodes.filter((node) => domain === "all" || node.domain === domain);
+    const visibleNodes = sourceGraph.nodes.filter((node) => domain === "all" || node.domain === domain);
     const visibleIds = new Set(visibleNodes.map((node) => node.id));
-    const visibleEdges = unifiedGraph.edges.filter((edge) => {
+    const visibleEdges = sourceGraph.edges.filter((edge) => {
         if (!visibleIds.has(edge.source) || !visibleIds.has(edge.target)) {
             return false;
         }
@@ -550,6 +559,18 @@ function renderDetailHtml(title, blocks, extraButtons = []) {
     `;
 }
 
+async function expandNeighborhood(domain, refId) {
+    const resp = await fetch(`/api/explorer/neighbors/${encodeURIComponent(domain)}/${encodeURIComponent(refId)}?limit=24`);
+    const payload = await resp.json();
+    if (!payload.found) {
+        return;
+    }
+    graphOverride = {nodes: payload.nodes || [], edges: payload.edges || [], summary: payload.summary || {}};
+    const focus = (graphOverride.nodes || []).find((node) => node.id === payload.focus_id);
+    activeNode = focus || activeNode;
+    renderGraph();
+}
+
 async function loadNodeDetails(domain, refId, graphNode = null) {
     detailDomainEl.textContent = domain || "unknown";
     const resp = await fetch(`/api/explorer/node/${encodeURIComponent(domain)}/${encodeURIComponent(refId)}`);
@@ -565,7 +586,10 @@ async function loadNodeDetails(domain, refId, graphNode = null) {
     }
     if (domain === "code" && payload.unit) {
         const snippet = payload.snippet?.snippet || "";
-        const buttons = snippet ? ['<button id="copy-snippet">Copy Snippet</button>'] : [];
+        const buttons = ['<button id="expand-neighborhood">Expand Neighborhood</button>'];
+        if (snippet) {
+            buttons.unshift('<button id="copy-snippet">Copy Snippet</button>');
+        }
         blocks.push(`
             <div class="detail-block"><strong>Unit</strong><pre>${escapeHtml(JSON.stringify(payload.unit, null, 2))}</pre></div>
             <div class="detail-block"><strong>Snippet</strong><pre id="snippet-text">${escapeHtml(snippet)}</pre></div>
@@ -580,8 +604,13 @@ async function loadNodeDetails(domain, refId, graphNode = null) {
                 copyButton.textContent = "Copied";
             });
         }
+        const expandButton = document.getElementById("expand-neighborhood");
+        if (expandButton) {
+            expandButton.addEventListener("click", () => expandNeighborhood(domain, refId));
+        }
         return;
     }
+    const buttons = ['<button id="expand-neighborhood">Expand Neighborhood</button>'];
     if (payload.node) {
         blocks.push(`<div class="detail-block"><pre>${escapeHtml(JSON.stringify(payload.node, null, 2))}</pre></div>`);
     }
@@ -594,7 +623,11 @@ async function loadNodeDetails(domain, refId, graphNode = null) {
     if (!blocks.length) {
         blocks.push('<div class="detail-block empty">No detail payload was returned for this selection.</div>');
     }
-    renderDetailHtml(refId, blocks);
+    renderDetailHtml(refId, blocks, buttons);
+    const expandButton = document.getElementById("expand-neighborhood");
+    if (expandButton) {
+        expandButton.addEventListener("click", () => expandNeighborhood(domain, refId));
+    }
 }
 
 async function runUnifiedSearch() {
@@ -618,6 +651,19 @@ async function loadRuntime() {
     setRuntimePills();
 }
 
+async function loadRuntimeHistory() {
+    const resp = await fetch("/api/runtime/history?limit=12");
+    const payload = await resp.json();
+    const rows = (payload.history || []).slice().reverse();
+    historyStatusEl.textContent = `${rows.length} entries`;
+    runtimeHistoryEl.innerHTML = rows.length ? rows.map((row) => `
+        <button type="button">
+            <strong>${escapeHtml(row.task || "idle")}</strong><br>
+            <span style="color:var(--text-secondary)">${escapeHtml(row.state || "unknown")} | models=${escapeHtml(String(row.active_model_count ?? 0))}</span>
+        </button>
+    `).join("") : '<div class="empty">No runtime history available.</div>';
+}
+
 async function loadUnifiedGraph() {
     const resp = await fetch("/api/graph/unified?limit_per_domain=80&limit_edges=320");
     unifiedGraph = await resp.json();
@@ -627,6 +673,7 @@ async function loadUnifiedGraph() {
 document.getElementById("run-search").addEventListener("click", runUnifiedSearch);
 document.getElementById("reset-graph").addEventListener("click", () => {
     activeNode = null;
+    graphOverride = null;
     domainFilterEl.value = "all";
     edgeFilterEl.value = "all";
     renderGraph();
@@ -642,5 +689,6 @@ queryEl.addEventListener("keydown", (event) => {
 });
 
 Promise.all([loadRuntime(), loadUnifiedGraph()]).then(() => runUnifiedSearch());
+loadRuntimeHistory();
 </script>
 {% endblock %}
