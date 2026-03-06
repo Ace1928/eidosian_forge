@@ -34,9 +34,9 @@ from code_forge.digester.pipeline import build_duplication_index, build_repo_ind
 from code_forge.digester.schema import validate_output_dir
 from code_forge.ingest.runner import IngestionRunner
 from code_forge.library.db import CodeLibraryDB
+from eidos_mcp.config.models import get_model_config
 from eidosian_core import eidosian
 from eidosian_core.ports import get_service_port
-from eidos_mcp.config.models import get_model_config
 
 from knowledge_forge import GraphRAGIntegration
 

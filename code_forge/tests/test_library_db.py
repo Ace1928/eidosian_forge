@@ -326,19 +326,16 @@ def test_render_snippet_and_unit_context(tmp_path: Path, monkeypatch) -> None:
     src_dir.mkdir(parents=True, exist_ok=True)
     source_path = src_dir / "math.py"
     source_path.write_text(
-        "def add(a, b):\n"
-        "    total = a + b\n"
-        "    return total\n"
-        "\n"
-        "def sub(a, b):\n"
-        "    return a - b\n",
+        "def add(a, b):\n" "    total = a + b\n" "    return total\n" "\n" "def sub(a, b):\n" "    return a - b\n",
         encoding="utf-8",
     )
     monkeypatch.setenv("EIDOS_FORGE_DIR", str(repo_root))
 
     db = CodeLibraryDB(repo_root / "data" / "code_forge" / "library.sqlite")
     content_hash = db.add_text(source_path.read_text(encoding="utf-8"))
-    module_id = db.add_unit(CodeUnit(unit_type="module", name="math", qualified_name="src.math", file_path="src/math.py"))
+    module_id = db.add_unit(
+        CodeUnit(unit_type="module", name="math", qualified_name="src.math", file_path="src/math.py")
+    )
     fn_id = db.add_unit(
         CodeUnit(
             unit_type="function",
