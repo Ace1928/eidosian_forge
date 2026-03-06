@@ -348,6 +348,38 @@ def grag_query_local(query: str) -> str:
     return str(grag.local_query(query))
 
 
+@tool(
+    name="grag_reports",
+    description="Read native GraphRAG community report summaries from the shared local vector+graph substrate.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "limit": {"type": "integer", "description": "Maximum reports to return (default: 5)"},
+        },
+    },
+)
+@eidosian()
+def grag_reports(limit: int = 5) -> str:
+    """Return native GraphRAG community report summaries."""
+    return json.dumps(grag.native_report_summary(limit=limit), indent=2)
+
+
+@tool(
+    name="grag_artifacts",
+    description="Read native GraphRAG Code Forge artifact summaries from the shared local vector+graph substrate.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "limit": {"type": "integer", "description": "Maximum artifacts to return (default: 10)"},
+        },
+    },
+)
+@eidosian()
+def grag_artifacts(limit: int = 10) -> str:
+    """Return native GraphRAG artifact summaries."""
+    return json.dumps(grag.native_artifact_summary(limit=limit), indent=2)
+
+
 # =============================================================================
 # UNIFIED CONTEXT (Knowledge + Memory Bridge)
 # =============================================================================

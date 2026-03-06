@@ -106,3 +106,27 @@ def test_code_forge_provenance_unit_filter(tmp_path: Path, monkeypatch) -> None:
 
     empty = json.loads(code.code_forge_provenance(unit_id="missing"))
     assert empty["count"] == 0
+
+
+def test_code_forge_artifact_summary_reads_native_graphrag(monkeypatch, tmp_path: Path) -> None:
+    class _FakeGraphRAG:
+        def __init__(self, graphrag_root):
+            self.root = graphrag_root
+
+        def native_artifact_summary(self, limit: int = 10):
+            return {
+                "count": 1,
+                "items": [
+                    {
+                        "kind": "code_forge_provenance_registry",
+                        "artifact_path": "data/code_forge/cycle/run_001/provenance_registry.json",
+                    }
+                ][:limit],
+            }
+
+    monkeypatch.setattr(code, "FORGE_DIR", tmp_path.resolve())
+    monkeypatch.setattr("knowledge_forge.integrations.graphrag.GraphRAGIntegration", _FakeGraphRAG)
+
+    payload = json.loads(code.code_forge_artifact_summary(limit=1))
+    assert payload["count"] == 1
+    assert payload["items"][0]["kind"] == "code_forge_provenance_registry"

@@ -736,6 +736,76 @@ class GraphRAGIntegration:
             "top_community": reports[0]["community"] if reports else None,
         }
 
+    def _load_native_reports_payload(self) -> Dict[str, Any]:
+        path = self.root / "output" / "native_community_reports.json"
+        if not path.exists():
+            return {"generated_at": None, "reports": [], "path": str(path)}
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            return {"generated_at": None, "reports": [], "path": str(path)}
+        if not isinstance(payload, dict):
+            return {"generated_at": None, "reports": [], "path": str(path)}
+        payload["path"] = str(path)
+        if not isinstance(payload.get("reports"), list):
+            payload["reports"] = []
+        return payload
+
+    @eidosian()
+    def native_report_summary(self, limit: int = 5) -> Dict[str, Any]:
+        payload = self._load_native_reports_payload()
+        reports = [row for row in payload.get("reports", []) if isinstance(row, dict)]
+        max_reports = max(1, int(limit or 5))
+        summaries: list[dict[str, Any]] = []
+        for row in reports[:max_reports]:
+            summaries.append(
+                {
+                    "community": row.get("community"),
+                    "title": row.get("title"),
+                    "rating": row.get("rating"),
+                    "summary": row.get("summary"),
+                    "finding_count": len(row.get("findings") or []),
+                    "node_count": len(row.get("node_ids") or []),
+                }
+            )
+        return {
+            "generated_at": payload.get("generated_at"),
+            "path": payload.get("path"),
+            "count": len(reports),
+            "reports": summaries,
+        }
+
+    @eidosian()
+    def native_artifact_summary(self, limit: int = 10) -> Dict[str, Any]:
+        state = self._load_native_state()
+        artifacts = [
+            value
+            for value in (state.get("code_forge_artifacts") or {}).values()
+            if isinstance(value, dict)
+        ]
+        items = sorted(
+            artifacts,
+            key=lambda row: str(row.get("updated_at") or ""),
+            reverse=True,
+        )
+        max_items = max(1, int(limit or 10))
+        summary_items = [
+            {
+                "kind": row.get("kind"),
+                "artifact_path": row.get("artifact_path"),
+                "updated_at": row.get("updated_at"),
+                "detail_node_count": len(row.get("node_ids") or []),
+            }
+            for row in items[:max_items]
+        ]
+        kind_counts = Counter(str(row.get("kind") or "unknown") for row in artifacts)
+        return {
+            "count": len(artifacts),
+            "kinds": dict(sorted(kind_counts.items())),
+            "items": summary_items,
+            "state_path": str(self.native_state_path),
+        }
+
     def _native_index(self, scan_roots: List[Path]) -> Dict[str, Any]:
         bridge = self._load_bridge()
         if bridge is None or getattr(bridge, "knowledge", None) is None:
