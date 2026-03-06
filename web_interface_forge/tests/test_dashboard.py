@@ -124,6 +124,15 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
     )
     monkeypatch.setattr(
         dashboard,
+        "get_runtime_history",
+        lambda limit=24: {
+            "count": 1,
+            "history": [{"task": "word_forge", "state": "running", "active_model_count": 1}],
+            "current": {},
+        },
+    )
+    monkeypatch.setattr(
+        dashboard,
         "get_memory_snapshot",
         lambda: {
             "count": 3,
@@ -174,12 +183,12 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(
         dashboard,
         "get_graph_neighbors",
-        lambda domain, node_id, limit=20: {
+        lambda domain, node_id, limit=20, depth=1: {
             "found": True,
             "focus_id": f"{domain}:{node_id}",
             "nodes": [{"id": f"{domain}:{node_id}", "domain": domain}],
             "edges": [],
-            "summary": {"node_count": 1, "edge_count": 0},
+            "summary": {"node_count": 1, "edge_count": 0, "depth": depth},
         },
     )
 
@@ -231,6 +240,7 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         assert node_payload["node"]["id"] == "k1"
         neighbor_payload = client.get("/api/explorer/neighbors/knowledge/k1").json()
         assert neighbor_payload["summary"]["node_count"] == 1
+        assert neighbor_payload["summary"]["depth"] == 1
 
 
 def test_browse_blocks_path_traversal() -> None:

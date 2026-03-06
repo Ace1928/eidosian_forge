@@ -313,6 +313,19 @@
                     <button id="reset-graph" class="secondary">Reset Graph</button>
                 </div>
             </div>
+            <div class="field-row">
+                <div class="field">
+                    <label for="neighbor-depth">Traversal Depth</label>
+                    <select id="neighbor-depth">
+                        <option value="1">Depth 1</option>
+                        <option value="2" selected>Depth 2</option>
+                        <option value="3">Depth 3</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <button id="toggle-pin" class="secondary">Pin Selection</button>
+                </div>
+            </div>
         </div>
 
         <div class="section-title">
@@ -382,11 +395,14 @@ const metricNodesEl = document.getElementById("metric-nodes");
 const metricEdgesEl = document.getElementById("metric-edges");
 const historyStatusEl = document.getElementById("history-status");
 const runtimeHistoryEl = document.getElementById("runtime-history");
+const neighborDepthEl = document.getElementById("neighbor-depth");
+const togglePinEl = document.getElementById("toggle-pin");
 
 let unifiedGraph = {nodes: [], edges: [], summary: {}};
 let runtimeOverview = {{ forge_overview | tojson }};
 let activeNode = null;
 let graphOverride = null;
+let pinnedNodes = new Set();
 
 function escapeHtml(text) {
     return String(text || "")
@@ -466,13 +482,14 @@ function renderGraph() {
     const nodeMarkup = laidOutNodes.map((node) => {
         const color = DOMAIN_COLORS[node.domain] || "#5cc8ff";
         const isActive = activeNode && activeNode.id === node.id;
+        const isPinned = pinnedNodes.has(node.id);
         const stroke = isActive ? "#ffffff" : color;
-        const radius = isActive ? 10 : 7;
+        const radius = isActive ? 10 : (isPinned ? 9 : 7);
         const label = escapeHtml(node.label || node.ref_id || node.id);
         const refId = encodeURIComponent(String(node.ref_id || ""));
         return `
             <g class="graph-node" data-domain="${escapeHtml(node.domain)}" data-ref="${refId}" data-id="${escapeHtml(node.id)}" style="cursor:pointer">
-                <circle cx="${node.x}" cy="${node.y}" r="${radius}" fill="${color}" fill-opacity="0.92" stroke="${stroke}" stroke-width="${isActive ? 2.2 : 1.1}"></circle>
+                <circle cx="${node.x}" cy="${node.y}" r="${radius}" fill="${color}" fill-opacity="${isPinned ? 1.0 : 0.92}" stroke="${stroke}" stroke-width="${isActive ? 2.2 : (isPinned ? 1.8 : 1.1)}"></circle>
                 <text x="${node.x + 12}" y="${node.y + 4}" fill="#e6f4ff" font-size="11">${label}</text>
             </g>
         `;
@@ -560,12 +577,28 @@ function renderDetailHtml(title, blocks, extraButtons = []) {
 }
 
 async function expandNeighborhood(domain, refId) {
-    const resp = await fetch(`/api/explorer/neighbors/${encodeURIComponent(domain)}/${encodeURIComponent(refId)}?limit=24`);
+    const depth = Number(neighborDepthEl.value || "2");
+    const resp = await fetch(`/api/explorer/neighbors/${encodeURIComponent(domain)}/${encodeURIComponent(refId)}?limit=36&depth=${depth}`);
     const payload = await resp.json();
     if (!payload.found) {
         return;
     }
-    graphOverride = {nodes: payload.nodes || [], edges: payload.edges || [], summary: payload.summary || {}};
+    const currentNodes = graphOverride?.nodes || [];
+    const currentEdges = graphOverride?.edges || [];
+    const byId = new Map(currentNodes.map((node) => [node.id, node]));
+    for (const node of (payload.nodes || [])) {
+        byId.set(node.id, node);
+    }
+    const edgeKey = (edge) => `${edge.source}|${edge.target}|${edge.rel_type}`;
+    const edgeMap = new Map(currentEdges.map((edge) => [edgeKey(edge), edge]));
+    for (const edge of (payload.edges || [])) {
+        edgeMap.set(edgeKey(edge), edge);
+    }
+    graphOverride = {
+        nodes: Array.from(byId.values()),
+        edges: Array.from(edgeMap.values()),
+        summary: payload.summary || {},
+    };
     const focus = (graphOverride.nodes || []).find((node) => node.id === payload.focus_id);
     activeNode = focus || activeNode;
     renderGraph();
@@ -674,11 +707,25 @@ document.getElementById("run-search").addEventListener("click", runUnifiedSearch
 document.getElementById("reset-graph").addEventListener("click", () => {
     activeNode = null;
     graphOverride = null;
+    pinnedNodes = new Set();
     domainFilterEl.value = "all";
     edgeFilterEl.value = "all";
     renderGraph();
     detailDomainEl.textContent = "none";
     detailEl.innerHTML = '<div class="detail-block empty">Graph selection cleared.</div>';
+});
+togglePinEl.addEventListener("click", () => {
+    if (!activeNode) {
+        return;
+    }
+    const next = new Set(pinnedNodes);
+    if (next.has(activeNode.id)) {
+        next.delete(activeNode.id);
+    } else {
+        next.add(activeNode.id);
+    }
+    pinnedNodes = next;
+    renderGraph();
 });
 domainFilterEl.addEventListener("change", renderGraph);
 edgeFilterEl.addEventListener("change", renderGraph);

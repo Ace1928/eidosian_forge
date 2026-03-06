@@ -366,8 +366,17 @@ def get_runtime_coordinator() -> Dict[str, Any]:
 
 def get_runtime_history(limit: int = 24) -> Dict[str, Any]:
     limit = max(1, int(limit))
-    coordinator = get_runtime_coordinator()
-    history = list(coordinator.get("history") or [])[-limit:]
+    if ForgeRuntimeCoordinator is not None:
+        try:
+            coordinator_obj = ForgeRuntimeCoordinator(COORDINATOR_STATUS)
+            history = coordinator_obj.history(limit=limit)
+            coordinator = coordinator_obj.read()
+        except Exception:
+            coordinator = get_runtime_coordinator()
+            history = list(coordinator.get("history") or [])[-limit:]
+    else:
+        coordinator = get_runtime_coordinator()
+        history = list(coordinator.get("history") or [])[-limit:]
     pipeline = _read_json_dict(PIPELINE_STATUS)
     scheduler = _read_json_dict(SCHEDULER_STATUS)
     if pipeline or scheduler:
@@ -920,8 +929,9 @@ def get_explorer_node(domain: str, node_id: str) -> Dict[str, Any]:
     return {"found": False, "domain": domain_key}
 
 
-def get_graph_neighbors(domain: str, node_id: str, limit: int = 20) -> Dict[str, Any]:
+def get_graph_neighbors(domain: str, node_id: str, limit: int = 20, depth: int = 1) -> Dict[str, Any]:
     limit = max(1, int(limit))
+    depth = max(1, int(depth))
     graph = get_unified_graph(limit_per_domain=120, limit_edges=420)
     domain_key = str(domain or "").strip().lower()
     ref_id = str(node_id or "").strip()
@@ -937,16 +947,25 @@ def get_graph_neighbors(domain: str, node_id: str, limit: int = 20) -> Dict[str,
     node_map = {str(node.get("id") or ""): node for node in graph.get("nodes") or [] if isinstance(node, dict)}
     edges = []
     neighbor_ids = {target_id}
-    for edge in graph.get("edges") or []:
-        if not isinstance(edge, dict):
-            continue
-        source = str(edge.get("source") or "")
-        target = str(edge.get("target") or "")
-        if source == target_id or target == target_id:
-            edges.append(edge)
-            neighbor_ids.add(source)
-            neighbor_ids.add(target)
-        if len(edges) >= limit:
+    frontier = {target_id}
+    all_edges = [edge for edge in (graph.get("edges") or []) if isinstance(edge, dict)]
+    for _ in range(depth):
+        next_frontier: set[str] = set()
+        for edge in all_edges:
+            source = str(edge.get("source") or "")
+            target = str(edge.get("target") or "")
+            if source in frontier or target in frontier:
+                edges.append(edge)
+                if source not in neighbor_ids:
+                    next_frontier.add(source)
+                if target not in neighbor_ids:
+                    next_frontier.add(target)
+                neighbor_ids.add(source)
+                neighbor_ids.add(target)
+            if len(edges) >= limit:
+                break
+        frontier = next_frontier
+        if not frontier or len(edges) >= limit:
             break
     nodes = [node_map[node_id] for node_id in neighbor_ids if node_id in node_map]
     return {
@@ -954,7 +973,7 @@ def get_graph_neighbors(domain: str, node_id: str, limit: int = 20) -> Dict[str,
         "focus_id": target_id,
         "nodes": nodes,
         "edges": edges,
-        "summary": {"node_count": len(nodes), "edge_count": len(edges)},
+        "summary": {"node_count": len(nodes), "edge_count": len(edges), "depth": depth},
     }
 
 
@@ -1100,8 +1119,8 @@ async def api_explorer_node(domain: str, node_id: str):
 
 
 @app.get("/api/explorer/neighbors/{domain}/{node_id:path}")
-async def api_explorer_neighbors(domain: str, node_id: str, limit: int = 20):
-    return JSONResponse(get_graph_neighbors(domain, node_id, limit=max(1, int(limit))))
+async def api_explorer_neighbors(domain: str, node_id: str, limit: int = 20, depth: int = 1):
+    return JSONResponse(get_graph_neighbors(domain, node_id, limit=max(1, int(limit)), depth=max(1, int(depth))))
 
 
 @app.get("/api/memory/search")
