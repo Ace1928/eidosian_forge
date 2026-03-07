@@ -7,15 +7,17 @@
 
 ## 🗺️ Overview
 
-`gis_forge` (Global Information System) is the centralized configuration registry for the Eidosian system.
-It supports:
-- **Hierarchical Keys**: Dot notation (`server.host`).
+`gis_forge` (Grid Information System) is the master Ontology Manager and centralized configuration registry for the Eidosian ecosystem. 
+It has evolved from a simple key-value store to managing the **Unified Eidosian Ontology (UEO)**—a high-performance, multidimensional vector graph that losslessly compresses Memory, Knowledge, Word, and Code into a single deductive substrate.
+
+### Capabilities:
+- **Unified Ontology (`ontology.py`)**: Vector-backed multidimensional graph storage (ChromaDB).
+- **Hierarchical Config**: Dot notation (`server.host`).
 - **Environment Overrides**: `EIDOS_SERVER_HOST` overrides `server.host`.
-- **Persistence**: Save/Load to JSON.
-- **Pub/Sub**: Listen for config changes.
 
 ## 🏗️ Architecture
-- `gis_core.py`: Main `GisCore` class.
+- `ontology.py`: The `UnifiedOntology` vector manager.
+- `gis_core.py`: Legacy configuration manager.
 
 ## 🚀 Usage
 
