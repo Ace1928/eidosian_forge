@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import asyncio
 import importlib.machinery
 import importlib.util
-import asyncio
 import json
 import sys
 from contextlib import asynccontextmanager
@@ -15,7 +15,12 @@ for extra in (LIB_ROOT, ROOT / "eidos_mcp" / "src"):
     if value not in sys.path:
         sys.path.insert(0, value)
 
-from eidosian_agent.local_mcp_agent import build_tool_contracts, load_profile, normalize_profile, validate_tool_arguments
+from eidosian_agent.local_mcp_agent import (
+    build_tool_contracts,
+    load_profile,
+    normalize_profile,
+    validate_tool_arguments,
+)
 
 SCRIPT_PATH = ROOT / "scripts" / "eidos_local_agent.py"
 
@@ -43,12 +48,16 @@ class _FakeSession:
     async def call_tool(self, name, arguments=None):
         class _Text:
             type = "text"
+
             def __init__(self, text: str):
                 self.text = text
+
         class _Result:
             structuredContent = None
+
             def __init__(self, text: str):
                 self.content = [_Text(text)]
+
         return _Result(self._responses.get(name, "ok"))
 
 
