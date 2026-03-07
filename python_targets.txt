@@ -1,3 +1,1 @@
-scripts/tests/test_termux_shell_bootstrap.py
-web_interface_forge/src/web_interface_forge/dashboard/main.py
-web_interface_forge/tests/test_dashboard.py
+gis_forge/src/gis_forge/ontology.py
