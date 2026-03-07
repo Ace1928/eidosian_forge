@@ -1,2 +1,1 @@
-.github/workflows/format.yml
-.github/workflows/lint.yml
+.github/workflows/consciousness-parity.yml
