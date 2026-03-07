@@ -1,0 +1,281 @@
+# Eidosian Master Implementation Program
+
+Date: 2026-03-07
+Status: Living master program
+Directive source: `docs/plans/AUTONOMOUS_EXECUTION_DIRECTIVE_2026-03-07.md`
+Canonical backlog inventory:
+- `reports/plans/plan_inventory_2026-03-07.json`
+- `reports/plans/plan_inventory_2026-03-07.txt`
+- `docs/plan_sweep/PLAN_SWEEP_TRACKER.md`
+
+## Program Intent
+
+Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active infrastructure work into one production implementation program that:
+- stabilizes CI and workflow execution,
+- hardens Termux/Linux parity and service orchestration,
+- upgrades Code Forge into the primary archive/code abstraction substrate,
+- upgrades GIS into the universal identification and information-governance substrate,
+- completes vector-native memory/knowledge/code/document/lexicon integration,
+- drives GraphRAG through the entire information estate,
+- and exposes the result through scheduler, autonomy, consciousness, and Atlas control planes.
+
+## Baseline Facts
+
+- Plan inventory currently reports `92` open markdown backlog files and `1096` open checklist items.
+- Largest open backlog surfaces:
+  - `word_forge`: 233 items
+  - `game_forge`: 133 items
+  - `computer_control_forge`: 74 items
+  - `web_interface_forge`: 73 items
+  - `eidos_mcp`: 72 items
+- `archive_forge` currently contains approximately `722710` files and is too large to treat as a monolithic one-shot ingestion target.
+- Current live CI failure classes observed from GitHub Actions:
+  - `Eidosian Universal CI`: monolithic Python test job fails on forge-specific dependency drift and syntax regressions.
+  - `Consciousness Linux Parity`: parity smoke fails in the smoke entrypoint and is too broad for reliable diagnostics.
+- Current vector substrate is operational locally, but Linux CI still fails when `hnswlib` is absent and tests assume the backend is mandatory.
+- Current GraphRAG native path exists, but lateral integration with Code Forge, doc pipelines, GIS, and lexicon pipelines is not yet complete enough to serve as the single global information substrate.
+
+## Execution Rules
+
+- Keep this file as the living top-level program.
+- Check off completed items with markdown strike-through in subordinate artifacts and status sections.
+- Every completed slice must update at least one of:
+  - memory,
+  - knowledge,
+  - a canonical plan/status artifact,
+  - CI/tests,
+  - git history.
+- Prefer narrow, composable commits with explicit artifact/test outcomes.
+- Treat CI definitions as product code, not repo decoration.
+
+## Program Phases
+
+### Phase 0: Program Governance, Inventory, and Traceability
+- [ ] Freeze a canonical backlog snapshot from all `TODO`, `PLAN`, and `ROADMAP` documents.
+- [ ] Generate a normalized master backlog table grouped by forge, domain, and execution dependency.
+- [ ] Create status links from this master program to all subordinate plans still in force.
+- [ ] Mark obsolete or superseded plan artifacts instead of silently ignoring them.
+- [ ] Create a unified completion ledger for commits, workflow runs, benchmarks, and ingestion milestones.
+
+### Phase 1: CI and Workflow Stabilization
+- [ ] Replace monolithic CI test execution with forge-scoped matrices and reusable workflow calls.
+- [ ] Split Python testing into independently reportable components:
+  - `agent_forge`
+  - `memory_forge`
+  - `knowledge_forge`
+  - `code_forge`
+  - `doc_forge`
+  - `eidos_mcp`
+  - `benchmarks`
+  - `web_interface_forge`
+  - additional forge groups as needed
+- [ ] Ensure every workflow reports:
+  - exact failing forge/component,
+  - exact failing command,
+  - artifact links,
+  - pass/fail summary table.
+- [ ] Make format automation targeted:
+  - changed files only where possible,
+  - scoped directories otherwise,
+  - no global repo rewrites on unrelated pushes.
+- [ ] Add a dependency-capability matrix so optional backends are explicit instead of becoming surprise CI failures.
+- [ ] Fix current known failure modes:
+  - `eidctl.py` syntax drift regression gate,
+  - missing `hnswlib` assumption in Linux CI,
+  - oversized parity smoke blast radius,
+  - secret-scan false positives/noisy paths if still present on latest runs.
+- [ ] Add artifact publication for per-forge test summaries, not just raw logs.
+- [ ] Add workflow self-tests and action pin governance without over-triggering on unrelated YAML.
+
+### Phase 2: Termux/Linux Runtime Platform
+- [ ] Complete migration from shell-started services to supervised service management.
+- [ ] Keep one canonical shell bootstrap contract across Termux and Linux.
+- [ ] Finish boot/resume semantics and ensure resumable services restart cleanly.
+- [ ] Standardize temp/runtime/cache/data paths across Termux and Linux.
+- [ ] Build a capability registry for platform differences instead of littering checks across code.
+- [ ] Integrate boot/service/runtime state into Atlas and the scheduler.
+
+### Phase 3: GIS Core and Universal Information Model
+- [ ] Define GIS as the canonical identification, classification, and governance layer for all information constructs.
+- [ ] Add a stable GIS identifier schema that can address:
+  - code units,
+  - files,
+  - documents,
+  - memory records,
+  - lexicon terms,
+  - graph communities,
+  - benchmark artifacts,
+  - source references,
+  - pipeline runs.
+- [ ] Define GIS namespaces, domain classes, relationship classes, and extension points.
+- [ ] Add GIS-backed lookup/index APIs and deterministic serialization.
+- [ ] Link GIS identifiers into Knowledge Forge, Memory Forge, Code Forge, Word Forge, and GraphRAG artifacts.
+- [ ] Add GIS-aware visualization and search in Atlas.
+
+### Phase 4: Shared Vector and Embedding Substrate
+- [ ] Make the vector substrate a first-class shared service contract across memory, knowledge, code, documents, and lexicon.
+- [ ] Standardize:
+  - embedder interface,
+  - vector-store interface,
+  - metadata contract,
+  - deletion/update semantics,
+  - reindex semantics,
+  - backend capability flags.
+- [ ] Add backend selection policies for:
+  - Termux-safe runtime,
+  - Linux CI/runtime,
+  - optional future backends.
+- [ ] Add vector drift detection, dimension validation, and rebuild policy.
+- [ ] Add benchmark coverage for recall, latency, persistence, rebuild time, and metadata filtering.
+
+### Phase 5: Memory Forge Completion
+- [ ] Finish migration of all memory tiers to the shared vector substrate.
+- [ ] Ensure every memory record has:
+  - GIS identity,
+  - embedding/vector metadata,
+  - tags/domains/keywords,
+  - community assignment,
+  - provenance,
+  - update timestamps,
+  - dedupe signature.
+- [ ] Add LLM-assisted enrichment policies for selective high-value memories.
+- [ ] Add community drift tracking, tier-health tracking, and quality scoring.
+- [ ] Feed memory trends into autonomy, consciousness, Atlas, and scheduler policy.
+
+### Phase 6: Knowledge Forge and Native GraphRAG Completion
+- [ ] Complete GraphRAG-native indexing parity for code, docs, memory, lexicon, references, and artifacts.
+- [ ] Ensure native report, trend, and assessment layers cover all indexed domains.
+- [ ] Add GIS and vector identity to graph nodes and communities.
+- [ ] Add richer graph operations:
+  - multi-hop traversal,
+  - community quality scoring,
+  - contradiction/gap analysis,
+  - evidence lineage.
+- [ ] Integrate crawl/Tika/doc ingestion outputs as first-class knowledge artifacts.
+
+### Phase 7: Code Forge Deep Upgrade
+- [ ] Upgrade Code Forge into the primary abstraction layer for archive reduction and code reuse.
+- [ ] Expand reversibility and canonicalization for extracted/archive code.
+- [ ] Improve deduplication across:
+  - exact copies,
+  - normalized copies,
+  - structural clones,
+  - semantic near-duplicates,
+  - migrated abstractions.
+- [ ] Add canonical extraction and abstraction workflows for reusable library synthesis.
+- [ ] Add standardization passes for naming, signatures, ownership, provenance, and test linkage.
+- [ ] Improve vectorized search, reverse lookup, snippet extraction, and dependency graph navigation.
+- [ ] Ensure archive-derived code can be ingested into the library and then safely retired from raw archive storage when replacement gates pass.
+
+### Phase 8: Archive Forge Reduction Program
+- [ ] Classify `archive_forge` into ingestion batches by source, type, and expected retention strategy.
+- [ ] Ingest code-like material into Code Forge first.
+- [ ] Ingest document-like material into doc/knowledge/GraphRAG pipelines.
+- [ ] Ingest reference/metadata/manifests into GIS/knowledge provenance stores.
+- [ ] Add promotion/deletion gates so raw archive content is only removed after abstraction and evidence thresholds are met.
+- [ ] Track archive burn-down with artifacts and dashboards.
+
+### Phase 9: Document, Tika, and Crawl Completion
+- [ ] Harden Tika and crawl ingestion for all supported local and fetched artifacts.
+- [ ] Create production pipelines for leftover non-code documents and file types.
+- [ ] Ensure final docs from doc processing are re-ingested into knowledge/GraphRAG.
+- [ ] Add source-reference ingestion as a first-class workflow with provenance, GIS IDs, and vectors.
+- [ ] Add file-type-specific routing policies and extraction QA metrics.
+
+### Phase 10: Word Forge and Living Lexicon Completion
+- [ ] Ensure every new term/phrase discovered by code/doc/crawl/memory pipelines enters the lexicon queue.
+- [ ] Expand term enrichment to include:
+  - definitions,
+  - examples,
+  - part of speech,
+  - roots,
+  - phonetics,
+  - domain tags,
+  - GIS identity,
+  - graph relationships,
+  - community membership.
+- [ ] Connect lexicon communities to knowledge and code communities.
+- [ ] Expose the queue, processing state, and graph in Atlas.
+
+### Phase 11: Scheduler, Coordinator, Autonomy, Consciousness
+- [ ] Make every model-using component obey the coordinator budget contract.
+- [ ] Ensure interactive sessions preempt non-interactive work safely.
+- [ ] Make scheduler jobs persistent, resumable, interrupt-safe, and stateful across restarts.
+- [ ] Feed runtime, ingestion, memory, report, and vector health into autonomy scoring.
+- [ ] Feed the same state into consciousness broadcasts and metrics.
+- [ ] Add explicit backlog and resume semantics for unfinished ingestion waves.
+
+### Phase 12: Atlas and Operator UX
+- [ ] Expand Atlas into the operator control plane for:
+  - services,
+  - pipelines,
+  - graph exploration,
+  - lexicon,
+  - code library,
+  - memory communities,
+  - workflow history,
+  - GIS lookup.
+- [ ] Add saved exploration sessions, filters, community overlays, and reversible snippet export.
+- [ ] Add runtime trend/history panes for workflows, pipelines, vector state, and archive burn-down.
+- [ ] Add execution control for supervised services and scheduler queues.
+
+### Phase 13: Validation, Benchmarks, and Promotion Gates
+- [ ] Define end-to-end promotion gates for each subsystem.
+- [ ] Add benchmark suites for:
+  - vector recall/latency,
+  - graph/community quality,
+  - Code Forge reuse/retrieval quality,
+  - doc quality,
+  - lexicon enrichment quality,
+  - scheduler throughput,
+  - service resiliency.
+- [ ] Require green CI, green targeted regression suites, and artifact publication before promotion/deletion actions.
+
+## Immediate Execution Order
+
+1. [ ] Stabilize CI/workflows and make failures forge-specific and actionable.
+2. [ ] Complete the runtime/platform/service substrate so long-running ingestion can stay up.
+3. [ ] Deepen Code Forge and vector contracts enough to process archive code safely.
+4. [ ] Build GIS identifier/model integration across memory/knowledge/code/docs/lexicon.
+5. [ ] Run archive/document ingestion waves with GraphRAG/native graph/vector integration.
+6. [ ] Complete Atlas/operator control and autonomous resumption loops.
+
+## Progress Log
+
+- [x] Backlog inventory generated:
+  - `reports/plans/plan_inventory_2026-03-07.json`
+  - `reports/plans/plan_inventory_2026-03-07.txt`
+- [x] Directive preserved verbatim:
+  - `docs/plans/AUTONOMOUS_EXECUTION_DIRECTIVE_2026-03-07.md`
+- [x] Research/source program created:
+  - `docs/plans/EIDOSIAN_RESEARCH_AND_SOURCE_PROGRAM_2026-03-07.md`
+- [x] Initial primary-source set saved and ingested:
+  - `docs/external_references/2026-03-07-master-program/`
+- [x] Phase 1 implementation slice started:
+  - dynamic Python component test-matrix planner added
+  - Universal CI Python tests refactored toward per-component matrix execution
+  - Linux parity smoke split into explicit phases (`pytest`, `stdio`, `audit`)
+- [x] CI workflow scope control expanded:
+  - reusable changed-manifest planner added for Python, Prettier, and component lint scopes
+  - `format.yml` converted from monorepo-wide formatting to changed-scope formatting
+  - `lint.yml` converted from monorepo-wide linting to per-component changed-scope linting
+  - `secret-scan.yml` now uploads a SARIF artifact and ignores mirrored external reference snapshots
+  - Universal CI format/lint passes now consume the same changed-manifest contract
+
+## Current Known Blocking Defects
+
+- [x] Universal CI Python testing is now broken out into per-component matrix jobs.
+- [ ] Linux CI assumes or encounters `hnswlib` unavailability in code paths that should be capability-gated.
+- [ ] Some workflow automation is still broader than ideal outside the newly scoped format/lint/test surfaces.
+- [ ] Archive ingestion scale is not yet chunked and governed enough for safe burn-down.
+- [ ] GIS is still conceptually present but not yet the enforced canonical identity/governance layer.
+
+## Completion Discipline
+
+For each completed item:
+- update the relevant subordinate plan/TODO/roadmap,
+- update this master program,
+- add/refresh tests and artifacts,
+- ingest any new source/reference material,
+- store a lesson or memory if the step changed the operating model,
+- commit and push a narrow change set.

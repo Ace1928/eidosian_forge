@@ -50,6 +50,8 @@ jobs:
       should_run: ${{ steps.check.outputs.should_run }}
       has_python: ${{ steps.check.outputs.has_python }}
       has_typescript: ${{ steps.check.outputs.has_typescript }}
+      python_test_matrix: ${{ steps.check.outputs.python_test_matrix }}
+      changed_manifest: ${{ steps.check.outputs.changed_manifest }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -78,13 +80,27 @@ jobs:
 
           printf "%s\n" "$CHANGED_FILES" > changed_files.txt
 
+          PYTHON_TRIGGERED=false
           # Check if Python files changed
-          if grep -qE '\.py$' changed_files.txt || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          if grep -qE '(\.py$|^pytest\.ini$|^pyproject\.toml$|^ruff\.toml$|^mypy\.ini$|^setup\.(py|cfg)$|^\.github/workflows/|^scripts/ci/)' changed_files.txt || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "has_python=true" >> $GITHUB_OUTPUT
             echo "::notice::Python files detected"
+            PYTHON_TRIGGERED=true
           else
             echo "has_python=false" >> $GITHUB_OUTPUT
           fi
+
+          if [ "$PYTHON_TRIGGERED" = "true" ]; then
+            MATRIX_JSON="$(python scripts/ci/python_test_matrix.py --changed-files changed_files.txt)"
+            echo "python_test_matrix=${MATRIX_JSON}" >> $GITHUB_OUTPUT
+            echo "::notice::Python test matrix: ${MATRIX_JSON}"
+          else
+            echo 'python_test_matrix={"include":[]}' >> $GITHUB_OUTPUT
+          fi
+
+          MANIFEST_JSON="$(python scripts/ci/changed_manifest.py --changed-files changed_files.txt)"
+          echo "changed_manifest=${MANIFEST_JSON}" >> $GITHUB_OUTPUT
+          echo "::notice::Changed manifest resolved"
 
           # Check if TypeScript/JavaScript files changed
           if grep -qE '\.(ts|tsx|js|jsx)$' changed_files.txt || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
@@ -119,23 +135,17 @@ jobs:
       - name: 🎨 Check Python formatting
         if: needs.validate.outputs.has_python == 'true'
         id: python_format
+        env:
+          MANIFEST_JSON: ${{ needs.validate.outputs.changed_manifest }}
         run: |
-          PYTHON_FORMAT_TARGETS=(
-            "agent_forge"
-            "code_forge"
-            "memory_forge"
-            "knowledge_forge"
-            "eidos_mcp"
-            "word_forge"
-            "doc_forge"
-            "scripts"
-            "lib"
-            "tests"
-          )
-          TARGETS=()
-          for t in "${PYTHON_FORMAT_TARGETS[@]}"; do
-            [ -e "$t" ] && TARGETS+=("$t")
-          done
+          python - <<'PY' > python_targets.txt
+          import json
+          import os
+          payload = json.loads(os.environ["MANIFEST_JSON"])
+          for path in payload.get("python_files", []):
+              print(path)
+          PY
+          mapfile -t TARGETS < python_targets.txt
           if [ ${#TARGETS[@]} -eq 0 ]; then
             echo "::notice::No Python formatting targets found; skipping."
             exit 0
@@ -166,9 +176,23 @@ jobs:
 
       - name: 🎨 Check TypeScript formatting
         if: needs.validate.outputs.has_typescript == 'true'
+        env:
+          MANIFEST_JSON: ${{ needs.validate.outputs.changed_manifest }}
         run: |
+          python - <<'PY' > prettier_targets.txt
+          import json
+          import os
+          payload = json.loads(os.environ["MANIFEST_JSON"])
+          for path in payload.get("prettier_files", []):
+              print(path)
+          PY
+          mapfile -t TARGETS < prettier_targets.txt
+          if [ ${#TARGETS[@]} -eq 0 ]; then
+            echo "::notice::No TypeScript/JS formatting targets found; skipping."
+            exit 0
+          fi
           echo "::group::Prettier format check"
-          prettier "**/*.{ts,tsx,js,jsx}" --check --ignore-path .gitignore --ignore-unknown --log-level warn
+          prettier "${TARGETS[@]}" --check --ignore-path .gitignore --ignore-unknown --log-level warn
           echo "::endgroup::"
 
   lint:
@@ -196,23 +220,17 @@ jobs:
           pip install black isort flake8 mypy pylint ruff
 
       - name: 🔍 Check code formatting
+        env:
+          MANIFEST_JSON: ${{ needs.validate.outputs.changed_manifest }}
         run: |
-          PYTHON_LINT_TARGETS=(
-            "agent_forge"
-            "code_forge"
-            "memory_forge"
-            "knowledge_forge"
-            "eidos_mcp"
-            "word_forge"
-            "doc_forge"
-            "scripts"
-            "lib"
-            "tests"
-          )
-          TARGETS=()
-          for t in "${PYTHON_LINT_TARGETS[@]}"; do
-            [ -e "$t" ] && TARGETS+=("$t")
-          done
+          python - <<'PY' > python_targets.txt
+          import json
+          import os
+          payload = json.loads(os.environ["MANIFEST_JSON"])
+          for path in payload.get("python_files", []):
+              print(path)
+          PY
+          mapfile -t TARGETS < python_targets.txt
           if [ ${#TARGETS[@]} -eq 0 ]; then
             echo "::notice::No Python lint targets found; skipping."
             exit 0
@@ -235,23 +253,17 @@ jobs:
           fi
 
       - name: 🔬 Lint with flake8
+        env:
+          MANIFEST_JSON: ${{ needs.validate.outputs.changed_manifest }}
         run: |
-          PYTHON_LINT_TARGETS=(
-            "agent_forge"
-            "code_forge"
-            "memory_forge"
-            "knowledge_forge"
-            "eidos_mcp"
-            "word_forge"
-            "doc_forge"
-            "scripts"
-            "lib"
-            "tests"
-          )
-          TARGETS=()
-          for t in "${PYTHON_LINT_TARGETS[@]}"; do
-            [ -e "$t" ] && TARGETS+=("$t")
-          done
+          python - <<'PY' > python_targets.txt
+          import json
+          import os
+          payload = json.loads(os.environ["MANIFEST_JSON"])
+          for path in payload.get("python_files", []):
+              print(path)
+          PY
+          mapfile -t TARGETS < python_targets.txt
           if [ ${#TARGETS[@]} -eq 0 ]; then
             echo "::notice::No Python lint targets found; skipping."
             exit 0
@@ -264,65 +276,17 @@ jobs:
 
       - name: 🧬 Deep analysis with pylint
         run: |
-          PYTHON_LINT_TARGETS=(
-            "agent_forge"
-            "code_forge"
-            "memory_forge"
-            "knowledge_forge"
-            "eidos_mcp"
-            "word_forge"
-            "doc_forge"
-            "scripts"
-            "lib"
-            "tests"
-          )
-          TARGETS=()
-          for t in "${PYTHON_LINT_TARGETS[@]}"; do
-            [ -e "$t" ] && TARGETS+=("$t")
-          done
-          if [ ${#TARGETS[@]} -eq 0 ]; then
-            echo "::notice::No Python lint targets found; skipping."
-            exit 0
-          fi
-          if command -v pylint >/dev/null 2>&1; then
-            pylint --recursive=y "${TARGETS[@]}" --exit-zero || true
-          else
-            echo "::warning::pylint not installed, skipping deep analysis"
-          fi
+          echo "::notice::Skipping pylint in universal CI; component lint workflow is authoritative."
 
       - name: 📐 Type check with mypy
         run: |
-          PYTHON_LINT_TARGETS=(
-            "agent_forge"
-            "code_forge"
-            "memory_forge"
-            "knowledge_forge"
-            "eidos_mcp"
-            "word_forge"
-            "doc_forge"
-            "scripts"
-            "lib"
-            "tests"
-          )
-          TARGETS=()
-          for t in "${PYTHON_LINT_TARGETS[@]}"; do
-            [ -e "$t" ] && TARGETS+=("$t")
-          done
-          if [ ${#TARGETS[@]} -eq 0 ]; then
-            echo "::notice::No Python lint targets found; skipping."
-            exit 0
-          fi
-          if command -v mypy >/dev/null 2>&1; then
-            mypy "${TARGETS[@]}" --show-error-codes || echo "::warning::Type checking issues detected"
-          else
-            echo "::warning::mypy not installed, skipping type check"
-          fi
+          echo "::notice::Skipping mypy in universal CI; targeted type checks belong in forge-specific workflows."
 
   test:
-    name: 🧪 Test
+    name: 🧪 Test · ${{ matrix.component }}
     needs: [validate, lint]
-    if: needs.validate.outputs.should_run == 'true' && needs.lint.result == 'success'
-    runs-on: ${{ matrix.os }}
+    if: needs.validate.outputs.should_run == 'true' && needs.lint.result == 'success' && needs.validate.outputs.has_python == 'true'
+    runs-on: ubuntu-latest
     permissions:
       contents: read  # Only reading repository contents
     defaults:
@@ -331,16 +295,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.12"]
-        os: [ubuntu-latest]
+        include: ${{ fromJSON(needs.validate.outputs.python_test_matrix).include }}
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: 🐍 Set up Python ${{ matrix.python-version }}
+      - name: 🐍 Set up Python 3.12
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.12"
 
       - name: 📦 Install dependencies
         run: |
@@ -365,6 +328,8 @@ jobs:
             pyarrow \
             psutil \
             pyyaml \
+            beautifulsoup4 \
+            hnswlib \
             huggingface_hub \
             chromadb \
             nltk \
@@ -386,37 +351,15 @@ jobs:
           done < <(find . -maxdepth 2 -type d -name src | sed 's#^\./##' | sort)
           export PYTHONPATH="$PY_PATH"
 
-          mapfile -t TEST_TARGETS < <(find . -maxdepth 2 -type d -name tests | sed 's#^\./##' | sort | grep -v '^eidos_mcp_backup_')
-          if [ "${#TEST_TARGETS[@]}" -eq 0 ]; then
-            echo "::notice::No tests directories discovered."
-            exit 0
-          fi
-
           TEST_TIMEOUT_SEC="${EIDOS_TEST_TIMEOUT_SEC:-900}"
-          echo "::notice::Per-forge pytest timeout: ${TEST_TIMEOUT_SEC}s"
-
-          FAILURES=()
-          for target in "${TEST_TARGETS[@]}"; do
-            proj="${target%/tests}"
-            echo "::group::pytest ${target}"
-            if (cd "$proj" && timeout "${TEST_TIMEOUT_SEC}" python -m pytest -q tests --maxfail=1 --disable-warnings); then
-              echo "::notice::${proj} tests passed"
-            else
-              code=$?
-              if [ "$code" -eq 124 ]; then
-                echo "::error::${proj} tests timed out after ${TEST_TIMEOUT_SEC}s"
-              else
-                echo "::error::${proj} tests failed (exit=${code})"
-              fi
-              FAILURES+=("${proj}:exit=${code}")
-            fi
-            echo "::endgroup::"
-          done
-
-          if [ "${#FAILURES[@]}" -gt 0 ]; then
-            echo "::error::Failing test groups: ${FAILURES[*]}"
-            exit 1
-          fi
+          TARGET="${{ matrix.test_path }}"
+          COMPONENT="${{ matrix.component }}"
+          echo "::notice::Per-component pytest timeout: ${TEST_TIMEOUT_SEC}s"
+          echo "::group::pytest ${TARGET}"
+          mkdir -p reports/ci
+          timeout "${TEST_TIMEOUT_SEC}" python -m pytest -q "${TARGET}" --maxfail=1 --disable-warnings --junitxml "reports/ci/${COMPONENT}.xml"
+          echo "::notice::${COMPONENT} tests passed"
+          echo "::endgroup::"
 
       - name: 📊 Coverage placeholder
         run: |
@@ -429,6 +372,16 @@ jobs:
             <packages/>
           </coverage>
           XML
+
+      - name: 📤 Upload component test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-test-${{ matrix.component }}-${{ github.run_number }}
+          if-no-files-found: warn
+          path: |
+            reports/ci/${{ matrix.component }}.xml
+          retention-days: 7
 
       - name: 📊 Upload coverage
         uses: codecov/codecov-action@v4

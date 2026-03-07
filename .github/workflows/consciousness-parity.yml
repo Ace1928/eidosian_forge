@@ -71,12 +71,26 @@ jobs:
             websockets \
             tika
 
-      - name: Run Linux Parity Smoke
+      - name: Run Linux Parity Smoke · pytest
         env:
           PYTHONUNBUFFERED: "1"
           EIDOS_AUDIT_OPTIONAL_FORGES: "mkey,llm,erais,glyph,word"
         run: |
-          bash scripts/linux_parity_smoke.sh
+          bash scripts/linux_parity_smoke.sh pytest
+
+      - name: Run Linux Parity Smoke · stdio
+        env:
+          PYTHONUNBUFFERED: "1"
+          EIDOS_AUDIT_OPTIONAL_FORGES: "mkey,llm,erais,glyph,word"
+        run: |
+          bash scripts/linux_parity_smoke.sh stdio
+
+      - name: Run Linux Parity Smoke · audit
+        env:
+          PYTHONUNBUFFERED: "1"
+          EIDOS_AUDIT_OPTIONAL_FORGES: "mkey,llm,erais,glyph,word"
+        run: |
+          bash scripts/linux_parity_smoke.sh audit
 
       - name: Run Consciousness Benchmarks (CI Baseline)
         env:

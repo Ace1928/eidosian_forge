@@ -9,6 +9,7 @@ regexes = [
   '''(?i)fake(_|-)?(token|key|secret)'''
 ]
 paths = [
+  '''docs/external_references/''',
   '''memory_forge/legacy_imports/''',
   '''.git/'''
 ]

@@ -1,0 +1,331 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Introduction - Tree-sitter</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="src/assets/css/playground.css">
+        <link rel="stylesheet" href="src/assets/css/mdbook-admonish.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "searchindex.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Tree-sitter</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/tree-sitter/tree-sitter" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+                        <a href="https://github.com/tree-sitter/tree-sitter/edit/master/docs/src/index.md" title="Suggest an edit" aria-label="Suggest an edit" rel="edit">
+                            <i id="git-edit-button" class="fa fa-edit"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <div style="display: flex; justify-content: center; margin-left: 32px;">
+    <a href="./"><img src="assets/images/tree-sitter-small.png" width="200" height="200" alt="Tree-sitter logo" /></a>
+</div>
+<h1 id="introduction"><a class="header" href="#introduction">Introduction</a></h1>
+<p>Tree-sitter is a parser generator tool and an incremental parsing library. It can build a concrete syntax tree for a source
+file and efficiently update the syntax tree as the source file is edited. Tree-sitter aims to be:</p>
+<ul>
+<li><strong>General</strong> enough to parse any programming language</li>
+<li><strong>Fast</strong> enough to parse on every keystroke in a text editor</li>
+<li><strong>Robust</strong> enough to provide useful results even in the presence of syntax errors</li>
+<li><strong>Dependency-free</strong> so that the runtime library (which is written in pure <a href="https://github.com/tree-sitter/tree-sitter/tree/master/lib">C11</a>)
+can be embedded in any application</li>
+</ul>
+<h2 id="language-bindings"><a class="header" href="#language-bindings">Language Bindings</a></h2>
+<p>There are bindings that allow Tree-sitter to be used from the following languages:</p>
+<h3 id="official"><a class="header" href="#official">Official</a></h3>
+<ul>
+<li><a href="https://github.com/tree-sitter/csharp-tree-sitter">C#</a></li>
+<li><a href="https://github.com/tree-sitter/go-tree-sitter">Go</a></li>
+<li><a href="https://github.com/tree-sitter/haskell-tree-sitter">Haskell</a></li>
+<li><a href="https://github.com/tree-sitter/java-tree-sitter">Java (JDK 22+)</a></li>
+<li><a href="https://github.com/tree-sitter/node-tree-sitter">JavaScript (Node.js)</a></li>
+<li><a href="https://github.com/tree-sitter/tree-sitter/tree/master/lib/binding_web">JavaScript (Wasm)</a></li>
+<li><a href="https://github.com/tree-sitter/kotlin-tree-sitter">Kotlin</a></li>
+<li><a href="https://github.com/tree-sitter/py-tree-sitter">Python</a></li>
+<li><a href="https://github.com/tree-sitter/tree-sitter/tree/master/lib/binding_rust">Rust</a></li>
+<li><a href="https://github.com/tree-sitter/swift-tree-sitter">Swift</a></li>
+<li><a href="https://github.com/tree-sitter/zig-tree-sitter">Zig</a></li>
+</ul>
+<h3 id="third-party"><a class="header" href="#third-party">Third-party</a></h3>
+<ul>
+<li><a href="https://github.com/zabbius/dotnet-tree-sitter">C# (.NET)</a></li>
+<li><a href="https://github.com/nsumner/cpp-tree-sitter">C++</a></li>
+<li><a href="https://github.com/crystal-lang-tools/crystal-tree-sitter">Crystal</a></li>
+<li><a href="https://github.com/aminya/d-tree-sitter">D</a></li>
+<li><a href="https://github.com/modersohn/delphi-tree-sitter">Delphi</a></li>
+<li><a href="https://www.gnu.org/software/emacs/manual/html_node/elisp/Parsing-Program-Source.html">ELisp</a></li>
+<li><a href="https://github.com/alexaandru/go-tree-sitter-bare">Go</a></li>
+<li><a href="https://github.com/Z572/guile-ts">Guile</a></li>
+<li><a href="https://github.com/sogaiu/janet-tree-sitter">Janet</a></li>
+<li><a href="https://github.com/bonede/tree-sitter-ng">Java (JDK 8+)</a></li>
+<li><a href="https://github.com/seart-group/java-tree-sitter">Java (JDK 11+)</a></li>
+<li><a href="https://github.com/MichaelHatherly/TreeSitter.jl">Julia</a></li>
+<li><a href="https://github.com/euclidianAce/ltreesitter">Lua</a></li>
+<li><a href="https://github.com/xcb-xwii/lua-tree-sitter">Lua</a></li>
+<li><a href="https://github.com/semgrep/ocaml-tree-sitter-core">OCaml</a></li>
+<li><a href="https://github.com/laytan/odin-tree-sitter">Odin</a></li>
+<li><a href="https://metacpan.org/pod/Text::Treesitter">Perl</a></li>
+<li><a href="https://github.com/Evref-BL/Pharo-Tree-Sitter">Pharo</a></li>
+<li><a href="https://github.com/soulseekah/ext-treesitter">PHP</a></li>
+<li><a href="https://github.com/DavisVaughan/r-tree-sitter">R</a></li>
+<li><a href="https://github.com/Faveod/ruby-tree-sitter">Ruby</a></li>
+</ul>
+<p><em>Keep in mind that some of the bindings may be incomplete or out of date.</em></p>
+<h2 id="parsers"><a class="header" href="#parsers">Parsers</a></h2>
+<p>The following parsers can be found in the upstream organization:</p>
+<ul>
+<li><a href="https://github.com/tree-sitter/tree-sitter-agda">Agda</a></li>
+<li><a href="https://github.com/tree-sitter/tree-sitter-bash">Bash</a></li>
+<li><a href="https://github.com/tree-sitter/tree-sitter-c">C</a></li>
+<li><a href="https://github.com/tree-sitter/tree-sitter-cpp">C++</a></li>
+<li><a href="https://github.com/tree-sitter/tree-sitter-c-sharp">C#</a></li>
+<li><a href="https://github.com/tree-sitter/tree-sitter-css">CSS</a></li>
+<li><a href="https://github.com/tree-sitter/tree-sitter-embedded-template">ERB / EJS</a></li>
+<li><a href="https://github.com/tree-sitter/tree-sitter-go">Go</a></li>
+<li><a href="https://github.com/tree-sitter/tree-sitter-haskell">Haskell</a></li>
+<li><a href="https://github.com/tree-sitter/tree-sitter-html">HTML</a></li>
+<li><a href="https://github.com/tree-sitter/tree-sitter-java">Java</a></li>
+<li><a href="https://github.com/tree-sitter/tree-sitter-javascript">JavaScript</a></li>
+<li><a href="https://github.com/tree-sitter/tree-sitter-jsdoc">JSDoc</a></li>
+<li><a href="https://github.com/tree-sitter/tree-sitter-json">JSON</a></li>
+<li><a href="https://github.com/tree-sitter/tree-sitter-julia">Julia</a></li>
+<li><a href="https://github.com/tree-sitter/tree-sitter-ocaml">OCaml</a></li>
+<li><a href="https://github.com/tree-sitter/tree-sitter-php">PHP</a></li>
+<li><a href="https://github.com/tree-sitter/tree-sitter-python">Python</a></li>
+<li><a href="https://github.com/tree-sitter/tree-sitter-regex">Regex</a></li>
+<li><a href="https://github.com/tree-sitter/tree-sitter-ruby">Ruby</a></li>
+<li><a href="https://github.com/tree-sitter/tree-sitter-rust">Rust</a></li>
+<li><a href="https://github.com/tree-sitter/tree-sitter-scala">Scala</a></li>
+<li><a href="https://github.com/tree-sitter/tree-sitter-typescript">TypeScript</a></li>
+<li><a href="https://github.com/tree-sitter/tree-sitter-verilog">Verilog</a></li>
+</ul>
+<p>A list of known parsers can be found in the <a href="https://github.com/tree-sitter/tree-sitter/wiki/List-of-parsers">wiki</a>.</p>
+<h2 id="talks-on-tree-sitter"><a class="header" href="#talks-on-tree-sitter">Talks on Tree-sitter</a></h2>
+<ul>
+<li><a href="https://www.thestrangeloop.com/2018/tree-sitter---a-new-parsing-system-for-programming-tools.html">Strange Loop 2018</a></li>
+<li><a href="https://www.youtube.com/watch?v=0CGzC_iss-8">FOSDEM 2018</a></li>
+<li><a href="https://www.youtube.com/watch?v=a1rC79DHpmY">GitHub Universe 2017</a></li>
+</ul>
+<h2 id="underlying-research"><a class="header" href="#underlying-research">Underlying Research</a></h2>
+<p>The design of Tree-sitter was greatly influenced by the following research papers:</p>
+<ul>
+<li><a href="https://www2.eecs.berkeley.edu/Pubs/TechRpts/1997/CSD-97-946.pdf">Practical Algorithms for Incremental Software Development Environments</a></li>
+<li><a href="https://www-users.cse.umn.edu/~evw/pubs/vanwyk07gpce/vanwyk07gpce.pdf">Context Aware Scanning for Parsing Extensible Languages</a></li>
+<li><a href="https://harmonia.cs.berkeley.edu/papers/twagner-parsing.pdf">Efficient and Flexible Incremental Parsing</a></li>
+<li><a href="https://harmonia.cs.berkeley.edu/papers/twagner-glr.pdf">Incremental Analysis of Real Programming Languages</a></li>
+<li><a href="https://web.archive.org/web/20240302031213/https://what-when-how.com/compiler-writing/bottom-up-parsing-compiler-writing-part-13">Error Detection and Recovery in LR Parsers</a></li>
+<li><a href="https://apps.dtic.mil/sti/pdfs/ADA043470.pdf">Error Recovery for LR Parsers</a></li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+
+                            <a rel="next prefetch" href="using-parsers/index.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+
+                    <a rel="next prefetch" href="using-parsers/index.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="src/assets/js/playground.js"></script>
+
+
+
+    </div>
+    </body>
+</html>
