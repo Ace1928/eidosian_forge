@@ -261,6 +261,10 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
   - `lint.yml` converted from monorepo-wide linting to per-component changed-scope linting
   - `secret-scan.yml` now uploads a SARIF artifact and ignores mirrored external reference snapshots
   - Universal CI format/lint passes now consume the same changed-manifest contract
+- [x] Workflow maintenance surfaces tightened:
+  - `workflow-lint.yml` now detects changed workflow files before running `actionlint`
+  - `security-audit.yml` now publishes generated reports as artifacts
+  - CI source set extended with actionlint and gitleaks primary references and ingested locally
 
 ## Current Known Blocking Defects
 

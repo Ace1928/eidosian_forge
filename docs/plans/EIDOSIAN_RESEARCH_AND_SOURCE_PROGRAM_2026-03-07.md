@@ -169,3 +169,4 @@ For every saved source set:
 - `docs/external_references/2026-03-07-termux-upgrade/`
 - `docs/external_references/2026-03-07-tmp-redirection/`
 - `docs/external_references/2026-03-07-master-program/`
+- `docs/external_references/2026-03-07-master-program/ci/`

@@ -23,8 +23,63 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  detect:
+    name: Detect Workflow Scope
+    runs-on: ubuntu-latest
+    outputs:
+      workflow_files: ${{ steps.files.outputs.workflow_files }}
+      has_files: ${{ steps.files.outputs.has_files }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: files
+        name: Resolve workflow files
+        shell: bash
+        run: |
+          set -eu
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            mapfile -t FILES < <(find .github/workflows -maxdepth 1 -type f \( -name '*.yml' -o -name '*.yaml' \) | sort)
+            if [ -f ".github/workflow-config.yml" ]; then
+              FILES+=(".github/workflow-config.yml")
+            fi
+          else
+            if [ "${{ github.event_name }}" = "pull_request" ]; then
+              BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            elif [ -n "${{ github.event.before }}" ] && [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
+              BASE_SHA="${{ github.event.before }}"
+            else
+              BASE_SHA=""
+            fi
+            if [ -n "$BASE_SHA" ]; then
+              mapfile -t FILES < <(git diff --name-only "$BASE_SHA" "${{ github.sha }}" | grep -E '^\.github/workflows/.*\.(yml|yaml)$|^\.github/workflow-config\.yml$' || true)
+            else
+              mapfile -t FILES < <(find .github/workflows -maxdepth 1 -type f \( -name '*.yml' -o -name '*.yaml' \) | sort)
+            fi
+          fi
+
+          if [ "${#FILES[@]}" -eq 0 ]; then
+            echo "has_files=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "workflow_files<<EOF"
+              echo
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "has_files=true" >> "$GITHUB_OUTPUT"
+          {
+            echo "workflow_files<<EOF"
+            printf '%s\n' "${FILES[@]}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
   actionlint:
     name: Validate GitHub Workflows
+    needs: detect
+    if: needs.detect.outputs.has_files == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -38,10 +93,11 @@ jobs:
         run: go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.11
 
       - name: Lint workflows
+        env:
+          WORKFLOW_FILES: ${{ needs.detect.outputs.workflow_files }}
         run: |
           # Keep workflow syntax/action validation strict while avoiding non-blocking shellcheck
           # noise from legacy scripts and here-doc formatting across reusable workflows.
-          WORKFLOW_FILES="$(find .github/workflows -maxdepth 1 -type f \( -name '*.yml' -o -name '*.yaml' \) | tr '\n' ' ')"
           if [ -z "$WORKFLOW_FILES" ]; then
             echo "::notice::No workflow files found."
             exit 0
@@ -49,3 +105,18 @@ jobs:
           "$(go env GOPATH)/bin/actionlint" -color -oneline \
             -ignore 'shellcheck reported issue' \
             $WORKFLOW_FILES
+
+  summary:
+    name: Workflow Lint Summary
+    needs: [detect, actionlint]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Summary
+        run: |
+          echo "## Workflow Lint Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Surface | Status |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---------|--------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Scope detection | ${{ needs.detect.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| actionlint | ${{ needs.actionlint.result }} |" >> "$GITHUB_STEP_SUMMARY"

@@ -229,6 +229,17 @@ jobs:
                   fh.write("\n".join(summary_lines) + "\n")
           PY
 
+      - name: Upload security audit artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-audit-${{ github.run_number }}
+          if-no-files-found: warn
+          path: |
+            reports/security/*.json
+            reports/security/*.md
+            reports/security/*.log
+
       - name: Enforce Critical/High Gates
         env:
           REPORT_PATH: ${{ steps.collect.outputs.report_path }}
