@@ -1,1 +1,3 @@
+data/kb.json
+data/kb_vectors/meta.json
 data/tiered_memory/self.json
