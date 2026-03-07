@@ -82,3 +82,4 @@ Saved under `docs/external_references/2026-03-07-local-agent-mcp/` and intended 
   - stale-own-lease recovery added after the first failed live run
   - bounded live observer run executed a real MCP tool call (`diagnostics_ping`)
   - bounded live observer run now degrades to a structured timeout artifact instead of crashing the process
+  - default local-agent timeout budget raised to `1800s` so complex Qwen turns can complete in service mode

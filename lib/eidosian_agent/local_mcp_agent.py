@@ -476,7 +476,7 @@ class LocalMcpAgent:
         last["effective_thinking_mode"] = attempted[-1]
         return last
 
-    async def run_cycle(self, objective: str, *, timeout_sec: float = 180.0) -> dict[str, Any]:
+    async def run_cycle(self, objective: str, *, timeout_sec: float = 1800.0) -> dict[str, Any]:
         profile = self.profile
         owner = self._owner()
         call_counts: dict[str, int] = {}
@@ -632,7 +632,7 @@ class LocalMcpAgent:
         *,
         interval_sec: float = 120.0,
         max_cycles: int = 0,
-        timeout_sec: float = 180.0,
+        timeout_sec: float = 1800.0,
     ) -> dict[str, Any]:
         count = 0
         latest: dict[str, Any] = {}
@@ -655,7 +655,7 @@ def cli_entry(
     continuous: bool = False,
     interval_sec: float = 120.0,
     max_cycles: int = 0,
-    timeout_sec: float = 180.0,
+    timeout_sec: float = 1800.0,
 ) -> dict[str, Any]:
     profile = load_profile(path=policy_path or DEFAULT_POLICY_PATH, name=profile_name)
     agent = LocalMcpAgent(

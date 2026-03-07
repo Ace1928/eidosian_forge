@@ -26,7 +26,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--continuous", action="store_true")
     parser.add_argument("--interval-sec", type=float, default=120.0)
     parser.add_argument("--max-cycles", type=int, default=0)
-    parser.add_argument("--timeout-sec", type=float, default=180.0)
+    parser.add_argument("--timeout-sec", type=float, default=1800.0)
     return parser.parse_args()
 
 
