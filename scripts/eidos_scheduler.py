@@ -71,7 +71,17 @@ def _pipeline_pythonpath() -> str:
     return ":".join(items)
 
 
-def _status_payload(*, state: str, current_task: str, interval_sec: float, cycle: int, next_run_in_seconds: float = 0.0, last_result: dict[str, Any] | None = None, last_error: str = "", pid: int | None = None) -> dict[str, Any]:
+def _status_payload(
+    *,
+    state: str,
+    current_task: str,
+    interval_sec: float,
+    cycle: int,
+    next_run_in_seconds: float = 0.0,
+    last_result: dict[str, Any] | None = None,
+    last_error: str = "",
+    pid: int | None = None,
+) -> dict[str, Any]:
     return {
         "contract": "eidos.scheduler.status.v1",
         "updated_at": _now_utc(),
@@ -103,7 +113,9 @@ def run_scheduler_cycle(
     cycle: int = 1,
 ) -> dict[str, Any]:
     coordinator = coordinator or ForgeRuntimeCoordinator()
-    decision = coordinator.can_allocate(owner=_owner(), requested_models=_requested_models(model), allow_same_owner=False)
+    decision = coordinator.can_allocate(
+        owner=_owner(), requested_models=_requested_models(model), allow_same_owner=False
+    )
     if not decision.get("allowed"):
         payload = _status_payload(
             state="waiting",
@@ -236,7 +248,9 @@ def run_scheduler_cycle(
 @eidosian()
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Coordinator-aware living pipeline scheduler.")
-    parser.add_argument("--interval-sec", type=float, default=float(os.environ.get("EIDOS_SCHEDULER_INTERVAL_SEC", 900)))
+    parser.add_argument(
+        "--interval-sec", type=float, default=float(os.environ.get("EIDOS_SCHEDULER_INTERVAL_SEC", 900))
+    )
     parser.add_argument("--timeout-sec", type=float, default=float(os.environ.get("EIDOS_SCHEDULER_TIMEOUT_SEC", 7200)))
     parser.add_argument("--max-cycles", type=int, default=int(os.environ.get("EIDOS_SCHEDULER_MAX_CYCLES", 0)))
     parser.add_argument("--code-max-files", type=int, default=None)

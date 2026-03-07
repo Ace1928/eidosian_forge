@@ -106,14 +106,12 @@ MUTATING_TOOL_NAMES = {
 def _normalize_tool_rule(name: str, payload: Any) -> dict[str, Any]:
     rule = _as_dict(payload)
     allowed_keys = [str(x) for x in _as_list(rule.get("allowed_keys"))]
-    string_max_lengths = {
-        str(k): int(v) for k, v in _as_dict(rule.get("string_max_lengths")).items() if str(k).strip()
-    }
+    string_max_lengths = {str(k): int(v) for k, v in _as_dict(rule.get("string_max_lengths")).items() if str(k).strip()}
     integer_bounds = {}
     for key, bounds in _as_dict(rule.get("integer_bounds")).items():
         bounds_dict = _as_dict(bounds)
         integer_bounds[str(key)] = {
-            "min": int(bounds_dict.get("min", -2**31)),
+            "min": int(bounds_dict.get("min", -(2**31))),
             "max": int(bounds_dict.get("max", 2**31 - 1)),
         }
     allowed_values = {
@@ -188,7 +186,7 @@ def contract_schema(schema: dict[str, Any], rule: dict[str, Any]) -> dict[str, A
             prop["maxLength"] = int(rule["string_max_lengths"][key])
         if key in _as_dict(rule.get("integer_bounds")):
             bounds = _as_dict(rule["integer_bounds"][key])
-            prop["minimum"] = int(bounds.get("min", -2**31))
+            prop["minimum"] = int(bounds.get("min", -(2**31)))
             prop["maximum"] = int(bounds.get("max", 2**31 - 1))
         if key in _as_dict(rule.get("allowed_values")):
             prop["enum"] = list(rule["allowed_values"][key])
@@ -266,7 +264,7 @@ def validate_tool_arguments(name: str, args: Any, profile: AgentProfile, call_co
         if isinstance(value, int) and not isinstance(value, bool):
             bounds = _as_dict(rule.get("integer_bounds")).get(str_key)
             if bounds:
-                lo = int(bounds.get("min", -2**31))
+                lo = int(bounds.get("min", -(2**31)))
                 hi = int(bounds.get("max", 2**31 - 1))
                 if value < lo or value > hi:
                     raise ToolPolicyError(f"integer_out_of_bounds:{name}:{str_key}")
@@ -287,7 +285,9 @@ def validate_tool_arguments(name: str, args: Any, profile: AgentProfile, call_co
     return cleaned
 
 
-async def _call_tool(session: SessionType, name: str, arguments: dict[str, Any] | None = None, timeout_sec: float = 60.0) -> str:
+async def _call_tool(
+    session: SessionType, name: str, arguments: dict[str, Any] | None = None, timeout_sec: float = 60.0
+) -> str:
     result = await asyncio.wait_for(session.call_tool(name, arguments=arguments or {}), timeout=timeout_sec)
     lines: list[str] = []
     structured = getattr(result, "structuredContent", None)
@@ -511,7 +511,9 @@ class LocalMcpAgent:
         resource_count = 0
         resource_sample: list[dict[str, str]] = []
         tool_contract_count = 0
-        allocation = self.coordinator.can_allocate(owner=owner, requested_models=self._lease_models(), allow_same_owner=False)
+        allocation = self.coordinator.can_allocate(
+            owner=owner, requested_models=self._lease_models(), allow_same_owner=False
+        )
         if (
             not allocation.get("allowed")
             and str(allocation.get("reason") or "") in {"instance_budget_exceeded", "family_budget_exceeded"}
@@ -582,8 +584,12 @@ class LocalMcpAgent:
                 for step_index in range(profile.max_steps):
                     if total_tool_calls >= profile.max_tool_calls:
                         break
-                    raw_response = await self._request_step(messages=messages, tools=tool_contracts, timeout_sec=timeout_sec)
-                    effective_thinking_mode = str(raw_response.get("effective_thinking_mode") or effective_thinking_mode)
+                    raw_response = await self._request_step(
+                        messages=messages, tools=tool_contracts, timeout_sec=timeout_sec
+                    )
+                    effective_thinking_mode = str(
+                        raw_response.get("effective_thinking_mode") or effective_thinking_mode
+                    )
                     message = _as_dict(raw_response.get("message"))
                     tool_calls = _as_list(message.get("tool_calls"))
                     content = str(message.get("content") or "").strip()

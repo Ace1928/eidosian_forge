@@ -361,7 +361,9 @@ class AutonomySupervisor:
         weak_communities = int(report_summary.get("weak_communities") or 0)
         benchmark_failures = int(artifact_summary.get("benchmark_failures") or 0)
         drift_warning_artifacts = int(artifact_summary.get("drift_warning_artifacts") or 0)
-        local_agent = context.get("local_agent_summary") if isinstance(context.get("local_agent_summary"), Mapping) else {}
+        local_agent = (
+            context.get("local_agent_summary") if isinstance(context.get("local_agent_summary"), Mapping) else {}
+        )
         local_agent_status = _to_text(local_agent.get("status")).lower()
         local_agent_tool_calls = int(local_agent.get("tool_calls") or 0)
 

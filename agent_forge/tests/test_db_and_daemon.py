@@ -1,7 +1,7 @@
+import os
 import sqlite3
 import subprocess
 import sys
-import os
 from pathlib import Path
 
 from core import db as DB
@@ -39,7 +39,9 @@ def test_db_helpers(tmp_path: Path):
 def test_eidosd_once(tmp_path: Path):
     state_dir = tmp_path / "state"
     cmd = [sys.executable, str(EIDOSD), "--state-dir", str(state_dir), "--once"]
-    res = subprocess.run(cmd, capture_output=True, text=True, cwd=str(REPO_ROOT), env={**os.environ, "PYTHONPATH": PYTHONPATH})
+    res = subprocess.run(
+        cmd, capture_output=True, text=True, cwd=str(REPO_ROOT), env={**os.environ, "PYTHONPATH": PYTHONPATH}
+    )
     assert res.returncode == 0, res.stderr
 
     conn = sqlite3.connect(state_dir / "e3.sqlite")

@@ -67,8 +67,7 @@ def test_init_schema_migrates_legacy_db_without_gis_columns(tmp_path: Path) -> N
 
     db_path = tmp_path / "library.sqlite"
     conn = sqlite3.connect(db_path)
-    conn.executescript(
-        """
+    conn.executescript("""
         CREATE TABLE code_text (
             content_hash TEXT PRIMARY KEY,
             content TEXT NOT NULL
@@ -95,8 +94,7 @@ def test_init_schema_migrates_legacy_db_without_gis_columns(tmp_path: Path) -> N
             run_id TEXT,
             created_at TEXT NOT NULL
         );
-        """
-    )
+        """)
     conn.commit()
     conn.close()
 

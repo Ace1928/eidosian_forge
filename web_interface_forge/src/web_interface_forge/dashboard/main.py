@@ -3,16 +3,12 @@ import logging
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import Any
-from typing import Dict
-from typing import List
+from typing import Any, Dict, List
 
 import markdown
 import psutil
-from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import FileResponse
-from fastapi.responses import HTMLResponse
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -43,6 +39,7 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 # --- Helpers ---
 
+
 def get_system_stats() -> Dict[str, Any]:
     try:
         cpu = psutil.cpu_percent(interval=None)
@@ -70,6 +67,7 @@ def _read_json(path: Path, default: Dict[str, Any]) -> Dict[str, Any]:
         return payload if isinstance(payload, dict) else default
     except Exception:
         return default
+
 
 def get_forge_status() -> Dict[str, Any]:
     status = {"doc_forge": "unknown", "details": {}}
@@ -141,6 +139,7 @@ def get_runtime_history(limit: int = 24) -> List[Dict[str, Any]]:
         return []
     return [row for row in rows if isinstance(row, dict)][-max(1, int(limit)) :]
 
+
 def get_file_tree(path: Path) -> List[Dict[str, Any]]:
     tree = []
     try:
@@ -157,13 +156,15 @@ def get_file_tree(path: Path) -> List[Dict[str, Any]]:
                 "mtime": datetime.fromtimestamp(entry.stat().st_mtime).isoformat(),
             }
             if entry.is_dir():
-                item["children"] = [] # Lazy loading not implemented for simplicity, just show dir
+                item["children"] = []  # Lazy loading not implemented for simplicity, just show dir
             tree.append(item)
     except Exception as e:
         logger.error(f"Error listing {path}: {e}")
     return tree
 
+
 # --- Routes ---
+
 
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request):
@@ -173,16 +174,21 @@ async def dashboard(request: Request):
     runtime_snapshot = get_runtime_snapshot()
     local_agent_history = get_local_agent_history()
 
-    return templates.TemplateResponse(request, "index.html", {
-        "request": request,
-        "sys_stats": sys_stats,
-        "forge_status": forge_status,
-        "recent_docs": doc_snapshot["recent_docs"],
-        "doc_status": doc_snapshot["status"],
-        "doc_index_count": doc_snapshot["index_count"],
-        "runtime_snapshot": runtime_snapshot,
-        "local_agent_history": local_agent_history,
-    })
+    return templates.TemplateResponse(
+        request,
+        "index.html",
+        {
+            "request": request,
+            "sys_stats": sys_stats,
+            "forge_status": forge_status,
+            "recent_docs": doc_snapshot["recent_docs"],
+            "doc_status": doc_snapshot["status"],
+            "doc_index_count": doc_snapshot["index_count"],
+            "runtime_snapshot": runtime_snapshot,
+            "local_agent_history": local_agent_history,
+        },
+    )
+
 
 @app.get("/browse/{path:path}", response_class=HTMLResponse)
 async def browse(request: Request, path: str):
@@ -197,25 +203,22 @@ async def browse(request: Request, path: str):
     if target_path.is_dir():
         files = get_file_tree(target_path)
         parent = str(Path(path).parent) if path != "." else None
-        return templates.TemplateResponse(request, "browser.html", {
-            "request": request,
-            "path": path,
-            "files": files,
-            "parent": parent
-        })
+        return templates.TemplateResponse(
+            request, "browser.html", {"request": request, "path": path, "files": files, "parent": parent}
+        )
     elif target_path.is_file():
         if target_path.suffix.lower() == ".md":
             content = target_path.read_text()
-            html_content = markdown.markdown(content, extensions=['fenced_code', 'tables', 'toc'])
-            return templates.TemplateResponse(request, "viewer.html", {
-                "request": request,
-                "path": path,
-                "content": html_content,
-                "filename": target_path.name
-            })
+            html_content = markdown.markdown(content, extensions=["fenced_code", "tables", "toc"])
+            return templates.TemplateResponse(
+                request,
+                "viewer.html",
+                {"request": request, "path": path, "content": html_content, "filename": target_path.name},
+            )
         else:
             # For non-markdown files, just serve raw or download
             return FileResponse(target_path)
+
 
 @app.get("/api/system")
 async def api_system():
@@ -246,8 +249,10 @@ async def api_local_agent_status():
 async def health():
     return {"status": "ok", "service": "eidos_atlas"}
 
+
 if __name__ == "__main__":
     import uvicorn
+
     # Default port 8936 for dashboard (next to doc_forge 8930)
     port = int(os.environ.get("EIDOS_DASHBOARD_PORT", 8936))
     uvicorn.run(app, host="0.0.0.0", port=port)

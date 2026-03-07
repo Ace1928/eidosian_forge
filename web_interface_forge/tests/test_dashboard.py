@@ -4,7 +4,6 @@ import json
 from pathlib import Path
 
 from fastapi.testclient import TestClient
-
 from web_interface_forge.dashboard import main as dashboard
 
 
