@@ -2639,11 +2639,7 @@
     },
     "importance": 1.5,
     "ttl_seconds": null,
-    "tags": [
-      "learning",
-      "self-improvement",
-      "lesson"
-    ],
+    "tags": ["learning", "self-improvement", "lesson"],
     "linked_memories": []
   }
 ]
