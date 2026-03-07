@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, Optional
 
 from code_forge.library.similarity import hamming_distance64, token_jaccard, tokenize_code_text
+from gis_forge import build_code_unit_gis_id, build_run_gis_id
 
 try:
     from eidosian_vector import HNSWVectorStore
@@ -86,6 +87,7 @@ class CodeLibraryDB:
 
                 CREATE TABLE IF NOT EXISTS ingestion_runs (
                     run_id TEXT PRIMARY KEY,
+                    gis_id TEXT,
                     root_path TEXT NOT NULL,
                     mode TEXT NOT NULL,
                     created_at TEXT NOT NULL,
@@ -94,6 +96,7 @@ class CodeLibraryDB:
 
                 CREATE TABLE IF NOT EXISTS code_units (
                     id TEXT PRIMARY KEY,
+                    gis_id TEXT,
                     language TEXT NOT NULL,
                     unit_type TEXT NOT NULL,
                     name TEXT NOT NULL,
@@ -157,6 +160,8 @@ class CodeLibraryDB:
 
                 CREATE INDEX IF NOT EXISTS idx_code_units_file_path
                     ON code_units(file_path);
+                CREATE INDEX IF NOT EXISTS idx_code_units_gis_id
+                    ON code_units(gis_id);
                 CREATE INDEX IF NOT EXISTS idx_code_units_qualified_name
                     ON code_units(qualified_name);
                 CREATE INDEX IF NOT EXISTS idx_code_units_content_hash
@@ -186,6 +191,8 @@ class CodeLibraryDB:
 
             self._ensure_column(conn, "code_units", "complexity", "REAL")
             self._ensure_column(conn, "code_units", "language", "TEXT")
+            self._ensure_column(conn, "code_units", "gis_id", "TEXT")
+            self._ensure_column(conn, "ingestion_runs", "gis_id", "TEXT")
 
             self._ensure_column(conn, "code_fingerprints", "structural_hash", "TEXT")
             conn.execute("""
@@ -217,14 +224,15 @@ class CodeLibraryDB:
         run_id: Optional[str] = None,
     ) -> str:
         run_id = run_id or hashlib.sha256(f"{root_path}|{mode}|{_utc_now()}".encode("utf-8")).hexdigest()[:16]
+        gis_id = build_run_gis_id(root_path=root_path, mode=mode, run_id=run_id)
         payload = json.dumps(config or {}, sort_keys=True)
         with self._connect() as conn:
             conn.execute(
                 """
-                INSERT INTO ingestion_runs (run_id, root_path, mode, created_at, config_json)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO ingestion_runs (run_id, gis_id, root_path, mode, created_at, config_json)
+                VALUES (?, ?, ?, ?, ?, ?)
                 """,
-                (run_id, root_path, mode, _utc_now(), payload),
+                (run_id, gis_id, root_path, mode, _utc_now(), payload),
             )
         return run_id
 
@@ -375,15 +383,26 @@ class CodeLibraryDB:
 
     def add_unit(self, unit: CodeUnit) -> str:
         unit_id = self.make_unit_id(unit)
+        gis_id = build_code_unit_gis_id(
+            language=unit.language,
+            unit_type=unit.unit_type,
+            file_path=unit.file_path,
+            qualified_name=unit.qualified_name,
+            name=unit.name,
+            line_start=unit.line_start,
+            line_end=unit.line_end,
+            content_hash=unit.content_hash,
+        )
         with self._connect() as conn:
             conn.execute(
                 """
                 INSERT INTO code_units (
-                    id, language, unit_type, name, qualified_name, file_path,
+                    id, gis_id, language, unit_type, name, qualified_name, file_path,
                     line_start, line_end, col_start, col_end, content_hash,
                     parent_id, run_id, complexity, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(id) DO UPDATE SET
+                    gis_id=COALESCE(code_units.gis_id, excluded.gis_id),
                     line_start=COALESCE(code_units.line_start, excluded.line_start),
                     line_end=COALESCE(code_units.line_end, excluded.line_end),
                     col_start=COALESCE(code_units.col_start, excluded.col_start),
@@ -395,6 +414,7 @@ class CodeLibraryDB:
                 """,
                 (
                     unit_id,
+                    gis_id,
                     unit.language,
                     unit.unit_type,
                     unit.name,
@@ -422,6 +442,7 @@ class CodeLibraryDB:
                 model_name="hash128_v1",
                 dim=128,
                 metadata={
+                    "gis_id": gis_id,
                     "language": unit.language,
                     "unit_type": unit.unit_type,
                     "file_path": unit.file_path,
@@ -431,6 +452,19 @@ class CodeLibraryDB:
             )
 
         return unit_id
+
+    def get_run(self, run_id: str) -> Optional[Dict[str, Any]]:
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                SELECT run_id, gis_id, root_path, mode, created_at, config_json
+                FROM ingestion_runs
+                WHERE run_id = ?
+                LIMIT 1
+                """,
+                (str(run_id),),
+            ).fetchone()
+        return dict(row) if row else None
 
     def should_process_file(self, file_path: str, content_hash: str, analysis_version: int) -> bool:
         with self._connect() as conn:

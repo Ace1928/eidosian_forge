@@ -6,6 +6,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
+from gis_forge import build_artifact_gis_id, build_provenance_gis_id, build_run_gis_id
+
 
 def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -63,8 +65,9 @@ def write_provenance_links(
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     records = _artifact_records(artifact_paths)
+    root_text = str(Path(root_path).resolve())
     digest = hashlib.sha256()
-    digest.update(str(Path(root_path).resolve()).encode("utf-8"))
+    digest.update(root_text.encode("utf-8"))
     digest.update(str(source_run_id or "").encode("utf-8"))
     digest.update(str(integration_policy).encode("utf-8"))
     digest.update(str(integration_run_id or "").encode("utf-8"))
@@ -91,12 +94,39 @@ def write_provenance_links(
     provenance = {
         "generated_at": _utc_now(),
         "stage": str(stage),
-        "root_path": str(Path(root_path).resolve()),
+        "root_path": root_text,
         "source_run_id": source_run_id,
+        "source_run_gis_id": build_run_gis_id(root_path=root_text, mode=str(stage), run_id=source_run_id)
+        if source_run_id
+        else None,
         "integration_policy": str(integration_policy),
         "integration_run_id": integration_run_id,
+        "integration_run_gis_id": build_run_gis_id(
+            root_path=root_text,
+            mode=f"{stage}:{integration_policy}",
+            run_id=integration_run_id,
+        )
+        if integration_run_id
+        else None,
         "provenance_id": digest.hexdigest()[:24],
-        "artifacts": records,
+        "provenance_gis_id": build_provenance_gis_id(
+            stage=str(stage),
+            root_path=root_text,
+            provenance_id=digest.hexdigest()[:24],
+        ),
+        "artifacts": [
+            {
+                **rec,
+                "gis_id": build_artifact_gis_id(
+                    stage=str(stage),
+                    root_path=root_text,
+                    artifact_kind=str(rec.get("artifact_kind") or "artifact"),
+                    artifact_path=str(rec.get("path") or ""),
+                    provenance_id=digest.hexdigest()[:24],
+                ),
+            }
+            for rec in records
+        ],
         "knowledge_links": {
             "count": len(kb_links),
             "links": kb_links,

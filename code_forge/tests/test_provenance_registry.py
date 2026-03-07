@@ -29,6 +29,7 @@ def test_build_provenance_registry_merges_unit_links() -> None:
             "documents": [
                 {
                     "unit_id": "u1",
+                    "unit_gis_id": "gis:eidos:code-forge:code-unit:pkg.mod.fn:12345678",
                     "document_path": "/tmp/grag/u1.md",
                     "qualified_name": "pkg.mod.func",
                     "language": "python",
@@ -67,11 +68,13 @@ def test_build_provenance_registry_merges_unit_links() -> None:
     unit_links = registry["links"]["unit_links"]
     assert len(unit_links) == 1
     assert unit_links[0]["unit_id"] == "u1"
+    assert unit_links[0]["unit_gis_id"].startswith("gis:eidos:code-forge:code-unit:")
     assert unit_links[0]["knowledge_node_id"] == "n1"
     assert unit_links[0]["memory_id"] == "m1"
     assert unit_links[0]["qualified_name"] == "pkg.mod.func"
     assert registry["benchmark"]["gate_pass"] is True
     assert registry["drift"]["warning_count"] == 1
+    assert registry["registry_gis_id"].startswith("gis:eidos:code-forge:provenance-registry:")
 
 
 def test_write_registry_and_load_latest_benchmark(tmp_path: Path) -> None:
@@ -117,3 +120,4 @@ def test_write_registry_and_load_latest_benchmark(tmp_path: Path) -> None:
         benchmark_payload=payload,
     )
     assert Path(registry["path"]).exists()
+    assert registry["registry_gis_id"].startswith("gis:eidos:code-forge:provenance-registry:")

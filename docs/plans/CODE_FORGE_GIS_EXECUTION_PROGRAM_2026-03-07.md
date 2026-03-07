@@ -41,7 +41,7 @@ Saved under `docs/external_references/2026-03-07-code-forge-gis/` and ingested i
 ## Execution Tracks
 
 ### Track A: GIS Identity and Provenance
-- [ ] Define stable GIS identifiers for:
+- [x] Define stable GIS identifiers for:
   - code units
   - source files
   - extracted abstractions
@@ -50,9 +50,9 @@ Saved under `docs/external_references/2026-03-07-code-forge-gis/` and ingested i
   - lexicon terms
   - references
   - pipeline runs
-- [ ] Define deterministic serialization rules for GIS IDs.
-- [ ] Map Code Forge units and ingestion runs to GIS IDs.
-- [ ] Map archive triage, provenance links, and retirement gates to GIS IDs.
+- [x] Define deterministic serialization rules for GIS IDs.
+- [x] Map Code Forge units and ingestion runs to GIS IDs.
+- [x] Map archive triage, provenance links, and retirement gates to GIS IDs.
 - [ ] Align GIS provenance fields with PROV-O concepts:
   - entity
   - activity
@@ -119,7 +119,7 @@ Saved under `docs/external_references/2026-03-07-code-forge-gis/` and ingested i
 
 ## Immediate Implementation Queue
 
-1. [ ] Attach stable GIS/provenance identity fields to Code Forge units and ingestion artifacts.
+1. [x] Attach stable GIS/provenance identity fields to Code Forge units and ingestion artifacts.
 2. [ ] Add GraphRAG export reconciliation for Code Forge units, triage artifacts, and reduction-plan artifacts.
 3. [ ] Build batch classification and resumable ingestion state for `archive_forge`.
 4. [ ] Add reverse lookup/report APIs needed by Atlas and the scheduler.
@@ -134,3 +134,11 @@ Saved under `docs/external_references/2026-03-07-code-forge-gis/` and ingested i
 - [x] Baseline Code Forge substrate reviewed:
   - `code_forge/src/code_forge/library/db.py`
   - `code_forge/src/code_forge/digester/pipeline.py`
+- [x] Deterministic GIS identity added to the live Code Forge substrate:
+  - `gis_forge/src/gis_forge/identity.py`
+  - `code_forge/src/code_forge/library/db.py`
+  - `code_forge/src/code_forge/integration/pipeline.py`
+  - `code_forge/src/code_forge/integration/provenance.py`
+  - `code_forge/src/code_forge/integration/provenance_registry.py`
+- [x] Focused regression slice passed for GIS/Code Forge identity wiring:
+  - `22 passed, 1 skipped`

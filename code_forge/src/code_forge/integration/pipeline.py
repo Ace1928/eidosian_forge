@@ -69,6 +69,7 @@ def sync_units_to_knowledge_forge(
         metadata = {
             "source": "code_forge",
             "code_unit_id": unit_id,
+            "code_unit_gis_id": unit.get("gis_id"),
             "qualified_name": qn,
             "file_path": unit.get("file_path"),
             "line_start": unit.get("line_start"),
@@ -165,6 +166,7 @@ def export_units_for_graphrag(
         documents.append(
             {
                 "unit_id": unit_id,
+                "unit_gis_id": str(unit.get("gis_id") or ""),
                 "qualified_name": qn,
                 "language": language,
                 "unit_type": unit_type,

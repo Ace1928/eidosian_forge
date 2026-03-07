@@ -49,6 +49,17 @@ def test_add_unit_roundtrip(tmp_path: Path) -> None:
     assert stored["content_hash"] == content_hash
     assert stored["line_start"] == 1
     assert stored["line_end"] == 2
+    assert stored["gis_id"].startswith("gis:eidos:code-forge:code-unit:")
+
+
+def test_create_run_persists_gis_id(tmp_path: Path) -> None:
+    db = CodeLibraryDB(tmp_path / "library.sqlite")
+    run_id = db.create_run("/repo", "analysis", config={"extensions": [".py"]})
+    stored = db.get_run(run_id)
+
+    assert stored is not None
+    assert stored["run_id"] == run_id
+    assert stored["gis_id"].startswith("gis:eidos:code-forge:run:")
 
 
 def test_relationships(tmp_path: Path) -> None:

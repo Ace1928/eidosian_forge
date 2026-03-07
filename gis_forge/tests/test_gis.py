@@ -3,6 +3,7 @@ import threading
 from pathlib import Path
 from gis_forge import GisCore
 from gis_forge import defaults
+from gis_forge import build_artifact_gis_id, build_code_unit_gis_id, build_registry_gis_id, build_run_gis_id
 from pydantic import BaseModel
 
 class ServerConfig(BaseModel):
@@ -106,3 +107,33 @@ def test_gis_flatten():
     gis.set("a.b", 1)
     flat = gis.flatten()
     assert flat["a.b"] == 1
+
+
+def test_gis_identity_builders_are_deterministic():
+    run_id = build_run_gis_id(root_path="/repo", mode="analysis", run_id="run_1")
+    assert run_id == build_run_gis_id(root_path="/repo", mode="analysis", run_id="run_1")
+    assert run_id.startswith("gis:eidos:code-forge:run:")
+
+    unit_id = build_code_unit_gis_id(
+        language="python",
+        unit_type="function",
+        file_path="src/mod.py",
+        qualified_name="pkg.mod.fn",
+        name="fn",
+        line_start=10,
+        line_end=14,
+        content_hash="abc123",
+    )
+    assert unit_id.startswith("gis:eidos:code-forge:code-unit:")
+    assert "pkg.mod.fn" in unit_id
+
+    artifact_id = build_artifact_gis_id(
+        stage="archive_digester",
+        root_path="/repo",
+        artifact_kind="triage",
+        artifact_path="/tmp/out/triage.json",
+        provenance_id="prov_1",
+    )
+    registry_id = build_registry_gis_id(root_path="/repo", registry_id="reg_1")
+    assert artifact_id.startswith("gis:eidos:code-forge:artifact:")
+    assert registry_id.startswith("gis:eidos:code-forge:provenance-registry:")

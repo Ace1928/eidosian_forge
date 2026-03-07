@@ -6,6 +6,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
+from gis_forge import build_registry_gis_id
+
 SCHEMA_VERSION = "code_forge_provenance_registry_v1"
 
 
@@ -33,6 +35,7 @@ def _build_unit_link_index(provenance: Mapping[str, Any]) -> list[dict[str, Any]
         if rec is None:
             rec = {
                 "unit_id": unit_id,
+                "unit_gis_id": None,
                 "knowledge_node_id": None,
                 "knowledge_status": None,
                 "memory_id": None,
@@ -74,6 +77,7 @@ def _build_unit_link_index(provenance: Mapping[str, Any]) -> list[dict[str, Any]
             continue
         rec = _entry(unit_id)
         rec["graphrag_document_path"] = str(doc.get("document_path") or "") or None
+        rec["unit_gis_id"] = str(doc.get("unit_gis_id") or rec.get("unit_gis_id") or "") or None
         rec["qualified_name"] = str(doc.get("qualified_name") or "") or None
         rec["language"] = str(doc.get("language") or "") or None
         rec["unit_type"] = str(doc.get("unit_type") or "") or None
@@ -167,7 +171,12 @@ def build_provenance_registry(
         "schema_version": SCHEMA_VERSION,
         "generated_at": _utc_now(),
         "registry_id": digest.hexdigest()[:24],
+        "registry_gis_id": build_registry_gis_id(
+            root_path=str(provenance.get("root_path") or ""),
+            registry_id=digest.hexdigest()[:24],
+        ),
         "provenance_id": provenance.get("provenance_id"),
+        "provenance_gis_id": provenance.get("provenance_gis_id"),
         "stage": provenance.get("stage"),
         "root_path": provenance.get("root_path"),
         "integration_policy": provenance.get("integration_policy"),

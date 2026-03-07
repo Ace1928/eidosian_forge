@@ -2600,5 +2600,34 @@
       "operations"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "de7e0413-75a2-45dc-b051-8a7d742c033c",
+    "content": "LESSON: Treat GIS identity as a deterministic cross-forge substrate, not a late-stage reporting field. Attach GIS IDs at Code Forge ingestion time so vector metadata, GraphRAG exports, and provenance artifacts all share the same stable identifiers.\nCONTEXT: Code Forge GIS integration slice",
+    "created_at": "2026-03-07T12:34:14.658091",
+    "last_accessed": "2026-03-07T12:34:14.658109",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "Treat GIS identity as a deterministic cross-forge substrate, not a late-stage reporting field. Attach GIS IDs at Code Forge ingestion time so vector metadata, GraphRAG exports, and provenance artifacts all share the same stable identifiers.",
+      "context": "Code Forge GIS integration slice",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "learning",
+      "self-improvement",
+      "identity",
+      "vectors",
+      "code_forge",
+      "lesson",
+      "graphrag",
+      "gis",
+      "provenance"
+    ],
+    "linked_memories": []
   }
 ]
