@@ -254,6 +254,86 @@ def test_graphrag_incremental_index_native_fallback_ingests_docs_and_word_graph(
     assert artifact_hits
 
 
+def test_graphrag_code_forge_artifact_reconciles_by_unit_gis_id(tmp_path):
+    workspace = tmp_path / "workspace"
+    docs = workspace / "input"
+    docs.mkdir(parents=True, exist_ok=True)
+    (docs / "guide.md").write_text("native code artifact linking", encoding="utf-8")
+
+    artifact_dir = tmp_path / "data" / "code_forge" / "cycle" / "run_002"
+    artifact_dir.mkdir(parents=True, exist_ok=True)
+    (artifact_dir / "provenance_registry.json").write_text(
+        """
+        {
+          "schema_version": "code_forge_provenance_registry_v1",
+          "generated_at": "2026-03-06T00:00:00+00:00",
+          "registry_id": "reg_2",
+          "registry_gis_id": "gis:eidos:code-forge:provenance-registry:registry:reg0002",
+          "stage": "archive_digester",
+          "root_path": "/tmp/repo",
+          "provenance_id": "prov_2",
+          "provenance_gis_id": "gis:eidos:code-forge:provenance:archive-digester-provenance:prov0002",
+          "links": {
+            "knowledge_count": 0,
+            "memory_count": 0,
+            "graphrag_count": 1,
+            "unit_links": [
+              {
+                "unit_id": "u2",
+                "unit_gis_id": "gis:eidos:code-forge:code-unit:pkg.mod.fn:22222222",
+                "qualified_name": "pkg.mod.fn",
+                "knowledge_node_id": "",
+                "memory_id": ""
+              }
+            ]
+          }
+        }
+        """.strip(),
+        encoding="utf-8",
+    )
+
+    kb_path = tmp_path / "kb.json"
+    knowledge = KnowledgeForge(persistence_path=kb_path)
+    code_node = knowledge.add_knowledge(
+        content="Code node content",
+        concepts=["pkg.mod.fn"],
+        tags=["code_forge"],
+        metadata={
+            "source": "code_forge",
+            "code_unit_id": "u2",
+            "code_unit_gis_id": "gis:eidos:code-forge:code-unit:pkg.mod.fn:22222222",
+        },
+    )
+    knowledge.save()
+
+    grag = GraphRAGIntegration(
+        graphrag_root=workspace,
+        kb_path=kb_path,
+        memory_dir=tmp_path / "memory",
+        word_graph_path=tmp_path / "missing_word_graph.json",
+    )
+    with patch("knowledge_forge.integrations.graphrag.subprocess.run") as run_mock:
+        run_mock.return_value = subprocess.CompletedProcess(
+            args=["python", "-m", "graphrag", "index"],
+            returncode=2,
+            stdout="",
+            stderr="graphrag not installed",
+        )
+        result = grag.run_incremental_index([docs, artifact_dir])
+
+    assert result["success"] is True
+    knowledge = KnowledgeForge(persistence_path=kb_path)
+    related = knowledge.get_related_nodes(code_node.id)
+    related_ids = {node.id for node in related}
+    artifact_roots = [
+        node
+        for node in knowledge.search("Code Forge artifact:")
+        if (node.metadata or {}).get("registry_gis_id") == "gis:eidos:code-forge:provenance-registry:registry:reg0002"
+    ]
+    assert artifact_roots
+    assert artifact_roots[0].id in related_ids
+
+
 def test_graphrag_incremental_index_removes_stale_native_documents(tmp_path):
     workspace = tmp_path / "workspace"
     docs = workspace / "input"

@@ -120,7 +120,7 @@ Saved under `docs/external_references/2026-03-07-code-forge-gis/` and ingested i
 ## Immediate Implementation Queue
 
 1. [x] Attach stable GIS/provenance identity fields to Code Forge units and ingestion artifacts.
-2. [ ] Add GraphRAG export reconciliation for Code Forge units, triage artifacts, and reduction-plan artifacts.
+2. [~] Add GraphRAG export reconciliation for Code Forge units, triage artifacts, and reduction-plan artifacts.
 3. [ ] Build batch classification and resumable ingestion state for `archive_forge`.
 4. [ ] Add reverse lookup/report APIs needed by Atlas and the scheduler.
 5. [ ] Add archive retirement gates and evidence artifacts.
@@ -142,3 +142,8 @@ Saved under `docs/external_references/2026-03-07-code-forge-gis/` and ingested i
   - `code_forge/src/code_forge/integration/provenance_registry.py`
 - [x] Focused regression slice passed for GIS/Code Forge identity wiring:
   - `22 passed, 1 skipped`
+- [x] Native GraphRAG artifact ingestion now reconciles Code Forge artifacts by `unit_gis_id`:
+  - `knowledge_forge/src/knowledge_forge/integrations/graphrag.py`
+  - `knowledge_forge/tests/test_kb.py`
+- [x] Extended focused regression slice passed for GIS + GraphRAG reconciliation:
+  - `32 passed, 2 skipped`

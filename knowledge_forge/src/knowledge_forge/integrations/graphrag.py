@@ -486,6 +486,12 @@ class GraphRAGIntegration:
         self, knowledge: Any, state: Dict[str, Any], scan_roots: List[Path]
     ) -> Dict[str, Any]:
         artifact_state = dict(state.get("code_forge_artifacts") or {})
+        unit_gis_index: dict[str, str] = {}
+        for node_id, node in getattr(knowledge, "nodes", {}).items():
+            metadata = getattr(node, "metadata", {}) or {}
+            gis_id = str(metadata.get("code_unit_gis_id") or metadata.get("unit_gis_id") or "").strip()
+            if gis_id:
+                unit_gis_index[gis_id] = str(node_id)
         active_paths: set[str] = set()
         artifacts_seen = 0
         artifacts_indexed = 0
@@ -530,6 +536,11 @@ class GraphRAGIntegration:
                     "source": "code_forge",
                     "kind": kind,
                     "artifact_path": rel_path,
+                    "artifact_gis_id": payload.get("registry_gis_id")
+                    or payload.get("provenance_gis_id")
+                    or payload.get("gis_id"),
+                    "provenance_gis_id": payload.get("provenance_gis_id"),
+                    "registry_gis_id": payload.get("registry_gis_id"),
                     "source_paths": [str(path)],
                     "sha256": digest,
                 },
@@ -546,6 +557,11 @@ class GraphRAGIntegration:
                         "source": "code_forge",
                         "kind": "artifact_summary",
                         "artifact_path": rel_path,
+                        "artifact_gis_id": payload.get("registry_gis_id")
+                        or payload.get("provenance_gis_id")
+                        or payload.get("gis_id"),
+                        "provenance_gis_id": payload.get("provenance_gis_id"),
+                        "registry_gis_id": payload.get("registry_gis_id"),
                         "source_paths": [str(path)],
                         "sha256": digest,
                     },
@@ -570,6 +586,9 @@ class GraphRAGIntegration:
 
             for row in unit_links[:200]:
                 knowledge_node_id = str(row.get("knowledge_node_id") or row.get("node_id") or "").strip()
+                unit_gis_id = str(row.get("unit_gis_id") or "").strip()
+                if not knowledge_node_id and unit_gis_id:
+                    knowledge_node_id = unit_gis_index.get(unit_gis_id, "")
                 if knowledge_node_id and knowledge_node_id in knowledge.nodes:
                     knowledge.link_nodes(root_node.id, knowledge_node_id)
                     links_created += 1
@@ -586,6 +605,7 @@ class GraphRAGIntegration:
                             "source": "code_forge",
                             "kind": "unit_link",
                             "unit_id": unit_id or None,
+                            "unit_gis_id": unit_gis_id or None,
                             "qualified_name": qualified_name,
                             "artifact_path": rel_path,
                             "source_paths": [str(path)],
