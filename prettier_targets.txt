@@ -1,3 +1,1 @@
-data/eidos_semantic_graph.json
-data/kb.json
-data/tiered_memory/self.json
+cfg/local_agent_profiles.json
