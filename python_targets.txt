@@ -1,14 +1,3 @@
-agent_forge/src/agent_forge/autonomy/supervisor.py
-agent_forge/src/agent_forge/cli/eidosd.py
-agent_forge/tests/test_autonomy_supervisor.py
-agent_forge/tests/test_db_and_daemon.py
-code_forge/src/code_forge/library/db.py
-code_forge/tests/test_library_db.py
-lib/eidosian_agent/local_mcp_agent.py
 scripts/eidos_scheduler.py
-scripts/living_knowledge_pipeline.py
-scripts/qwenchat.py
-scripts/tests/test_eidos_local_agent.py
-scripts/tests/test_eidos_scheduler.py
-web_interface_forge/src/web_interface_forge/dashboard/main.py
-web_interface_forge/tests/test_dashboard.py
+scripts/tests/test_termux_runit_services.py
+scripts/tests/test_termux_shell_bootstrap.py

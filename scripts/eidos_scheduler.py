@@ -405,7 +405,9 @@ def main() -> int:
                 interval_sec=interval_sec,
                 cycle=int(prior_status.get("cycle") or 0),
                 next_run_in_seconds=0.0,
-                last_result=prior_status.get("last_result") if isinstance(prior_status.get("last_result"), dict) else {},
+                last_result=(
+                    prior_status.get("last_result") if isinstance(prior_status.get("last_result"), dict) else {}
+                ),
                 last_error="stale_running_status_recovered",
             ),
         )
@@ -428,7 +430,9 @@ def main() -> int:
                     interval_sec=interval_sec,
                     cycle=cycle,
                     next_run_in_seconds=0.0,
-                    last_result=_load_state().get("last_result") if isinstance(_load_state().get("last_result"), dict) else {},
+                    last_result=(
+                        _load_state().get("last_result") if isinstance(_load_state().get("last_result"), dict) else {}
+                    ),
                     last_error="stop_requested",
                 ),
             )
@@ -439,7 +443,9 @@ def main() -> int:
                 run_graphrag=bool(args.run_graphrag),
                 code_max_files=args.code_max_files,
                 state="stopped",
-                last_result=_load_state().get("last_result") if isinstance(_load_state().get("last_result"), dict) else {},
+                last_result=(
+                    _load_state().get("last_result") if isinstance(_load_state().get("last_result"), dict) else {}
+                ),
                 stop_requested=True,
             )
             return 0
@@ -470,7 +476,9 @@ def main() -> int:
                     interval_sec=interval_sec,
                     cycle=cycle,
                     next_run_in_seconds=sleep_remaining,
-                    last_result=current_state.get("last_result") if isinstance(current_state.get("last_result"), dict) else {},
+                    last_result=(
+                        current_state.get("last_result") if isinstance(current_state.get("last_result"), dict) else {}
+                    ),
                     last_error=_load_json(STATUS_PATH).get("last_error") if STATUS_PATH.exists() else "",
                 ),
             )

@@ -20,7 +20,7 @@ def test_install_termux_runit_services_creates_service_tree(tmp_path: Path) -> N
     (home / ".eidosian" / "log" / "sv").mkdir(parents=True)
     for name in ("bash", "sh"):
         target = prefix / "bin" / name
-        target.write_text("#!/bin/sh\nexec /bin/sh \"$@\"\n", encoding="utf-8")
+        target.write_text('#!/bin/sh\nexec /bin/sh "$@"\n', encoding="utf-8")
         target.chmod(0o755)
     svlogger.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
     svlogger.chmod(0o755)
@@ -36,7 +36,7 @@ def test_install_termux_runit_services_creates_service_tree(tmp_path: Path) -> N
     assert (scheduler / "down").exists()
     run_text = (scheduler / "run").read_text(encoding="utf-8")
     assert "run_eidos_scheduler.sh" in run_text
-    assert "EIDOS_SERVICE_SUPERVISION=\"runit\"" in run_text
+    assert 'EIDOS_SERVICE_SUPERVISION="runit"' in run_text
 
 
 def test_eidos_termux_services_install_runit_command(tmp_path: Path) -> None:
@@ -47,7 +47,7 @@ def test_eidos_termux_services_install_runit_command(tmp_path: Path) -> None:
     (prefix / "share" / "termux-services").mkdir(parents=True)
     for name in ("bash", "sh"):
         target = prefix / "bin" / name
-        target.write_text("#!/bin/sh\nexec /bin/sh \"$@\"\n", encoding="utf-8")
+        target.write_text('#!/bin/sh\nexec /bin/sh "$@"\n', encoding="utf-8")
         target.chmod(0o755)
     svlogger = prefix / "share" / "termux-services" / "svlogger"
     svlogger.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
