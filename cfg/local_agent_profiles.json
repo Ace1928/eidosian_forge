@@ -1,0 +1,110 @@
+{
+  "contract": "eidos.local_agent_profiles.v1",
+  "profiles": {
+    "observer": {
+      "description": "Read-only local forge observer using MCP-discovered tools under a narrow contract.",
+      "max_steps": 6,
+      "max_tool_calls": 8,
+      "max_mutating_calls": 0,
+      "thinking_mode": "on",
+      "temperature": 0.2,
+      "max_tokens": 1536,
+      "max_observation_chars": 2200,
+      "system_prompt": "You are a guarded local Eidosian observer. Inspect the forge, use only the exposed tools, and stop when the next action is clear.",
+      "allowed_tools": {
+        "diagnostics_ping": {"allowed_keys": [], "mode": "read", "max_calls_per_cycle": 1},
+        "system_info": {"allowed_keys": [], "mode": "read", "max_calls_per_cycle": 1},
+        "memory_stats": {"allowed_keys": [], "mode": "read", "max_calls_per_cycle": 1},
+        "tiered_memory_stats": {"allowed_keys": [], "mode": "read", "max_calls_per_cycle": 1},
+        "kb_search": {"allowed_keys": ["query"], "string_max_lengths": {"query": 240}, "mode": "read", "max_calls_per_cycle": 2},
+        "unified_context_search": {
+          "allowed_keys": ["query", "max_results", "include_memory", "include_knowledge"],
+          "string_max_lengths": {"query": 240},
+          "integer_bounds": {"max_results": {"min": 1, "max": 8}},
+          "const_arguments": {"include_memory": true, "include_knowledge": true},
+          "mode": "read",
+          "max_calls_per_cycle": 2
+        },
+        "tiered_recall": {
+          "allowed_keys": ["query", "limit", "namespace", "tier"],
+          "string_max_lengths": {"query": 240, "namespace": 48, "tier": 32},
+          "integer_bounds": {"limit": {"min": 1, "max": 8}},
+          "mode": "read",
+          "max_calls_per_cycle": 2
+        },
+        "grag_query_local": {"allowed_keys": ["query"], "string_max_lengths": {"query": 240}, "mode": "read", "max_calls_per_cycle": 2},
+        "grag_reports": {"allowed_keys": [], "mode": "read", "max_calls_per_cycle": 1},
+        "grag_trends": {"allowed_keys": [], "mode": "read", "max_calls_per_cycle": 1},
+        "grag_assessment": {"allowed_keys": [], "mode": "read", "max_calls_per_cycle": 1},
+        "grag_artifacts": {"allowed_keys": [], "mode": "read", "max_calls_per_cycle": 1},
+        "code_forge_artifact_summary": {"allowed_keys": [], "mode": "read", "max_calls_per_cycle": 1},
+        "wf_search_terms": {
+          "allowed_keys": ["pattern", "limit"],
+          "string_max_lengths": {"pattern": 80},
+          "integer_bounds": {"limit": {"min": 1, "max": 12}},
+          "mode": "read",
+          "max_calls_per_cycle": 2
+        },
+        "wf_get_term": {"allowed_keys": ["term"], "string_max_lengths": {"term": 80}, "mode": "read", "max_calls_per_cycle": 2},
+        "wf_find_related": {
+          "allowed_keys": ["term", "limit", "relation_type"],
+          "string_max_lengths": {"term": 80, "relation_type": 40},
+          "integer_bounds": {"limit": {"min": 1, "max": 12}},
+          "mode": "read",
+          "max_calls_per_cycle": 2
+        },
+        "tool_info": {"allowed_keys": ["name"], "string_max_lengths": {"name": 80}, "mode": "read", "max_calls_per_cycle": 4}
+      }
+    },
+    "curator": {
+      "description": "Knowledge and lexicon curator with tightly limited write access.",
+      "max_steps": 8,
+      "max_tool_calls": 10,
+      "max_mutating_calls": 2,
+      "thinking_mode": "on",
+      "temperature": 0.2,
+      "max_tokens": 1792,
+      "max_observation_chars": 2400,
+      "system_prompt": "You are a guarded local Eidosian curator. Inspect first, then make only minimal, high-confidence updates through the allowed write tools.",
+      "allowed_tools": {
+        "diagnostics_ping": {"allowed_keys": [], "mode": "read", "max_calls_per_cycle": 1},
+        "kb_search": {"allowed_keys": ["query"], "string_max_lengths": {"query": 240}, "mode": "read", "max_calls_per_cycle": 2},
+        "unified_context_search": {
+          "allowed_keys": ["query", "max_results", "include_memory", "include_knowledge"],
+          "string_max_lengths": {"query": 240},
+          "integer_bounds": {"max_results": {"min": 1, "max": 8}},
+          "const_arguments": {"include_memory": true, "include_knowledge": true},
+          "mode": "read",
+          "max_calls_per_cycle": 2
+        },
+        "grag_query_local": {"allowed_keys": ["query"], "string_max_lengths": {"query": 240}, "mode": "read", "max_calls_per_cycle": 2},
+        "wf_search_terms": {
+          "allowed_keys": ["pattern", "limit"],
+          "string_max_lengths": {"pattern": 80},
+          "integer_bounds": {"limit": {"min": 1, "max": 12}},
+          "mode": "read",
+          "max_calls_per_cycle": 2
+        },
+        "kb_add": {
+          "allowed_keys": ["fact", "tags"],
+          "string_max_lengths": {"fact": 400},
+          "mode": "mutating",
+          "max_calls_per_cycle": 1
+        },
+        "tiered_remember": {
+          "allowed_keys": ["content", "namespace", "tier", "importance", "tags"],
+          "string_max_lengths": {"content": 400, "namespace": 48, "tier": 32, "tags": 120},
+          "allowed_values": {"namespace": ["task", "knowledge", "eidos"], "tier": ["working", "long_term", "self"]},
+          "mode": "mutating",
+          "max_calls_per_cycle": 1
+        },
+        "wf_add_term": {
+          "allowed_keys": ["term", "definition", "pos", "source"],
+          "string_max_lengths": {"term": 80, "definition": 400, "pos": 24, "source": 120},
+          "mode": "mutating",
+          "max_calls_per_cycle": 1
+        }
+      }
+    }
+  }
+}

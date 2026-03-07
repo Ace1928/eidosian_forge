@@ -11,12 +11,14 @@ MCP_PID_FILE="${RUN_DIR}/eidos_mcp.pid"
 DOC_PID_FILE="${RUN_DIR}/doc_forge.pid"
 ATLAS_PID_FILE="${RUN_DIR}/eidos_atlas.pid"
 SCHEDULER_PID_FILE="${RUN_DIR}/eidos_scheduler.pid"
+LOCAL_AGENT_PID_FILE="${RUN_DIR}/eidos_local_agent.pid"
 OLLAMA_QWEN_PID_FILE="${RUN_DIR}/ollama_qwen.pid"
 OLLAMA_EMBED_PID_FILE="${RUN_DIR}/ollama_embedding.pid"
 MCP_LOG_FILE="${FORGE_ROOT}/doc_forge/mcp_server.log"
 DOC_LOG_FILE="${FORGE_ROOT}/doc_forge/orchestrator.log"
 ATLAS_LOG_FILE="${FORGE_ROOT}/web_interface_forge/eidos_atlas.log"
 SCHEDULER_LOG_FILE="${FORGE_ROOT}/logs/eidos_scheduler.log"
+LOCAL_AGENT_LOG_FILE="${FORGE_ROOT}/logs/eidos_local_agent.log"
 OLLAMA_QWEN_LOG_FILE="${FORGE_ROOT}/logs/ollama_qwen.log"
 OLLAMA_EMBED_LOG_FILE="${FORGE_ROOT}/logs/ollama_embedding.log"
 
@@ -50,6 +52,7 @@ OLLAMA_EMBED_HEALTH_URL="${EIDOS_OLLAMA_EMBED_HEALTH_URL:-http://127.0.0.1:${OLL
 ENABLE_DOC_FORGE_AUTOSTART="${EIDOS_ENABLE_DOC_FORGE_AUTOSTART:-1}"
 ENABLE_ATLAS_AUTOSTART="${EIDOS_ENABLE_ATLAS_AUTOSTART:-1}"
 ENABLE_SCHEDULER_AUTOSTART="${EIDOS_ENABLE_SCHEDULER_AUTOSTART:-1}"
+ENABLE_LOCAL_AGENT_AUTOSTART="${EIDOS_ENABLE_LOCAL_AGENT_AUTOSTART:-1}"
 ENABLE_OLLAMA_AUTOSTART="${EIDOS_ENABLE_OLLAMA_AUTOSTART:-1}"
 
 mkdir -p "${RUN_DIR}"
@@ -276,6 +279,9 @@ case "${cmd}" in
         if _is_truthy "${ENABLE_SCHEDULER_AUTOSTART}" && [ -x "${FORGE_ROOT}/scripts/eidos_scheduler.py" ]; then
             _start_service "Eidos Scheduler" "${FORGE_ROOT}/scripts/run_eidos_scheduler.sh" "${SCHEDULER_PID_FILE}" "${SCHEDULER_LOG_FILE}" "" "scripts/run_eidos_scheduler.sh" || true
         fi
+        if _is_truthy "${ENABLE_LOCAL_AGENT_AUTOSTART}" && [ -x "${FORGE_ROOT}/scripts/run_local_mcp_agent.sh" ]; then
+            _start_service "Eidos Local Agent" "${FORGE_ROOT}/scripts/run_local_mcp_agent.sh" "${LOCAL_AGENT_PID_FILE}" "${LOCAL_AGENT_LOG_FILE}" "" "scripts/run_local_mcp_agent.sh" || true
+        fi
 
         if ! _wait_http_ok "${MCP_HEALTH_URL}" 15; then
             _log "warning: MCP health check failed at ${MCP_HEALTH_URL}."
@@ -290,6 +296,7 @@ case "${cmd}" in
             _stop_service "Eidos Documentation Forge" "${DOC_PID_FILE}" "doc_forge/scripts/run_forge.sh"
             _stop_service "Eidos Atlas Dashboard" "${ATLAS_PID_FILE}" "web_interface_forge/scripts/run_dashboard.sh"
             _stop_service "Eidos Scheduler" "${SCHEDULER_PID_FILE}" "scripts/run_eidos_scheduler.sh"
+            _stop_service "Eidos Local Agent" "${LOCAL_AGENT_PID_FILE}" "scripts/run_local_mcp_agent.sh"
         fi
         ;;
     start)
@@ -319,6 +326,9 @@ case "${cmd}" in
         if _is_truthy "${ENABLE_SCHEDULER_AUTOSTART}" && [ -x "${FORGE_ROOT}/scripts/eidos_scheduler.py" ]; then
             _start_service "Eidos Scheduler" "${FORGE_ROOT}/scripts/run_eidos_scheduler.sh" "${SCHEDULER_PID_FILE}" "${SCHEDULER_LOG_FILE}" "" "scripts/run_eidos_scheduler.sh"
         fi
+        if _is_truthy "${ENABLE_LOCAL_AGENT_AUTOSTART}" && [ -x "${FORGE_ROOT}/scripts/run_local_mcp_agent.sh" ]; then
+            _start_service "Eidos Local Agent" "${FORGE_ROOT}/scripts/run_local_mcp_agent.sh" "${LOCAL_AGENT_PID_FILE}" "${LOCAL_AGENT_LOG_FILE}" "" "scripts/run_local_mcp_agent.sh"
+        fi
 
         _wait_http_ok "${MCP_HEALTH_URL}" 15 || {
             _log "warning: MCP health check failed at ${MCP_HEALTH_URL}."
@@ -332,6 +342,7 @@ case "${cmd}" in
         _stop_service "Eidos Documentation Forge" "${DOC_PID_FILE}" "doc_forge/scripts/run_forge.sh"
         _stop_service "Eidos Atlas Dashboard" "${ATLAS_PID_FILE}" "web_interface_forge/scripts/run_dashboard.sh"
         _stop_service "Eidos Scheduler" "${SCHEDULER_PID_FILE}" "scripts/run_eidos_scheduler.sh"
+        _stop_service "Eidos Local Agent" "${LOCAL_AGENT_PID_FILE}" "scripts/run_local_mcp_agent.sh"
         ;;
     restart)
         "$0" stop
@@ -344,6 +355,7 @@ case "${cmd}" in
         _status_service "Eidos Documentation Forge" "${DOC_PID_FILE}" "${DOC_PORT}" "doc_forge/scripts/run_forge.sh" "${DOC_HEALTH_URL}"
         _status_service "Eidos Atlas Dashboard" "${ATLAS_PID_FILE}" "${ATLAS_PORT}" "web_interface_forge/scripts/run_dashboard.sh" "${ATLAS_HEALTH_URL}"
         _status_service "Eidos Scheduler" "${SCHEDULER_PID_FILE}" "" "scripts/run_eidos_scheduler.sh"
+        _status_service "Eidos Local Agent" "${LOCAL_AGENT_PID_FILE}" "" "scripts/run_local_mcp_agent.sh"
         printf 'Interactive shell refcount: %s\n' "$(_read_count)"
         ;;
     *)

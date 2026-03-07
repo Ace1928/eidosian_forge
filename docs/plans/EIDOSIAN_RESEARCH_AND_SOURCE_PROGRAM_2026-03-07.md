@@ -127,6 +127,18 @@ Need sources for:
 Primary source targets:
 - official docs for the frontend/chart/graph libraries actually in use
 
+### R9: Local Small Agent / MCP Tool Contracts
+Need sources for:
+- MCP tool and resource semantics
+- MCP client transport and authorization expectations
+- local-model tool calling and structured-output patterns
+- contract-driven tool schema restriction and guarded execution loops
+
+Primary source targets:
+- `modelcontextprotocol.io`
+- `docs.ollama.com`
+- official model pages under `ollama.com/library/...`
+
 ## Source Acquisition Waves
 
 ### Wave A: Immediate implementation blockers
@@ -140,13 +152,19 @@ Primary source targets:
 - [x] Secret-scanning workflow references and gitleaks configuration docs already captured through the GitHub Actions source set
 
 ### Wave B: Architectural unification
-- [ ] W3C provenance / RDF / OWL references for GIS and graph identity
+- [x] W3C provenance / RDF / OWL references for GIS and graph identity
 - [ ] additional vector/metadata filtering references if backend changes are needed
 - [ ] code-clone / parsing references if current internal approach is insufficient
 
 ### Wave C: UX / operator plane / runtime control
 - [ ] official docs for current dashboard stack
 - [ ] any service-control/websocket/runtime telemetry references directly tied to implementation
+
+### Wave D: Local agent / MCP tool use
+- [x] MCP tool/resource/client/authorization references
+- [x] Ollama tool-calling / structured-output / thinking references
+- [x] OpenClaw integration reference captured as a comparative local-agent pattern
+- [ ] Local-agent evaluation and safety references beyond the current implementation stack if a stronger harness is needed
 
 ## Ingestion Protocol
 
@@ -163,6 +181,7 @@ For every saved source set:
 - [x] ingested source artifacts in knowledge/vector system
 - [x] implementation notes back-linked to source sets for the CI/workflow stabilization slice
 - [x] updated master implementation program with sourced constraints and choices for the current CI slice
+- [x] local-agent/MCP source program linked into an implementation slice
 
 ## Current Source Sets
 
@@ -170,3 +189,7 @@ For every saved source set:
 - `docs/external_references/2026-03-07-tmp-redirection/`
 - `docs/external_references/2026-03-07-master-program/`
 - `docs/external_references/2026-03-07-master-program/ci/`
+- `docs/external_references/2026-03-07-code-forge-gis/`
+- `docs/external_references/2026-03-07-notebook-ingestion/`
+- `docs/external_references/2026-03-07-archive-doc-routing/`
+- `docs/external_references/2026-03-07-local-agent-mcp/`

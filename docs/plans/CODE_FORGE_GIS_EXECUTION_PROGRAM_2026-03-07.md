@@ -85,19 +85,19 @@ Saved under `docs/external_references/2026-03-07-code-forge-gis/` and ingested i
 - [ ] Add promotion gates before raw archive retirement.
 
 ### Track C: Archive Reduction
-- [ ] Batch `archive_forge` into manageable ingestion waves.
-- [ ] Separate:
+- [~] Batch `archive_forge` into manageable ingestion waves.
+- [~] Separate:
   - code-like artifacts
   - document-like artifacts
   - metadata/provenance artifacts
   - binary/unsupported artifacts
-- [ ] Route code-like artifacts through Code Forge first.
-- [ ] Route document-like artifacts through doc/Tika/native GraphRAG.
+- [~] Route code-like artifacts through Code Forge first.
+- [~] Route document-like artifacts through doc/Tika/native GraphRAG.
 - [ ] Retain deletion evidence and rollback pointers for every retirement action.
 
 ### Track D: Graph / Vector Integration
 - [ ] Ensure every Code Forge unit stored in SQLite is mirrored into the shared vector substrate with stable metadata keys.
-- [ ] Ensure every promoted code/document/archive artifact is mirrored into native GraphRAG with GIS identity.
+- [~] Ensure every promoted code/document/archive artifact is mirrored into native GraphRAG with GIS identity.
 - [ ] Add graph-side links for:
   - source file -> unit
   - unit -> abstraction
@@ -123,7 +123,7 @@ Saved under `docs/external_references/2026-03-07-code-forge-gis/` and ingested i
 
 1. [x] Attach stable GIS/provenance identity fields to Code Forge units and ingestion artifacts.
 2. [~] Add GraphRAG export reconciliation for Code Forge units, triage artifacts, and reduction-plan artifacts.
-3. [~] Build batch classification and resumable ingestion state for `archive_forge`.
+3. [x] Build batch classification and resumable ingestion state for `archive_forge`.
 4. [ ] Add reverse lookup/report APIs needed by Atlas and the scheduler.
 5. [ ] Add archive retirement gates and evidence artifacts.
 

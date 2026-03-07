@@ -9,6 +9,7 @@ Canonical backlog inventory:
 - `docs/plan_sweep/PLAN_SWEEP_TRACKER.md`
 Active subordinate execution slices:
 - `docs/plans/CODE_FORGE_GIS_EXECUTION_PROGRAM_2026-03-07.md`
+- `docs/plans/LOCAL_AGENT_MCP_EXECUTION_PROGRAM_2026-03-07.md`
 
 ## Program Intent
 
@@ -53,15 +54,15 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
 ## Program Phases
 
 ### Phase 0: Program Governance, Inventory, and Traceability
-- [ ] Freeze a canonical backlog snapshot from all `TODO`, `PLAN`, and `ROADMAP` documents.
+- [x] Freeze a canonical backlog snapshot from all `TODO`, `PLAN`, and `ROADMAP` documents.
 - [ ] Generate a normalized master backlog table grouped by forge, domain, and execution dependency.
-- [ ] Create status links from this master program to all subordinate plans still in force.
+- [x] Create status links from this master program to all subordinate plans still in force.
 - [ ] Mark obsolete or superseded plan artifacts instead of silently ignoring them.
 - [ ] Create a unified completion ledger for commits, workflow runs, benchmarks, and ingestion milestones.
 
 ### Phase 1: CI and Workflow Stabilization
-- [ ] Replace monolithic CI test execution with forge-scoped matrices and reusable workflow calls.
-- [ ] Split Python testing into independently reportable components:
+- [~] Replace monolithic CI test execution with forge-scoped matrices and reusable workflow calls.
+- [~] Split Python testing into independently reportable components:
   - `agent_forge`
   - `memory_forge`
   - `knowledge_forge`
@@ -71,31 +72,31 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
   - `benchmarks`
   - `web_interface_forge`
   - additional forge groups as needed
-- [ ] Ensure every workflow reports:
+- [~] Ensure every workflow reports:
   - exact failing forge/component,
   - exact failing command,
   - artifact links,
   - pass/fail summary table.
-- [ ] Make format automation targeted:
+- [x] Make format automation targeted:
   - changed files only where possible,
   - scoped directories otherwise,
   - no global repo rewrites on unrelated pushes.
 - [ ] Add a dependency-capability matrix so optional backends are explicit instead of becoming surprise CI failures.
-- [ ] Fix current known failure modes:
+- [~] Fix current known failure modes:
   - `eidctl.py` syntax drift regression gate,
   - missing `hnswlib` assumption in Linux CI,
   - oversized parity smoke blast radius,
   - secret-scan false positives/noisy paths if still present on latest runs.
-- [ ] Add artifact publication for per-forge test summaries, not just raw logs.
-- [ ] Add workflow self-tests and action pin governance without over-triggering on unrelated YAML.
+- [~] Add artifact publication for per-forge test summaries, not just raw logs.
+- [x] Add workflow self-tests and action pin governance without over-triggering on unrelated YAML.
 
 ### Phase 2: Termux/Linux Runtime Platform
 - [ ] Complete migration from shell-started services to supervised service management.
-- [ ] Keep one canonical shell bootstrap contract across Termux and Linux.
+- [~] Keep one canonical shell bootstrap contract across Termux and Linux.
 - [ ] Finish boot/resume semantics and ensure resumable services restart cleanly.
-- [ ] Standardize temp/runtime/cache/data paths across Termux and Linux.
+- [~] Standardize temp/runtime/cache/data paths across Termux and Linux.
 - [ ] Build a capability registry for platform differences instead of littering checks across code.
-- [ ] Integrate boot/service/runtime state into Atlas and the scheduler.
+- [~] Integrate boot/service/runtime state into Atlas and the scheduler.
 
 ### Phase 3: GIS Core and Universal Information Model
 - [ ] Define GIS as the canonical identification, classification, and governance layer for all information constructs.
@@ -111,11 +112,11 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
   - pipeline runs.
 - [ ] Define GIS namespaces, domain classes, relationship classes, and extension points.
 - [ ] Add GIS-backed lookup/index APIs and deterministic serialization.
-- [ ] Link GIS identifiers into Knowledge Forge, Memory Forge, Code Forge, Word Forge, and GraphRAG artifacts.
+- [~] Link GIS identifiers into Knowledge Forge, Memory Forge, Code Forge, Word Forge, and GraphRAG artifacts.
 - [ ] Add GIS-aware visualization and search in Atlas.
 
 ### Phase 4: Shared Vector and Embedding Substrate
-- [ ] Make the vector substrate a first-class shared service contract across memory, knowledge, code, documents, and lexicon.
+- [~] Make the vector substrate a first-class shared service contract across memory, knowledge, code, documents, and lexicon.
 - [ ] Standardize:
   - embedder interface,
   - vector-store interface,
@@ -127,11 +128,11 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
   - Termux-safe runtime,
   - Linux CI/runtime,
   - optional future backends.
-- [ ] Add vector drift detection, dimension validation, and rebuild policy.
+- [~] Add vector drift detection, dimension validation, and rebuild policy.
 - [ ] Add benchmark coverage for recall, latency, persistence, rebuild time, and metadata filtering.
 
 ### Phase 5: Memory Forge Completion
-- [ ] Finish migration of all memory tiers to the shared vector substrate.
+- [~] Finish migration of all memory tiers to the shared vector substrate.
 - [ ] Ensure every memory record has:
   - GIS identity,
   - embedding/vector metadata,
@@ -141,22 +142,22 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
   - update timestamps,
   - dedupe signature.
 - [ ] Add LLM-assisted enrichment policies for selective high-value memories.
-- [ ] Add community drift tracking, tier-health tracking, and quality scoring.
-- [ ] Feed memory trends into autonomy, consciousness, Atlas, and scheduler policy.
+- [~] Add community drift tracking, tier-health tracking, and quality scoring.
+- [~] Feed memory trends into autonomy, consciousness, Atlas, and scheduler policy.
 
 ### Phase 6: Knowledge Forge and Native GraphRAG Completion
-- [ ] Complete GraphRAG-native indexing parity for code, docs, memory, lexicon, references, and artifacts.
-- [ ] Ensure native report, trend, and assessment layers cover all indexed domains.
-- [ ] Add GIS and vector identity to graph nodes and communities.
+- [~] Complete GraphRAG-native indexing parity for code, docs, memory, lexicon, references, and artifacts.
+- [~] Ensure native report, trend, and assessment layers cover all indexed domains.
+- [~] Add GIS and vector identity to graph nodes and communities.
 - [ ] Add richer graph operations:
   - multi-hop traversal,
   - community quality scoring,
   - contradiction/gap analysis,
   - evidence lineage.
-- [ ] Integrate crawl/Tika/doc ingestion outputs as first-class knowledge artifacts.
+- [~] Integrate crawl/Tika/doc ingestion outputs as first-class knowledge artifacts.
 
 ### Phase 7: Code Forge Deep Upgrade
-- [ ] Upgrade Code Forge into the primary abstraction layer for archive reduction and code reuse.
+- [~] Upgrade Code Forge into the primary abstraction layer for archive reduction and code reuse.
 - [ ] Expand reversibility and canonicalization for extracted/archive code.
 - [ ] Improve deduplication across:
   - exact copies,
@@ -166,27 +167,27 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
   - migrated abstractions.
 - [ ] Add canonical extraction and abstraction workflows for reusable library synthesis.
 - [ ] Add standardization passes for naming, signatures, ownership, provenance, and test linkage.
-- [ ] Improve vectorized search, reverse lookup, snippet extraction, and dependency graph navigation.
+- [~] Improve vectorized search, reverse lookup, snippet extraction, and dependency graph navigation.
 - [ ] Ensure archive-derived code can be ingested into the library and then safely retired from raw archive storage when replacement gates pass.
 
 ### Phase 8: Archive Forge Reduction Program
-- [ ] Classify `archive_forge` into ingestion batches by source, type, and expected retention strategy.
-- [ ] Ingest code-like material into Code Forge first.
-- [ ] Ingest document-like material into doc/knowledge/GraphRAG pipelines.
-- [ ] Ingest reference/metadata/manifests into GIS/knowledge provenance stores.
+- [~] Classify `archive_forge` into ingestion batches by source, type, and expected retention strategy.
+- [~] Ingest code-like material into Code Forge first.
+- [~] Ingest document-like material into doc/knowledge/GraphRAG pipelines.
+- [~] Ingest reference/metadata/manifests into GIS/knowledge provenance stores.
 - [ ] Add promotion/deletion gates so raw archive content is only removed after abstraction and evidence thresholds are met.
-- [ ] Track archive burn-down with artifacts and dashboards.
+- [~] Track archive burn-down with artifacts and dashboards.
 
 ### Phase 9: Document, Tika, and Crawl Completion
-- [ ] Harden Tika and crawl ingestion for all supported local and fetched artifacts.
-- [ ] Create production pipelines for leftover non-code documents and file types.
-- [ ] Ensure final docs from doc processing are re-ingested into knowledge/GraphRAG.
-- [ ] Add source-reference ingestion as a first-class workflow with provenance, GIS IDs, and vectors.
-- [ ] Add file-type-specific routing policies and extraction QA metrics.
+- [~] Harden Tika and crawl ingestion for all supported local and fetched artifacts.
+- [~] Create production pipelines for leftover non-code documents and file types.
+- [~] Ensure final docs from doc processing are re-ingested into knowledge/GraphRAG.
+- [~] Add source-reference ingestion as a first-class workflow with provenance, GIS IDs, and vectors.
+- [~] Add file-type-specific routing policies and extraction QA metrics.
 
 ### Phase 10: Word Forge and Living Lexicon Completion
-- [ ] Ensure every new term/phrase discovered by code/doc/crawl/memory pipelines enters the lexicon queue.
-- [ ] Expand term enrichment to include:
+- [~] Ensure every new term/phrase discovered by code/doc/crawl/memory pipelines enters the lexicon queue.
+- [~] Expand term enrichment to include:
   - definitions,
   - examples,
   - part of speech,
@@ -197,18 +198,18 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
   - graph relationships,
   - community membership.
 - [ ] Connect lexicon communities to knowledge and code communities.
-- [ ] Expose the queue, processing state, and graph in Atlas.
+- [~] Expose the queue, processing state, and graph in Atlas.
 
 ### Phase 11: Scheduler, Coordinator, Autonomy, Consciousness
-- [ ] Make every model-using component obey the coordinator budget contract.
-- [ ] Ensure interactive sessions preempt non-interactive work safely.
-- [ ] Make scheduler jobs persistent, resumable, interrupt-safe, and stateful across restarts.
-- [ ] Feed runtime, ingestion, memory, report, and vector health into autonomy scoring.
-- [ ] Feed the same state into consciousness broadcasts and metrics.
-- [ ] Add explicit backlog and resume semantics for unfinished ingestion waves.
+- [~] Make every model-using component obey the coordinator budget contract.
+- [x] Ensure interactive sessions preempt non-interactive work safely.
+- [~] Make scheduler jobs persistent, resumable, interrupt-safe, and stateful across restarts.
+- [~] Feed runtime, ingestion, memory, report, and vector health into autonomy scoring.
+- [~] Feed the same state into consciousness broadcasts and metrics.
+- [~] Add explicit backlog and resume semantics for unfinished ingestion waves.
 
 ### Phase 12: Atlas and Operator UX
-- [ ] Expand Atlas into the operator control plane for:
+- [~] Expand Atlas into the operator control plane for:
   - services,
   - pipelines,
   - graph exploration,
@@ -217,8 +218,8 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
   - memory communities,
   - workflow history,
   - GIS lookup.
-- [ ] Add saved exploration sessions, filters, community overlays, and reversible snippet export.
-- [ ] Add runtime trend/history panes for workflows, pipelines, vector state, and archive burn-down.
+- [~] Add saved exploration sessions, filters, community overlays, and reversible snippet export.
+- [~] Add runtime trend/history panes for workflows, pipelines, vector state, and archive burn-down.
 - [ ] Add execution control for supervised services and scheduler queues.
 
 ### Phase 13: Validation, Benchmarks, and Promotion Gates
@@ -235,12 +236,12 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
 
 ## Immediate Execution Order
 
-1. [ ] Stabilize CI/workflows and make failures forge-specific and actionable.
-2. [ ] Complete the runtime/platform/service substrate so long-running ingestion can stay up.
-3. [ ] Deepen Code Forge and vector contracts enough to process archive code safely.
-4. [ ] Build GIS identifier/model integration across memory/knowledge/code/docs/lexicon.
-5. [ ] Run archive/document ingestion waves with GraphRAG/native graph/vector integration.
-6. [ ] Complete Atlas/operator control and autonomous resumption loops.
+1. [~] Stabilize CI/workflows and make failures forge-specific and actionable.
+2. [~] Complete the runtime/platform/service substrate so long-running ingestion can stay up.
+3. [~] Deepen Code Forge and vector contracts enough to process archive code safely.
+4. [~] Build GIS identifier/model integration across memory/knowledge/code/docs/lexicon.
+5. [~] Run archive/document ingestion waves with GraphRAG/native graph/vector integration.
+6. [~] Complete Atlas/operator control and autonomous resumption loops.
 
 ## Progress Log
 
@@ -266,6 +267,8 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
   - `lib/eidosian_runtime/__init__.py` added so runtime imports resolve in CI
 - [x] Code Forge / GIS implementation slice created:
   - `docs/plans/CODE_FORGE_GIS_EXECUTION_PROGRAM_2026-03-07.md`
+- [x] Local agent / MCP implementation slice created:
+  - `docs/plans/LOCAL_AGENT_MCP_EXECUTION_PROGRAM_2026-03-07.md`
 - [x] Code Forge / GIS primary-source set saved and ingested:
   - `docs/external_references/2026-03-07-code-forge-gis/`
   - `lint.yml` converted from monorepo-wide linting to per-component changed-scope linting
@@ -280,6 +283,23 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
   - changed-manifest component selection no longer expands all Python components for workflow-only changes
   - changed-file lint now operates on changed files within each component instead of whole component roots
   - auto-format no longer fails on residual non-fixable Ruff findings after auto-fix
+- [x] Archive-code/document/metadata ingestion moved from planning into bounded live execution:
+  - resumable archive-wave execution implemented
+  - bounded include-path execution avoids full-tree rescans
+  - live real-archive smoke succeeded with `3` selected batches and `0` failures
+- [x] Code Forge export quality tightened for GraphRAG / Knowledge Forge promotion:
+  - structural-noise units are filtered by default
+  - live bounded rerun cut elapsed time from `25.405s` to `13.209s` (`48.01%` reduction)
+- [x] Guarded local small-agent substrate started:
+  - source bundle saved under `docs/external_references/2026-03-07-local-agent-mcp/`
+  - source bundle ingested locally via Tika-backed ingestion (`12 files`, `102 nodes`)
+  - policy-contracted MCP/Qwen harness added under `lib/eidosian_agent/`
+  - CLI wrapper added at `scripts/eidos_local_agent.py`
+- [x] Local small-agent service and validation hardening advanced:
+  - continuous service wrapper added at `scripts/run_local_mcp_agent.sh`
+  - `eidos_termux_services.sh` can now manage the local agent
+  - stale-own-lease recovery prevents stuck coordinator ownership after failed runs
+  - live bounded observer validation now returns structured timeout artifacts instead of crashing on long Qwen turns
 
 ## Current Known Blocking Defects
 
