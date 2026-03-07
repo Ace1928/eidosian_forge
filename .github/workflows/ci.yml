@@ -324,6 +324,7 @@ jobs:
             openai \
             fastapi \
             jinja2 \
+            Markdown \
             pandas \
             pyarrow \
             psutil \
