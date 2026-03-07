@@ -2,6 +2,28 @@
 
 Date: 2026-03-07
 
+## Status Update
+
+- Phase 0 completed:
+  - startup backup and restore scripts added
+  - machine-readable startup audit added
+  - current startup snapshot stored under `backups/termux_startup/`
+- Phase 1 materially completed:
+  - `~/.bashrc` reduced to a thin repo-managed wrapper
+  - `shell/bootstrap.sh` added as the canonical cross-platform shell loader
+  - common shell behavior moved into `shell/common.d/`
+  - Termux-specific behavior retained in `shell/profile.d/`
+  - standard `eidosian_venv` activation scripts restored
+  - raw `.env` sourcing replaced with safe dotenv parsing
+- Phase 4 partially completed:
+  - `scripts/eidos_termux_boot.sh` added
+  - `scripts/install_termux_boot.sh` now installs `~/.termux/boot/00-eidos-boot`
+- Immediate next focus:
+  - migrate always-on services toward `termux-services` / runit
+  - continue modularizing remaining shell and userland concerns
+  - expose service and boot controls through Atlas
+  - keep the same bootstrap contract working on Linux
+
 Purpose:
 - redesign the Termux startup/bootstrap path
 - make `eidosian_venv` the default active Python environment in a controlled, portable way

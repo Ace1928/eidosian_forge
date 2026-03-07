@@ -3,8 +3,20 @@
 eidos_termux_runtime_init() {
     eidos_termux_is_interactive || return 0
 
+    export TU_DEBUG="${TU_DEBUG:-noconform}"
+    export MESA_VK_WSI_PRESENT_MODE="${MESA_VK_WSI_PRESENT_MODE:-fifo}"
+    export MESA_VK_ABORT_ON_DEVICE_LOSS="${MESA_VK_ABORT_ON_DEVICE_LOSS:-true}"
+    export MESA_SHADER_CACHE_DISABLE="${MESA_SHADER_CACHE_DISABLE:-false}"
+    export MESA_NO_DITHER="${MESA_NO_DITHER:-1}"
     export BLIS_ARCH="${BLIS_ARCH:-generic}"
-    local lib_flags="-lm -ldl -llog -lGLESv1_CM -lGLESv2 -landroid"
+    export DISPLAY="${DISPLAY:-:1}"
+
+    local runtime_default="/data/data/com.termux/files/usr/tmp/$(id -u)"
+    export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-${runtime_default}}"
+    mkdir -p "${XDG_RUNTIME_DIR}"
+    chmod 700 "${XDG_RUNTIME_DIR}" >/dev/null 2>&1 || true
+
+    local lib_flags='-lm -ldl -llog -lGLESv1_CM -lGLESv2 -landroid'
     export EXTRA_LDFLAGS="${EXTRA_LDFLAGS:+$EXTRA_LDFLAGS }${lib_flags}"
     export LDFLAGS="${LDFLAGS:+$LDFLAGS }${lib_flags}"
     export LIBS="${LIBS:+$LIBS }${lib_flags}"
@@ -14,16 +26,11 @@ eidos_termux_runtime_init() {
     alias dls='cd ~/storage/shared/Download'
     alias pics='cd ~/storage/shared/DCIM'
 
-    if [ -f .env ]; then
-        # shellcheck source=/dev/null
-        source .env
-    fi
-
-    if [ "${EIDOS_ENABLE_PULSEAUDIO_AUTOSTART:-1}" = "1" ] && command -v pulseaudio >/dev/null 2>&1; then
+    if [ "${EIDOS_ENABLE_PULSEAUDIO_AUTOSTART:-1}" = "1" ] && eidos_shell_has pulseaudio; then
         if ! pgrep -x pulseaudio >/dev/null 2>&1; then
             pulseaudio --start --exit-idle-time=-1 >/dev/null 2>&1 || true
             sleep 1
-            if command -v pactl >/dev/null 2>&1; then
+            if eidos_shell_has pactl; then
                 pactl load-module module-native-protocol-tcp auth-anonymous=1 listen=127.0.0.1 >/dev/null 2>&1 || true
             fi
         fi
@@ -36,7 +43,7 @@ eidos_termux_runtime_init() {
         fi
     fi
 
-    if [ "${EIDOS_DISABLE_NOTIFICATIONS:-0}" != "1" ] && command -v notify >/dev/null 2>&1; then
-        notify "Shell loaded and ready."
+    if [ "${EIDOS_DISABLE_NOTIFICATIONS:-0}" != "1" ]; then
+        notify 'Shell loaded and ready.' >/dev/null 2>&1 || true
     fi
 }

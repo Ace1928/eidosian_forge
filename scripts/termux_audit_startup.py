@@ -69,6 +69,7 @@ def main() -> int:
             "exists": bashrc.exists(),
             "line_count": len(bashrc_text.splitlines()) if bashrc_text else 0,
             "sources_eidos_env": _contains(bashrc_text, "eidos_env.sh"),
+            "sources_shell_bootstrap": _contains(bashrc_text, "shell/bootstrap.sh"),
             "sources_termux_bootstrap": _contains(bashrc_text, "termux_bootstrap.sh"),
             "starts_eidos_services": _contains(bashrc_text, "eidos_termux_services.sh"),
             "starts_x11": _contains(bashrc_text, "start_x11"),
@@ -77,6 +78,7 @@ def main() -> int:
         },
         "shell_modules": {
             "termux_bootstrap_exists": (FORGE_ROOT / "shell" / "termux_bootstrap.sh").exists(),
+            "shell_bootstrap_exists": (FORGE_ROOT / "shell" / "bootstrap.sh").exists(),
             "profile_modules": (
                 sorted(str(p.relative_to(FORGE_ROOT)) for p in (FORGE_ROOT / "shell" / "profile.d").glob("*.sh"))
                 if (FORGE_ROOT / "shell" / "profile.d").exists()
@@ -97,8 +99,8 @@ def main() -> int:
         recs.append("consider allow-external-apps = true if RUN_COMMAND integration is desired")
     if report["bashrc"]["line_count"] > 250:
         recs.append("thin ~/.bashrc by moving runtime logic into sourced modules")
-    if not report["bashrc"]["sources_termux_bootstrap"]:
-        recs.append("source shell/termux_bootstrap.sh from ~/.bashrc")
+    if not report["bashrc"]["sources_shell_bootstrap"]:
+        recs.append("source shell/bootstrap.sh from ~/.bashrc")
 
     RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
     REPORT_PATH.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
