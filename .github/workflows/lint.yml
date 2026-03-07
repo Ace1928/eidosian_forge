@@ -116,11 +116,22 @@ jobs:
 
       - name: Lint component
         shell: bash
+        env:
+          MANIFEST_JSON: ${{ needs.validate.outputs.manifest }}
         run: |
           set -eu
-          TARGET="${{ matrix.root }}"
-          if [ ! -e "$TARGET" ]; then
-            echo "::notice::Missing lint target $TARGET; skipping."
+          python - <<'PY' > lint_targets.txt
+          import json
+          import os
+          payload = json.loads(os.environ["MANIFEST_JSON"])
+          prefix = "${{ matrix.root }}/"
+          for path in payload.get("python_files", []):
+              if path == "${{ matrix.root }}" or path.startswith(prefix):
+                  print(path)
+          PY
+          mapfile -t TARGETS < lint_targets.txt
+          if [ "${#TARGETS[@]}" -eq 0 ]; then
+            echo "::notice::No changed Python files for ${{ matrix.component }}; skipping."
             exit 0
           fi
 
@@ -128,10 +139,10 @@ jobs:
           ISORT_STATUS=0
           FLAKE8_STATUS=0
 
-          black "$TARGET" --check --diff --line-length=120 || BLACK_STATUS=$?
-          isort "$TARGET" --check --diff --profile=black --line-length=120 --skip-gitignore || ISORT_STATUS=$?
-          ruff check "$TARGET" --config=ruff.toml
-          flake8 "$TARGET" --count --statistics --show-source --max-line-length=120 --exclude=.git,.venv,venv,eidosian_venv,node_modules,.cache,dist,build,__pycache__ || FLAKE8_STATUS=$?
+          black "${TARGETS[@]}" --check --diff --line-length=120 || BLACK_STATUS=$?
+          isort "${TARGETS[@]}" --check --diff --profile=black --line-length=120 --filter-files || ISORT_STATUS=$?
+          ruff check "${TARGETS[@]}" --config=ruff.toml
+          flake8 "${TARGETS[@]}" --count --statistics --show-source --max-line-length=120 --exclude=.git,.venv,venv,eidosian_venv,node_modules,.cache,dist,build,__pycache__ || FLAKE8_STATUS=$?
 
           {
             echo "### Python lint · ${{ matrix.component }}"

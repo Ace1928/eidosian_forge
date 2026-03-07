@@ -33,7 +33,12 @@ def test_eidos_exec_redirects_hardcoded_tmp(tmp_path: Path) -> None:
     subprocess.run([str(BUILD_SCRIPT)], check=True, cwd=FORGE_ROOT, env=env)
 
     target_tmp = tmp_path / "tmp-root"
-    script = "import pathlib; p=pathlib.Path('/tmp/eidos-hardcoded-test.txt'); p.write_text('ok', encoding='utf-8'); print(p.exists())"
+    script = (
+        "import pathlib; "
+        "p=pathlib.Path('/tmp/eidos-hardcoded-test.txt'); "
+        "p.write_text('ok', encoding='utf-8'); "
+        "print(p.exists())"
+    )
     run_env = env.copy()
     run_env["EIDOS_TMPDIR"] = str(target_tmp)
     run_env["EIDOS_ENABLE_TMP_PRELOAD"] = "1"
@@ -82,7 +87,12 @@ def test_eidos_exec_sets_tmp_contract_without_preload(tmp_path: Path) -> None:
     env = os.environ.copy()
     env["EIDOS_TMPDIR"] = str(target_tmp)
     result = subprocess.run(
-        [str(EXEC_SCRIPT), "python3", "-c", "import os; print(os.environ['TMPDIR']); print(os.environ.get('LD_PRELOAD',''))"],
+        [
+            str(EXEC_SCRIPT),
+            "python3",
+            "-c",
+            "import os; print(os.environ['TMPDIR']); print(os.environ.get('LD_PRELOAD',''))",
+        ],
         check=True,
         cwd=FORGE_ROOT,
         env=env,

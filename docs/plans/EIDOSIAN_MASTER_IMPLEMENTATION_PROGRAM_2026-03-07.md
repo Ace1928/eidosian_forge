@@ -265,6 +265,11 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
   - `workflow-lint.yml` now detects changed workflow files before running `actionlint`
   - `security-audit.yml` now publishes generated reports as artifacts
   - CI source set extended with actionlint and gitleaks primary references and ingested locally
+- [x] Live CI regression follow-up applied after first scoped rollout:
+  - tracked the missing `scripts/ci/python_test_matrix.py` and regression test
+  - changed-manifest component selection no longer expands all Python components for workflow-only changes
+  - changed-file lint now operates on changed files within each component instead of whole component roots
+  - auto-format no longer fails on residual non-fixable Ruff findings after auto-fix
 
 ## Current Known Blocking Defects
 

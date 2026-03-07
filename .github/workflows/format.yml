@@ -141,7 +141,9 @@ jobs:
           fi
           black "${TARGETS[@]}" --fast --line-length=120
           isort "${TARGETS[@]}" --profile=black --line-length=120 --filter-files
-          ruff check "${TARGETS[@]}" --fix --config=ruff.toml
+          if ! ruff check "${TARGETS[@]}" --fix --config=ruff.toml; then
+            echo "::warning::Ruff left non-fixable findings in changed Python files after auto-fix."
+          fi
 
       - name: Check for changes
         id: check_changes

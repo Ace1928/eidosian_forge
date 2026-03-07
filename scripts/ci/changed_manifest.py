@@ -26,7 +26,6 @@ PYTHON_COMPONENTS = [
 ]
 
 PYTHON_GLOBAL_PREFIXES = {
-    ".github",
     "lib",
 }
 PYTHON_TRIGGER_FILES = {

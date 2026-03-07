@@ -29,10 +29,8 @@ def test_manifest_selects_changed_python_components_only() -> None:
     assert ts_include == [{"project": "autoseed", "root": "game_forge/src/autoseed"}]
 
 
-def test_manifest_expands_to_all_components_for_global_python_changes() -> None:
+def test_manifest_does_not_expand_components_for_workflow_only_changes() -> None:
     payload = build_manifest([".github/workflows/ci.yml"])
     include = payload["python_components"]["include"]
-    components = [entry["component"] for entry in include]
-    assert "agent_forge" in components
-    assert "web_interface_forge" in components
+    assert include == []
     assert payload["has_python_files"] is False
