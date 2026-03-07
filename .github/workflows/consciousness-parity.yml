@@ -69,7 +69,8 @@ jobs:
             rich \
             typer \
             websockets \
-            tika
+            tika \
+            beautifulsoup4
 
       - name: Run Linux Parity Smoke · pytest
         env:
