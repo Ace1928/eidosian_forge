@@ -179,6 +179,149 @@ def build_repo_index(
     return payload
 
 
+def _route_for_entry(entry: dict[str, Any]) -> str:
+    category = str(entry.get("category") or "")
+    extension = str(entry.get("extension") or "").lower()
+    language = str(entry.get("language") or "").lower()
+
+    if extension in {".md", ".rst", ".txt", ".adoc", ".pdf", ".html", ".htm", ".ipynb"}:
+        return "document_pipeline"
+    if extension in {".json", ".yaml", ".yml", ".toml", ".ini", ".csv", ".tsv", ".xml"}:
+        return "knowledge_metadata"
+    if extension in {".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp", ".svg", ".mp3", ".wav", ".mp4", ".mov"}:
+        return "defer_binary"
+    if category in {"source", "script", "test"} or language not in {"unknown", "", "text"}:
+        return "code_forge"
+    return "manual_review"
+
+
+def build_archive_ingestion_batches(
+    repo_index: dict[str, Any],
+    output_dir: Path,
+    *,
+    max_files_per_batch: int = 500,
+    max_bytes_per_batch: int = 50_000_000,
+) -> dict[str, Any]:
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    route_groups: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    for entry in list(repo_index.get("entries") or []):
+        if not isinstance(entry, dict):
+            continue
+        route = _route_for_entry(entry)
+        category = str(entry.get("category") or "unknown")
+        route_groups.setdefault((route, category), []).append(entry)
+
+    batches: list[dict[str, Any]] = []
+    for (route, category), entries in sorted(route_groups.items()):
+        ordered = sorted(entries, key=lambda row: (str(row.get("extension") or ""), str(row.get("path") or "")))
+        chunk: list[dict[str, Any]] = []
+        chunk_bytes = 0
+        chunk_no = 1
+
+        def _flush() -> None:
+            nonlocal chunk, chunk_bytes, chunk_no
+            if not chunk:
+                return
+            batch_files = [str(item.get("path") or "") for item in chunk]
+            batch_id = hashlib.sha256(
+                f"{route}|{category}|{chunk_no}|{'|'.join(batch_files)}".encode("utf-8")
+            ).hexdigest()[:16]
+            batches.append(
+                {
+                    "batch_id": batch_id,
+                    "route": route,
+                    "category": category,
+                    "sequence": chunk_no,
+                    "file_count": len(chunk),
+                    "total_bytes": chunk_bytes,
+                    "extensions": sorted({str(item.get("extension") or "") for item in chunk}),
+                    "paths": batch_files,
+                    "status": "pending",
+                }
+            )
+            chunk = []
+            chunk_bytes = 0
+            chunk_no += 1
+
+        for entry in ordered:
+            entry_bytes = int(entry.get("bytes") or 0)
+            if chunk and (len(chunk) >= max(1, int(max_files_per_batch)) or (chunk_bytes + entry_bytes) > max_bytes_per_batch):
+                _flush()
+            chunk.append(entry)
+            chunk_bytes += entry_bytes
+        _flush()
+
+    payload = {
+        "generated_at": _utc_now(),
+        "root_path": repo_index.get("root_path"),
+        "files_total": int(repo_index.get("files_total") or 0),
+        "batch_count": len(batches),
+        "route_counts": {
+            route: sum(1 for batch in batches if batch["route"] == route)
+            for route in sorted({batch["route"] for batch in batches})
+        },
+        "batches": batches,
+    }
+    (output_dir / "archive_ingestion_batches.json").write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    return payload
+
+
+def initialize_archive_ingestion_state(
+    batch_plan: dict[str, Any],
+    output_dir: Path,
+) -> dict[str, Any]:
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    batches = list(batch_plan.get("batches") or [])
+    payload = {
+        "generated_at": _utc_now(),
+        "root_path": batch_plan.get("root_path"),
+        "batch_count": len(batches),
+        "completed_count": 0,
+        "batches": {
+            str(batch["batch_id"]): {
+                "route": batch.get("route"),
+                "category": batch.get("category"),
+                "status": "pending",
+                "attempts": 0,
+                "last_error": None,
+                "updated_at": None,
+            }
+            for batch in batches
+            if isinstance(batch, dict) and batch.get("batch_id")
+        },
+    }
+    (output_dir / "archive_ingestion_state.json").write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    return payload
+
+
+def update_archive_ingestion_state(
+    output_dir: Path,
+    *,
+    batch_id: str,
+    status: str,
+    error: str | None = None,
+) -> dict[str, Any]:
+    output_dir = Path(output_dir)
+    state_path = output_dir / "archive_ingestion_state.json"
+    if not state_path.exists():
+        raise FileNotFoundError(f"missing archive ingestion state: {state_path}")
+    payload = json.loads(state_path.read_text(encoding="utf-8"))
+    batches = payload.get("batches") or {}
+    if batch_id not in batches:
+        raise KeyError(f"unknown batch_id: {batch_id}")
+    batch = batches[batch_id]
+    batch["status"] = str(status)
+    batch["attempts"] = int(batch.get("attempts") or 0) + 1
+    batch["last_error"] = error
+    batch["updated_at"] = _utc_now()
+    payload["completed_count"] = sum(1 for item in batches.values() if str(item.get("status")) == "completed")
+    state_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    return payload
+
+
 def _count_file_hits_from_groups(groups: list[dict[str, Any]]) -> dict[str, int]:
     out: dict[str, int] = {}
     for group in groups:

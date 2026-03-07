@@ -2,12 +2,15 @@ import json
 from pathlib import Path
 
 from code_forge.digester.pipeline import (
+    build_archive_ingestion_batches,
     build_archive_reduction_plan,
     build_duplication_index,
+    initialize_archive_ingestion_state,
     build_repo_index,
     build_triage_dashboard,
     build_triage_report,
     run_archive_digester,
+    update_archive_ingestion_state,
 )
 from code_forge.digester.schema import validate_output_dir
 from code_forge.ingest.runner import IngestionRunner
@@ -190,6 +193,37 @@ def test_run_archive_digester_integration_policy_modes(tmp_path: Path) -> None:
     assert registry.get("schema_version")
     unit_links = ((registry.get("links") or {}).get("unit_links")) or []
     assert isinstance(unit_links, list)
+
+
+def test_build_archive_batches_and_state(tmp_path: Path) -> None:
+    repo = tmp_path / "archive_like"
+    repo.mkdir()
+    (repo / "src").mkdir()
+    (repo / "docs").mkdir()
+    (repo / "images").mkdir()
+    (repo / "src" / "a.py").write_text("def a():\n    return 1\n", encoding="utf-8")
+    (repo / "src" / "b.py").write_text("def b():\n    return 2\n", encoding="utf-8")
+    (repo / "docs" / "guide.md").write_text("# Guide\n", encoding="utf-8")
+    (repo / "docs" / "meta.json").write_text('{"ok": true}\n', encoding="utf-8")
+    (repo / "images" / "img.webp").write_bytes(b"RIFF0000WEBP")
+
+    output = tmp_path / "digester"
+    repo_index = build_repo_index(repo, output, extensions=[".py", ".md", ".json", ".webp"])
+    batches = build_archive_ingestion_batches(repo_index, output, max_files_per_batch=1, max_bytes_per_batch=1024)
+    state = initialize_archive_ingestion_state(batches, output)
+
+    assert (output / "archive_ingestion_batches.json").exists()
+    assert (output / "archive_ingestion_state.json").exists()
+    assert batches["batch_count"] >= 4
+    assert "code_forge" in batches["route_counts"]
+    assert "document_pipeline" in batches["route_counts"]
+    assert "knowledge_metadata" in batches["route_counts"]
+    assert "defer_binary" in batches["route_counts"]
+
+    first_batch_id = batches["batches"][0]["batch_id"]
+    updated = update_archive_ingestion_state(output, batch_id=first_batch_id, status="completed")
+    assert updated["completed_count"] == 1
+    assert state["batch_count"] == batches["batch_count"]
 
 
 def test_triage_profile_hot_path_preserves_duplicate_candidate(tmp_path: Path) -> None:
