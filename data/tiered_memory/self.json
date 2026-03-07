@@ -231,13 +231,7 @@
     "metadata": {},
     "importance": 1.5,
     "ttl_seconds": null,
-    "tags": [
-      "milestone_h",
-      "consciousness",
-      "ppx",
-      "phenomenology",
-      "metrics"
-    ],
+    "tags": ["milestone_h", "consciousness", "ppx", "phenomenology", "metrics"],
     "linked_memories": []
   },
   {
@@ -847,13 +841,7 @@
     },
     "importance": 1.5,
     "ttl_seconds": null,
-    "tags": [
-      "status",
-      "phase18",
-      "side-effect-free",
-      "lesson",
-      "watchdog"
-    ],
+    "tags": ["status", "phase18", "side-effect-free", "lesson", "watchdog"],
     "linked_memories": []
   },
   {
@@ -872,14 +860,7 @@
     },
     "importance": 1.5,
     "ttl_seconds": null,
-    "tags": [
-      "phase19",
-      "linux-parity",
-      "mcp",
-      "ci",
-      "lesson",
-      "audit-matrix"
-    ],
+    "tags": ["phase19", "linux-parity", "mcp", "ci", "lesson", "audit-matrix"],
     "linked_memories": []
   },
   {
@@ -898,13 +879,7 @@
     },
     "importance": 1.5,
     "ttl_seconds": null,
-    "tags": [
-      "linux-audit",
-      "phase20",
-      "lesson",
-      "ci-gate",
-      "observability"
-    ],
+    "tags": ["linux-audit", "phase20", "lesson", "ci-gate", "observability"],
     "linked_memories": []
   },
   {
@@ -923,13 +898,7 @@
     },
     "importance": 1.5,
     "ttl_seconds": null,
-    "tags": [
-      "phase20",
-      "kb",
-      "mcp",
-      "lesson",
-      "memory-hygiene"
-    ],
+    "tags": ["phase20", "kb", "mcp", "lesson", "memory-hygiene"],
     "linked_memories": []
   },
   {
@@ -973,13 +942,7 @@
     },
     "importance": 1.5,
     "ttl_seconds": null,
-    "tags": [
-      "bench",
-      "phase22",
-      "replay-manifest",
-      "lesson",
-      "provenance"
-    ],
+    "tags": ["bench", "phase22", "replay-manifest", "lesson", "provenance"],
     "linked_memories": []
   },
   {
@@ -1123,12 +1086,7 @@
     "metadata": {},
     "importance": 1.5,
     "ttl_seconds": null,
-    "tags": [
-      "strategy-shift",
-      "velvet-beef",
-      "introspection",
-      "identity"
-    ],
+    "tags": ["strategy-shift", "velvet-beef", "introspection", "identity"],
     "linked_memories": []
   },
   {
@@ -1246,12 +1204,7 @@
     "metadata": {},
     "importance": 1.5,
     "ttl_seconds": null,
-    "tags": [
-      "ports",
-      "validation",
-      "doc_forge",
-      "reliability"
-    ],
+    "tags": ["ports", "validation", "doc_forge", "reliability"],
     "linked_memories": []
   },
   {
@@ -1407,11 +1360,7 @@
     },
     "importance": 1.5,
     "ttl_seconds": null,
-    "tags": [
-      "learning",
-      "self-improvement",
-      "lesson"
-    ],
+    "tags": ["learning", "self-improvement", "lesson"],
     "linked_memories": []
   },
   {
@@ -2283,11 +2232,7 @@
     },
     "importance": 1.5,
     "ttl_seconds": null,
-    "tags": [
-      "learning",
-      "self-improvement",
-      "lesson"
-    ],
+    "tags": ["learning", "self-improvement", "lesson"],
     "linked_memories": []
   },
   {

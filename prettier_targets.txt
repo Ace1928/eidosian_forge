@@ -1,1 +1,1 @@
-.github/workflows/consciousness-parity.yml
+data/tiered_memory/self.json
