@@ -5,6 +5,7 @@ import json
 import os
 import re
 import socket
+import time
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -105,12 +106,14 @@ MUTATING_TOOL_NAMES = {
 def _normalize_tool_rule(name: str, payload: Any) -> dict[str, Any]:
     rule = _as_dict(payload)
     allowed_keys = [str(x) for x in _as_list(rule.get("allowed_keys"))]
-    string_max_lengths = {str(k): int(v) for k, v in _as_dict(rule.get("string_max_lengths")).items() if str(k).strip()}
+    string_max_lengths = {
+        str(k): int(v) for k, v in _as_dict(rule.get("string_max_lengths")).items() if str(k).strip()
+    }
     integer_bounds = {}
     for key, bounds in _as_dict(rule.get("integer_bounds")).items():
         bounds_dict = _as_dict(bounds)
         integer_bounds[str(key)] = {
-            "min": int(bounds_dict.get("min", -(2**31))),
+            "min": int(bounds_dict.get("min", -2**31)),
             "max": int(bounds_dict.get("max", 2**31 - 1)),
         }
     allowed_values = {
@@ -185,7 +188,7 @@ def contract_schema(schema: dict[str, Any], rule: dict[str, Any]) -> dict[str, A
             prop["maxLength"] = int(rule["string_max_lengths"][key])
         if key in _as_dict(rule.get("integer_bounds")):
             bounds = _as_dict(rule["integer_bounds"][key])
-            prop["minimum"] = int(bounds.get("min", -(2**31)))
+            prop["minimum"] = int(bounds.get("min", -2**31))
             prop["maximum"] = int(bounds.get("max", 2**31 - 1))
         if key in _as_dict(rule.get("allowed_values")):
             prop["enum"] = list(rule["allowed_values"][key])
@@ -263,7 +266,7 @@ def validate_tool_arguments(name: str, args: Any, profile: AgentProfile, call_co
         if isinstance(value, int) and not isinstance(value, bool):
             bounds = _as_dict(rule.get("integer_bounds")).get(str_key)
             if bounds:
-                lo = int(bounds.get("min", -(2**31)))
+                lo = int(bounds.get("min", -2**31))
                 hi = int(bounds.get("max", 2**31 - 1))
                 if value < lo or value > hi:
                     raise ToolPolicyError(f"integer_out_of_bounds:{name}:{str_key}")
@@ -284,9 +287,7 @@ def validate_tool_arguments(name: str, args: Any, profile: AgentProfile, call_co
     return cleaned
 
 
-async def _call_tool(
-    session: SessionType, name: str, arguments: dict[str, Any] | None = None, timeout_sec: float = 60.0
-) -> str:
+async def _call_tool(session: SessionType, name: str, arguments: dict[str, Any] | None = None, timeout_sec: float = 60.0) -> str:
     result = await asyncio.wait_for(session.call_tool(name, arguments=arguments or {}), timeout=timeout_sec)
     lines: list[str] = []
     structured = getattr(result, "structuredContent", None)
@@ -311,14 +312,33 @@ async def _http_ready(url: str) -> bool:
         return False
 
 
+async def _list_resources(session: SessionType, timeout_sec: float = 15.0) -> list[dict[str, str]]:
+    if not hasattr(session, "list_resources"):
+        return []
+    try:
+        result = await asyncio.wait_for(session.list_resources(), timeout=timeout_sec)
+    except Exception:
+        return []
+    rows: list[dict[str, str]] = []
+    for item in getattr(result, "resources", []) or []:
+        rows.append(
+            {
+                "uri": str(getattr(item, "uri", "") or "").strip(),
+                "name": str(getattr(item, "name", "") or "").strip(),
+                "description": str(getattr(item, "description", "") or "").strip(),
+            }
+        )
+    return rows
+
+
 @asynccontextmanager
-async def open_mcp_session(root: Path, url: str | None = None) -> AsyncIterator[ClientSession]:
+async def open_mcp_session(root: Path, url: str | None = None) -> AsyncIterator[tuple[ClientSession, str]]:
     target_url = str(url or DEFAULT_MCP_URL)
     if await _http_ready(target_url):
         async with streamable_http_client(target_url) as (read, write, _):
             async with ClientSession(read, write) as session:
                 await session.initialize()
-                yield session
+                yield session, "streamable_http"
         return
 
     venv_python = root / "eidosian_venv" / "bin" / "python3"
@@ -348,7 +368,7 @@ async def open_mcp_session(root: Path, url: str | None = None) -> AsyncIterator[
     async with stdio_client(params) as (read, write):
         async with ClientSession(read, write) as session:
             await session.initialize()
-            yield session
+            yield session, "stdio"
 
 
 class LocalMcpAgent:
@@ -482,12 +502,16 @@ class LocalMcpAgent:
         call_counts: dict[str, int] = {}
         mutating_calls = 0
         total_tool_calls = 0
+        total_tool_latency_ms = 0
         cycle_log: list[dict[str, Any]] = []
         final_message = ""
         effective_thinking_mode = profile.thinking_mode
-        allocation = self.coordinator.can_allocate(
-            owner=owner, requested_models=self._lease_models(), allow_same_owner=False
-        )
+        mcp_transport = ""
+        list_tools_ms = 0
+        resource_count = 0
+        resource_sample: list[dict[str, str]] = []
+        tool_contract_count = 0
+        allocation = self.coordinator.can_allocate(owner=owner, requested_models=self._lease_models(), allow_same_owner=False)
         if (
             not allocation.get("allowed")
             and str(allocation.get("reason") or "") in {"instance_budget_exceeded", "family_budget_exceeded"}
@@ -533,18 +557,33 @@ class LocalMcpAgent:
                     ),
                 },
             ]
-            async with open_mcp_session(self.forge_root, url=self.mcp_url) as session:
+            async with open_mcp_session(self.forge_root, url=self.mcp_url) as opened:
+                session, mcp_transport = opened
+                list_started = time.perf_counter()
                 discovered = await asyncio.wait_for(session.list_tools(), timeout=30.0)
+                list_tools_ms = int(round((time.perf_counter() - list_started) * 1000.0))
+                resources = await _list_resources(session)
+                resource_count = len(resources)
+                resource_sample = resources[:6]
                 tool_contracts, missing_tools = build_tool_contracts(list(discovered.tools), profile)
+                tool_contract_count = len(tool_contracts)
+                if resource_sample:
+                    resource_lines = []
+                    for resource in resource_sample[:4]:
+                        label = resource.get("name") or resource.get("uri") or "resource"
+                        desc = resource.get("description") or ""
+                        resource_lines.append(f"- {label}: {desc}".strip())
+                    messages.append(
+                        {
+                            "role": "system",
+                            "content": "Available MCP resources:\n" + "\n".join(resource_lines),
+                        }
+                    )
                 for step_index in range(profile.max_steps):
                     if total_tool_calls >= profile.max_tool_calls:
                         break
-                    raw_response = await self._request_step(
-                        messages=messages, tools=tool_contracts, timeout_sec=timeout_sec
-                    )
-                    effective_thinking_mode = str(
-                        raw_response.get("effective_thinking_mode") or effective_thinking_mode
-                    )
+                    raw_response = await self._request_step(messages=messages, tools=tool_contracts, timeout_sec=timeout_sec)
+                    effective_thinking_mode = str(raw_response.get("effective_thinking_mode") or effective_thinking_mode)
                     message = _as_dict(raw_response.get("message"))
                     tool_calls = _as_list(message.get("tool_calls"))
                     content = str(message.get("content") or "").strip()
@@ -568,7 +607,10 @@ class LocalMcpAgent:
                             if mutating_calls > profile.max_mutating_calls:
                                 raise ToolPolicyError(f"mutating_call_budget_exceeded:{name}")
                         total_tool_calls += 1
+                        tool_started = time.perf_counter()
                         observation = await _call_tool(session, name, validated_args, timeout_sec=timeout_sec)
+                        duration_ms = int(round((time.perf_counter() - tool_started) * 1000.0))
+                        total_tool_latency_ms += duration_ms
                         observation = observation[: profile.max_observation_chars]
                         messages.append({"role": "tool", "tool_name": name, "content": observation})
                         cycle_log.append(
@@ -576,6 +618,7 @@ class LocalMcpAgent:
                                 "step": step_index + 1,
                                 "tool": name,
                                 "arguments": validated_args,
+                                "duration_ms": duration_ms,
                                 "observation_chars": len(observation),
                             }
                         )
@@ -587,7 +630,13 @@ class LocalMcpAgent:
                     "profile": profile.name,
                     "thinking_mode": profile.thinking_mode,
                     "effective_thinking_mode": effective_thinking_mode,
+                    "mcp_transport": mcp_transport,
+                    "list_tools_ms": list_tools_ms,
+                    "resource_count": resource_count,
+                    "resource_sample": resource_sample,
+                    "tool_contract_count": tool_contract_count,
                     "tool_calls": total_tool_calls,
+                    "tool_latency_ms_total": total_tool_latency_ms,
                     "mutating_calls": mutating_calls,
                     "missing_tools": missing_tools,
                     "final_message": final_message,
@@ -609,7 +658,13 @@ class LocalMcpAgent:
                 "profile": profile.name,
                 "thinking_mode": profile.thinking_mode,
                 "effective_thinking_mode": effective_thinking_mode,
+                "mcp_transport": mcp_transport,
+                "list_tools_ms": list_tools_ms,
+                "resource_count": resource_count,
+                "resource_sample": resource_sample,
+                "tool_contract_count": tool_contract_count,
                 "tool_calls": total_tool_calls,
+                "tool_latency_ms_total": total_tool_latency_ms,
                 "mutating_calls": mutating_calls,
                 "final_message": final_message,
                 "cycle_log": cycle_log,

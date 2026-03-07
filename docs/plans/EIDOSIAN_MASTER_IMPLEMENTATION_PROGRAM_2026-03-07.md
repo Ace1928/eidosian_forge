@@ -91,7 +91,7 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
 - [x] Add workflow self-tests and action pin governance without over-triggering on unrelated YAML.
 
 ### Phase 2: Termux/Linux Runtime Platform
-- [ ] Complete migration from shell-started services to supervised service management.
+- [~] Complete migration from shell-started services to supervised service management.
 - [~] Keep one canonical shell bootstrap contract across Termux and Linux.
 - [ ] Finish boot/resume semantics and ensure resumable services restart cleanly.
 - [~] Standardize temp/runtime/cache/data paths across Termux and Linux.
@@ -207,6 +207,7 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
 - [~] Feed runtime, ingestion, memory, report, and vector health into autonomy scoring.
 - [~] Feed the same state into consciousness broadcasts and metrics.
 - [~] Add explicit backlog and resume semantics for unfinished ingestion waves.
+- [~] Add governed local-agent execution as a first-class runtime surface.
 
 ### Phase 12: Atlas and Operator UX
 - [~] Expand Atlas into the operator control plane for:
@@ -220,6 +221,7 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
   - GIS lookup.
 - [~] Add saved exploration sessions, filters, community overlays, and reversible snippet export.
 - [~] Add runtime trend/history panes for workflows, pipelines, vector state, and archive burn-down.
+- [~] Add local-agent runtime status/history to the operator surface.
 - [ ] Add execution control for supervised services and scheduler queues.
 
 ### Phase 13: Validation, Benchmarks, and Promotion Gates
@@ -258,6 +260,11 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
   - dynamic Python component test-matrix planner added
   - Universal CI Python tests refactored toward per-component matrix execution
   - Linux parity smoke split into explicit phases (`pytest`, `stdio`, `audit`)
+- [x] Local-agent control-plane slice advanced:
+  - guarded local MCP agent now records transport/resource telemetry
+  - local-agent state is visible in Atlas and autonomy
+  - scheduler wrapper/service path implemented and bounded live smoke now reaches the real living pipeline
+  - official MCP control-plane + Ollama residency/context references saved and ingested
 - [x] CI workflow scope control expanded:
   - reusable changed-manifest planner added for Python, Prettier, and component lint scopes
   - `format.yml` converted from monorepo-wide formatting to changed-scope formatting

@@ -22,6 +22,12 @@ DOC_RUNTIME = FORGE_ROOT / "doc_forge" / "runtime"
 DOC_FINAL = DOC_RUNTIME / "final_docs"
 DOC_INDEX = DOC_RUNTIME / "doc_index.json"
 DOC_STATUS = DOC_RUNTIME / "processor_status.json"
+RUNTIME_DIR = FORGE_ROOT / "data" / "runtime"
+LOCAL_AGENT_STATUS = RUNTIME_DIR / "local_mcp_agent" / "status.json"
+LOCAL_AGENT_HISTORY = RUNTIME_DIR / "local_mcp_agent" / "history.jsonl"
+SCHEDULER_STATUS = RUNTIME_DIR / "eidos_scheduler_status.json"
+COORDINATOR_STATUS = RUNTIME_DIR / "forge_coordinator_status.json"
+COORDINATOR_HISTORY = RUNTIME_DIR / "forge_runtime_trends.json"
 TEMPLATES_DIR = Path(__file__).parent / "templates"
 STATIC_DIR = Path(__file__).parent / "static"
 STATIC_DIR.mkdir(parents=True, exist_ok=True)
@@ -94,6 +100,47 @@ def get_doc_snapshot() -> Dict[str, Any]:
         "recent_docs": recent_docs,
     }
 
+
+def get_runtime_snapshot() -> Dict[str, Any]:
+    coordinator = _read_json(COORDINATOR_STATUS, {})
+    scheduler = _read_json(SCHEDULER_STATUS, {})
+    local_agent = _read_json(LOCAL_AGENT_STATUS, {})
+    return {
+        "coordinator": coordinator,
+        "scheduler": scheduler,
+        "local_agent": local_agent,
+    }
+
+
+def get_local_agent_history(limit: int = 12) -> List[Dict[str, Any]]:
+    rows: List[Dict[str, Any]] = []
+    if not LOCAL_AGENT_HISTORY.exists():
+        return rows
+    try:
+        lines = LOCAL_AGENT_HISTORY.read_text(encoding="utf-8").splitlines()
+    except Exception:
+        return rows
+    for line in reversed(lines):
+        if not line.strip():
+            continue
+        try:
+            payload = json.loads(line)
+        except Exception:
+            continue
+        if isinstance(payload, dict):
+            rows.append(payload)
+        if len(rows) >= max(1, int(limit)):
+            break
+    return rows
+
+
+def get_runtime_history(limit: int = 24) -> List[Dict[str, Any]]:
+    payload = _read_json(COORDINATOR_HISTORY, {})
+    rows = payload.get("entries", [])
+    if not isinstance(rows, list):
+        return []
+    return [row for row in rows if isinstance(row, dict)][-max(1, int(limit)) :]
+
 def get_file_tree(path: Path) -> List[Dict[str, Any]]:
     tree = []
     try:
@@ -123,6 +170,8 @@ async def dashboard(request: Request):
     sys_stats = get_system_stats()
     forge_status = get_forge_status()
     doc_snapshot = get_doc_snapshot()
+    runtime_snapshot = get_runtime_snapshot()
+    local_agent_history = get_local_agent_history()
 
     return templates.TemplateResponse(request, "index.html", {
         "request": request,
@@ -131,6 +180,8 @@ async def dashboard(request: Request):
         "recent_docs": doc_snapshot["recent_docs"],
         "doc_status": doc_snapshot["status"],
         "doc_index_count": doc_snapshot["index_count"],
+        "runtime_snapshot": runtime_snapshot,
+        "local_agent_history": local_agent_history,
     })
 
 @app.get("/browse/{path:path}", response_class=HTMLResponse)
@@ -174,6 +225,21 @@ async def api_system():
 @app.get("/api/doc/status")
 async def api_doc_status():
     return get_doc_snapshot()
+
+
+@app.get("/api/runtime")
+async def api_runtime():
+    snapshot = get_runtime_snapshot()
+    snapshot["history"] = get_runtime_history()
+    return snapshot
+
+
+@app.get("/api/runtime/local-agent")
+async def api_local_agent_status():
+    return {
+        "status": _read_json(LOCAL_AGENT_STATUS, {}),
+        "history": get_local_agent_history(),
+    }
 
 
 @app.get("/health")

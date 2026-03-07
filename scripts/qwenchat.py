@@ -125,7 +125,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--model", default=os.environ.get("EIDOS_QWEN_MODEL", "qwen3.5:2b"))
     parser.add_argument("--poll-interval", type=float, default=5.0)
     parser.add_argument("--prompt", default="", help="Run a single prompt and exit instead of interactive chat.")
-    parser.add_argument("--timeout-sec", type=float, default=120.0, help="Timeout for one-shot prompt mode.")
+    parser.add_argument("--timeout-sec", type=float, default=1800.0, help="Timeout for one-shot prompt mode.")
     parser.add_argument("extra", nargs="*", help="Additional arguments passed to `ollama run`.")
     return parser.parse_args()
 

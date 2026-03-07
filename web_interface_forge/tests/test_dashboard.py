@@ -45,11 +45,56 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
 
     (final_docs / "foo").mkdir(parents=True, exist_ok=True)
     (final_docs / "foo" / "bar.py.md").write_text("# Example\n", encoding="utf-8")
+    runtime_dir = tmp_path / "data" / "runtime"
+    _write_json(
+        runtime_dir / "local_mcp_agent" / "status.json",
+        {
+            "status": "success",
+            "profile": "observer",
+            "tool_calls": 1,
+            "mcp_transport": "stdio",
+            "created_at": "2026-03-07T00:00:00+00:00",
+        },
+    )
+    (runtime_dir / "local_mcp_agent" / "history.jsonl").write_text(
+        json.dumps(
+            {
+                "status": "success",
+                "tool_calls": 1,
+                "mcp_transport": "stdio",
+                "created_at": "2026-03-07T00:00:00+00:00",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    _write_json(
+        runtime_dir / "eidos_scheduler_status.json",
+        {
+            "state": "sleeping",
+            "current_task": "living_pipeline",
+        },
+    )
+    _write_json(
+        runtime_dir / "forge_coordinator_status.json",
+        {
+            "state": "idle",
+            "task": "idle",
+            "owner": "",
+            "active_models": [],
+        },
+    )
 
     monkeypatch.setattr(dashboard, "DOC_RUNTIME", runtime)
     monkeypatch.setattr(dashboard, "DOC_FINAL", final_docs)
     monkeypatch.setattr(dashboard, "DOC_INDEX", runtime / "doc_index.json")
     monkeypatch.setattr(dashboard, "DOC_STATUS", runtime / "processor_status.json")
+    monkeypatch.setattr(dashboard, "RUNTIME_DIR", runtime_dir)
+    monkeypatch.setattr(dashboard, "LOCAL_AGENT_STATUS", runtime_dir / "local_mcp_agent" / "status.json")
+    monkeypatch.setattr(dashboard, "LOCAL_AGENT_HISTORY", runtime_dir / "local_mcp_agent" / "history.jsonl")
+    monkeypatch.setattr(dashboard, "SCHEDULER_STATUS", runtime_dir / "eidos_scheduler_status.json")
+    monkeypatch.setattr(dashboard, "COORDINATOR_STATUS", runtime_dir / "forge_coordinator_status.json")
+    monkeypatch.setattr(dashboard, "COORDINATOR_HISTORY", runtime_dir / "forge_runtime_trends.json")
 
     with TestClient(dashboard.app) as client:
         resp = client.get("/api/doc/status")
@@ -61,6 +106,14 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         html = client.get("/").text
         assert "foo/bar.py" in html
         assert "Indexed Docs" in html
+        assert "Local Agent" in html
+        runtime_resp = client.get("/api/runtime")
+        assert runtime_resp.status_code == 200
+        runtime_payload = runtime_resp.json()
+        assert runtime_payload["local_agent"]["status"] == "success"
+        local_agent_resp = client.get("/api/runtime/local-agent")
+        assert local_agent_resp.status_code == 200
+        assert local_agent_resp.json()["status"]["profile"] == "observer"
 
 
 def test_browse_blocks_path_traversal() -> None:

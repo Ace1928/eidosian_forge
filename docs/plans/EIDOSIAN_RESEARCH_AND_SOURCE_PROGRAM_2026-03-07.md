@@ -164,7 +164,13 @@ Primary source targets:
 - [x] MCP tool/resource/client/authorization references
 - [x] Ollama tool-calling / structured-output / thinking references
 - [x] OpenClaw integration reference captured as a comparative local-agent pattern
-- [ ] Local-agent evaluation and safety references beyond the current implementation stack if a stronger harness is needed
+- [~] Local-agent evaluation and safety references beyond the current implementation stack if a stronger harness is needed
+- [x] Additional MCP control-plane references:
+  - prompts
+  - roots
+  - sampling
+  - Ollama FAQ keep-alive/runtime residency
+  - Ollama context-length guidance
 
 ## Ingestion Protocol
 
@@ -193,3 +199,4 @@ For every saved source set:
 - `docs/external_references/2026-03-07-notebook-ingestion/`
 - `docs/external_references/2026-03-07-archive-doc-routing/`
 - `docs/external_references/2026-03-07-local-agent-mcp/`
+- `docs/external_references/2026-03-07-local-agent-control-plane/`

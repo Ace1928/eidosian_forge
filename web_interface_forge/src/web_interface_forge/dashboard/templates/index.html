@@ -65,6 +65,16 @@
         <div class="stat-value">{{ forge_status.get('doc_forge', 'unknown')|upper }}</div>
         <div class="stat-label">Doc Forge</div>
     </div>
+    <div class="card">
+        <h3>Scheduler</h3>
+        <div class="stat-value">{{ runtime_snapshot.get('scheduler', {}).get('state', 'unknown')|upper }}</div>
+        <div class="stat-label">{{ runtime_snapshot.get('scheduler', {}).get('current_task', 'idle') }}</div>
+    </div>
+    <div class="card">
+        <h3>Local Agent</h3>
+        <div class="stat-value">{{ runtime_snapshot.get('local_agent', {}).get('status', 'unknown')|upper }}</div>
+        <div class="stat-label">{{ runtime_snapshot.get('local_agent', {}).get('profile', 'n/a') }}</div>
+    </div>
 </div>
 
 <div class="card">
@@ -93,6 +103,47 @@
     {% else %}
     <p>No recent documents found or index unavailable.</p>
     {% endif %}
+</div>
+
+<div class="grid">
+    <div class="card">
+        <h3>Coordinator</h3>
+        <table>
+            <tbody>
+                <tr><th>Owner</th><td>{{ runtime_snapshot.get('coordinator', {}).get('owner', '') or 'idle' }}</td></tr>
+                <tr><th>Task</th><td>{{ runtime_snapshot.get('coordinator', {}).get('task', '') or 'idle' }}</td></tr>
+                <tr><th>State</th><td>{{ runtime_snapshot.get('coordinator', {}).get('state', '') or 'idle' }}</td></tr>
+                <tr><th>Models</th><td>{{ runtime_snapshot.get('coordinator', {}).get('active_models', [])|length }}</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="card">
+        <h3>Local Agent History</h3>
+        {% if local_agent_history %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Status</th>
+                    <th>Tools</th>
+                    <th>Transport</th>
+                    <th>Updated</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in local_agent_history %}
+                <tr>
+                    <td>{{ row.get('status', 'unknown') }}</td>
+                    <td>{{ row.get('tool_calls', 0) }}</td>
+                    <td>{{ row.get('mcp_transport', 'n/a') }}</td>
+                    <td>{{ row.get('created_at', '')[:19].replace('T', ' ') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No local-agent history available.</p>
+        {% endif %}
+    </div>
 </div>
 
 <script>

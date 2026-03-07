@@ -22,7 +22,11 @@ FORGE_ROOT = Path(os.environ.get("EIDOS_FORGE_DIR", str(Path(__file__).resolve()
 for extra in (
     FORGE_ROOT / "lib",
     FORGE_ROOT / "code_forge" / "src",
+    FORGE_ROOT / "gis_forge" / "src",
     FORGE_ROOT / "knowledge_forge" / "src",
+    FORGE_ROOT / "memory_forge" / "src",
+    FORGE_ROOT / "eidos_mcp" / "src",
+    FORGE_ROOT / "ollama_forge" / "src",
     FORGE_ROOT,
 ):
     extra_str = str(extra)

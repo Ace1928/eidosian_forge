@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sqlite3
 import sys
 from datetime import datetime, timezone
@@ -66,6 +67,18 @@ def run_once(
         "load1": s.get("load1"),
         "mem_available_kb": s.get("mem_available_kb"),
     }
+    local_agent_path = _P(state_dir).parent / "data" / "runtime" / "local_mcp_agent" / "status.json"
+    try:
+        local_agent = json.loads(local_agent_path.read_text(encoding="utf-8")) if local_agent_path.exists() else {}
+    except Exception:
+        local_agent = {}
+    if isinstance(local_agent, dict):
+        tool_calls = int(local_agent.get("tool_calls") or 0)
+        resource_count = int(local_agent.get("resource_count") or 0)
+        DB.insert_metric(state_dir, "local_agent.tool_calls", float(tool_calls))
+        DB.insert_metric(state_dir, "local_agent.resource_count", float(resource_count))
+        payload["local_agent_status"] = str(local_agent.get("status") or "")
+        payload["local_agent_tool_calls"] = tool_calls
     DB.insert_journal(state_dir, "daemon.beat", "beat")
     E.append(state_dir, "daemon.beat", payload, tags=["daemon", "beat"])
     S.append_journal(state_dir, "daemon.beat", etype="daemon.beat")

@@ -236,3 +236,42 @@ def test_supervisor_hygiene_scoring_uses_report_and_artifact_risk(tmp_path: Path
     assert payload["mission_id"] == "repo_hygiene"
     assert payload["benchmark_failures"] == 1
     assert payload["average_report_quality"] == 0.42
+
+
+def test_supervisor_reads_local_agent_runtime_state(tmp_path: Path) -> None:
+    state_dir = tmp_path / "state"
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir(parents=True, exist_ok=True)
+    (repo_root / "data" / "runtime" / "local_mcp_agent").mkdir(parents=True, exist_ok=True)
+    (repo_root / "data" / "runtime" / "local_mcp_agent" / "status.json").write_text(
+        '{"status":"timeout","profile":"observer","tool_calls":1,"resource_count":1,"mcp_transport":"stdio"}',
+        encoding="utf-8",
+    )
+    S.migrate(state_dir)
+
+    supervisor = AutonomySupervisor(
+        state_dir,
+        repo_root=repo_root,
+        bridge=_FakeBridge(),
+        memory_system=_FakeMemory(),
+        graphrag=_FakeGraphRAG(),
+        config={
+            "enabled": True,
+            "policy": {"max_active_goals": 1, "allowed_templates": ["hygiene"]},
+            "missions": [
+                {
+                    "id": "repo_hygiene",
+                    "title": "Autonomy: repo hygiene sweep",
+                    "drive": "integrity",
+                    "template": "hygiene",
+                    "priority": 0.5,
+                    "query": "repo benchmark drift artifact report",
+                }
+            ],
+        },
+    )
+
+    payload = supervisor.tick(beat_count=3)
+    assert payload["status"] == "selected"
+    assert payload["local_agent_status"] == "timeout"
+    assert payload["local_agent_tool_calls"] == 1

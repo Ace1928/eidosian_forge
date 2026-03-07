@@ -43,21 +43,21 @@ Saved under `docs/external_references/2026-03-07-local-agent-mcp/` and intended 
 - [x] Discover MCP tools dynamically at runtime.
 - [x] Contract discovered schemas down to policy-allowed arguments only.
 - [x] Support MCP HTTP transport first and stdio fallback second.
-- [ ] Add richer resource usage alongside tool usage.
-- [ ] Add transport telemetry and retry classification to cycle artifacts.
+- [~] Add richer resource usage alongside tool usage.
+- [~] Add transport telemetry and retry classification to cycle artifacts.
 
 ### Track C: Local Model Harness
 - [x] Use the dedicated local Qwen runtime.
 - [x] Support reasoning-on first with reasoning-off fallback for empty turns.
 - [x] Implement a bounded agent loop with explicit max-step and max-tool-call ceilings.
 - [ ] Add prompt/response benchmark artifacts for observer vs curator profiles.
-- [ ] Add live reliability smoke over the dedicated qwen service and running MCP server.
+- [~] Add live reliability smoke over the dedicated qwen service and running MCP server.
 
 ### Track D: Runtime Governance
 - [x] Enforce coordinator leasing around local-agent cycles.
 - [x] Persist current status and append cycle history artifacts.
 - [~] Register local-agent work as a first-class scheduled surface.
-- [ ] Feed local-agent artifact health back into autonomy and Atlas.
+- [x] Feed local-agent artifact health back into autonomy and Atlas.
 
 ## Immediate Queue
 
@@ -65,6 +65,7 @@ Saved under `docs/external_references/2026-03-07-local-agent-mcp/` and intended 
 2. [~] Run live bounded observer-cycle validation against the active MCP service.
 3. [x] Add continuous background-service wiring once the live cycle is clean enough to manage safely.
 4. [ ] Extend profiles for safe write-capable curation and scheduled contribution.
+5. [ ] Add resource-read policies and explicit transport retry telemetry to the cycle contract.
 
 ## Progress Log
 
@@ -83,3 +84,18 @@ Saved under `docs/external_references/2026-03-07-local-agent-mcp/` and intended 
   - bounded live observer run executed a real MCP tool call (`diagnostics_ping`)
   - bounded live observer run now degrades to a structured timeout artifact instead of crashing the process
   - default local-agent timeout budget raised to `1800s` so complex Qwen turns can complete in service mode
+- [x] Local-agent cycle artifacts now include:
+  - MCP transport label
+  - tool discovery timing
+  - resource counts/sample
+  - per-tool latency in the cycle log
+- [x] Atlas now exposes local-agent status/history through runtime APIs.
+- [x] Autonomy supervisor now ingests local-agent runtime health for mission context/scoring.
+- [x] Additional control-plane sources saved and ingested:
+  - `docs/external_references/2026-03-07-local-agent-control-plane/`
+  - `files_processed=6`
+  - `nodes_created=27`
+- [~] Live scheduler/supervisor integration now exists:
+  - `scripts/eidos_scheduler.py`
+  - `scripts/run_eidos_scheduler.sh`
+  - bounded live scheduler smoke reached the real living pipeline and ran for >60s before manual stop

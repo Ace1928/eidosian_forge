@@ -60,6 +60,19 @@ class _FakeSession:
 
         return _Result(self._responses.get(name, "ok"))
 
+    async def list_resources(self):
+        class _Resource:
+            def __init__(self, uri: str, name: str, description: str):
+                self.uri = uri
+                self.name = name
+                self.description = description
+
+        class _Result:
+            def __init__(self):
+                self.resources = [_Resource("memory://status", "memory-status", "memory status view")]
+
+        return _Result()
+
 
 class _FakeCoordinator:
     def __init__(self):
@@ -213,7 +226,7 @@ def test_run_cycle_returns_timeout_artifact(monkeypatch, tmp_path: Path) -> None
 
     @asynccontextmanager
     async def _fake_session_ctx(_root, url=None):
-        yield _FakeSession([_Tool("diagnostics_ping", "Ping", {"type": "object", "properties": {}})], {})
+        yield _FakeSession([_Tool("diagnostics_ping", "Ping", {"type": "object", "properties": {}})], {}), "stdio"
 
     async def _fake_request_step(*args, **kwargs):
         raise TimeoutError("simulated timeout")
@@ -229,3 +242,31 @@ def test_run_cycle_returns_timeout_artifact(monkeypatch, tmp_path: Path) -> None
     monkeypatch.setattr(agent, "_request_step", _fake_request_step)
     result = asyncio.run(agent.run_cycle("health check", timeout_sec=1.0))
     assert result["status"] == "timeout"
+
+
+def test_run_cycle_success_records_transport_and_resources(monkeypatch, tmp_path: Path) -> None:
+    import eidosian_agent.local_mcp_agent as mod
+    from eidosian_agent.local_mcp_agent import LocalMcpAgent
+    from eidosian_runtime import ForgeRuntimeCoordinator
+
+    @asynccontextmanager
+    async def _fake_session_ctx(_root, url=None):
+        yield _FakeSession([_Tool("diagnostics_ping", "Ping", {"type": "object", "properties": {}})], {}), "stdio"
+
+    async def _fake_request_step(*args, **kwargs):
+        return {"message": {"content": "done"}, "effective_thinking_mode": "on"}
+
+    monkeypatch.setattr(mod, "open_mcp_session", _fake_session_ctx)
+
+    coordinator = ForgeRuntimeCoordinator(tmp_path / "forge_coordinator_status.json")
+    agent = LocalMcpAgent(
+        coordinator=coordinator,
+        profile=load_profile(ROOT / "cfg" / "local_agent_profiles.json"),
+        runtime_dir=tmp_path / "runtime",
+    )
+    monkeypatch.setattr(agent, "_request_step", _fake_request_step)
+    result = asyncio.run(agent.run_cycle("health check", timeout_sec=1.0))
+    assert result["status"] == "success"
+    assert result["mcp_transport"] == "stdio"
+    assert result["resource_count"] == 1
+    assert result["tool_contract_count"] >= 1

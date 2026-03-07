@@ -257,6 +257,37 @@ class AutonomySupervisor:
                 parts.append("drift warnings")
             context_tokens |= _tokenize(" ".join(parts))
 
+        runtime_dir = self.repo_root / "data" / "runtime"
+        local_agent_summary: dict[str, Any] = {}
+        try:
+            local_agent_path = runtime_dir / "local_mcp_agent" / "status.json"
+            if local_agent_path.exists():
+                payload = json.loads(local_agent_path.read_text(encoding="utf-8"))
+                if isinstance(payload, Mapping):
+                    local_agent_summary = {
+                        "status": _to_text(payload.get("status")),
+                        "profile": _to_text(payload.get("profile")),
+                        "tool_calls": int(payload.get("tool_calls") or 0),
+                        "mutating_calls": int(payload.get("mutating_calls") or 0),
+                        "resource_count": int(payload.get("resource_count") or 0),
+                        "mcp_transport": _to_text(payload.get("mcp_transport")),
+                        "final_message": _to_text(payload.get("final_message"))[:240],
+                        "error": _to_text(payload.get("error"))[:240],
+                    }
+                    context_tokens |= _tokenize(
+                        " ".join(
+                            [
+                                local_agent_summary["status"],
+                                local_agent_summary["profile"],
+                                local_agent_summary["mcp_transport"],
+                                local_agent_summary["final_message"],
+                                local_agent_summary["error"],
+                            ]
+                        )
+                    )
+        except Exception:
+            local_agent_summary = {}
+
         return {
             "query": query,
             "load_error": load_error,
@@ -264,6 +295,7 @@ class AutonomySupervisor:
             "tokens": sorted(context_tokens),
             "report_summary": report_summary,
             "artifact_summary": artifact_summary,
+            "local_agent_summary": local_agent_summary,
         }
 
     def _recent_selections(self) -> list[dict[str, Any]]:
@@ -329,15 +361,22 @@ class AutonomySupervisor:
         weak_communities = int(report_summary.get("weak_communities") or 0)
         benchmark_failures = int(artifact_summary.get("benchmark_failures") or 0)
         drift_warning_artifacts = int(artifact_summary.get("drift_warning_artifacts") or 0)
+        local_agent = context.get("local_agent_summary") if isinstance(context.get("local_agent_summary"), Mapping) else {}
+        local_agent_status = _to_text(local_agent.get("status")).lower()
+        local_agent_tool_calls = int(local_agent.get("tool_calls") or 0)
 
         if template == "hygiene":
             score += min(1.4, benchmark_failures * 0.45 + drift_warning_artifacts * 0.25)
             if avg_quality and avg_quality < 0.75:
                 score += min(0.45, 0.75 - avg_quality)
+            if local_agent_status in {"timeout", "error"}:
+                score += 0.3
         elif template == "consciousness_guard":
             if avg_quality >= 0.7:
                 score += min(0.25, avg_quality * 0.25)
             score -= min(0.2, weak_communities * 0.05)
+            if local_agent_tool_calls > 0 and local_agent_status == "success":
+                score += 0.1
         elif template == "lint":
             score += min(0.4, benchmark_failures * 0.2)
 
@@ -398,6 +437,8 @@ class AutonomySupervisor:
                 ((context.get("report_summary") or {}).get("average_quality_score")) or 0.0
             ),
             "benchmark_failures": int(((context.get("artifact_summary") or {}).get("benchmark_failures")) or 0),
+            "local_agent_status": _to_text(((context.get("local_agent_summary") or {}).get("status")) or ""),
+            "local_agent_tool_calls": int(((context.get("local_agent_summary") or {}).get("tool_calls")) or 0),
             "repo_root": str(self.repo_root),
             "repo_dirty": repo_dirty,
         }
@@ -491,6 +532,8 @@ class AutonomySupervisor:
                 ((context.get("report_summary") or {}).get("average_quality_score")) or 0.0
             ),
             "benchmark_failures": int(((context.get("artifact_summary") or {}).get("benchmark_failures")) or 0),
+            "local_agent_status": _to_text(((context.get("local_agent_summary") or {}).get("status")) or ""),
+            "local_agent_tool_calls": int(((context.get("local_agent_summary") or {}).get("tool_calls")) or 0),
         }
         BUS.append(self.state_dir, "autonomy.mission_selected", payload, tags=["autonomy", "selected"])
         S.append_journal(

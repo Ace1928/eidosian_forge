@@ -62,6 +62,51 @@ def test_create_run_persists_gis_id(tmp_path: Path) -> None:
     assert stored["gis_id"].startswith("gis:eidos:code-forge:run:")
 
 
+def test_init_schema_migrates_legacy_db_without_gis_columns(tmp_path: Path) -> None:
+    import sqlite3
+
+    db_path = tmp_path / "library.sqlite"
+    conn = sqlite3.connect(db_path)
+    conn.executescript(
+        """
+        CREATE TABLE code_text (
+            content_hash TEXT PRIMARY KEY,
+            content TEXT NOT NULL
+        );
+        CREATE TABLE ingestion_runs (
+            run_id TEXT PRIMARY KEY,
+            root_path TEXT NOT NULL,
+            mode TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            config_json TEXT
+        );
+        CREATE TABLE code_units (
+            id TEXT PRIMARY KEY,
+            unit_type TEXT NOT NULL,
+            name TEXT NOT NULL,
+            qualified_name TEXT,
+            file_path TEXT NOT NULL,
+            line_start INTEGER,
+            line_end INTEGER,
+            col_start INTEGER,
+            col_end INTEGER,
+            content_hash TEXT,
+            parent_id TEXT,
+            run_id TEXT,
+            created_at TEXT NOT NULL
+        );
+        """
+    )
+    conn.commit()
+    conn.close()
+
+    db = CodeLibraryDB(db_path)
+    run_id = db.create_run("/repo", "analysis", config={})
+    stored = db.get_run(run_id)
+    assert stored is not None
+    assert stored["gis_id"].startswith("gis:eidos:code-forge:run:")
+
+
 def test_relationships(tmp_path: Path) -> None:
     db = CodeLibraryDB(tmp_path / "library.sqlite")
     parent = CodeUnit(unit_type="module", name="math", file_path="src/math.py")

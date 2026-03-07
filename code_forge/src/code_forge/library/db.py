@@ -160,14 +160,10 @@ class CodeLibraryDB:
 
                 CREATE INDEX IF NOT EXISTS idx_code_units_file_path
                     ON code_units(file_path);
-                CREATE INDEX IF NOT EXISTS idx_code_units_gis_id
-                    ON code_units(gis_id);
                 CREATE INDEX IF NOT EXISTS idx_code_units_qualified_name
                     ON code_units(qualified_name);
                 CREATE INDEX IF NOT EXISTS idx_code_units_content_hash
                     ON code_units(content_hash);
-                CREATE INDEX IF NOT EXISTS idx_code_units_language
-                    ON code_units(language);
                 CREATE INDEX IF NOT EXISTS idx_code_units_unit_type
                     ON code_units(unit_type);
 
@@ -193,6 +189,14 @@ class CodeLibraryDB:
             self._ensure_column(conn, "code_units", "language", "TEXT")
             self._ensure_column(conn, "code_units", "gis_id", "TEXT")
             self._ensure_column(conn, "ingestion_runs", "gis_id", "TEXT")
+            conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_code_units_gis_id
+                    ON code_units(gis_id)
+                """)
+            conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_code_units_language
+                    ON code_units(language)
+                """)
 
             self._ensure_column(conn, "code_fingerprints", "structural_hash", "TEXT")
             conn.execute("""
