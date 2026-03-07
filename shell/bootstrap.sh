@@ -6,6 +6,7 @@ EIDOS_SHELL_COMMON_DIR="${EIDOS_SHELL_COMMON_DIR:-${EIDOS_SHELL_ROOT}/common.d}"
 for eidos_common_module in \
     "${EIDOS_SHELL_COMMON_DIR}/00_common_helpers.sh" \
     "${EIDOS_SHELL_COMMON_DIR}/10_common_runtime.sh" \
+    "${EIDOS_SHELL_COMMON_DIR}/15_common_tmp.sh" \
     "${EIDOS_SHELL_COMMON_DIR}/20_common_aliases.sh" \
     "${EIDOS_SHELL_COMMON_DIR}/30_common_prompt.sh"
 do
@@ -16,6 +17,7 @@ done
 unset eidos_common_module
 
 eidos_shell_common_runtime_init
+eidos_shell_common_tmp_init
 eidos_shell_common_aliases_init
 eidos_shell_common_prompt_init
 

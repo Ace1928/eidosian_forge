@@ -13,6 +13,7 @@ Common shell modules live in `shell/common.d` and are loaded in lexical order:
 
 - `00_common_helpers.sh`: logging, notifications, platform checks, path helpers, and utility functions
 - `10_common_runtime.sh`: history, shell options, portable path setup, and `.env` sourcing
+- `15_common_tmp.sh`: portable temp-root selection, `TMPDIR` exports, `~/tmp` linkage, and optional experimental `/tmp` preload redirection
 - `20_common_aliases.sh`: portable aliases and script launch aliases
 - `30_common_prompt.sh`: prompt initialization and command-not-found behavior
 
@@ -37,6 +38,8 @@ Install helpers:
 
 - `scripts/install_shell_bootstrap.sh`: installs the thin `~/.bashrc` wrapper from the repo template
 - `scripts/install_shell_prereqs.sh`: installs recommended shell packages on Termux/Linux
+- `scripts/build_tmpredir.sh`: builds the optional experimental `LD_PRELOAD` library that rewrites hardcoded `/tmp` and `/var/tmp` paths
+- `scripts/eidos_exec.sh`: executes a command with the Eidos temp contract; preload redirection is opt-in via `EIDOS_ENABLE_TMP_PRELOAD=1`
 - `scripts/install_termux_boot.sh`: installs `~/.termux/boot/00-eidos-boot`
 - `scripts/eidos_termux_boot.sh`: boot-safe orchestration entrypoint for Termux:Boot
 - `scripts/repair_venv_activation.sh`: restores standard venv activate scripts if needed
@@ -49,6 +52,9 @@ Design constraints:
 - keep `~/.bashrc` thin and repo-managed
 - never install packages implicitly during shell startup
 - keep the forge venv activation deterministic and reversible
+- set one portable temp contract:
+  - normal software should honor `TMPDIR`
+  - hardcoded `/tmp` software can opt into experimental `LD_PRELOAD` redirection through `scripts/eidos_exec.sh`
 - keep boot orchestration separate from interactive shell startup
 - preserve portability so the same bootstrap can run on Termux or Linux where possible
 - use `scripts/eidos_safe_run.sh` for long or risky jobs instead of ambient shell state

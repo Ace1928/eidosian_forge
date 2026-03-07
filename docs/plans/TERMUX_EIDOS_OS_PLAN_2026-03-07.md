@@ -15,6 +15,7 @@ Date: 2026-03-07
   - Termux-specific behavior retained in `shell/profile.d/`
   - standard `eidosian_venv` activation scripts restored
   - raw `.env` sourcing replaced with safe dotenv parsing
+  - portable temp-root contract added with `TMPDIR` export and optional experimental `/tmp` preload redirection
 - Phase 4 partially completed:
   - `scripts/eidos_termux_boot.sh` added
   - `scripts/install_termux_boot.sh` now installs `~/.termux/boot/00-eidos-boot`
