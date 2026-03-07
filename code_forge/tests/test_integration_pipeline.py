@@ -15,10 +15,7 @@ def _make_repo(root: Path) -> None:
         encoding="utf-8",
     )
     (root / "src" / "flow.py").write_text(
-        "def gate(x):\n"
-        "    if x > 3:\n"
-        "        return x\n"
-        "    return 0\n",
+        "def gate(x):\n" "    if x > 3:\n" "        return x\n" "    return 0\n",
         encoding="utf-8",
     )
 

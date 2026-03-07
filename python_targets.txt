@@ -1,3 +1,2 @@
-code_forge/src/code_forge/digester/__init__.py
-code_forge/src/code_forge/digester/pipeline.py
-code_forge/tests/test_digester_pipeline.py
+code_forge/src/code_forge/integration/pipeline.py
+code_forge/tests/test_integration_pipeline.py
