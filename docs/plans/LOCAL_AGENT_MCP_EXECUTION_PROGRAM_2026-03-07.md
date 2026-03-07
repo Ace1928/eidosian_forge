@@ -52,6 +52,7 @@ Saved under `docs/external_references/2026-03-07-local-agent-mcp/` and intended 
 - [x] Implement a bounded agent loop with explicit max-step and max-tool-call ceilings.
 - [ ] Add prompt/response benchmark artifacts for observer vs curator profiles.
 - [~] Add live reliability smoke over the dedicated qwen service and running MCP server.
+- [x] Add configurable model residency (`keep_alive`) for long-running local cycles and services.
 
 ### Track D: Runtime Governance
 - [x] Enforce coordinator leasing around local-agent cycles.
@@ -95,6 +96,8 @@ Saved under `docs/external_references/2026-03-07-local-agent-mcp/` and intended 
   - `docs/external_references/2026-03-07-local-agent-control-plane/`
   - `files_processed=6`
   - `nodes_created=27`
+- [x] Synthetic guarded MCP resource-read tool added under profile control.
+- [x] Service/CLI keep-alive override added for long-lived Qwen residency.
 - [~] Live scheduler/supervisor integration now exists:
   - `scripts/eidos_scheduler.py`
   - `scripts/run_eidos_scheduler.sh`

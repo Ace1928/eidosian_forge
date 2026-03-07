@@ -7,6 +7,7 @@
       "max_tool_calls": 8,
       "max_mutating_calls": 0,
       "thinking_mode": "on",
+      "keep_alive": "2h",
       "temperature": 0.2,
       "max_tokens": 1536,
       "max_observation_chars": 2200,
@@ -29,6 +30,14 @@
           "allowed_keys": ["query", "limit", "namespace", "tier"],
           "string_max_lengths": {"query": 240, "namespace": 48, "tier": 32},
           "integer_bounds": {"limit": {"min": 1, "max": 8}},
+          "mode": "read",
+          "max_calls_per_cycle": 2
+        },
+        "read_resource": {
+          "synthetic": "resource_read",
+          "allowed_keys": ["uri"],
+          "string_max_lengths": {"uri": 200},
+          "blocked_patterns": {"uri": ["^(file|https?)://", "^/"]},
           "mode": "read",
           "max_calls_per_cycle": 2
         },
@@ -62,6 +71,7 @@
       "max_tool_calls": 10,
       "max_mutating_calls": 2,
       "thinking_mode": "on",
+      "keep_alive": "2h",
       "temperature": 0.2,
       "max_tokens": 1792,
       "max_observation_chars": 2400,
@@ -74,6 +84,14 @@
           "string_max_lengths": {"query": 240},
           "integer_bounds": {"max_results": {"min": 1, "max": 8}},
           "const_arguments": {"include_memory": true, "include_knowledge": true},
+          "mode": "read",
+          "max_calls_per_cycle": 2
+        },
+        "read_resource": {
+          "synthetic": "resource_read",
+          "allowed_keys": ["uri"],
+          "string_max_lengths": {"uri": 200},
+          "blocked_patterns": {"uri": ["^(file|https?)://", "^/"]},
           "mode": "read",
           "max_calls_per_cycle": 2
         },

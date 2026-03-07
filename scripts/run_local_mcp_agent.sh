@@ -10,6 +10,7 @@ INTERVAL_SEC="${EIDOS_LOCAL_AGENT_INTERVAL_SEC:-180}"
 MAX_CYCLES="${EIDOS_LOCAL_AGENT_MAX_CYCLES:-0}"
 TIMEOUT_SEC="${EIDOS_LOCAL_AGENT_TIMEOUT_SEC:-1800}"
 MODEL="${EIDOS_LOCAL_AGENT_MODEL:-qwen3.5:2b}"
+KEEP_ALIVE="${EIDOS_LOCAL_AGENT_KEEP_ALIVE:-2h}"
 POLICY_PATH="${EIDOS_LOCAL_AGENT_POLICY_PATH:-${FORGE_ROOT}/cfg/local_agent_profiles.json}"
 
 cd "${FORGE_ROOT}"
@@ -19,6 +20,7 @@ exec "${PYTHON_BIN}" "${FORGE_ROOT}/scripts/eidos_local_agent.py" \
   --profile "${PROFILE}" \
   --policy-path "${POLICY_PATH}" \
   --model "${MODEL}" \
+  --keep-alive "${KEEP_ALIVE}" \
   --continuous \
   --interval-sec "${INTERVAL_SEC}" \
   --max-cycles "${MAX_CYCLES}" \

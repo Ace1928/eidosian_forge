@@ -27,6 +27,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--interval-sec", type=float, default=120.0)
     parser.add_argument("--max-cycles", type=int, default=0)
     parser.add_argument("--timeout-sec", type=float, default=1800.0)
+    parser.add_argument("--keep-alive", default="", help="Override Ollama keep_alive residency, e.g. 2h.")
     return parser.parse_args()
 
 
@@ -43,6 +44,7 @@ def main() -> int:
         interval_sec=float(args.interval_sec),
         max_cycles=int(args.max_cycles),
         timeout_sec=float(args.timeout_sec),
+        keep_alive=str(args.keep_alive or ""),
     )
     print(json.dumps(result, ensure_ascii=False, indent=2, default=str))
     return 0 if str(result.get("status") or "") in {"success", "blocked", "timeout"} else 1

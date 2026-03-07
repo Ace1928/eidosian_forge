@@ -82,6 +82,7 @@ class AgentProfile:
     thinking_mode: str
     temperature: float
     max_tokens: int
+    keep_alive: str
     max_observation_chars: int
     system_prompt: str
     allowed_tools: dict[str, dict[str, Any]]
@@ -131,6 +132,7 @@ def _normalize_tool_rule(name: str, payload: Any) -> dict[str, Any]:
         if str(k).strip()
     }
     return {
+        "synthetic": str(rule.get("synthetic") or "").strip().lower(),
         "mode": str(rule.get("mode") or ("mutating" if name in MUTATING_TOOL_NAMES else "read")).strip().lower(),
         "allowed_keys": allowed_keys,
         "string_max_lengths": string_max_lengths,
@@ -159,6 +161,7 @@ def normalize_profile(name: str, payload: Any) -> AgentProfile:
         thinking_mode=str(raw.get("thinking_mode") or "on").strip().lower(),
         temperature=float(raw.get("temperature", 0.2) or 0.2),
         max_tokens=max(128, int(raw.get("max_tokens", 2048) or 2048)),
+        keep_alive=str(raw.get("keep_alive") or "2h").strip(),
         max_observation_chars=max(256, int(raw.get("max_observation_chars", 2400) or 2400)),
         system_prompt=str(raw.get("system_prompt") or "").strip(),
         allowed_tools=allowed_tools,
@@ -208,6 +211,25 @@ def build_tool_contracts(discovered_tools: list[Any], profile: AgentProfile) -> 
     tools: list[dict[str, Any]] = []
     missing: list[str] = []
     for name, rule in profile.allowed_tools.items():
+        if str(rule.get("synthetic") or "") == "resource_read":
+            tools.append(
+                {
+                    "type": "function",
+                    "function": {
+                        "name": name,
+                        "description": "Read an allowed MCP resource by URI under the local-agent policy contract.",
+                        "parameters": contract_schema(
+                            {
+                                "type": "object",
+                                "properties": {"uri": {"type": "string"}},
+                                "required": ["uri"],
+                            },
+                            rule,
+                        ),
+                    },
+                }
+            )
+            continue
         tool = by_name.get(name)
         if tool is None:
             missing.append(name)
@@ -329,6 +351,20 @@ async def _list_resources(session: SessionType, timeout_sec: float = 15.0) -> li
             }
         )
     return rows
+
+
+async def _read_resource(session: SessionType, uri: str, timeout_sec: float = 60.0) -> str:
+    result = await asyncio.wait_for(session.read_resource(uri), timeout=timeout_sec)
+    lines: list[str] = []
+    for block in getattr(result, "contents", []) or []:
+        text = getattr(block, "text", None)
+        if text:
+            lines.append(str(text))
+            continue
+        blob = getattr(block, "blob", None)
+        if blob:
+            lines.append(str(blob))
+    return "\n".join([line for line in lines if line]).strip()
 
 
 @asynccontextmanager
@@ -467,6 +503,7 @@ class LocalMcpAgent:
                 "num_predict": self.profile.max_tokens,
             },
             "think": thinking_mode == "on",
+            "keep_alive": self.profile.keep_alive,
         }
         async with httpx.AsyncClient(timeout=max(10.0, float(timeout_sec))) as client:
             response = await client.post(f"{self.model_url}/api/chat", json=payload)
@@ -614,7 +651,14 @@ class LocalMcpAgent:
                                 raise ToolPolicyError(f"mutating_call_budget_exceeded:{name}")
                         total_tool_calls += 1
                         tool_started = time.perf_counter()
-                        observation = await _call_tool(session, name, validated_args, timeout_sec=timeout_sec)
+                        if str(profile.allowed_tools[name].get("synthetic") or "") == "resource_read":
+                            observation = await _read_resource(
+                                session,
+                                str(validated_args.get("uri") or ""),
+                                timeout_sec=timeout_sec,
+                            )
+                        else:
+                            observation = await _call_tool(session, name, validated_args, timeout_sec=timeout_sec)
                         duration_ms = int(round((time.perf_counter() - tool_started) * 1000.0))
                         total_tool_latency_ms += duration_ms
                         observation = observation[: profile.max_observation_chars]
@@ -723,8 +767,24 @@ def cli_entry(
     interval_sec: float = 120.0,
     max_cycles: int = 0,
     timeout_sec: float = 1800.0,
+    keep_alive: str = "",
 ) -> dict[str, Any]:
     profile = load_profile(path=policy_path or DEFAULT_POLICY_PATH, name=profile_name)
+    if keep_alive.strip():
+        profile = AgentProfile(
+            name=profile.name,
+            description=profile.description,
+            max_steps=profile.max_steps,
+            max_tool_calls=profile.max_tool_calls,
+            max_mutating_calls=profile.max_mutating_calls,
+            thinking_mode=profile.thinking_mode,
+            temperature=profile.temperature,
+            max_tokens=profile.max_tokens,
+            keep_alive=keep_alive.strip(),
+            max_observation_chars=profile.max_observation_chars,
+            system_prompt=profile.system_prompt,
+            allowed_tools=profile.allowed_tools,
+        )
     agent = LocalMcpAgent(
         forge_root=FORGE_ROOT,
         model=model,

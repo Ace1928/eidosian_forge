@@ -73,6 +73,18 @@ class _FakeSession:
 
         return _Result()
 
+    async def read_resource(self, uri):
+        class _Item:
+            def __init__(self, text: str):
+                self.text = text
+                self.blob = None
+
+        class _Result:
+            def __init__(self, text: str):
+                self.contents = [_Item(text)]
+
+        return _Result(f"resource:{uri}")
+
 
 class _FakeCoordinator:
     def __init__(self):
@@ -185,7 +197,26 @@ def test_load_real_profile_contract() -> None:
     profile = load_profile(ROOT / "cfg" / "local_agent_profiles.json", "observer")
     assert profile.name == "observer"
     assert "kb_search" in profile.allowed_tools
+    assert "read_resource" in profile.allowed_tools
     assert profile.max_mutating_calls == 0
+
+
+def test_build_tool_contracts_includes_synthetic_resource_reader() -> None:
+    profile = normalize_profile(
+        "observer",
+        {
+            "allowed_tools": {
+                "read_resource": {
+                    "synthetic": "resource_read",
+                    "allowed_keys": ["uri"],
+                    "string_max_lengths": {"uri": 120},
+                }
+            }
+        },
+    )
+    tools, missing = build_tool_contracts([], profile)
+    assert missing == []
+    assert tools[0]["function"]["name"] == "read_resource"
 
 
 def test_agent_blank_urls_fall_back_to_defaults() -> None:
@@ -270,3 +301,42 @@ def test_run_cycle_success_records_transport_and_resources(monkeypatch, tmp_path
     assert result["mcp_transport"] == "stdio"
     assert result["resource_count"] == 1
     assert result["tool_contract_count"] >= 1
+
+
+def test_run_cycle_can_read_allowed_resource(monkeypatch, tmp_path: Path) -> None:
+    import eidosian_agent.local_mcp_agent as mod
+    from eidosian_agent.local_mcp_agent import LocalMcpAgent
+    from eidosian_runtime import ForgeRuntimeCoordinator
+
+    @asynccontextmanager
+    async def _fake_session_ctx(_root, url=None):
+        yield _FakeSession([], {}), "stdio"
+
+    calls = {"count": 0}
+
+    async def _fake_request_step(*args, **kwargs):
+        calls["count"] += 1
+        if calls["count"] == 1:
+            return {
+                "message": {
+                    "tool_calls": [
+                        {"function": {"name": "read_resource", "arguments": {"uri": "memory://status"}}}
+                    ]
+                },
+                "effective_thinking_mode": "on",
+            }
+        return {"message": {"content": "done"}, "effective_thinking_mode": "on"}
+
+    monkeypatch.setattr(mod, "open_mcp_session", _fake_session_ctx)
+
+    coordinator = ForgeRuntimeCoordinator(tmp_path / "forge_coordinator_status.json")
+    agent = LocalMcpAgent(
+        coordinator=coordinator,
+        profile=load_profile(ROOT / "cfg" / "local_agent_profiles.json"),
+        runtime_dir=tmp_path / "runtime",
+    )
+    monkeypatch.setattr(agent, "_request_step", _fake_request_step)
+    result = asyncio.run(agent.run_cycle("read resource", timeout_sec=1.0))
+    assert result["status"] == "success"
+    assert result["tool_calls"] == 1
+    assert result["cycle_log"][0]["tool"] == "read_resource"
