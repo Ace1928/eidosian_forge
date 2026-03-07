@@ -1,0 +1,2 @@
+scripts/ci/changed_manifest.py
+scripts/tests/test_changed_manifest.py
