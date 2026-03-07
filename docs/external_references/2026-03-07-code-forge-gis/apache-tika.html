@@ -1,0 +1,763 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+ 
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+
+
+
+
+
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Apache Tika &#x2013; Apache Tika</title>
+    <style type="text/css" media="all">
+      @import url("./css/site.css");
+    </style>
+    <link rel="icon" type="image/png" href="./tikaNoText16.png" />
+  </head>
+  <body>
+    <div id="body">
+      <div id="banner">
+        <a href="https://tika.apache.org" id="bannerLeft" title="Apache Tika"
+          ><img src="https://tika.apache.org/tika.png" alt="Apache Tika"
+                width="292" height="100"/></a>
+        <a href="https://www.apache.org/" id="bannerRight"
+           title="The Apache Software Foundation"
+          ><img src="https://tika.apache.org/asf-logo.jpg" alt="The Apache Software Foundation"
+                width="190" height="100"/></a>
+      </div>
+      <div id="content">
+        <!-- Licensed to the Apache Software Foundation (ASF) under one or more --><!-- contributor license agreements.  See the NOTICE file distributed with --><!-- this work for additional information regarding copyright ownership. --><!-- The ASF licenses this file to You under the Apache License, Version 2.0 --><!-- (the "License"); you may not use this file except in compliance with --><!-- the License.  You may obtain a copy of the License at --><!--  --><!-- https://www.apache.org/licenses/LICENSE-2.0 --><!--  --><!-- Unless required by applicable law or agreed to in writing, software --><!-- distributed under the License is distributed on an "AS IS" BASIS, --><!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. --><!-- See the License for the specific language governing permissions and --><!-- limitations under the License. --><div class="section">
+<h2><a name="Apache_Tika_-_a_content_analysis_toolkit"></a>Apache Tika - a content analysis toolkit</h2>
+<p>The Apache Tika&#x2122; toolkit detects and extracts metadata and text from over a thousand different file types (such as PPT, XLS, and PDF). All of these file types can be parsed through a single interface, making Tika useful for search engine indexing, content analysis, translation, and much more. You can find the latest release on the <a href="./download.html">download page</a>. Please see the <a href="./3.2.3/gettingstarted.html">Getting Started</a> page for more information on how to start using Tika.</p>
+<p>The <a href="./3.2.3/parser.html">Parser</a> and <a href="./3.2.3/detection.html">Detector</a> pages describe the main interfaces of Tika and how they work.</p>
+<p>For more in-depth documentation, see our <a class="externalLink" href="https://cwiki.apache.org/confluence/display/tika">wiki</a>, especially for <a class="externalLink" href="https://cwiki.apache.org/confluence/display/TIKA/TikaServer">tika-server</a>.</p>
+<p>If you're interested in contributing to Tika, please see the <a href="./contribute.html">Contributing</a> page or send an email to the <a href="./mail-lists.html">Tika development list</a>.</p>
+<p>Tika is a project of the <a class="externalLink" href="https://www.apache.org/">Apache Software Foundation</a>, and was formerly a subproject of <a class="externalLink" href="https://lucene.apache.org/">Apache Lucene</a>. </p></div>
+<div class="section">
+<h2><a name="Latest_News"></a>Latest News</h2>
+<dl>
+<dt>9 September 2025: Apache Tika Release</dt>
+<dd> Apache Tika 3.2.3 has been released! This release includes an important bug fix for tika-server's handling of PDFs that contain XFA (TIKA-4482) as well as dependency upgrades. Please see the <a class="externalLink" href="https://dist.apache.org/repos/dist/release/tika/3.2.3/CHANGES-3.2.3.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 3.2.3.</dd>
+<dt>7 August 2025: Apache Tika Release</dt>
+<dd> Apache Tika 3.2.2 has been released! This release includes several bug fixes and dependency upgrades. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/3.2.2/CHANGES-3.2.2.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 3.2.2.</dd>
+<dt>9 July 2025: Apache Tika Release</dt>
+<dd> Apache Tika 3.2.1 has been released! This release includes several bug fixes and dependency upgrades. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/3.2.1/CHANGES-3.2.1.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 3.2.1.</dd>
+<dt>26 May 2025: Apache Tika Release</dt>
+<dd> Apache Tika 3.2.0 has been released! This release includes several bug fixes and dependency upgrades. This release dramatically improves metadata extraction from MSG files. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/3.2.0/CHANGES-3.2.0.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 3.2.0.</dd>
+<dt>5 May 2025: Apache Tika Release</dt>
+<dd> Apache Tika 2.9.4 has been released! This release includes several bug fixes and dependency upgrades. Please see the <a class="externalLink" href="https://dist.apache.org/repos/dist/release/tika/2.9.4/CHANGES-2.9.4.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 2.9.4.
+<p><b>Note:</b> This is the final 2.x release. The 2.x branch and support for Java 8 are now at End Of Life. See <a class="externalLink" href="https://cwiki.apache.org/confluence/display/TIKA/Tika+Roadmap+--+2.x%2C+3.x+and+Beyond">Tika Roadmap 2.x, 3.x and Beyond</a>.</p></dd>
+<dt>6 February 2025: Apache Tika Release</dt>
+<dd> Apache Tika 2.9.3 has been released! This release includes several bug fixes and dependency upgrades. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/2.9.3/CHANGES-2.9.3.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 2.9.3.
+<p><b>Note:</b> The current roadmap plans for End Of Life for the 2.x branch (and support for Java 8) in April 2025. See <a class="externalLink" href="https://cwiki.apache.org/confluence/display/TIKA/Tika+Roadmap+--+2.x%2C+3.x+and+Beyond">Tika Roadmap 2.x, 3.x and Beyond</a>.</p></dd>
+<dt>31 January 2025: Apache Tika Release</dt>
+<dd> Apache Tika 3.1.0 has been released! This release includes several bug fixes and dependency upgrades. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/3.1.0/CHANGES-3.1.0.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 3.1.0. The 3.x branch requires Java 11.
+<p><b>Note:</b> The current roadmap plans for End Of Life for the 2.x branch (and support for Java 8) in April 2025. See <a class="externalLink" href="https://cwiki.apache.org/confluence/display/TIKA/Tika+Roadmap+--+2.x%2C+3.x+and+Beyond">Tika Roadmap 2.x, 3.x and Beyond</a>.</p></dd>
+<dt>19 October 2024: Apache Tika Release</dt>
+<dd> Apache Tika 3.0.0 has been released! This release includes several bug fixes and dependency upgrades. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/3.0.0/CHANGES-3.0.0.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 3.0.0. The 3.x branch requires Java 11.
+<p><b>Note:</b> The current roadmap plans for End Of Life for the 2.x branch (and support for Java 8) in April 2025. See <a class="externalLink" href="https://cwiki.apache.org/confluence/display/TIKA/Tika+Roadmap+--+2.x%2C+3.x+and+Beyond">Tika Roadmap 2.x, 3.x and Beyond</a>.</p></dd>
+<dt>15 July 2024: Apache Tika Release</dt>
+<dd> Apache Tika 3.0.0-BETA2 has been released! This release includes several bug fixes and dependency upgrades. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/3.0.0-BETA2/CHANGES-3.0.0-BETA2.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 3.0.0-BETA2.</dd>
+<dt>2 April 2024: Apache Tika Release</dt>
+<dd> Apache Tika 2.9.2 has been released! This release includes several bug fixes and dependency upgrades. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/2.9.2/CHANGES-2.9.2.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 2.9.2.</dd>
+<dt>13 December 2023: Apache Tika Release</dt>
+<dd> Apache Tika 3.0.0-BETA has been released! This release includes the first BETA release for the 3.x branch. The biggest change is that 3.x requires Java &gt;= 11. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/3.0.0-BETA/CHANGES-3.0.0-BETA.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 3.0.0-BETA. NOTE: Users of the tika-solr-emitter should take steps to mitigate the risks of logback related cves: CVE-2023-6481/CVE-2023-6378.</dd>
+<dt>20 October 2023: Apache Tika Release</dt>
+<dd> Apache Tika 2.9.1 has been released! This release includes several bug fixes and dependency upgrades, including an upgrade of commons-compress that fixes CVE-2023-42503. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/2.9.1/CHANGES-2.9.1.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 2.9.1.</dd>
+<dt>28 August 2023: Apache Tika Release</dt>
+<dd> Apache Tika 2.9.0 has been released! This release includes several bug fixes and dependency upgrades. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/2.9.0/CHANGES-2.9.0.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 2.9.0.</dd>
+<dt>15 May 2023: Apache Tika Release</dt>
+<dd> Apache Tika 2.8.0 has been released! This release includes optional handling of incremental updates in PDFs, a bug fix that had prevented the running of exiftool and ffmpeg by default, and the move of the GeoTopic parser back to its 1.x namespace: o.a.t.parser.geo.topic. There are several other improvements, bug fixes and dependency upgrades. Note that we are no longer shading the tika-parsers-standard module. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/2.8.0/CHANGES-2.8.0.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 2.8.0.</dd>
+<dt>03 February 2023: Apache Tika Release</dt>
+<dd> Apache Tika 2.7.0 has been released! This release includes releasing tika-parser-nlp-package as its own artifact, improvements to handling attachments in RFC822 .eml files, several other improvements and dependency upgrades. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/2.7.0/CHANGES-2.7.0.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 2.7.0.</dd>
+<dt>07 November 2022: Apache Tika Release</dt>
+<dd> Apache Tika 2.6.0 has been released! This release includes an optional integration with the Siegfried detector, a bug fix to the OpenSearch emitter and dependency upgrades. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/2.6.0/CHANGES-2.6.0.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 2.6.0.</dd>
+<dt>03 October 2022: Apache Tika Release</dt>
+<dd> Apache Tika 2.5.0 has been released! This release includes improvements to configurability and customization as well as security related fixes and dependency upgrades. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/2.5.0/CHANGES-2.5.0.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 2.5.0.
+<p><b>Note:</b> As of September 30, 2022 Tika's 1.x branch has reached its End of Life and is no longer supported.</p></dd>
+<dt>14 September 2022: Apache Tika Release</dt>
+<dd> Apache Tika 1.28.5 has been released! This release includes a security related fix and dependency upgrades. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/1.28.5/CHANGES-1.28.5.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 1.28.5.
+<p><b>Note:</b> The Apache Tika PMC has set September 30, 2022 as the End Of Life for the Tika 1.x branch. The PMC will make security fixes for the 1.x branch until that date.</p></dd>
+<dt>17 June 2022: Apache Tika Release</dt>
+<dd> Apache Tika 2.4.1 has been released! This release includes improvements to configurability and customization as well as security related fixes and dependency upgrades. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/2.4.1/CHANGES-2.4.1.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 2.4.1.</dd>
+<dt>16 June 2022: Apache Tika Release</dt>
+<dd> Apache Tika 1.28.4 has been released! This release includes security related fixes and dependency upgrades. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/1.28.4/CHANGES-1.28.4.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 1.28.4.
+<p><b>Note:</b> The Apache Tika PMC has set September 30, 2022 as the End Of Life for the Tika 1.x branch. The PMC will make security fixes for the 1.x branch until that date.</p></dd>
+<dt>27 May 2022: Apache Tika Release</dt>
+<dd> Apache Tika 1.28.3 has been released! This release includes security related fixes and dependency upgrades. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/1.28.3/CHANGES-1.28.3.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 1.28.3.
+<p><b>Note:</b> The Apache Tika PMC has set September 30, 2022 as the End Of Life for the Tika 1.x branch. The PMC will make security fixes for the 1.x branch until that date.</p></dd>
+<dt>2 May 2022: Apache Tika Release</dt>
+<dd> Apache Tika 2.4.0 has been released! This release includes new mime detection for http-responses, frictionless data packages, DGN files and others. Added basic parsers for WARC and WACZ. Added configuration for metadata write filters, custom content handler decorators and embedded document extractors. This release also includes security related updates and general upgrades for many dependencies.
+<p><b>Note:</b> To save on resources, we no longer include the deeplearning4j dependencies in the tika-dl jar. Users must provide those dependencies (TIKA-3676).</p>
+<p>Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/2.4.0/CHANGES-2.4.0.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 2.4.0.</p></dd>
+<dt>2 May 2022: Apache Tika Release</dt>
+<dd> Apache Tika 1.28.2 has been released! This release includes security related dependency upgrades. This release also includes a non-trivial upgrade to Apache POI 5.2.0 (TIKA-3164); users will observe significantly more logging from the POI parsers. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/1.28.2/CHANGES-1.28.2.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 1.28.2.
+<p><b>Note:</b> The Apache Tika PMC has set September 30, 2022 as the End Of Life for the Tika 1.x branch. The PMC will make security fixes for the 1.x branch until that date.</p></dd>
+<dt>11 February 2022: Apache Tika Release</dt>
+<dd> Apache Tika 1.28.1 has been released! This release includes security related dependency upgrades. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/1.28.1/CHANGES-1.28.1.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 1.28.1.
+<p><b>Note:</b> The Apache Tika PMC has set September 30, 2022 as the End Of Life for the Tika 1.x branch. The PMC will make security fixes for the 1.x branch until that date.</p></dd>
+<dt>07 February 2022: Apache Tika Release</dt>
+<dd> Apache Tika 2.3.0 has been released! This release includes several security upgrades in dependencies, including an upgrade to log4j2 (version 2.17.1). This release also includes a non-trivial upgrade to Apache POI 5.2.0 (TIKA-3164); users will observe significantly more logging from the POI parsers. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/2.3.0/CHANGES-2.3.0.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 2.3.0.</dd>
+<dt>23 December 2021: Apache Tika Release</dt>
+<dd> Apache Tika 2.2.1 has been released! This release includes an upgrade to log4j2 (version 2.17.0) and a critical fix for an OOXML (docx/pptx/xlsx) regression that was introduced in 2.2.0 (TIKA-3627). Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/2.2.1/CHANGES-2.2.1.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 2.2.1.
+<p><b>Note:</b> The Apache Tika PMC has set September 30, 2022 as the End Of Life for the Tika 1.x branch. The PMC will make security fixes for the 1.x branch until that date.</p></dd>
+<dt>23 December 2021: Apache Tika Release</dt>
+<dd> Apache Tika 1.28 has been released! This release includes migration to log4j2 (version 2.17.0) from log4j 1.x, an upgrade to Apache PDFBox 2.0.25 and other general dependency upgrades. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/1.28/CHANGES-1.28.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 1.28.
+<p><b>Note:</b> The Apache Tika PMC has set September 30, 2022 as the End Of Life for the Tika 1.x branch. The PMC will make security fixes for the 1.x branch until that date.</p></dd>
+<dt>16 December 2021: Apache Tika Release</dt>
+<dd> Apache Tika 2.2.0 has been released! This release includes a mitigation against log4j's CVE-2021-44228 by upgrading to log4j 2.15.0. This also includes a new parser for OneNote files downloaded from Office365, numerous improvements to file detection (JPEG XL, MARC, ICC Profiles and others), as well as general robustness improvements to the tika-pipes modules. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/2.2.0/CHANGES-2.2.0.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 2.2.0.
+<p><b>Note:</b> The Apache Tika PMC has set September 30, 2022 as the End Of Life for the Tika 1.x branch. The PMC will make security fixes for the 1.x branch until that date.</p></dd>
+<dt>18 August 2021: Apache Tika Release</dt>
+<dd> Apache Tika 2.1.0 has been released! This release includes a significant refactoring in the tika-parsers-extended modules and numerous bug fixes (especially in the pipes modules) and dependency upgrades. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/2.1.0/CHANGES-2.1.0.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 2.1.0.</dd>
+<dt>19 July 2021: Apache Tika Release</dt>
+<dd> Apache Tika 2.0.0 has been released! This release includes a significant refactoring from the 1.x branch including modularization of the parsers modules, the new pipes modules and numerous bug fixes and dependency upgrades. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/2.0.0/CHANGES-2.0.0.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 2.0.0.</dd>
+<dt>6 July 2021: Apache Tika Release</dt>
+<dd> Apache Tika 1.27 has been released! This release includes a new JSON handler for the /tika endpoint in tika-server,a new MP4 parser based on Drew Noakes' metadata-extractor and numerous bug fixes and dependency upgrades. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/1.27/CHANGES-1.27.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 1.27.</dd>
+<dt>25 May 2021: Apache Tika Release</dt>
+<dd> Apache Tika 2.0.0-BETA has been released! This release includes improved performance in the pipes module and still further refactorings. Note: There may still be breaking changes before the 2.0.0 release. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/2.0.0-BETA/CHANGES-2.0.0-BETA.txt">CHANGES.txt</a> file for a list of major changes in the release. Please follow <a class="externalLink" href="https://cwiki.apache.org/confluence/display/TIKA/Migrating+to+Tika+2.0.0">Migrating to Tika 2.x</a> for updates on migrating to Tika 2.x. See the download page for more information on how to obtain Apache Tika 2.0.0-BETA.</dd>
+<dt>29 March 2021: Apache Tika Release</dt>
+<dd> Apache Tika 1.26 has been released! This release includes improved performance in the ForkParser, improved detection and parsing of XPS files and numerous bug fixes and dependency upgrades. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/1.26/CHANGES-1.26.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 1.26.</dd>
+<dt>16 January 2021: Apache Tika 2.0.0-ALPHA Release</dt>
+<dd> Apache Tika 2.0.0-ALPHA has been released! This ALPHA release includes a major refactoring of the modules to enable more fine-grained selection of resources, among many other refactorings. Note: There may still be breaking changes before the 2.0.0-BETA and 2.0.0 releases. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/CHANGES-2.0.0-ALPHA.txt">CHANGES.txt</a> file for a list of major changes in the release. Please follow <a class="externalLink" href="https://cwiki.apache.org/confluence/display/TIKA/Migrating+to+Tika+2.0.0">Migrating to Tika 2.x</a> for updates on migrating to Tika 2.x. See the download page for more information on how to obtain Apache Tika 2.0.0-ALPHA.</dd>
+<dt>30 November 2020: Apache Tika Release</dt>
+<dd> Apache Tika 1.25 has been released! This release includes detection of new file types (parquet, bplist, hprof and flat ODF), new parsers for XLZ, IDML and MIF and flat ODF files, and a critical fix to a license inconsistency in Adobe's xmpcore dependency. This release also includes numerous bug fixes and dependency upgrades. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/CHANGES-1.25.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 1.25.</dd>
+<dt>21 April 2020: Apache Tika Release</dt>
+<dd> Apache Tika 1.24.1 has been released! This release includes enabling gzipping streams for tika-server, security fixes and numerous bug fixes and dependency upgrades. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/CHANGES-1.24.1.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 1.24.1.</dd>
+<dt>17 March 2020: Apache Tika Release</dt>
+<dd> Apache Tika 1.24 has been released! This release includes a new artifact to enable starting tika-server as a service via Eric Pugh, improved detection of zip-based formats, more complex PDF processing options, security fixes and numerous bug fixes and dependency upgrades. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/CHANGES-1.24.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 1.24.</dd>
+<dt>06 December 2019: Apache Tika Release</dt>
+<dd> Apache Tika 1.23 has been released! This release includes a new parser for XLIFF v1.2 files, via Dave Meikle, improved file detection (HEIF/HEIC, FDF and others), and numerous bug fixes and dependency upgrades. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/CHANGES-1.23.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 1.23.</dd>
+<dt>01 August 2019: Apache Tika Release</dt>
+<dd> Apache Tika 1.22 has been released! This release includes a new parser for HWP files, via SooMyung Lee (soomyung) and JinSup Kim (ddoleye), expanded language coverage in tika-eval and numerous bug fixes and dependency upgrades. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/CHANGES-1.22.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 1.22.</dd>
+<dt>20 May 2019: Apache Tika Release</dt>
+<dd> Apache Tika 1.21 has been released! This release includes a new parser and detector for CSV files, a new, alpha-level 'auto' mode for running OCR on PDF pages and numerous bug fixes and dependency upgrades. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/CHANGES-1.21.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 1.21.</dd>
+<dt>22 December 2018: Apache Tika Release</dt>
+<dd> Apache Tika 1.20 has been released! This release includes one critical bug fix: prevent tika-server from responding with a 503 after hitting an OutOfMemory Error (TIKA-2776). Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/CHANGES-1.20.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 1.20.</dd>
+<dt>9 October 2018: Apache Tika Release</dt>
+<dd> Apache Tika 1.19.1 has been released! This release includes two critical bug fixes: a) fixing the MP3Parser (TIKA-2730) and b) limiting entity expansions in SAX parsing (TIKA-2727). Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/CHANGES-1.19.1.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 1.19.1.</dd>
+<dt>18 September 2018: Apache Tika Release</dt>
+<dd> Apache Tika 1.19 has been released! This release requires Java 8. This release includes bug fixes, improved mime detection, security fixes and upgrades to dependencies. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/CHANGES-1.19.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 1.19.</dd>
+<dt>24 April 2018: Apache Tika Release</dt>
+<dd> Apache Tika 1.18 has been released! This release includes bug fixes (e.g. extraction from grouped shapes in PPT), security fixes and upgrades to dependencies. <b>PLEASE NOTE:</b> The next versions will require Java 8. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/CHANGES-1.18.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 1.18.</dd>
+<dt>13 December 2017: Apache Tika Release</dt>
+<dd> Apache Tika 1.17 has been released! This release includes new support for automatic image captioning, as well as numerous bug fixes and upgrades to dependencies. <b>PLEASE NOTE:</b> this will be the last version that will support Java 7. The next versions will require Java 8. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/CHANGES-1.17.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 1.17.</dd>
+<dt>12 July 2017: Apache Tika Release</dt>
+<dd> Apache Tika 1.16 has been released! This release includes integration with USCDataScience's Age Predictor, more warnings for missing optional dependencies, extraction of text from charts and diagrams in ooxml files, and numerous improvements to mime detection. This release removes two dependencies that may have been incompatible with ASL 2.0 -- org.json and jj2000. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/CHANGES-1.16.txt">CHANGES.txt</a> file for the full list of changes in the release and have a look at the download page for more information on how to obtain Apache Tika 1.16.</dd>
+<dt>30 May 2017: Apache Tika Release</dt>
+<dd> Apache Tika 1.15 has been released! This release includes integration with Google's Tensorflow Object Recognition via the OpenCV API, a new 'tika-eval' module, configurable encoding detectors and several new parsers. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/CHANGES-1.15.txt">CHANGES.txt</a> file for a full list of changes in this release and have a look at the download page for more information on how to obtain Apache Tika 1.15.</dd>
+<dt>19 Oct 2016: Apache Tika Release</dt>
+<dd> Apache Tika 1.14 has been released! This release includes integration with Google's Tensorflow Image Recognition via the Inception API, improvements to PDF parsing using OCR, message parsing and MIME detection. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/CHANGES-1.14.txt">CHANGES.txt</a> file for a full list of changes in this release and have a look at the downlpage page for more information on how to obtain Apache Tika 1.14.</dd>
+<dt>16 May 2016: Apache Tika Release</dt>
+<dd> Apache Tika 1.13 has been released! This release includes some significant changes to the PDF support, including PDFBox 2.0.1, two new NER system support (MIT-NLP Information Extraction and GROBID Quantities), a new tika-langdetect module, and much more. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/CHANGES-1.13.txt">CHANGES.txt</a> file for a full list of changes in this release and have a look at the download page for more information on how to obtain Apache Tika 1.13.</dd>
+<dt>6 April 2016: Apache Tika key technology in exposing Panama Papers</dt>
+<dd> As documented on the <a class="externalLink" href="https://t.co/0ZA9ZLaP5x">Forbes article</a>, Apache Tika and Apache Solr were the two linchpin technologies used in the wide exposure of analyzing the Panama papers data files that tracks government corruption and offshore accounts - a global news story. </dd>
+<dt>19 February 2016: Apache Tika Release</dt>
+<dd> Apache Tika 1.12 has been released! This release includes some improvements to Named Entity Recognition (Stanford NER integration and Apache OpenNLP) and additionally efficiency improvements to the GeoTopicParser. There are also bugfixes to Tika REST server in this release. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/CHANGES-1.12.txt">CHANGES.txt</a> file for a full list of changes in this release and have a look at the download page for more information on how to obtain Apache Tika 1.12.</dd>
+<dt>25 October 2015: Apache Tika Release</dt>
+<dd> Apache Tika 1.11 has been released! This release includes several improvements that better utilize Java7 support, that help extract more content using the cTAKES clinical extraction system and GROBID journal parser, and improvements to Tesseract extraction. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/CHANGES-1.11.txt">CHANGES.txt</a> file for a full list of changes in this release and have a look at the download page for more information on how to obtain Apache Tika 1.11.</dd>
+<dt>01 August 2015: Apache Tika Release</dt>
+<dd> Apache Tika 1.10 has been released! This release includes several improvements including the ability to parse MS Access Files, composite parser creation via Tika Config XML, and many more! Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/CHANGES-1.10.txt">CHANGES.txt</a> file for a full list of changes in this release and have a look at the download page for more information on how to obtain Apache Tika 1.10.</dd>
+<dt>23 June 2015: Apache Tika Release</dt>
+<dd> Apache Tika 1.9 has been released. This includes several improvements including parsers that extract additional content e.g., from images using EXIF and FFMPEG, along with improvements to MIME detection using probabilistic means, and updates to the Tika REST server supporting translation and language detection. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/CHANGES-1.9.txt">CHANGES.txt</a> file for a full list of changes in this release. Have a look at the download page for more information on how to obtain Apache Tika 1.9.</dd>
+<dt>20 April 2015: Apache Tika Release</dt>
+<dd> Apache Tika 1.8 has been released! This release includes several bug fixes, tika-batch (a batch processing system for processing large sets of files), and more! Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/CHANGES-1.8.txt">CHANGES.txt</a> file for a full list of changes in this release and have a look at the download page for more information on how to obtain Apache Tika 1.8.</dd>
+<dt>15 January 2015: Apache Tika Release</dt>
+<dd> Apache Tika 1.7 has been released! This release includes bug fixes and new features including a new Tesseract OCR Parser; a new GDAL Parser; more supported formats, and overall improvements in Tika stability. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/CHANGES-1.7.txt">CHANGES.txt</a> file for a full list of changes in this release and have a look at the download page for more information on how to obtain Apache Tika 1.7.</dd>
+<dt>5 September 2014: Apache Tika Release</dt>
+<dd> Apache Tika 1.6 has been released! This release includes bug fixes and new features including a new Translation API; more supported formats, and overall improvements in Tika stability. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/CHANGES-1.6.txt">CHANGES.txt</a> file for a full list of changes in this release and have a look at the download page for more information on how to obtain Apache Tika 1.6.</dd>
+<dt>7-9 April 2014: Tika at ApacheCon NA in Denver</dt>
+<dd> ApacheCon NA is in Denver for 2014, and this time we've <a class="externalLink" href="http://apacheconnorthamerica2014.sched.org/?s=tika">5 Tika related talks</a> on the schedule! Do come along to learn more about how Tika works, and how it has been used. See the <a class="externalLink" href="http://events.linuxfoundation.org/events/apachecon-north-america/">ApacheCon site</a> for more information and how to attend.</dd>
+<dt>19 Feb 2014: Apache Tika Release</dt>
+<dd> Apache Tika 1.5 has been released! This release includes several important bugfixes and new features. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/CHANGES-1.5.txt">CHANGES.txt</a> file for a full list of changes in this release, and have a look at the download page for more information on how to obtain Apache Tika 1.5.</dd>
+<dt>1 September 2013: Community News - NSF Proposal Win</dt>
+<dd> Chris Mattmann, Apache Tika PMC member and Adjunct Assistant Professor at the University of Southern California, has won a National Science Foundation proposal for a project to deliver an open source framework for metadata exploration, automatic text mining and information retrieval of polar data using Apache Tika. You can read more <a class="externalLink" href="http://www.nsf.gov/awardsearch/showAward?AWD_ID=1348450&amp;HistoricalAwards=false">here</a>. 
+<p>Congratulations to Chris and the team at USC!</p></dd>
+<dt>3 July 2013: Apache Tika Release</dt>
+<dd> Apache Tika 1.4 has been released! This release includes several important bugfixes and new features. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/CHANGES-1.4.txt">CHANGES.txt</a> file for a full list of changes in this release, and have a look at the download page for more information on how to obtain Apache Tika 1.4.</dd>
+<dt>22 January 2013: Apache Tika Release</dt>
+<dd> Apache Tika 1.3 has been released! This release includes several important bugfixes and new features. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/CHANGES-1.3.txt">CHANGES.txt</a> file for a full list of changes in this release, and have a look at the download page for more information on how to obtain Apache Tika 1.3. </dd>
+<dt>17 July 2012: Apache Tika Release</dt>
+<dd> Apache Tika 1.2 has been released! This is the first appearance of a few new core sub-modules, including the Tika JAX-RS Network Server, as well as new support for handling XMP metadata. Of course, new file formats have been added and improvements have been made to parsing and detection of existing formats. Please see the <a class="externalLink" href="https://archive.apache.org/dist/tika/CHANGES-1.2.txt">CHANGES.txt</a> file for a full list of changes in this release, and have a look at the download page for more information on how to obtain Apache Tika 1.2.</dd>
+<dt>23 March 2012: Apache Tika Release</dt>
+<dd> Apache Tika 1.1 is out the door! We've made a number of improvements to PDF, RTF and MP3 parsing. We've also provided some new features on the command line including the ability to list detectors. Other bug fixes and improvements are listed in the <a class="externalLink" href="https://archive.apache.org/dist/tika/CHANGES-1.1.txt">CHANGES.txt</a> file for this release. Have a look at the download page for more information on the release.</dd>
+<dt>7 November 2011: Apache Tika Release</dt>
+<dd> Apache Tika 1.0 has been released, just in time for ApacheCon NA 2011! The 1.0 release of Tika removes all deprecated pre 1.0 API methods, makes several OSGi and Configuration improvements, and improves parsing in RTF, Word and PDF files. Tika no longer ships a retro-translated JDK 1.4 version of the library, so it's time to get on JDK 1.5 or higher to use Tika, so be on the look out. Have a look at the download page for more details. </dd>
+<dt>7-11 November 2011 - Tika at US ApacheCon</dt>
+<dd> ApacheCon NA is coming to Vancouver, British Columbia, at the Westin Bayshore, and Chris Mattmann will be giving a <a class="externalLink" href="http://na11.apachecon.com/talks/19391">talk</a> on the forthcoming 1.0 release of Tika as part of the <a class="externalLink" href="http://na11.apachecon.com/talk/by_track/1400">Content Technologies track</a> on Thursday November 10th, 2011. The talk will cover the history of Tika, its genesis, its inception as a top-level project, and where it's headed 1.0 and beyond. Come out and support Tika by attending the talk! </dd>
+<dt>30 September 2011: Apache Tika Release</dt>
+<dd> Apache Tika 0.10 has been released. This release includes new parser support for CHM files, bugfixes to RTF parsing, an improved GUI and more. Please see the download page for more details. </dd>
+<dt>16 February 2011: Apache Tika Release</dt>
+<dd> Apache Tika 0.9 has been released. This release includes several important bugfixes and new features. Please see the download page for more details. </dd>
+<dt>12 November 2010: Apache Tika Release</dt>
+<dd> Apache Tika 0.8 has been released. Please see the download page for more details. This is our first release as a TLP. We're excited!</dd>
+<dt>1-5 November 2010 - Tika at US ApacheCon</dt>
+<dd> ApacheCon NA is coming to Atlanta, Georgia, at the Westin Peachtree, and Tika is being repped as part of the <a class="externalLink" href="http://us.apachecon.com/c/acna2010/schedule/2010/11/05">Lucene and friends track</a> on Friday, November 5th, 2010. Chris Mattmann will give a talk on how Tika is being used at NASA and in the context of other projects in the Apache ecosystem.
+<p>Friday, Nov. 5th, 2010:</p>
+<ul>
+<li><a class="externalLink" href="http://us.apachecon.com/c/acna2010/sessions/538">Scientific data curation and processing with Apache Tika</a> - Chris Mattmann @ 9:00am</li></ul></dd>
+<dt>April 2010: Tika Graduates to TLP</dt>
+<dd> Apache Tika was voted into TLP status by a resolution submitted to the Apache Board. We are in the process of updating the site and moving things around. If you notice anything out of place, let us know.</dd>
+<dt>April 2010: Apache Tika Release</dt>
+<dd> Apache Tika 0.7 has been released. Please see the download page for more details.</dd>
+<dt>January 2010: Apache Tika Release</dt>
+<dd> Apache Tika 0.6 has been released. Please see the download page for more details.</dd>
+<dt>November 2009: Apache Tika Release</dt>
+<dd> Apache Tika 0.5 has been released. Please see the download page for more details.</dd>
+<dt>14 August 2009 - Lucene at US ApacheCon</dt>
+<dd> ApacheCon US is once again in the Bay Area and Lucene is coming along for the ride! The Lucene community has planned two full days of talks, plus a meetup and the usual bevy of training. With a well-balanced mix of first time and veteran ApacheCon speakers, the <a class="externalLink" href="http://www.us.apachecon.com/c/acus2009/schedule#lucene">Lucene track</a> at ApacheCon US promises to have something for everyone. Be sure not to miss:
+<p>Training:</p>
+<ul>
+<li><a class="externalLink" href="http://www.us.apachecon.com/c/acus2009/sessions/437">Lucene Boot Camp</a> - A two day training session, Nov. 2nd &amp; 3rd</li>
+<li><a class="externalLink" href="http://www.us.apachecon.com/c/acus2009/sessions/375">Solr Day</a> - A one day training session, Nov. 2nd</li></ul>
+<p>Thursday, Nov. 5th:</p>
+<ul>
+<li><a class="externalLink" href="http://www.us.apachecon.com/c/acus2009/sessions/428">Introduction to the Lucene Ecosystem</a> - Grant Ingersoll @ 9:00</li>
+<li><a class="externalLink" href="http://www.us.apachecon.com/c/acus2009/sessions/461">Lucene Basics and New Features</a> - Michael Busch @ 10:00</li>
+<li><a class="externalLink" href="http://www.us.apachecon.com/c/acus2009/sessions/331">Apache Solr: Out of the Box</a> - Chris Hostetter @ 14:00</li>
+<li><a class="externalLink" href="http://www.us.apachecon.com/c/acus2009/sessions/427">Introduction to Nutch</a> - Andrzej Bialecki @ 15:00</li>
+<li><a class="externalLink" href="http://www.us.apachecon.com/c/acus2009/sessions/430">Lucene and Solr Performance Tuning</a> - Mark Miller @ 16:30</li></ul>
+<p>Friday, Nov. 6th:</p>
+<ul>
+<li><a class="externalLink" href="http://www.us.apachecon.com/c/acus2009/sessions/332">Implementing an Information Retrieval Framework for an Organizational Repository</a> - Sithu D Sudarsan @ 9:00</li>
+<li><a class="externalLink" href="http://www.us.apachecon.com/c/acus2009/sessions/333">Apache Mahout - Going from raw data to Information</a> - Isabel Drost @ 10:00</li>
+<li><a class="externalLink" href="http://www.us.apachecon.com/c/acus2009/sessions/334">MIME Magic with Apache Tika</a> - Jukka Zitting @ 11:30</li>
+<li><a class="externalLink" href="http://www.us.apachecon.com/c/acus2009/sessions/335">Building Intelligent Search Applications with the Lucene Ecosystem</a> - Ted Dunning @ 14:00</li>
+<li><a class="externalLink" href="http://www.us.apachecon.com/c/acus2009/sessions/462">Realtime Search</a> - Jason Rutherglen @ 15:00</li></ul></dd>
+<dt>July 2009: Apache Tika Release</dt>
+<dd> Apache Tika 0.4 has been released. Please see the download page for more details.</dd>
+<dt>March 2009: Apache Tika Release</dt>
+<dd> Apache Tika 0.3 has been released. Please see the download page for more details.</dd>
+<dt>February 2009: Lucene at ApacheCon Europe 2009 in Amsterdam</dt>
+<dd> Lucene will be extremely well represented at <a class="externalLink" href="http://www.eu.apachecon.com/c/aceu2009/">ApacheCon EU 2009</a> in Amsterdam, Netherlands this March 23-27, 2009:
+<ul>
+<li><a class="externalLink" href="http://eu.apachecon.com/c/aceu2009/sessions/197">Lucene Boot Camp</a> - A two day training session, March 23 &amp; 24th</li>
+<li><a class="externalLink" href="http://eu.apachecon.com/c/aceu2009/sessions/201">Solr Boot Camp</a> - A one day training session, March 24th</li>
+<li><a class="externalLink" href="http://eu.apachecon.com/c/aceu2009/sessions/136">Introducing Apache Mahout</a> - Grant Ingersoll. March 25th @ 10:30</li>
+<li><a class="externalLink" href="http://eu.apachecon.com/c/aceu2009/sessions/137">Lucene/Solr Case Studies</a> - Erik Hatcher. March 25th @ 11:30</li>
+<li><a class="externalLink" href="http://eu.apachecon.com/c/aceu2009/sessions/138">Advanced Indexing Techniques with Apache Lucene</a> - Michael Busch. March 25th @ 14:00</li>
+<li><a class="externalLink" href="http://eu.apachecon.com/c/aceu2009/sessions/251">Apache Solr - A Case Study</a> - Uri Boness. March 26th @ 17:30</li>
+<li><a class="externalLink" href="http://eu.apachecon.com/c/aceu2009/sessions/250">Best of breed - httpd, forrest, solr and droids</a> - Thorsten Scherler. March 27th @ 17:30</li>
+<li><a class="externalLink" href="http://eu.apachecon.com/c/aceu2009/sessions/165">Apache Droids - an intelligent standalone robot framework</a> - Thorsten Scherler. March 26th @ 15:00</li></ul></dd>
+<dt>December 2008: Apache Tika Release</dt>
+<dd> Apache Tika 0.2 has been released. Please see the download page for more details.</dd>
+<dt>November 2008: User mailing list created</dt>
+<dd> A new mailing list, tika-user@lucene.apache.org, has been created for discussion about the use of the Tika toolkit. You can subscribe this mailing list by sending a message to tika-user-subscribe@lucene.apache.org.</dd>
+<dt>October 2008: Tika graduates to a Lucene subproject</dt>
+<dd> Tika has graduated form the Incubator to become a subproject of Apache Lucene. The project infrastructure will be migrated from incubator.apache.org to lucene.apache.org.</dd>
+<dt>October 2008: Apache Tika status report</dt>
+<dd> Dave Meikle was just voted in as a new committer.
+<p>Paolo Mottadelli will present Tika at ApacheCon US.</p>
+<p>Tika 0.2 should be released soon.</p>
+<p>Usage documentation has been added to the website.</p></dd>
+<dt>July 2008: Apache Tika status report</dt>
+<dd> Tika community remains relatively small, with just a handful of active members
+<p>Work towards Tika 0.2 continues, Chris Mattman has volunteered to be the release manager</p></dd>
+<dt>April 2008: Apache Tika status report</dt>
+<dd> Niall Pemberton joined the project as a committer and PPMC member
+<p>The number of issues reported by external contributors is growing gradually.</p>
+<p>There was a Fast Feather Talk on Tika in ApacheCon EU 2008</p>
+<p>We have good contacts especially with Apache POI and PDFBox</p>
+<p>We are working towards Tika 0.2</p>
+<p>Metadata handling improvements are being discussed</p></dd>
+<dt>January 2008: Apache Tika status report</dt>
+<dd> No new committers since the last report, activity has been moderate but steady, leading to the 0.1 release.
+<p>Tika 0.1 (incubating) has just been released.</p>
+<p>Chris Mattmann intends to use that release in Nutch, That's good progress towards Tika's goal of providing data extraction functionality to other projects.</p>
+<p>A new Tika logo was created by Google Highly Open Participation student, hasn't been integrated yet.</p></dd>
+<dt>December 27th, 2007: Tika 0.1-incubating Released!</dt>
+<dd> Tika has made its first official release, titled 0.1-incubating. See the <a class="externalLink" href="https://archive.apache.org/dist/incubator/tika/CHANGES-0.1-incubating.txt">CHANGES.txt</a> file for more information on the list of updates in this initial release. Thanks to all who contributed! You can download the official source tarball <a class="externalLink" href="https://www.apache.org/dyn/closer.cgi/incubator/tika">here</a>.</dd>
+<dt>October 8th, 2007: Welcome Keith Bennett!</dt>
+<dd> The Tika PPMC has <a class="externalLink" href="http://www.nabble.com/Please-welcome-Keith-Bennett-as-a-Tika-committer%21-tf4586151.html#a13107428">elected</a> Keith Bennett as our new committer. Welcome!</dd>
+<dt>March 22nd, 2007: Apache Tika project started</dt>
+<dd> The Apache Tika project was formally started when the <a class="externalLink" href="http://wiki.apache.org/incubator/TikaProposal">Tika proposal</a> was <a class="externalLink" href="http://mail-archives.apache.org/mod_mbox/incubator-general/200703.mbox/%3c510143ac0703221130p4341aa78vd6608c13ffc95a82@mail.gmail.com%3e">accepted</a> by the <a class="externalLink" href="https://incubator.apache.org/">Apache Incubator PMC</a>. </dd></dl></div>
+      </div>
+      <div id="sidebar">
+        <div id="navigation">
+                    <h5>Apache Tika</h5>
+            <ul>
+              
+    <li class="none">
+              <strong>Introduction</strong>
+        </li>
+              
+    <li class="none">
+                    <a href="download.html">Download</a>
+          </li>
+              
+    <li class="none">
+                    <a href="contribute.html">Contribute</a>
+          </li>
+              
+    <li class="none">
+                    <a href="mail-lists.html">Mailing Lists</a>
+          </li>
+              
+    <li class="none">
+                    <a href="https://cwiki.apache.org/confluence/display/tika" class="externalLink">Tika Wiki</a>
+          </li>
+              
+    <li class="none">
+                    <a href="https://cwiki.apache.org/confluence/display/TIKA/TikaServer" class="externalLink">Tika Server Wiki</a>
+          </li>
+              
+    <li class="none">
+                    <a href="https://issues.apache.org/jira/browse/TIKA" class="externalLink">Issue Tracker</a>
+          </li>
+              
+    <li class="none">
+                    <a href="security-model.html">Security Model</a>
+          </li>
+              
+    <li class="none">
+                    <a href="security.html">Security</a>
+          </li>
+              
+    <li class="none">
+                    <a href="https://cwiki.apache.org/confluence/display/TIKA/Support" class="externalLink">Tika Support</a>
+          </li>
+          </ul>
+              <h5>Documentation</h5>
+            <ul>
+              
+          
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="expanded">
+                    <a href="3.2.3/index.html">Apache Tika 3.2.3</a>
+                  <ul>
+                  
+    <li class="none">
+                    <a href="3.2.3/gettingstarted.html">Getting Started</a>
+          </li>
+                  
+    <li class="none">
+                    <a href="3.2.3/formats.html">Supported Formats</a>
+          </li>
+                  
+    <li class="none">
+                    <a href="3.2.3/parser.html">Parser API</a>
+          </li>
+                  
+    <li class="none">
+                    <a href="3.2.3/parser_guide.html">Parser 5min Quick Start Guide</a>
+          </li>
+                  
+    <li class="none">
+                    <a href="3.2.3/detection.html">Content and Language Detection</a>
+          </li>
+                  
+    <li class="none">
+                    <a href="3.2.3/configuring.html">Configuring Tika</a>
+          </li>
+                  
+    <li class="none">
+                    <a href="3.2.3/examples.html">Usage Examples</a>
+          </li>
+                  
+    <li class="none">
+                    <a href="3.2.3/api/">API Documentation</a>
+          </li>
+              </ul>
+        </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="3.2.2/index.html">Apache Tika 3.2.2</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="3.2.1/index.html">Apache Tika 3.2.1</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="3.2.0/index.html">Apache Tika 3.2.0</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="3.1.0/index.html">Apache Tika 3.1.0</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="3.0.0/index.html">Apache Tika 3.0.0</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="3.0.0-BETA2/index.html">Apache Tika 3.0.0-BETA2</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="3.0.0-BETA/index.html">Apache Tika 3.0.0-BETA</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="2.9.4/index.html">Apache Tika 2.9.4</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="2.9.3/index.html">Apache Tika 2.9.3</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="2.9.2/index.html">Apache Tika 2.9.2</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="2.9.1/index.html">Apache Tika 2.9.1</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="2.9.0/index.html">Apache Tika 2.9.0</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="2.8.0/index.html">Apache Tika 2.8.0</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="2.7.0/index.html">Apache Tika 2.7.0</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="2.6.0/index.html">Apache Tika 2.6.0</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="2.5.0/index.html">Apache Tika 2.5.0</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="2.4.1/index.html">Apache Tika 2.4.1</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="2.4.0/index.html">Apache Tika 2.4.0</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="2.3.0/index.html">Apache Tika 2.3.0</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="2.2.1/index.html">Apache Tika 2.2.1</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="2.2.0/index.html">Apache Tika 2.2.0</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="2.1.0/index.html">Apache Tika 2.1.0</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="2.0.0/index.html">Apache Tika 2.0.0</a>
+                </li>
+          </ul>
+              <h5>The Apache Software Foundation</h5>
+            <ul>
+              
+    <li class="none">
+                    <a href="https://www.apache.org/foundation/" class="externalLink">About</a>
+          </li>
+              
+    <li class="none">
+                    <a href="https://www.apache.org/licenses/" class="externalLink">License</a>
+          </li>
+              
+    <li class="none">
+                    <a href="https://www.apache.org/security/" class="externalLink">Security</a>
+          </li>
+              
+    <li class="none">
+                    <a href="https://www.apache.org/foundation/sponsorship.html" class="externalLink">Sponsorship</a>
+          </li>
+              
+    <li class="none">
+                    <a href="https://www.apache.org/foundation/thanks.html" class="externalLink">Thanks</a>
+          </li>
+          </ul>
+      
+
+
+          <div id="bookpromo">
+            <h5>Books about Tika</h5>
+            <p>
+              <a href="http://manning.com/mattmann/" title="Tika in Action"
+                ><img src="./mattmann_cover150.jpg"
+                      width="150" height="186"/></a>
+            </p>
+          </div>
+        </div>
+      </div>
+      <div id="footer">
+        <p>
+          Copyright &#169; 2025
+          <a href="https://www.apache.org/">The Apache Software Foundation</a>.
+          Site powered by <a href="https://maven.apache.org/">Apache Maven</a>. 
+           <br/>
+          Apache Tika, Tika, Apache, the Apache feather logo, and the Apache
+          Tika project logo are trademarks of The Apache Software Foundation.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

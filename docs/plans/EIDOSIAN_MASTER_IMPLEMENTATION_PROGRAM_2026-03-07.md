@@ -7,6 +7,8 @@ Canonical backlog inventory:
 - `reports/plans/plan_inventory_2026-03-07.json`
 - `reports/plans/plan_inventory_2026-03-07.txt`
 - `docs/plan_sweep/PLAN_SWEEP_TRACKER.md`
+Active subordinate execution slices:
+- `docs/plans/CODE_FORGE_GIS_EXECUTION_PROGRAM_2026-03-07.md`
 
 ## Program Intent
 
@@ -258,6 +260,14 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
 - [x] CI workflow scope control expanded:
   - reusable changed-manifest planner added for Python, Prettier, and component lint scopes
   - `format.yml` converted from monorepo-wide formatting to changed-scope formatting
+- [x] Remaining Universal CI breakages patched in local and remote workflow code:
+  - `eidctl.py` syntax regression repaired
+  - `Markdown` added to CI dependency bootstrap
+  - `lib/eidosian_runtime/__init__.py` added so runtime imports resolve in CI
+- [x] Code Forge / GIS implementation slice created:
+  - `docs/plans/CODE_FORGE_GIS_EXECUTION_PROGRAM_2026-03-07.md`
+- [x] Code Forge / GIS primary-source set saved and ingested:
+  - `docs/external_references/2026-03-07-code-forge-gis/`
   - `lint.yml` converted from monorepo-wide linting to per-component changed-scope linting
   - `secret-scan.yml` now uploads a SARIF artifact and ignores mirrored external reference snapshots
   - Universal CI format/lint passes now consume the same changed-manifest contract
