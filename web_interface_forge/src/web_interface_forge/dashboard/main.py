@@ -252,7 +252,14 @@ async def browse_domain(request: Request, domain: str, path: str = "."):
         return templates.TemplateResponse(
             request,
             "browser.html",
-            {"request": request, "domain": domain, "path": path, "files": files, "parent": parent, "root_label": root.name},
+            {
+                "request": request,
+                "domain": domain,
+                "path": path,
+                "files": files,
+                "parent": parent,
+                "root_label": root.name,
+            },
         )
     elif target_path.is_file():
         if target_path.suffix.lower() == ".md":
