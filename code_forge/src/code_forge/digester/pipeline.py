@@ -247,7 +247,9 @@ def build_archive_ingestion_batches(
 
         for entry in ordered:
             entry_bytes = int(entry.get("bytes") or 0)
-            if chunk and (len(chunk) >= max(1, int(max_files_per_batch)) or (chunk_bytes + entry_bytes) > max_bytes_per_batch):
+            if chunk and (
+                len(chunk) >= max(1, int(max_files_per_batch)) or (chunk_bytes + entry_bytes) > max_bytes_per_batch
+            ):
                 _flush()
             chunk.append(entry)
             chunk_bytes += entry_bytes
