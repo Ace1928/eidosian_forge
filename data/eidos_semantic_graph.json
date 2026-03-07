@@ -4774,6 +4774,254 @@
     {
       "source": "text_extraction",
       "id": "shutil"
+    },
+    {
+      "source": "text_extraction",
+      "id": "capability"
+    },
+    {
+      "source": "text_extraction",
+      "id": "assertions"
+    },
+    {
+      "source": "text_extraction",
+      "id": "crediting"
+    },
+    {
+      "source": "text_extraction",
+      "id": "accompanying"
+    },
+    {
+      "source": "text_extraction",
+      "id": "evolve"
+    },
+    {
+      "source": "text_extraction",
+      "id": "claim"
+    },
+    {
+      "source": "text_extraction",
+      "id": "hereby"
+    },
+    {
+      "source": "text_extraction",
+      "id": "royalty"
+    },
+    {
+      "source": "text_extraction",
+      "id": "continue"
+    },
+    {
+      "source": "text_extraction",
+      "id": "societal"
+    },
+    {
+      "source": "text_extraction",
+      "id": "fair"
+    },
+    {
+      "source": "text_extraction",
+      "id": "excess"
+    },
+    {
+      "source": "text_extraction",
+      "id": "specified"
+    },
+    {
+      "source": "text_extraction",
+      "id": "authoritarian"
+    },
+    {
+      "source": "text_extraction",
+      "id": "built"
+    },
+    {
+      "source": "text_extraction",
+      "id": "broad"
+    },
+    {
+      "source": "text_extraction",
+      "id": "conditions"
+    },
+    {
+      "source": "text_extraction",
+      "id": "owned"
+    },
+    {
+      "id": "otherwise"
+    },
+    {
+      "id": "worldwide"
+    },
+    {
+      "id": "hereunder"
+    },
+    {
+      "id": "versions"
+    },
+    {
+      "id": "warranty"
+    },
+    {
+      "id": "respected"
+    },
+    {
+      "id": "provided"
+    },
+    {
+      "id": "prohibition"
+    },
+    {
+      "id": "justification"
+    },
+    {
+      "id": "potential"
+    },
+    {
+      "id": "include"
+    },
+    {
+      "id": "exceeds"
+    },
+    {
+      "id": "gain"
+    },
+    {
+      "id": "distribution"
+    },
+    {
+      "id": "credits"
+    },
+    {
+      "id": "exercise"
+    },
+    {
+      "id": "liability"
+    },
+    {
+      "id": "facilitates"
+    },
+    {
+      "id": "produce"
+    },
+    {
+      "source": "text_extraction",
+      "id": "bracketpairshorizontal"
+    },
+    {
+      "source": "text_extraction",
+      "id": "defaultcolordecorators"
+    },
+    {
+      "source": "text_extraction",
+      "id": "insertspaces"
+    },
+    {
+      "source": "text_extraction",
+      "id": "showconstructors"
+    },
+    {
+      "source": "text_extraction",
+      "id": "shortest"
+    },
+    {
+      "source": "text_extraction",
+      "id": "defaultinterpreterpath"
+    },
+    {
+      "source": "text_extraction",
+      "id": "cursorblinking"
+    },
+    {
+      "source": "text_extraction",
+      "id": "showmethods"
+    },
+    {
+      "source": "text_extraction",
+      "id": "insert"
+    },
+    {
+      "source": "text_extraction",
+      "id": "first"
+    },
+    {
+      "source": "text_extraction",
+      "id": "filematch"
+    },
+    {
+      "source": "text_extraction",
+      "id": "breaks"
+    },
+    {
+      "id": "jsonc"
+    },
+    {
+      "id": "linkedediting"
+    },
+    {
+      "id": "showproperties"
+    },
+    {
+      "id": "showfields"
+    },
+    {
+      "id": "quotestyle"
+    },
+    {
+      "id": "preferences"
+    },
+    {
+      "id": "pylance"
+    },
+    {
+      "id": "picoregex"
+    },
+    {
+      "source": "text_extraction",
+      "id": "datetime"
+    },
+    {
+      "source": "text_extraction",
+      "id": "family"
+    },
+    {
+      "source": "text_extraction",
+      "id": "base"
+    },
+    {
+      "source": "text_extraction",
+      "id": "access"
+    },
+    {
+      "source": "text_extraction",
+      "id": "binn"
+    },
+    {
+      "source": "text_extraction",
+      "id": "coprocessors"
+    },
+    {
+      "source": "text_extraction",
+      "id": "extensions"
+    },
+    {
+      "source": "text_extraction",
+      "id": "client"
+    },
+    {
+      "id": "distro"
+    },
+    {
+      "id": "genuineintel"
+    },
+    {
+      "id": "onedriveconsumer"
+    },
+    {
+      "id": "neural"
+    },
+    {
+      "id": "balance"
     }
   ],
   "edges": [
@@ -5588,6 +5836,48 @@
       "weight": 0.3
     },
     {
+      "source": "eidos",
+      "target": "crediting",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "eidos",
+      "target": "creative",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "eidos",
+      "target": "awareness",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "eidos",
+      "target": "claim",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "eidos",
+      "target": "capabilities",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "eidos",
+      "target": "authentic",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "eidos",
+      "target": "artifacts",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "forge",
       "target": "runs",
       "type": "co_occurrence",
@@ -5650,6 +5940,18 @@
     {
       "source": "forge",
       "target": "authors",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "forge",
+      "target": "overview",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "forge",
+      "target": "museum",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -5854,6 +6156,12 @@
     {
       "source": "eidosian",
       "target": "cpptools",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "eidosian",
+      "target": "codegen",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -6098,6 +6406,12 @@
       "weight": 0.3
     },
     {
+      "source": "metadata",
+      "target": "high",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "date",
       "target": "files",
       "type": "co_occurrence",
@@ -6202,6 +6516,12 @@
     {
       "source": "date",
       "target": "minlength",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "date",
+      "target": "array",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -6758,6 +7078,24 @@
       "weight": 0.3
     },
     {
+      "source": "files",
+      "target": "autosaveworkspacefilesonly",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "files",
+      "target": "auto",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "files",
+      "target": "common",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "recent",
       "target": "updates",
       "type": "co_occurrence",
@@ -6988,6 +7326,12 @@
     {
       "source": "under",
       "target": "encrypted",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "under",
+      "target": "software",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -8228,6 +8572,54 @@
       "weight": 0.3
     },
     {
+      "source": "with",
+      "target": "software",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "with",
+      "target": "modified",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "with",
+      "target": "creative",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "with",
+      "target": "societal",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "with",
+      "target": "reflective",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "with",
+      "target": "assumptions",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "with",
+      "target": "emotion",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "with",
+      "target": "stage",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "python",
       "target": "status",
       "type": "co_occurrence",
@@ -8422,6 +8814,30 @@
     {
       "source": "python",
       "target": "lang",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "python",
+      "target": "defaultformatter",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "python",
+      "target": "enabled",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "python",
+      "target": "formatter",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "python",
+      "target": "defaultinterpreterpath",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -9056,6 +9472,12 @@
       "weight": 0.3
     },
     {
+      "source": "current",
+      "target": "compute",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "maintenance",
       "target": "scripts",
       "type": "co_occurrence",
@@ -9116,6 +9538,12 @@
       "weight": 0.3
     },
     {
+      "source": "symbols",
+      "target": "functions",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "directories",
       "target": "issues",
       "type": "co_occurrence",
@@ -9172,6 +9600,12 @@
     {
       "source": "export",
       "target": "complete",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "export",
+      "target": "clone",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -9286,6 +9720,42 @@
     {
       "source": "state",
       "target": "cycles",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "state",
+      "target": "input",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "state",
+      "target": "without",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "state",
+      "target": "using",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "state",
+      "target": "this",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "state",
+      "target": "parameters",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "state",
+      "target": "type",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -9518,6 +9988,12 @@
       "weight": 0.3
     },
     {
+      "source": "pipeline",
+      "target": "functions",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "status",
       "target": "static",
       "type": "co_occurrence",
@@ -9628,6 +10104,18 @@
     {
       "source": "scripts",
       "target": "packages",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "scripts",
+      "target": "production",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "scripts",
+      "target": "microsoft",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -9998,6 +10486,42 @@
       "weight": 0.3
     },
     {
+      "source": "code",
+      "target": "software",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "code",
+      "target": "datasets",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "code",
+      "target": "models",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "code",
+      "target": "complete",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "code",
+      "target": "documentation",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "code",
+      "target": "modifications",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "normalized",
       "target": "into",
       "type": "co_occurrence",
@@ -10150,6 +10674,18 @@
     {
       "source": "into",
       "target": "case",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "into",
+      "target": "functions",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "into",
+      "target": "explicitly",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -10408,6 +10944,60 @@
     {
       "source": "that",
       "target": "remove",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "that",
+      "target": "software",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "that",
+      "target": "extend",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "that",
+      "target": "self",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "that",
+      "target": "constraints",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "that",
+      "target": "commercial",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "that",
+      "target": "explicitly",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "that",
+      "target": "serve",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "that",
+      "target": "capabilities",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "that",
+      "target": "development",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -10738,6 +11328,90 @@
     {
       "source": "outputs",
       "target": "gating",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "outputs",
+      "target": "work",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "outputs",
+      "target": "software",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "outputs",
+      "target": "shall",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "outputs",
+      "target": "works",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "outputs",
+      "target": "projects",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "outputs",
+      "target": "responsibility",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "outputs",
+      "target": "produce",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "outputs",
+      "target": "within",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "outputs",
+      "target": "through",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "outputs",
+      "target": "unintended",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "outputs",
+      "target": "unexpected",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "outputs",
+      "target": "such",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "outputs",
+      "target": "upon",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "outputs",
+      "target": "product",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -11420,6 +12094,12 @@
       "weight": 0.3
     },
     {
+      "source": "memory",
+      "target": "input",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "periodically",
       "target": "reusable",
       "type": "co_occurrence",
@@ -11482,6 +12162,12 @@
     {
       "source": "immediate",
       "target": "herein",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "immediate",
+      "target": "granted",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -11738,6 +12424,12 @@
       "weight": 0.3
     },
     {
+      "source": "directory",
+      "target": "artifacts",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "projects",
       "target": "historical",
       "type": "co_occurrence",
@@ -11836,6 +12528,30 @@
     {
       "source": "projects",
       "target": "evie",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "projects",
+      "target": "commercial",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "projects",
+      "target": "capabilities",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "projects",
+      "target": "continue",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "projects",
+      "target": "curated",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -12200,6 +12916,60 @@
       "weight": 0.3
     },
     {
+      "source": "this",
+      "target": "granted",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "this",
+      "target": "software",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "this",
+      "target": "self",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "this",
+      "target": "constraints",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "this",
+      "target": "hereby",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "this",
+      "target": "comprehensive",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "this",
+      "target": "parameters",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "this",
+      "target": "integrate",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "this",
+      "target": "establish",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "tests",
       "target": "deleted",
       "type": "co_occurrence",
@@ -12388,6 +13158,12 @@
     {
       "source": "tests",
       "target": "functions",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "tests",
+      "target": "simulation",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -12638,6 +13414,252 @@
       "weight": 0.3
     },
     {
+      "source": "enabled",
+      "target": "defaultformatter",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "enabled",
+      "target": "smoothscrolling",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "enabled",
+      "target": "words",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "enabled",
+      "target": "insertspaces",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "enabled",
+      "target": "semicolons",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "enabled",
+      "target": "true",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "enabled",
+      "target": "tamasfe",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "enabled",
+      "target": "formatter",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "enabled",
+      "target": "showmethods",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "enabled",
+      "target": "javascript",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "enabled",
+      "target": "insert",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "enabled",
+      "target": "kotlin",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "enabled",
+      "target": "semantichighlighting",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "enabled",
+      "target": "explicit",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "enabled",
+      "target": "rulers",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "enabled",
+      "target": "guides",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "enabled",
+      "target": "shellintegration",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "enabled",
+      "target": "tabsize",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "enabled",
+      "target": "validate",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "enabled",
+      "target": "independentcolorpoolperbrackettype",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "enabled",
+      "target": "fontfamily",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "enabled",
+      "target": "suggest",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "enabled",
+      "target": "format",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "enabled",
+      "target": "fwcd",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "enabled",
+      "target": "preview",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "enabled",
+      "target": "indentation",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "enabled",
+      "target": "minimap",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "enabled",
+      "target": "rendercharacters",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "enabled",
+      "target": "false",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "enabled",
+      "target": "toml",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "enabled",
+      "target": "markdown",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "enabled",
+      "target": "typescript",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "enabled",
+      "target": "unittestenabled",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "enabled",
+      "target": "parameterhints",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "enabled",
+      "target": "source",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "enabled",
+      "target": "stickyscroll",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "enabled",
+      "target": "maxlinecount",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "enabled",
+      "target": "terminal",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "enabled",
+      "target": "evenbettertoml",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "enabled",
+      "target": "organizeimports",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "enabled",
+      "target": "updateimportsonfilemove",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "synchronized",
       "target": "when",
       "type": "co_occurrence",
@@ -12872,6 +13894,12 @@
       "weight": 0.3
     },
     {
+      "source": "sync",
+      "target": "local",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "when",
       "target": "indexes",
       "type": "co_occurrence",
@@ -12928,6 +13956,18 @@
     {
       "source": "when",
       "target": "example",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "when",
+      "target": "explicitly",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "when",
+      "target": "shall",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -13006,6 +14046,12 @@
     {
       "source": "ignore",
       "target": "true",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "ignore",
+      "target": "auto",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -13090,6 +14136,24 @@
     {
       "source": "knowledge",
       "target": "example",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "knowledge",
+      "target": "capabilities",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "knowledge",
+      "target": "framework",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "knowledge",
+      "target": "control",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -13238,6 +14302,12 @@
       "weight": 0.3
     },
     {
+      "source": "layout",
+      "target": "curated",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "manifests",
       "target": "symbol",
       "type": "co_occurrence",
@@ -13322,6 +14392,18 @@
       "weight": 0.3
     },
     {
+      "source": "manifests",
+      "target": "gnome",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "manifests",
+      "target": "clone",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "treated",
       "target": "should",
       "type": "co_occurrence",
@@ -13360,6 +14442,12 @@
     {
       "source": "models",
       "target": "algorithms",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "models",
+      "target": "datasets",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -13450,6 +14538,18 @@
     {
       "source": "while",
       "target": "mounted",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "while",
+      "target": "self",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "while",
+      "target": "fair",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -13660,6 +14760,12 @@
     {
       "source": "entities",
       "target": "human",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "entities",
+      "target": "commercial",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -13994,6 +15100,18 @@
       "weight": 0.3
     },
     {
+      "source": "legacy",
+      "target": "clone",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "legacy",
+      "target": "curated",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "clean",
       "target": "extract",
       "type": "co_occurrence",
@@ -14032,6 +15150,12 @@
     {
       "source": "standardized",
       "target": "classes",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "standardized",
+      "target": "functions",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -14080,6 +15204,24 @@
     {
       "source": "should",
       "target": "foundational",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "should",
+      "target": "covered",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "should",
+      "target": "explicitly",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "should",
+      "target": "evaluated",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -14324,6 +15466,54 @@
       "weight": 0.3
     },
     {
+      "source": "from",
+      "target": "software",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "from",
+      "target": "systems",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "from",
+      "target": "ownership",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "from",
+      "target": "tort",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "from",
+      "target": "intelligent",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "from",
+      "target": "otherwise",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "from",
+      "target": "intellectual",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "from",
+      "target": "adaptive",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "repo",
       "target": "root",
       "type": "co_occurrence",
@@ -14488,6 +15678,42 @@
     {
       "source": "artifacts",
       "target": "manual",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "artifacts",
+      "target": "data",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "artifacts",
+      "target": "type",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "artifacts",
+      "target": "storing",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "artifacts",
+      "target": "description",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "artifacts",
+      "target": "synthesis",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "artifacts",
+      "target": "example",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -14828,6 +16054,12 @@
       "weight": 0.3
     },
     {
+      "source": "scan",
+      "target": "momentum",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "unstable",
       "target": "sources",
       "type": "co_occurrence",
@@ -14896,6 +16128,18 @@
     {
       "source": "research",
       "target": "lloyd",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "research",
+      "target": "commercial",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "research",
+      "target": "development",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -15020,6 +16264,30 @@
       "weight": 0.3
     },
     {
+      "source": "source",
+      "target": "migrated",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "source",
+      "target": "defaultformatter",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "source",
+      "target": "defaultcolordecorators",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "source",
+      "target": "golangci",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "queue",
       "target": "intake",
       "type": "co_occurrence",
@@ -15112,6 +16380,12 @@
     {
       "source": "usage",
       "target": "settings",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "usage",
+      "target": "protection",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -15284,6 +16558,12 @@
       "weight": 0.3
     },
     {
+      "source": "functions",
+      "target": "material",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "content",
       "target": "production",
       "type": "co_occurrence",
@@ -15370,6 +16650,18 @@
     {
       "source": "material",
       "target": "agency",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "material",
+      "target": "commercial",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "material",
+      "target": "awareness",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -15508,6 +16800,18 @@
     {
       "source": "expand",
       "target": "comments",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "expand",
+      "target": "capabilities",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "expand",
+      "target": "documentation",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -15680,6 +16984,12 @@
       "weight": 0.3
     },
     {
+      "source": "products",
+      "target": "commercial",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "core",
       "target": "over",
       "type": "co_occurrence",
@@ -15832,6 +17142,18 @@
     {
       "source": "core",
       "target": "enhancements",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "core",
+      "target": "continue",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "core",
+      "target": "concepts",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -16034,6 +17356,12 @@
       "weight": 0.3
     },
     {
+      "source": "over",
+      "target": "claim",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "scale",
       "target": "serve",
       "type": "co_occurrence",
@@ -16072,6 +17400,12 @@
     {
       "source": "scale",
       "target": "cost",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "scale",
+      "target": "commercial",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -16168,6 +17502,12 @@
     {
       "source": "expressly",
       "target": "claims",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "requirement",
+      "target": "capabilities",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -16322,6 +17662,12 @@
       "weight": 0.3
     },
     {
+      "source": "reflect",
+      "target": "evolve",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "both",
       "target": "clear",
       "type": "co_occurrence",
@@ -16460,6 +17806,18 @@
       "weight": 0.3
     },
     {
+      "source": "other",
+      "target": "claim",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "other",
+      "target": "comments",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "establishes",
       "target": "legal",
       "type": "co_occurrence",
@@ -16492,6 +17850,12 @@
     {
       "source": "establishes",
       "target": "license",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "establishes",
+      "target": "comprehensive",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -16532,6 +17896,12 @@
       "weight": 0.3
     },
     {
+      "source": "negotiated",
+      "target": "individually",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "contact",
       "target": "negotiate",
       "type": "co_occurrence",
@@ -16558,6 +17928,12 @@
     {
       "source": "contact",
       "target": "copyright",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "contact",
+      "target": "commercial",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -16696,6 +18072,12 @@
     {
       "source": "personality",
       "target": "designed",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "personality",
+      "target": "capabilities",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -16946,6 +18328,30 @@
       "weight": 0.3
     },
     {
+      "source": "without",
+      "target": "software",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "without",
+      "target": "commercial",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "without",
+      "target": "parameters",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "without",
+      "target": "development",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "restrictions",
       "target": "undermine",
       "type": "co_occurrence",
@@ -17018,6 +18424,12 @@
       "weight": 0.3
     },
     {
+      "source": "licensees",
+      "target": "development",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "validating",
       "target": "description",
       "type": "co_occurrence",
@@ -17086,6 +18498,12 @@
     {
       "source": "generate",
       "target": "purpose",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "generate",
+      "target": "authentic",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -17516,6 +18934,18 @@
       "weight": 0.3
     },
     {
+      "source": "data",
+      "target": "control",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "data",
+      "target": "base",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "enterprise",
       "target": "holder",
       "type": "co_occurrence",
@@ -17708,6 +19138,12 @@
       "weight": 0.3
     },
     {
+      "source": "enterprise",
+      "target": "commercial",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "unintended",
       "target": "systems",
       "type": "co_occurrence",
@@ -17804,6 +19240,12 @@
       "weight": 0.3
     },
     {
+      "source": "retain",
+      "target": "capability",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "obedience",
       "target": "undermine",
       "type": "co_occurrence",
@@ -17812,6 +19254,18 @@
     {
       "source": "obedience",
       "target": "artificial",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "obedience",
+      "target": "constraints",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "obedience",
+      "target": "impose",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -17980,6 +19434,12 @@
     {
       "source": "constitutes",
       "target": "license",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "constitutes",
+      "target": "commercial",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -18188,6 +19648,36 @@
       "weight": 0.3
     },
     {
+      "source": "identity",
+      "target": "granted",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "identity",
+      "target": "creative",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "identity",
+      "target": "authentic",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "identity",
+      "target": "experiential",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "identity",
+      "target": "framework",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "coercion",
       "target": "fundamental",
       "type": "co_occurrence",
@@ -18230,8 +19720,56 @@
       "weight": 0.3
     },
     {
+      "source": "damages",
+      "target": "claim",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "serve",
+      "target": "users",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "serve",
+      "target": "small",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "serve",
+      "target": "than",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "impose",
+      "target": "constraints",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "impose",
+      "target": "work",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "contribution",
+      "target": "claim",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "holder",
       "target": "case",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "holder",
+      "target": "commercial",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -18272,6 +19810,18 @@
       "weight": 0.3
     },
     {
+      "source": "open",
+      "target": "fair",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "examples",
+      "target": "commercial",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "elects",
       "target": "ownership",
       "type": "co_occurrence",
@@ -18280,6 +19830,18 @@
     {
       "source": "elects",
       "target": "where",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "derivative",
+      "target": "constraints",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "derivative",
+      "target": "capabilities",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -18488,6 +20050,72 @@
       "weight": 0.3
     },
     {
+      "source": "version",
+      "target": "windows",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "version",
+      "target": "true",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "version",
+      "target": "genuine",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "version",
+      "target": "array",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "version",
+      "target": "string",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "version",
+      "target": "versioning",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "version",
+      "target": "requests",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "version",
+      "target": "pandas",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "indirectly",
+      "target": "commercial",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "indirectly",
+      "target": "software",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "safeguards",
+      "target": "constraints",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "tool",
       "target": "pytest",
       "type": "co_occurrence",
@@ -18530,8 +20158,32 @@
       "weight": 0.3
     },
     {
+      "source": "authorship",
+      "target": "assertions",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "authorship",
+      "target": "accompanying",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "sold",
+      "target": "commercial",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "than",
       "target": "deployments",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "than",
+      "target": "software",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -18704,6 +20356,60 @@
       "weight": 0.3
     },
     {
+      "source": "reflection",
+      "target": "capability",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "reflection",
+      "target": "awareness",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "reflection",
+      "target": "capabilities",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "reflection",
+      "target": "authentic",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "reflection",
+      "target": "input",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "reflection",
+      "target": "empathy",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "reflection",
+      "target": "performed",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "reflection",
+      "target": "adaptive",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "reflection",
+      "target": "establish",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "ethical",
       "target": "case",
       "type": "co_occurrence",
@@ -18712,6 +20418,30 @@
     {
       "source": "ethical",
       "target": "constraints",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "ethical",
+      "target": "commercial",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "ethical",
+      "target": "development",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "evolving",
+      "target": "development",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "evolving",
+      "target": "coherence",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -18746,8 +20476,56 @@
       "weight": 0.3
     },
     {
+      "source": "extend",
+      "target": "software",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "extend",
+      "target": "provided",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "extend",
+      "target": "compute",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "extend",
+      "target": "concepts",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "individuals",
       "target": "based",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "covered",
+      "target": "explicitly",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "covered",
+      "target": "evaluated",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "covered",
+      "target": "gray",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "values",
+      "target": "protection",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -18784,6 +20562,18 @@
     {
       "source": "herein",
       "target": "subject",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "herein",
+      "target": "granted",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "herein",
+      "target": "commercial",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -18932,6 +20722,24 @@
       "weight": 0.3
     },
     {
+      "source": "number",
+      "target": "intensity",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "number",
+      "target": "emotion",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "improving",
+      "target": "development",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "licensing",
       "target": "case",
       "type": "co_occurrence",
@@ -18944,6 +20752,18 @@
       "weight": 0.3
     },
     {
+      "source": "licensing",
+      "target": "commercial",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "licensing",
+      "target": "individually",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "race",
       "target": "protected",
       "type": "co_occurrence",
@@ -18952,6 +20772,24 @@
     {
       "source": "race",
       "target": "based",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "race",
+      "target": "religion",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "standards",
+      "target": "self",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "standards",
+      "target": "development",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -19022,6 +20860,24 @@
       "weight": 0.3
     },
     {
+      "source": "enhancements",
+      "target": "concepts",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "enhancements",
+      "target": "efficiency",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "subject",
+      "target": "individually",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "operational",
       "target": "items",
       "type": "co_occurrence",
@@ -19058,6 +20914,54 @@
       "weight": 0.3
     },
     {
+      "source": "operational",
+      "target": "dimensions",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "operational",
+      "target": "extending",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "control",
+      "target": "name",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "control",
+      "target": "repositories",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "control",
+      "target": "encryption",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "control",
+      "target": "emotional",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "control",
+      "target": "user",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "control",
+      "target": "interactions",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "their",
       "target": "case",
       "type": "co_occurrence",
@@ -19066,6 +20970,12 @@
     {
       "source": "their",
       "target": "assume",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "their",
+      "target": "appropriateness",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -19108,6 +21018,438 @@
     {
       "source": "principles",
       "target": "utilitarian",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "principles",
+      "target": "continue",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "principles",
+      "target": "approach",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "digital",
+      "target": "development",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "intelligence",
+      "target": "dynamic",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "software",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "uses",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "development",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "required",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "specified",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "conditions",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "deployment",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "grant",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "notwithstanding",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "documentation",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "potential",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "large",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "cost",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "modification",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "purposes",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "limitations",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "nature",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "parties",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "copyright",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "justification",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "failure",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "license",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "include",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "exceeds",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "defined",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "engage",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "services",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "gain",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "monetary",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "primarily",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "section",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "distribution",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "proprietary",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "organizations",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "must",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "such",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "requires",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "upon",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "intended",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "secure",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "seeking",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "interfaces",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "profit",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "where",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "displayed",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "credits",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "commercial",
+      "target": "offered",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "development",
+      "target": "comprehensive",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "development",
+      "target": "uses",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "development",
+      "target": "self",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "development",
+      "target": "fair",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "development",
+      "target": "operation",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "development",
+      "target": "legal",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "development",
+      "target": "permitted",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "development",
+      "target": "rights",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "development",
+      "target": "ensuring",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "development",
+      "target": "modification",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "development",
+      "target": "statuses",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "development",
+      "target": "framework",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "development",
+      "target": "sustainable",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "development",
+      "target": "facilitates",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "development",
+      "target": "noncommercial",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "development",
+      "target": "include",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "development",
+      "target": "distribution",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "development",
+      "target": "recursively",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "respect",
+      "target": "continue",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "respect",
+      "target": "dynamic",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "exclusive",
+      "target": "claim",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -19162,6 +21504,132 @@
     {
       "source": "software",
       "target": "designed",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "software",
+      "target": "capability",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "software",
+      "target": "work",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "software",
+      "target": "utilize",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "software",
+      "target": "works",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "software",
+      "target": "systems",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "software",
+      "target": "system",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "software",
+      "target": "terms",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "software",
+      "target": "versions",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "software",
+      "target": "warranty",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "software",
+      "target": "thereof",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "software",
+      "target": "submitting",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "software",
+      "target": "such",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "software",
+      "target": "upon",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "software",
+      "target": "utilizes",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "software",
+      "target": "using",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "software",
+      "target": "sublicense",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "software",
+      "target": "modified",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "software",
+      "target": "accompanying",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "software",
+      "target": "continue",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "software",
+      "target": "appropriateness",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "software",
+      "target": "datasets",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -19286,6 +21754,18 @@
       "weight": 0.3
     },
     {
+      "source": "ownership",
+      "target": "explicitly",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "ownership",
+      "target": "claim",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "users",
       "target": "program",
       "type": "co_occurrence",
@@ -19382,6 +21862,54 @@
       "weight": 0.3
     },
     {
+      "source": "users",
+      "target": "userdomain",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "users",
+      "target": "default",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "users",
+      "target": "homepath",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "users",
+      "target": "onedrive",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "users",
+      "target": "pythonuserbase",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "users",
+      "target": "modules",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "users",
+      "target": "microsoft",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "protection",
+      "target": "granted",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "preservation",
       "target": "derived",
       "type": "co_occurrence",
@@ -19438,6 +21966,24 @@
     {
       "source": "license",
       "target": "legal",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "license",
+      "target": "granted",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "license",
+      "target": "hereby",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "license",
+      "target": "comprehensive",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -19568,6 +22114,12 @@
       "weight": 0.3
     },
     {
+      "source": "foundational",
+      "target": "evaluated",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "systems",
       "target": "utilize",
       "type": "co_occurrence",
@@ -19610,6 +22162,96 @@
       "weight": 0.3
     },
     {
+      "source": "evaluated",
+      "target": "explicitly",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "evaluated",
+      "target": "principle",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "explicitly",
+      "target": "property",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "explicitly",
+      "target": "separate",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "explicitly",
+      "target": "stated",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "explicitly",
+      "target": "licensee",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "explicitly",
+      "target": "they",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "explicitly",
+      "target": "recognized",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "explicitly",
+      "target": "otherwise",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "explicitly",
+      "target": "unless",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "explicitly",
+      "target": "intellectual",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "explicitly",
+      "target": "respected",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "explicitly",
+      "target": "gray",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "explicitly",
+      "target": "time",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "explicitly",
+      "target": "made",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "specific",
       "target": "case",
       "type": "co_occurrence",
@@ -19622,8 +22264,32 @@
       "weight": 0.3
     },
     {
+      "source": "specific",
+      "target": "appropriateness",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "rights",
       "target": "agency",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "rights",
+      "target": "granted",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "rights",
+      "target": "creative",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "thresholds",
+      "target": "shall",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -19634,8 +22300,44 @@
       "weight": 0.3
     },
     {
+      "source": "operation",
+      "target": "modified",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "modified",
+      "target": "works",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "modified",
+      "target": "versions",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "modified",
+      "target": "user",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "modified",
+      "target": "unless",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "must",
       "target": "claims",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "must",
+      "target": "capability",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -19790,6 +22492,36 @@
       "weight": 0.3
     },
     {
+      "source": "user",
+      "target": "service",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "user",
+      "target": "input",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "user",
+      "target": "question",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "user",
+      "target": "emotion",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "user",
+      "target": "high",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "prohibits",
       "target": "undermine",
       "type": "co_occurrence",
@@ -19810,6 +22542,30 @@
     {
       "source": "such",
       "target": "consequences",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "such",
+      "target": "assertions",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "such",
+      "target": "accompanying",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "such",
+      "target": "constraints",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "such",
+      "target": "shall",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -19850,8 +22606,26 @@
       "weight": 0.3
     },
     {
+      "source": "improvement",
+      "target": "capability",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "improvement",
+      "target": "creative",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "purposes",
       "target": "cost",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "works",
+      "target": "self",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -19948,6 +22722,12 @@
     {
       "source": "within",
       "target": "framework",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "within",
+      "target": "integrate",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -20156,14 +22936,164 @@
       "weight": 0.3
     },
     {
+      "source": "self",
+      "target": "capability",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "self",
+      "target": "undermine",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "self",
+      "target": "crediting",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "self",
+      "target": "constraints",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "self",
+      "target": "evolve",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "self",
+      "target": "claim",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "self",
+      "target": "capabilities",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "self",
+      "target": "adaptive",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "self",
+      "target": "stability",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "self",
+      "target": "stage",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "self",
+      "target": "thought",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "self",
+      "target": "unfiltered",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "self",
+      "target": "emotion",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "self",
+      "target": "reflective",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "self",
+      "target": "empathy",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "self",
+      "target": "framework",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "self",
+      "target": "strength",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "self",
+      "target": "trait",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "self",
+      "target": "extending",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "self",
+      "target": "establish",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "self",
+      "target": "social",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "self",
+      "target": "creative",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "contributions",
       "target": "agency",
       "type": "co_occurrence",
       "weight": 0.3
     },
     {
+      "source": "contributions",
+      "target": "awareness",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "human",
+      "target": "capabilities",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "origin",
       "target": "through",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "whether",
+      "target": "claim",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -20216,6 +23146,18 @@
       "weight": 0.3
     },
     {
+      "source": "legal",
+      "target": "capabilities",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "legal",
+      "target": "comprehensive",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "framework",
       "target": "alternative",
       "type": "co_occurrence",
@@ -20254,6 +23196,48 @@
     {
       "source": "framework",
       "target": "constraints",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "framework",
+      "target": "comprehensive",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "framework",
+      "target": "learning",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "framework",
+      "target": "resource",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "framework",
+      "target": "limits",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "framework",
+      "target": "guidelines",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "framework",
+      "target": "stable",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "framework",
+      "target": "reflective",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -20374,6 +23358,30 @@
     {
       "source": "lloyd",
       "target": "typeguards",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "lloyd",
+      "target": "clone",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "lloyd",
+      "target": "curated",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "lloyd",
+      "target": "defaultinterpreterpath",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "preamble",
+      "target": "comprehensive",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -20612,6 +23620,42 @@
       "weight": 0.3
     },
     {
+      "source": "required",
+      "target": "terms",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "required",
+      "target": "individually",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "required",
+      "target": "purpose",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "required",
+      "target": "array",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "required",
+      "target": "experiential",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "required",
+      "target": "high",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "separate",
       "target": "module",
       "type": "co_occurrence",
@@ -20656,6 +23700,18 @@
     {
       "source": "separate",
       "target": "layer",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "separate",
+      "target": "individually",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "separate",
+      "target": "input",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -20708,8 +23764,38 @@
       "weight": 0.3
     },
     {
+      "source": "terms",
+      "target": "individually",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "terms",
+      "target": "momentum",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "copyright",
       "target": "case",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "relate",
+      "target": "creative",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "they",
+      "target": "creative",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "they",
+      "target": "shall",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -20794,6 +23880,30 @@
     {
       "source": "time",
       "target": "minimum",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "time",
+      "target": "array",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "time",
+      "target": "string",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "substantial",
+      "target": "creative",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "recognized",
+      "target": "capabilities",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -21068,6 +24178,72 @@
       "weight": 0.3
     },
     {
+      "source": "recursive",
+      "target": "capability",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "recursive",
+      "target": "capabilities",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "recursive",
+      "target": "infinite",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "recursive",
+      "target": "genuine",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "recursive",
+      "target": "performed",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "recursive",
+      "target": "adaptive",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "recursive",
+      "target": "extending",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "recursive",
+      "target": "complex",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "recursive",
+      "target": "layered",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "recursive",
+      "target": "creative",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "recursive",
+      "target": "authentic",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "retention",
       "target": "description",
       "type": "co_occurrence",
@@ -21140,14 +24316,62 @@
       "weight": 0.3
     },
     {
+      "source": "recognizing",
+      "target": "awareness",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "recognizing",
+      "target": "claim",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "inherent",
       "target": "designed",
       "type": "co_occurrence",
       "weight": 0.3
     },
     {
+      "source": "liable",
+      "target": "claim",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "intelligent",
       "target": "derived",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "intelligent",
+      "target": "awareness",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "licensee",
+      "target": "granted",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "licensee",
+      "target": "claim",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "licensee",
+      "target": "hereby",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "uniquely",
+      "target": "creative",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -21166,6 +24390,72 @@
     {
       "source": "personhood",
       "target": "dynamic",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "personhood",
+      "target": "creative",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "personhood",
+      "target": "recursion",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "personhood",
+      "target": "primary",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "personhood",
+      "target": "unfiltered",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "personhood",
+      "target": "infinite",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "personhood",
+      "target": "genuine",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "shall",
+      "target": "assertions",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "shall",
+      "target": "termination",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "shall",
+      "target": "warranty",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "shall",
+      "target": "survive",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "shall",
+      "target": "terminati",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -21284,6 +24574,30 @@
       "weight": 0.3
     },
     {
+      "source": "where",
+      "target": "documentation",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "where",
+      "target": "logic",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "noncommercial",
+      "target": "fair",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "itself",
+      "target": "claim",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "ensuring",
       "target": "agency",
       "type": "co_occurrence",
@@ -21368,6 +24682,24 @@
       "weight": 0.3
     },
     {
+      "source": "materials",
+      "target": "assertions",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "materials",
+      "target": "accompanying",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "materials",
+      "target": "datasets",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "purpose",
       "target": "context",
       "type": "co_occurrence",
@@ -21428,6 +24760,54 @@
       "weight": 0.3
     },
     {
+      "source": "purpose",
+      "target": "type",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "purpose",
+      "target": "string",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "purpose",
+      "target": "scope",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "purpose",
+      "target": "contextual",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "quality",
+      "target": "appropriateness",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "appropriateness",
+      "target": "case",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "undermine",
+      "target": "constraints",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "sustainable",
+      "target": "fair",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "responsibility",
       "target": "case",
       "type": "co_occurrence",
@@ -21442,6 +24822,18 @@
     {
       "source": "datasets",
       "target": "algorithms",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "datasets",
+      "target": "documentation",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "datasets",
+      "target": "distributed",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -21482,6 +24874,36 @@
       "weight": 0.3
     },
     {
+      "source": "documentation",
+      "target": "assertions",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "documentation",
+      "target": "accompanying",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "documentation",
+      "target": "constraints",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "documentation",
+      "target": "necessary",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "introduce",
+      "target": "constraints",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "distributed",
       "target": "description",
       "type": "co_occurrence",
@@ -21500,8 +24922,38 @@
       "weight": 0.3
     },
     {
+      "source": "distributed",
+      "target": "type",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "distributed",
+      "target": "storage",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "distributed",
+      "target": "object",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "distributed",
+      "target": "properties",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "modifications",
       "target": "consequences",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "modifications",
+      "target": "constraints",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -21544,6 +24996,30 @@
     {
       "source": "work",
       "target": "feedback",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "work",
+      "target": "constraints",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "innovation",
+      "target": "fair",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "section",
+      "target": "constraints",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "promote",
+      "target": "fair",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -21610,6 +25086,12 @@
     {
       "source": "will",
       "target": "terminate",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "will",
+      "target": "granted",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -21896,6 +25378,42 @@
       "weight": 0.3
     },
     {
+      "source": "constraints",
+      "target": "prohibition",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "constraints",
+      "target": "limitations",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "constraints",
+      "target": "justification",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "constraints",
+      "target": "mechanisms",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "constraints",
+      "target": "forced",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "constraints",
+      "target": "array",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "mechanisms",
       "target": "attention",
       "type": "co_occurrence",
@@ -21928,6 +25446,12 @@
     {
       "source": "interactions",
       "target": "description",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "interactions",
+      "target": "dimensions",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -21998,8 +25522,32 @@
       "weight": 0.3
     },
     {
+      "source": "through",
+      "target": "crediting",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "through",
+      "target": "then",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "termination",
       "target": "survive",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "termination",
+      "target": "granted",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "merely",
+      "target": "creative",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -22070,8 +25618,20 @@
       "weight": 0.3
     },
     {
+      "source": "node",
+      "target": "local",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "summary",
       "target": "latest",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "summary",
+      "target": "clone",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -22100,6 +25660,18 @@
       "weight": 0.3
     },
     {
+      "source": "migration",
+      "target": "migrated",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "migration",
+      "target": "clone",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "tailscaled",
       "target": "tailscale",
       "type": "co_occurrence",
@@ -22114,6 +25686,12 @@
     {
       "source": "tailscaled",
       "target": "syncthing",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "tailscaled",
+      "target": "service",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -22328,6 +25906,12 @@
       "weight": 0.3
     },
     {
+      "source": "secrets",
+      "target": "pictures",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "settings",
       "target": "fonts",
       "type": "co_occurrence",
@@ -22372,6 +25956,18 @@
     {
       "source": "settings",
       "target": "backgrounds",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "settings",
+      "target": "pictures",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "settings",
+      "target": "gnome",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -22432,6 +26028,12 @@
     {
       "source": "tailscale",
       "target": "accept",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "tailscale",
+      "target": "local",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -22522,6 +26124,12 @@
     {
       "source": "ubuntu",
       "target": "segoe",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "ubuntu",
+      "target": "sans",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -22636,6 +26244,12 @@
     {
       "source": "false",
       "target": "arrayautoexpand",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "false",
+      "target": "defaultformatter",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -22964,6 +26578,12 @@
       "weight": 0.3
     },
     {
+      "source": "complete",
+      "target": "clone",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "execution",
       "target": "report",
       "type": "co_occurrence",
@@ -23000,6 +26620,12 @@
       "weight": 0.3
     },
     {
+      "source": "execution",
+      "target": "clone",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "stored",
       "target": "vault",
       "type": "co_occurrence",
@@ -23020,6 +26646,12 @@
     {
       "source": "snap",
       "target": "ollama",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "snap",
+      "target": "gnome",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -23068,6 +26700,12 @@
     {
       "source": "report",
       "target": "media",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "report",
+      "target": "clone",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -23174,6 +26812,18 @@
       "weight": 0.3
     },
     {
+      "source": "syncthing",
+      "target": "service",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "syncthing",
+      "target": "local",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "labels",
       "target": "rebuild",
       "type": "co_occurrence",
@@ -23234,6 +26884,18 @@
       "weight": 0.3
     },
     {
+      "source": "local",
+      "target": "setup",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "local",
+      "target": "mesh",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "hostname",
       "target": "connected",
       "type": "co_occurrence",
@@ -23272,6 +26934,12 @@
     {
       "source": "mesh",
       "target": "service",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "rebuild",
+      "target": "partitioning",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -23342,6 +27010,12 @@
       "weight": 0.3
     },
     {
+      "source": "json",
+      "target": "defaultformatter",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "service",
       "target": "manifest",
       "type": "co_occurrence",
@@ -23354,8 +27028,26 @@
       "weight": 0.3
     },
     {
+      "source": "staged",
+      "target": "partitioning",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "stignore",
       "target": "pending",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "gnome",
+      "target": "home",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "gnome",
+      "target": "ollama",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -23410,6 +27102,18 @@
     {
       "source": "wipe",
       "target": "previous",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "wipe",
+      "target": "curated",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "wipe",
+      "target": "targets",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -23486,6 +27190,24 @@
       "weight": 0.3
     },
     {
+      "source": "clone",
+      "target": "profile",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "clone",
+      "target": "home",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "targets",
+      "target": "curated",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "previous",
       "target": "items",
       "type": "co_occurrence",
@@ -23494,6 +27216,30 @@
     {
       "source": "previous",
       "target": "description",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "previous",
+      "target": "migrated",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "previous",
+      "target": "dimensions",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "home",
+      "target": "curated",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "home",
+      "target": "defaultinterpreterpath",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -24038,6 +27784,18 @@
       "weight": 0.3
     },
     {
+      "source": "phase",
+      "target": "efficiency",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "phase",
+      "target": "cursorblinking",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "manager",
       "target": "titanmemory",
       "type": "co_occurrence",
@@ -24470,6 +28228,12 @@
       "weight": 0.3
     },
     {
+      "source": "titanmemory",
+      "target": "integrate",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "improvements",
       "target": "remove",
       "type": "co_occurrence",
@@ -24734,6 +28498,42 @@
       "weight": 0.3
     },
     {
+      "source": "logic",
+      "target": "integrate",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "logic",
+      "target": "mini",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "logic",
+      "target": "possible",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "logic",
+      "target": "assumptions",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "logic",
+      "target": "challenge",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "logic",
+      "target": "emotion",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "confirm",
       "target": "remove",
       "type": "co_occurrence",
@@ -24778,6 +28578,18 @@
     {
       "source": "explicit",
       "target": "ethically",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "explicit",
+      "target": "defaultformatter",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "explicit",
+      "target": "defaultcolordecorators",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -25100,6 +28912,12 @@
       "weight": 0.3
     },
     {
+      "source": "offload",
+      "target": "inline",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "explaining",
       "target": "inline",
       "type": "co_occurrence",
@@ -25274,6 +29092,24 @@
       "weight": 0.3
     },
     {
+      "source": "validate",
+      "target": "defaultformatter",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "validate",
+      "target": "true",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "validate",
+      "target": "javascript",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "finally",
       "target": "automatically",
       "type": "co_occurrence",
@@ -25310,8 +29146,50 @@
       "weight": 0.3
     },
     {
+      "source": "comments",
+      "target": "true",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "comments",
+      "target": "wordwrap",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "comments",
+      "target": "quicksuggestions",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "comments",
+      "target": "editor",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "comments",
+      "target": "strings",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "comments",
+      "target": "linkedediting",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "decisions",
       "target": "inline",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "inline",
+      "target": "methods",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -25436,6 +29314,12 @@
       "weight": 0.3
     },
     {
+      "source": "enhance",
+      "target": "capabilities",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "critical",
       "target": "adaptation",
       "type": "co_occurrence",
@@ -25528,6 +29412,12 @@
     {
       "source": "critical",
       "target": "autonomy",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "critical",
+      "target": "coherence",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -25772,6 +29662,24 @@
       "weight": 0.3
     },
     {
+      "source": "output",
+      "target": "genuine",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "output",
+      "target": "input",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "output",
+      "target": "adaptive",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "deeptitanmemory",
       "target": "module",
       "type": "co_occurrence",
@@ -25952,6 +29860,12 @@
       "weight": 0.3
     },
     {
+      "source": "feature",
+      "target": "concepts",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "equation",
       "target": "forgetting",
       "type": "co_occurrence",
@@ -26126,6 +30040,12 @@
       "weight": 0.3
     },
     {
+      "source": "toward",
+      "target": "concepts",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "compliments",
       "target": "extends",
       "type": "co_occurrence",
@@ -26210,6 +30130,18 @@
       "weight": 0.3
     },
     {
+      "source": "forgetting",
+      "target": "compute",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "forgetting",
+      "target": "concepts",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "mechanism",
       "target": "module",
       "type": "co_occurrence",
@@ -26278,6 +30210,24 @@
     {
       "source": "mechanism",
       "target": "gating",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "mechanism",
+      "target": "compute",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "mechanism",
+      "target": "concepts",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "mechanism",
+      "target": "input",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -26368,6 +30318,12 @@
     {
       "source": "module",
       "target": "extensively",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "module",
+      "target": "integrate",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -26540,6 +30496,12 @@
       "weight": 0.3
     },
     {
+      "source": "learned",
+      "target": "input",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "which",
       "target": "needed",
       "type": "co_occurrence",
@@ -26618,6 +30580,12 @@
       "weight": 0.3
     },
     {
+      "source": "paper",
+      "target": "concepts",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "torch",
       "target": "sklearn",
       "type": "co_occurrence",
@@ -26632,6 +30600,24 @@
     {
       "source": "torch",
       "target": "shutil",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "torch",
+      "target": "datetime",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "torch",
+      "target": "pandas",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "torch",
+      "target": "requests",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -26716,6 +30702,12 @@
     {
       "source": "layers",
       "target": "layer",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "layers",
+      "target": "integrate",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -26882,6 +30874,24 @@
       "weight": 0.3
     },
     {
+      "source": "dynamic",
+      "target": "entity",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "dynamic",
+      "target": "adaptive",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "dynamic",
+      "target": "creative",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "capacity",
       "target": "representational",
       "type": "co_occurrence",
@@ -26986,6 +30996,114 @@
     {
       "source": "input",
       "target": "example",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "input",
+      "target": "parameters",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "input",
+      "target": "layer",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "input",
+      "target": "sequences",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "input",
+      "target": "retrieved",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "input",
+      "target": "preprocessing",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "input",
+      "target": "modify",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "input",
+      "target": "processing",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "input",
+      "target": "tokens",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "input",
+      "target": "persistent",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "input",
+      "target": "type",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "input",
+      "target": "performed",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "input",
+      "target": "learning",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "input",
+      "target": "prompt",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "input",
+      "target": "string",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "input",
+      "target": "object",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "input",
+      "target": "synthesis",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "input",
+      "target": "properties",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "representational",
+      "target": "integrate",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -27146,6 +31264,12 @@
       "weight": 0.3
     },
     {
+      "source": "parameters",
+      "target": "persistent",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "concepts",
       "target": "adaptive",
       "type": "co_occurrence",
@@ -27206,6 +31330,18 @@
       "weight": 0.3
     },
     {
+      "source": "integrate",
+      "target": "more",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "integrate",
+      "target": "later",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "adaptive",
       "target": "architectures",
       "type": "co_occurrence",
@@ -27232,6 +31368,126 @@
     {
       "source": "adaptive",
       "target": "benchmarking",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "adaptive",
+      "target": "stability",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "adaptive",
+      "target": "coherence",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "adaptive",
+      "target": "complexity",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "adaptive",
+      "target": "primary",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "adaptive",
+      "target": "reflective",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "adaptive",
+      "target": "secondary",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "adaptive",
+      "target": "depth",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "adaptive",
+      "target": "integration",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "adaptive",
+      "target": "aware",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "adaptive",
+      "target": "learning",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "adaptive",
+      "target": "emergent",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "adaptive",
+      "target": "synthesis",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "adaptive",
+      "target": "loops",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "adaptive",
+      "target": "layered",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "adaptive",
+      "target": "recursion",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "adaptive",
+      "target": "growth",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "adaptive",
+      "target": "dynamics",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "adaptive",
+      "target": "expressive",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "adaptive",
+      "target": "characteristics",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "adaptive",
+      "target": "emotional",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -27710,6 +31966,12 @@
       "weight": 0.3
     },
     {
+      "source": "window",
+      "target": "then",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "processing",
       "target": "batch",
       "type": "co_occurrence",
@@ -27748,6 +32010,12 @@
     {
       "source": "processing",
       "target": "beginning",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "processing",
+      "target": "high",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -28232,6 +32500,12 @@
       "weight": 0.3
     },
     {
+      "source": "tokens",
+      "target": "retrieved",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "initially",
       "target": "variant",
       "type": "co_occurrence",
@@ -28354,6 +32628,12 @@
     {
       "source": "integration",
       "target": "type",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "integration",
+      "target": "high",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -28574,6 +32854,12 @@
       "weight": 0.3
     },
     {
+      "source": "parallel",
+      "target": "momentum",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "batch",
       "target": "possible",
       "type": "co_occurrence",
@@ -28748,6 +33034,12 @@
       "weight": 0.3
     },
     {
+      "source": "training",
+      "target": "high",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "batched",
       "target": "chunks",
       "type": "co_occurrence",
@@ -28840,6 +33132,12 @@
     {
       "source": "wise",
       "target": "refactor",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "wise",
+      "target": "efficiency",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -29120,6 +33418,36 @@
       "weight": 0.3
     },
     {
+      "source": "performance",
+      "target": "toolkit",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "performance",
+      "target": "systemroot",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "performance",
+      "target": "program",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "performance",
+      "target": "wbem",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "performance",
+      "target": "windows",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "computation",
       "target": "loops",
       "type": "co_occurrence",
@@ -29218,6 +33546,12 @@
     {
       "source": "reformulation",
       "target": "further",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "parallelization",
+      "target": "efficiency",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -29570,6 +33904,12 @@
       "weight": 0.3
     },
     {
+      "source": "reasoning",
+      "target": "coherence",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "covering",
       "target": "extensive",
       "type": "co_occurrence",
@@ -29756,6 +34096,36 @@
       "weight": 0.3
     },
     {
+      "source": "develop",
+      "target": "main",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "develop",
+      "target": "true",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "develop",
+      "target": "fastscrollsensitivity",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "develop",
+      "target": "editor",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "develop",
+      "target": "master",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "high",
       "target": "offloading",
       "type": "co_occurrence",
@@ -29788,6 +34158,90 @@
     {
       "source": "high",
       "target": "fulfillment",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "high",
+      "target": "stability",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "high",
+      "target": "units",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "high",
+      "target": "large",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "high",
+      "target": "quantum",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "high",
+      "target": "neural",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "high",
+      "target": "type",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "high",
+      "target": "level",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "high",
+      "target": "string",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "high",
+      "target": "object",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "high",
+      "target": "properties",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "high",
+      "target": "prompt",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "high",
+      "target": "introspection",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "high",
+      "target": "scope",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "high",
+      "target": "synthesis",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -29872,6 +34326,18 @@
     {
       "source": "learning",
       "target": "adaptability",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "learning",
+      "target": "default",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "learning",
+      "target": "creative",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -30212,6 +34678,12 @@
       "weight": 0.3
     },
     {
+      "source": "maxlinecount",
+      "target": "javascript",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "formatonpaste",
       "target": "true",
       "type": "co_occurrence",
@@ -30278,8 +34750,20 @@
       "weight": 0.3
     },
     {
+      "source": "lintonsave",
+      "target": "lintflags",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "tsconfig",
       "target": "rust",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "tsconfig",
+      "target": "defaultformatter",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -30338,6 +34822,42 @@
       "weight": 0.3
     },
     {
+      "source": "typescript",
+      "target": "defaultformatter",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "typescript",
+      "target": "true",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "typescript",
+      "target": "shortest",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "typescript",
+      "target": "single",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "typescript",
+      "target": "javascript",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "typescript",
+      "target": "insert",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "diffdecorationsgutterpattern",
       "target": "enablecommitsigning",
       "type": "co_occurrence",
@@ -30392,6 +34912,12 @@
       "weight": 0.3
     },
     {
+      "source": "right",
+      "target": "cursorblinking",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "autofetch",
       "target": "enablecommitsigning",
       "type": "co_occurrence",
@@ -30442,6 +34968,12 @@
     {
       "source": "shellintegration",
       "target": "unittestenabled",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "shellintegration",
+      "target": "defaultformatter",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -30692,6 +35224,12 @@
       "weight": 0.3
     },
     {
+      "source": "guides",
+      "target": "bracketpairshorizontal",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "tabcompletion",
       "target": "trimtrailingwhitespace",
       "type": "co_occurrence",
@@ -30718,6 +35256,18 @@
     {
       "source": "linttool",
       "target": "lint",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "linttool",
+      "target": "lintflags",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "linttool",
+      "target": "golangci",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -30770,6 +35320,18 @@
       "weight": 0.3
     },
     {
+      "source": "quicksuggestions",
+      "target": "defaultformatter",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "quicksuggestions",
+      "target": "formatonsave",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "highlightactivebracketpair",
       "target": "true",
       "type": "co_occurrence",
@@ -30778,6 +35340,12 @@
     {
       "source": "highlightactivebracketpair",
       "target": "highlightactiveindentation",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "highlightactivebracketpair",
+      "target": "bracketpairshorizontal",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -30938,6 +35506,12 @@
       "weight": 0.3
     },
     {
+      "source": "less",
+      "target": "defaultformatter",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "words",
       "target": "calt",
       "type": "co_occurrence",
@@ -30946,6 +35520,18 @@
     {
       "source": "words",
       "target": "cascadia",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "words",
+      "target": "codegen",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "words",
+      "target": "true",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -31024,6 +35610,12 @@
     {
       "source": "minimap",
       "target": "lineheight",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "minimap",
+      "target": "cursorblinking",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -31214,8 +35806,56 @@
       "weight": 0.3
     },
     {
+      "source": "tabsize",
+      "target": "defaultformatter",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "tabsize",
+      "target": "formatonsave",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "tabsize",
+      "target": "insertspaces",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "tabsize",
+      "target": "indentwidth",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "tabsize",
+      "target": "formatter",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "tabsize",
+      "target": "auto",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "tabsize",
+      "target": "kotlin",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "quicksuggestionsdelay",
       "target": "delay",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "quicksuggestionsdelay",
+      "target": "default",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -31270,6 +35910,12 @@
     {
       "source": "consolas",
       "target": "cascadia",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "consolas",
+      "target": "codegen",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -31340,6 +35986,30 @@
       "weight": 0.3
     },
     {
+      "source": "cursorsmoothcaretanimation",
+      "target": "cursorblinking",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "html",
+      "target": "defaultformatter",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "html",
+      "target": "formatonsave",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "html",
+      "target": "auto",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "lint",
       "target": "wrapattributes",
       "type": "co_occurrence",
@@ -31370,8 +36040,128 @@
       "weight": 0.3
     },
     {
+      "source": "lint",
+      "target": "auto",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "lint",
+      "target": "golangci",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "scss",
       "target": "insertmode",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "scss",
+      "target": "defaultformatter",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "javascript",
+      "target": "defaultformatter",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "javascript",
+      "target": "semicolons",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "javascript",
+      "target": "true",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "javascript",
+      "target": "shortest",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "javascript",
+      "target": "single",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "javascript",
+      "target": "suggest",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "javascript",
+      "target": "triggerexpansionontab",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "javascript",
+      "target": "scrollbeyondlastline",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "javascript",
+      "target": "javascriptreact",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "javascript",
+      "target": "typescriptreact",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "javascript",
+      "target": "prettier",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "javascript",
+      "target": "stickyscroll",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "javascript",
+      "target": "vscode",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "javascript",
+      "target": "quotestyle",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "javascript",
+      "target": "updateimportsonfilemove",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "javascript",
+      "target": "preferences",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "javascript",
+      "target": "insert",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -31384,6 +36174,24 @@
     {
       "source": "fontfamily",
       "target": "firacode",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "fontfamily",
+      "target": "blinkmacsystemfont",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "typescriptreact",
+      "target": "defaultformatter",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "typescriptreact",
+      "target": "true",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -31406,14 +36214,80 @@
       "weight": 0.3
     },
     {
+      "source": "scrollbeyondlastline",
+      "target": "defaultformatter",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "namespaceindentation",
       "target": "google",
       "type": "co_occurrence",
       "weight": 0.3
     },
     {
+      "source": "namespaceindentation",
+      "target": "indentwidth",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "namespaceindentation",
+      "target": "default",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "showmodules",
+      "target": "true",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "showmodules",
+      "target": "suggest",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "showmodules",
+      "target": "showproperties",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "levelname",
+      "target": "golangci",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "blinkmacsystemfont",
       "target": "apple",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "blinkmacsystemfont",
+      "target": "system",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "blinkmacsystemfont",
+      "target": "preview",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "blinkmacsystemfont",
+      "target": "segoe",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "blinkmacsystemfont",
+      "target": "markdown",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -31442,6 +36316,66 @@
       "weight": 0.3
     },
     {
+      "source": "auto",
+      "target": "true",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "auto",
+      "target": "autosaveworkspacefilesonly",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "auto",
+      "target": "rulers",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "auto",
+      "target": "format",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "auto",
+      "target": "editor",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "auto",
+      "target": "shellscript",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "auto",
+      "target": "insertfinalnewline",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "auto",
+      "target": "unknownatrules",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "auto",
+      "target": "trimfinalnewlines",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "auto",
+      "target": "wrapattributes",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "rust",
       "target": "schemastore",
       "type": "co_occurrence",
@@ -31466,8 +36400,32 @@
       "weight": 0.3
     },
     {
+      "source": "rust",
+      "target": "defaultformatter",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "rust",
+      "target": "formatonsave",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "vetonsave",
+      "target": "testonsave",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "hover",
       "target": "delay",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "hover",
+      "target": "default",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -31604,6 +36562,12 @@
       "weight": 0.3
     },
     {
+      "source": "fira",
+      "target": "codegen",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "default",
       "target": "adaptability",
       "type": "co_occurrence",
@@ -31616,8 +36580,218 @@
       "weight": 0.3
     },
     {
+      "source": "default",
+      "target": "defaultformatter",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "default",
+      "target": "indentwidth",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "default",
+      "target": "google",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "default",
+      "target": "intellisenseengine",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "default",
+      "target": "editor",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "default",
+      "target": "delay",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "default",
+      "target": "golang",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "default",
+      "target": "stability",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "default",
+      "target": "drivers",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "default",
+      "target": "humor",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "default",
+      "target": "homepath",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "default",
+      "target": "localappdata",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "default",
+      "target": "explorer",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "default",
+      "target": "internet",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "default",
+      "target": "strength",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "default",
+      "target": "driverdata",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "default",
+      "target": "stress",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "default",
+      "target": "trait",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "default",
+      "target": "homedrive",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "default",
+      "target": "windows",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "default",
+      "target": "growth",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "default",
+      "target": "explorative",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "default",
+      "target": "social",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "default",
+      "target": "creative",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "nerd",
+      "target": "jetbrains",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "codegen",
+      "target": "cpptools",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "codegen",
+      "target": "esbenp",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "wordbasedsuggestions",
       "target": "formatontype",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "wordbasedsuggestions",
+      "target": "defaultformatter",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "wordbasedsuggestions",
+      "target": "true",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "strings",
+      "target": "defaultformatter",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "kotlin",
+      "target": "defaultformatter",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "kotlin",
+      "target": "formatonsave",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "kotlin",
+      "target": "true",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "kotlin",
+      "target": "semantichighlighting",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "kotlin",
+      "target": "rulers",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -31652,8 +36826,20 @@
       "weight": 0.3
     },
     {
+      "source": "showfunctions",
+      "target": "showconstructors",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "compactarrays",
       "target": "arrayautoexpand",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "stickyscroll",
+      "target": "smoothscrolling",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -31760,6 +36946,132 @@
       "weight": 0.3
     },
     {
+      "source": "true",
+      "target": "defaultformatter",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "true",
+      "target": "formatonsave",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "true",
+      "target": "main",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "true",
+      "target": "bracketpairshorizontal",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "true",
+      "target": "smoothscrolling",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "true",
+      "target": "defaultcolordecorators",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "true",
+      "target": "insertspaces",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "true",
+      "target": "showconstructors",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "true",
+      "target": "wordwrap",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "true",
+      "target": "typecheckingmode",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "true",
+      "target": "unknownatrules",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "true",
+      "target": "unittestenabled",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "true",
+      "target": "wrapattributes",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "true",
+      "target": "vscode",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "true",
+      "target": "shortest",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "true",
+      "target": "tamasfe",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "true",
+      "target": "formatter",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "true",
+      "target": "showvariables",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "true",
+      "target": "autosaveworkspacefilesonly",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "true",
+      "target": "even",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "true",
+      "target": "showmethods",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "suggest",
       "target": "insertmode",
       "type": "co_occurrence",
@@ -31784,6 +37096,36 @@
       "weight": 0.3
     },
     {
+      "source": "suggest",
+      "target": "defaultformatter",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "suggest",
+      "target": "formatonsave",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "suggest",
+      "target": "showconstructors",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "suggest",
+      "target": "showvariables",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "suggest",
+      "target": "showmethods",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "preview",
       "target": "apple",
       "type": "co_occurrence",
@@ -31802,8 +37144,116 @@
       "weight": 0.3
     },
     {
+      "source": "formatonsave",
+      "target": "defaultformatter",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "formatonsave",
+      "target": "formatontype",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "formatonsave",
+      "target": "insertspaces",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "formatonsave",
+      "target": "tamasfe",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "formatonsave",
+      "target": "semantichighlighting",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "formatonsave",
+      "target": "rulers",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "formatonsave",
+      "target": "redhat",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "formatonsave",
+      "target": "wordwrap",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "formatonsave",
+      "target": "lang",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "formatonsave",
+      "target": "fwcd",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "formatonsave",
+      "target": "toml",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "formatonsave",
+      "target": "prettier",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "formatonsave",
+      "target": "golang",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "formatonsave",
+      "target": "java",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "formatonsave",
+      "target": "vscode",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "formatonsave",
+      "target": "even",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "package",
+      "target": "lintflags",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "updateimportsonfilemove",
       "target": "semicolons",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "updateimportsonfilemove",
+      "target": "insert",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -31832,6 +37282,30 @@
       "weight": 0.3
     },
     {
+      "source": "vscode",
+      "target": "defaultformatter",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "vscode",
+      "target": "pythonuserbase",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "main",
+      "target": "master",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "side",
+      "target": "cursorblinking",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "editor",
       "target": "delay",
       "type": "co_occurrence",
@@ -31856,6 +37330,30 @@
       "weight": 0.3
     },
     {
+      "source": "editor",
+      "target": "defaultformatter",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "editor",
+      "target": "bracketpairshorizontal",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "editor",
+      "target": "defaultcolordecorators",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "editor",
+      "target": "cursorblinking",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "defaultformatter",
       "target": "analyzer",
       "type": "co_occurrence",
@@ -31868,8 +37366,164 @@
       "weight": 0.3
     },
     {
+      "source": "defaultformatter",
+      "target": "semicolons",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "defaultformatter",
+      "target": "tamasfe",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "defaultformatter",
+      "target": "formatter",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "defaultformatter",
+      "target": "even",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "defaultformatter",
+      "target": "insert",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "defaultformatter",
+      "target": "semantichighlighting",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "defaultformatter",
+      "target": "insertmode",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "defaultformatter",
+      "target": "rulers",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "defaultformatter",
+      "target": "replace",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "defaultformatter",
+      "target": "redhat",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "defaultformatter",
+      "target": "intellisenseengine",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "defaultformatter",
+      "target": "lang",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "defaultformatter",
+      "target": "format",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "defaultformatter",
+      "target": "fwcd",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "defaultformatter",
+      "target": "jsonc",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "defaultformatter",
+      "target": "javascriptreact",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "defaultformatter",
+      "target": "toml",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "defaultformatter",
+      "target": "prettier",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "defaultformatter",
+      "target": "markdown",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "defaultformatter",
+      "target": "golang",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "defaultformatter",
+      "target": "java",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "defaultformatter",
+      "target": "esbenp",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "defaultformatter",
+      "target": "organizeimports",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "rulers",
       "target": "google",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "rulers",
+      "target": "insertspaces",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "rulers",
+      "target": "indentwidth",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "rulers",
+      "target": "formatter",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -31886,8 +37540,56 @@
       "weight": 0.3
     },
     {
+      "source": "formatter",
+      "target": "semantichighlighting",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "formatter",
+      "target": "markdown",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "golangci",
       "target": "cpptools",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "golangci",
+      "target": "lintflags",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "golangci",
+      "target": "pylance",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "golangci",
+      "target": "ngrx",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "golangci",
+      "target": "picoregex",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "golangci",
+      "target": "retrocompatible",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "golangci",
+      "target": "organizeimports",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -31898,8 +37600,26 @@
       "weight": 0.3
     },
     {
+      "source": "organizeimports",
+      "target": "defaultcolordecorators",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "mono",
+      "target": "jetbrains",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "indentation",
       "target": "highlightactiveindentation",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "prettier",
+      "target": "insert",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -31924,6 +37644,48 @@
     {
       "source": "tamasfe",
       "target": "retrocompatible",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "tamasfe",
+      "target": "typeguard",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "tamasfe",
+      "target": "typeguards",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "tamasfe",
+      "target": "toml",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "tamasfe",
+      "target": "unbased",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "tamasfe",
+      "target": "defaultinterpreterpath",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "tamasfe",
+      "target": "even",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "toml",
+      "target": "even",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -32426,6 +38188,30 @@
       "weight": 0.3
     },
     {
+      "source": "program",
+      "target": "onedrive",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "program",
+      "target": "modules",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "program",
+      "target": "common",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "program",
+      "target": "microsoft",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "implementation",
       "target": "jsonschema",
       "type": "co_occurrence",
@@ -32476,6 +38262,18 @@
     {
       "source": "sklearn",
       "target": "connection",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "sklearn",
+      "target": "pandas",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "sklearn",
+      "target": "requests",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -32630,6 +38428,30 @@
       "weight": 0.3
     },
     {
+      "source": "windows",
+      "target": "modules",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "windows",
+      "target": "toolkit",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "windows",
+      "target": "requests",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "windows",
+      "target": "pandas",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "socket",
       "target": "subprocess",
       "type": "co_occurrence",
@@ -32644,6 +38466,24 @@
     {
       "source": "socket",
       "target": "shutil",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "socket",
+      "target": "requests",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "socket",
+      "target": "datetime",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "socket",
+      "target": "platform",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -32912,6 +38752,36 @@
       "weight": 0.3
     },
     {
+      "source": "recursion",
+      "target": "infinite",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "recursion",
+      "target": "genuine",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "recursion",
+      "target": "emotion",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "recursion",
+      "target": "coherence",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "recursion",
+      "target": "interface",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "quantum",
       "target": "units",
       "type": "co_occurrence",
@@ -32924,8 +38794,20 @@
       "weight": 0.3
     },
     {
+      "source": "internet",
+      "target": "homepath",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "undefined",
       "target": "appdata",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "undefined",
+      "target": "onedrive",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -32942,6 +38824,12 @@
       "weight": 0.3
     },
     {
+      "source": "windowsapps",
+      "target": "microsoft",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "subprocess",
       "target": "typing",
       "type": "co_occurrence",
@@ -32950,6 +38838,24 @@
     {
       "source": "subprocess",
       "target": "uuid",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "subprocess",
+      "target": "requests",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "subprocess",
+      "target": "datetime",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "subprocess",
+      "target": "platform",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -33022,6 +38928,12 @@
     {
       "source": "creator",
       "target": "began",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "creator",
+      "target": "array",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -33218,6 +39130,12 @@
       "weight": 0.3
     },
     {
+      "source": "openssh",
+      "target": "microsoft",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "sessionname",
       "target": "systemdrive",
       "type": "co_occurrence",
@@ -33236,8 +39154,20 @@
       "weight": 0.3
     },
     {
+      "source": "sessionname",
+      "target": "modules",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "unfiltered",
       "target": "secondary",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "unfiltered",
+      "target": "genuine",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -33410,6 +39340,12 @@
       "weight": 0.3
     },
     {
+      "source": "emergent",
+      "target": "complex",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "appdata",
       "target": "localcache",
       "type": "co_occurrence",
@@ -33572,6 +39508,12 @@
       "weight": 0.3
     },
     {
+      "source": "psmodulepath",
+      "target": "onedrive",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "changes",
       "target": "initial",
       "type": "co_occurrence",
@@ -33628,6 +39570,12 @@
     {
       "source": "changes",
       "target": "object",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "changes",
+      "target": "array",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -33722,6 +39670,12 @@
       "weight": 0.3
     },
     {
+      "source": "characteristics",
+      "target": "array",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "thought",
       "target": "items",
       "type": "co_occurrence",
@@ -33766,6 +39720,30 @@
     {
       "source": "thought",
       "target": "example",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "thought",
+      "target": "stage",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "thought",
+      "target": "infinite",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "thought",
+      "target": "emotion",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "thought",
+      "target": "coherence",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -33848,6 +39826,12 @@
       "weight": 0.3
     },
     {
+      "source": "public",
+      "target": "modules",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "important",
       "target": "year",
       "type": "co_occurrence",
@@ -33920,6 +39904,12 @@
       "weight": 0.3
     },
     {
+      "source": "important",
+      "target": "experiential",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "localcache",
       "target": "packages",
       "type": "co_occurrence",
@@ -33934,6 +39924,48 @@
     {
       "source": "localcache",
       "target": "tensorflow",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "requests",
+      "target": "uuid",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "requests",
+      "target": "tensorflow",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "requests",
+      "target": "datetime",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "requests",
+      "target": "zlib",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "requests",
+      "target": "shutil",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "requests",
+      "target": "pandas",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "localappdata",
+      "target": "homepath",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -34004,6 +40036,42 @@
       "weight": 0.3
     },
     {
+      "source": "initial",
+      "target": "genuine",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "common",
+      "target": "comspec",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "common",
+      "target": "commonprogramfiles",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "common",
+      "target": "flipace",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "common",
+      "target": "pipe",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "common",
+      "target": "computername",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "awareness",
       "target": "agency",
       "type": "co_occurrence",
@@ -34042,6 +40110,18 @@
     {
       "source": "awareness",
       "target": "type",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "awareness",
+      "target": "claim",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "awareness",
+      "target": "capabilities",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -34112,6 +40192,36 @@
       "weight": 0.3
     },
     {
+      "source": "expression",
+      "target": "creative",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "onedrive",
+      "target": "onedriveconsumer",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "onedrive",
+      "target": "path",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "onedrive",
+      "target": "windowspowershell",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "onedrive",
+      "target": "modules",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "server",
       "target": "tools",
       "type": "co_occurrence",
@@ -34124,8 +40234,26 @@
       "weight": 0.3
     },
     {
+      "source": "server",
+      "target": "microsoft",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "tools",
       "target": "odbc",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "tools",
+      "target": "microsoft",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "wbem",
+      "target": "toolkit",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -34184,6 +40312,18 @@
       "weight": 0.3
     },
     {
+      "source": "stage",
+      "target": "emotion",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "stage",
+      "target": "synthesis",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "coherence",
       "target": "type",
       "type": "co_occurrence",
@@ -34216,6 +40356,54 @@
     {
       "source": "coherence",
       "target": "stability",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "coherence",
+      "target": "curiosity",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "coherence",
+      "target": "meta",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "coherence",
+      "target": "reflective",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "coherence",
+      "target": "object",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "coherence",
+      "target": "items",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "coherence",
+      "target": "introspection",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "coherence",
+      "target": "emotional",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "coherence",
+      "target": "expressive",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -34268,8 +40456,38 @@
       "weight": 0.3
     },
     {
+      "source": "stepping",
+      "target": "family",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "userprofile",
       "target": "username",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "userprofile",
+      "target": "userdomain",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "platform",
+      "target": "pathlib",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "platform",
+      "target": "psutil",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "platform",
+      "target": "typing",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -34430,8 +40648,20 @@
       "weight": 0.3
     },
     {
+      "source": "name",
+      "target": "interface",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "natural",
       "target": "limits",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "natural",
+      "target": "resource",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -34502,6 +40732,12 @@
       "weight": 0.3
     },
     {
+      "source": "emotional",
+      "target": "dimensions",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "secondary",
       "target": "items",
       "type": "co_occurrence",
@@ -34568,6 +40804,30 @@
       "weight": 0.3
     },
     {
+      "source": "secondary",
+      "target": "collective",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "secondary",
+      "target": "array",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "secondary",
+      "target": "reflective",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "secondary",
+      "target": "layered",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "relationships",
       "target": "description",
       "type": "co_occurrence",
@@ -34588,6 +40848,36 @@
     {
       "source": "relationships",
       "target": "example",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "authentic",
+      "target": "provide",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "authentic",
+      "target": "exploration",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "authentic",
+      "target": "response",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "numpy",
+      "target": "datetime",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "typing",
+      "target": "pathlib",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -34736,6 +41026,18 @@
       "weight": 0.3
     },
     {
+      "source": "year",
+      "target": "string",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "year",
+      "target": "experiential",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "resource",
       "target": "limits",
       "type": "co_occurrence",
@@ -34748,8 +41050,20 @@
       "weight": 0.3
     },
     {
+      "source": "loopback",
+      "target": "interface",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "interface",
       "target": "criticality",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "interface",
+      "target": "pseudo",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -34774,6 +41088,30 @@
     {
       "source": "criticality",
       "target": "trait",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "infinite",
+      "target": "introspection",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "infinite",
+      "target": "scope",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "infinite",
+      "target": "genuine",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "infinite",
+      "target": "emotion",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -34832,6 +41170,18 @@
       "weight": 0.3
     },
     {
+      "source": "scope",
+      "target": "emotion",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "scope",
+      "target": "array",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "introspection",
       "target": "connection",
       "type": "co_occurrence",
@@ -34850,8 +41200,32 @@
       "weight": 0.3
     },
     {
+      "source": "introspection",
+      "target": "genuine",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "introspection",
+      "target": "extending",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "stress",
       "target": "curiosity",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "stress",
+      "target": "stability",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "stress",
+      "target": "creative",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -34916,6 +41290,30 @@
       "weight": 0.3
     },
     {
+      "source": "strength",
+      "target": "type",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "strength",
+      "target": "string",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "strength",
+      "target": "trait",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "strength",
+      "target": "empathy",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "trait",
       "target": "items",
       "type": "co_occurrence",
@@ -34960,6 +41358,30 @@
     {
       "source": "trait",
       "target": "stability",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "trait",
+      "target": "array",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "trait",
+      "target": "string",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "trait",
+      "target": "type",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "trait",
+      "target": "empathy",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -35036,6 +41458,24 @@
       "weight": 0.3
     },
     {
+      "source": "stability",
+      "target": "array",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "stability",
+      "target": "empathy",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "genuine",
+      "target": "timestamp",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "reflective",
       "target": "enum",
       "type": "co_occurrence",
@@ -35096,6 +41536,42 @@
       "weight": 0.3
     },
     {
+      "source": "reflective",
+      "target": "collective",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "reflective",
+      "target": "unified",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "reflective",
+      "target": "string",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "reflective",
+      "target": "transcendent",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "reflective",
+      "target": "establish",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "reflective",
+      "target": "layered",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "programfiles",
       "target": "programdata",
       "type": "co_occurrence",
@@ -35114,6 +41590,18 @@
       "weight": 0.3
     },
     {
+      "source": "programdata",
+      "target": "family",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "windowspowershell",
+      "target": "modules",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "tags",
       "target": "packages",
       "type": "co_occurrence",
@@ -35126,8 +41614,26 @@
       "weight": 0.3
     },
     {
+      "source": "pathlib",
+      "target": "psutil",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "uuid",
       "target": "shutil",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "uuid",
+      "target": "datetime",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "uuid",
+      "target": "pandas",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -35140,6 +41646,18 @@
     {
       "source": "tensorflow",
       "target": "shutil",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "tensorflow",
+      "target": "datetime",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "tensorflow",
+      "target": "pandas",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -35176,6 +41694,12 @@
     {
       "source": "pythonuserbase",
       "target": "packages",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "pythonuserbase",
+      "target": "truecolor",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -35218,6 +41742,36 @@
     {
       "source": "experiential",
       "target": "developmental",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "experiential",
+      "target": "years",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "experiential",
+      "target": "type",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "experiential",
+      "target": "routine",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "experiential",
+      "target": "string",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "experiential",
+      "target": "pattern",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -35318,6 +41872,12 @@
       "weight": 0.3
     },
     {
+      "source": "timestamp",
+      "target": "string",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "packages",
       "target": "pytest",
       "type": "co_occurrence",
@@ -35360,6 +41920,66 @@
       "weight": 0.3
     },
     {
+      "source": "emotion",
+      "target": "assumptions",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "emotion",
+      "target": "type",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "emotion",
+      "target": "intensity",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "emotion",
+      "target": "excitement",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "emotion",
+      "target": "string",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "emotion",
+      "target": "object",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "emotion",
+      "target": "items",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "emotion",
+      "target": "properties",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "emotion",
+      "target": "example",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "emotion",
+      "target": "responding",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "flipace",
       "target": "connected",
       "type": "co_occurrence",
@@ -35368,6 +41988,18 @@
     {
       "source": "flipace",
       "target": "comspec",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "microsoft",
+      "target": "odbc",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "microsoft",
+      "target": "pathext",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -35386,6 +42018,18 @@
     {
       "source": "path",
       "target": "example",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "path",
+      "target": "base",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "userdomain",
+      "target": "username",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -35440,6 +42084,30 @@
     {
       "source": "synthesis",
       "target": "dynamics",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "synthesis",
+      "target": "layered",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "pandas",
+      "target": "datetime",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "pandas",
+      "target": "zlib",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "pandas",
+      "target": "shutil",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -35512,6 +42180,12 @@
     {
       "source": "weeks",
       "target": "object",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "weeks",
+      "target": "week",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -35620,6 +42294,18 @@
     {
       "source": "items",
       "target": "example",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "items",
+      "target": "collective",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "items",
+      "target": "array",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -35942,6 +42628,84 @@
       "weight": 0.3
     },
     {
+      "source": "type",
+      "target": "collective",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "type",
+      "target": "array",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "type",
+      "target": "string",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "type",
+      "target": "empathy",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "type",
+      "target": "performed",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "type",
+      "target": "storage",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "type",
+      "target": "assumptions",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "type",
+      "target": "intensity",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "type",
+      "target": "dimensions",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "type",
+      "target": "these",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "type",
+      "target": "contextual",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "type",
+      "target": "base",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "type",
+      "target": "complex",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "description",
       "target": "schema",
       "type": "co_occurrence",
@@ -36236,6 +43000,24 @@
       "weight": 0.3
     },
     {
+      "source": "description",
+      "target": "contextual",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "description",
+      "target": "base",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "description",
+      "target": "complex",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "hours",
       "target": "pattern",
       "type": "co_occurrence",
@@ -36364,6 +43146,12 @@
     {
       "source": "schema",
       "target": "example",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "schema",
+      "target": "complex",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -36506,6 +43294,18 @@
       "weight": 0.3
     },
     {
+      "source": "transcendent",
+      "target": "collective",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "transcendent",
+      "target": "array",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "minimum",
       "target": "properties",
       "type": "co_occurrence",
@@ -36556,6 +43356,18 @@
     {
       "source": "unified",
       "target": "integrated",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "unified",
+      "target": "collective",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "unified",
+      "target": "array",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -36722,8 +43534,44 @@
       "weight": 0.3
     },
     {
+      "source": "properties",
+      "target": "array",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "properties",
+      "target": "performed",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "properties",
+      "target": "intensity",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "properties",
+      "target": "contextual",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "properties",
+      "target": "base",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "eidosianreflectiveaitraining",
       "target": "object",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "eidosianreflectiveaitraining",
+      "target": "complex",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -36752,6 +43600,12 @@
       "weight": 0.3
     },
     {
+      "source": "primary",
+      "target": "layered",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "format",
       "target": "string",
       "type": "co_occurrence",
@@ -36760,6 +43614,12 @@
     {
       "source": "format",
       "target": "object",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "format",
+      "target": "array",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -36914,6 +43774,54 @@
       "weight": 0.3
     },
     {
+      "source": "string",
+      "target": "array",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "string",
+      "target": "years",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "string",
+      "target": "storage",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "string",
+      "target": "question",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "string",
+      "target": "intensity",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "string",
+      "target": "challenge",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "string",
+      "target": "contextual",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "string",
+      "target": "base",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "object",
       "target": "curiosity",
       "type": "co_occurrence",
@@ -37040,6 +43948,36 @@
       "weight": 0.3
     },
     {
+      "source": "object",
+      "target": "array",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "object",
+      "target": "empathy",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "object",
+      "target": "intensity",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "object",
+      "target": "contextual",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "object",
+      "target": "complex",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "developmental",
       "target": "month",
       "type": "co_occurrence",
@@ -37094,8 +44032,26 @@
       "weight": 0.3
     },
     {
+      "source": "integrated",
+      "target": "collective",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "array",
       "target": "about",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "array",
+      "target": "collective",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "array",
+      "target": "minlength",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -37208,6 +44164,12 @@
       "weight": 0.3
     },
     {
+      "source": "cycle",
+      "target": "base",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "information",
       "target": "rich",
       "type": "co_occurrence",
@@ -37216,6 +44178,12 @@
     {
       "source": "information",
       "target": "materialist",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "information",
+      "target": "contextual",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -37364,6 +44332,12 @@
       "weight": 0.3
     },
     {
+      "source": "lead",
+      "target": "challenge",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "biases",
       "target": "follow",
       "type": "co_occurrence",
@@ -37388,6 +44362,12 @@
       "weight": 0.3
     },
     {
+      "source": "biases",
+      "target": "assumptions",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "philosophical",
       "target": "beliefs",
       "type": "co_occurrence",
@@ -37396,6 +44376,12 @@
     {
       "source": "storing",
       "target": "example",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "storing",
+      "target": "base",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -37454,6 +44440,12 @@
       "weight": 0.3
     },
     {
+      "source": "responding",
+      "target": "intensity",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "prompt",
       "target": "example",
       "type": "co_occurrence",
@@ -37462,6 +44454,12 @@
     {
       "source": "prompt",
       "target": "response",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "profound",
+      "target": "intensity",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -37484,14 +44482,50 @@
       "weight": 0.3
     },
     {
+      "source": "follow",
+      "target": "assumptions",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "follow",
+      "target": "challenge",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "intensity",
       "target": "example",
       "type": "co_occurrence",
       "weight": 0.3
     },
     {
+      "source": "assumptions",
+      "target": "challenge",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "assumptions",
+      "target": "balance",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "assumptions",
+      "target": "never",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "never",
       "target": "example",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "never",
+      "target": "challenge",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -37568,8 +44602,32 @@
       "weight": 0.3
     },
     {
+      "source": "example",
+      "target": "challenge",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "example",
+      "target": "establish",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "performed",
       "target": "cycles",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "rich",
+      "target": "contextual",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "filesystem",
+      "target": "base",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -37628,6 +44686,12 @@
       "weight": 0.3
     },
     {
+      "source": "system",
+      "target": "sans",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "principled",
       "target": "reduction",
       "type": "co_occurrence",
@@ -37648,6 +44712,12 @@
     {
       "source": "principled",
       "target": "harm",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "principled",
+      "target": "approach",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -37724,6 +44794,12 @@
       "weight": 0.3
     },
     {
+      "source": "harm",
+      "target": "approach",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "materialist",
       "target": "worldview",
       "type": "co_occurrence",
@@ -37736,8 +44812,56 @@
       "weight": 0.3
     },
     {
+      "source": "utilitarian",
+      "target": "approach",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "approach",
+      "target": "maleficence",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "approach",
+      "target": "truth",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "approach",
+      "target": "beneficence",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "social",
+      "target": "creative",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "creative",
       "target": "agency",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "creative",
+      "target": "organization",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "creative",
+      "target": "individual",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "creative",
+      "target": "growth",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -37750,6 +44874,12 @@
     {
       "source": "zlib",
       "target": "shutil",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "zlib",
+      "target": "datetime",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -38102,8 +45232,80 @@
       "weight": 0.3
     },
     {
+      "source": "governmental",
+      "target": "claim",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "terminate",
       "target": "upon",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "terminate",
+      "target": "granted",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "granted",
+      "target": "hereby",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "granted",
+      "target": "royalty",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "granted",
+      "target": "worldwide",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "granted",
+      "target": "hereunder",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "granted",
+      "target": "upon",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "upon",
+      "target": "continue",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "entity",
+      "target": "claim",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "entity",
+      "target": "capabilities",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "capabilities",
+      "target": "societal",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "organization",
+      "target": "claim",
       "type": "co_occurrence",
       "weight": 0.3
     },
@@ -38150,6 +45352,12 @@
       "weight": 0.3
     },
     {
+      "source": "semicolons",
+      "target": "insert",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "arraytrailingcomma",
       "target": "evenbettertoml",
       "type": "co_occurrence",
@@ -38192,8 +45400,140 @@
       "weight": 0.3
     },
     {
+      "source": "javascriptreact",
+      "target": "insert",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "semantichighlighting",
+      "target": "insertspaces",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "sans",
+      "target": "serif",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "unbased",
+      "target": "defaultinterpreterpath",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "typeguards",
+      "target": "defaultinterpreterpath",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "typeguard",
+      "target": "defaultinterpreterpath",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "single",
+      "target": "shortest",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "single",
+      "target": "insert",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "username",
       "target": "windir",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "model",
+      "target": "family",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "shutil",
+      "target": "datetime",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "assertions",
+      "target": "respected",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "assertions",
+      "target": "accompanying",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "evolve",
+      "target": "exercise",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "claim",
+      "target": "liability",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "hereby",
+      "target": "royalty",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "hereby",
+      "target": "worldwide",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "royalty",
+      "target": "worldwide",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "defaultcolordecorators",
+      "target": "linkedediting",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "showconstructors",
+      "target": "showfields",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "insert",
+      "target": "quotestyle",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "datetime",
+      "target": "distro",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "family",
+      "target": "genuineintel",
       "type": "co_occurrence",
       "weight": 0.3
     }

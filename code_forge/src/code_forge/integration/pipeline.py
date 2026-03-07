@@ -7,9 +7,52 @@ from typing import Any
 
 from code_forge.library.db import CodeLibraryDB
 
+CANONICAL_EXPORTABLE_UNIT_TYPES = {
+    "module",
+    "class",
+    "interface",
+    "trait",
+    "enum",
+    "function",
+    "method",
+}
+
+STRUCTURAL_NOISE_UNIT_TYPES = {
+    "external_symbol",
+    "if_block",
+    "for_block",
+    "while_block",
+    "try_block",
+    "with_block",
+    "list_comp",
+    "dict_comp",
+    "set_comp",
+    "gen_exp",
+    "bool_op",
+    "lambda",
+}
+
 
 def _safe_name(value: str) -> str:
     return re.sub(r"[^A-Za-z0-9_.-]+", "_", value).strip("_") or "unit"
+
+
+def _should_export_unit(
+    unit: dict[str, Any],
+    *,
+    min_token_count: int,
+    export_structural_units: bool = False,
+) -> bool:
+    token_count = int(unit.get("token_count") or 0)
+    if token_count < max(0, int(min_token_count)):
+        return False
+
+    unit_type = str(unit.get("unit_type") or "node")
+    if export_structural_units:
+        return unit_type != "external_symbol"
+    if unit_type in STRUCTURAL_NOISE_UNIT_TYPES:
+        return False
+    return unit_type in CANONICAL_EXPORTABLE_UNIT_TYPES
 
 
 def sync_units_to_knowledge_forge(
@@ -18,6 +61,7 @@ def sync_units_to_knowledge_forge(
     limit: int = 5000,
     min_token_count: int = 5,
     run_id: str | None = None,
+    export_structural_units: bool = False,
     include_node_links: bool = False,
     node_links_limit: int = 200,
 ) -> dict[str, Any]:
@@ -35,6 +79,7 @@ def sync_units_to_knowledge_forge(
     created = 0
     updated = 0
     links = 0
+    skipped_units = 0
     id_to_node = dict(existing)
     node_links: list[dict[str, str]] = []
 
@@ -42,7 +87,12 @@ def sync_units_to_knowledge_forge(
         unit_id = str(unit.get("id"))
         if not unit_id:
             continue
-        if int(unit.get("token_count") or 0) < max(0, int(min_token_count)):
+        if not _should_export_unit(
+            unit,
+            min_token_count=min_token_count,
+            export_structural_units=export_structural_units,
+        ):
+            skipped_units += 1
             continue
 
         qn = str(unit.get("qualified_name") or unit.get("name") or unit_id)
@@ -112,6 +162,7 @@ def sync_units_to_knowledge_forge(
         "scanned_units": len(units),
         "created_nodes": created,
         "existing_nodes": updated,
+        "skipped_units": skipped_units,
         "links_created": links,
         "node_links": node_links if include_node_links else [],
         "node_links_truncated": bool(include_node_links and len(units) > len(node_links)),
@@ -124,6 +175,7 @@ def export_units_for_graphrag(
     limit: int = 20000,
     min_token_count: int = 5,
     run_id: str | None = None,
+    export_structural_units: bool = False,
 ) -> dict[str, Any]:
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -134,7 +186,11 @@ def export_units_for_graphrag(
     documents: list[dict[str, Any]] = []
 
     for unit in db.iter_units(limit=max(1, int(limit)), run_id=run_id):
-        if int(unit.get("token_count") or 0) < max(0, int(min_token_count)):
+        if not _should_export_unit(
+            unit,
+            min_token_count=min_token_count,
+            export_structural_units=export_structural_units,
+        ):
             skipped += 1
             continue
 
@@ -180,6 +236,7 @@ def export_units_for_graphrag(
         "run_id": run_id,
         "generated_documents": exported,
         "skipped_documents": skipped,
+        "export_structural_units": bool(export_structural_units),
         "by_language": by_language,
         "documents": documents,
     }
@@ -191,6 +248,7 @@ def export_units_for_graphrag(
         "run_id": run_id,
         "exported": exported,
         "skipped": skipped,
+        "export_structural_units": bool(export_structural_units),
         "by_language": by_language,
         "manifest_path": str(manifest_path.resolve()),
     }

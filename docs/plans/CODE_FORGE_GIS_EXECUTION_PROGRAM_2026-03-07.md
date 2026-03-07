@@ -185,3 +185,28 @@ Saved under `docs/external_references/2026-03-07-code-forge-gis/` and ingested i
   - code route: `6 files`, `469 units_created`, `450 knowledge nodes`, `450 GraphRAG docs`
   - document route: `12 files`, `20 knowledge nodes`, `561 lexicon nodes added`
   - metadata route: `6 files`, `6 knowledge nodes`, `285 lexicon nodes added`
+- [x] Tightened Code Forge promotion/export quality for GraphRAG and Knowledge Forge:
+  - default export now excludes structural-noise units such as:
+    - `external_symbol`
+    - `if_block`
+    - `for_block`
+    - `while_block`
+    - `try_block`
+    - `with_block`
+    - comprehension / boolean-op nodes
+  - canonical default export now favors:
+    - `module`
+    - `class`
+    - `interface`
+    - `trait`
+    - `enum`
+    - `function`
+    - `method`
+- [x] Extended integration regression slice passed for the tightened export contract:
+  - `11 passed`
+- [x] Live bounded archive-wave rerun confirmed lower-noise export with better throughput:
+  - elapsed: `13.209s`
+  - runtime reduction vs baseline: `48.01%`
+  - code route knowledge nodes: `141` (from `450`)
+  - code route GraphRAG docs: `141` (from `450`)
+  - code route skipped structural units: `973`
