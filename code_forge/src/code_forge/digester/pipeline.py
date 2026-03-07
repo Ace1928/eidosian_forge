@@ -133,7 +133,13 @@ def build_repo_index(
     by_extension: dict[str, int] = {}
 
     seen = 0
-    for file_path in root_path.rglob("*"):
+    candidate_paths: Iterable[Path]
+    if include_set:
+        candidate_paths = [(root_path / rel_path).resolve() for rel_path in sorted(include_set)]
+    else:
+        candidate_paths = root_path.rglob("*")
+
+    for file_path in candidate_paths:
         if not file_path.is_file():
             continue
         if _should_skip(file_path, exclude):
@@ -141,8 +147,6 @@ def build_repo_index(
 
         rel_path = file_path.relative_to(root_path)
         rel_path_str = str(rel_path).replace("\\", "/")
-        if include_set and rel_path_str not in include_set:
-            continue
 
         suffix = file_path.suffix.lower()
         if suffix not in extension_set:

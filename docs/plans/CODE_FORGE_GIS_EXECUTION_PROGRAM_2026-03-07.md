@@ -38,6 +38,7 @@ Saved under `docs/external_references/2026-03-07-code-forge-gis/` and ingested i
 - HNSWlib README: `hnswlib-readme.md`
 - Apache Tika: `apache-tika.html`
 - Jupyter nbformat spec: `../2026-03-07-notebook-ingestion/jupyter-nbformat-format-description.html`
+- Archive document routing set: `../2026-03-07-archive-doc-routing/README.md`
 
 ## Execution Tracks
 
@@ -168,3 +169,19 @@ Saved under `docs/external_references/2026-03-07-code-forge-gis/` and ingested i
   - `knowledge_metadata`
 - [x] Extended focused regression slice passed for archive wave execution:
   - `39 passed, 2 skipped`
+- [x] Added current archive document-routing source set:
+  - `docs/external_references/2026-03-07-archive-doc-routing/`
+- [x] Archive document-routing source set ingested locally via Tika-backed ingestion:
+  - `files_processed=3`
+  - `nodes_created=26`
+- [x] Fixed include-path execution so bounded archive waves do not re-scan the full archive tree:
+  - `code_forge/src/code_forge/ingest/runner.py`
+  - `code_forge/src/code_forge/digester/pipeline.py`
+- [x] Live bounded archive-wave validation completed on real `archive_forge` content:
+  - selected batches: `3`
+  - completed: `3`
+  - failed: `0`
+  - elapsed: `25.405s`
+  - code route: `6 files`, `469 units_created`, `450 knowledge nodes`, `450 GraphRAG docs`
+  - document route: `12 files`, `20 knowledge nodes`, `561 lexicon nodes added`
+  - metadata route: `6 files`, `6 knowledge nodes`, `285 lexicon nodes added`

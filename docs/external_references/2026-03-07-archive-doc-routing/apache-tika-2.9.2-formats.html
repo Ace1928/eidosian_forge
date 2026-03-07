@@ -1,0 +1,1132 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+ 
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+
+
+
+
+
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Apache Tika &#x2013; Supported Document Formats</title>
+    <style type="text/css" media="all">
+      @import url("../css/site.css");
+    </style>
+    <link rel="icon" type="image/png" href="../tikaNoText16.png" />
+  </head>
+  <body>
+    <div id="body">
+      <div id="banner">
+        <a href="https://tika.apache.org" id="bannerLeft" title="Apache Tika"
+          ><img src="https://tika.apache.org/tika.png" alt="Apache Tika"
+                width="292" height="100"/></a>
+        <a href="https://www.apache.org/" id="bannerRight"
+           title="The Apache Software Foundation"
+          ><img src="https://tika.apache.org/asf-logo.jpg" alt="The Apache Software Foundation"
+                width="190" height="100"/></a>
+      </div>
+      <div id="content">
+        <!-- Licensed to the Apache Software Foundation (ASF) under one or more --><!-- contributor license agreements.  See the NOTICE file distributed with --><!-- this work for additional information regarding copyright ownership. --><!-- The ASF licenses this file to You under the Apache License, Version 2.0 --><!-- (the "License"); you may not use this file except in compliance with --><!-- the License.  You may obtain a copy of the License at --><!--  --><!-- http://www.apache.org/licenses/LICENSE-2.0 --><!--  --><!-- Unless required by applicable law or agreed to in writing, software --><!-- distributed under the License is distributed on an "AS IS" BASIS, --><!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. --><!-- See the License for the specific language governing permissions and --><!-- limitations under the License. --><div class="section">
+<h2><a name="Supported_Document_Formats"></a>Supported Document Formats</h2>
+<p>This page lists all the document formats supported by the parsers in Apache Tika 2.9.2. Follow the links to the various parser class javadocs for more detailed information about each document format and how it is parsed by Tika.</p>
+<p><b>Please note</b> that Apache Tika is able to detect a much wider range of formats than those listed below, this page only documents those formats from which Tika is able to extract metadata and/or textual content.</p>
+<ul>
+<li><a href="#Supported_Document_Formats">Supported Document Formats</a>
+<ul>
+<li><a href="#HyperText_Markup_Language">HyperText Markup Language</a></li>
+<li><a href="#XML_and_derived_formats">XML and derived formats</a></li>
+<li><a href="#Microsoft_Office_document_formats">Microsoft Office document formats</a></li>
+<li><a href="#OpenDocument_Format">OpenDocument Format</a></li>
+<li><a href="#iWorks_document_formats">iWorks document formats</a></li>
+<li><a href="#WordPerfect_document_formats">WordPerfect document formats</a></li>
+<li><a href="#Portable_Document_Format">Portable Document Format</a></li>
+<li><a href="#Electronic_Publication_Format">Electronic Publication Format</a></li>
+<li><a href="#Rich_Text_Format">Rich Text Format</a></li>
+<li><a href="#Compression_and_packaging_formats">Compression and packaging formats</a></li>
+<li><a href="#Text_formats">Text formats</a></li>
+<li><a href="#Feed_and_Syndication_formats">Feed and Syndication formats</a></li>
+<li><a href="#Help_formats">Help formats</a></li>
+<li><a href="#Audio_formats">Audio formats</a></li>
+<li><a href="#Image_formats">Image formats</a></li>
+<li><a href="#Video_formats">Video formats</a></li>
+<li><a href="#Java_class_files_and_archives">Java class files and archives</a></li>
+<li><a href="#Source_code">Source code</a></li>
+<li><a href="#Mail_formats">Mail formats</a></li>
+<li><a href="#CAD_formats">CAD formats</a></li>
+<li><a href="#Font_formats">Font formats</a></li>
+<li><a href="#Scientific_formats">Scientific formats</a></li>
+<li><a href="#Executable_programs_and_libraries">Executable programs and libraries</a></li>
+<li><a href="#Crypto_formats">Crypto formats</a></li>
+<li><a href="#Database_formats">Database formats</a></li>
+<li><a href="#Natural_Language_Processing">Natural Language Processing</a></li>
+<li><a href="#Image_and_Video_object_recognition">Image and Video object recognition</a></li></ul></li>
+<li><a href="#Full_list_of_Supported_Formats_in_standard_artifacts">Full list of Supported Formats in &quot;standard&quot; artifacts</a></li></ul>
+<div class="section">
+<h3><a name="HyperText_Markup_Language">HyperText Markup Language</a></h3>
+<p>The HyperText Markup Language (HTML) is the lingua franca of the web. Tika uses the <a class="externalLink" href="http://home.ccil.org/~cowan/XML/tagsoup/">TagSoup</a> library to support virtually any kind of HTML found on the web. The output from the <a href="./api/org/apache/tika/parser/html/HtmlParser.html">HtmlParser</a> class is guaranteed to be well-formed and valid XHTML, and various heuristics are used to prevent things like inline scripts from cluttering the extracted text content.</p></div>
+<div class="section">
+<h3><a name="XML_and_derived_formats">XML and derived formats</a></h3>
+<p>The Extensible Markup Language (XML) format is a generic format that can be used for all kinds of content. Tika has custom parsers for some widely used XML vocabularies like XHTML, OOXML and ODF, but the default <a href="./api/org/apache/tika/parser/xml/DcXMLParser.html">DcXMLParser</a> class simply extracts the text content of the document and ignores any XML structure. The only exception to this rule are Dublin Core metadata elements that are used for the document metadata.</p></div>
+<div class="section">
+<h3><a name="Microsoft_Office_document_formats">Microsoft Office document formats</a></h3>
+<p>Microsoft Office and some related applications produce documents in the generic OLE 2 Compound Document and Office Open XML (OOXML) formats. The older OLE 2 format was introduced in Microsoft Office version 97 and was the default format until Office version 2007 and the new XML-based OOXML format. The <a href="./api/org/apache/tika/parser/microsoft/OfficeParser.html">OfficeParser</a> and <a href="./api/org/apache/tika/parser/microsoft/ooxml/OOXMLParser.html">OOXMLParser</a> classes use <a class="externalLink" href="http://poi.apache.org/">Apache POI</a> libraries to support text and metadata extraction from both OLE2 and OOXML documents.</p>
+<p>Old, pre-OLE2 Excel files (Excel 2, 3 and 4) are handled by the <a href="./api/org/apache/tika/parser/microsoft/OldExcelParser.html">OldExcelParser</a>.</p>
+<p>The older, pre-OOXML pure-XML, office file formats are handled by <a href="./api/org/apache/tika/parser/microsoft/xml/SpreadsheetMLParser.html">SpreadsheetMLParser</a>, <a href="./api/org/apache/tika/parser/microsoft/xml/WordMLParser.html">WordMLParser</a> and <a href="./api/org/apache/tika/parser/microsoft/ooxml/xwpf/ml2006/Word2006MLParser.html">Word2006MLParser</a>.</p>
+<p>Temporary Office lock files (owner files) are supported for basic metadata extraction by <a href="./api/org/apache/tika/parser/microsoft/MSOwnerFileParser.html">MSOwnerFileParser</a>.</p></div>
+<div class="section">
+<h3><a name="OpenDocument_Format">OpenDocument Format</a></h3>
+<p>The OpenDocument format (ODF) is used most notably as the default format of the OpenOffice.org office suite. The <a href="./api/org/apache/tika/parser/odf/OpenDocumentParser.html">OpenDocumentParser</a> class supports this format and the earlier OpenOffice 1.0 format on which ODF is based.</p></div>
+<div class="section">
+<h3><a name="iWorks_document_formats">iWorks document formats</a></h3>
+<p>The various iWorks document formats (Numbers, Pages, Keynote) are supported by the <a href="./api/org/apache/tika/parser/iwork/IWorkPackageParser.html">IWorkPackageParser</a> class, which extracts text and metadata.</p></div>
+<div class="section">
+<h3><a name="WordPerfect_document_formats">WordPerfect document formats</a></h3>
+<p>The Corel WordPerfect Office Suite formats are supported by <a href="./api/org/apache/tika/parser/wordperfect/WordPerfectParser.html">WordPerfectParser</a>, supporting WordPerfect WP6+ files, and <a href="./api/org/apache/tika/parser/wordperfect/QuattroProParser.html">QuattroProParser</a>, supporting QuattroPro QPW v9+ files.</p></div>
+<div class="section">
+<h3><a name="Portable_Document_Format">Portable Document Format</a></h3>
+<p>The <a href="./api/org/apache/tika/parser/pdf/PDFParser.html">PDFParser</a> class parsers Portable Document Format (PDF) documents using the <a class="externalLink" href="http://pdfbox.apache.org/">Apache PDFBox</a> library.</p></div>
+<div class="section">
+<h3><a name="Electronic_Publication_Format">Electronic Publication Format</a></h3>
+<p>The <a href="./api/org/apache/tika/parser/epub/EpubParser.html">EpubParser</a> class supports the Electronic Publication Format (EPUB) used for many digital books.</p>
+<p>The <a href="./api/org/apache/tika/parser/xml/FictionBookParser.html">FictionBookParser</a> class supports the xml-based Fiction Book publishing format.</p></div>
+<div class="section">
+<h3><a name="Rich_Text_Format">Rich Text Format</a></h3>
+<p>The <a href="./api/org/apache/tika/parser/rtf/RTFParser.html">RTFParser</a> class uses the standard javax.swing.text.rtf feature to extract text content from Rich Text Format (RTF) documents.</p></div>
+<div class="section">
+<h3><a name="Compression_and_packaging_formats">Compression and packaging formats</a></h3>
+<p>Tika uses the <a class="externalLink" href="http://commons.apache.org/compress/">Commons Compress</a> library to support various compression and packaging formats. The <a href="./api/org/apache/tika/parser/pkg/CompressorParser.html">CompressorParser</a> class handles parsing of the top level compression formats, then <a href="./api/org/apache/tika/parser/pkg/PackageParser.html">PackageParser</a> class and its subclasses parse the packaging formats and then pass the unpacked document streams to a second parsing stage using the parser instance specified in the parse context. Formats supported include Tar, AR, ARJ, CPIO, Dump, Zip, 7Zip, Gzip, BZip2, XZ, LZMA, Z and Pack200.</p>
+<p>Additionally, the <a href="./api/org/apache/tika/parser/pkg/RarParser.html">RarParser</a> class supports the RAR archive format, which isn't supported by Commons Compress.</p>
+<p>The <a href="./api/org/apache/tika/parser/apple/AppleSingleFileParser.html">AppleSingleFileParser</a> class supports resources packaged within AppleSingle and AppleDouble files.</p></div>
+<div class="section">
+<h3><a name="Text_formats">Text formats</a></h3>
+<p>Extracting text content from plain text files seems like a simple task until you start thinking of all the possible character encodings. The <a href="./api/org/apache/tika/parser/txt/TXTParser.html">TXTParser</a> class uses encoding detection code from the <a class="externalLink" href="http://site.icu-project.org/">ICU</a> project to automatically detect the character encoding of a text document.</p></div>
+<div class="section">
+<h3><a name="Feed_and_Syndication_formats">Feed and Syndication formats</a></h3>
+<p>The <a href="./api/org/apache/tika/parser/feed/FeedParser.html">FeedParser</a> class supports the RSS and Atom feed syndication formats.</p>
+<p>The <a href="./api/org/apache/tika/parser/iptc/IptcAnpaParser.html">IptcAnpaParser</a> class supports the IPTC ANPA News Wire feed format.</p></div>
+<div class="section">
+<h3><a name="Help_formats">Help formats</a></h3>
+<p>The <a href="./api/org/apache/tika/parser/chm/ChmParser.html">ChmParser</a> class supports the CHM Help format.</p></div>
+<div class="section">
+<h3><a name="Audio_formats">Audio formats</a></h3>
+<p>Tika can detect several common audio formats and extract metadata from them. Even text extraction is supported for some audio files that contain lyrics or other textual content. Extracted metadata includes sampling rates, channels, format information, artists, titles etc. The <a href="./api/org/apache/tika/parser/audio/AudioParser.html">AudioParser</a> and <a href="./api/org/apache/tika/parser/audio/MidiParser.html">MidiParser</a> classes use standard javax.sound features to process simple audio formats. The <a href="./api/org/apache/tika/parser/mp3/Mp3Parser.html">Mp3Parser</a> class adds support for the widely used MP3 format, and the <a href="./api/org/apache/tika/parser/mp4/MP4Parser.html">MP4Parser</a> class provides it for MP4 audio. The Ogg family of audio formats (Vorbis, Speex, Opus, Flac etc) are supported by the <a href="./api/org/gagravarr/tika/VorbisParser.html">VorbisParser</a>, <a href="./api/org/gagravarr/tika/OpusParser.html">OpusParser</a>, <a href="./api/org/gagravarr/tika/SpeexParser.html">SpeexParser</a> and <a href="./api/org/gagravarr/tika/FlacParser.html">FlacParser</a> classes.</p></div>
+<div class="section">
+<h3><a name="Image_formats">Image formats</a></h3>
+<p>The <a href="./api/org/apache/tika/parser/image/ImageParser.html">ImageParser</a> class uses the standard javax.imageio feature to extract simple metadata from image formats supported by the Java platform, such as PNG, GIF and BMP. More complex image metadata is available through the <a href="./api/org/apache/tika/parser/jpeg/JpegParser.html">JpegParser</a> class and <a href="./api/org/apache/tika/parser/image/TiffParser.html">TiffParser</a> classes that uses the metadata-extractor library to supports Exif metadata extraction from Jpeg and Tiff images. The <a href="./api/org/apache/tika/parser/image/PSDParser.html">PSDParser</a> class extracts metadata from PSD images. The <a href="./api/org/apache/tika/parser/image/BPGParser.html">BPGParser</a> class extracts simple metadata from BPG (Better Portable Graphics) images. The <a href="./api/org/apache/tika/parser/image/WebPParser.html">WebPParser</a> class extracts simple metadata from WebP image format. The <a href="./api/org/apache/tika/parser/image/ICNSParser.html">ICNSParser</a> class extracts simple metadata from the Apple ICNS icon image format.</p>
+<p>When extracting from images, it is also possible to chain in Tesseract, via the <a href="./api/org/apache/tika/parser/ocr/TesseractOCRParser.html">TesseractOCRParser</a>, to have OCR performed on the contents of the image.</p>
+<p>The <a href="./api/org/apache/tika/parser/microsoft/WMFParser.html">WMFParser</a> class extracts simple text from Microsoft WMF drawings. The <a href="./api/org/apache/tika/parser/microsoft/EMFParser.html">EMFParser</a> class extracts simple text from Microsoft EMF drawings, along with exposing any embedded other resources / files.</p></div>
+<div class="section">
+<h3><a name="Video_formats">Video formats</a></h3>
+<p>Tika supports the Flash video format using a simple parsing algorithm implemented in the <a href="./api/org/apache/tika/parser/video/FLVParser">FLVParser</a> class.</p>
+<p>The MP4 family of video formats (MP4, Quicktime, 3GPP etc) is supported by the <a href="./api/org/apache/tika/parser/mp4/MP4Parser">MP4Parser</a> class, which extracts metadata on the video, along with audio stream (if present).</p>
+<p>For the Ogg family of video formats, a limited amount of metadata is extracted by the <a href="./api/org/gagravarr/tika/OggParser.html">OggParser</a> class. There is also an experimental <a href="./api/org/gagravarr/tika/TheoraParser.html">TheoraParser</a> class which extracts only limited metadata, pending a consensus on the &quot;right&quot; way to return metadata for audio streams along with the video metadata.</p>
+<p>As an alternative to the metadata-focused parsers above, the <a href="./api/org/apache/tika/parser/pot/PooledTimeSeriesParser">PooledTimeSeriesParser</a> can be used (if the required tool is installed) to generate a numeric representation of the video suitable for similarity searches. More details on this approach, and setup instructions for the parser + tool, can be found on <a class="externalLink" href="https://wiki.apache.org/tika/PooledTimeSeriesParser">the Tika wiki page for the parser</a>.</p></div>
+<div class="section">
+<h3><a name="Java_class_files_and_archives">Java class files and archives</a></h3>
+<p>The <a href="./api/org/apache/tika/parser/asm/ClassParser">ClassParser</a> class extracts class names and method signatures from Java class files, and the <a href="./api/org/apache/tika/parser/pkg/PackageParser.html">PackageParser</a> class supports also jar archives.</p></div>
+<div class="section">
+<h3><a name="Source_code">Source code</a></h3>
+<p>The <a href="./api/org/apache/tika/parser/code/SourceCodeParser">SourceCodeParser</a> class handles a number of source code formats, including Java, C, C++ and Groovy. It provides a formatted form of the code, along with some simple metadata.</p></div>
+<div class="section">
+<h3><a name="Mail_formats">Mail formats</a></h3>
+<p>The <a href="./api/org/apache/tika/parser/mbox/MboxParser.html">MboxParser</a> can extract email messages from the mbox format used by many email archives and Unix-style mailboxes.</p>
+<p>The <a href="./api/org/apache/tika/parser/mail/RFC822Parser.html">RFC822Parser</a> can process single email messages in the RFC 822 format used by many email clients in their archives / exports.</p>
+<p>The <a href="./api/org/apache/tika/parser/mbox/OutlookPSTParser.html">OutlookPSTParser</a> can extract email messages from the Microsoft Outlook PST email format.</p>
+<p>The <a href="./api/org/apache/tika/parser/microsoft/OutlookExtractor.html">OutlookExtractor</a> (part of <a href="./api/org/apache/tika/parser/microsoft/OfficeParser.html">OfficeParser</a>) is able to extract email messages from the Microsoft Outlook MSG email format.</p>
+<p>The <a href="./api/org/apache/tika/parser/microsoft/TNEFParser.html">TNEFParser</a> can extract email attachments from the Microsoft TNEF (Transport Neutral Encoding Format, aka Winmail.dat) used with some Microsoft email clients.</p></div>
+<div class="section">
+<h3><a name="CAD_formats">CAD formats</a></h3>
+<p>The <a href="./api/org/apache/tika/parser/dwg/DWGParser.html">DWGParser</a> can extract simple metadata from the DWG CAD format.</p></div>
+<div class="section">
+<h3><a name="Font_formats">Font formats</a></h3>
+<p>The <a href="./api/org/apache/tika/parser/font/TrueTypeParser.html">TrueTypeParser</a> class can extract simple metadata from the TrueType font format. The <a href="./api/org/apache/tika/parser/font/AdobeFontMetricParser.html">AdobeFontMetricParser</a> class does something similar for Adobe Font Metrics files.</p></div>
+<div class="section">
+<h3><a name="Scientific_formats">Scientific formats</a></h3>
+<p>The <a href="./api/org/apache/tika/parser/dif/DIFParser.html">DIFParser</a> is able to extract attribute metadata from the GCMD Directory Interchange Format (DIF) scientific file format.</p>
+<p>The <a href="./api/org/apache/tika/parser/gdal/GDALParser.html">GDALParser</a> is able to extract attribute metadata from the GDAL scientific file format.</p>
+<p>The <a href="./api/org/apache/tika/parser/geoinfo/GeographicInformationParser.html">GeographicInformationParser</a> is able to extract attribute metadata from the ISO-19139 georgraphic information file format.</p>
+<p>The <a href="./api/org/apache/tika/parser/geo/topic/GeoParser.html">GeoParser</a> is makes use of a pre-built collection of a geographic gazetteer, to resolve geographic entities into their positions into the metadata</p>
+<p>The <a href="./api/org/apache/tika/parser/grib/GribParser.html">GribParser</a> is able to extract attribute metadata from the Grib scientific file format.</p>
+<p>The <a href="./api/org/apache/tika/parser/hdf/HDFParser.html">HDFParser</a> is able to extract attribute metadata from the HDF scientific file format.</p>
+<p>The <a href="./api/org/apache/tika/parser/isatab/ISArchiveParser.html">ISArchiveParser</a> is able to extract attribute metadata from the ISA-Tab (ISA Tools) family of scientific file formats.</p>
+<p>The <a href="./api/org/apache/tika/parser/netcdf/NetCDFParser.html">NetCDFParser</a> is able to extract attribute metadata from the NetCDF scientific file format.</p>
+<p>The <a href="./api/org/apache/tika/parser/mat/MatParser.html">MatParser</a> is able to extract attribute metadata from the Matlab scientific file format.</p></div>
+<div class="section">
+<h3><a name="Executable_programs_and_libraries">Executable programs and libraries</a></h3>
+<p>The <a href="./api/org/apache/tika/parser/executable/ExecutableParser.html">ExecutableParser</a> can extract metadata information on platforms, architectures and types from a range of executable formats and libraries, such as Windows Executables and Linux / BSD programs and libraries.</p></div>
+<div class="section">
+<h3><a name="Crypto_formats">Crypto formats</a></h3>
+<p>The <a href="./api/org/apache/tika/parser/crypto/Pkcs7Parser.html">Pkcs7Parser</a> is able to parse the contents of PKCS7 signed messages, but doesn't include any information from the outer PKCS7 wrapper.</p>
+<p>The <a href="./api/org/apache/tika/parser/crypto/TSDParser.html">TSDParser</a> class processes metadata from Time Stamped Data Envelope files, as well as exposing the contents stored within the TSD wrapper.</p></div>
+<div class="section">
+<h3><a name="Database_formats">Database formats</a></h3>
+<p>The <a href="./api/org/apache/tika/parser/jdbc/SQLite3Parser.html">SQLite3Parser</a> is able to extract content from SQLite3 files, in a tabular form. However, it requires that the <a class="externalLink" href="http://xerial.org/software/">org.xerial sqlite-jdbc jar</a> is manually added to the classpath first, as that binary jar isn't shipped as standard.</p>
+<p>The <a href="./api/org/apache/tika/parser/microsoft/JackcessParser.html">JackcessParser</a> is able to extract metadata and content in a tabular form, from Microsoft Access database files.</p>
+<p>The <a href="./api/org/apache/tika/parser/dbf/DBFParser.html">DBFParser</a> currently supports versions of dBase files (dbf) before version 7. dBase formats are used in many legacy database systems, including dBase, FoxBASE, FoxPRO and in ESRI's Shapefile format. See <a class="externalLink" href="http://www.digitalpreservation.gov/formats/fdd/fdd000325.shtml"> digitalpreservation.gov</a> for background on this format.</p></div>
+<div class="section">
+<h3><a name="Natural_Language_Processing">Natural Language Processing</a></h3>
+<p>Tika supports calling out to a number of Natural Language Processing and Named Entity Recognition frameworks, tools and libraries. </p>
+<p>These can be used to support additional formats, or to gain extra information on existing formats. In many cases, additional tools or REST services or training datasets are required to enable or power this support.</p>
+<p>Details on the requirements and setup steps are generally given either in the parser's javadocs, or on the <a class="externalLink" href="https://wiki.apache.org/tika/">Tika wiki</a>.</p>
+<p>The <a href="./api/org/apache/tika/parser/sentiment/analysis/SentimentParser.html">SentimentParser</a> class classifies documents based on the sentiment of document, powered by Apache OpenNLP's Maximum Entropy Classifier.</p>
+<p><a href="./api/org/apache/tika/parser/journal/JournalParser.html">JournalParser</a> uses Grobid (via RESTful server) to extract additional metadata from the text of journal publications. A number of other NLP and NER parsers are available in the <a href="./api/org/apache/tika/parser/ner/">ner package</a></p></div>
+<div class="section">
+<h3><a name="Image_and_Video_object_recognition">Image and Video object recognition</a></h3>
+<p>Tika supports calling out to a number of Object Recognition frameworks to analyse the contents of images and videos. Large training datasets and or frameworks are generally required, often accessed via REST services. The <a href="./api/org/apache/tika/parser/recognition/">recognition package</a> contains most of these. Details on the requirements and setup steps are generally given on the <a class="externalLink" href="https://wiki.apache.org/tika/">Tika wiki</a>.</p></div></div>
+<div class="section">
+<h2><a name="Full_list_of_Supported_Formats_in_standard_artifacts"></a>Full list of Supported Formats in &quot;standard&quot; artifacts</h2>
+<ul>
+<li>org.apache.tika.parser.apple.<a href="./api/org/apache/tika/parser/apple/AppleSingleFileParser">AppleSingleFileParser</a>
+<ul>
+<li>application/applefile</li></ul></li>
+<li>org.apache.tika.parser.apple.<a href="./api/org/apache/tika/parser/apple/PListParser">PListParser</a>
+<ul>
+<li>application/x-plist</li>
+<li>application/x-bplist-itunes</li>
+<li>application/x-bplist</li>
+<li>application/x-bplist-memgraph</li>
+<li>application/x-bplist-webarchive</li></ul></li>
+<li>org.apache.tika.parser.asm.<a href="./api/org/apache/tika/parser/asm/ClassParser">ClassParser</a>
+<ul>
+<li>application/java-vm</li></ul></li>
+<li>org.apache.tika.parser.audio.<a href="./api/org/apache/tika/parser/audio/AudioParser">AudioParser</a>
+<ul>
+<li>audio/vnd.wave</li>
+<li>audio/x-wav</li>
+<li>audio/basic</li>
+<li>audio/x-aiff</li></ul></li>
+<li>org.apache.tika.parser.audio.<a href="./api/org/apache/tika/parser/audio/MidiParser">MidiParser</a>
+<ul>
+<li>application/x-midi</li>
+<li>audio/midi</li></ul></li>
+<li>org.apache.tika.parser.code.<a href="./api/org/apache/tika/parser/code/SourceCodeParser">SourceCodeParser</a>
+<ul>
+<li>text/x-c++src</li>
+<li>text/x-groovy</li>
+<li>text/x-java-source</li></ul></li>
+<li>org.apache.tika.parser.crypto.<a href="./api/org/apache/tika/parser/crypto/Pkcs7Parser">Pkcs7Parser</a>
+<ul>
+<li>application/pkcs7-signature</li>
+<li>application/pkcs7-mime</li></ul></li>
+<li>org.apache.tika.parser.crypto.<a href="./api/org/apache/tika/parser/crypto/TSDParser">TSDParser</a>
+<ul>
+<li>application/timestamped-data</li></ul></li>
+<li>org.apache.tika.parser.csv.<a href="./api/org/apache/tika/parser/csv/TextAndCSVParser">TextAndCSVParser</a>
+<ul>
+<li>text/csv</li>
+<li>text/tsv</li>
+<li>text/plain</li></ul></li>
+<li>org.apache.tika.parser.dbf.<a href="./api/org/apache/tika/parser/dbf/DBFParser">DBFParser</a>
+<ul>
+<li>application/x-dbf</li></ul></li>
+<li>org.apache.tika.parser.dgn.<a href="./api/org/apache/tika/parser/dgn/DGN8Parser">DGN8Parser</a>
+<ul>
+<li>image/vnd.dgn; version=8</li></ul></li>
+<li>org.apache.tika.parser.dif.<a href="./api/org/apache/tika/parser/dif/DIFParser">DIFParser</a>
+<ul>
+<li>application/dif+xml</li></ul></li>
+<li>org.apache.tika.parser.dwg.<a href="./api/org/apache/tika/parser/dwg/DWGParser">DWGParser</a>
+<ul>
+<li>image/vnd.dwg</li></ul></li>
+<li>org.apache.tika.parser.epub.<a href="./api/org/apache/tika/parser/epub/EpubParser">EpubParser</a>
+<ul>
+<li>application/x-ibooks+zip</li>
+<li>application/epub+zip</li></ul></li>
+<li>org.apache.tika.parser.executable.<a href="./api/org/apache/tika/parser/executable/ExecutableParser">ExecutableParser</a>
+<ul>
+<li>application/x-msdownload</li>
+<li>application/x-sharedlib</li>
+<li>application/x-elf</li>
+<li>application/x-object</li>
+<li>application/x-executable</li>
+<li>application/x-coredump</li></ul></li>
+<li>org.apache.tika.parser.external.<a href="./api/org/apache/tika/parser/external/ExternalParser">ExternalParser</a>
+<ul>
+<li>video/avi</li>
+<li>video/mpeg</li>
+<li>video/x-msvideo</li>
+<li>video/mp4</li></ul></li>
+<li>org.apache.tika.parser.feed.<a href="./api/org/apache/tika/parser/feed/FeedParser">FeedParser</a>
+<ul>
+<li>application/atom+xml</li>
+<li>application/rss+xml</li></ul></li>
+<li>org.apache.tika.parser.font.<a href="./api/org/apache/tika/parser/font/AdobeFontMetricParser">AdobeFontMetricParser</a>
+<ul>
+<li>application/x-font-adobe-metric</li></ul></li>
+<li>org.apache.tika.parser.font.<a href="./api/org/apache/tika/parser/font/TrueTypeParser">TrueTypeParser</a>
+<ul>
+<li>application/x-font-ttf</li></ul></li>
+<li>org.apache.tika.parser.html.<a href="./api/org/apache/tika/parser/html/HtmlParser">HtmlParser</a>
+<ul>
+<li>text/html</li>
+<li>application/vnd.wap.xhtml+xml</li>
+<li>application/x-asp</li>
+<li>application/xhtml+xml</li></ul></li>
+<li>org.apache.tika.parser.http.<a href="./api/org/apache/tika/parser/http/HttpParser">HttpParser</a>
+<ul>
+<li>application/x-httpresponse</li></ul></li>
+<li>org.apache.tika.parser.hwp.<a href="./api/org/apache/tika/parser/hwp/HwpV5Parser">HwpV5Parser</a>
+<ul>
+<li>application/x-hwp-v5</li></ul></li>
+<li>org.apache.tika.parser.image.<a href="./api/org/apache/tika/parser/image/BPGParser">BPGParser</a>
+<ul>
+<li>image/bpg</li>
+<li>image/x-bpg</li></ul></li>
+<li>org.apache.tika.parser.image.<a href="./api/org/apache/tika/parser/image/HeifParser">HeifParser</a>
+<ul>
+<li>image/heic-sequence</li>
+<li>image/heif</li>
+<li>image/heic</li>
+<li>image/heif-sequence</li></ul></li>
+<li>org.apache.tika.parser.image.<a href="./api/org/apache/tika/parser/image/ICNSParser">ICNSParser</a>
+<ul>
+<li>image/icns</li></ul></li>
+<li>org.apache.tika.parser.image.<a href="./api/org/apache/tika/parser/image/ImageParser">ImageParser</a>
+<ul>
+<li>image/png</li>
+<li>image/vnd.wap.wbmp</li>
+<li>image/x-jbig2</li>
+<li>image/bmp</li>
+<li>image/x-xcf</li>
+<li>image/gif</li>
+<li>image/x-icon</li>
+<li>image/x-ms-bmp</li></ul></li>
+<li>org.apache.tika.parser.image.<a href="./api/org/apache/tika/parser/image/JXLParser">JXLParser</a>
+<ul>
+<li>image/jxl</li></ul></li>
+<li>org.apache.tika.parser.image.<a href="./api/org/apache/tika/parser/image/JpegParser">JpegParser</a>
+<ul>
+<li>image/jpeg</li></ul></li>
+<li>org.apache.tika.parser.image.<a href="./api/org/apache/tika/parser/image/PSDParser">PSDParser</a>
+<ul>
+<li>image/vnd.adobe.photoshop</li></ul></li>
+<li>org.apache.tika.parser.image.<a href="./api/org/apache/tika/parser/image/TiffParser">TiffParser</a>
+<ul>
+<li>image/tiff</li></ul></li>
+<li>org.apache.tika.parser.image.<a href="./api/org/apache/tika/parser/image/WebPParser">WebPParser</a>
+<ul>
+<li>image/webp</li></ul></li>
+<li>org.apache.tika.parser.indesign.<a href="./api/org/apache/tika/parser/indesign/IDMLParser">IDMLParser</a>
+<ul>
+<li>application/vnd.adobe.indesign-idml-package</li></ul></li>
+<li>org.apache.tika.parser.iptc.<a href="./api/org/apache/tika/parser/iptc/IptcAnpaParser">IptcAnpaParser</a>
+<ul>
+<li>text/vnd.iptc.anpa</li></ul></li>
+<li>org.apache.tika.parser.iwork.<a href="./api/org/apache/tika/parser/iwork/IWorkPackageParser">IWorkPackageParser</a>
+<ul>
+<li>application/vnd.apple.keynote</li>
+<li>application/vnd.apple.iwork</li>
+<li>application/vnd.apple.numbers</li>
+<li>application/vnd.apple.pages</li></ul></li>
+<li>org.apache.tika.parser.iwork.iwana.<a href="./api/org/apache/tika/parser/iwork/iwana/IWork13PackageParser">IWork13PackageParser</a>
+<ul>
+<li>application/vnd.apple.numbers.13</li>
+<li>application/vnd.apple.unknown.13</li>
+<li>application/vnd.apple.pages.13</li>
+<li>application/vnd.apple.keynote.13</li></ul></li>
+<li>org.apache.tika.parser.iwork.iwana.<a href="./api/org/apache/tika/parser/iwork/iwana/IWork18PackageParser">IWork18PackageParser</a>
+<ul>
+<li>application/vnd.apple.pages.18</li>
+<li>application/vnd.apple.keynote.18</li>
+<li>application/vnd.apple.numbers.18</li></ul></li>
+<li>org.apache.tika.parser.mail.<a href="./api/org/apache/tika/parser/mail/RFC822Parser">RFC822Parser</a>
+<ul>
+<li>message/rfc822</li></ul></li>
+<li>org.apache.tika.parser.mat.<a href="./api/org/apache/tika/parser/mat/MatParser">MatParser</a>
+<ul>
+<li>application/x-matlab-data</li></ul></li>
+<li>org.apache.tika.parser.mbox.<a href="./api/org/apache/tika/parser/mbox/MboxParser">MboxParser</a>
+<ul>
+<li>application/mbox</li></ul></li>
+<li>org.apache.tika.parser.microsoft.<a href="./api/org/apache/tika/parser/microsoft/EMFParser">EMFParser</a>
+<ul>
+<li>image/emf</li></ul></li>
+<li>org.apache.tika.parser.microsoft.<a href="./api/org/apache/tika/parser/microsoft/JackcessParser">JackcessParser</a>
+<ul>
+<li>application/x-msaccess</li></ul></li>
+<li>org.apache.tika.parser.microsoft.<a href="./api/org/apache/tika/parser/microsoft/MSOwnerFileParser">MSOwnerFileParser</a>
+<ul>
+<li>application/x-ms-owner</li></ul></li>
+<li>org.apache.tika.parser.microsoft.<a href="./api/org/apache/tika/parser/microsoft/OfficeParser">OfficeParser</a>
+<ul>
+<li>application/x-tika-msoffice-embedded; format=ole10_native</li>
+<li>application/msword</li>
+<li>application/vnd.visio</li>
+<li>application/x-tika-ole-drm-encrypted</li>
+<li>application/vnd.ms-project</li>
+<li>application/x-tika-msworks-spreadsheet</li>
+<li>application/x-mspublisher</li>
+<li>application/vnd.ms-powerpoint</li>
+<li>application/x-tika-msoffice</li>
+<li>application/sldworks</li>
+<li>application/x-tika-ooxml-protected</li>
+<li>application/vnd.ms-excel</li>
+<li>application/vnd.ms-outlook</li></ul></li>
+<li>org.apache.tika.parser.microsoft.<a href="./api/org/apache/tika/parser/microsoft/OldExcelParser">OldExcelParser</a>
+<ul>
+<li>application/vnd.ms-excel.workspace.3</li>
+<li>application/vnd.ms-excel.workspace.4</li>
+<li>application/vnd.ms-excel.sheet.2</li>
+<li>application/vnd.ms-excel.sheet.3</li>
+<li>application/vnd.ms-excel.sheet.4</li></ul></li>
+<li>org.apache.tika.parser.microsoft.<a href="./api/org/apache/tika/parser/microsoft/TNEFParser">TNEFParser</a>
+<ul>
+<li>application/vnd.ms-tnef</li>
+<li>application/x-tnef</li>
+<li>application/ms-tnef</li></ul></li>
+<li>org.apache.tika.parser.microsoft.<a href="./api/org/apache/tika/parser/microsoft/WMFParser">WMFParser</a>
+<ul>
+<li>image/wmf</li></ul></li>
+<li>org.apache.tika.parser.microsoft.activemime.<a href="./api/org/apache/tika/parser/microsoft/activemime/ActiveMimeParser">ActiveMimeParser</a>
+<ul>
+<li>application/x-activemime</li></ul></li>
+<li>org.apache.tika.parser.microsoft.chm.<a href="./api/org/apache/tika/parser/microsoft/chm/ChmParser">ChmParser</a>
+<ul>
+<li>application/vnd.ms-htmlhelp</li>
+<li>application/x-chm</li>
+<li>application/chm</li></ul></li>
+<li>org.apache.tika.parser.microsoft.onenote.<a href="./api/org/apache/tika/parser/microsoft/onenote/OneNoteParser">OneNoteParser</a>
+<ul>
+<li>application/onenote; format=one</li></ul></li>
+<li>org.apache.tika.parser.microsoft.ooxml.<a href="./api/org/apache/tika/parser/microsoft/ooxml/OOXMLParser">OOXMLParser</a>
+<ul>
+<li>application/vnd.ms-powerpoint.template.macroenabled.12</li>
+<li>application/vnd.ms-excel.addin.macroenabled.12</li>
+<li>application/vnd.openxmlformats-officedocument.wordprocessingml.template</li>
+<li>application/vnd.ms-excel.sheet.binary.macroenabled.12</li>
+<li>application/vnd.openxmlformats-officedocument.wordprocessingml.document</li>
+<li>application/vnd.ms-powerpoint.slide.macroenabled.12</li>
+<li>application/vnd.ms-visio.drawing</li>
+<li>application/vnd.ms-powerpoint.slideshow.macroenabled.12</li>
+<li>application/vnd.ms-powerpoint.presentation.macroenabled.12</li>
+<li>application/vnd.openxmlformats-officedocument.presentationml.slide</li>
+<li>application/vnd.ms-excel.sheet.macroenabled.12</li>
+<li>application/vnd.ms-word.template.macroenabled.12</li>
+<li>application/vnd.ms-word.document.macroenabled.12</li>
+<li>application/vnd.ms-powerpoint.addin.macroenabled.12</li>
+<li>application/vnd.openxmlformats-officedocument.spreadsheetml.template</li>
+<li>application/vnd.ms-xpsdocument</li>
+<li>application/vnd.ms-visio.drawing.macroenabled.12</li>
+<li>application/vnd.ms-visio.template.macroenabled.12</li>
+<li>model/vnd.dwfx+xps</li>
+<li>application/vnd.openxmlformats-officedocument.presentationml.template</li>
+<li>application/vnd.openxmlformats-officedocument.presentationml.presentation</li>
+<li>application/vnd.openxmlformats-officedocument.spreadsheetml.sheet</li>
+<li>application/vnd.ms-visio.stencil</li>
+<li>application/vnd.ms-visio.template</li>
+<li>application/vnd.openxmlformats-officedocument.presentationml.slideshow</li>
+<li>application/vnd.ms-visio.stencil.macroenabled.12</li>
+<li>application/vnd.ms-excel.template.macroenabled.12</li></ul></li>
+<li>org.apache.tika.parser.microsoft.ooxml.xwpf.ml2006.<a href="./api/org/apache/tika/parser/microsoft/ooxml/xwpf/ml2006/Word2006MLParser">Word2006MLParser</a>
+<ul>
+<li>application/vnd.ms-word2006ml</li></ul></li>
+<li>org.apache.tika.parser.microsoft.pst.<a href="./api/org/apache/tika/parser/microsoft/pst/OutlookPSTParser">OutlookPSTParser</a>
+<ul>
+<li>application/vnd.ms-outlook-pst</li></ul></li>
+<li>org.apache.tika.parser.microsoft.rtf.<a href="./api/org/apache/tika/parser/microsoft/rtf/RTFParser">RTFParser</a>
+<ul>
+<li>application/rtf</li></ul></li>
+<li>org.apache.tika.parser.microsoft.xml.<a href="./api/org/apache/tika/parser/microsoft/xml/SpreadsheetMLParser">SpreadsheetMLParser</a>
+<ul>
+<li>application/vnd.ms-spreadsheetml</li></ul></li>
+<li>org.apache.tika.parser.microsoft.xml.<a href="./api/org/apache/tika/parser/microsoft/xml/WordMLParser">WordMLParser</a>
+<ul>
+<li>application/vnd.ms-wordml</li></ul></li>
+<li>org.apache.tika.parser.mif.<a href="./api/org/apache/tika/parser/mif/MIFParser">MIFParser</a>
+<ul>
+<li>application/x-mif</li>
+<li>application/vnd.mif</li>
+<li>application/x-maker</li></ul></li>
+<li>org.apache.tika.parser.mp3.<a href="./api/org/apache/tika/parser/mp3/Mp3Parser">Mp3Parser</a>
+<ul>
+<li>audio/mpeg</li></ul></li>
+<li>org.apache.tika.parser.mp4.<a href="./api/org/apache/tika/parser/mp4/MP4Parser">MP4Parser</a>
+<ul>
+<li>video/x-m4v</li>
+<li>application/mp4</li>
+<li>video/3gpp</li>
+<li>video/3gpp2</li>
+<li>video/quicktime</li>
+<li>audio/mp4</li>
+<li>video/mp4</li></ul></li>
+<li>org.apache.tika.parser.ocr.<a href="./api/org/apache/tika/parser/ocr/TesseractOCRParser">TesseractOCRParser</a>
+<ul>
+<li>image/ocr-x-portable-pixmap</li>
+<li>image/ocr-jpx</li>
+<li>image/x-portable-pixmap</li>
+<li>image/ocr-jpeg</li>
+<li>image/ocr-jp2</li>
+<li>image/jpx</li>
+<li>image/ocr-png</li>
+<li>image/ocr-tiff</li>
+<li>image/ocr-gif</li>
+<li>image/ocr-bmp</li>
+<li>image/jp2</li></ul></li>
+<li>org.apache.tika.parser.odf.<a href="./api/org/apache/tika/parser/odf/FlatOpenDocumentParser">FlatOpenDocumentParser</a>
+<ul>
+<li>application/vnd.oasis.opendocument.tika.flat.document</li>
+<li>application/vnd.oasis.opendocument.flat.presentation</li>
+<li>application/vnd.oasis.opendocument.flat.spreadsheet</li>
+<li>application/vnd.oasis.opendocument.flat.text</li></ul></li>
+<li>org.apache.tika.parser.odf.<a href="./api/org/apache/tika/parser/odf/OpenDocumentParser">OpenDocumentParser</a>
+<ul>
+<li>application/x-vnd.oasis.opendocument.presentation</li>
+<li>application/vnd.oasis.opendocument.chart</li>
+<li>application/x-vnd.oasis.opendocument.text-web</li>
+<li>application/x-vnd.oasis.opendocument.image</li>
+<li>application/vnd.oasis.opendocument.graphics-template</li>
+<li>application/vnd.oasis.opendocument.text-web</li>
+<li>application/x-vnd.oasis.opendocument.spreadsheet-template</li>
+<li>application/vnd.oasis.opendocument.spreadsheet-template</li>
+<li>application/vnd.sun.xml.writer</li>
+<li>application/x-vnd.oasis.opendocument.graphics-template</li>
+<li>application/vnd.oasis.opendocument.graphics</li>
+<li>application/vnd.oasis.opendocument.spreadsheet</li>
+<li>application/x-vnd.oasis.opendocument.chart</li>
+<li>application/x-vnd.oasis.opendocument.spreadsheet</li>
+<li>application/vnd.oasis.opendocument.image</li>
+<li>application/x-vnd.oasis.opendocument.text</li>
+<li>application/x-vnd.oasis.opendocument.text-template</li>
+<li>application/vnd.oasis.opendocument.formula-template</li>
+<li>application/x-vnd.oasis.opendocument.formula</li>
+<li>application/vnd.oasis.opendocument.image-template</li>
+<li>application/x-vnd.oasis.opendocument.image-template</li>
+<li>application/x-vnd.oasis.opendocument.presentation-template</li>
+<li>application/vnd.oasis.opendocument.presentation-template</li>
+<li>application/vnd.oasis.opendocument.text</li>
+<li>application/vnd.oasis.opendocument.text-template</li>
+<li>application/vnd.oasis.opendocument.chart-template</li>
+<li>application/x-vnd.oasis.opendocument.chart-template</li>
+<li>application/x-vnd.oasis.opendocument.formula-template</li>
+<li>application/x-vnd.oasis.opendocument.text-master</li>
+<li>application/vnd.oasis.opendocument.presentation</li>
+<li>application/x-vnd.oasis.opendocument.graphics</li>
+<li>application/vnd.oasis.opendocument.formula</li>
+<li>application/vnd.oasis.opendocument.text-master</li></ul></li>
+<li>org.apache.tika.parser.pdf.<a href="./api/org/apache/tika/parser/pdf/PDFParser">PDFParser</a>
+<ul>
+<li>application/pdf</li></ul></li>
+<li>org.apache.tika.parser.pkg.<a href="./api/org/apache/tika/parser/pkg/CompressorParser">CompressorParser</a>
+<ul>
+<li>application/zlib</li>
+<li>application/x-gzip</li>
+<li>application/x-bzip2</li>
+<li>application/x-compress</li>
+<li>application/x-java-pack200</li>
+<li>application/x-lzma</li>
+<li>application/deflate64</li>
+<li>application/x-lz4</li>
+<li>application/x-snappy</li>
+<li>application/x-brotli</li>
+<li>application/gzip</li>
+<li>application/x-bzip</li>
+<li>application/x-xz</li></ul></li>
+<li>org.apache.tika.parser.pkg.<a href="./api/org/apache/tika/parser/pkg/PackageParser">PackageParser</a>
+<ul>
+<li>application/x-tar</li>
+<li>application/java-archive</li>
+<li>application/x-arj</li>
+<li>application/x-archive</li>
+<li>application/zip</li>
+<li>application/x-cpio</li>
+<li>application/x-tika-unix-dump</li>
+<li>application/x-7z-compressed</li></ul></li>
+<li>org.apache.tika.parser.pkg.<a href="./api/org/apache/tika/parser/pkg/RarParser">RarParser</a>
+<ul>
+<li>application/x-rar-compressed</li></ul></li>
+<li>org.apache.tika.parser.prt.<a href="./api/org/apache/tika/parser/prt/PRTParser">PRTParser</a>
+<ul>
+<li>application/x-prt</li></ul></li>
+<li>org.apache.tika.parser.sas.<a href="./api/org/apache/tika/parser/sas/SAS7BDATParser">SAS7BDATParser</a>
+<ul>
+<li>application/x-sas-data</li></ul></li>
+<li>org.apache.tika.parser.tmx.<a href="./api/org/apache/tika/parser/tmx/TMXParser">TMXParser</a>
+<ul>
+<li>application/x-tmx</li></ul></li>
+<li>org.apache.tika.parser.video.<a href="./api/org/apache/tika/parser/video/FLVParser">FLVParser</a>
+<ul>
+<li>video/x-flv</li></ul></li>
+<li>org.apache.tika.parser.wacz.<a href="./api/org/apache/tika/parser/wacz/WACZParser">WACZParser</a>
+<ul>
+<li>application/x-wacz</li></ul></li>
+<li>org.apache.tika.parser.warc.<a href="./api/org/apache/tika/parser/warc/WARCParser">WARCParser</a>
+<ul>
+<li>application/warc</li>
+<li>application/warc+gz</li></ul></li>
+<li>org.apache.tika.parser.wordperfect.<a href="./api/org/apache/tika/parser/wordperfect/QuattroProParser">QuattroProParser</a>
+<ul>
+<li>application/x-quattro-pro; version=9</li></ul></li>
+<li>org.apache.tika.parser.wordperfect.<a href="./api/org/apache/tika/parser/wordperfect/WordPerfectParser">WordPerfectParser</a>
+<ul>
+<li>application/vnd.wordperfect; version=5.1</li>
+<li>application/vnd.wordperfect; version=5.0</li>
+<li>application/vnd.wordperfect; version=6.x</li></ul></li>
+<li>org.apache.tika.parser.xliff.<a href="./api/org/apache/tika/parser/xliff/XLIFF12Parser">XLIFF12Parser</a>
+<ul>
+<li>application/x-xliff+xml</li></ul></li>
+<li>org.apache.tika.parser.xliff.<a href="./api/org/apache/tika/parser/xliff/XLZParser">XLZParser</a>
+<ul>
+<li>application/x-xliff+zip</li></ul></li>
+<li>org.apache.tika.parser.xml.<a href="./api/org/apache/tika/parser/xml/DcXMLParser">DcXMLParser</a>
+<ul>
+<li>application/xml</li>
+<li>image/svg+xml</li></ul></li>
+<li>org.apache.tika.parser.xml.<a href="./api/org/apache/tika/parser/xml/FictionBookParser">FictionBookParser</a>
+<ul>
+<li>application/x-fictionbook+xml</li></ul></li>
+<li>org.gagravarr.tika.<a href="./api/org/gagravarr/tika/FlacParser">FlacParser</a>
+<ul>
+<li>audio/x-oggflac</li>
+<li>audio/x-flac</li></ul></li>
+<li>org.gagravarr.tika.<a href="./api/org/gagravarr/tika/OggParser">OggParser</a>
+<ul>
+<li>audio/ogg</li>
+<li>application/kate</li>
+<li>application/ogg</li>
+<li>video/daala</li>
+<li>video/x-ogguvs</li>
+<li>video/x-ogm</li>
+<li>audio/x-oggpcm</li>
+<li>video/ogg</li>
+<li>video/x-dirac</li>
+<li>video/x-oggrgb</li>
+<li>video/x-oggyuv</li></ul></li>
+<li>org.gagravarr.tika.<a href="./api/org/gagravarr/tika/OpusParser">OpusParser</a>
+<ul>
+<li>audio/opus</li>
+<li>audio/ogg; codecs=opus</li></ul></li>
+<li>org.gagravarr.tika.<a href="./api/org/gagravarr/tika/SpeexParser">SpeexParser</a>
+<ul>
+<li>audio/ogg; codecs=speex</li>
+<li>audio/speex</li></ul></li>
+<li>org.gagravarr.tika.<a href="./api/org/gagravarr/tika/TheoraParser">TheoraParser</a>
+<ul>
+<li>video/theora</li></ul></li>
+<li>org.gagravarr.tika.<a href="./api/org/gagravarr/tika/VorbisParser">VorbisParser</a>
+<ul>
+<li>audio/vorbis</li></ul></li></ul></div>
+      </div>
+      <div id="sidebar">
+        <div id="navigation">
+                    <h5>Apache Tika</h5>
+            <ul>
+              
+    <li class="none">
+                    <a href="../index.html">Introduction</a>
+          </li>
+              
+    <li class="none">
+                    <a href="../download.html">Download</a>
+          </li>
+              
+    <li class="none">
+                    <a href="../contribute.html">Contribute</a>
+          </li>
+              
+    <li class="none">
+                    <a href="../mail-lists.html">Mailing Lists</a>
+          </li>
+              
+    <li class="none">
+                    <a href="https://cwiki.apache.org/confluence/display/tika" class="externalLink">Tika Wiki</a>
+          </li>
+              
+    <li class="none">
+                    <a href="https://cwiki.apache.org/confluence/display/TIKA/TikaServer" class="externalLink">Tika Server Wiki</a>
+          </li>
+              
+    <li class="none">
+                    <a href="https://issues.apache.org/jira/browse/TIKA" class="externalLink">Issue Tracker</a>
+          </li>
+              
+    <li class="none">
+                    <a href="../security-model.html">Security Model</a>
+          </li>
+              
+    <li class="none">
+                    <a href="../security.html">Security</a>
+          </li>
+              
+    <li class="none">
+                    <a href="https://cwiki.apache.org/confluence/display/TIKA/Support" class="externalLink">Tika Support</a>
+          </li>
+          </ul>
+              <h5>Documentation</h5>
+            <ul>
+              
+          
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="expanded">
+                    <a href="../3.2.3/index.html">Apache Tika 3.2.3</a>
+                  <ul>
+                  
+    <li class="none">
+                    <a href="../3.2.3/gettingstarted.html">Getting Started</a>
+          </li>
+                  
+    <li class="none">
+                    <a href="../3.2.3/formats.html">Supported Formats</a>
+          </li>
+                  
+    <li class="none">
+                    <a href="../3.2.3/parser.html">Parser API</a>
+          </li>
+                  
+    <li class="none">
+                    <a href="../3.2.3/parser_guide.html">Parser 5min Quick Start Guide</a>
+          </li>
+                  
+    <li class="none">
+                    <a href="../3.2.3/detection.html">Content and Language Detection</a>
+          </li>
+                  
+    <li class="none">
+                    <a href="../3.2.3/configuring.html">Configuring Tika</a>
+          </li>
+                  
+    <li class="none">
+                    <a href="../3.2.3/examples.html">Usage Examples</a>
+          </li>
+                  
+    <li class="none">
+                    <a href="../3.2.3/api/">API Documentation</a>
+          </li>
+              </ul>
+        </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../3.2.2/index.html">Apache Tika 3.2.2</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../3.2.1/index.html">Apache Tika 3.2.1</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../3.2.0/index.html">Apache Tika 3.2.0</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../3.1.0/index.html">Apache Tika 3.1.0</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../3.0.0/index.html">Apache Tika 3.0.0</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../3.0.0-BETA2/index.html">Apache Tika 3.0.0-BETA2</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../3.0.0-BETA/index.html">Apache Tika 3.0.0-BETA</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../2.9.4/index.html">Apache Tika 2.9.4</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../2.9.3/index.html">Apache Tika 2.9.3</a>
+                </li>
+              
+                
+                    
+                        
+                  
+                  
+                  
+                  
+                  
+                  
+              
+            <li class="expanded">
+                    <a href="../2.9.2/index.html">Apache Tika 2.9.2</a>
+                  <ul>
+                  
+    <li class="none">
+                    <a href="../2.9.2/gettingstarted.html">Getting Started</a>
+          </li>
+                  
+    <li class="none">
+              <strong>Supported Formats</strong>
+        </li>
+                  
+    <li class="none">
+                    <a href="../2.9.2/parser.html">Parser API</a>
+          </li>
+                  
+    <li class="none">
+                    <a href="../2.9.2/parser_guide.html">Parser 5min Quick Start Guide</a>
+          </li>
+                  
+    <li class="none">
+                    <a href="../2.9.2/detection.html">Content and Language Detection</a>
+          </li>
+                  
+    <li class="none">
+                    <a href="../2.9.2/configuring.html">Configuring Tika</a>
+          </li>
+                  
+    <li class="none">
+                    <a href="../2.9.2/examples.html">Usage Examples</a>
+          </li>
+                  
+    <li class="none">
+                    <a href="../2.9.2/api/">API Documentation</a>
+          </li>
+              </ul>
+        </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../2.9.1/index.html">Apache Tika 2.9.1</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../2.9.0/index.html">Apache Tika 2.9.0</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../2.8.0/index.html">Apache Tika 2.8.0</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../2.7.0/index.html">Apache Tika 2.7.0</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../2.6.0/index.html">Apache Tika 2.6.0</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../2.5.0/index.html">Apache Tika 2.5.0</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../2.4.1/index.html">Apache Tika 2.4.1</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../2.4.0/index.html">Apache Tika 2.4.0</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../2.3.0/index.html">Apache Tika 2.3.0</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../2.2.1/index.html">Apache Tika 2.2.1</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../2.2.0/index.html">Apache Tika 2.2.0</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../2.1.0/index.html">Apache Tika 2.1.0</a>
+                </li>
+              
+                
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+              
+        <li class="collapsed">
+                    <a href="../2.0.0/index.html">Apache Tika 2.0.0</a>
+                </li>
+          </ul>
+              <h5>The Apache Software Foundation</h5>
+            <ul>
+              
+    <li class="none">
+                    <a href="https://www.apache.org/foundation/" class="externalLink">About</a>
+          </li>
+              
+    <li class="none">
+                    <a href="https://www.apache.org/licenses/" class="externalLink">License</a>
+          </li>
+              
+    <li class="none">
+                    <a href="https://www.apache.org/security/" class="externalLink">Security</a>
+          </li>
+              
+    <li class="none">
+                    <a href="https://www.apache.org/foundation/sponsorship.html" class="externalLink">Sponsorship</a>
+          </li>
+              
+    <li class="none">
+                    <a href="https://www.apache.org/foundation/thanks.html" class="externalLink">Thanks</a>
+          </li>
+          </ul>
+      
+
+
+          <div id="bookpromo">
+            <h5>Books about Tika</h5>
+            <p>
+              <a href="http://manning.com/mattmann/" title="Tika in Action"
+                ><img src="../mattmann_cover150.jpg"
+                      width="150" height="186"/></a>
+            </p>
+          </div>
+        </div>
+      </div>
+      <div id="footer">
+        <p>
+          Copyright &#169; 2025
+          <a href="https://www.apache.org/">The Apache Software Foundation</a>.
+          Site powered by <a href="https://maven.apache.org/">Apache Maven</a>. 
+           <br/>
+          Apache Tika, Tika, Apache, the Apache feather logo, and the Apache
+          Tika project logo are trademarks of The Apache Software Foundation.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

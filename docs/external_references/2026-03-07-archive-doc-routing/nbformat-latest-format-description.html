@@ -1,0 +1,961 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>The Notebook file format &#8212; nbformat 5.10 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="_static/documentation_options.js?v=f5ca5f3c"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'format_description';</script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Supported markup formats" href="markup.html" />
+    <link rel="prev" title="The Jupyter Notebook Format" href="index.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="5.10" />
+  <script async type="text/javascript" src="/_/static/javascript/readthedocs-addons.js"></script><meta name="readthedocs-project-slug" content="nbformat" /><meta name="readthedocs-version-slug" content="latest" /><meta name="readthedocs-resolver-filename" content="/format_description.html" /><meta name="readthedocs-http-status" content="200" /></head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">nbformat 5.10 documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    The Notebook file format
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="markup.html">
+    Supported markup formats
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api.html">
+    Python API for working with notebook files
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="changelog.html">
+    Changelog
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    The Notebook file format
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="markup.html">
+    Supported markup formats
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api.html">
+    Python API for working with notebook files
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="changelog.html">
+    Changelog
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">The Notebook file format</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="the-notebook-file-format">
+<span id="notebook-file-format"></span><h1>The Notebook file format<a class="headerlink" href="#the-notebook-file-format" title="Link to this heading">#</a></h1>
+<p>The official Jupyter Notebook format is defined with
+<a class="reference external" href="https://github.com/jupyter/nbformat/blob/master/nbformat/v4/nbformat.v4.schema.json">this JSON schema</a>,
+which is used by Jupyter tools to validate notebooks.</p>
+<p>This page contains a human-readable description of the notebook format.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><em>All</em> metadata fields are optional.
+While the types and values of some metadata fields are defined,
+no metadata fields are required to be defined. Any metadata field
+may also be ignored.</p>
+</div>
+<section id="top-level-structure">
+<h2>Top-level structure<a class="headerlink" href="#top-level-structure" title="Link to this heading">#</a></h2>
+<p>At the highest level, a Jupyter notebook is a dictionary with a few keys:</p>
+<ul class="simple">
+<li><p>metadata (dict)</p></li>
+<li><p>nbformat (int)</p></li>
+<li><p>nbformat_minor (int)</p></li>
+<li><p>cells (list)</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s2">&quot;metadata&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;kernel_info&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="c1"># if kernel_info is defined, its name field is required.</span>
+            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;the name of the kernel&quot;</span>
+        <span class="p">},</span>
+        <span class="s2">&quot;language_info&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="c1"># if language_info is defined, its name field is required.</span>
+            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;the programming language of the kernel&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;the version of the language&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;codemirror_mode&quot;</span><span class="p">:</span> <span class="s2">&quot;The name of the codemirror mode to use [optional]&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;nbformat&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+    <span class="s2">&quot;nbformat_minor&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="s2">&quot;cells&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="c1"># list of cell dictionaries, see below</span>
+    <span class="p">],</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Some fields, such as code input and text output, are characteristically multi-line strings.
+When these fields are written to disk, they <strong>may</strong> be written as a list of strings,
+which should be joined with <code class="docutils literal notranslate"><span class="pre">''</span></code> when reading back into memory.
+In programmatic APIs for working with notebooks (Python, Javascript),
+these are always re-joined into the original multi-line string.
+If you intend to work with notebook files directly,
+you must allow multi-line string fields to be either a string or list of strings.</p>
+</section>
+<section id="cell-types">
+<h2>Cell Types<a class="headerlink" href="#cell-types" title="Link to this heading">#</a></h2>
+<p>There are a few basic cell types for encapsulating code and text.
+All cells have the following basic structure:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s2">&quot;cell_type&quot;</span><span class="p">:</span> <span class="s2">&quot;type&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;metadata&quot;</span><span class="p">:</span> <span class="p">{},</span>
+    <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="s2">&quot;single string or [list, of, strings]&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>On disk, multi-line strings <strong>MAY</strong> be split into lists of strings.
+When read with the nbformat Python API,
+these multi-line strings will always be a single string.</p>
+</div>
+<section id="markdown-cells">
+<h3>Markdown cells<a class="headerlink" href="#markdown-cells" title="Link to this heading">#</a></h3>
+<p>Markdown cells are used for body-text, and contain markdown,
+as defined in <a class="reference external" href="https://help.github.com/articles/github-flavored-markdown">GitHub-flavored markdown</a>, and implemented in <a class="reference external" href="https://github.com/chjj/marked">marked</a>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s2">&quot;cell_type&quot;</span><span class="p">:</span> <span class="s2">&quot;markdown&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;metadata&quot;</span><span class="p">:</span> <span class="p">{},</span>
+    <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="s2">&quot;[multi-line *markdown*]&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="versionchanged">
+<p><span class="versionmodified changed">Changed in version nbformat: </span>4.0</p>
+<p>Heading cells have been removed in favor of simple headings in markdown.</p>
+</div>
+</section>
+<section id="code-cells">
+<h3>Code cells<a class="headerlink" href="#code-cells" title="Link to this heading">#</a></h3>
+<p>Code cells are the primary content of Jupyter notebooks.
+They contain source code in the language of the document’s associated kernel,
+and a list of outputs associated with executing that code.
+They also have an execution_count, which must be an integer or <code class="docutils literal notranslate"><span class="pre">null</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s2">&quot;cell_type&quot;</span><span class="p">:</span> <span class="s2">&quot;code&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;execution_count&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>  <span class="c1"># integer or null</span>
+    <span class="s2">&quot;metadata&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;collapsed&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>  <span class="c1"># whether the output of the cell is collapsed</span>
+        <span class="s2">&quot;scrolled&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>  <span class="c1"># any of true, false or &quot;auto&quot;</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="s2">&quot;[some multi-line code]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;outputs&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="c1"># list of output dicts (described below)</span>
+            <span class="s2">&quot;output_type&quot;</span><span class="p">:</span> <span class="s2">&quot;stream&quot;</span><span class="p">,</span>
+            <span class="c1"># ...</span>
+        <span class="p">}</span>
+    <span class="p">],</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="versionchanged">
+<p><span class="versionmodified changed">Changed in version nbformat: </span>4.0</p>
+<p><code class="docutils literal notranslate"><span class="pre">input</span></code> was renamed to <code class="docutils literal notranslate"><span class="pre">source</span></code>, for consistency among cell types.</p>
+</div>
+<div class="versionchanged">
+<p><span class="versionmodified changed">Changed in version nbformat: </span>4.0</p>
+<p><code class="docutils literal notranslate"><span class="pre">prompt_number</span></code> renamed to <code class="docutils literal notranslate"><span class="pre">execution_count</span></code></p>
+</div>
+</section>
+<section id="code-cell-outputs">
+<h3>Code cell outputs<a class="headerlink" href="#code-cell-outputs" title="Link to this heading">#</a></h3>
+<p>A code cell can have a variety of outputs (stream data or rich mime-type output).
+These correspond to <a class="reference external" href="https://jupyter-client.readthedocs.io/en/latest/messaging.html#messaging" title="(in jupyter_client v8.6)"><span class="xref std std-ref">messages</span></a> produced as a result of executing the cell.</p>
+<p>All outputs have an <code class="docutils literal notranslate"><span class="pre">output_type</span></code> field,
+which is a string defining what type of output it is.</p>
+<section id="stream-output">
+<h4>stream output<a class="headerlink" href="#stream-output" title="Link to this heading">#</a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s2">&quot;output_type&quot;</span><span class="p">:</span> <span class="s2">&quot;stream&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;stdout&quot;</span><span class="p">,</span>  <span class="c1"># or stderr</span>
+    <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="s2">&quot;[multiline stream text]&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="versionchanged">
+<p><span class="versionmodified changed">Changed in version nbformat: </span>4.0</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">stream</span></code> key was changed to <code class="docutils literal notranslate"><span class="pre">name</span></code> to match
+the stream message.</p>
+</div>
+</section>
+<section id="display-data">
+<span id="id1"></span><h4>display_data<a class="headerlink" href="#display-data" title="Link to this heading">#</a></h4>
+<p>Rich display outputs, as created by <code class="docutils literal notranslate"><span class="pre">display_data</span></code> messages,
+contain data keyed by mime-type. This is often called a mime-bundle,
+and shows up in various locations in the notebook format and message spec.
+The metadata of these messages may be keyed by mime-type as well.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s2">&quot;output_type&quot;</span><span class="p">:</span> <span class="s2">&quot;display_data&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;text/plain&quot;</span><span class="p">:</span> <span class="s2">&quot;[multiline text data]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;image/png&quot;</span><span class="p">:</span> <span class="s2">&quot;[base64-encoded-multiline-png-data]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;application/json&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="c1"># JSON data is included as-is</span>
+            <span class="s2">&quot;key1&quot;</span><span class="p">:</span> <span class="s2">&quot;data&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;key2&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;some&quot;</span><span class="p">,</span> <span class="s2">&quot;values&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;key3&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;more&quot;</span><span class="p">:</span> <span class="s2">&quot;data&quot;</span><span class="p">},</span>
+        <span class="p">},</span>
+        <span class="s2">&quot;application/vnd.exampleorg.type+json&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="c1"># JSON data, included as-is, when the mime-type key ends in +json</span>
+            <span class="s2">&quot;key1&quot;</span><span class="p">:</span> <span class="s2">&quot;data&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;key2&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;some&quot;</span><span class="p">,</span> <span class="s2">&quot;values&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;key3&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;more&quot;</span><span class="p">:</span> <span class="s2">&quot;data&quot;</span><span class="p">},</span>
+        <span class="p">},</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;metadata&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;image/png&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;width&quot;</span><span class="p">:</span> <span class="mi">640</span><span class="p">,</span>
+            <span class="s2">&quot;height&quot;</span><span class="p">:</span> <span class="mi">480</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">},</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="versionchanged">
+<p><span class="versionmodified changed">Changed in version nbformat: </span>4.0</p>
+<p><code class="docutils literal notranslate"><span class="pre">application/json</span></code> output is no longer double-serialized into a string.</p>
+</div>
+<div class="versionchanged">
+<p><span class="versionmodified changed">Changed in version nbformat: </span>4.0</p>
+<p>mime-types are used for keys, instead of a combination of short names (<code class="docutils literal notranslate"><span class="pre">text</span></code>)
+and mime-types, and are stored in a <code class="docutils literal notranslate"><span class="pre">data</span></code> key, rather than the top-level.
+i.e. <code class="docutils literal notranslate"><span class="pre">output.data['image/png']</span></code> instead of <code class="docutils literal notranslate"><span class="pre">output.png</span></code>.</p>
+</div>
+</section>
+<section id="execute-result">
+<h4>execute_result<a class="headerlink" href="#execute-result" title="Link to this heading">#</a></h4>
+<p>Results of executing a cell (as created by <code class="docutils literal notranslate"><span class="pre">displayhook</span></code> in Python)
+are stored in <code class="docutils literal notranslate"><span class="pre">execute_result</span></code> outputs.
+<code class="docutils literal notranslate"><span class="pre">execute_result</span></code> outputs are identical to <code class="docutils literal notranslate"><span class="pre">display_data</span></code>,
+adding only a <code class="docutils literal notranslate"><span class="pre">execution_count</span></code> field, which must be an integer.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s2">&quot;output_type&quot;</span><span class="p">:</span> <span class="s2">&quot;execute_result&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;execution_count&quot;</span><span class="p">:</span> <span class="mi">42</span><span class="p">,</span>
+    <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;text/plain&quot;</span><span class="p">:</span> <span class="s2">&quot;[multiline text data]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;image/png&quot;</span><span class="p">:</span> <span class="s2">&quot;[base64-encoded-multiline-png-data]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;application/json&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="c1"># JSON data is included as-is</span>
+            <span class="s2">&quot;json&quot;</span><span class="p">:</span> <span class="s2">&quot;data&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;metadata&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;image/png&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;width&quot;</span><span class="p">:</span> <span class="mi">640</span><span class="p">,</span>
+            <span class="s2">&quot;height&quot;</span><span class="p">:</span> <span class="mi">480</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">},</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="versionchanged">
+<p><span class="versionmodified changed">Changed in version nbformat: </span>4.0</p>
+<p><code class="docutils literal notranslate"><span class="pre">pyout</span></code> renamed to <code class="docutils literal notranslate"><span class="pre">execute_result</span></code></p>
+</div>
+<div class="versionchanged">
+<p><span class="versionmodified changed">Changed in version nbformat: </span>4.0</p>
+<p><code class="docutils literal notranslate"><span class="pre">prompt_number</span></code> renamed to <code class="docutils literal notranslate"><span class="pre">execution_count</span></code></p>
+</div>
+</section>
+<section id="error">
+<h4>error<a class="headerlink" href="#error" title="Link to this heading">#</a></h4>
+<p>Failed execution may show an error:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s1">&#39;output_type&#39;</span><span class="p">:</span> <span class="s1">&#39;error&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;ename&#39;</span> <span class="p">:</span> <span class="nb">str</span><span class="p">,</span>   <span class="c1"># Exception name, as a string</span>
+    <span class="s1">&#39;evalue&#39;</span> <span class="p">:</span> <span class="nb">str</span><span class="p">,</span>  <span class="c1"># Exception value, as a string</span>
+
+    <span class="c1"># The traceback will contain a list of frames,</span>
+    <span class="c1"># represented each as a string.</span>
+    <span class="s1">&#39;traceback&#39;</span> <span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="versionchanged">
+<p><span class="versionmodified changed">Changed in version nbformat: </span>4.0</p>
+<p><code class="docutils literal notranslate"><span class="pre">pyerr</span></code> renamed to <code class="docutils literal notranslate"><span class="pre">error</span></code></p>
+</div>
+</section>
+</section>
+<section id="raw-nbconvert-cells">
+<span id="id2"></span><h3>Raw NBConvert cells<a class="headerlink" href="#raw-nbconvert-cells" title="Link to this heading">#</a></h3>
+<p>A raw cell is defined as content that should be included <em>unmodified</em> in <a class="reference external" href="https://nbconvert.readthedocs.org">nbconvert</a> output.
+For example, this cell could include raw LaTeX for nbconvert to pdf via latex,
+or restructured text for use in Sphinx documentation.</p>
+<p>The notebook authoring environment does not render raw cells.</p>
+<p>The only logic in a raw cell is the <code class="docutils literal notranslate"><span class="pre">format</span></code> metadata field.
+If defined, it specifies which nbconvert output format is the intended target
+for the raw cell. When outputting to any other format,
+the raw cell’s contents will be excluded.
+In the default case when this value is undefined,
+a raw cell’s contents will be included in any nbconvert output,
+regardless of format.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s2">&quot;cell_type&quot;</span><span class="p">:</span> <span class="s2">&quot;raw&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;metadata&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="c1"># the mime-type of the target nbconvert format.</span>
+        <span class="c1"># nbconvert to formats other than this will exclude this cell.</span>
+        <span class="s2">&quot;format&quot;</span><span class="p">:</span> <span class="s2">&quot;mime/type&quot;</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;some nbformat output text&quot;</span><span class="p">],</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="cell-attachments">
+<h3>Cell attachments<a class="headerlink" href="#cell-attachments" title="Link to this heading">#</a></h3>
+<p>Markdown and raw cells can have a number of attachments, typically inline
+images that can be referenced in the markdown content of a cell. The <code class="docutils literal notranslate"><span class="pre">attachments</span></code>
+dictionary of a cell contains a set of mime-bundles (see <a class="reference external" href="https://jupyter-client.readthedocs.io/en/latest/messaging.html#id5" title="(in jupyter_client v8.6)"><span class="xref std std-ref">display_data</span></a>)
+keyed by filename that represents the files attached to the cell.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">attachments</span></code> dictionary is an optional field and can be undefined or empty if the cell does not have any attachments.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s2">&quot;cell_type&quot;</span><span class="p">:</span> <span class="s2">&quot;markdown&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;metadata&quot;</span><span class="p">:</span> <span class="p">{},</span>
+    <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Here is an *inline* image ![inline image](attachment:test.png)&quot;</span><span class="p">],</span>
+    <span class="s2">&quot;attachments&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;test.png&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;image/png&quot;</span><span class="p">:</span> <span class="s2">&quot;base64-encoded-png-data&quot;</span><span class="p">}},</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="cell-ids">
+<h3>Cell ids<a class="headerlink" href="#cell-ids" title="Link to this heading">#</a></h3>
+<p>Since the 4.5 schema release, all cells have an <code class="docutils literal notranslate"><span class="pre">id</span></code> field which must be a string of length
+1-64 with alphanumeric, <code class="docutils literal notranslate"><span class="pre">-</span></code>, and <code class="docutils literal notranslate"><span class="pre">_</span></code> as legal characters to use. These ids must be unique to
+any given Notebook following the nbformat spec.</p>
+<p>The full rules and guidelines for using cells ids is captured in the corresponding
+<a class="reference external" href="https://github.com/jupyter/enhancement-proposals/blob/master/62-cell-id/cell-id.md">JEP Proposal</a>.</p>
+<p>If attempting to add similar support to other languages supporting notebooks specs, this
+<a class="reference external" href="https://github.com/jupyter/nbformat/pull/189">Example PR</a> can be used as a reference to follow.</p>
+</section>
+</section>
+<section id="backward-compatible-changes">
+<h2>Backward-compatible changes<a class="headerlink" href="#backward-compatible-changes" title="Link to this heading">#</a></h2>
+<p>The notebook format is an evolving format. When backward-compatible changes are made,
+the notebook format minor version is incremented. When backward-incompatible changes are made,
+the major version is incremented.</p>
+<p>As of nbformat 4.x, backward-compatible changes include:</p>
+<ul class="simple">
+<li><p>new fields in any dictionary (notebook, cell, output, metadata, etc.)</p></li>
+<li><p>new cell types</p></li>
+<li><p>new output types</p></li>
+</ul>
+<p>New cell or output types will not be rendered in versions that do not recognize them,
+but they will be preserved.</p>
+<p>Because the nbformat python package used to be less strict about validating
+notebook files, two features have been backported from nbformat 4.x to
+nbformat 4.0. These are:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">attachment</span></code> top-level keys in the Markdown and raw cell types
+(backported from nbformat 4.1)</p></li>
+<li><p>Mime-bundle attributes are JSON data if the mime-type key ends in <code class="docutils literal notranslate"><span class="pre">+json</span></code>
+(backported from nbformat 4.2)</p></li>
+</ul>
+<p>These backports ensure that any valid nbformat 4.4 file is also a valid
+nbformat 4.0 file.</p>
+</section>
+<section id="metadata">
+<h2>Metadata<a class="headerlink" href="#metadata" title="Link to this heading">#</a></h2>
+<p>Metadata is a place that you can put arbitrary JSONable information about
+your notebook, cell, or output. Because it is a shared namespace,
+any custom metadata should use a sufficiently unique namespace,
+such as <code class="docutils literal notranslate"><span class="pre">metadata.kaylees_md.foo</span> <span class="pre">=</span> <span class="pre">&quot;bar&quot;</span></code>.</p>
+<p>Metadata fields officially defined for Jupyter notebooks are listed here:</p>
+<section id="notebook-metadata">
+<h3>Notebook metadata<a class="headerlink" href="#notebook-metadata" title="Link to this heading">#</a></h3>
+<p>The following metadata keys are defined at the notebook level:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Key</p></th>
+<th class="head"><p>Value</p></th>
+<th class="head"><p>Interpretation</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>kernelspec</p></td>
+<td><p>dict</p></td>
+<td><p>A <a class="reference external" href="https://jupyter-client.readthedocs.io/en/latest/kernels.html#kernelspecs" title="(in jupyter_client v8.6)"><span class="xref std std-ref">kernel specification</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p>authors</p></td>
+<td><p>list of dicts</p></td>
+<td><p>A list of authors of the document</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>A notebook’s authors is a list of dictionaries containing information about each author of the notebook.
+Currently, only the name is required.
+Additional fields may be added.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">nb</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">authors</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Fernando Perez&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Brian Granger&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+</section>
+<section id="cell-metadata">
+<h3>Cell metadata<a class="headerlink" href="#cell-metadata" title="Link to this heading">#</a></h3>
+<p>Official Jupyter metadata, as used by Jupyter frontends should be placed in the
+<code class="docutils literal notranslate"><span class="pre">metadata.jupyter</span></code> namespace, for example <code class="docutils literal notranslate"><span class="pre">metadata.jupyter.foo</span> <span class="pre">=</span> <span class="pre">&quot;bar&quot;</span></code>.</p>
+<p>The following metadata keys are defined at the cell level:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Key</p></th>
+<th class="head"><p>Value</p></th>
+<th class="head"><p>Interpretation</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>collapsed</p></td>
+<td><p>bool</p></td>
+<td><p>Whether the cell’s output container should be collapsed</p></td>
+</tr>
+<tr class="row-odd"><td><p>scrolled</p></td>
+<td><p>bool or ‘auto’</p></td>
+<td><p>Whether the cell’s output is scrolled, unscrolled, or autoscrolled</p></td>
+</tr>
+<tr class="row-even"><td><p>deletable</p></td>
+<td><p>bool</p></td>
+<td><p>If False, prevent deletion of the cell</p></td>
+</tr>
+<tr class="row-odd"><td><p>editable</p></td>
+<td><p>bool</p></td>
+<td><p>If False, prevent editing of the cell (by definition, this also prevents deleting the cell)</p></td>
+</tr>
+<tr class="row-even"><td><p>format</p></td>
+<td><p>‘mime/type’</p></td>
+<td><p>The mime-type of a <a class="reference internal" href="#raw-nbconvert-cells"><span class="std std-ref">Raw NBConvert Cell</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p>name</p></td>
+<td><p>str</p></td>
+<td><p>A name for the cell. Should be unique across the notebook. Uniqueness must be verified outside of the json schema.</p></td>
+</tr>
+<tr class="row-even"><td><p>tags</p></td>
+<td><p>list of str</p></td>
+<td><p>A list of string tags on the cell. Commas are not allowed in a tag</p></td>
+</tr>
+<tr class="row-odd"><td><p>jupyter</p></td>
+<td><p>dict</p></td>
+<td><p>A namespace holding jupyter specific fields. See docs below for more details</p></td>
+</tr>
+<tr class="row-even"><td><p>execution</p></td>
+<td><p>dict</p></td>
+<td><p>A namespace holding execution specific fields. See docs below for more details</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The following metadata keys are defined at the cell level within the <code class="docutils literal notranslate"><span class="pre">jupyter</span></code> namespace</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Key</p></th>
+<th class="head"><p>Value</p></th>
+<th class="head"><p>Interpretation</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>source_hidden</p></td>
+<td><p>bool</p></td>
+<td><p>Whether the cell’s source should be shown</p></td>
+</tr>
+<tr class="row-odd"><td><p>outputs_hidden</p></td>
+<td><p>bool</p></td>
+<td><p>Whether the cell’s outputs should be shown</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The following metadata keys are defined at the cell level within the <code class="docutils literal notranslate"><span class="pre">execution</span></code> namespace.
+These are lower level fields capturing common kernel message timestamps for better visibility
+in applications where needed. Most users will not look at these directly.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Key</p></th>
+<th class="head"><p>Value</p></th>
+<th class="head"><p>Interpretation</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>iopub.execute_input</p></td>
+<td><p>ISO 8601 format</p></td>
+<td><p>Indicates the time at which the kernel broadcasts an execute_input message. This represents the time when request for work was received by the kernel.</p></td>
+</tr>
+<tr class="row-odd"><td><p>iopub.status.busy</p></td>
+<td><p>ISO 8601 format</p></td>
+<td><p>Indicates the time at which the iopub channel’s kernel status message is ‘busy’. This represents the time when work was started by the kernel.</p></td>
+</tr>
+<tr class="row-even"><td><p>shell.execute_reply</p></td>
+<td><p>ISO 8601 format</p></td>
+<td><p>Indicates the time at which the shell channel’s execute_reply status message was created. This represents the time when work was completed by the kernel.</p></td>
+</tr>
+<tr class="row-odd"><td><p>iopub.status.idle</p></td>
+<td><p>ISO 8601 format</p></td>
+<td><p>Indicates the time at which the iopub channel’s kernel status message is ‘idle’. This represents the time when the kernel is ready to accept new work.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="output-metadata">
+<h3>Output metadata<a class="headerlink" href="#output-metadata" title="Link to this heading">#</a></h3>
+<p>The following metadata keys are defined for code cell outputs:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Key</p></th>
+<th class="head"><p>Value</p></th>
+<th class="head"><p>Interpretation</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>isolated</p></td>
+<td><p>bool</p></td>
+<td><p>Whether the output should be isolated into an IFrame</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="index.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">The Jupyter Notebook Format</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="markup.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Supported markup formats</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#top-level-structure">Top-level structure</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#cell-types">Cell Types</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#markdown-cells">Markdown cells</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#code-cells">Code cells</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#code-cell-outputs">Code cell outputs</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#stream-output">stream output</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#display-data">display_data</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#execute-result">execute_result</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#error">error</a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#raw-nbconvert-cells">Raw NBConvert cells</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#cell-attachments">Cell attachments</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#cell-ids">Cell ids</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#backward-compatible-changes">Backward-compatible changes</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#metadata">Metadata</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#notebook-metadata">Notebook metadata</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#cell-metadata">Cell metadata</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#output-metadata">Output metadata</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/format_description.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2015, Jupyter Development Team.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

@@ -102,6 +102,16 @@ class IngestionRunner:
             for item in (include_paths or [])
             if str(item).strip()
         }
+        if include_set:
+            for rel_path in sorted(include_set):
+                file_path = (root_path / rel_path).resolve()
+                if not file_path.is_file():
+                    continue
+                if self._is_excluded(file_path, exclude_patterns):
+                    continue
+                if file_path.suffix.lower() in extensions:
+                    yield file_path
+            return
         for file_path in root_path.rglob("*"):
             if not file_path.is_file():
                 continue

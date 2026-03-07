@@ -2622,5 +2622,28 @@
     "ttl_seconds": null,
     "tags": ["learning", "self-improvement", "lesson"],
     "linked_memories": []
+  },
+  {
+    "id": "53651fe0-ca85-4ce3-8b4b-0d5b34b97230",
+    "content": "LESSON: Bounded archive-wave execution must short-circuit directly to include_paths in both repo indexing and ingestion scans; otherwise a small batch still pays full archive traversal cost and appears falsely hung.\nCONTEXT: Live archive_forge wave validation on 2026-03-07",
+    "created_at": "2026-03-07T13:16:35.999372",
+    "last_accessed": "2026-03-07T13:16:35.999380",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "Bounded archive-wave execution must short-circuit directly to include_paths in both repo indexing and ingestion scans; otherwise a small batch still pays full archive traversal cost and appears falsely hung.",
+      "context": "Live archive_forge wave validation on 2026-03-07",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "learning",
+      "self-improvement",
+      "lesson"
+    ],
+    "linked_memories": []
   }
 ]
