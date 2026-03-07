@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+from code_forge.digester import pipeline as digester_pipeline
 from code_forge.digester.pipeline import (
     build_archive_ingestion_batches,
     build_archive_reduction_plan,
@@ -9,7 +10,9 @@ from code_forge.digester.pipeline import (
     build_triage_dashboard,
     build_triage_report,
     initialize_archive_ingestion_state,
+    load_archive_ingestion_state,
     run_archive_digester,
+    run_archive_ingestion_batches,
     update_archive_ingestion_state,
 )
 from code_forge.digester.schema import validate_output_dir
@@ -224,6 +227,97 @@ def test_build_archive_batches_and_state(tmp_path: Path) -> None:
     updated = update_archive_ingestion_state(output, batch_id=first_batch_id, status="completed")
     assert updated["completed_count"] == 1
     assert state["batch_count"] == batches["batch_count"]
+    loaded = load_archive_ingestion_state(output)
+    assert loaded["completed_count"] == 1
+
+
+def test_build_repo_index_include_paths_filters_entries(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / "src").mkdir()
+    (repo / "docs").mkdir()
+    (repo / "src" / "keep.py").write_text("def keep():\n    return 1\n", encoding="utf-8")
+    (repo / "src" / "drop.py").write_text("def drop():\n    return 0\n", encoding="utf-8")
+    (repo / "docs" / "guide.md").write_text("# Guide\n", encoding="utf-8")
+
+    output = tmp_path / "digester"
+    repo_index = build_repo_index(
+        repo,
+        output,
+        extensions=[".py", ".md"],
+        include_paths=["src/keep.py", "docs/guide.md"],
+    )
+
+    assert repo_index["files_total"] == 2
+    assert {entry["path"] for entry in repo_index["entries"]} == {"src/keep.py", "docs/guide.md"}
+
+
+def test_run_archive_ingestion_batches_processes_code_doc_and_metadata_routes(tmp_path: Path, monkeypatch) -> None:
+    repo = tmp_path / "archive_like"
+    repo.mkdir()
+    (repo / "src").mkdir()
+    (repo / "docs").mkdir()
+    (repo / "meta").mkdir()
+    (repo / "src" / "a.py").write_text("def a():\n    return 1\n", encoding="utf-8")
+    (repo / "docs" / "guide.md").write_text("# Guide\n\nAlpha beta gamma delta.\n", encoding="utf-8")
+    (repo / "meta" / "index.json").write_text('{"name": "guide", "status": "ready"}\n', encoding="utf-8")
+
+    db = CodeLibraryDB(tmp_path / "library.sqlite")
+    runner = IngestionRunner(db=db, runs_dir=tmp_path / "runs")
+    output = tmp_path / "digester"
+    kb = tmp_path / "kb.json"
+    grag = tmp_path / "grag"
+
+    repo_index = build_repo_index(repo, output, extensions=[".py", ".md", ".json"])
+    batch_plan = build_archive_ingestion_batches(repo_index, output, max_files_per_batch=1, max_bytes_per_batch=4096)
+    initialize_archive_ingestion_state(batch_plan, output)
+
+    monkeypatch.setattr(
+        digester_pipeline,
+        "_process_document_batch",
+        lambda **kwargs: {
+            "generated_at": "now",
+            "batch_id": kwargs["batch"]["batch_id"],
+            "route": "document_pipeline",
+            "files_processed": len(kwargs["batch"]["paths"]),
+            "nodes_created": 2,
+            "lexicon_nodes_added": 3,
+            "results": [],
+            "errors": [],
+        },
+    )
+    monkeypatch.setattr(
+        digester_pipeline,
+        "_process_metadata_batch",
+        lambda **kwargs: {
+            "generated_at": "now",
+            "batch_id": kwargs["batch"]["batch_id"],
+            "route": "knowledge_metadata",
+            "files_processed": len(kwargs["batch"]["paths"]),
+            "nodes_created": 1,
+            "lexicon_nodes_added": 1,
+            "results": [],
+            "errors": [],
+        },
+    )
+
+    summary = run_archive_ingestion_batches(
+        root_path=repo,
+        db=db,
+        runner=runner,
+        output_dir=output,
+        kb_path=kb,
+        graphrag_output_dir=grag,
+        include_routes=["code_forge", "document_pipeline", "knowledge_metadata"],
+    )
+
+    assert summary["completed"] >= 3
+    assert (output / "archive_ingestion_wave_summary.json").exists()
+    batches_dir = output / "batches"
+    assert any(path.name == "archive_digester_summary.json" for path in batches_dir.rglob("archive_digester_summary.json"))
+    assert len(list(batches_dir.rglob("batch_summary.json"))) >= 3
+    routes = {str(run.get("route") or "") for run in summary["runs"]}
+    assert {"code_forge", "document_pipeline", "knowledge_metadata"}.issubset(routes)
 
 
 def test_triage_profile_hot_path_preserves_duplicate_candidate(tmp_path: Path) -> None:

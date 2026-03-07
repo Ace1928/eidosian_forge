@@ -94,14 +94,27 @@ class IngestionRunner:
         root_path: Path,
         extensions: Iterable[str],
         exclude_patterns: List[str],
+        include_paths: Optional[Iterable[str]] = None,
     ) -> Iterable[Path]:
         extensions = {e.lower() for e in extensions}
+        include_set = {
+            str(Path(item)).replace("\\", "/").lstrip("./")
+            for item in (include_paths or [])
+            if str(item).strip()
+        }
         for file_path in root_path.rglob("*"):
             if not file_path.is_file():
                 continue
             if self._is_excluded(file_path, exclude_patterns):
                 continue
             if file_path.suffix.lower() in extensions:
+                if include_set:
+                    try:
+                        rel_path = str(file_path.relative_to(root_path)).replace("\\", "/")
+                    except ValueError:
+                        continue
+                    if rel_path not in include_set:
+                        continue
                 yield file_path
 
     @staticmethod
@@ -125,6 +138,7 @@ class IngestionRunner:
         root_path: Path,
         extensions: Iterable[str],
         exclude_patterns: List[str],
+        include_paths: Optional[Iterable[str]] = None,
         max_files: Optional[int] = None,
         estimate_loc: bool = True,
         sample_size: int = 200,
@@ -136,7 +150,7 @@ class IngestionRunner:
         sample_bytes = 0
         seen = 0
 
-        for path in self._iter_source_files(root_path, extensions, exclude_patterns):
+        for path in self._iter_source_files(root_path, extensions, exclude_patterns, include_paths=include_paths):
             try:
                 file_bytes = path.stat().st_size
                 if estimate_loc:
@@ -410,6 +424,7 @@ class IngestionRunner:
         mode: str = "analysis",
         exclude_patterns: Optional[List[str]] = None,
         extensions: Optional[Iterable[str]] = None,
+        include_paths: Optional[Iterable[str]] = None,
         max_files: Optional[int] = None,
         progress_every: int = 50,
         run_id: Optional[str] = None,
@@ -432,7 +447,20 @@ class IngestionRunner:
         extensions = set(ext.lower() for ext in (extensions or DEFAULT_EXTENSIONS))
 
         run_id = run_id or uuid.uuid4().hex[:16]
-        self.db.create_run(str(root_path), mode, run_id=run_id, config={"extensions": sorted(extensions)})
+        normalized_include = [
+            str(Path(item)).replace("\\", "/").lstrip("./")
+            for item in (include_paths or [])
+            if str(item).strip()
+        ]
+        self.db.create_run(
+            str(root_path),
+            mode,
+            run_id=run_id,
+            config={
+                "extensions": sorted(extensions),
+                "include_paths": normalized_include,
+            },
+        )
         files: List[str] = []
         files_processed = 0
         units_created = 0
@@ -443,6 +471,7 @@ class IngestionRunner:
             root_path,
             extensions,
             exclude_patterns,
+            include_paths=normalized_include,
             max_files=max_files,
         )
 

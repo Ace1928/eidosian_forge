@@ -641,7 +641,10 @@ class GraphRAGIntegration:
             drift = payload.get("drift")
             if isinstance(drift, dict) and drift.get("warning_count") is not None:
                 drift_node = knowledge.add_knowledge(
-                    content=f"Drift warnings: {drift.get('warning_count')}\nMax abs delta: {drift.get('max_abs_delta')}",
+                    content=(
+                        f"Drift warnings: {drift.get('warning_count')}\n"
+                        f"Max abs delta: {drift.get('max_abs_delta')}"
+                    ),
                     concepts=["drift", "code_forge"],
                     tags=["code_forge", "drift", kind],
                     metadata={
@@ -870,7 +873,8 @@ class GraphRAGIntegration:
             md_lines.append(f"- Summary: {report['summary']}")
             metrics = report.get("metrics") or {}
             md_lines.append(
-                f"- Quality: {metrics.get('quality_score')} ({metrics.get('quality_band')}, density={metrics.get('link_density')})"
+                f"- Quality: {metrics.get('quality_score')} "
+                f"({metrics.get('quality_band')}, density={metrics.get('link_density')})"
             )
             md_lines.append("- Findings:")
             for finding in report["findings"]:

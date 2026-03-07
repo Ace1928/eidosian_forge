@@ -37,6 +37,7 @@ Saved under `docs/external_references/2026-03-07-code-forge-gis/` and ingested i
 - Tree-sitter query syntax: `tree-sitter-query-syntax.html`
 - HNSWlib README: `hnswlib-readme.md`
 - Apache Tika: `apache-tika.html`
+- Jupyter nbformat spec: `../2026-03-07-notebook-ingestion/jupyter-nbformat-format-description.html`
 
 ## Execution Tracks
 
@@ -153,3 +154,17 @@ Saved under `docs/external_references/2026-03-07-code-forge-gis/` and ingested i
   - `code_forge/tests/test_digester_pipeline.py`
 - [x] Extended focused regression slice passed for digester + GIS + GraphRAG:
   - `37 passed, 2 skipped`
+- [x] Notebook-format primary source saved locally under `docs/external_references/2026-03-07-notebook-ingestion/`.
+- [x] Notebook-format source set ingested locally via Tika-backed ingestion:
+  - `files_processed=2`
+  - `nodes_created=9`
+- [x] Archive ingestion progressed from static planning to resumable route execution:
+  - `code_forge/src/code_forge/ingest/runner.py`
+  - `code_forge/src/code_forge/digester/pipeline.py`
+  - `code_forge/tests/test_digester_pipeline.py`
+- [x] Added route-aware batch execution for:
+  - `code_forge`
+  - `document_pipeline`
+  - `knowledge_metadata`
+- [x] Extended focused regression slice passed for archive wave execution:
+  - `39 passed, 2 skipped`
