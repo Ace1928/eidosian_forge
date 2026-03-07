@@ -113,11 +113,15 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         local_agent_resp = client.get("/api/runtime/local-agent")
         assert local_agent_resp.status_code == 200
         assert local_agent_resp.json()["status"]["profile"] == "observer"
+        assert client.get("/browse/forge/").status_code == 200
+        assert client.get("/browse/home/").status_code == 200
 
 
 def test_browse_blocks_path_traversal() -> None:
     with TestClient(dashboard.app) as client:
         resp = client.get("/browse/%2e%2e/%2e%2e/etc/passwd")
+        assert resp.status_code == 403
+        resp = client.get("/browse/forge/%2e%2e/%2e%2e/etc/passwd")
         assert resp.status_code == 403
 
 
@@ -127,3 +131,9 @@ def test_health_endpoint() -> None:
         assert resp.status_code == 200
         payload = resp.json()
         assert payload["status"] == "ok"
+
+
+def test_service_api_invalid_action() -> None:
+    with TestClient(dashboard.app) as client:
+        resp = client.post("/api/services/invalid")
+        assert resp.status_code == 400

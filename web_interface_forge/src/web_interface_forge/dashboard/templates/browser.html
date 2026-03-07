@@ -5,7 +5,7 @@
 
 {% block content %}
 <div class="breadcrumb">
-    <a href="/browse/">root</a> <span>/</span>
+    <a href="/browse/{{ domain }}/">{{ root_label or domain }}</a> <span>/</span>
     {% for part in path.split('/') %}
         {% if part and part != '.' %}
             <span>{{ part }}</span> <span>/</span>
@@ -14,9 +14,9 @@
 </div>
 
 <div class="card">
-    <h2>Directory: {{ path }}</h2>
+    <h2>{{ domain|upper }}: {{ path }}</h2>
     {% if parent %}
-    <p><a href="/browse/{{ parent }}">.. (Up one level)</a></p>
+    <p><a href="/browse/{{ domain }}/{{ parent }}">.. (Up one level)</a></p>
     {% endif %}
     <table>
         <thead>
@@ -31,9 +31,9 @@
             <tr>
                 <td>
                     {% if item.is_dir %}
-                    <a href="/browse/{{ item.path }}">📂 {{ item.name }}/</a>
+                    <a href="/browse/{{ domain }}/{{ item.path }}">📂 {{ item.name }}/</a>
                     {% else %}
-                    <a href="/browse/{{ item.path }}">📄 {{ item.name }}</a>
+                    <a href="/browse/{{ domain }}/{{ item.path }}">📄 {{ item.name }}</a>
                     {% endif %}
                 </td>
                 <td>{{ item.size }} B</td>

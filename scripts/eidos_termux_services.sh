@@ -4,6 +4,7 @@ set -euo pipefail
 FORGE_ROOT="${EIDOS_FORGE_ROOT:-/data/data/com.termux/files/home/eidosian_forge}"
 PYTHON_BIN="${EIDOS_VENV_PYTHON:-${FORGE_ROOT}/eidosian_venv/bin/python}"
 PORT_REGISTRY_SCRIPT="${FORGE_ROOT}/scripts/port_registry.py"
+START_SERVICES_SH="${PREFIX:-/data/data/com.termux/files/usr}/etc/profile.d/start-services.sh"
 RUN_DIR="${HOME}/.eidosian/run"
 LOCK_FILE="${RUN_DIR}/services.lock"
 SHELL_COUNT_FILE="${RUN_DIR}/.interactive_shell_count"
@@ -185,6 +186,13 @@ _runit_status() {
     sv status "${service_dir}" 2>&1 || true
 }
 
+_ensure_termux_service_supervisor() {
+    command -v sv >/dev/null 2>&1 || return 0
+    [ -f "${START_SERVICES_SH}" ] || return 0
+    # shellcheck source=/dev/null
+    . "${START_SERVICES_SH}" >/dev/null 2>&1 || true
+}
+
 _start_service() {
     local service_name="$1"
     local script_path="$2"
@@ -194,6 +202,7 @@ _start_service() {
     local expected_cmd="${6:-}"
     local runit_service="${7:-}"
 
+    _ensure_termux_service_supervisor
     if [ -n "${runit_service}" ] && _runit_start "${runit_service}"; then
         _log "${service_name}: started via runit (${runit_service})."
         return 0

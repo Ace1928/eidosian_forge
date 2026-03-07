@@ -5,6 +5,7 @@ eidos_shell_common_runtime_init() {
 
     export LANG="${LANG:-en_US.UTF-8}"
     export TERM="${TERM:-xterm-256color}"
+    export EIDOS_FORGE_ROOT="${EIDOS_FORGE_ROOT:-$HOME/eidosian_forge}"
     export SCRIPTS_DIR="${SCRIPTS_DIR:-$HOME/scripts}"
     export NB_PORT="${NB_PORT:-9090}"
     export USE_CUDA="${USE_CUDA:-0}"
@@ -20,6 +21,7 @@ eidos_shell_common_runtime_init() {
 
     PROMPT_COMMAND="update_title${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
 
+    eidos_path_prepend "${EIDOS_FORGE_ROOT}/scripts"
     eidos_path_prepend "$HOME/bin"
     eidos_path_prepend "$HOME/.local/bin"
     eidos_path_prepend "$HOME/.cargo/bin"

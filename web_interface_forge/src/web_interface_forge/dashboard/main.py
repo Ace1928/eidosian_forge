@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import subprocess
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List
@@ -19,11 +20,13 @@ DOC_FINAL = DOC_RUNTIME / "final_docs"
 DOC_INDEX = DOC_RUNTIME / "doc_index.json"
 DOC_STATUS = DOC_RUNTIME / "processor_status.json"
 RUNTIME_DIR = FORGE_ROOT / "data" / "runtime"
+HOME_ROOT = Path(os.environ.get("HOME", "/data/data/com.termux/files/home")).resolve()
 LOCAL_AGENT_STATUS = RUNTIME_DIR / "local_mcp_agent" / "status.json"
 LOCAL_AGENT_HISTORY = RUNTIME_DIR / "local_mcp_agent" / "history.jsonl"
 SCHEDULER_STATUS = RUNTIME_DIR / "eidos_scheduler_status.json"
 COORDINATOR_STATUS = RUNTIME_DIR / "forge_coordinator_status.json"
 COORDINATOR_HISTORY = RUNTIME_DIR / "forge_runtime_trends.json"
+SERVICES_SCRIPT = FORGE_ROOT / "scripts" / "eidos_termux_services.sh"
 TEMPLATES_DIR = Path(__file__).parent / "templates"
 STATIC_DIR = Path(__file__).parent / "static"
 STATIC_DIR.mkdir(parents=True, exist_ok=True)
@@ -163,6 +166,40 @@ def get_file_tree(path: Path) -> List[Dict[str, Any]]:
     return tree
 
 
+def _resolve_browse_root(domain: str) -> Path:
+    if domain == "forge":
+        return FORGE_ROOT
+    if domain == "home":
+        return HOME_ROOT
+    return DOC_FINAL
+
+
+def _service_command(action: str) -> Dict[str, Any]:
+    allowed = {"start", "stop", "restart", "status"}
+    if action not in allowed:
+        raise HTTPException(status_code=400, detail="Invalid service action")
+    if not SERVICES_SCRIPT.exists():
+        raise HTTPException(status_code=503, detail="Service controller unavailable")
+    env = os.environ.copy()
+    env["EIDOS_FORGE_ROOT"] = str(FORGE_ROOT)
+    result = subprocess.run(
+        [str(SERVICES_SCRIPT), action],
+        cwd=str(FORGE_ROOT),
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=90,
+        check=False,
+    )
+    return {
+        "action": action,
+        "returncode": result.returncode,
+        "stdout": result.stdout,
+        "stderr": result.stderr,
+        "ok": result.returncode == 0,
+    }
+
+
 # --- Routes ---
 
 
@@ -190,11 +227,20 @@ async def dashboard(request: Request):
     )
 
 
-@app.get("/browse/{path:path}", response_class=HTMLResponse)
-async def browse(request: Request, path: str):
-    # Security check: prevent directory traversal
-    target_path = (DOC_FINAL / path).resolve()
+@app.get("/browse/{domain}/", response_class=HTMLResponse)
+async def browse_domain_root(request: Request, domain: str):
+    return await browse_domain(request, domain, ".")
+
+
+@app.get("/browse/{domain}/{path:path}", response_class=HTMLResponse)
+async def browse_domain(request: Request, domain: str, path: str = "."):
+    root = _resolve_browse_root(domain)
+    target_path = (root / path).resolve()
     if not str(target_path).startswith(str(DOC_FINAL.resolve())):
+        if not str(target_path).startswith(str(root.resolve())):
+            raise HTTPException(status_code=403, detail="Access denied")
+
+    if domain == "docs" and not str(target_path).startswith(str(DOC_FINAL.resolve())):
         raise HTTPException(status_code=403, detail="Access denied")
 
     if not target_path.exists():
@@ -204,7 +250,9 @@ async def browse(request: Request, path: str):
         files = get_file_tree(target_path)
         parent = str(Path(path).parent) if path != "." else None
         return templates.TemplateResponse(
-            request, "browser.html", {"request": request, "path": path, "files": files, "parent": parent}
+            request,
+            "browser.html",
+            {"request": request, "domain": domain, "path": path, "files": files, "parent": parent, "root_label": root.name},
         )
     elif target_path.is_file():
         if target_path.suffix.lower() == ".md":
@@ -218,6 +266,11 @@ async def browse(request: Request, path: str):
         else:
             # For non-markdown files, just serve raw or download
             return FileResponse(target_path)
+
+
+@app.get("/browse/{path:path}", response_class=HTMLResponse)
+async def browse(request: Request, path: str):
+    return await browse_domain(request, "docs", path)
 
 
 @app.get("/api/system")
@@ -235,6 +288,16 @@ async def api_runtime():
     snapshot = get_runtime_snapshot()
     snapshot["history"] = get_runtime_history()
     return snapshot
+
+
+@app.get("/api/services")
+async def api_services():
+    return _service_command("status")
+
+
+@app.post("/api/services/{action}")
+async def api_services_action(action: str):
+    return _service_command(action)
 
 
 @app.get("/api/runtime/local-agent")

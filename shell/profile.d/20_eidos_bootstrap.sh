@@ -10,6 +10,7 @@ eidos_termux_bootstrap_init() {
 
     local env_module="${EIDOS_FORGE_ROOT}/eidos_env.sh"
     local service_script="${EIDOS_FORGE_ROOT}/scripts/eidos_termux_services.sh"
+    local atlas_url="${EIDOS_TERMUX_ATLAS_URL:-http://127.0.0.1:${EIDOS_ATLAS_PORT:-8936}}"
 
     if [ -f "${env_module}" ]; then
         # shellcheck source=/dev/null
@@ -26,6 +27,6 @@ eidos_termux_bootstrap_init() {
     fi
 
     if [ "${EIDOS_DISABLE_NOTIFICATIONS:-0}" != "1" ] && command -v notify >/dev/null 2>&1; then
-        notify "💎 Eidosian Nexus initialized. Status: PERFECT."
+        notify "Eidosian Nexus initialized. Atlas: ${atlas_url}"
     fi
 }

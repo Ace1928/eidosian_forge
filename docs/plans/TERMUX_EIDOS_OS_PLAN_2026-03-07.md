@@ -20,10 +20,28 @@ Date: 2026-03-07
   - `scripts/eidos_termux_boot.sh` added
   - `scripts/install_termux_boot.sh` now installs `~/.termux/boot/00-eidos-boot`
 - Immediate next focus:
-  - migrate always-on services toward `termux-services` / runit
+  - expose more service and queue controls through Atlas
   - continue modularizing remaining shell and userland concerns
-  - expose service and boot controls through Atlas
+  - complete boot/resume semantics around the now-installed runit service layer
   - keep the same bootstrap contract working on Linux
+
+- Phase 2 materially advanced:
+  - `scripts/install_termux_runit_services.sh` now installs runit units under `$PREFIX/var/service`
+  - `scripts/eidos_termux_services.sh` now prefers `sv`/runit when installed
+  - live services verified under runit:
+    - qwen ollama
+    - embedding ollama
+    - MCP
+    - Doc Forge
+    - Atlas
+    - scheduler
+    - local agent
+  - interactive shell startup now preserves:
+    - forge `scripts/` on `PATH`
+    - default forge `VIRTUAL_ENV`
+    - Atlas URL export
+    - wake-lock request
+    - startup notification with Atlas URL
 
 Purpose:
 - redesign the Termux startup/bootstrap path

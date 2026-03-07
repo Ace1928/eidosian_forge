@@ -75,6 +75,11 @@
         <div class="stat-value">{{ runtime_snapshot.get('local_agent', {}).get('status', 'unknown')|upper }}</div>
         <div class="stat-label">{{ runtime_snapshot.get('local_agent', {}).get('profile', 'n/a') }}</div>
     </div>
+    <div class="card">
+        <h3>Control Plane</h3>
+        <div class="stat-value"><a href="/browse/forge/">FORGE</a></div>
+        <div class="stat-label"><a href="/browse/home/">Home Browser</a> · <a href="/api/services" target="_blank">Service Status</a></div>
+    </div>
 </div>
 
 <div class="card">

@@ -40,6 +40,7 @@ eidos_use_env() {
         fi
     done
 
+    path_value="$(_eidos_path_prepend_unique "$path_value" "$FORGE_ROOT/scripts")"
     path_value="$(_eidos_path_prepend_unique "$path_value" "$FORGE_ROOT/bin")"
     if [ -d "$FORGE_ROOT/llama.cpp/build/bin" ]; then
         path_value="$(_eidos_path_prepend_unique "$path_value" "$FORGE_ROOT/llama.cpp/build/bin")"

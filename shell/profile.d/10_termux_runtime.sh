@@ -10,6 +10,7 @@ eidos_termux_runtime_init() {
     export MESA_NO_DITHER="${MESA_NO_DITHER:-1}"
     export BLIS_ARCH="${BLIS_ARCH:-generic}"
     export DISPLAY="${DISPLAY:-:1}"
+    export EIDOS_TERMUX_ATLAS_URL="${EIDOS_TERMUX_ATLAS_URL:-http://127.0.0.1:${EIDOS_ATLAS_PORT:-8936}}"
 
     local runtime_default="/data/data/com.termux/files/usr/tmp/$(id -u)"
     export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-${runtime_default}}"
@@ -25,6 +26,12 @@ eidos_termux_runtime_init() {
     alias docs='cd ~/storage/shared/Documents'
     alias dls='cd ~/storage/shared/Download'
     alias pics='cd ~/storage/shared/DCIM'
+    alias atlas='termux-open-url "${EIDOS_TERMUX_ATLAS_URL}"'
+    alias atlas-url='printf "%s\n" "${EIDOS_TERMUX_ATLAS_URL}"'
+
+    if command -v termux-wake-lock >/dev/null 2>&1; then
+        termux-wake-lock >/dev/null 2>&1 || true
+    fi
 
     if [ "${EIDOS_ENABLE_PULSEAUDIO_AUTOSTART:-1}" = "1" ] && eidos_shell_has pulseaudio; then
         if ! pgrep -x pulseaudio >/dev/null 2>&1; then
@@ -44,6 +51,6 @@ eidos_termux_runtime_init() {
     fi
 
     if [ "${EIDOS_DISABLE_NOTIFICATIONS:-0}" != "1" ]; then
-        notify 'Shell loaded and ready.' >/dev/null 2>&1 || true
+        notify "Shell loaded. Atlas: ${EIDOS_TERMUX_ATLAS_URL}" >/dev/null 2>&1 || true
     fi
 }

@@ -267,6 +267,10 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
   - `scripts/eidos_termux_services.sh` now prefers `sv` when installed
   - scheduler state persistence and recovery added
   - runit service definitions installed under `$PREFIX/var/service` with `down` guards for safe boot handoff
+- [~] Termux launch contract hardened:
+  - forge `scripts/` added to the canonical shell/env path contract
+  - interactive startup now exports Atlas URL and requests wake-lock
+  - Atlas now exposes forge/home browsing and service control APIs
   - Universal CI Python tests refactored toward per-component matrix execution
   - Linux parity smoke split into explicit phases (`pytest`, `stdio`, `audit`)
 - [x] Local-agent control-plane slice advanced:

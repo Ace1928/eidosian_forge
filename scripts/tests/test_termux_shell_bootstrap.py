@@ -49,13 +49,15 @@ def test_bootstrap_shell_smoke(tmp_path: Path) -> None:
     bashrc.write_text(
         "#!/usr/bin/env bash\n"
         f"source {BOOTSTRAP}\n"
-        "printf 'BOOTSTRAP_OK=%s\\n' \"${EIDOS_SHELL_COMMON_HELPERS_LOADED:-0}\"\n",
+        "printf 'BOOTSTRAP_OK=%s\\n' \"${EIDOS_SHELL_COMMON_HELPERS_LOADED:-0}\"\n"
+        "printf 'HAS_FORGE_SCRIPTS=%s\\n' \"$(printf '%s' \"${PATH}\" | grep -Fq '/eidosian_forge/scripts' && echo 1 || echo 0)\"\n",
         encoding="utf-8",
     )
     env = os.environ.copy()
     env.update(
         {
             "HOME": str(home),
+            "EIDOS_FORGE_ROOT": str(FORGE_ROOT),
             "EIDOS_ENABLE_DOC_FORGE_AUTOSTART": "0",
             "EIDOS_ENABLE_ATLAS_AUTOSTART": "0",
             "EIDOS_ENABLE_SCHEDULER_AUTOSTART": "0",
@@ -75,6 +77,7 @@ def test_bootstrap_shell_smoke(tmp_path: Path) -> None:
         env=env,
     )
     assert "BOOTSTRAP_OK=1" in result.stdout
+    assert "HAS_FORGE_SCRIPTS=1" in result.stdout
 
 
 def test_termux_audit_detects_shell_bootstrap(tmp_path: Path) -> None:
