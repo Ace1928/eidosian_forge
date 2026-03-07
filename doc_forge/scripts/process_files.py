@@ -64,34 +64,35 @@ def call_llm(prompt):
         except Exception:
             return fallback
 
-    default_port = _registry_port("doc_forge_llm", 8093)
-    url = os.environ.get("EIDOS_DOC_FORGE_COMPLETION_URL", f"http://127.0.0.1:{default_port}/completion")
-
-    # Qwen-style prompt
-    full_prompt = f"""<|im_start|>system
-{SYSTEM_PROMPT}<|im_end|>
-<|im_start|>user
-{prompt}<|im_end|>
-<|im_start|>assistant
-"""
+    default_port = _registry_port("ollama_qwen_http", 8938)
+    url = os.environ.get("EIDOS_DOC_FORGE_COMPLETION_URL", f"http://127.0.0.1:{default_port}/api/generate")
 
     payload = {
-        "prompt": full_prompt,
-        "n_predict": 2048,
-        "temperature": 0.7,
-        "stop": ["<|im_end|>", "<|im_start|>"],
+        "model": "qwen3.5:2b",
+        "system": SYSTEM_PROMPT,
+        "prompt": prompt,
         "stream": False,
+        "options": {
+            "temperature": 0.7,
+            "num_predict": 2048
+        }
     }
 
     try:
-        response = requests.post(url, json=payload, timeout=600)
+        response = requests.post(url, json=payload, timeout=3600)
         if response.status_code != 200:
-            return f"ERROR: llama-server returned status {response.status_code}\n{response.text}"
+            return f"ERROR: ollama returned status {response.status_code}\n{response.text}"
 
         data = response.json()
-        return data.get("content", "").strip()
+        output = data.get("response", "").strip()
+        
+        # Strip thinking blocks
+        import re
+        output = re.sub(r"<think>.*?</think>", "", output, flags=re.DOTALL).strip()
+        
+        return output
     except Exception as e:
-        return f"ERROR: Failed to connect to llama-server: {e}"
+        return f"ERROR: Failed to connect to ollama: {e}"
 
 
 def pre_check(content):

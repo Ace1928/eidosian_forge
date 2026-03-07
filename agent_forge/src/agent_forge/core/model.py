@@ -103,6 +103,7 @@ class ModelManager:
         "deepseek": "agent_forge.models.deepseek_model",
         "llamacpp": "agent_forge.models.llamacpp_model",
         "llm_forge": "agent_forge.models.llm_forge_model",
+        "ollama": "agent_forge.models.ollama_model",
         "huggingface": "agent_forge.models.huggingface_model",
     }
 
