@@ -1,3 +1,1 @@
-data/eidos_semantic_graph.json
-data/kb.json
-data/tiered_memory/self.json
+agent_forge/managed_agents/learner/config.yaml
