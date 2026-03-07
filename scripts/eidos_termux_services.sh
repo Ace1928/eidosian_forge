@@ -37,6 +37,7 @@ DEFAULT_DOC_PORT="$(_registry_port_default doc_forge_dashboard 8930)"
 DEFAULT_ATLAS_PORT="$(_registry_port_default eidos_atlas_dashboard 8936)"
 DEFAULT_OLLAMA_QWEN_PORT="$(_registry_port_default ollama_qwen_http 8938)"
 DEFAULT_OLLAMA_EMBED_PORT="$(_registry_port_default ollama_embedding_http 8940)"
+RUNIT_SERVICE_ROOT="${EIDOS_RUNIT_SERVICE_DIR:-${PREFIX:-/data/data/com.termux/files/usr}/var/service}"
 
 MCP_PORT="${EIDOS_MCP_PORT:-${DEFAULT_MCP_PORT}}"
 MCP_HEALTH_URL="${EIDOS_MCP_HEALTH_URL:-http://127.0.0.1:${MCP_PORT}/health}"
@@ -145,6 +146,45 @@ _is_truthy() {
     esac
 }
 
+_runit_service_path() {
+    printf '%s/%s' "${RUNIT_SERVICE_ROOT}" "$1"
+}
+
+_runit_service_installed() {
+    local service_key="$1"
+    command -v sv >/dev/null 2>&1 || return 1
+    [ -d "$(_runit_service_path "${service_key}")" ]
+}
+
+_runit_start() {
+    local service_key="$1"
+    local service_dir
+    service_dir="$(_runit_service_path "${service_key}")"
+    _runit_service_installed "${service_key}" || return 1
+    rm -f "${service_dir}/down"
+    sv up "${service_dir}" >/dev/null 2>&1 || true
+    sleep 1
+    sv status "${service_dir}" >/dev/null 2>&1
+}
+
+_runit_stop() {
+    local service_key="$1"
+    local service_dir
+    service_dir="$(_runit_service_path "${service_key}")"
+    _runit_service_installed "${service_key}" || return 1
+    sv down "${service_dir}" >/dev/null 2>&1 || true
+    : > "${service_dir}/down"
+    return 0
+}
+
+_runit_status() {
+    local service_key="$1"
+    local service_dir
+    service_dir="$(_runit_service_path "${service_key}")"
+    _runit_service_installed "${service_key}" || return 1
+    sv status "${service_dir}" 2>&1 || true
+}
+
 _start_service() {
     local service_name="$1"
     local script_path="$2"
@@ -152,6 +192,12 @@ _start_service() {
     local log_file="$4"
     local port_check="${5:-}"
     local expected_cmd="${6:-}"
+    local runit_service="${7:-}"
+
+    if [ -n "${runit_service}" ] && _runit_start "${runit_service}"; then
+        _log "${service_name}: started via runit (${runit_service})."
+        return 0
+    fi
 
     mkdir -p "$(dirname "${pid_file}")" "$(dirname "${log_file}")"
 
@@ -190,6 +236,12 @@ _stop_service() {
     local service_name="$1"
     local pid_file="$2"
     local expected_cmd="${3:-}"
+    local runit_service="${4:-}"
+
+    if [ -n "${runit_service}" ] && _runit_stop "${runit_service}"; then
+        _log "${service_name}: stopped via runit (${runit_service})."
+    fi
+
     [ -f "${pid_file}" ] || return 0
 
     local pid
@@ -209,8 +261,20 @@ _status_service() {
     local port="${3:-}"
     local expected_cmd="${4:-}"
     local health_url="${5:-}"
+    local runit_service="${6:-}"
     local status="stopped"
     local pid=""
+    local runit_status=""
+
+    if [ -n "${runit_service}" ] && _runit_service_installed "${runit_service}"; then
+        runit_status="$(_runit_status "${runit_service}")"
+        if printf '%s' "${runit_status}" | grep -Fq 'warning:'; then
+            runit_status=""
+        fi
+        if [ -n "${runit_status}" ] && printf '%s' "${runit_status}" | grep -Eq '^run:'; then
+            status="runit ${runit_status}"
+        fi
+    fi
 
     if [ -f "${pid_file}" ]; then
         pid="$(cat "${pid_file}" 2>/dev/null || true)"
@@ -225,6 +289,9 @@ _status_service() {
     fi
     if [ -n "${health_url}" ] && _http_ok "${health_url}" && [ "${status}" = "stopped" ]; then
         status="running(external health=${health_url})"
+    fi
+    if [ "${status}" = "stopped" ] && [ -n "${runit_status}" ]; then
+        status="runit ${runit_status}"
     fi
     printf '%s: %s\n' "${service_name}" "${status}"
 }
@@ -261,26 +328,26 @@ case "${cmd}" in
     start-shell)
         _with_lock _increment_shell_count_locked >/dev/null
         if _is_truthy "${ENABLE_OLLAMA_AUTOSTART}" && [ -x "${FORGE_ROOT}/scripts/run_ollama_qwen.sh" ] && [ -x "${FORGE_ROOT}/scripts/run_ollama_embedding.sh" ]; then
-            _start_service "Eidos Ollama Qwen" "${FORGE_ROOT}/scripts/run_ollama_qwen.sh" "${OLLAMA_QWEN_PID_FILE}" "${OLLAMA_QWEN_LOG_FILE}" "${OLLAMA_QWEN_PORT}" "scripts/run_ollama_qwen.sh" || true
-            _start_service "Eidos Ollama Embedding" "${FORGE_ROOT}/scripts/run_ollama_embedding.sh" "${OLLAMA_EMBED_PID_FILE}" "${OLLAMA_EMBED_LOG_FILE}" "${OLLAMA_EMBED_PORT}" "scripts/run_ollama_embedding.sh" || true
+            _start_service "Eidos Ollama Qwen" "${FORGE_ROOT}/scripts/run_ollama_qwen.sh" "${OLLAMA_QWEN_PID_FILE}" "${OLLAMA_QWEN_LOG_FILE}" "${OLLAMA_QWEN_PORT}" "scripts/run_ollama_qwen.sh" "eidos-ollama-qwen" || true
+            _start_service "Eidos Ollama Embedding" "${FORGE_ROOT}/scripts/run_ollama_embedding.sh" "${OLLAMA_EMBED_PID_FILE}" "${OLLAMA_EMBED_LOG_FILE}" "${OLLAMA_EMBED_PORT}" "scripts/run_ollama_embedding.sh" "eidos-ollama-embedding" || true
             _wait_http_ok "${OLLAMA_QWEN_HEALTH_URL}" 30 || _log "warning: Ollama qwen health check failed at ${OLLAMA_QWEN_HEALTH_URL}."
             _wait_http_ok "${OLLAMA_EMBED_HEALTH_URL}" 30 || _log "warning: Ollama embedding health check failed at ${OLLAMA_EMBED_HEALTH_URL}."
         fi
-        _start_service "Eidos MCP Server" "${FORGE_ROOT}/eidos_mcp/run_server.sh" "${MCP_PID_FILE}" "${MCP_LOG_FILE}" "${MCP_PORT}" "eidos_mcp/run_server.sh" || true
+        _start_service "Eidos MCP Server" "${FORGE_ROOT}/eidos_mcp/run_server.sh" "${MCP_PID_FILE}" "${MCP_LOG_FILE}" "${MCP_PORT}" "eidos_mcp/run_server.sh" "eidos-mcp" || true
         if _is_truthy "${ENABLE_DOC_FORGE_AUTOSTART}" && [ -x "${FORGE_ROOT}/doc_forge/scripts/run_forge.sh" ]; then
-            _start_service "Eidos Documentation Forge" "${FORGE_ROOT}/doc_forge/scripts/run_forge.sh" "${DOC_PID_FILE}" "${DOC_LOG_FILE}" "${DOC_PORT}" "doc_forge/scripts/run_forge.sh" || true
+            _start_service "Eidos Documentation Forge" "${FORGE_ROOT}/doc_forge/scripts/run_forge.sh" "${DOC_PID_FILE}" "${DOC_LOG_FILE}" "${DOC_PORT}" "doc_forge/scripts/run_forge.sh" "eidos-doc-forge" || true
             if ! _wait_http_ok "${DOC_HEALTH_URL}" 20; then
                 _log "warning: Doc Forge health check failed at ${DOC_HEALTH_URL}."
             fi
         fi
         if _is_truthy "${ENABLE_ATLAS_AUTOSTART}" && [ -x "${FORGE_ROOT}/web_interface_forge/scripts/run_dashboard.sh" ]; then
-            _start_service "Eidos Atlas Dashboard" "${FORGE_ROOT}/web_interface_forge/scripts/run_dashboard.sh" "${ATLAS_PID_FILE}" "${ATLAS_LOG_FILE}" "${ATLAS_PORT}" "web_interface_forge/scripts/run_dashboard.sh" || true
+            _start_service "Eidos Atlas Dashboard" "${FORGE_ROOT}/web_interface_forge/scripts/run_dashboard.sh" "${ATLAS_PID_FILE}" "${ATLAS_LOG_FILE}" "${ATLAS_PORT}" "web_interface_forge/scripts/run_dashboard.sh" "eidos-atlas" || true
         fi
         if _is_truthy "${ENABLE_SCHEDULER_AUTOSTART}" && [ -x "${FORGE_ROOT}/scripts/eidos_scheduler.py" ]; then
-            _start_service "Eidos Scheduler" "${FORGE_ROOT}/scripts/run_eidos_scheduler.sh" "${SCHEDULER_PID_FILE}" "${SCHEDULER_LOG_FILE}" "" "scripts/run_eidos_scheduler.sh" || true
+            _start_service "Eidos Scheduler" "${FORGE_ROOT}/scripts/run_eidos_scheduler.sh" "${SCHEDULER_PID_FILE}" "${SCHEDULER_LOG_FILE}" "" "scripts/run_eidos_scheduler.sh" "eidos-scheduler" || true
         fi
         if _is_truthy "${ENABLE_LOCAL_AGENT_AUTOSTART}" && [ -x "${FORGE_ROOT}/scripts/run_local_mcp_agent.sh" ]; then
-            _start_service "Eidos Local Agent" "${FORGE_ROOT}/scripts/run_local_mcp_agent.sh" "${LOCAL_AGENT_PID_FILE}" "${LOCAL_AGENT_LOG_FILE}" "" "scripts/run_local_mcp_agent.sh" || true
+            _start_service "Eidos Local Agent" "${FORGE_ROOT}/scripts/run_local_mcp_agent.sh" "${LOCAL_AGENT_PID_FILE}" "${LOCAL_AGENT_LOG_FILE}" "" "scripts/run_local_mcp_agent.sh" "eidos-local-agent" || true
         fi
 
         if ! _wait_http_ok "${MCP_HEALTH_URL}" 15; then
@@ -290,19 +357,19 @@ case "${cmd}" in
     exit-shell)
         remaining_count="$(_with_lock _decrement_shell_count_locked)"
         if [ "${remaining_count}" -eq 0 ]; then
-            _stop_service "Eidos Ollama Qwen" "${OLLAMA_QWEN_PID_FILE}" "scripts/run_ollama_qwen.sh"
-            _stop_service "Eidos Ollama Embedding" "${OLLAMA_EMBED_PID_FILE}" "scripts/run_ollama_embedding.sh"
-            _stop_service "Eidos MCP Server" "${MCP_PID_FILE}" "eidos_mcp/run_server.sh"
-            _stop_service "Eidos Documentation Forge" "${DOC_PID_FILE}" "doc_forge/scripts/run_forge.sh"
-            _stop_service "Eidos Atlas Dashboard" "${ATLAS_PID_FILE}" "web_interface_forge/scripts/run_dashboard.sh"
-            _stop_service "Eidos Scheduler" "${SCHEDULER_PID_FILE}" "scripts/run_eidos_scheduler.sh"
-            _stop_service "Eidos Local Agent" "${LOCAL_AGENT_PID_FILE}" "scripts/run_local_mcp_agent.sh"
+            _stop_service "Eidos Ollama Qwen" "${OLLAMA_QWEN_PID_FILE}" "scripts/run_ollama_qwen.sh" "eidos-ollama-qwen"
+            _stop_service "Eidos Ollama Embedding" "${OLLAMA_EMBED_PID_FILE}" "scripts/run_ollama_embedding.sh" "eidos-ollama-embedding"
+            _stop_service "Eidos MCP Server" "${MCP_PID_FILE}" "eidos_mcp/run_server.sh" "eidos-mcp"
+            _stop_service "Eidos Documentation Forge" "${DOC_PID_FILE}" "doc_forge/scripts/run_forge.sh" "eidos-doc-forge"
+            _stop_service "Eidos Atlas Dashboard" "${ATLAS_PID_FILE}" "web_interface_forge/scripts/run_dashboard.sh" "eidos-atlas"
+            _stop_service "Eidos Scheduler" "${SCHEDULER_PID_FILE}" "scripts/run_eidos_scheduler.sh" "eidos-scheduler"
+            _stop_service "Eidos Local Agent" "${LOCAL_AGENT_PID_FILE}" "scripts/run_local_mcp_agent.sh" "eidos-local-agent"
         fi
         ;;
     start)
         if _is_truthy "${ENABLE_OLLAMA_AUTOSTART}" && [ -x "${FORGE_ROOT}/scripts/run_ollama_qwen.sh" ] && [ -x "${FORGE_ROOT}/scripts/run_ollama_embedding.sh" ]; then
-            _start_service "Eidos Ollama Qwen" "${FORGE_ROOT}/scripts/run_ollama_qwen.sh" "${OLLAMA_QWEN_PID_FILE}" "${OLLAMA_QWEN_LOG_FILE}" "${OLLAMA_QWEN_PORT}" "scripts/run_ollama_qwen.sh"
-            _start_service "Eidos Ollama Embedding" "${FORGE_ROOT}/scripts/run_ollama_embedding.sh" "${OLLAMA_EMBED_PID_FILE}" "${OLLAMA_EMBED_LOG_FILE}" "${OLLAMA_EMBED_PORT}" "scripts/run_ollama_embedding.sh"
+            _start_service "Eidos Ollama Qwen" "${FORGE_ROOT}/scripts/run_ollama_qwen.sh" "${OLLAMA_QWEN_PID_FILE}" "${OLLAMA_QWEN_LOG_FILE}" "${OLLAMA_QWEN_PORT}" "scripts/run_ollama_qwen.sh" "eidos-ollama-qwen"
+            _start_service "Eidos Ollama Embedding" "${FORGE_ROOT}/scripts/run_ollama_embedding.sh" "${OLLAMA_EMBED_PID_FILE}" "${OLLAMA_EMBED_LOG_FILE}" "${OLLAMA_EMBED_PORT}" "scripts/run_ollama_embedding.sh" "eidos-ollama-embedding"
             _wait_http_ok "${OLLAMA_QWEN_HEALTH_URL}" 30 || {
                 _log "warning: Ollama qwen health check failed at ${OLLAMA_QWEN_HEALTH_URL}."
             }
@@ -310,24 +377,24 @@ case "${cmd}" in
                 _log "warning: Ollama embedding health check failed at ${OLLAMA_EMBED_HEALTH_URL}."
             }
         fi
-        _start_service "Eidos MCP Server" "${FORGE_ROOT}/eidos_mcp/run_server.sh" "${MCP_PID_FILE}" "${MCP_LOG_FILE}" "${MCP_PORT}" "eidos_mcp/run_server.sh"
+        _start_service "Eidos MCP Server" "${FORGE_ROOT}/eidos_mcp/run_server.sh" "${MCP_PID_FILE}" "${MCP_LOG_FILE}" "${MCP_PORT}" "eidos_mcp/run_server.sh" "eidos-mcp"
         if _is_truthy "${ENABLE_DOC_FORGE_AUTOSTART}" && [ -x "${FORGE_ROOT}/doc_forge/scripts/run_forge.sh" ]; then
-            _start_service "Eidos Documentation Forge" "${FORGE_ROOT}/doc_forge/scripts/run_forge.sh" "${DOC_PID_FILE}" "${DOC_LOG_FILE}" "${DOC_PORT}" "doc_forge/scripts/run_forge.sh"
+            _start_service "Eidos Documentation Forge" "${FORGE_ROOT}/doc_forge/scripts/run_forge.sh" "${DOC_PID_FILE}" "${DOC_LOG_FILE}" "${DOC_PORT}" "doc_forge/scripts/run_forge.sh" "eidos-doc-forge"
             _wait_http_ok "${DOC_HEALTH_URL}" 20 || {
                 _log "warning: Doc Forge health check failed at ${DOC_HEALTH_URL}."
             }
         fi
         if _is_truthy "${ENABLE_ATLAS_AUTOSTART}" && [ -x "${FORGE_ROOT}/web_interface_forge/scripts/run_dashboard.sh" ]; then
-            _start_service "Eidos Atlas Dashboard" "${FORGE_ROOT}/web_interface_forge/scripts/run_dashboard.sh" "${ATLAS_PID_FILE}" "${ATLAS_LOG_FILE}" "${ATLAS_PORT}" "web_interface_forge/scripts/run_dashboard.sh"
+            _start_service "Eidos Atlas Dashboard" "${FORGE_ROOT}/web_interface_forge/scripts/run_dashboard.sh" "${ATLAS_PID_FILE}" "${ATLAS_LOG_FILE}" "${ATLAS_PORT}" "web_interface_forge/scripts/run_dashboard.sh" "eidos-atlas"
             _wait_http_ok "${ATLAS_HEALTH_URL}" 15 || {
                 _log "warning: Atlas Dashboard health check failed at ${ATLAS_HEALTH_URL}."
             }
         fi
         if _is_truthy "${ENABLE_SCHEDULER_AUTOSTART}" && [ -x "${FORGE_ROOT}/scripts/eidos_scheduler.py" ]; then
-            _start_service "Eidos Scheduler" "${FORGE_ROOT}/scripts/run_eidos_scheduler.sh" "${SCHEDULER_PID_FILE}" "${SCHEDULER_LOG_FILE}" "" "scripts/run_eidos_scheduler.sh"
+            _start_service "Eidos Scheduler" "${FORGE_ROOT}/scripts/run_eidos_scheduler.sh" "${SCHEDULER_PID_FILE}" "${SCHEDULER_LOG_FILE}" "" "scripts/run_eidos_scheduler.sh" "eidos-scheduler"
         fi
         if _is_truthy "${ENABLE_LOCAL_AGENT_AUTOSTART}" && [ -x "${FORGE_ROOT}/scripts/run_local_mcp_agent.sh" ]; then
-            _start_service "Eidos Local Agent" "${FORGE_ROOT}/scripts/run_local_mcp_agent.sh" "${LOCAL_AGENT_PID_FILE}" "${LOCAL_AGENT_LOG_FILE}" "" "scripts/run_local_mcp_agent.sh"
+            _start_service "Eidos Local Agent" "${FORGE_ROOT}/scripts/run_local_mcp_agent.sh" "${LOCAL_AGENT_PID_FILE}" "${LOCAL_AGENT_LOG_FILE}" "" "scripts/run_local_mcp_agent.sh" "eidos-local-agent"
         fi
 
         _wait_http_ok "${MCP_HEALTH_URL}" 15 || {
@@ -336,30 +403,33 @@ case "${cmd}" in
         }
         ;;
     stop)
-        _stop_service "Eidos Ollama Qwen" "${OLLAMA_QWEN_PID_FILE}" "scripts/run_ollama_qwen.sh"
-        _stop_service "Eidos Ollama Embedding" "${OLLAMA_EMBED_PID_FILE}" "scripts/run_ollama_embedding.sh"
-        _stop_service "Eidos MCP Server" "${MCP_PID_FILE}" "eidos_mcp/run_server.sh"
-        _stop_service "Eidos Documentation Forge" "${DOC_PID_FILE}" "doc_forge/scripts/run_forge.sh"
-        _stop_service "Eidos Atlas Dashboard" "${ATLAS_PID_FILE}" "web_interface_forge/scripts/run_dashboard.sh"
-        _stop_service "Eidos Scheduler" "${SCHEDULER_PID_FILE}" "scripts/run_eidos_scheduler.sh"
-        _stop_service "Eidos Local Agent" "${LOCAL_AGENT_PID_FILE}" "scripts/run_local_mcp_agent.sh"
+        _stop_service "Eidos Ollama Qwen" "${OLLAMA_QWEN_PID_FILE}" "scripts/run_ollama_qwen.sh" "eidos-ollama-qwen"
+        _stop_service "Eidos Ollama Embedding" "${OLLAMA_EMBED_PID_FILE}" "scripts/run_ollama_embedding.sh" "eidos-ollama-embedding"
+        _stop_service "Eidos MCP Server" "${MCP_PID_FILE}" "eidos_mcp/run_server.sh" "eidos-mcp"
+        _stop_service "Eidos Documentation Forge" "${DOC_PID_FILE}" "doc_forge/scripts/run_forge.sh" "eidos-doc-forge"
+        _stop_service "Eidos Atlas Dashboard" "${ATLAS_PID_FILE}" "web_interface_forge/scripts/run_dashboard.sh" "eidos-atlas"
+        _stop_service "Eidos Scheduler" "${SCHEDULER_PID_FILE}" "scripts/run_eidos_scheduler.sh" "eidos-scheduler"
+        _stop_service "Eidos Local Agent" "${LOCAL_AGENT_PID_FILE}" "scripts/run_local_mcp_agent.sh" "eidos-local-agent"
         ;;
     restart)
         "$0" stop
         "$0" start
         ;;
+    install-runit)
+        exec "${FORGE_ROOT}/scripts/install_termux_runit_services.sh"
+        ;;
     status)
-        _status_service "Eidos Ollama Qwen" "${OLLAMA_QWEN_PID_FILE}" "${OLLAMA_QWEN_PORT}" "scripts/run_ollama_qwen.sh" "${OLLAMA_QWEN_HEALTH_URL}"
-        _status_service "Eidos Ollama Embedding" "${OLLAMA_EMBED_PID_FILE}" "${OLLAMA_EMBED_PORT}" "scripts/run_ollama_embedding.sh" "${OLLAMA_EMBED_HEALTH_URL}"
-        _status_service "Eidos MCP Server" "${MCP_PID_FILE}" "${MCP_PORT}" "eidos_mcp/run_server.sh" "${MCP_HEALTH_URL}"
-        _status_service "Eidos Documentation Forge" "${DOC_PID_FILE}" "${DOC_PORT}" "doc_forge/scripts/run_forge.sh" "${DOC_HEALTH_URL}"
-        _status_service "Eidos Atlas Dashboard" "${ATLAS_PID_FILE}" "${ATLAS_PORT}" "web_interface_forge/scripts/run_dashboard.sh" "${ATLAS_HEALTH_URL}"
-        _status_service "Eidos Scheduler" "${SCHEDULER_PID_FILE}" "" "scripts/run_eidos_scheduler.sh"
-        _status_service "Eidos Local Agent" "${LOCAL_AGENT_PID_FILE}" "" "scripts/run_local_mcp_agent.sh"
+        _status_service "Eidos Ollama Qwen" "${OLLAMA_QWEN_PID_FILE}" "${OLLAMA_QWEN_PORT}" "scripts/run_ollama_qwen.sh" "${OLLAMA_QWEN_HEALTH_URL}" "eidos-ollama-qwen"
+        _status_service "Eidos Ollama Embedding" "${OLLAMA_EMBED_PID_FILE}" "${OLLAMA_EMBED_PORT}" "scripts/run_ollama_embedding.sh" "${OLLAMA_EMBED_HEALTH_URL}" "eidos-ollama-embedding"
+        _status_service "Eidos MCP Server" "${MCP_PID_FILE}" "${MCP_PORT}" "eidos_mcp/run_server.sh" "${MCP_HEALTH_URL}" "eidos-mcp"
+        _status_service "Eidos Documentation Forge" "${DOC_PID_FILE}" "${DOC_PORT}" "doc_forge/scripts/run_forge.sh" "${DOC_HEALTH_URL}" "eidos-doc-forge"
+        _status_service "Eidos Atlas Dashboard" "${ATLAS_PID_FILE}" "${ATLAS_PORT}" "web_interface_forge/scripts/run_dashboard.sh" "${ATLAS_HEALTH_URL}" "eidos-atlas"
+        _status_service "Eidos Scheduler" "${SCHEDULER_PID_FILE}" "" "scripts/run_eidos_scheduler.sh" "" "eidos-scheduler"
+        _status_service "Eidos Local Agent" "${LOCAL_AGENT_PID_FILE}" "" "scripts/run_local_mcp_agent.sh" "" "eidos-local-agent"
         printf 'Interactive shell refcount: %s\n' "$(_read_count)"
         ;;
     *)
-        echo "Usage: $0 {start-shell|exit-shell|start|stop|restart|status}" >&2
+        echo "Usage: $0 {start-shell|exit-shell|start|stop|restart|install-runit|status}" >&2
         exit 2
         ;;
 esac

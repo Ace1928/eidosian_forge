@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import signal
 import subprocess
 import sys
 import time
@@ -22,7 +23,9 @@ from eidosian_runtime import ForgeRuntimeCoordinator
 
 RUNTIME_DIR = FORGE_ROOT / "data" / "runtime"
 STATUS_PATH = RUNTIME_DIR / "eidos_scheduler_status.json"
+STATE_PATH = RUNTIME_DIR / "eidos_scheduler_state.json"
 PIPELINE_STATUS_PATH = RUNTIME_DIR / "living_pipeline_status.json"
+_STOP_REQUESTED = False
 
 
 def _now_utc() -> str:
@@ -42,6 +45,38 @@ def _load_json(path: Path) -> dict[str, Any]:
     except Exception:
         return {}
     return payload if isinstance(payload, dict) else {}
+
+
+def _pid_alive(pid: Any) -> bool:
+    try:
+        pid_value = int(pid or 0)
+    except Exception:
+        return False
+    if pid_value <= 0:
+        return False
+    try:
+        os.kill(pid_value, 0)
+    except OSError:
+        return False
+    return True
+
+
+def _load_state() -> dict[str, Any]:
+    payload = _load_json(STATE_PATH)
+    payload.setdefault("contract", "eidos.scheduler.state.v1")
+    payload.setdefault("cycle", 0)
+    payload.setdefault("consecutive_failures", 0)
+    payload.setdefault("last_result", {})
+    return payload
+
+
+def _write_state(payload: dict[str, Any]) -> None:
+    merged = {
+        "contract": "eidos.scheduler.state.v1",
+        "updated_at": _now_utc(),
+        **payload,
+    }
+    _write_json(STATE_PATH, merged)
 
 
 def _owner() -> str:
@@ -97,6 +132,38 @@ def _status_payload(
     }
 
 
+def _mark_scheduler_state(
+    *,
+    cycle: int,
+    interval_sec: float,
+    model: str,
+    run_graphrag: bool,
+    code_max_files: int | None,
+    state: str,
+    last_result: dict[str, Any] | None = None,
+    stop_requested: bool = False,
+) -> None:
+    previous = _load_state()
+    consecutive_failures = int(previous.get("consecutive_failures") or 0)
+    if state == "success":
+        consecutive_failures = 0
+    elif state in {"error", "timeout"}:
+        consecutive_failures += 1
+    _write_state(
+        {
+            "cycle": int(cycle),
+            "state": state,
+            "interval_sec": float(interval_sec),
+            "model": model,
+            "run_graphrag": bool(run_graphrag),
+            "code_max_files": code_max_files,
+            "consecutive_failures": consecutive_failures,
+            "last_result": dict(last_result or previous.get("last_result") or {}),
+            "stop_requested": bool(stop_requested),
+        }
+    )
+
+
 @eidosian()
 def run_scheduler_cycle(
     *,
@@ -113,6 +180,30 @@ def run_scheduler_cycle(
     cycle: int = 1,
 ) -> dict[str, Any]:
     coordinator = coordinator or ForgeRuntimeCoordinator()
+    if _STOP_REQUESTED:
+        result = {"status": "stopped", "reason": "stop_requested"}
+        _write_json(
+            STATUS_PATH,
+            _status_payload(
+                state="stopped",
+                current_task="living_pipeline",
+                interval_sec=interval_sec,
+                cycle=cycle,
+                next_run_in_seconds=0.0,
+                last_result=result,
+            ),
+        )
+        _mark_scheduler_state(
+            cycle=cycle,
+            interval_sec=interval_sec,
+            model=model,
+            run_graphrag=run_graphrag,
+            code_max_files=code_max_files,
+            state="stopped",
+            last_result=result,
+            stop_requested=True,
+        )
+        return result
     decision = coordinator.can_allocate(
         owner=_owner(), requested_models=_requested_models(model), allow_same_owner=False
     )
@@ -126,6 +217,15 @@ def run_scheduler_cycle(
             last_result={"status": "waiting", "reason": str(decision.get("reason") or "blocked")},
         )
         _write_json(STATUS_PATH, payload)
+        _mark_scheduler_state(
+            cycle=cycle,
+            interval_sec=interval_sec,
+            model=model,
+            run_graphrag=run_graphrag,
+            code_max_files=code_max_files,
+            state="waiting",
+            last_result=payload.get("last_result"),
+        )
         return payload
 
     coordinator.heartbeat(
@@ -150,6 +250,14 @@ def run_scheduler_cycle(
             cycle=cycle,
             next_run_in_seconds=0.0,
         ),
+    )
+    _mark_scheduler_state(
+        cycle=cycle,
+        interval_sec=interval_sec,
+        model=model,
+        run_graphrag=run_graphrag,
+        code_max_files=code_max_files,
+        state="running",
     )
     command = [
         python_bin or str(FORGE_ROOT / "eidosian_venv" / "bin" / "python"),
@@ -210,6 +318,15 @@ def run_scheduler_cycle(
                 last_error=result["stderr"] if proc.returncode != 0 else "",
             ),
         )
+        _mark_scheduler_state(
+            cycle=cycle,
+            interval_sec=interval_sec,
+            model=model,
+            run_graphrag=run_graphrag,
+            code_max_files=code_max_files,
+            state=result["status"],
+            last_result=result,
+        )
         return result
     except subprocess.TimeoutExpired as exc:
         elapsed = round(time.perf_counter() - start, 3)
@@ -231,6 +348,15 @@ def run_scheduler_cycle(
                 last_result=result,
                 last_error="pipeline_timeout",
             ),
+        )
+        _mark_scheduler_state(
+            cycle=cycle,
+            interval_sec=interval_sec,
+            model=model,
+            run_graphrag=run_graphrag,
+            code_max_files=code_max_files,
+            state="timeout",
+            last_result=result,
         )
         return result
     finally:
@@ -264,12 +390,59 @@ def parse_args() -> argparse.Namespace:
 
 @eidosian()
 def main() -> int:
+    global _STOP_REQUESTED
     args = parse_args()
     interval_sec = max(5.0, float(args.interval_sec))
     timeout_sec = max(60.0, float(args.timeout_sec))
     max_cycles = max(0, int(args.max_cycles))
-    cycle = 0
+    prior_status = _load_json(STATUS_PATH)
+    if str(prior_status.get("state") or "") == "running" and not _pid_alive(prior_status.get("pid")):
+        _write_json(
+            STATUS_PATH,
+            _status_payload(
+                state="recovered",
+                current_task=str(prior_status.get("current_task") or "living_pipeline"),
+                interval_sec=interval_sec,
+                cycle=int(prior_status.get("cycle") or 0),
+                next_run_in_seconds=0.0,
+                last_result=prior_status.get("last_result") if isinstance(prior_status.get("last_result"), dict) else {},
+                last_error="stale_running_status_recovered",
+            ),
+        )
+    cycle = int(_load_state().get("cycle") or 0)
+
+    def _request_stop(_signum, _frame) -> None:
+        global _STOP_REQUESTED
+        _STOP_REQUESTED = True
+
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        signal.signal(sig, _request_stop)
+
     while True:
+        if _STOP_REQUESTED:
+            _write_json(
+                STATUS_PATH,
+                _status_payload(
+                    state="stopped",
+                    current_task="living_pipeline",
+                    interval_sec=interval_sec,
+                    cycle=cycle,
+                    next_run_in_seconds=0.0,
+                    last_result=_load_state().get("last_result") if isinstance(_load_state().get("last_result"), dict) else {},
+                    last_error="stop_requested",
+                ),
+            )
+            _mark_scheduler_state(
+                cycle=cycle,
+                interval_sec=interval_sec,
+                model=str(args.model),
+                run_graphrag=bool(args.run_graphrag),
+                code_max_files=args.code_max_files,
+                state="stopped",
+                last_result=_load_state().get("last_result") if isinstance(_load_state().get("last_result"), dict) else {},
+                stop_requested=True,
+            )
+            return 0
         cycle += 1
         run_scheduler_cycle(
             interval_sec=interval_sec,
@@ -286,6 +459,9 @@ def main() -> int:
             return 0
         sleep_remaining = interval_sec
         while sleep_remaining > 0:
+            if _STOP_REQUESTED:
+                break
+            current_state = _load_state()
             _write_json(
                 STATUS_PATH,
                 _status_payload(
@@ -294,7 +470,7 @@ def main() -> int:
                     interval_sec=interval_sec,
                     cycle=cycle,
                     next_run_in_seconds=sleep_remaining,
-                    last_result=_load_json(STATUS_PATH).get("last_result") if STATUS_PATH.exists() else {},
+                    last_result=current_state.get("last_result") if isinstance(current_state.get("last_result"), dict) else {},
                     last_error=_load_json(STATUS_PATH).get("last_error") if STATUS_PATH.exists() else "",
                 ),
             )

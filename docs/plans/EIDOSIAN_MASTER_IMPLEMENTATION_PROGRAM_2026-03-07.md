@@ -93,7 +93,7 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
 ### Phase 2: Termux/Linux Runtime Platform
 - [~] Complete migration from shell-started services to supervised service management.
 - [~] Keep one canonical shell bootstrap contract across Termux and Linux.
-- [ ] Finish boot/resume semantics and ensure resumable services restart cleanly.
+- [~] Finish boot/resume semantics and ensure resumable services restart cleanly.
 - [~] Standardize temp/runtime/cache/data paths across Termux and Linux.
 - [ ] Build a capability registry for platform differences instead of littering checks across code.
 - [~] Integrate boot/service/runtime state into Atlas and the scheduler.
@@ -258,6 +258,15 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
   - `docs/external_references/2026-03-07-master-program/`
 - [x] Phase 1 implementation slice started:
   - dynamic Python component test-matrix planner added
+- [x] Termux shell bootstrap thinned and modularized:
+  - repo-managed `~/.bashrc` bootstrap
+  - restored `eidosian_venv/bin/activate`
+  - startup backup/audit artifacts
+- [~] Runit-backed Termux service migration advanced:
+  - `scripts/install_termux_runit_services.sh`
+  - `scripts/eidos_termux_services.sh` now prefers `sv` when installed
+  - scheduler state persistence and recovery added
+  - runit service definitions installed under `$PREFIX/var/service` with `down` guards for safe boot handoff
   - Universal CI Python tests refactored toward per-component matrix execution
   - Linux parity smoke split into explicit phases (`pytest`, `stdio`, `audit`)
 - [x] Local-agent control-plane slice advanced:

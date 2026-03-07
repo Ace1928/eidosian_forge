@@ -158,7 +158,7 @@ Primary source targets:
 
 ### Wave C: UX / operator plane / runtime control
 - [ ] official docs for current dashboard stack
-- [ ] any service-control/websocket/runtime telemetry references directly tied to implementation
+- [~] any service-control/websocket/runtime telemetry references directly tied to implementation
 
 ### Wave D: Local agent / MCP tool use
 - [x] MCP tool/resource/client/authorization references
@@ -200,3 +200,5 @@ For every saved source set:
 - `docs/external_references/2026-03-07-archive-doc-routing/`
 - `docs/external_references/2026-03-07-local-agent-mcp/`
 - `docs/external_references/2026-03-07-local-agent-control-plane/`
+- `docs/external_references/2026-03-07-termux-runit-services/`
+- `docs/external_references/2026-03-07-runtime-path-contracts/`

@@ -7,6 +7,7 @@ from pathlib import Path
 FORGE_ROOT = Path(__file__).resolve().parents[2]
 INSTALL_SHELL = FORGE_ROOT / "scripts" / "install_shell_bootstrap.sh"
 INSTALL_BOOT = FORGE_ROOT / "scripts" / "install_termux_boot.sh"
+INSTALL_RUNIT = FORGE_ROOT / "scripts" / "install_termux_runit_services.sh"
 AUDIT = FORGE_ROOT / "scripts" / "termux_audit_startup.py"
 BOOTSTRAP = FORGE_ROOT / "shell" / "bootstrap.sh"
 
@@ -35,6 +36,10 @@ def test_install_termux_boot_writes_wrapper(tmp_path: Path) -> None:
     assert wrapper.exists()
     text = wrapper.read_text(encoding="utf-8")
     assert "eidos_termux_boot.sh" in text
+
+
+def test_install_termux_runit_script_exists() -> None:
+    assert INSTALL_RUNIT.exists()
 
 
 def test_bootstrap_shell_smoke(tmp_path: Path) -> None:
