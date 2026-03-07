@@ -1,2 +1,2 @@
-.github/workflows/security-audit.yml
-.github/workflows/workflow-lint.yml
+.github/workflows/format.yml
+.github/workflows/lint.yml
