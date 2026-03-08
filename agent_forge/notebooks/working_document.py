@@ -2655,7 +2655,7 @@ def display_capability_assessment(substrates: SubstrateMap) -> None:
         error_msg = local_models[0] if local_models else "No models found"
         print_section(error_msg, indent=4)
         print_section("Consider downloading a small model, e.g.:", indent=4)
-        print_section("Qwen/Qwen2.5-0.5B-Instruct or TinyLlama/TinyLlama-1.1B-Chat", indent=6)
+        print_section("Qwen/Qwen3.5-2B-Instruct or TinyLlama/TinyLlama-1.1B-Chat", indent=6)
 
     print_banner("✅ CAPABILITY ASSESSMENT COMPLETE", "└", "┘", 60)
     print_separator("section")

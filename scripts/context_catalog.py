@@ -29,7 +29,7 @@ class CatalogBuilder:
         summary_cfg = self.catalog_cfg.get("summary", {})
         cache_path = summary_cfg.get("cache_path")
         self.summarizer = Summarizer(
-            model=summary_cfg.get("model", "qwen2.5:1.5b-Instruct"),  # Updated default model
+            model=summary_cfg.get("model", "qwen3.5:2b-Instruct"),  # Updated default model
             max_chars=summary_cfg.get("max_chars", 3200),
             min_chars=summary_cfg.get("min_chars", 512),
             timeout_seconds=summary_cfg.get("timeout_seconds", 60),

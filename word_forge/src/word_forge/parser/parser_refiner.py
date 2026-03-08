@@ -493,7 +493,7 @@ class ParserRefiner:
         self.term_extractor = TermExtractor()
         self.stats = ProcessingStatistics()
 
-        self.llm_state = llm_state or ModelState(model_name or "qwen/qwen2.5-0.5b-instruct")
+        self.llm_state = llm_state or ModelState(model_name or "qwen/qwen3.5-2b-instruct")
 
         # Initialize thread pool for parallel processing
         self._executor = ThreadPoolExecutor(max_workers=5)

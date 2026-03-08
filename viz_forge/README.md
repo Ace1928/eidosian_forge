@@ -42,7 +42,7 @@ p.line(
     x=[1, 2, 3, 4], 
     y=[10, 15, 7, 25], 
     title="Inference Latency (ms)",
-    label="qwen-1.5b"
+    label="qwen-3.5-2b"
 )
 
 # Render to standard reports directory

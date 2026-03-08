@@ -141,10 +141,10 @@ def initialize_model() -> TransformersModel:
     Returns:
         TransformersModel: Configured transformer model instance ready for agent integration.
     """
-    logger.info("=== Instantiating Transformer Model: Qwen/Qwen2.5-0.5B-Instruct ===")
+    logger.info("=== Instantiating Transformer Model: Qwen/Qwen3.5-2B-Instruct ===")
 
     model = TransformersModel(
-        model_id="Qwen/Qwen2.5-0.5B-Instruct",
+        model_id="Qwen/Qwen3.5-2B-Instruct",
         device_map="auto",
         torch_dtype="auto",
         max_new_tokens=2048,
@@ -612,7 +612,7 @@ def load_pretrained_model_and_tool() -> Tuple[Optional[TransformersModel], Optio
         # Load a pretrained model
         model = load_model(
             model_type="transformers",
-            model_id="Qwen/Qwen2.5-0.5B-Instruct",
+            model_id="Qwen/Qwen3.5-2B-Instruct",
             api_base=None,
             api_key=None,
         )

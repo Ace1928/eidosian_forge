@@ -758,7 +758,7 @@ def run_pipeline(
     if run_graphrag:
         llm_port = get_service_port("graphrag_llm", default=8081, env_keys=("EIDOS_GRAPHRAG_LLM_PORT",))
         embed_port = get_service_port("graphrag_embedding", default=8082, env_keys=("EIDOS_GRAPHRAG_EMBED_PORT",))
-        llm_fallback = _pick_sweep_model(repo_root, repo_root / "models" / "Qwen2.5-0.5B-Instruct-Q8_0.gguf")
+        llm_fallback = _pick_sweep_model(repo_root, repo_root / "models" / "Qwen3.5-2B-Instruct-Q4_K_M.gguf")
         llm_model = _pick_selected_model(repo_root, "graphrag", "completion_model", llm_fallback)
         embed_model = _pick_selected_model(
             repo_root,
