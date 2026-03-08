@@ -2,11 +2,14 @@
 Eidosian Audit Forge CLI.
 Provides terminal-based commands to manage audit coverage and tasks.
 """
-import typer
-from rich.console import Console
+
 from pathlib import Path
-from audit_forge.audit_core import AuditForge
+
+import typer
 from eidosian_core import eidosian
+from rich.console import Console
+
+from audit_forge.audit_core import AuditForge
 
 app = typer.Typer()
 console = Console()
@@ -14,19 +17,21 @@ console = Console()
 # Default to current directory if not specified
 DEFAULT_ROOT = Path.cwd()
 
+
 @eidosian()
 @app.command()
 def coverage(root: Path = DEFAULT_ROOT):
     """Check audit coverage."""
     audit = AuditForge(data_dir=root / "audit_data")
     stats = audit.verify_coverage(str(root))
-    
+
     console.print(f"[bold]Audit Coverage for {root}[/bold]")
     console.print(f"Unreviewed Files: [red]{stats['unreviewed_count']}[/red]")
-    if stats['unreviewed_sample']:
+    if stats["unreviewed_sample"]:
         console.print("\nSample Unreviewed:")
-        for f in stats['unreviewed_sample']:
+        for f in stats["unreviewed_sample"]:
             console.print(f" - {f}")
+
 
 @eidosian()
 @app.command()
@@ -37,6 +42,7 @@ def mark(path: str, agent: str = "user"):
     audit.coverage.mark_reviewed(path, agent_id=agent)
     console.print(f"[green]Marked {path} as reviewed by {agent}[/green]")
 
+
 @eidosian()
 @app.command()
 def todo(task: str, section: str = "Immediate"):
@@ -46,7 +52,8 @@ def todo(task: str, section: str = "Immediate"):
     if audit.todo_manager.add_task(section, task):
         console.print(f"[green]Added task to {section}[/green]")
     else:
-        console.print(f"[yellow]Task already exists[/yellow]")
+        console.print("[yellow]Task already exists[/yellow]")
+
 
 @eidosian()
 def main():

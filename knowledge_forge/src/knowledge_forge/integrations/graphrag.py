@@ -642,8 +642,7 @@ class GraphRAGIntegration:
             if isinstance(drift, dict) and drift.get("warning_count") is not None:
                 drift_node = knowledge.add_knowledge(
                     content=(
-                        f"Drift warnings: {drift.get('warning_count')}\n"
-                        f"Max abs delta: {drift.get('max_abs_delta')}"
+                        f"Drift warnings: {drift.get('warning_count')}\n" f"Max abs delta: {drift.get('max_abs_delta')}"
                     ),
                     concepts=["drift", "code_forge"],
                     tags=["code_forge", "drift", kind],

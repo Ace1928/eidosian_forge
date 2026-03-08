@@ -24,10 +24,9 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Protocol, Set
+from typing import Any, Dict, List, Optional, Set
 
 from eidosian_core import eidosian
-from eidosian_core.ports import get_service_url
 from eidosian_vector import HNSWVectorStore
 
 from .interfaces import MemoryType
@@ -175,11 +174,12 @@ class TieredMemorySystem:
         else:
             self.persistence_dir = persistence_dir
         self.persistence_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Use unified model config if no embedder provided
         if embedder is None:
             try:
                 from eidos_mcp.config.models import model_config
+
                 self.embedder = model_config
             except ImportError:
                 self.embedder = None
@@ -191,7 +191,7 @@ class TieredMemorySystem:
         self._lock_handle = None
         self._lock_depth = 0
         self.vector_store = None
-        
+
         if self.embedder is not None:
             try:
                 store_dir = Path(vector_store_dir) if vector_store_dir else self.persistence_dir / "vectors"

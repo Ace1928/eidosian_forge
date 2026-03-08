@@ -77,7 +77,7 @@ class ProcessorState:
         if not isinstance(state, dict):
             logger.warning(f"State file {self.state_path} was not a dictionary. Resetting to default.")
             state = self._default_state()
-            
+
         default = self._default_state()
         for key, value in default.items():
             state.setdefault(key, value)

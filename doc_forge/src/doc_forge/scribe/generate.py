@@ -23,16 +23,13 @@ class DocGenerator:
     def _call_model(self, prompt: str, temperature: float = 0.2, stop: list[str] | None = None) -> str:
         # Check if we are using Ollama or llama-server
         is_ollama = "/api/generate" in self.cfg.completion_url
-        
+
         if is_ollama:
             payload = {
                 "model": "qwen3.5:2b",
                 "prompt": prompt,
                 "stream": False,
-                "options": {
-                    "temperature": temperature,
-                    "num_predict": self.cfg.llm_n_predict
-                }
+                "options": {"temperature": temperature, "num_predict": self.cfg.llm_n_predict},
             }
         else:
             payload = {
@@ -50,14 +47,15 @@ class DocGenerator:
                 resp = requests.post(self.cfg.completion_url, json=payload, timeout=3600)
                 resp.raise_for_status()
                 data = resp.json()
-                
+
                 if is_ollama:
                     output = (data.get("response") or "").strip()
                 else:
                     output = (data.get("content") or "").strip()
-                
+
                 # Strip thinking blocks for production quality
                 import re
+
                 output = re.sub(r"<think>.*?</think>", "", output, flags=re.DOTALL).strip()
                 return output
             finally:

@@ -1,10 +1,13 @@
-import os
 import threading
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Optional
-from .memory import MemoryStore
-from llm_forge import ModelManager, OpenAIProvider, OllamaProvider
+
 from eidosian_core import eidosian
+
+from llm_forge import ModelManager, OllamaProvider, OpenAIProvider
+
+from .memory import MemoryStore
+
 
 class NarrativeEngine:
     """Self-referential engine backed by LLM Forge."""
@@ -20,14 +23,14 @@ class NarrativeEngine:
         self.store = MemoryStore(memory_path)
         self.think_interval = think_interval
         self.model_name = model_name
-        
+
         self.manager = ModelManager()
         if provider == "openai":
             self.manager.register_provider("openai", OpenAIProvider(api_key=api_key))
         elif provider == "ollama":
             self.manager.register_provider("ollama", OllamaProvider())
         self.provider_name = provider
-            
+
         self._timer: Optional[threading.Timer] = None
         self._reset_timer()
 
@@ -57,7 +60,7 @@ class NarrativeEngine:
             response = result.text
         except Exception as exc:
             response = f"Error: {exc}"
-            
+
         self.record_interaction(user_input, response)
         return response
 

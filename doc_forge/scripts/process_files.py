@@ -72,10 +72,7 @@ def call_llm(prompt):
         "system": SYSTEM_PROMPT,
         "prompt": prompt,
         "stream": False,
-        "options": {
-            "temperature": 0.7,
-            "num_predict": 2048
-        }
+        "options": {"temperature": 0.7, "num_predict": 2048},
     }
 
     try:
@@ -85,11 +82,12 @@ def call_llm(prompt):
 
         data = response.json()
         output = data.get("response", "").strip()
-        
+
         # Strip thinking blocks
         import re
+
         output = re.sub(r"<think>.*?</think>", "", output, flags=re.DOTALL).strip()
-        
+
         return output
     except Exception as e:
         return f"ERROR: Failed to connect to ollama: {e}"
