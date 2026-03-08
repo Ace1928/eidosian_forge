@@ -1,1 +1,4 @@
-gis_forge/src/gis_forge/ontology.py
+gis_forge/src/gis_forge/analysis.py
+gis_forge/src/gis_forge/ontology_engine.py
+gis_forge/src/gis_forge/vector_substrate.py
+scripts/migrate_to_ueo.py
