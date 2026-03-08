@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_path_documentation.py
+KIND: code
+
+import os
+import sys
+from typing import Union
+Normalize a file/dir name for comparison purposes.

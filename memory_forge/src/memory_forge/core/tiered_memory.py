@@ -131,56 +131,6 @@ class TieredMemoryItem:
         )
 
 
-class EmbeddingService(Protocol):
-    """Protocol for embedding generation."""
-
-    def embed_text(self, text: str) -> List[float]: ...
-
-
-class OllamaEmbedder:
-    """
-    Ollama-based embedding service using unified model configuration.
-
-    Uses nomic-embed-text by default (768 dimensions, 8192 context).
-    """
-
-    def __init__(
-        self,
-        model: Optional[str] = None,
-        base_url: str = get_service_url("ollama_http", default_port=11434, default_host="localhost", default_path=""),
-    ):
-        # Try to get model from unified config
-        try:
-            from eidos_mcp.config.models import model_config
-
-            self.model = model or model_config.embedding.model
-        except ImportError:
-            self.model = model or "nomic-embed-text"
-        self.base_url = base_url
-
-    @eidosian()
-    def embed_text(self, text: str) -> List[float]:
-        """Generate embedding for text using Ollama."""
-        import httpx
-
-        url = f"{self.base_url}/api/embeddings"
-        data = {"model": self.model, "prompt": text}
-
-        try:
-            with httpx.Client(timeout=60.0) as client:
-                resp = client.post(url, json=data)
-                resp.raise_for_status()
-                return resp.json()["embedding"]
-        except Exception:
-            # Return empty embedding on failure (graceful degradation)
-            return []
-
-    @eidosian()
-    def embed_batch(self, texts: List[str]) -> List[List[float]]:
-        """Generate embeddings for multiple texts."""
-        return [self.embed_text(t) for t in texts]
-
-
 class TieredMemorySystem:
     """
     Multi-tiered memory system for EIDOS.
@@ -215,7 +165,7 @@ class TieredMemorySystem:
     def __init__(
         self,
         persistence_dir: Optional[Path] = None,
-        embedder: Optional[EmbeddingService] = None,
+        embedder: Optional[Any] = None,
         vector_store_dir: Optional[Path] = None,
     ):
         if persistence_dir is None:
@@ -225,13 +175,24 @@ class TieredMemorySystem:
         else:
             self.persistence_dir = persistence_dir
         self.persistence_dir.mkdir(parents=True, exist_ok=True)
-        self.embedder = embedder
+        
+        # Use unified model config if no embedder provided
+        if embedder is None:
+            try:
+                from eidos_mcp.config.models import model_config
+                self.embedder = model_config
+            except ImportError:
+                self.embedder = None
+        else:
+            self.embedder = embedder
+
         self._thread_lock = threading.RLock()
         self._lock_path = self.persistence_dir / ".tiered_memory.lock"
         self._lock_handle = None
         self._lock_depth = 0
         self.vector_store = None
-        if embedder is not None:
+        
+        if self.embedder is not None:
             try:
                 store_dir = Path(vector_store_dir) if vector_store_dir else self.persistence_dir / "vectors"
                 self.vector_store = HNSWVectorStore(store_dir)

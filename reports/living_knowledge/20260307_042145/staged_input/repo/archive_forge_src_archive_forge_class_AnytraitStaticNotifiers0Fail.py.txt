@@ -1,0 +1,11 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AnytraitStaticNotifiers0Fail.py
+KIND: code
+
+import unittest
+from traits import trait_notifiers
+from traits.api import Float, HasTraits, Undefined
+class AnytraitStaticNotifiers0Fail(HasTraits):
+    fail = Float
+
+    def _anytrait_changed():
+        raise Exception('error')

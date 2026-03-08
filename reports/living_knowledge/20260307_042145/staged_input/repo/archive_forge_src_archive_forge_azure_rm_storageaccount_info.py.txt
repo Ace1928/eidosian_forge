@@ -1,0 +1,480 @@
+SOURCE_PATH: archive_forge/src/archive_forge/azure_rm_storageaccount_info.py
+KIND: code
+
+#!/usr/bin/python
+#
+# Copyright (c) 2016 Matt Davis, <mdavis@ansible.com>
+#                    Chris Houseknecht, <house@redhat.com>
+
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+from __future__ import absolute_import, division, print_function
+__metaclass__ = type
+
+
+DOCUMENTATION = '''
+---
+module: azure_rm_storageaccount_info
+
+version_added: "0.1.2"
+
+short_description: Get storage account facts
+
+description:
+    - Get facts for one storage account or all storage accounts within a resource group.
+
+options:
+    name:
+        description:
+            - Only show results for a specific account.
+        type: str
+    resource_group:
+        description:
+            - Limit results to a resource group. Required when filtering by name.
+        type: str
+        aliases:
+            - resource_group_name
+    tags:
+        description:
+            - Limit results by providing a list of tags. Format tags as 'key' or 'key:value'.
+        type: list
+        elements: str
+    show_connection_string:
+        description:
+            - Show the connection string for each of the storageaccount's endpoints.
+            - For convenient usage, I(show_connection_string) will also show the access keys for each of the storageaccount's endpoints.
+            - Note that it will cost a lot of time when list all storageaccount rather than query a single one.
+        type: bool
+    show_blob_cors:
+        description:
+            - Show the blob CORS settings for each blob related to the storage account.
+            - Querying all storage accounts will take a long time.
+        type: bool
+    show_georeplication_stats:
+        description:
+            - Show the Geo Replication Stats for each storage account.
+            - Using this option on an account that does not support georeplication will cause a delay in getting results.
+        type: bool
+
+extends_documentation_fragment:
+    - azure.azcollection.azure
+
+author:
+    - Chris Houseknecht (@chouseknecht)
+    - Matt Davis (@nitzmahone)
+
+'''
+
+EXAMPLES = '''
+- name: Get facts for one account
+  azure_rm_storageaccount_info:
+    resource_group: myResourceGroup
+    name: clh0002
+
+- name: Get facts for all accounts in a resource group
+  azure_rm_storageaccount_info:
+    resource_group: myResourceGroup
+
+- name: Get facts for all accounts by tags
+  azure_rm_storageaccount_info:
+    tags:
+      - testing
+      - foo:bar
+'''
+
+RETURN = '''
+azure_storageaccounts:
+    description:
+        - List of storage account dicts.
+    returned: always
+    type: list
+    example: [{
+        "id": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/myResourceGroups/testing/providers/Microsoft.Storage/storageAccounts/testaccount001",
+        "location": "eastus2",
+        "name": "testaccount001",
+        "properties": {
+            "accountType": "Standard_LRS",
+            "creationTime": "2016-03-28T02:46:58.290113Z",
+            "primaryEndpoints": {
+                "blob": "https://testaccount001.blob.core.windows.net/",
+                "file": "https://testaccount001.file.core.windows.net/",
+                "queue": "https://testaccount001.queue.core.windows.net/",
+                "table": "https://testaccount001.table.core.windows.net/"
+            },
+            "primaryLocation": "eastus2",
+            "provisioningState": "Succeeded",
+            "statusOfPrimary": "Available"
+        },
+        "tags": {},
+        "type": "Microsoft.Storage/storageAccounts"
+    }]
+storageaccounts:
+    description:
+        - List of storage account dicts in resource module's parameter format.
+    returned: always
+    type: complex
+    contains:
+        id:
+            description:
+                - Resource ID.
+            returned: always
+            type: str
+            sample: "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/resourceGroups/myResourceGroup/providers/Microsoft.Storage/storageAccounts/t
+                     estaccount001"
+        name:
+            description:
+                - Name of the storage account to update or create.
+            returned: always
+            type: str
+            sample: testaccount001
+        location:
+            description:
+                - Valid Azure location. Defaults to location of the resource group.
+            returned: always
+            type: str
+            sample: eastus
+        account_type:
+            description:
+                - Type of storage account.
+                - C(Standard_ZRS) and C(Premium_LRS) accounts cannot be changed to other account types.
+                - Other account types cannot be changed to C(Standard_ZRS) or C(Premium_LRS).
+            returned: always
+            type: str
+            sample: Standard_ZRS
+        custom_domain:
+            description:
+                - User domain assigned to the storage account.
+                - Must be a dictionary with I(name) and I(use_sub_domain) keys where I(name) is the CNAME source.
+            returned: always
+            type: complex
+            contains:
+                name:
+                    description:
+                        - CNAME source.
+                    returned: always
+                    type: str
+                    sample: testaccount
+                use_sub_domain:
+                    description:
+                        - Whether to use sub domain.
+                    returned: always
+                    type: bool
+                    sample: true
+        encryption:
+            description:
+                - The encryption settings on the storage account.
+            type: complex
+            returned: always
+            contains:
+                key_source:
+                    description:
+                        - The encryption keySource (provider).
+                    type: str
+                    returned: always
+                    sample: Microsoft.Storage
+                require_infrastructure_encryption:
+                    description:
+                        - A boolean indicating whether or not the service applies a secondary layer of encryption with platform managed keys for data at rest.
+                    type: bool
+                    returned: always
+                    sample: false
+                services:
+                    description:
+                        - List of services which support encryption.
+                    type: dict
+                    returned: always
+                    contains:
+                        file:
+                            description:
+                                - The encryption function of the file storage service.
+                            type: dict
+                            returned: always
+                            sample: {'enabled': true}
+                        table:
+                            description:
+                                - The encryption function of the table storage service.
+                            type: dict
+                            returned: always
+                            sample: {'enabled': true}
+                        queue:
+                            description:
+                                - The encryption function of the queue storage service.
+                            type: dict
+                            returned: always
+                            sample: {'enabled': true}
+                        blob:
+                            description:
+                                - The encryption function of the blob storage service.
+                            type: dict
+                            returned: always
+                            sample: {'enabled': true}
+        is_hns_enabled:
+            description:
+                - Account HierarchicalNamespace enabled if sets to true.
+            type: bool
+            returned: always
+            sample: true
+        kind:
+            description:
+                - The kind of storage.
+            returned: always
+            type: str
+            sample: Storage
+        access_tier:
+            description:
+                - The access tier for this storage account.
+            returned: always
+            type: str
+            sample: Hot
+        https_only:
+            description:
+                -  Allows https traffic only to storage service when set to C(true).
+            returned: always
+            type: bool
+            sample: false
+        minimum_tls_version:
+            description:
+                -  The minimum TLS version permitted on requests to storage.
+            returned: always
+            type: str
+            sample: TLS1_2
+        public_network_access:
+            description:
+                -  Public network access to Storage Account allowed or disallowed.
+            returned: always
+            type: str
+            sample: Enabled
+        allow_blob_public_access:
+            description:
+                -  Public access to all blobs or containers in the storage account allowed or disallowed.
+            returned: always
+            type: bool
+            sample: true
+        network_acls:
+            description:
+                - A set of firewall and virtual network rules
+            returned: always
+            type: dict
+            sample: {
+                    "bypass": "AzureServices",
+                    "default_action": "Deny",
+                    "virtual_network_rules": [
+                        {
+                            "action": "Allow",
+                            "id": "/subscriptions/mySubscriptionId/resourceGroups/myResourceGroup/ \
+                                    providers/Microsoft.Network/virtualNetworks/myVnet/subnets/mySubnet"
+                            }
+                        ],
+                    "ip_rules": [
+                        {
+                            "action": "Allow",
+                            "value": "1.2.3.4"
+                        },
+                        {
+                            "action": "Allow",
+                            "value": "123.234.123.0/24"
+                        }
+                    ]
+                    }
+        provisioning_state:
+            description:
+                - The status of the storage account at the time the operation was called.
+                - Possible values include C(Creating), C(ResolvingDNS), C(Succeeded).
+            returned: always
+            type: str
+            sample: Succeeded
+        failover_in_progress:
+            description:
+                - Status indicating the storage account is currently failing over to its secondary location.
+            returned: always
+            type: bool
+            sample: False
+        secondary_location:
+            description:
+                - The location of the geo-replicated secondary for the storage account.
+                - Only available if the I(account_type=Standard_GRS) or I(account_type=Standard_RAGRS).
+            returned: always
+            type: str
+            sample: westus
+        status_of_primary:
+            description:
+                - Status of the primary location of the storage account; either C(available) or C(unavailable).
+            returned: always
+            type: str
+            sample: available
+        status_of_secondary:
+            description:
+                - Status of the secondary location of the storage account; either C(available) or C(unavailable).
+            returned: always
+            type: str
+            sample: available
+        primary_location:
+            description:
+                - The location of the primary data center for the storage account.
+            returned: always
+            type: str
+            sample: eastus
+        primary_endpoints:
+            description:
+                - URLs to retrieve a public I(blob), I(file), I(queue), or I(table) object.
+                - Note that C(Standard_ZRS) and C(Premium_LRS) accounts only return the blob endpoint.
+            returned: always
+            type: complex
+            contains:
+                blob:
+                    description:
+                        - The primary blob endpoint and connection string.
+                    returned: always
+                    type: complex
+                    contains:
+                        endpoint:
+                            description:
+                                - The primary blob endpoint.
+                            returned: always
+                            type: str
+                            sample: "https://testaccount001.blob.core.windows.net/"
+                        connectionstring:
+                            description:
+                                - Connectionstring of the blob endpoint.
+                            returned: always
+                            type: str
+                            sample: "DefaultEndpointsProtocol=https;EndpointSuffix=core.windows.net;AccountName=X;AccountKey=X;BlobEndpoint=X"
+                file:
+                    description:
+                        - The primary file endpoint and connection string.
+                    returned: always
+                    type: complex
+                    contains:
+                        endpoint:
+                            description:
+                                - The primary file endpoint.
+                            returned: always
+                            type: str
+                            sample: "https://testaccount001.file.core.windows.net/"
+                        connectionstring:
+                            description:
+                                - Connectionstring of the file endpoint.
+                            returned: always
+                            type: str
+                            sample: "DefaultEndpointsProtocol=https;EndpointSuffix=core.windows.net;AccountName=X;AccountKey=X;FileEndpoint=X"
+                queue:
+                    description:
+                        - The primary queue endpoint and connection string.
+                    returned: always
+                    type: complex
+                    contains:
+                        endpoint:
+                            description:
+                                - The primary queue endpoint.
+                            returned: always
+                            type: str
+                            sample: "https://testaccount001.queue.core.windows.net/"
+                        connectionstring:
+                            description:
+                                - Connectionstring of the queue endpoint.
+                            returned: always
+                            type: str
+                            sample: "DefaultEndpointsProtocol=https;EndpointSuffix=core.windows.net;AccountName=X;AccountKey=X;QueueEndpoint=X"
+                table:
+                    description:
+                        - The primary table endpoint and connection string.
+                    returned: always
+                    type: complex
+                    contains:
+                        endpoint:
+                            description:
+                                - The primary table endpoint.
+                            returned: always
+                            type: str
+                            sample: "https://testaccount001.table.core.windows.net/"
+                        connectionstring:
+                            description:
+                                - Connectionstring of the table endpoint.
+                            returned: always
+                            type: str
+                            sample: "DefaultEndpointsProtocol=https;EndpointSuffix=core.windows.net;AccountName=X;AccountKey=X;TableEndpoint=X"
+                key:
+                    description:
+                        - The account key for the primary_endpoints
+                    returned: always
+                    type: str
+                    sample: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+        secondary_endpoints:
+            description:
+                - The URLs to retrieve a public I(blob), I(file), I(queue), or I(table) object from the secondary location.
+                - Only available if the SKU I(name=Standard_RAGRS).
+            returned: always
+            type: complex
+            contains:
+                blob:
+                    description:
+                        - The secondary blob endpoint and connection string.
+                    returned: always
+                    type: complex
+                    contains:
+                        endpoint:
+                            description:
+                                - The secondary blob endpoint.
+                            returned: always
+                            type: str
+                            sample: "https://testaccount001.blob.core.windows.net/"
+                        connectionstring:
+                            description:
+                                - Connectionstring of the blob endpoint.
+                            returned: always
+                            type: str
+                            sample: "DefaultEndpointsProtocol=https;EndpointSuffix=core.windows.net;AccountName=X;AccountKey=X;BlobEndpoint=X"
+                file:
+                    description:
+                        - The secondary file endpoint and connection string.
+                    returned: always
+                    type: complex
+                    contains:
+                        endpoint:
+                            description:
+                                - The secondary file endpoint.
+                            returned: always
+                            type: str
+                            sample: "https://testaccount001.file.core.windows.net/"
+                        connectionstring:
+                            description:
+                                - Connectionstring of the file endpoint.
+                            returned: always
+                            type: str
+                            sample: "DefaultEndpointsProtocol=https;EndpointSuffix=core.windows.net;AccountName=X;AccountKey=X;FileEndpoint=X"
+                queue:
+                    description:
+                        - The secondary queue endpoint and connection string.
+                    returned: always
+                    type: complex
+                    contains:
+                        endpoint:
+                            description:
+                                - The secondary queue endpoint.
+                            returned: always
+                            type: str
+                            sample: "https://testaccount001.queue.core.windows.net/"
+                        connectionstring:
+                            description:
+                                - Connectionstring of the queue endpoint.
+                            returned: always
+                            type: str
+                            sample: "DefaultEndpointsProtocol=https;EndpointSuffix=core.windows.net;AccountName=X;AccountKey=X;QueueEndpoint=X"
+                table:
+                    description:
+                        - The secondary table endpoint and connection string.
+                    returned: always
+                    type: complex
+                    contains:
+                        endpoint:
+                            description:
+                                - The secondary table endpoint.
+                            returned: always
+                            type: str
+                            sample: "https://testaccount001.table.core.windows.net/"
+                        connectionstring:
+                            description:
+                                - Connectionstring of the table endpoint.
+                            returned: always
+                            type: str
+                            sample: "DefaultEndpointsProtocol=https;EndpointSuffix=core.windows.net;AccountName=X;AccountKey=X;TableEndpoint=X"

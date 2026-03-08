@@ -1,0 +1,26 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/TW
+KIND: config
+
+TW
+	連江縣lienchiang county
+	金門縣kinmen county$
+	彰化縣changhua county彰縣
+	嘉義市chiayi city
+	嘉義縣chiayi county#
+	新竹縣hsinchu county竹縣!
+	新竹市hsinchu city竹市&
+	花蓮市hualien county	花蓮縣!
+宜縣yilan county	宜蘭縣
+	基隆市keelung city&
+	高雄市kaohsiung city	高雄縣"
+	苗栗縣miaoli county苗縣"
+	南投縣nantou county投縣
+	澎湖縣penghu county$
+	屏東縣pingtung county屏縣,
+	桃園市taoyuan city	桃園縣桃縣#
+	台南市tainan city	臺南市#
+	台北市taipei city	臺北市'
+	台北縣new taipei city	新北市&
+	台東縣taitung county	臺東縣%
+	台中市taichung city	臺中市
+	雲林縣yunlin county

@@ -5022,6 +5022,24 @@
     },
     {
       "id": "balance"
+    },
+    {
+      "definition": "Relating to Eidos or its philosophical framework of recursive self-optimization and structural elegance.",
+      "pos": "adj",
+      "source": "manual_init",
+      "id": "Eidosian"
+    },
+    {
+      "definition": "A metaphor for a system that is smooth and aesthetically pleasing yet substantial and powerful. Represents the Eidosian ideal of balancing style with functional mass.",
+      "pos": "noun",
+      "source": "manual_init",
+      "id": "Velvet Beef"
+    },
+    {
+      "definition": "Represents the active, operational capability of the Eidosian ecosystem to manipulate its own environment and codebase.",
+      "pos": "noun",
+      "source": "manual_init",
+      "id": "Titan's Arm"
     }
   ],
   "edges": [

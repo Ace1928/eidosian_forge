@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_interpnd_info_documentation.py
+KIND: code
+
+from sympy import symbols, binomial, Matrix
+
+Here we perform some symbolic computations required for the N-D
+interpolation routines in `interpnd.pyx`.

@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/bunch_documentation.py
+KIND: code
+
+from __future__ import annotations
+from typing import Any
+A dict with attribute-access

@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_Graph_documentation.py
+KIND: code
+
+from reportlab.lib import colors
+from math import sqrt
+Return a string describing the graph data.

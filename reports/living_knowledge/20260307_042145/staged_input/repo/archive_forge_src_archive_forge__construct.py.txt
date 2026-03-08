@@ -1,0 +1,631 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_construct.py
+KIND: code
+
+"""Functions to construct sparse matrices and arrays
+"""
+
+__docformat__ = "restructuredtext en"
+
+__all__ = ['spdiags', 'eye', 'identity', 'kron', 'kronsum',
+           'hstack', 'vstack', 'bmat', 'rand', 'random', 'diags', 'block_diag',
+           'diags_array', 'block_array', 'eye_array', 'random_array']
+
+import numbers
+import math
+import numpy as np
+
+from scipy._lib._util import check_random_state, rng_integers
+from ._sputils import upcast, get_index_dtype, isscalarlike
+
+from ._sparsetools import csr_hstack
+from ._bsr import bsr_matrix, bsr_array
+from ._coo import coo_matrix, coo_array
+from ._csc import csc_matrix, csc_array
+from ._csr import csr_matrix, csr_array
+from ._dia import dia_matrix, dia_array
+
+from ._base import issparse, sparray
+
+
+def spdiags(data, diags, m=None, n=None, format=None):
+    """
+    Return a sparse matrix from diagonals.
+
+    Parameters
+    ----------
+    data : array_like
+        Matrix diagonals stored row-wise
+    diags : sequence of int or an int
+        Diagonals to set:
+
+        * k = 0  the main diagonal
+        * k > 0  the kth upper diagonal
+        * k < 0  the kth lower diagonal
+    m, n : int, tuple, optional
+        Shape of the result. If `n` is None and `m` is a given tuple,
+        the shape is this tuple. If omitted, the matrix is square and
+        its shape is len(data[0]).
+    format : str, optional
+        Format of the result. By default (format=None) an appropriate sparse
+        matrix format is returned. This choice is subject to change.
+
+    .. warning::
+
+        This function returns a sparse matrix -- not a sparse array.
+        You are encouraged to use ``diags_array`` to take advantage
+        of the sparse array functionality.
+
+    See Also
+    --------
+    diags_array : more convenient form of this function
+    diags : matrix version of diags_array
+    dia_matrix : the sparse DIAgonal format.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.sparse import spdiags
+    >>> data = np.array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
+    >>> diags = np.array([0, -1, 2])
+    >>> spdiags(data, diags, 4, 4).toarray()
+    array([[1, 0, 3, 0],
+           [1, 2, 0, 4],
+           [0, 2, 3, 0],
+           [0, 0, 3, 4]])
+
+    """
+    if m is None and n is None:
+        m = n = len(data[0])
+    elif n is None:
+        m, n = m
+    return dia_matrix((data, diags), shape=(m, n)).asformat(format)
+
+
+def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=None):
+    """
+    Construct a sparse array from diagonals.
+
+    Parameters
+    ----------
+    diagonals : sequence of array_like
+        Sequence of arrays containing the array diagonals,
+        corresponding to `offsets`.
+    offsets : sequence of int or an int, optional
+        Diagonals to set:
+          - k = 0  the main diagonal (default)
+          - k > 0  the kth upper diagonal
+          - k < 0  the kth lower diagonal
+    shape : tuple of int, optional
+        Shape of the result. If omitted, a square array large enough
+        to contain the diagonals is returned.
+    format : {"dia", "csr", "csc", "lil", ...}, optional
+        Matrix format of the result. By default (format=None) an
+        appropriate sparse array format is returned. This choice is
+        subject to change.
+    dtype : dtype, optional
+        Data type of the array.
+
+    Notes
+    -----
+    The result from `diags_array` is the sparse equivalent of::
+
+        np.diag(diagonals[0], offsets[0])
+        + ...
+        + np.diag(diagonals[k], offsets[k])
+
+    Repeated diagonal offsets are disallowed.
+
+    .. versionadded:: 1.11
+
+    Examples
+    --------
+    >>> from scipy.sparse import diags_array
+    >>> diagonals = [[1, 2, 3, 4], [1, 2, 3], [1, 2]]
+    >>> diags_array(diagonals, offsets=[0, -1, 2]).toarray()
+    array([[1, 0, 1, 0],
+           [1, 2, 0, 2],
+           [0, 2, 3, 0],
+           [0, 0, 3, 4]])
+
+    Broadcasting of scalars is supported (but shape needs to be
+    specified):
+
+    >>> diags_array([1, -2, 1], offsets=[-1, 0, 1], shape=(4, 4)).toarray()
+    array([[-2.,  1.,  0.,  0.],
+           [ 1., -2.,  1.,  0.],
+           [ 0.,  1., -2.,  1.],
+           [ 0.,  0.,  1., -2.]])
+
+
+    If only one diagonal is wanted (as in `numpy.diag`), the following
+    works as well:
+
+    >>> diags_array([1, 2, 3], offsets=1).toarray()
+    array([[ 0.,  1.,  0.,  0.],
+           [ 0.,  0.,  2.,  0.],
+           [ 0.,  0.,  0.,  3.],
+           [ 0.,  0.,  0.,  0.]])
+    """
+    # if offsets is not a sequence, assume that there's only one diagonal
+    if isscalarlike(offsets):
+        # now check that there's actually only one diagonal
+        if len(diagonals) == 0 or isscalarlike(diagonals[0]):
+            diagonals = [np.atleast_1d(diagonals)]
+        else:
+            raise ValueError("Different number of diagonals and offsets.")
+    else:
+        diagonals = list(map(np.atleast_1d, diagonals))
+
+    offsets = np.atleast_1d(offsets)
+
+    # Basic check
+    if len(diagonals) != len(offsets):
+        raise ValueError("Different number of diagonals and offsets.")
+
+    # Determine shape, if omitted
+    if shape is None:
+        m = len(diagonals[0]) + abs(int(offsets[0]))
+        shape = (m, m)
+
+    # Determine data type, if omitted
+    if dtype is None:
+        dtype = np.common_type(*diagonals)
+
+    # Construct data array
+    m, n = shape
+
+    M = max([min(m + offset, n - offset) + max(0, offset)
+             for offset in offsets])
+    M = max(0, M)
+    data_arr = np.zeros((len(offsets), M), dtype=dtype)
+
+    K = min(m, n)
+
+    for j, diagonal in enumerate(diagonals):
+        offset = offsets[j]
+        k = max(0, offset)
+        length = min(m + offset, n - offset, K)
+        if length < 0:
+            raise ValueError("Offset %d (index %d) out of bounds" % (offset, j))
+        try:
+            data_arr[j, k:k+length] = diagonal[...,:length]
+        except ValueError as e:
+            if len(diagonal) != length and len(diagonal) != 1:
+                raise ValueError(
+                    "Diagonal length (index %d: %d at offset %d) does not "
+                    "agree with array size (%d, %d)." % (
+                    j, len(diagonal), offset, m, n)) from e
+            raise
+
+    return dia_array((data_arr, offsets), shape=(m, n)).asformat(format)
+
+
+def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
+    """
+    Construct a sparse matrix from diagonals.
+
+    .. warning::
+
+        This function returns a sparse matrix -- not a sparse array.
+        You are encouraged to use ``diags_array`` to take advantage
+        of the sparse array functionality.
+
+    Parameters
+    ----------
+    diagonals : sequence of array_like
+        Sequence of arrays containing the matrix diagonals,
+        corresponding to `offsets`.
+    offsets : sequence of int or an int, optional
+        Diagonals to set:
+          - k = 0  the main diagonal (default)
+          - k > 0  the kth upper diagonal
+          - k < 0  the kth lower diagonal
+    shape : tuple of int, optional
+        Shape of the result. If omitted, a square matrix large enough
+        to contain the diagonals is returned.
+    format : {"dia", "csr", "csc", "lil", ...}, optional
+        Matrix format of the result. By default (format=None) an
+        appropriate sparse matrix format is returned. This choice is
+        subject to change.
+    dtype : dtype, optional
+        Data type of the matrix.
+
+    See Also
+    --------
+    spdiags : construct matrix from diagonals
+    diags_array : construct sparse array instead of sparse matrix
+
+    Notes
+    -----
+    This function differs from `spdiags` in the way it handles
+    off-diagonals.
+
+    The result from `diags` is the sparse equivalent of::
+
+        np.diag(diagonals[0], offsets[0])
+        + ...
+        + np.diag(diagonals[k], offsets[k])
+
+    Repeated diagonal offsets are disallowed.
+
+    .. versionadded:: 0.11
+
+    Examples
+    --------
+    >>> from scipy.sparse import diags
+    >>> diagonals = [[1, 2, 3, 4], [1, 2, 3], [1, 2]]
+    >>> diags(diagonals, [0, -1, 2]).toarray()
+    array([[1, 0, 1, 0],
+           [1, 2, 0, 2],
+           [0, 2, 3, 0],
+           [0, 0, 3, 4]])
+
+    Broadcasting of scalars is supported (but shape needs to be
+    specified):
+
+    >>> diags([1, -2, 1], [-1, 0, 1], shape=(4, 4)).toarray()
+    array([[-2.,  1.,  0.,  0.],
+           [ 1., -2.,  1.,  0.],
+           [ 0.,  1., -2.,  1.],
+           [ 0.,  0.,  1., -2.]])
+
+
+    If only one diagonal is wanted (as in `numpy.diag`), the following
+    works as well:
+
+    >>> diags([1, 2, 3], 1).toarray()
+    array([[ 0.,  1.,  0.,  0.],
+           [ 0.,  0.,  2.,  0.],
+           [ 0.,  0.,  0.,  3.],
+           [ 0.,  0.,  0.,  0.]])
+    """
+    A = diags_array(diagonals, offsets=offsets, shape=shape, dtype=dtype)
+    return dia_matrix(A).asformat(format)
+
+
+def identity(n, dtype='d', format=None):
+    """Identity matrix in sparse format
+
+    Returns an identity matrix with shape (n,n) using a given
+    sparse format and dtype. This differs from `eye_array` in
+    that it has a square shape with ones only on the main diagonal.
+    It is thus the multiplicative identity. `eye_array` allows
+    rectangular shapes and the diagonal can be offset from the main one.
+
+    .. warning::
+
+        This function returns a sparse matrix -- not a sparse array.
+        You are encouraged to use ``eye_array`` to take advantage
+        of the sparse array functionality.
+
+    Parameters
+    ----------
+    n : int
+        Shape of the identity matrix.
+    dtype : dtype, optional
+        Data type of the matrix
+    format : str, optional
+        Sparse format of the result, e.g., format="csr", etc.
+
+    Examples
+    --------
+    >>> import scipy as sp
+    >>> sp.sparse.identity(3).toarray()
+    array([[ 1.,  0.,  0.],
+           [ 0.,  1.,  0.],
+           [ 0.,  0.,  1.]])
+    >>> sp.sparse.identity(3, dtype='int8', format='dia')
+    <3x3 sparse matrix of type '<class 'numpy.int8'>'
+            with 3 stored elements (1 diagonals) in DIAgonal format>
+    >>> sp.sparse.eye_array(3, dtype='int8', format='dia')
+    <3x3 sparse array of type '<class 'numpy.int8'>'
+            with 3 stored elements (1 diagonals) in DIAgonal format>
+
+    """
+    return eye(n, n, dtype=dtype, format=format)
+
+
+def eye_array(m, n=None, *, k=0, dtype=float, format=None):
+    """Identity matrix in sparse array format
+
+    Return a sparse array with ones on diagonal.
+    Specifically a sparse array (m x n) where the kth diagonal
+    is all ones and everything else is zeros.
+
+    Parameters
+    ----------
+    m : int or tuple of ints
+        Number of rows requested.
+    n : int, optional
+        Number of columns. Default: `m`.
+    k : int, optional
+        Diagonal to place ones on. Default: 0 (main diagonal).
+    dtype : dtype, optional
+        Data type of the array
+    format : str, optional (default: "dia")
+        Sparse format of the result, e.g., format="csr", etc.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import scipy as sp
+    >>> sp.sparse.eye_array(3).toarray()
+    array([[ 1.,  0.,  0.],
+           [ 0.,  1.,  0.],
+           [ 0.,  0.,  1.]])
+    >>> sp.sparse.eye_array(3, dtype=np.int8)
+    <3x3 sparse array of type '<class 'numpy.int8'>'
+            with 3 stored elements (1 diagonals) in DIAgonal format>
+
+    """
+    # TODO: delete next 15 lines [combine with _eye()] once spmatrix removed
+    return _eye(m, n, k, dtype, format)
+
+
+def _eye(m, n, k, dtype, format, as_sparray=True):
+    if as_sparray:
+        csr_sparse = csr_array
+        csc_sparse = csc_array
+        coo_sparse = coo_array
+        diags_sparse = diags_array
+    else:
+        csr_sparse = csr_matrix
+        csc_sparse = csc_matrix
+        coo_sparse = coo_matrix
+        diags_sparse = diags
+
+    if n is None:
+        n = m
+    m, n = int(m), int(n)
+
+    if m == n and k == 0:
+        # fast branch for special formats
+        if format in ['csr', 'csc']:
+            idx_dtype = get_index_dtype(maxval=n)
+            indptr = np.arange(n+1, dtype=idx_dtype)
+            indices = np.arange(n, dtype=idx_dtype)
+            data = np.ones(n, dtype=dtype)
+            cls = {'csr': csr_sparse, 'csc': csc_sparse}[format]
+            return cls((data, indices, indptr), (n, n))
+
+        elif format == 'coo':
+            idx_dtype = get_index_dtype(maxval=n)
+            row = np.arange(n, dtype=idx_dtype)
+            col = np.arange(n, dtype=idx_dtype)
+            data = np.ones(n, dtype=dtype)
+            return coo_sparse((data, (row, col)), (n, n))
+
+    data = np.ones((1, max(0, min(m + k, n))), dtype=dtype)
+    return diags_sparse(data, offsets=[k], shape=(m, n), dtype=dtype).asformat(format)
+
+
+def eye(m, n=None, k=0, dtype=float, format=None):
+    """Sparse matrix with ones on diagonal
+
+    Returns a sparse matrix (m x n) where the kth diagonal
+    is all ones and everything else is zeros.
+
+    Parameters
+    ----------
+    m : int
+        Number of rows in the matrix.
+    n : int, optional
+        Number of columns. Default: `m`.
+    k : int, optional
+        Diagonal to place ones on. Default: 0 (main diagonal).
+    dtype : dtype, optional
+        Data type of the matrix.
+    format : str, optional
+        Sparse format of the result, e.g., format="csr", etc.
+
+    .. warning::
+
+        This function returns a sparse matrix -- not a sparse array.
+        You are encouraged to use ``eye_array`` to take advantage
+        of the sparse array functionality.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import scipy as sp
+    >>> sp.sparse.eye(3).toarray()
+    array([[ 1.,  0.,  0.],
+           [ 0.,  1.,  0.],
+           [ 0.,  0.,  1.]])
+    >>> sp.sparse.eye(3, dtype=np.int8)
+    <3x3 sparse matrix of type '<class 'numpy.int8'>'
+        with 3 stored elements (1 diagonals) in DIAgonal format>
+
+    """
+    return _eye(m, n, k, dtype, format, False)
+
+
+def kron(A, B, format=None):
+    """kronecker product of sparse matrices A and B
+
+    Parameters
+    ----------
+    A : sparse or dense matrix
+        first matrix of the product
+    B : sparse or dense matrix
+        second matrix of the product
+    format : str, optional (default: 'bsr' or 'coo')
+        format of the result (e.g. "csr")
+        If None, choose 'bsr' for relatively dense array and 'coo' for others
+
+    Returns
+    -------
+    kronecker product in a sparse format.
+    Returns a sparse matrix unless either A or B is a
+    sparse array in which case returns a sparse array.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import scipy as sp
+    >>> A = sp.sparse.csr_array(np.array([[0, 2], [5, 0]]))
+    >>> B = sp.sparse.csr_array(np.array([[1, 2], [3, 4]]))
+    >>> sp.sparse.kron(A, B).toarray()
+    array([[ 0,  0,  2,  4],
+           [ 0,  0,  6,  8],
+           [ 5, 10,  0,  0],
+           [15, 20,  0,  0]])
+
+    >>> sp.sparse.kron(A, [[1, 2], [3, 4]]).toarray()
+    array([[ 0,  0,  2,  4],
+           [ 0,  0,  6,  8],
+           [ 5, 10,  0,  0],
+           [15, 20,  0,  0]])
+
+    """
+    # TODO: delete next 10 lines and replace _sparse with _array when spmatrix removed
+    if isinstance(A, sparray) or isinstance(B, sparray):
+        # convert to local variables
+        bsr_sparse = bsr_array
+        csr_sparse = csr_array
+        coo_sparse = coo_array
+    else:  # use spmatrix
+        bsr_sparse = bsr_matrix
+        csr_sparse = csr_matrix
+        coo_sparse = coo_matrix
+
+    B = coo_sparse(B)
+
+    # B is fairly dense, use BSR
+    if (format is None or format == "bsr") and 2*B.nnz >= B.shape[0] * B.shape[1]:
+        A = csr_sparse(A,copy=True)
+        output_shape = (A.shape[0]*B.shape[0], A.shape[1]*B.shape[1])
+
+        if A.nnz == 0 or B.nnz == 0:
+            # kronecker product is the zero matrix
+            return coo_sparse(output_shape).asformat(format)
+
+        B = B.toarray()
+        data = A.data.repeat(B.size).reshape(-1,B.shape[0],B.shape[1])
+        data = data * B
+
+        return bsr_sparse((data,A.indices,A.indptr), shape=output_shape)
+    else:
+        # use COO
+        A = coo_sparse(A)
+        output_shape = (A.shape[0]*B.shape[0], A.shape[1]*B.shape[1])
+
+        if A.nnz == 0 or B.nnz == 0:
+            # kronecker product is the zero matrix
+            return coo_sparse(output_shape).asformat(format)
+
+        # expand entries of a into blocks
+        row = A.row.repeat(B.nnz)
+        col = A.col.repeat(B.nnz)
+        data = A.data.repeat(B.nnz)
+
+        if max(A.shape[0]*B.shape[0], A.shape[1]*B.shape[1]) > np.iinfo('int32').max:
+            row = row.astype(np.int64)
+            col = col.astype(np.int64)
+
+        row *= B.shape[0]
+        col *= B.shape[1]
+
+        # increment block indices
+        row,col = row.reshape(-1,B.nnz),col.reshape(-1,B.nnz)
+        row += B.row
+        col += B.col
+        row,col = row.reshape(-1),col.reshape(-1)
+
+        # compute block entries
+        data = data.reshape(-1,B.nnz) * B.data
+        data = data.reshape(-1)
+
+        return coo_sparse((data,(row,col)), shape=output_shape).asformat(format)
+
+
+def kronsum(A, B, format=None):
+    """kronecker sum of square sparse matrices A and B
+
+    Kronecker sum of two sparse matrices is a sum of two Kronecker
+    products kron(I_n,A) + kron(B,I_m) where A has shape (m,m)
+    and B has shape (n,n) and I_m and I_n are identity matrices
+    of shape (m,m) and (n,n), respectively.
+
+    Parameters
+    ----------
+    A
+        square matrix
+    B
+        square matrix
+    format : str
+        format of the result (e.g. "csr")
+
+    Returns
+    -------
+    kronecker sum in a sparse matrix format
+
+    """
+    # TODO: delete next 8 lines and replace _sparse with _array when spmatrix removed
+    if isinstance(A, sparray) or isinstance(B, sparray):
+        # convert to local variables
+        coo_sparse = coo_array
+        identity_sparse = eye_array
+    else:
+        coo_sparse = coo_matrix
+        identity_sparse = identity
+
+    A = coo_sparse(A)
+    B = coo_sparse(B)
+
+    if A.shape[0] != A.shape[1]:
+        raise ValueError('A is not square')
+
+    if B.shape[0] != B.shape[1]:
+        raise ValueError('B is not square')
+
+    dtype = upcast(A.dtype, B.dtype)
+
+    I_n = identity_sparse(A.shape[0], dtype=dtype)
+    I_m = identity_sparse(B.shape[0], dtype=dtype)
+    L = kron(I_m, A, format='coo')
+    R = kron(B, I_n, format='coo')
+
+    return (L + R).asformat(format)
+
+
+def _compressed_sparse_stack(blocks, axis, return_spmatrix):
+    """
+    Stacking fast path for CSR/CSC matrices or arrays
+    (i) vstack for CSR, (ii) hstack for CSC.
+    """
+    other_axis = 1 if axis == 0 else 0
+    data = np.concatenate([b.data for b in blocks])
+    constant_dim = blocks[0].shape[other_axis]
+    idx_dtype = get_index_dtype(arrays=[b.indptr for b in blocks],
+                                maxval=max(data.size, constant_dim))
+    indices = np.empty(data.size, dtype=idx_dtype)
+    indptr = np.empty(sum(b.shape[axis] for b in blocks) + 1, dtype=idx_dtype)
+    last_indptr = idx_dtype(0)
+    sum_dim = 0
+    sum_indices = 0
+    for b in blocks:
+        if b.shape[other_axis] != constant_dim:
+            raise ValueError(f'incompatible dimensions for axis {other_axis}')
+        indices[sum_indices:sum_indices+b.indices.size] = b.indices
+        sum_indices += b.indices.size
+        idxs = slice(sum_dim, sum_dim + b.shape[axis])
+        indptr[idxs] = b.indptr[:-1]
+        indptr[idxs] += last_indptr
+        sum_dim += b.shape[axis]
+        last_indptr += b.indptr[-1]
+    indptr[-1] = last_indptr
+    # TODO remove this if-structure when sparse matrices removed
+    if return_spmatrix:
+        if axis == 0:
+            return csr_matrix((data, indices, indptr),
+                              shape=(sum_dim, constant_dim))
+        else:
+            return csc_matrix((data, indices, indptr),
+                              shape=(constant_dim, sum_dim))
+
+    if axis == 0:
+        return csr_array((data, indices, indptr),
+                          shape=(sum_dim, constant_dim))
+    else:
+        return csc_array((data, indices,

@@ -1,0 +1,412 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_archive_maps.py
+KIND: code
+
+# coding=utf-8
+# Copyright 2024 The HuggingFace Inc. team.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+from collections import OrderedDict
+
+from ...utils import logging
+
+
+logger = logging.get_logger(__name__)
+
+
+class DeprecatedDict(dict):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def __getitem__(self, item):
+        logger.warning(
+            "Archive maps are deprecated and will be removed in version v4.40.0 as they are no longer relevant. "
+            "If looking to get all checkpoints for a given architecture, we recommend using `huggingface_hub` "
+            "with the list_models method."
+        )
+        return self[item]
+
+
+class DeprecatedList(list):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def __getitem__(self, item):
+        logger.warning_once(
+            "Archive maps are deprecated and will be removed in version v4.40.0 as they are no longer relevant. "
+            "If looking to get all checkpoints for a given architecture, we recommend using `huggingface_hub` "
+            "with the `list_models` method."
+        )
+        return super().__getitem__(item)
+
+
+ALBERT_PRETRAINED_CONFIG_ARCHIVE_MAP = DeprecatedDict(
+    {
+        "albert/albert-base-v1": "https://huggingface.co/albert/albert-base-v1/resolve/main/config.json",
+        "albert/albert-large-v1": "https://huggingface.co/albert/albert-large-v1/resolve/main/config.json",
+        "albert/albert-xlarge-v1": "https://huggingface.co/albert/albert-xlarge-v1/resolve/main/config.json",
+        "albert/albert-xxlarge-v1": "https://huggingface.co/albert/albert-xxlarge-v1/resolve/main/config.json",
+        "albert/albert-base-v2": "https://huggingface.co/albert/albert-base-v2/resolve/main/config.json",
+        "albert/albert-large-v2": "https://huggingface.co/albert/albert-large-v2/resolve/main/config.json",
+        "albert/albert-xlarge-v2": "https://huggingface.co/albert/albert-xlarge-v2/resolve/main/config.json",
+        "albert/albert-xxlarge-v2": "https://huggingface.co/albert/albert-xxlarge-v2/resolve/main/config.json",
+    }
+)
+
+ALBERT_PRETRAINED_MODEL_ARCHIVE_LIST = DeprecatedList(
+    [
+        "albert/albert-base-v1",
+        "albert/albert-large-v1",
+        "albert/albert-xlarge-v1",
+        "albert/albert-xxlarge-v1",
+        "albert/albert-base-v2",
+        "albert/albert-large-v2",
+        "albert/albert-xlarge-v2",
+        "albert/albert-xxlarge-v2",
+    ]
+)
+
+TF_ALBERT_PRETRAINED_MODEL_ARCHIVE_LIST = DeprecatedList(
+    [
+        "albert/albert-base-v1",
+        "albert/albert-large-v1",
+        "albert/albert-xlarge-v1",
+        "albert/albert-xxlarge-v1",
+        "albert/albert-base-v2",
+        "albert/albert-large-v2",
+        "albert/albert-xlarge-v2",
+        "albert/albert-xxlarge-v2",
+    ]
+)
+
+ALIGN_PRETRAINED_CONFIG_ARCHIVE_MAP = DeprecatedDict(
+    {"kakaobrain/align-base": "https://huggingface.co/kakaobrain/align-base/resolve/main/config.json"}
+)
+
+ALIGN_PRETRAINED_MODEL_ARCHIVE_LIST = DeprecatedList(["kakaobrain/align-base"])
+
+ALTCLIP_PRETRAINED_CONFIG_ARCHIVE_MAP = DeprecatedDict(
+    {"BAAI/AltCLIP": "https://huggingface.co/BAAI/AltCLIP/resolve/main/config.json"}
+)
+
+ALTCLIP_PRETRAINED_MODEL_ARCHIVE_LIST = DeprecatedList(["BAAI/AltCLIP"])
+
+AUDIO_SPECTROGRAM_TRANSFORMER_PRETRAINED_CONFIG_ARCHIVE_MAP = DeprecatedDict(
+    {
+        "MIT/ast-finetuned-audioset-10-10-0.4593": "https://huggingface.co/MIT/ast-finetuned-audioset-10-10-0.4593/resolve/main/config.json"
+    }
+)
+
+AUDIO_SPECTROGRAM_TRANSFORMER_PRETRAINED_MODEL_ARCHIVE_LIST = DeprecatedList(
+    ["MIT/ast-finetuned-audioset-10-10-0.4593"]
+)
+
+AUTOFORMER_PRETRAINED_CONFIG_ARCHIVE_MAP = DeprecatedDict(
+    {
+        "huggingface/autoformer-tourism-monthly": "https://huggingface.co/huggingface/autoformer-tourism-monthly/resolve/main/config.json"
+    }
+)
+
+AUTOFORMER_PRETRAINED_MODEL_ARCHIVE_LIST = DeprecatedList(["huggingface/autoformer-tourism-monthly"])
+
+BARK_PRETRAINED_MODEL_ARCHIVE_LIST = DeprecatedList(["suno/bark-small", "suno/bark"])
+
+BART_PRETRAINED_MODEL_ARCHIVE_LIST = DeprecatedList(["facebook/bart-large"])
+
+BEIT_PRETRAINED_CONFIG_ARCHIVE_MAP = DeprecatedDict(
+    {
+        "microsoft/beit-base-patch16-224-pt22k": "https://huggingface.co/microsoft/beit-base-patch16-224-pt22k/resolve/main/config.json"
+    }
+)
+
+BEIT_PRETRAINED_MODEL_ARCHIVE_LIST = DeprecatedList(["microsoft/beit-base-patch16-224"])
+
+BERT_PRETRAINED_CONFIG_ARCHIVE_MAP = DeprecatedDict(
+    {
+        "google-bert/bert-base-uncased": "https://huggingface.co/google-bert/bert-base-uncased/resolve/main/config.json",
+        "google-bert/bert-large-uncased": "https://huggingface.co/google-bert/bert-large-uncased/resolve/main/config.json",
+        "google-bert/bert-base-cased": "https://huggingface.co/google-bert/bert-base-cased/resolve/main/config.json",
+        "google-bert/bert-large-cased": "https://huggingface.co/google-bert/bert-large-cased/resolve/main/config.json",
+        "google-bert/bert-base-multilingual-uncased": "https://huggingface.co/google-bert/bert-base-multilingual-uncased/resolve/main/config.json",
+        "google-bert/bert-base-multilingual-cased": "https://huggingface.co/google-bert/bert-base-multilingual-cased/resolve/main/config.json",
+        "google-bert/bert-base-chinese": "https://huggingface.co/google-bert/bert-base-chinese/resolve/main/config.json",
+        "google-bert/bert-base-german-cased": "https://huggingface.co/google-bert/bert-base-german-cased/resolve/main/config.json",
+        "google-bert/bert-large-uncased-whole-word-masking": "https://huggingface.co/google-bert/bert-large-uncased-whole-word-masking/resolve/main/config.json",
+        "google-bert/bert-large-cased-whole-word-masking": "https://huggingface.co/google-bert/bert-large-cased-whole-word-masking/resolve/main/config.json",
+        "google-bert/bert-large-uncased-whole-word-masking-finetuned-squad": "https://huggingface.co/google-bert/bert-large-uncased-whole-word-masking-finetuned-squad/resolve/main/config.json",
+        "google-bert/bert-large-cased-whole-word-masking-finetuned-squad": "https://huggingface.co/google-bert/bert-large-cased-whole-word-masking-finetuned-squad/resolve/main/config.json",
+        "google-bert/bert-base-cased-finetuned-mrpc": "https://huggingface.co/google-bert/bert-base-cased-finetuned-mrpc/resolve/main/config.json",
+        "google-bert/bert-base-german-dbmdz-cased": "https://huggingface.co/google-bert/bert-base-german-dbmdz-cased/resolve/main/config.json",
+        "google-bert/bert-base-german-dbmdz-uncased": "https://huggingface.co/google-bert/bert-base-german-dbmdz-uncased/resolve/main/config.json",
+        "cl-tohoku/bert-base-japanese": "https://huggingface.co/cl-tohoku/bert-base-japanese/resolve/main/config.json",
+        "cl-tohoku/bert-base-japanese-whole-word-masking": "https://huggingface.co/cl-tohoku/bert-base-japanese-whole-word-masking/resolve/main/config.json",
+        "cl-tohoku/bert-base-japanese-char": "https://huggingface.co/cl-tohoku/bert-base-japanese-char/resolve/main/config.json",
+        "cl-tohoku/bert-base-japanese-char-whole-word-masking": "https://huggingface.co/cl-tohoku/bert-base-japanese-char-whole-word-masking/resolve/main/config.json",
+        "TurkuNLP/bert-base-finnish-cased-v1": "https://huggingface.co/TurkuNLP/bert-base-finnish-cased-v1/resolve/main/config.json",
+        "TurkuNLP/bert-base-finnish-uncased-v1": "https://huggingface.co/TurkuNLP/bert-base-finnish-uncased-v1/resolve/main/config.json",
+        "wietsedv/bert-base-dutch-cased": "https://huggingface.co/wietsedv/bert-base-dutch-cased/resolve/main/config.json",
+    }
+)
+
+BERT_PRETRAINED_MODEL_ARCHIVE_LIST = DeprecatedList(
+    [
+        "google-bert/bert-base-uncased",
+        "google-bert/bert-large-uncased",
+        "google-bert/bert-base-cased",
+        "google-bert/bert-large-cased",
+        "google-bert/bert-base-multilingual-uncased",
+        "google-bert/bert-base-multilingual-cased",
+        "google-bert/bert-base-chinese",
+        "google-bert/bert-base-german-cased",
+        "google-bert/bert-large-uncased-whole-word-masking",
+        "google-bert/bert-large-cased-whole-word-masking",
+        "google-bert/bert-large-uncased-whole-word-masking-finetuned-squad",
+        "google-bert/bert-large-cased-whole-word-masking-finetuned-squad",
+        "google-bert/bert-base-cased-finetuned-mrpc",
+        "google-bert/bert-base-german-dbmdz-cased",
+        "google-bert/bert-base-german-dbmdz-uncased",
+        "cl-tohoku/bert-base-japanese",
+        "cl-tohoku/bert-base-japanese-whole-word-masking",
+        "cl-tohoku/bert-base-japanese-char",
+        "cl-tohoku/bert-base-japanese-char-whole-word-masking",
+        "TurkuNLP/bert-base-finnish-cased-v1",
+        "TurkuNLP/bert-base-finnish-uncased-v1",
+        "wietsedv/bert-base-dutch-cased",
+    ]
+)
+
+TF_BERT_PRETRAINED_MODEL_ARCHIVE_LIST = DeprecatedList(
+    [
+        "google-bert/bert-base-uncased",
+        "google-bert/bert-large-uncased",
+        "google-bert/bert-base-cased",
+        "google-bert/bert-large-cased",
+        "google-bert/bert-base-multilingual-uncased",
+        "google-bert/bert-base-multilingual-cased",
+        "google-bert/bert-base-chinese",
+        "google-bert/bert-base-german-cased",
+        "google-bert/bert-large-uncased-whole-word-masking",
+        "google-bert/bert-large-cased-whole-word-masking",
+        "google-bert/bert-large-uncased-whole-word-masking-finetuned-squad",
+        "google-bert/bert-large-cased-whole-word-masking-finetuned-squad",
+        "google-bert/bert-base-cased-finetuned-mrpc",
+        "cl-tohoku/bert-base-japanese",
+        "cl-tohoku/bert-base-japanese-whole-word-masking",
+        "cl-tohoku/bert-base-japanese-char",
+        "cl-tohoku/bert-base-japanese-char-whole-word-masking",
+        "TurkuNLP/bert-base-finnish-cased-v1",
+        "TurkuNLP/bert-base-finnish-uncased-v1",
+        "wietsedv/bert-base-dutch-cased",
+    ]
+)
+
+BIG_BIRD_PRETRAINED_CONFIG_ARCHIVE_MAP = DeprecatedDict(
+    {
+        "google/bigbird-roberta-base": "https://huggingface.co/google/bigbird-roberta-base/resolve/main/config.json",
+        "google/bigbird-roberta-large": "https://huggingface.co/google/bigbird-roberta-large/resolve/main/config.json",
+        "google/bigbird-base-trivia-itc": "https://huggingface.co/google/bigbird-base-trivia-itc/resolve/main/config.json",
+    }
+)
+
+BIG_BIRD_PRETRAINED_MODEL_ARCHIVE_LIST = DeprecatedList(
+    ["google/bigbird-roberta-base", "google/bigbird-roberta-large", "google/bigbird-base-trivia-itc"]
+)
+
+BIGBIRD_PEGASUS_PRETRAINED_CONFIG_ARCHIVE_MAP = DeprecatedDict(
+    {
+        "google/bigbird-pegasus-large-arxiv": "https://huggingface.co/google/bigbird-pegasus-large-arxiv/resolve/main/config.json",
+        "google/bigbird-pegasus-large-pubmed": "https://huggingface.co/google/bigbird-pegasus-large-pubmed/resolve/main/config.json",
+        "google/bigbird-pegasus-large-bigpatent": "https://huggingface.co/google/bigbird-pegasus-large-bigpatent/resolve/main/config.json",
+    }
+)
+
+BIGBIRD_PEGASUS_PRETRAINED_MODEL_ARCHIVE_LIST = DeprecatedList(
+    [
+        "google/bigbird-pegasus-large-arxiv",
+        "google/bigbird-pegasus-large-pubmed",
+        "google/bigbird-pegasus-large-bigpatent",
+    ]
+)
+
+BIOGPT_PRETRAINED_CONFIG_ARCHIVE_MAP = DeprecatedDict(
+    {"microsoft/biogpt": "https://huggingface.co/microsoft/biogpt/resolve/main/config.json"}
+)
+
+BIOGPT_PRETRAINED_MODEL_ARCHIVE_LIST = DeprecatedList(["microsoft/biogpt", "microsoft/BioGPT-Large"])
+
+BIT_PRETRAINED_CONFIG_ARCHIVE_MAP = DeprecatedDict(
+    {"google/bit-50": "https://huggingface.co/google/bit-50/resolve/main/config.json"}
+)
+
+BIT_PRETRAINED_MODEL_ARCHIVE_LIST = DeprecatedList(["google/bit-50"])
+
+BLENDERBOT_PRETRAINED_CONFIG_ARCHIVE_MAP = DeprecatedDict(
+    {"facebook/blenderbot-3B": "https://huggingface.co/facebook/blenderbot-3B/resolve/main/config.json"}
+)
+
+BLENDERBOT_PRETRAINED_MODEL_ARCHIVE_LIST = DeprecatedList(["facebook/blenderbot-3B"])
+
+BLENDERBOT_SMALL_PRETRAINED_CONFIG_ARCHIVE_MAP = {
+    "facebook/blenderbot_small-90M": "https://huggingface.co/facebook/blenderbot_small-90M/resolve/main/config.json",
+    # See all BlenderbotSmall models at https://huggingface.co/models?filter=blenderbot_small
+}
+
+BLENDERBOT_SMALL_PRETRAINED_MODEL_ARCHIVE_LIST = DeprecatedList(["facebook/blenderbot_small-90M"])
+
+BLIP_PRETRAINED_CONFIG_ARCHIVE_MAP = DeprecatedDict(
+    {
+        "Salesforce/blip-vqa-base": "https://huggingface.co/Salesforce/blip-vqa-base/resolve/main/config.json",
+        "Salesforce/blip-vqa-capfit-large": "https://huggingface.co/Salesforce/blip-vqa-base-capfit/resolve/main/config.json",
+        "Salesforce/blip-image-captioning-base": "https://huggingface.co/Salesforce/blip-image-captioning-base/resolve/main/config.json",
+        "Salesforce/blip-image-captioning-large": "https://huggingface.co/Salesforce/blip-image-captioning-large/resolve/main/config.json",
+        "Salesforce/blip-itm-base-coco": "https://huggingface.co/Salesforce/blip-itm-base-coco/resolve/main/config.json",
+        "Salesforce/blip-itm-large-coco": "https://huggingface.co/Salesforce/blip-itm-large-coco/resolve/main/config.json",
+        "Salesforce/blip-itm-base-flikr": "https://huggingface.co/Salesforce/blip-itm-base-flikr/resolve/main/config.json",
+        "Salesforce/blip-itm-large-flikr": "https://huggingface.co/Salesforce/blip-itm-large-flikr/resolve/main/config.json",
+    }
+)
+
+BLIP_PRETRAINED_MODEL_ARCHIVE_LIST = DeprecatedList(
+    [
+        "Salesforce/blip-vqa-base",
+        "Salesforce/blip-vqa-capfilt-large",
+        "Salesforce/blip-image-captioning-base",
+        "Salesforce/blip-image-captioning-large",
+        "Salesforce/blip-itm-base-coco",
+        "Salesforce/blip-itm-large-coco",
+        "Salesforce/blip-itm-base-flickr",
+        "Salesforce/blip-itm-large-flickr",
+    ]
+)
+
+TF_BLIP_PRETRAINED_MODEL_ARCHIVE_LIST = DeprecatedList(
+    [
+        "Salesforce/blip-vqa-base",
+        "Salesforce/blip-vqa-capfilt-large",
+        "Salesforce/blip-image-captioning-base",
+        "Salesforce/blip-image-captioning-large",
+        "Salesforce/blip-itm-base-coco",
+        "Salesforce/blip-itm-large-coco",
+        "Salesforce/blip-itm-base-flickr",
+        "Salesforce/blip-itm-large-flickr",
+    ]
+)
+
+BLIP_2_PRETRAINED_CONFIG_ARCHIVE_MAP = DeprecatedDict(
+    {"salesforce/blip2-opt-2.7b": "https://huggingface.co/salesforce/blip2-opt-2.7b/resolve/main/config.json"}
+)
+
+BLIP_2_PRETRAINED_MODEL_ARCHIVE_LIST = DeprecatedList(["Salesforce/blip2-opt-2.7b"])
+
+BLOOM_PRETRAINED_CONFIG_ARCHIVE_MAP = DeprecatedDict(
+    {
+        "bigscience/bloom": "https://huggingface.co/bigscience/bloom/resolve/main/config.json",
+        "bigscience/bloom-560m": "https://huggingface.co/bigscience/bloom-560m/blob/main/config.json",
+        "bigscience/bloom-1b1": "https://huggingface.co/bigscience/bloom-1b1/blob/main/config.json",
+        "bigscience/bloom-1b7": "https://huggingface.co/bigscience/bloom-1b7/blob/main/config.json",
+        "bigscience/bloom-3b": "https://huggingface.co/bigscience/bloom-3b/blob/main/config.json",
+        "bigscience/bloom-7b1": "https://huggingface.co/bigscience/bloom-7b1/blob/main/config.json",
+    }
+)
+
+BLOOM_PRETRAINED_MODEL_ARCHIVE_LIST = DeprecatedList(
+    [
+        "bigscience/bigscience-small-testing",
+        "bigscience/bloom-560m",
+        "bigscience/bloom-1b1",
+        "bigscience/bloom-1b7",
+        "bigscience/bloom-3b",
+        "bigscience/bloom-7b1",
+        "bigscience/bloom",
+    ]
+)
+
+BRIDGETOWER_PRETRAINED_CONFIG_ARCHIVE_MAP = DeprecatedDict(
+    {
+        "BridgeTower/bridgetower-base": "https://huggingface.co/BridgeTower/bridgetower-base/blob/main/config.json",
+        "BridgeTower/bridgetower-base-itm-mlm": "https://huggingface.co/BridgeTower/bridgetower-base-itm-mlm/blob/main/config.json",
+    }
+)
+
+BRIDGETOWER_PRETRAINED_MODEL_ARCHIVE_LIST = DeprecatedList(
+    ["BridgeTower/bridgetower-base", "BridgeTower/bridgetower-base-itm-mlm"]
+)
+
+BROS_PRETRAINED_CONFIG_ARCHIVE_MAP = DeprecatedDict(
+    {
+        "jinho8345/bros-base-uncased": "https://huggingface.co/jinho8345/bros-base-uncased/blob/main/config.json",
+        "jinho8345/bros-large-uncased": "https://huggingface.co/jinho8345/bros-large-uncased/blob/main/config.json",
+    }
+)
+
+BROS_PRETRAINED_MODEL_ARCHIVE_LIST = DeprecatedList(["jinho8345/bros-base-uncased", "jinho8345/bros-large-uncased"])
+
+CAMEMBERT_PRETRAINED_CONFIG_ARCHIVE_MAP = DeprecatedDict(
+    {
+        "almanach/camembert-base": "https://huggingface.co/almanach/camembert-base/resolve/main/config.json",
+        "umberto-commoncrawl-cased-v1": "https://huggingface.co/Musixmatch/umberto-commoncrawl-cased-v1/resolve/main/config.json",
+        "umberto-wikipedia-uncased-v1": "https://huggingface.co/Musixmatch/umberto-wikipedia-uncased-v1/resolve/main/config.json",
+    }
+)
+
+CAMEMBERT_PRETRAINED_MODEL_ARCHIVE_LIST = DeprecatedList(
+    ["almanach/camembert-base", "Musixmatch/umberto-commoncrawl-cased-v1", "Musixmatch/umberto-wikipedia-uncased-v1"]
+)
+
+TF_CAMEMBERT_PRETRAINED_MODEL_ARCHIVE_LIST = DeprecatedList([])
+
+CANINE_PRETRAINED_CONFIG_ARCHIVE_MAP = DeprecatedDict(
+    {"google/canine-s": "https://huggingface.co/google/canine-s/resolve/main/config.json"}
+)
+
+CANINE_PRETRAINED_MODEL_ARCHIVE_LIST = DeprecatedList(["google/canine-s", "google/canine-r"])
+
+CHINESE_CLIP_PRETRAINED_CONFIG_ARCHIVE_MAP = DeprecatedDict(
+    {
+        "OFA-Sys/chinese-clip-vit-base-patch16": "https://huggingface.co/OFA-Sys/chinese-clip-vit-base-patch16/resolve/main/config.json"
+    }
+)
+
+CHINESE_CLIP_PRETRAINED_MODEL_ARCHIVE_LIST = DeprecatedList(["OFA-Sys/chinese-clip-vit-base-patch16"])
+
+CLAP_PRETRAINED_MODEL_ARCHIVE_LIST = DeprecatedList(["laion/clap-htsat-fused", "laion/clap-htsat-unfused"])
+
+CLIP_PRETRAINED_CONFIG_ARCHIVE_MAP = DeprecatedDict(
+    {"openai/clip-vit-base-patch32": "https://huggingface.co/openai/clip-vit-base-patch32/resolve/main/config.json"}
+)
+
+CLIP_PRETRAINED_MODEL_ARCHIVE_LIST = DeprecatedList(["openai/clip-vit-base-patch32"])
+
+TF_CLIP_PRETRAINED_MODEL_ARCHIVE_LIST = DeprecatedList(["openai/clip-vit-base-patch32"])
+
+CLIPSEG_PRETRAINED_CONFIG_ARCHIVE_MAP = DeprecatedDict(
+    {"CIDAS/clipseg-rd64": "https://huggingface.co/CIDAS/clipseg-rd64/resolve/main/config.json"}
+)
+
+CLIPSEG_PRETRAINED_MODEL_ARCHIVE_LIST = DeprecatedList(["CIDAS/clipseg-rd64-refined"])
+
+CLVP_PRETRAINED_CONFIG_ARCHIVE_MAP = DeprecatedDict(
+    {"susnato/clvp_dev": "https://huggingface.co/susnato/clvp_dev/resolve/main/config.json"}
+)
+
+CLVP_PRETRAINED_MODEL_ARCHIVE_LIST = DeprecatedList(["susnato/clvp_dev"])
+
+CODEGEN_PRETRAINED_CONFIG_ARCHIVE_MAP = DeprecatedDict(
+    {
+        "Salesforce/codegen-350M-nl": "https://huggingface.co/Salesforce/codegen-350M-nl/resolve/main/config.json",
+        "Salesforce/codegen-350M-multi": "https://huggingface.co/Salesforce/codegen-350M-multi/resolve/main/config.json",
+        "Salesforce/codegen-350M-mono": "https://huggingface.co/Salesforce/codegen-350M-mono/resolve/main/config.json",
+        "Salesforce/codegen-2B-nl": "https://huggingface.co/Salesforce/codegen-2B-nl/resolve/main/config.json",
+        "Salesforce/codegen-2B-multi": "https://huggingface.co/Salesforce/codegen-2B-multi/resolve/main/config.json",
+        "Salesforce/codegen-2B-mono": "https://huggingface.co/Salesforce/codegen-2B-mono/resolve/main/config.json",
+        "Salesforce/codegen-6B-nl": "https://huggingface.co/Salesforce/codegen-6B-nl/resolve/main/config.json",
+        "Salesforce/codegen-6B-multi": "https://huggingface.co/Salesforce/codegen-6B-mul

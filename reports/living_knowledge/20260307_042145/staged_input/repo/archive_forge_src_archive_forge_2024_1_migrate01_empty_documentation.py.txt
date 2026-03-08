@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/2024_1_migrate01_empty_documentation.py
+KIND: code
+
+Return the number of rows migrated.

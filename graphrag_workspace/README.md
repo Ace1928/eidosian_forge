@@ -12,7 +12,7 @@ This directory contains the operational configuration and workspace for **Micros
 
 The system uses **local inference** endpoints via Ollama.
 
-- **Chat Model**: `qwen2.5:1.5b`
+- **Chat Model**: `qwen3.5:2b`
 - **Embedding Model**: `nomic-embed-text:latest`
 - **Endpoint**: `http://127.0.0.1:11434/v1`
 - **Call timeout**: controlled in `settings.yaml` (`call_args.timeout`)
@@ -24,7 +24,7 @@ ollama serve
 ```
 2. Required models present:
 ```bash
-ollama pull qwen2.5:1.5b
+ollama pull qwen3.5:2b
 ollama pull nomic-embed-text:latest
 ollama list
 ```

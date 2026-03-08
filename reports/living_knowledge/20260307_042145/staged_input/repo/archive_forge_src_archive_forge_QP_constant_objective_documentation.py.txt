@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/QP_constant_objective_documentation.py
+KIND: code
+
+from pyomo.core import ConcreteModel, Var, Objective, Constraint, NonNegativeReals
+from pyomo.solvers.tests.models.base import _BaseTestModel, register_model
+
+    A continuous linear model with a constant objective that starts
+    as quadratic expression

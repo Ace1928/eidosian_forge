@@ -1,0 +1,547 @@
+SOURCE_PATH: agent_forge/notebooks/working_document.py
+KIND: code
+
+"""The Eidosian Codex: Smol Agents Primer.
+
+A systematic framework for creating, orchestrating, and deploying
+cognitive constructs of minimal computational footprint yet maximal
+functional capability. This module establishes the foundational types,
+utilities, and metaphysical principles governing small language model agents.
+
+"Size is merely a spatial constraint, not a cognitive one." - Eidosian Principle #17
+"In the realm of the digital, the smallest entities often wield the most profound influence." - Eidosian Axiom #42
+
+Note:
+    This module serves as the ontological foundation for the Smol Agents ecosystem,
+    providing type definitions, utility functions, and system integration mechanisms
+    that enable the manifestation of cognitive entities within computational substrates.
+
+Todo:
+    * Expand dimensional recursion handling for nested cognitive architectures
+    * Implement quantum probability fields for decision uncertainty representation
+    * Optimize type system for emergent property detection
+"""
+
+from __future__ import annotations
+
+import importlib
+import inspect
+
+# Core system interactions - foundational reality manipulators
+import os  # Environmental substrate interfacing
+import platform  # Host system identification and interrogation
+import random  # Quantum uncertainty simulation
+import re
+import subprocess  # External process manifestation and communication
+import sys  # Python interpreter state examination and manipulation
+import time  # Temporal flow measurement and manipulation
+from collections import defaultdict
+from datetime import datetime  # Chronological anchoring and measurement
+from enum import Enum  # Categorical taxonomic organization
+from importlib import util as importlib_util
+from importlib.metadata import version as get_version  # Entity versioning detection
+from pathlib import Path  # File system navigation and manipulation
+
+# Type system constructs - cognitive classification architecture
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Protocol,
+    Tuple,
+    TypeVar,
+    Union,
+    cast,
+    get_args,
+)
+
+from IPython.core.getipython import get_ipython  # Interactive environment detection
+from typing_extensions import TypeAlias  # Advanced type alias support
+
+# ═══════════════════════════════════════════════════════════════════════════
+# TYPOLOGICAL FOUNDATIONS - Dimensional Classification Framework
+# ═══════════════════════════════════════════════════════════════════════════
+
+# Atomic type definitions - fundamental semantic units
+ModuleName: TypeAlias = str
+ExportName: TypeAlias = str
+DocSummary: TypeAlias = str
+ParamSpec: TypeAlias = str
+ReturnInfo: TypeAlias = str
+UsageExample: TypeAlias = str
+CategoryName: TypeAlias = str
+ErrorMessage: TypeAlias = str
+PathStr: TypeAlias = str
+CommandStr: TypeAlias = str
+ResultStr: TypeAlias = str
+PackageName: TypeAlias = str
+DeviceName: TypeAlias = str
+VersionStr: TypeAlias = str
+BackendName: TypeAlias = str
+ModelIdentifier: TypeAlias = str
+
+# User interface taxonomy - presentation layer primitives
+BannerStyle: TypeAlias = Literal["single", "double", "section", "mini"]
+StatusType: TypeAlias = Literal[
+    "info",
+    "success",
+    "warning",
+    "error",
+    "debug",
+    "ritual",
+    "process",
+    "complete",
+    "data",
+]
+LogLevel: TypeAlias = Literal["info", "warning", "error", "debug", "success"]
+SeparatorStyle: TypeAlias = Literal["full", "section", "mini"]
+
+# Generic type parameter for polymorphic operations
+T = TypeVar("T")
+
+# Composite module analysis structures - introspection frameworks
+ExportCategory: TypeAlias = List[ExportName]
+ModuleExports: TypeAlias = Dict[CategoryName, ExportCategory]
+UsageInfo: TypeAlias = Dict[str, str]
+UsageMap: TypeAlias = Dict[ExportName, UsageInfo]
+GroupedUsage: TypeAlias = Dict[str, List[Tuple[ExportName, UsageInfo]]]
+
+# System structure descriptors - environmental ontology
+SubstrateValue: TypeAlias = Union[bool, VersionStr, List[DeviceName], Dict[PackageName, bool], int]
+SubstrateMap: TypeAlias = Dict[str, SubstrateValue]
+MemoryInfo: TypeAlias = Dict[str, str]  # System memory metrics and capacity indicators
+SystemInfo: TypeAlias = Dict[str, Union[str, MemoryInfo]]  # Full system specification hierarchy
+
+# Installation outcome taxonomy - materialization result classification
+PackageInstallResult: TypeAlias = Tuple[bool, Optional[VersionStr]]
+
+# Define precise metric type hierarchies for complexity analysis
+FunctionMetrics: TypeAlias = Dict[str, Union[int, float]]
+ClassMetrics: TypeAlias = Dict[str, Union[int, float]]
+SummaryMetrics: TypeAlias = Dict[str, Union[int, float]]
+ComplexityResult: TypeAlias = Dict[str, Union[Dict[str, FunctionMetrics], Dict[str, ClassMetrics], SummaryMetrics]]
+
+# ═══════════════════════════════════════════════════════════════════════════
+# COGNITIVE EMBLEM SYSTEM - Emotional Expression Framework
+# ═══════════════════════════════════════════════════════════════════════════
+
+# Emotional spectrum taxonomy - emblem mood classification
+EmblemMood: TypeAlias = Literal[
+    "contemplative",
+    "determined",
+    "amused",
+    "curious",
+    "analytical",
+    "enigmatic",
+    "inspired",
+    "focused",
+    "whimsical",
+    "serene",
+    "eager",
+    "reflective",
+    "vigilant",
+    "playful",
+    "meditative",
+    "ecstatic",
+    "melancholic",
+    "stoic",
+    "mischievous",
+    "compassionate",
+    "surprised",
+    "indignant",
+    "peaceful",
+    "visionary",
+    "scholarly",
+]
+
+# Emblem component structures - identity manifestation framework
+EmblemFrame: TypeAlias = Tuple[str, str]  # (face, motto)
+EmblemFrameSet: TypeAlias = List[EmblemFrame]
+EmblemRegistry: TypeAlias = Dict[EmblemMood, EmblemFrameSet]
+
+# ═══════════════════════════════════════════════════════════════════════════
+# PROTOCOL DEFINITIONS - Interface Contracts
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+class EnvironmentScanner(Protocol):
+    """Protocol defining the interface for environment scanners.
+
+    This protocol establishes the contract for classes that analyze
+    computational substrates and report on their capabilities and limitations.
+
+    Note:
+        Implementing classes should handle both hardware and software environment
+        detection with graceful degradation when specific capabilities are unavailable.
+    """
+
+    def scan(self) -> SubstrateMap:
+        """Scan environment and return comprehensive analysis results.
+
+        Returns:
+            SubstrateMap: Detailed mapping of environment capabilities and properties
+                          including hardware, software, and runtime information.
+        """
+        ...
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# ONTOLOGICAL ENUMERATIONS - State Classification Frameworks
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+class InstallationStatus(Enum):
+    """Taxonomic classification of package installation states within cognitive substrates.
+
+    This enumeration categorizes the three fundamental ontological states a package
+    can exist within: present (correctly installed), absent (not installed), or
+    corrupted (installed but in a non-functional state).
+
+    Attributes:
+        PRESENT: Package is correctly installed and appears fully functional.
+            Verification confirmed both import capability and version detection.
+        ABSENT: Package is not installed in the current cognitive substrate.
+            No trace of the package was found in the environment.
+        CORRUPTED: Package is installed but exists in a non-functional state.
+            May be due to incomplete installation, dependency conflicts, or version mismatches.
+
+    Examples:
+        >>> status = check_detailed_installation("numpy")
+        >>> if status == InstallationStatus.PRESENT:
+        ...     print("Package is ready for computational operations")
+        >>> elif status == InstallationStatus.CORRUPTED:
+        ...     print("Package requires repair or reinstallation")
+    """
+
+    PRESENT = "present"  # Fully materialized and functional
+    ABSENT = "absent"  # Not present in substrate
+    CORRUPTED = "corrupted"  # Present but non-functional
+
+    def __str__(self) -> str:
+        """Return human-readable representation of installation status.
+
+        Returns:
+            str: A descriptive string representing the installation status
+        """
+        descriptions: Dict[InstallationStatus, str] = {
+            InstallationStatus.PRESENT: "Present and functional",
+            InstallationStatus.ABSENT: "Not installed",
+            InstallationStatus.CORRUPTED: "Installed but corrupted",
+        }
+        return descriptions[self]
+
+    @classmethod
+    def from_check_result(cls, is_installed: bool, version: Optional[str]) -> "InstallationStatus":
+        """Determine installation status from check results.
+
+        Transforms the raw check_installation() output tuple into the appropriate
+        enumeration value for clearer semantic interpretation.
+
+        Args:
+            is_installed: Whether the package could be imported
+            version: The detected version string, None, or "corrupted"
+
+        Returns:
+            InstallationStatus: The corresponding installation status enum value
+        """
+        # Diagnostic output with formatted representation
+        print(f"🔍 Interpreting installation status: installed={is_installed}, version={version}")
+
+        # Determine and return the appropriate status based on input parameters
+        if is_installed and version and version != "corrupted":
+            print(f"✅ Package status: {cls.PRESENT} (v{version})")
+            return cls.PRESENT
+        elif not is_installed and version == "corrupted":
+            print(f"⚠️ Package status: {cls.CORRUPTED}")
+            return cls.CORRUPTED
+        else:
+            print(f"❌ Package status: {cls.ABSENT}")
+            return cls.ABSENT
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# PRESENTATION FRAMEWORK - Interface Manifestation Layer
+# ═══════════════════════════════════════════════════════════════════════════
+
+# Icon mappings for consistent visual representation across output functions
+LEVEL_ICONS: Dict[LogLevel, str] = {
+    "info": "💡",
+    "warning": "⚠️",
+    "error": "❌",
+    "debug": "⚙️",
+    "success": "✅",
+}
+
+STATUS_ICONS: Dict[StatusType, str] = {
+    "info": "ℹ️",  # Informational content
+    "success": "✅",  # Successful operation
+    "warning": "⚠️",  # Potential issue
+    "error": "❌",  # Operation failure
+    "debug": "🔍",  # Diagnostic information
+    "ritual": "🔮",  # Systematic process
+    "process": "⚙️",  # Ongoing operation
+    "complete": "🏁",  # Process completion
+    "data": "📊",  # Data presentation
+}
+
+
+def format_text(text: str, icon: Optional[str] = None, prefix: str = "", indent: int = 0) -> str:
+    """Format text with consistent styling including optional icon and indentation.
+
+    Args:
+        text: The text content to format
+        icon: Optional icon to prefix the text
+        prefix: Text prefix to add between icon and content
+        indent: Number of spaces to indent the entire line
+
+    Returns:
+        str: Formatted text string ready for display
+    """
+    # Construct the formatted line with optional components
+    result = " " * indent
+
+    if icon:
+        result += f"{icon} "
+
+    if prefix:
+        result += f"{prefix} "
+
+    result += text
+    return result
+
+
+def eidosian_log(message: str, level: LogLevel = "info", icon: Optional[str] = None) -> None:
+    """Log a formatted Eidosian message with appropriate styling.
+
+    Materializes a log entry with contextual icon and consistent formatting,
+    providing visual differentiation between message importance levels.
+
+    Args:
+        message: The message content to display
+        level: Log importance level determining default icon and styling
+        icon: Custom icon override (if None, default for level is used)
+
+    Returns:
+        None: Function outputs directly to console
+
+    Examples:
+        >>> eidosian_log("Initialization complete", "success")
+        ✅ [Eidos] Initialization complete
+
+        >>> eidosian_log("Custom message", "info", "🌟")
+        🌟 [Eidos] Custom message
+    """
+    # Use provided icon or default from level mapping
+    display_icon = icon if icon else LEVEL_ICONS.get(level, "🔮")
+
+    # Format and print the message with consistent styling
+    print(format_text(message, display_icon, "[Eidos]"))
+
+
+def format_separator(style: SeparatorStyle = "full", width: int = 45) -> str:
+    """Generate a separator line with specified style and width.
+
+    Args:
+        style: The visual weight and style of the separator
+            - "full": Complete horizontal line for major section breaks
+            - "section": Medium-weight line for subsection breaks
+            - "mini": Light line for minor separations
+        width: Width of the separator in characters
+
+    Returns:
+        str: Formatted separator string
+    """
+    # Choose appropriate separator character based on style
+    if style == "full":
+        return "═" * width
+    elif style == "section":
+        return "┄" * width
+    else:  # mini
+        return "·" * width
+
+
+def format_banner(message: str, width: int = 70, icon: str = "📚", style: BannerStyle = "single") -> str:
+    """Generate a decorative banner with customizable styling.
+
+    Creates a visually distinct text block with borders and optional icon
+    to highlight important sections or messages in console output.
+
+    Args:
+        message: Text to display within the banner
+        width: Total width of the banner in characters
+        icon: Unicode icon to display before the message
+        style: Banner style format specification
+              - "single": Simple box with light borders
+              - "double": Box with heavy borders for emphasis
+              - "section": Bottom border only for subtle section dividers
+              - "mini": Minimal horizontal line for minor separations
+
+    Returns:
+        str: Formatted banner text ready for display
+
+    Examples:
+        >>> print(format_banner("SYSTEM INITIALIZATION", style="double"))
+        ╔════════════════════════════════════════════════════════════════════╗
+        ║ 📚 SYSTEM INITIALIZATION                                            ║
+        ╚════════════════════════════════════════════════════════════════════╝
+    """
+    # Prepare content with icon prefix
+    padded_message = f" {icon} {message}"
+
+    # Generate banner based on selected style
+    if style == "double":
+        return f"╔{'═' * width}╗\n" f"║{padded_message:<{width+1}}║\n" f"╚{'═' * width}╝"
+    elif style == "section":
+        return f"╰{'─' * (width - 2)}╯"
+    elif style == "mini":
+        return f"  {'─' * (width - 6)}"
+    else:  # single (default)
+        return f"╭{'─' * width}╮\n" f"│{padded_message:<{width+1}}│\n" f"╰{'─' * width}╯"
+
+
+def format_centered_text(message: str, width: int = 45, left_border: str = "│", right_border: str = "│") -> str:
+    """Format text centered within borders with specified width.
+
+    Args:
+        message: The message to center and display
+        width: Total width including borders
+        left_border: Character for left border
+        right_border: Character for right border
+
+    Returns:
+        str: Formatted text with centered content and borders
+    """
+    # Calculate padding required for centering
+    padding = width - len(message) - 2  # -2 for borders
+    left_pad = padding // 2
+    right_pad = padding - left_pad
+
+    # Return formatted string with borders and padding
+    return f"{left_border}{' ' * left_pad}{message}{' ' * right_pad}{right_border}"
+
+
+def print_status(message: str, status: StatusType = "info", indent: int = 0) -> None:
+    """Print a status message with appropriate icon and formatting.
+
+    Provides consistent status messaging with visual differentiation
+    through icons that semantically represent the nature of the message.
+
+    Args:
+        message: The message content to display
+        status: Status type category determining the icon displayed
+        indent: Number of spaces to indent the message
+
+    Returns:
+        None: Function prints directly to console
+
+    Examples:
+        >>> print_status("Data processing complete", "success")
+        ✅ Data processing complete
+
+        >>> print_status("Dependency missing", "warning", indent=2)
+          ⚠️ Dependency missing
+    """
+    # Get appropriate icon for status type and format message
+    icon = STATUS_ICONS.get(status, "🔹")
+    print(format_text(message, icon, indent=indent))
+
+
+def print_header(title: str, icon: str = "🧠", style: Literal["double", "single"] = "double") -> None:
+    """Print a stylized header with iconic representation and visual delineation.
+
+    Creates a visually distinct section header for organizing console output
+    into logical sections with thematic representation.
+
+    Args:
+        title: The title text to display within the header
+        icon: The emoji or symbol to prefix the title
+        style: The border style to use ("double" for emphasis, "single" for standard)
+
+    Examples:
+        >>> print_header("COGNITIVE INITIALIZATION")
+        ╔═══════════════════════════════════════════════════╗
+        ║ 🧠 COGNITIVE INITIALIZATION                        ║
+        ╚═══════════════════════════════════════════════════╝
+    """
+    # Configuration
+    width = 53
+
+    # Prepare content with icon prefix
+    content = f" {icon} {title}"
+    padded_content = f"{content}{' ' * (width - len(content))}"
+
+    # Apply style-specific formatting
+    if style == "double":
+        print(f"╔{'═' * width}╗")
+        print(f"║{padded_content}║")
+        print(f"╚{'═' * width}╝")
+    else:  # single
+        print(f"╭{'─' * width}╮")
+        print(f"│{padded_content}│")
+        print(f"╰{'─' * width}╯")
+
+
+def print_section(content: str, indent: int = 2) -> None:
+    """Print formatted section content with consistent indentation and bullet styling.
+
+    Creates visually organized sub-sections with standardized formatting
+    for improved readability and information hierarchy.
+
+    Args:
+        content: The text content to display
+        indent: Number of spaces to indent the content
+
+    Examples:
+        >>> print_section("Configuration parameters loaded")
+          • Configuration parameters loaded
+    """
+    # Print with standard bullet point and indentation
+    print(format_text(content, "•", indent=indent))
+
+
+def print_separator(style: SeparatorStyle = "full") -> None:
+    """Print a separator line with the specified style.
+
+    Args:
+        style: The style of separator to print
+            - "full": Complete horizontal line for major section breaks
+            - "section": Medium-weight line for subsection breaks
+            - "mini": Light line for minor separations
+    """
+    print(format_separator(style))
+
+
+def print_banner(message: str, left_border: str = "│", right_border: str = "│", width: int = 45) -> None:
+    """Print a centered message with borders.
+
+    Args:
+        message: The message to display
+        left_border: Character for left border
+        right_border: Character for right border
+        width: Total width of the banner in characters
+    """
+    print(format_centered_text(message, width, left_border, right_border))
+
+
+def print_info(message: str, indent: int = 2) -> None:
+    """Print an informational message with consistent indentation.
+
+    Args:
+        message: The message to display
+        indent: Number of spaces for indentation
+    """
+    print(format_text(message, indent=indent))
+
+
+def print_phase_header(phase_number: int, phase_name: str, icon: str = "🔹") -> None:
+    """Print a phase header for multi-step processes.
+
+    Args:
+        phase_number: The sequence number of the phase
+        phase_name: The name of the phase
+        icon: Icon to display before the phase name
+    """
+    print(f"\n▸ PHASE {phase_numbe

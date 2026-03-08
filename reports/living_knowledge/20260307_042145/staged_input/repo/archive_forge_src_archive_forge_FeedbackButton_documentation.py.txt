@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/FeedbackButton_documentation.py
+KIND: code
+
+from ..Qt import QtCore, QtWidgets
+Resets the button to its original text and style. Threadsafe.

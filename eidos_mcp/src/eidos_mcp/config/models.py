@@ -157,7 +157,8 @@ DEFAULT_LOCAL_MODEL_PATH = os.environ.get(
         [
             FORGE_ROOT / "models" / "Qwen3.5-2B-Instruct-Q4_K_M.gguf",
             FORGE_ROOT / "models" / "Qwen2.5-1.5B-Instruct-Q8_0.gguf",
-            FORGE_ROOT / "doc_forge" / "models" / "qwen2.5-1.5b-instruct-q5_k_m.gguf",
+            FORGE_ROOT / "models" / "Qwen3.5-2B-Instruct-Q8_0.gguf",
+            FORGE_ROOT / "doc_forge" / "models" / "qwen3.5-2b-instruct-q5_k_m.gguf",
         ]
     ),
 )

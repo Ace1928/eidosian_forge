@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_error_documentation.py
+KIND: code
+
+import json
+from collections import namedtuple
+import macaroonbakery.bakery as bakery
+Override the __new__ method so that we can
+        have optional arguments, which namedtuple doesn't
+        allow

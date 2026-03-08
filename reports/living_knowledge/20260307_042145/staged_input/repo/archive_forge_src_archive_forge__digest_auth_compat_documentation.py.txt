@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_digest_auth_compat_documentation.py
+KIND: code
+
+import requests
+Provide a compatibility layer for requests.auth.HTTPDigestAuth.

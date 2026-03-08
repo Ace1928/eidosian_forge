@@ -1,0 +1,467 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_tensor.py
+KIND: code
+
+import copyreg
+import enum
+import functools
+import warnings
+from collections import OrderedDict
+from copy import deepcopy
+from numbers import Number
+from typing import Any, Dict, Optional, Tuple, Union
+
+import torch
+import torch._C as _C
+import torch.utils.hooks as hooks
+from torch._namedtensor_internals import (
+    check_serializing_named_tensor,
+    is_ellipsis,
+    resolve_ellipsis,
+    single_ellipsis_index,
+    unzip_namedshape,
+    update_names,
+)
+from torch.overrides import (
+    get_default_nowrap_functions,
+    handle_torch_function,
+    has_torch_function,
+    has_torch_function_unary,
+    has_torch_function_variadic,
+)
+from torch.utils.dlpack import DLDeviceType
+
+
+def _handle_torch_function_and_wrap_type_error_to_not_implemented(f):
+    assigned = functools.WRAPPER_ASSIGNMENTS
+
+    @functools.wraps(f, assigned=assigned)
+    def wrapped(*args, **kwargs):
+        try:
+            # See https://github.com/pytorch/pytorch/issues/75462
+            if has_torch_function(args):
+                return handle_torch_function(wrapped, args, *args, **kwargs)
+            return f(*args, **kwargs)
+        except TypeError:
+            return NotImplemented
+
+    return wrapped
+
+
+# Should not be used, this is kept only for BC of loading old serialized Tensor subclasses
+def _rebuild_from_type(func, type, args, dict):
+    if type is Tensor:
+        return func(*args)
+
+    ret = func(*args).as_subclass(type)
+    ret.__dict__ = dict
+    return ret
+
+
+def _rebuild_from_type_v2(func, new_type, args, state):
+    ret = func(*args)
+    if type(ret) is not new_type:
+        ret = ret.as_subclass(new_type)
+    # Tensor does define __setstate__ even though it doesn't define
+    # __getstate__. So only use __setstate__ if it is NOT the one defined
+    # on Tensor
+    if (
+        getattr(ret.__class__, "__setstate__", Tensor.__setstate__)
+        is not Tensor.__setstate__
+    ):
+        ret.__setstate__(state)
+    else:
+        ret = torch._utils._set_obj_state(ret, state)
+    return ret
+
+
+# NB: If you subclass Tensor, and want to share the subclassed class
+# across processes, you must also update torch/multiprocessing/reductions.py
+# to define a ForkingPickler serialization mode for the class.
+#
+# NB: If you add a new method to Tensor, you must update
+# torch/_C/__init__.pyi.in to add a type annotation for your method;
+# otherwise, it will not show up in autocomplete.
+class Tensor(torch._C.TensorBase):
+    def __deepcopy__(self, memo):
+        if has_torch_function_unary(self):
+            return handle_torch_function(Tensor.__deepcopy__, (self,), self, memo)
+        if not self.is_leaf:
+            raise RuntimeError(
+                "Only Tensors created explicitly by the user "
+                "(graph leaves) support the deepcopy protocol at the moment.  "
+                "If you were attempting to deepcopy a module, this may be because "
+                "of a torch.nn.utils.weight_norm usage, "
+                "see https://github.com/pytorch/pytorch/pull/103001"
+            )
+        if id(self) in memo:
+            return memo[id(self)]
+        with torch.no_grad():
+            # TODO: skipping storage copy is wrong for meta, as meta
+            # does accurate alias tracking; however, the code below
+            # doesn't work because of
+            # https://github.com/pytorch/pytorch/issues/47442
+            # Update the test in test_serialization if you remove 'meta' from here
+            if (
+                self.is_sparse
+                or self.device.type
+                in ["lazy", "xla", "mtia", "mps", "ort", "meta", "ipu"]
+                or (
+                    not torch._C._has_storage(self)
+                    and self.device.type == torch._C._get_privateuse1_backend_name()
+                )
+                or (type(self) is not Tensor and self.data_ptr() == 0)
+            ):
+                new_tensor = self.clone()
+                if type(new_tensor) is not type(self):
+                    raise RuntimeError(
+                        "The default implementation of __deepcopy__() for wrapper subclasses "
+                        "only works for subclass types that implement clone() and for which "
+                        "cloning returns another instance of the same subclass. You should either "
+                        "properly implement clone() for your subclass or override __deepcopy__() "
+                        "if it is intended behavior for clone() to return an instance of a "
+                        "different type."
+                    )
+            else:
+                new_storage = self._typed_storage()._deepcopy(memo)
+                if self.is_quantized:
+                    # quantizer_params can be different type based on torch attribute
+                    quantizer_params: Union[
+                        Tuple[torch.qscheme, float, int],
+                        Tuple[torch.qscheme, Tensor, Tensor, int],
+                    ]
+                    if self.qscheme() == torch.per_tensor_affine:
+                        quantizer_params = (
+                            self.qscheme(),
+                            self.q_scale(),
+                            self.q_zero_point(),
+                        )
+                    elif self.qscheme() in (
+                        torch.per_channel_affine,
+                        torch.per_channel_affine_float_qparams,
+                    ):
+                        quantizer_params = (
+                            self.qscheme(),
+                            self.q_per_channel_scales(),
+                            self.q_per_channel_zero_points(),
+                            self.q_per_channel_axis(),
+                        )
+                    else:
+                        raise RuntimeError(
+                            f"Unsupported qscheme {self.qscheme()} in deepcopy"
+                        )
+                    # TODO: Once we decide to break serialization FC, no longer
+                    # need to wrap with TypedStorage
+                    new_tensor = torch._utils._rebuild_qtensor(
+                        torch.storage.TypedStorage(
+                            wrap_storage=new_storage._untyped_storage,
+                            dtype=self.dtype,
+                            _internal=True,
+                        ),
+                        self.storage_offset(),
+                        self.size(),
+                        self.stride(),
+                        quantizer_params,
+                        self.requires_grad,
+                        self._backward_hooks,
+                    )
+                    if type(new_tensor) is not type(self):
+                        raise RuntimeError(
+                            "The default implementation of __deepcopy__() for quantized tensors "
+                            "expects the tensor returned by torch._utils._rebuild_qtensor() to "
+                            "match the type of the instance being copied. If you encounter this, "
+                            "please open an issue on PyTorch's GitHub."
+                        )
+                else:
+                    new_tensor = self.new_empty([])
+                    if type(new_tensor) is not type(self):
+                        raise RuntimeError(
+                            "The default implementation of __deepcopy__() for non-wrapper subclasses "
+                            "only works for subclass types that implement new_empty() and for which "
+                            "that function returns another instance of the same subclass. You should "
+                            "either properly implement new_empty() for your subclass or override "
+                            "__deepcopy__() if it is intended behavior for new_empty() to return "
+                            "an instance of a different type."
+                        )
+                    new_tensor.set_(
+                        new_storage, self.storage_offset(), self.size(), self.stride()
+                    )
+                    if self.is_conj():
+                        new_tensor = new_tensor.conj_physical()
+                    if self.is_neg():
+                        new_tensor = new_tensor.neg()
+            if self.requires_grad:
+                new_tensor.requires_grad_()
+            if self.grad is not None:
+                new_tensor.grad = self.grad.__deepcopy__(memo)
+
+            if type(self) is not Tensor:
+                if type(new_tensor) is not type(self):
+                    raise RuntimeError(
+                        "Type of deepcopy result does not match the type of the source tensor. "
+                        "If you encounter this, please open an issue on PyTorch's GitHub."
+                    )
+
+                # Plain Tensors don't have slots
+                slots_to_save = copyreg._slotnames(self.__class__)  # type: ignore[attr-defined]
+                for slot in slots_to_save:
+                    if hasattr(self, slot):
+                        setattr(new_tensor, slot, deepcopy(getattr(self, slot), memo))
+
+            new_tensor.__dict__ = deepcopy(self.__dict__, memo)
+
+            memo[id(self)] = new_tensor
+            return new_tensor
+
+    def __reduce_ex__(self, proto):
+        state = torch._utils._get_obj_state(self)
+        if type(self) is Tensor and not state:
+            # Fast path for regular tensor without Python state.
+            return self._reduce_ex_internal(proto)
+        if has_torch_function_unary(self):
+            return handle_torch_function(Tensor.__reduce_ex__, (self,), self, proto)
+        func, args = self._reduce_ex_internal(proto)
+        return (_rebuild_from_type_v2, (func, type(self), args, state))
+
+    def storage(self):
+        r"""
+        storage() -> torch.TypedStorage
+
+        Returns the underlying :class:`TypedStorage`.
+
+        .. warning::
+
+            :class:`TypedStorage` is deprecated. It will be removed in the future, and
+            :class:`UntypedStorage` will be the only storage class. To access the
+            :class:`UntypedStorage` directly, use :attr:`Tensor.untyped_storage()`.
+        """
+        if has_torch_function_unary(self):
+            return handle_torch_function(Tensor.storage, (self,), self)
+
+        torch.storage._warn_typed_storage_removal(stacklevel=2)
+        return self._typed_storage()
+
+    # For internal use only, to avoid raising deprecation warning
+    def _typed_storage(self):
+        untyped_storage = self.untyped_storage()
+        return torch.TypedStorage(
+            wrap_storage=untyped_storage, dtype=self.dtype, _internal=True
+        )
+
+    def _reduce_ex_internal(self, proto):
+        check_serializing_named_tensor(self)
+        # See Note [Don't serialize hooks]
+        torch.utils.hooks.warn_if_has_hooks(self)
+        backward_hooks: Dict[Any, Any] = OrderedDict()
+        # Note: Numpy array is chosen to be the rebuild component for XLA, MTIA, ORT Tensors.
+        # We considered a few options:
+        # 1. CPU tensor can't be used here.
+        #    Otherwise in torch.load CPU storage is reconstructed with randomly
+        #    initialized data, moved onto backend device, and then storage is updated
+        #    to the serialized content. This works perfectly for CPU/CUDA but not these backends;
+        #    their tensors are disconnected with storage so they don't get the update.
+        # 2. Python list is not a good fit due to performance reason.
+        #    `tolist()` converts every single element in the tensor into python objects
+        #    and serialize them one by one.
+        if self.device.type in ["xla", "mtia", "ort"] or (
+            not torch._C._has_storage(self)
+            and self.device.type == torch._C._get_privateuse1_backend_name()
+        ):
+            # Convert BFloat16 tesors to Float32 before conversion to numpy, as numpy doesn't
+            # support BFloat16. The rebuild tensor from numpy takes in the original self.dtype,
+            # this would reconstruct the BFloat16 tensor from numpy.
+            numpy_tensor = (
+                self.cpu().numpy()
+                if self.dtype != torch.bfloat16
+                else self.cpu().to(torch.float32).numpy()
+            )
+            return (
+                torch._utils._rebuild_device_tensor_from_numpy,
+                (numpy_tensor, self.dtype, str(self.device), self.requires_grad),
+            )
+        if self.device.type == "meta":
+            # NB: This implementation BREAKS storage sharing.  Current
+            # hypothesis is that no one cares for meta tensors.
+            arg_meta = (
+                self.dtype,
+                tuple(self.size()),
+                self.stride(),
+                self.requires_grad,
+            )
+            return (torch._utils._rebuild_meta_tensor_no_storage, arg_meta)
+        if self.is_quantized:
+            # quantizer_params can be different type based on torch attribute
+            quantizer_params: Union[
+                Tuple[torch.qscheme, float, int], Tuple[Any, Tensor, Tensor, int]
+            ]
+            if self.qscheme() == torch.per_tensor_affine:
+                quantizer_params = (
+                    torch.per_tensor_affine,
+                    self.q_scale(),
+                    self.q_zero_point(),
+                )
+            elif self.qscheme() in (
+                torch.per_channel_affine,
+                torch.per_channel_affine_float_qparams,
+            ):
+                # convert scales and zero points to tuple to avoid recursive calls
+                # when/if we get multi-axis quantized tensors in the future, the shape
+                # is recoverable from the main tensor shape
+                quantizer_params = (
+                    torch.per_channel_affine,
+                    self.q_per_channel_scales(),
+                    self.q_per_channel_zero_points(),
+                    self.q_per_channel_axis(),
+                )
+            else:
+                raise RuntimeError(
+                    f"Serialization is not supported for tensors of type {self.qscheme()}"
+                )
+            # TODO: Once we decide to break serialization FC, no longer
+            # need to wrap with TypedStorage
+            args_qtensor = (
+                torch.storage.TypedStorage(
+                    wrap_storage=self._typed_storage()._untyped_storage,
+                    dtype=self.dtype,
+                    _internal=True,
+                ),
+                self.storage_offset(),
+                tuple(self.size()),
+                self.stride(),
+                quantizer_params,
+                self.requires_grad,
+                backward_hooks,
+            )
+            return (torch._utils._rebuild_qtensor, args_qtensor)
+        elif self.is_sparse:
+            if self.layout == torch.sparse_coo:
+                args_sparse = (
+                    self.layout,
+                    (self._indices(), self._values(), self.size(), self.is_coalesced()),
+                )
+            else:
+                raise NotImplementedError(
+                    f"sparse tensor __reduce_ex__ for layout `{self.layout}`"
+                )
+            return (torch._utils._rebuild_sparse_tensor, args_sparse)
+        elif self.layout in {
+            torch.sparse_csr,
+            torch.sparse_csc,
+            torch.sparse_bsr,
+            torch.sparse_bsc,
+        }:
+            if self.layout in {torch.sparse_csr, torch.sparse_bsr}:
+                compressed_indices, plain_indices = (
+                    self.crow_indices(),
+                    self.col_indices(),
+                )
+            else:
+                compressed_indices, plain_indices = (
+                    self.ccol_indices(),
+                    self.row_indices(),
+                )
+            args_sparse_compressed = (
+                self.layout,
+                (
+                    compressed_indices,
+                    plain_indices,
+                    self.values(),
+                    self.size(),
+                ),
+            )
+            return (torch._utils._rebuild_sparse_tensor, args_sparse_compressed)
+        elif self.is_nested:
+            args_nested = (
+                # NB: values() currently returns the storage as a buffer in an unsafe way.
+                # Ideally, we'd use a private API for this instead. TODO: Switch to this if
+                # we ever get around to adding it.
+                self.values(),
+                self._nested_tensor_size(),
+                self._nested_tensor_strides(),
+                self._nested_tensor_storage_offsets(),
+            )
+            return (torch._utils._rebuild_nested_tensor, args_nested)
+        elif (
+            self.data_ptr() == 0
+            and type(self) is not torch.Tensor
+            and type(self).__torch_dispatch__ is not torch.Tensor.__torch_dispatch__
+        ):
+            arg_wrapper_subclass = (
+                type(self),
+                self.dtype,
+                tuple(self.size()),
+                self.stride(),
+                self.storage_offset(),
+                self.layout,
+                self.device,
+                self.requires_grad,
+            )
+            return (torch._utils._rebuild_wrapper_subclass, arg_wrapper_subclass)
+        else:
+            v3_dtypes = [
+                torch.float8_e5m2,
+                torch.float8_e4m3fn,
+                torch.float8_e5m2fnuz,
+                torch.float8_e4m3fnuz,
+                torch.bits8,
+                torch.bits16,
+                torch.bits1x8,
+                torch.bits2x4,
+                torch.bits4x2,
+                torch.complex32,
+            ]
+            if self.dtype in v3_dtypes:
+                rebuild_func = torch._utils._rebuild_tensor_v3
+                storage = self.untyped_storage()
+            else:
+                # TODO: Once we decide to break serialization FC, no longer
+                # need to wrap with TypedStorage
+                rebuild_func = torch._utils._rebuild_tensor_v2  # type: ignore[assignment]
+                storage = torch.storage.TypedStorage(
+                    wrap_storage=self._typed_storage()._untyped_storage,
+                    dtype=self.dtype,
+                    _internal=True,
+                )  # type: ignore[assignment]
+            args = (
+                storage,
+                self.storage_offset(),
+                tuple(self.size()),
+                self.stride(),
+                self.requires_grad,
+                backward_hooks,
+            )  # previously was self._backward_hooks
+
+            if isinstance(storage, torch.storage.UntypedStorage):
+                args = args + (self.dtype,)  # type: ignore[assignment]
+
+            metadata = torch._utils.get_tensor_metadata(self)
+            if metadata:
+                args = args + (metadata,)  # type: ignore[assignment]
+
+            return (rebuild_func, args)
+
+    def __setstate__(self, state):
+        if has_torch_function_unary(self):
+            return handle_torch_function(Tensor.__setstate__, (self,), self, state)
+        # Warning: this method is NOT called when you torch.load() a tensor;
+        # that is managed by _rebuild_tensor_v2
+        if not self.is_leaf:
+            raise RuntimeError("__setstate__ can be only called on leaf Tensors")
+        if len(state) == 4:
+            # legacy serialization of Tensor
+            self.set_(*state)
+            return
+        elif len(state) == 5:
+            # legacy serialization of Variable
+            self.data = state[0]
+            state = (state[3], state[4], state[2])
+        # The setting of _backward_hooks is expected to be a no-op.
+        # See Note [Don't serialize hooks]
+        self.requires_grad, _, self._backward_hooks = state
+
+    def __repr__(self, *, tensor_contents=None):
+        if has_torch_function_unary(self):
+            return handle_torch_function(
+                Tensor.__repr__, (self,), self, tensor_contents=tensor_contents
+            )
+        # All strings are unicode in Python 3.
+        return torch._tensor_str._str(self, tensor_co

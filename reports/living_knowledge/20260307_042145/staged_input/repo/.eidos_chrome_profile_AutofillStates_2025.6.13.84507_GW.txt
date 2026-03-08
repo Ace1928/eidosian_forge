@@ -1,0 +1,13 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/GW
+KIND: config
+
+GW
+bafatábafata
+bolama
+biombo
+bissau
+cacheu
+gabugabú
+oio	
+quinara	
+tombali

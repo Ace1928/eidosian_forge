@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_tz_documentation.py
+KIND: code
+
+from __future__ import annotations
+from datetime import datetime, timedelta, timezone, tzinfo
+Compute dst.

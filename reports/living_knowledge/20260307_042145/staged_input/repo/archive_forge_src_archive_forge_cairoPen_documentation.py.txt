@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/cairoPen_documentation.py
+KIND: code
+
+from fontTools.pens.basePen import BasePen
+Pen to draw to a Cairo graphics library context.

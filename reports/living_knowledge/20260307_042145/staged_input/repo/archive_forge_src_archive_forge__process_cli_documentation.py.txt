@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_process_cli_documentation.py
+KIND: code
+
+import clr
+import System
+import os
+from ._process_common import arg_split
+
+    Check if a process with the given PID (pid) exists

@@ -1,0 +1,8 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/manifest.json
+KIND: config
+
+{
+  "manifest_version": 2,
+  "name": "chromeAutofillStatesData",
+  "version": "2025.6.13.84507"
+}

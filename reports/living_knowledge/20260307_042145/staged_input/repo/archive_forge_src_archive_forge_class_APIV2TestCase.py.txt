@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_APIV2TestCase.py
+KIND: code
+
+import uuid
+from designateclient.tests import base
+class APIV2TestCase(base.APITestCase):
+    VERSION = '2'

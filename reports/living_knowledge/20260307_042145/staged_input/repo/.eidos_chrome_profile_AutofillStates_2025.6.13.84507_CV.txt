@@ -1,0 +1,30 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/CV
+KIND: config
+
+CV
+brava
+	boa vista
+santa catarina
+santa catarina do fogo
+
+santa cruz
+maio
+	mosteiros
+paulpaúl
+
+porto novo
+praia
+ribeira brava
+ribeira grande
+ribeira grande de santiago
+são domingos
+são filipe
+sao filipe
+sal
+são miguel
+são lourenço dos órgãos
+são salvador do mundo
+são vicente
+
+tarrafal3
+tarrafal de são nicolautarrafal de sao nicolau

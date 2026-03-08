@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/aliens_documentation.py
+KIND: code
+
+import os
+import random
+from typing import List
+import pygame as pg
+We only update the score in update() when it has changed.

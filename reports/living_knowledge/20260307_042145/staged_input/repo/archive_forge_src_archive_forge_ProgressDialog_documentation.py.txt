@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/ProgressDialog_documentation.py
+KIND: code
+
+from time import perf_counter
+from ..Qt import QtCore, QtGui, QtWidgets
+Use inplace-addition operator for easy incrementing.

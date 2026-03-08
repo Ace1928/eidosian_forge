@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/bq_flags_documentation.py
+KIND: code
+
+import os
+from typing import Optional
+from absl import flags
+Flags for calling BigQuery.

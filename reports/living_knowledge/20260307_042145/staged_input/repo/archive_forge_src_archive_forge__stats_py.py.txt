@@ -1,0 +1,582 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_stats_py.py
+KIND: code
+
+# Copyright 2002 Gary Strangman.  All rights reserved
+# Copyright 2002-2016 The SciPy Developers
+#
+# The original code from Gary Strangman was heavily adapted for
+# use in SciPy by Travis Oliphant.  The original code came with the
+# following disclaimer:
+#
+# This software is provided "as-is".  There are no expressed or implied
+# warranties of any kind, including, but not limited to, the warranties
+# of merchantability and fitness for a given application.  In no event
+# shall Gary Strangman be liable for any direct, indirect, incidental,
+# special, exemplary or consequential damages (including, but not limited
+# to, loss of use, data or profits, or business interruption) however
+# caused and on any theory of liability, whether in contract, strict
+# liability or tort (including negligence or otherwise) arising in any way
+# out of the use of this software, even if advised of the possibility of
+# such damage.
+
+"""
+A collection of basic statistical functions for Python.
+
+References
+----------
+.. [CRCProbStat2000] Zwillinger, D. and Kokoska, S. (2000). CRC Standard
+   Probability and Statistics Tables and Formulae. Chapman & Hall: New
+   York. 2000.
+
+"""
+import warnings
+import math
+from math import gcd
+from collections import namedtuple
+
+import numpy as np
+from numpy import array, asarray, ma
+
+from scipy import sparse
+from scipy.spatial.distance import cdist
+from scipy.spatial import distance_matrix
+
+from scipy.ndimage import _measurements
+from scipy.optimize import milp, LinearConstraint
+from scipy._lib._util import (check_random_state, MapWrapper, _get_nan,
+                              rng_integers, _rename_parameter, _contains_nan,
+                              AxisError)
+
+import scipy.special as special
+from scipy import linalg
+from . import distributions
+from . import _mstats_basic as mstats_basic
+from ._stats_mstats_common import (_find_repeats, linregress, theilslopes,
+                                   siegelslopes)
+from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
+                     _local_correlations)
+from dataclasses import dataclass, field
+from ._hypotests import _all_partitions
+from ._stats_pythran import _compute_outer_prob_inside_method
+from ._resampling import (MonteCarloMethod, PermutationMethod, BootstrapMethod,
+                          monte_carlo_test, permutation_test, bootstrap,
+                          _batch_generator)
+from ._axis_nan_policy import (_axis_nan_policy_factory,
+                               _broadcast_concatenate)
+from ._binomtest import _binary_search_for_binom_tst as _binary_search
+from scipy._lib._bunch import _make_tuple_bunch
+from scipy import stats
+from scipy.optimize import root_scalar
+from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
+from scipy._lib._util import normalize_axis_index
+
+# In __all__ but deprecated for removal in SciPy 1.13.0
+from scipy._lib._util import float_factorial  # noqa: F401
+from scipy.stats._mstats_basic import (  # noqa: F401
+    PointbiserialrResult, Ttest_1sampResult,  Ttest_relResult
+)
+
+
+# Functions/classes in other files should be added in `__init__.py`, not here
+__all__ = ['find_repeats', 'gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
+           'tmin', 'tmax', 'tstd', 'tsem', 'moment',
+           'skew', 'kurtosis', 'describe', 'skewtest', 'kurtosistest',
+           'normaltest', 'jarque_bera',
+           'scoreatpercentile', 'percentileofscore',
+           'cumfreq', 'relfreq', 'obrientransform',
+           'sem', 'zmap', 'zscore', 'gzscore', 'iqr', 'gstd',
+           'median_abs_deviation',
+           'sigmaclip', 'trimboth', 'trim1', 'trim_mean',
+           'f_oneway', 'pearsonr', 'fisher_exact',
+           'spearmanr', 'pointbiserialr',
+           'kendalltau', 'weightedtau', 'multiscale_graphcorr',
+           'linregress', 'siegelslopes', 'theilslopes', 'ttest_1samp',
+           'ttest_ind', 'ttest_ind_from_stats', 'ttest_rel',
+           'kstest', 'ks_1samp', 'ks_2samp',
+           'chisquare', 'power_divergence',
+           'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
+           'rankdata', 'combine_pvalues', 'quantile_test',
+           'wasserstein_distance', 'wasserstein_distance_nd', 'energy_distance',
+           'brunnermunzel', 'alexandergovern',
+           'expectile']
+
+
+def _chk_asarray(a, axis):
+    if axis is None:
+        a = np.ravel(a)
+        outaxis = 0
+    else:
+        a = np.asarray(a)
+        outaxis = axis
+
+    if a.ndim == 0:
+        a = np.atleast_1d(a)
+
+    return a, outaxis
+
+
+def _chk2_asarray(a, b, axis):
+    if axis is None:
+        a = np.ravel(a)
+        b = np.ravel(b)
+        outaxis = 0
+    else:
+        a = np.asarray(a)
+        b = np.asarray(b)
+        outaxis = axis
+
+    if a.ndim == 0:
+        a = np.atleast_1d(a)
+    if b.ndim == 0:
+        b = np.atleast_1d(b)
+
+    return a, b, outaxis
+
+
+SignificanceResult = _make_tuple_bunch('SignificanceResult',
+                                       ['statistic', 'pvalue'], [])
+
+
+# note that `weights` are paired with `x`
+@_axis_nan_policy_factory(
+        lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
+        result_to_tuple=lambda x: (x,), kwd_samples=['weights'])
+def gmean(a, axis=0, dtype=None, weights=None):
+    r"""Compute the weighted geometric mean along the specified axis.
+
+    The weighted geometric mean of the array :math:`a_i` associated to weights
+    :math:`w_i` is:
+
+    .. math::
+
+        \exp \left( \frac{ \sum_{i=1}^n w_i \ln a_i }{ \sum_{i=1}^n w_i }
+                   \right) \, ,
+
+    and, with equal weights, it gives:
+
+    .. math::
+
+        \sqrt[n]{ \prod_{i=1}^n a_i } \, .
+
+    Parameters
+    ----------
+    a : array_like
+        Input array or object that can be converted to an array.
+    axis : int or None, optional
+        Axis along which the geometric mean is computed. Default is 0.
+        If None, compute over the whole array `a`.
+    dtype : dtype, optional
+        Type to which the input arrays are cast before the calculation is
+        performed.
+    weights : array_like, optional
+        The `weights` array must be broadcastable to the same shape as `a`.
+        Default is None, which gives each value a weight of 1.0.
+
+    Returns
+    -------
+    gmean : ndarray
+        See `dtype` parameter above.
+
+    See Also
+    --------
+    numpy.mean : Arithmetic average
+    numpy.average : Weighted average
+    hmean : Harmonic mean
+
+    References
+    ----------
+    .. [1] "Weighted Geometric Mean", *Wikipedia*,
+           https://en.wikipedia.org/wiki/Weighted_geometric_mean.
+    .. [2] Grossman, J., Grossman, M., Katz, R., "Averages: A New Approach",
+           Archimedes Foundation, 1983
+
+    Examples
+    --------
+    >>> from scipy.stats import gmean
+    >>> gmean([1, 4])
+    2.0
+    >>> gmean([1, 2, 3, 4, 5, 6, 7])
+    3.3800151591412964
+    >>> gmean([1, 4, 7], weights=[3, 1, 3])
+    2.80668351922014
+
+    """
+
+    a = np.asarray(a, dtype=dtype)
+
+    if weights is not None:
+        weights = np.asarray(weights, dtype=dtype)
+
+    with np.errstate(divide='ignore'):
+        log_a = np.log(a)
+
+    return np.exp(np.average(log_a, axis=axis, weights=weights))
+
+
+@_axis_nan_policy_factory(
+        lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
+        result_to_tuple=lambda x: (x,), kwd_samples=['weights'])
+def hmean(a, axis=0, dtype=None, *, weights=None):
+    r"""Calculate the weighted harmonic mean along the specified axis.
+
+    The weighted harmonic mean of the array :math:`a_i` associated to weights
+    :math:`w_i` is:
+
+    .. math::
+
+        \frac{ \sum_{i=1}^n w_i }{ \sum_{i=1}^n \frac{w_i}{a_i} } \, ,
+
+    and, with equal weights, it gives:
+
+    .. math::
+
+        \frac{ n }{ \sum_{i=1}^n \frac{1}{a_i} } \, .
+
+    Parameters
+    ----------
+    a : array_like
+        Input array, masked array or object that can be converted to an array.
+    axis : int or None, optional
+        Axis along which the harmonic mean is computed. Default is 0.
+        If None, compute over the whole array `a`.
+    dtype : dtype, optional
+        Type of the returned array and of the accumulator in which the
+        elements are summed. If `dtype` is not specified, it defaults to the
+        dtype of `a`, unless `a` has an integer `dtype` with a precision less
+        than that of the default platform integer. In that case, the default
+        platform integer is used.
+    weights : array_like, optional
+        The weights array can either be 1-D (in which case its length must be
+        the size of `a` along the given `axis`) or of the same shape as `a`.
+        Default is None, which gives each value a weight of 1.0.
+
+        .. versionadded:: 1.9
+
+    Returns
+    -------
+    hmean : ndarray
+        See `dtype` parameter above.
+
+    See Also
+    --------
+    numpy.mean : Arithmetic average
+    numpy.average : Weighted average
+    gmean : Geometric mean
+
+    Notes
+    -----
+    The harmonic mean is computed over a single dimension of the input
+    array, axis=0 by default, or all values in the array if axis=None.
+    float64 intermediate and return values are used for integer inputs.
+
+    References
+    ----------
+    .. [1] "Weighted Harmonic Mean", *Wikipedia*,
+           https://en.wikipedia.org/wiki/Harmonic_mean#Weighted_harmonic_mean
+    .. [2] Ferger, F., "The nature and use of the harmonic mean", Journal of
+           the American Statistical Association, vol. 26, pp. 36-40, 1931
+
+    Examples
+    --------
+    >>> from scipy.stats import hmean
+    >>> hmean([1, 4])
+    1.6000000000000001
+    >>> hmean([1, 2, 3, 4, 5, 6, 7])
+    2.6997245179063363
+    >>> hmean([1, 4, 7], weights=[3, 1, 3])
+    1.9029126213592233
+
+    """
+    if not isinstance(a, np.ndarray):
+        a = np.array(a, dtype=dtype)
+    elif dtype:
+        # Must change the default dtype allowing array type
+        if isinstance(a, np.ma.MaskedArray):
+            a = np.ma.asarray(a, dtype=dtype)
+        else:
+            a = np.asarray(a, dtype=dtype)
+
+    if np.all(a >= 0):
+        # Harmonic mean only defined if greater than or equal to zero.
+        if weights is not None:
+            weights = np.asanyarray(weights, dtype=dtype)
+
+        with np.errstate(divide='ignore'):
+            return 1.0 / np.average(1.0 / a, axis=axis, weights=weights)
+    else:
+        raise ValueError("Harmonic mean only defined if all elements greater "
+                         "than or equal to zero")
+
+
+@_axis_nan_policy_factory(
+        lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
+        result_to_tuple=lambda x: (x,), kwd_samples=['weights'])
+def pmean(a, p, *, axis=0, dtype=None, weights=None):
+    r"""Calculate the weighted power mean along the specified axis.
+
+    The weighted power mean of the array :math:`a_i` associated to weights
+    :math:`w_i` is:
+
+    .. math::
+
+        \left( \frac{ \sum_{i=1}^n w_i a_i^p }{ \sum_{i=1}^n w_i }
+              \right)^{ 1 / p } \, ,
+
+    and, with equal weights, it gives:
+
+    .. math::
+
+        \left( \frac{ 1 }{ n } \sum_{i=1}^n a_i^p \right)^{ 1 / p }  \, .
+
+    When ``p=0``, it returns the geometric mean.
+
+    This mean is also called generalized mean or Hölder mean, and must not be
+    confused with the Kolmogorov generalized mean, also called
+    quasi-arithmetic mean or generalized f-mean [3]_.
+
+    Parameters
+    ----------
+    a : array_like
+        Input array, masked array or object that can be converted to an array.
+    p : int or float
+        Exponent.
+    axis : int or None, optional
+        Axis along which the power mean is computed. Default is 0.
+        If None, compute over the whole array `a`.
+    dtype : dtype, optional
+        Type of the returned array and of the accumulator in which the
+        elements are summed. If `dtype` is not specified, it defaults to the
+        dtype of `a`, unless `a` has an integer `dtype` with a precision less
+        than that of the default platform integer. In that case, the default
+        platform integer is used.
+    weights : array_like, optional
+        The weights array can either be 1-D (in which case its length must be
+        the size of `a` along the given `axis`) or of the same shape as `a`.
+        Default is None, which gives each value a weight of 1.0.
+
+    Returns
+    -------
+    pmean : ndarray, see `dtype` parameter above.
+        Output array containing the power mean values.
+
+    See Also
+    --------
+    numpy.average : Weighted average
+    gmean : Geometric mean
+    hmean : Harmonic mean
+
+    Notes
+    -----
+    The power mean is computed over a single dimension of the input
+    array, ``axis=0`` by default, or all values in the array if ``axis=None``.
+    float64 intermediate and return values are used for integer inputs.
+
+    .. versionadded:: 1.9
+
+    References
+    ----------
+    .. [1] "Generalized Mean", *Wikipedia*,
+           https://en.wikipedia.org/wiki/Generalized_mean
+    .. [2] Norris, N., "Convexity properties of generalized mean value
+           functions", The Annals of Mathematical Statistics, vol. 8,
+           pp. 118-120, 1937
+    .. [3] Bullen, P.S., Handbook of Means and Their Inequalities, 2003
+
+    Examples
+    --------
+    >>> from scipy.stats import pmean, hmean, gmean
+    >>> pmean([1, 4], 1.3)
+    2.639372938300652
+    >>> pmean([1, 2, 3, 4, 5, 6, 7], 1.3)
+    4.157111214492084
+    >>> pmean([1, 4, 7], -2, weights=[3, 1, 3])
+    1.4969684896631954
+
+    For p=-1, power mean is equal to harmonic mean:
+
+    >>> pmean([1, 4, 7], -1, weights=[3, 1, 3])
+    1.9029126213592233
+    >>> hmean([1, 4, 7], weights=[3, 1, 3])
+    1.9029126213592233
+
+    For p=0, power mean is defined as the geometric mean:
+
+    >>> pmean([1, 4, 7], 0, weights=[3, 1, 3])
+    2.80668351922014
+    >>> gmean([1, 4, 7], weights=[3, 1, 3])
+    2.80668351922014
+
+    """
+    if not isinstance(p, (int, float)):
+        raise ValueError("Power mean only defined for exponent of type int or "
+                         "float.")
+    if p == 0:
+        return gmean(a, axis=axis, dtype=dtype, weights=weights)
+
+    if not isinstance(a, np.ndarray):
+        a = np.array(a, dtype=dtype)
+    elif dtype:
+        # Must change the default dtype allowing array type
+        if isinstance(a, np.ma.MaskedArray):
+            a = np.ma.asarray(a, dtype=dtype)
+        else:
+            a = np.asarray(a, dtype=dtype)
+
+    if np.all(a >= 0):
+        # Power mean only defined if greater than or equal to zero
+        if weights is not None:
+            weights = np.asanyarray(weights, dtype=dtype)
+
+        with np.errstate(divide='ignore'):
+            return np.float_power(
+                np.average(np.float_power(a, p), axis=axis, weights=weights),
+                1/p)
+    else:
+        raise ValueError("Power mean only defined if all elements greater "
+                         "than or equal to zero")
+
+
+ModeResult = namedtuple('ModeResult', ('mode', 'count'))
+
+
+def _mode_result(mode, count):
+    # When a slice is empty, `_axis_nan_policy` automatically produces
+    # NaN for `mode` and `count`. This is a reasonable convention for `mode`,
+    # but `count` should not be NaN; it should be zero.
+    i = np.isnan(count)
+    if i.shape == ():
+        count = count.dtype(0) if i else count
+    else:
+        count[i] = 0
+    return ModeResult(mode, count)
+
+
+@_axis_nan_policy_factory(_mode_result, override={'vectorization': True,
+                                                  'nan_propagation': False})
+def mode(a, axis=0, nan_policy='propagate', keepdims=False):
+    r"""Return an array of the modal (most common) value in the passed array.
+
+    If there is more than one such value, only one is returned.
+    The bin-count for the modal bins is also returned.
+
+    Parameters
+    ----------
+    a : array_like
+        Numeric, n-dimensional array of which to find mode(s).
+    axis : int or None, optional
+        Axis along which to operate. Default is 0. If None, compute over
+        the whole array `a`.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan.
+        The following options are available (default is 'propagate'):
+
+          * 'propagate': treats nan as it would treat any other value
+          * 'raise': throws an error
+          * 'omit': performs the calculations ignoring nan values
+    keepdims : bool, optional
+        If set to ``False``, the `axis` over which the statistic is taken
+        is consumed (eliminated from the output array). If set to ``True``,
+        the `axis` is retained with size one, and the result will broadcast
+        correctly against the input array.
+
+    Returns
+    -------
+    mode : ndarray
+        Array of modal values.
+    count : ndarray
+        Array of counts for each mode.
+
+    Notes
+    -----
+    The mode  is calculated using `numpy.unique`.
+    In NumPy versions 1.21 and after, all NaNs - even those with different
+    binary representations - are treated as equivalent and counted as separate
+    instances of the same value.
+
+    By convention, the mode of an empty array is NaN, and the associated count
+    is zero.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> a = np.array([[3, 0, 3, 7],
+    ...               [3, 2, 6, 2],
+    ...               [1, 7, 2, 8],
+    ...               [3, 0, 6, 1],
+    ...               [3, 2, 5, 5]])
+    >>> from scipy import stats
+    >>> stats.mode(a, keepdims=True)
+    ModeResult(mode=array([[3, 0, 6, 1]]), count=array([[4, 2, 2, 1]]))
+
+    To get mode of whole array, specify ``axis=None``:
+
+    >>> stats.mode(a, axis=None, keepdims=True)
+    ModeResult(mode=[[3]], count=[[5]])
+    >>> stats.mode(a, axis=None, keepdims=False)
+    ModeResult(mode=3, count=5)
+
+    """
+    # `axis`, `nan_policy`, and `keepdims` are handled by `_axis_nan_policy`
+    if not np.issubdtype(a.dtype, np.number):
+        message = ("Argument `a` is not recognized as numeric. "
+                   "Support for input that cannot be coerced to a numeric "
+                   "array was deprecated in SciPy 1.9.0 and removed in SciPy "
+                   "1.11.0. Please consider `np.unique`.")
+        raise TypeError(message)
+
+    if a.size == 0:
+        NaN = _get_nan(a)
+        return ModeResult(*np.array([NaN, 0], dtype=NaN.dtype))
+
+    vals, cnts = np.unique(a, return_counts=True)
+    modes, counts = vals[cnts.argmax()], cnts.max()
+    return ModeResult(modes[()], counts[()])
+
+
+def _put_nan_to_limits(a, limits, inclusive):
+    """Put NaNs in an array for values outside of given limits.
+
+    This is primarily a utility function.
+
+    Parameters
+    ----------
+    a : array
+    limits : (float or None, float or None)
+        A tuple consisting of the (lower limit, upper limit).  Values in the
+        input array less than the lower limit or greater than the upper limit
+        will be replaced with `np.nan`. None implies no limit.
+    inclusive : (bool, bool)
+        A tuple consisting of the (lower flag, upper flag).  These flags
+        determine whether values exactly equal to lower or upper are allowed.
+
+    """
+    if limits is None:
+        return a
+    mask = np.full_like(a, False, dtype=np.bool_)
+    lower_limit, upper_limit = limits
+    lower_include, upper_include = inclusive
+    if lower_limit is not None:
+        mask |= (a < lower_limit) if lower_include else a <= lower_limit
+    if upper_limit is not None:
+        mask |= (a > upper_limit) if upper_include else a >= upper_limit
+    if np.all(mask):
+        raise ValueError("No array values within given limits")
+    if np.any(mask):
+        a = a.copy() if np.issubdtype(a.dtype, np.inexact) else a.astype(np.float64)
+        a[mask] = np.nan
+    return a
+
+
+@_axis_nan_policy_factory(
+    lambda x: x, n_outputs=1, default_axis=None,
+    result_to_tuple=lambda x: (x,)
+)
+def tmean(a, limits=None, inclusive=(True, True), axis=None):
+    """Compute the trimmed mean.
+
+    This function finds the arithmetic mean of given values, ignoring values
+    outside the given `limits`.
+
+    Parameters
+    ----------
+    a : array_like

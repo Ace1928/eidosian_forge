@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/XPRESS_documentation.py
+KIND: code
+
+from pyomo.opt.base import OptSolver
+from pyomo.opt.base.solvers import SolverFactory
+import logging
+The XPRESS LP/MIP solver

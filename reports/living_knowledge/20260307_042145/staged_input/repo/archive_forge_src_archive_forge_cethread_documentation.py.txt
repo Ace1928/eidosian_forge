@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/cethread_documentation.py
+KIND: code
+
+import sys
+import threading
+from typing import Callable, List, Optional, Type, Union
+Raise the caught exception.
+
+        This does nothing if no exception occurred.

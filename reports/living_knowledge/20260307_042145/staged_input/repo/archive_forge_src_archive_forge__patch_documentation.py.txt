@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_patch_documentation.py
+KIND: code
+
+Merge a dict or keyword arguments with another dictionary

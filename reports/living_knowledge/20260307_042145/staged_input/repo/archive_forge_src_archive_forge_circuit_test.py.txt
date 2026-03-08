@@ -1,0 +1,705 @@
+SOURCE_PATH: archive_forge/src/archive_forge/circuit_test.py
+KIND: code
+
+# Copyright 2018 The Cirq Developers
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+import itertools
+import os
+import time
+from collections import defaultdict
+from random import randint, random, sample, randrange
+from typing import Iterator, Optional, Tuple, TYPE_CHECKING
+
+import numpy as np
+import pytest
+import sympy
+
+import cirq
+from cirq import circuits
+from cirq import ops
+from cirq.testing.devices import ValidatingTestDevice
+
+
+class _Foxy(ValidatingTestDevice):
+    pass
+
+
+FOXY = _Foxy(
+    allowed_qubit_types=(cirq.GridQubit,),
+    allowed_gates=(ops.CZPowGate, ops.XPowGate, ops.YPowGate, ops.ZPowGate),
+    qubits=set(cirq.GridQubit.rect(2, 7)),
+    name=f'{__name__}.FOXY',
+    auto_decompose_gates=(ops.CCXPowGate,),
+    validate_locality=True,
+)
+
+
+BCONE = ValidatingTestDevice(
+    allowed_qubit_types=(cirq.GridQubit,),
+    allowed_gates=(ops.XPowGate,),
+    qubits={cirq.GridQubit(0, 6)},
+    name=f'{__name__}.BCONE',
+)
+
+
+if TYPE_CHECKING:
+    import cirq
+
+q0, q1, q2, q3 = cirq.LineQubit.range(4)
+
+
+class _MomentAndOpTypeValidatingDeviceType(cirq.Device):
+    def validate_operation(self, operation):
+        if not isinstance(operation, cirq.Operation):
+            raise ValueError(f'not isinstance({operation!r}, {cirq.Operation!r})')
+
+    def validate_moment(self, moment):
+        if not isinstance(moment, cirq.Moment):
+            raise ValueError(f'not isinstance({moment!r}, {cirq.Moment!r})')
+
+
+moment_and_op_type_validating_device = _MomentAndOpTypeValidatingDeviceType()
+
+
+def test_from_moments():
+    a, b, c, d = cirq.LineQubit.range(4)
+    moment = cirq.Moment(cirq.Z(a), cirq.Z(b))
+    subcircuit = cirq.FrozenCircuit.from_moments(cirq.X(c), cirq.Y(d))
+    circuit = cirq.Circuit.from_moments(
+        moment,
+        subcircuit,
+        [cirq.X(a), cirq.Y(b)],
+        [cirq.X(c)],
+        [],
+        cirq.Z(d),
+        [cirq.measure(a, b, key='ab'), cirq.measure(c, d, key='cd')],
+    )
+    assert circuit == cirq.Circuit(
+        cirq.Moment(cirq.Z(a), cirq.Z(b)),
+        cirq.Moment(
+            cirq.CircuitOperation(
+                cirq.FrozenCircuit(cirq.Moment(cirq.X(c)), cirq.Moment(cirq.Y(d)))
+            )
+        ),
+        cirq.Moment(cirq.X(a), cirq.Y(b)),
+        cirq.Moment(cirq.X(c)),
+        cirq.Moment(),
+        cirq.Moment(cirq.Z(d)),
+        cirq.Moment(cirq.measure(a, b, key='ab'), cirq.measure(c, d, key='cd')),
+    )
+    assert circuit[0] is moment
+    assert circuit[1].operations[0].circuit is subcircuit
+
+
+def test_alignment():
+    assert repr(cirq.Alignment.LEFT) == 'cirq.Alignment.LEFT'
+    assert repr(cirq.Alignment.RIGHT) == 'cirq.Alignment.RIGHT'
+
+
+def test_setitem():
+    circuit = cirq.Circuit([cirq.Moment(), cirq.Moment()])
+
+    circuit[1] = cirq.Moment([cirq.X(cirq.LineQubit(0))])
+    assert circuit == cirq.Circuit([cirq.Moment(), cirq.Moment([cirq.X(cirq.LineQubit(0))])])
+
+    circuit[1:1] = (
+        cirq.Moment([cirq.Y(cirq.LineQubit(0))]),
+        cirq.Moment([cirq.Z(cirq.LineQubit(0))]),
+    )
+    assert circuit == cirq.Circuit(
+        [
+            cirq.Moment(),
+            cirq.Moment([cirq.Y(cirq.LineQubit(0))]),
+            cirq.Moment([cirq.Z(cirq.LineQubit(0))]),
+            cirq.Moment([cirq.X(cirq.LineQubit(0))]),
+        ]
+    )
+
+
+@pytest.mark.parametrize('circuit_cls', [cirq.Circuit, cirq.FrozenCircuit])
+def test_equality(circuit_cls):
+    a = cirq.NamedQubit('a')
+    b = cirq.NamedQubit('b')
+
+    eq = cirq.testing.EqualsTester()
+
+    # Default is empty. Iterables get listed.
+    eq.add_equality_group(circuit_cls(), circuit_cls([]), circuit_cls(()))
+    eq.add_equality_group(circuit_cls([cirq.Moment()]), circuit_cls((cirq.Moment(),)))
+
+    # Equality depends on structure and contents.
+    eq.add_equality_group(circuit_cls([cirq.Moment([cirq.X(a)])]))
+    eq.add_equality_group(circuit_cls([cirq.Moment([cirq.X(b)])]))
+    eq.add_equality_group(circuit_cls([cirq.Moment([cirq.X(a)]), cirq.Moment([cirq.X(b)])]))
+    eq.add_equality_group(circuit_cls([cirq.Moment([cirq.X(a), cirq.X(b)])]))
+
+    # Big case.
+    eq.add_equality_group(
+        circuit_cls(
+            [
+                cirq.Moment([cirq.H(a), cirq.H(b)]),
+                cirq.Moment([cirq.CZ(a, b)]),
+                cirq.Moment([cirq.H(b)]),
+            ]
+        )
+    )
+    eq.add_equality_group(circuit_cls([cirq.Moment([cirq.H(a)]), cirq.Moment([cirq.CNOT(a, b)])]))
+
+
+@pytest.mark.parametrize('circuit_cls', [cirq.Circuit, cirq.FrozenCircuit])
+def test_approx_eq(circuit_cls):
+    a = cirq.NamedQubit('a')
+    b = cirq.NamedQubit('b')
+
+    assert not cirq.approx_eq(circuit_cls([cirq.Moment([cirq.X(a)])]), cirq.Moment([cirq.X(a)]))
+
+    assert cirq.approx_eq(
+        circuit_cls([cirq.Moment([cirq.X(a)])]), circuit_cls([cirq.Moment([cirq.X(a)])])
+    )
+    assert not cirq.approx_eq(
+        circuit_cls([cirq.Moment([cirq.X(a)])]), circuit_cls([cirq.Moment([cirq.X(b)])])
+    )
+
+    assert cirq.approx_eq(
+        circuit_cls([cirq.Moment([cirq.XPowGate(exponent=0)(a)])]),
+        circuit_cls([cirq.Moment([cirq.XPowGate(exponent=1e-9)(a)])]),
+    )
+
+    assert not cirq.approx_eq(
+        circuit_cls([cirq.Moment([cirq.XPowGate(exponent=0)(a)])]),
+        circuit_cls([cirq.Moment([cirq.XPowGate(exponent=1e-7)(a)])]),
+    )
+    assert cirq.approx_eq(
+        circuit_cls([cirq.Moment([cirq.XPowGate(exponent=0)(a)])]),
+        circuit_cls([cirq.Moment([cirq.XPowGate(exponent=1e-7)(a)])]),
+        atol=1e-6,
+    )
+
+
+def test_append_single():
+    a = cirq.NamedQubit('a')
+
+    c = cirq.Circuit()
+    c.append(())
+    assert c == cirq.Circuit()
+
+    c = cirq.Circuit()
+    c.append(cirq.X(a))
+    assert c == cirq.Circuit([cirq.Moment([cirq.X(a)])])
+
+    c = cirq.Circuit()
+    c.append([cirq.X(a)])
+    assert c == cirq.Circuit([cirq.Moment([cirq.X(a)])])
+
+    c = cirq.Circuit(cirq.H(a))
+    c.append(c)
+    assert c == cirq.Circuit(
+        [cirq.Moment(cirq.H(cirq.NamedQubit('a'))), cirq.Moment(cirq.H(cirq.NamedQubit('a')))]
+    )
+
+
+def test_append_control_key():
+    q0, q1, q2 = cirq.LineQubit.range(3)
+    c = cirq.Circuit()
+    c.append(cirq.measure(q0, key='a'))
+    c.append(cirq.X(q1).with_classical_controls('a'))
+    assert len(c) == 2
+
+    c = cirq.Circuit()
+    c.append(cirq.measure(q0, key='a'))
+    c.append(cirq.X(q1).with_classical_controls('b'))
+    c.append(cirq.X(q2).with_classical_controls('b'))
+    assert len(c) == 1
+
+
+def test_append_multiple():
+    a = cirq.NamedQubit('a')
+    b = cirq.NamedQubit('b')
+
+    c = cirq.Circuit()
+    c.append([cirq.X(a), cirq.X(b)], cirq.InsertStrategy.NEW)
+    assert c == cirq.Circuit([cirq.Moment([cirq.X(a)]), cirq.Moment([cirq.X(b)])])
+
+    c = cirq.Circuit()
+    c.append([cirq.X(a), cirq.X(b)], cirq.InsertStrategy.EARLIEST)
+    assert c == cirq.Circuit([cirq.Moment([cirq.X(a), cirq.X(b)])])
+
+    c = cirq.Circuit()
+    c.append(cirq.X(a), cirq.InsertStrategy.EARLIEST)
+    c.append(cirq.X(b), cirq.InsertStrategy.EARLIEST)
+    assert c == cirq.Circuit([cirq.Moment([cirq.X(a), cirq.X(b)])])
+
+
+def test_append_control_key_subcircuit():
+    q0, q1 = cirq.LineQubit.range(2)
+
+    c = cirq.Circuit()
+    c.append(cirq.measure(q0, key='a'))
+    c.append(
+        cirq.CircuitOperation(
+            cirq.FrozenCircuit(cirq.ClassicallyControlledOperation(cirq.X(q1), 'a'))
+        )
+    )
+    assert len(c) == 2
+
+    c = cirq.Circuit()
+    c.append(cirq.measure(q0, key='a'))
+    c.append(
+        cirq.CircuitOperation(
+            cirq.FrozenCircuit(cirq.ClassicallyControlledOperation(cirq.X(q1), 'b'))
+        )
+    )
+    assert len(c) == 1
+
+    c = cirq.Circuit()
+    c.append(cirq.measure(q0, key='a'))
+    c.append(
+        cirq.CircuitOperation(
+            cirq.FrozenCircuit(cirq.ClassicallyControlledOperation(cirq.X(q1), 'b'))
+        ).with_measurement_key_mapping({'b': 'a'})
+    )
+    assert len(c) == 2
+
+    c = cirq.Circuit()
+    c.append(cirq.CircuitOperation(cirq.FrozenCircuit(cirq.measure(q0, key='a'))))
+    c.append(
+        cirq.CircuitOperation(
+            cirq.FrozenCircuit(cirq.ClassicallyControlledOperation(cirq.X(q1), 'b'))
+        ).with_measurement_key_mapping({'b': 'a'})
+    )
+    assert len(c) == 2
+
+    c = cirq.Circuit()
+    c.append(
+        cirq.CircuitOperation(
+            cirq.FrozenCircuit(cirq.measure(q0, key='a'))
+        ).with_measurement_key_mapping({'a': 'c'})
+    )
+    c.append(
+        cirq.CircuitOperation(
+            cirq.FrozenCircuit(cirq.ClassicallyControlledOperation(cirq.X(q1), 'b'))
+        ).with_measurement_key_mapping({'b': 'c'})
+    )
+    assert len(c) == 2
+
+    c = cirq.Circuit()
+    c.append(
+        cirq.CircuitOperation(
+            cirq.FrozenCircuit(cirq.measure(q0, key='a'))
+        ).with_measurement_key_mapping({'a': 'b'})
+    )
+    c.append(
+        cirq.CircuitOperation(
+            cirq.FrozenCircuit(cirq.ClassicallyControlledOperation(cirq.X(q1), 'b'))
+        ).with_measurement_key_mapping({'b': 'a'})
+    )
+    assert len(c) == 1
+
+
+def test_measurement_key_paths():
+    a = cirq.LineQubit(0)
+    circuit1 = cirq.Circuit(cirq.measure(a, key='A'))
+    assert cirq.measurement_key_names(circuit1) == {'A'}
+    circuit2 = cirq.with_key_path(circuit1, ('B',))
+    assert cirq.measurement_key_names(circuit2) == {'B:A'}
+    circuit3 = cirq.with_key_path_prefix(circuit2, ('C',))
+    assert cirq.measurement_key_names(circuit3) == {'C:B:A'}
+
+
+def test_append_moments():
+    a = cirq.NamedQubit('a')
+    b = cirq.NamedQubit('b')
+
+    c = cirq.Circuit()
+    c.append(cirq.Moment([cirq.X(a), cirq.X(b)]), cirq.InsertStrategy.NEW)
+    assert c == cirq.Circuit([cirq.Moment([cirq.X(a), cirq.X(b)])])
+
+    c = cirq.Circuit()
+    c.append(
+        [cirq.Moment([cirq.X(a), cirq.X(b)]), cirq.Moment([cirq.X(a), cirq.X(b)])],
+        cirq.InsertStrategy.NEW,
+    )
+    assert c == cirq.Circuit(
+        [cirq.Moment([cirq.X(a), cirq.X(b)]), cirq.Moment([cirq.X(a), cirq.X(b)])]
+    )
+
+
+@pytest.mark.parametrize('circuit_cls', [cirq.Circuit, cirq.FrozenCircuit])
+def test_add_op_tree(circuit_cls):
+    a = cirq.NamedQubit('a')
+    b = cirq.NamedQubit('b')
+
+    c = circuit_cls()
+    assert c + [cirq.X(a), cirq.Y(b)] == circuit_cls([cirq.Moment([cirq.X(a), cirq.Y(b)])])
+
+    assert c + cirq.X(a) == circuit_cls(cirq.X(a))
+    assert c + [cirq.X(a)] == circuit_cls(cirq.X(a))
+    assert c + [[[cirq.X(a)], []]] == circuit_cls(cirq.X(a))
+    assert c + (cirq.X(a),) == circuit_cls(cirq.X(a))
+    assert c + (cirq.X(a) for _ in range(1)) == circuit_cls(cirq.X(a))
+    with pytest.raises(TypeError):
+        _ = c + cirq.X
+
+
+@pytest.mark.parametrize('circuit_cls', [cirq.Circuit, cirq.FrozenCircuit])
+def test_radd_op_tree(circuit_cls):
+    a = cirq.NamedQubit('a')
+    b = cirq.NamedQubit('b')
+
+    c = circuit_cls()
+    assert [cirq.X(a), cirq.Y(b)] + c == circuit_cls([cirq.Moment([cirq.X(a), cirq.Y(b)])])
+
+    assert cirq.X(a) + c == circuit_cls(cirq.X(a))
+    assert [cirq.X(a)] + c == circuit_cls(cirq.X(a))
+    assert [[[cirq.X(a)], []]] + c == circuit_cls(cirq.X(a))
+    assert (cirq.X(a),) + c == circuit_cls(cirq.X(a))
+    assert (cirq.X(a) for _ in range(1)) + c == circuit_cls(cirq.X(a))
+    with pytest.raises(AttributeError):
+        _ = cirq.X + c
+    with pytest.raises(TypeError):
+        _ = 0 + c
+
+    # non-empty circuit addition
+    if circuit_cls == cirq.FrozenCircuit:
+        d = cirq.FrozenCircuit(cirq.Y(b))
+    else:
+        d = cirq.Circuit()
+        d.append(cirq.Y(b))
+    assert [cirq.X(a)] + d == circuit_cls([cirq.Moment([cirq.X(a)]), cirq.Moment([cirq.Y(b)])])
+    assert cirq.Moment([cirq.X(a)]) + d == circuit_cls(
+        [cirq.Moment([cirq.X(a)]), cirq.Moment([cirq.Y(b)])]
+    )
+
+
+def test_add_iadd_equivalence():
+    q0, q1 = cirq.LineQubit.range(2)
+    iadd_circuit = cirq.Circuit(cirq.X(q0))
+    iadd_circuit += cirq.H(q1)
+
+    add_circuit = cirq.Circuit(cirq.X(q0)) + cirq.H(q1)
+    assert iadd_circuit == add_circuit
+
+
+@pytest.mark.parametrize('circuit_cls', [cirq.Circuit, cirq.FrozenCircuit])
+def test_bool(circuit_cls):
+    assert not circuit_cls()
+    assert circuit_cls(cirq.X(cirq.NamedQubit('a')))
+
+
+@pytest.mark.parametrize('circuit_cls', [cirq.Circuit, cirq.FrozenCircuit])
+def test_repr(circuit_cls):
+    assert repr(circuit_cls()) == f'cirq.{circuit_cls.__name__}()'
+
+    a = cirq.NamedQubit('a')
+    b = cirq.NamedQubit('b')
+    c = circuit_cls(
+        [cirq.Moment([cirq.H(a), cirq.H(b)]), cirq.Moment(), cirq.Moment([cirq.CZ(a, b)])]
+    )
+    cirq.testing.assert_equivalent_repr(c)
+    assert (
+        repr(c)
+        == f"""cirq.{circuit_cls.__name__}([
+    cirq.Moment(
+        cirq.H(cirq.NamedQubit('a')),
+        cirq.H(cirq.NamedQubit('b')),
+    ),
+    cirq.Moment(),
+    cirq.Moment(
+        cirq.CZ(cirq.NamedQubit('a'), cirq.NamedQubit('b')),
+    ),
+])"""
+    )
+
+
+@pytest.mark.parametrize('circuit_cls', [cirq.Circuit, cirq.FrozenCircuit])
+def test_empty_moments(circuit_cls):
+    # 1-qubit test
+    op = cirq.X(cirq.NamedQubit('a'))
+    op_moment = cirq.Moment([op])
+    circuit = circuit_cls([op_moment, op_moment, cirq.Moment(), op_moment])
+
+    cirq.testing.assert_has_diagram(circuit, "a: ───X───X───────X───", use_unicode_characters=True)
+    cirq.testing.assert_has_diagram(
+        circuit,
+        """
+a
+│
+X
+│
+X
+│
+│
+│
+X
+│
+""",
+        use_unicode_characters=True,
+        transpose=True,
+    )
+
+    # 1-qubit ascii-only test
+    cirq.testing.assert_has_diagram(circuit, "a: ---X---X-------X---", use_unicode_characters=False)
+    cirq.testing.assert_has_diagram(
+        circuit,
+        """
+a
+|
+X
+|
+X
+|
+|
+|
+X
+|
+""",
+        use_unicode_characters=False,
+        transpose=True,
+    )
+
+    # 2-qubit test
+    op = cirq.CNOT(cirq.NamedQubit('a'), cirq.NamedQubit('b'))
+    op_moment = cirq.Moment([op])
+    circuit = circuit_cls([op_moment, op_moment, cirq.Moment(), op_moment])
+
+    cirq.testing.assert_has_diagram(
+        circuit,
+        """
+a: ───@───@───────@───
+      │   │       │
+b: ───X───X───────X───""",
+        use_unicode_characters=True,
+    )
+    cirq.testing.assert_has_diagram(
+        circuit,
+        """
+a b
+│ │
+@─X
+│ │
+@─X
+│ │
+│ │
+│ │
+@─X
+│ │
+""",
+        use_unicode_characters=True,
+        transpose=True,
+    )
+
+    # 2-qubit ascii-only test
+    cirq.testing.assert_has_diagram(
+        circuit,
+        """
+a: ---@---@-------@---
+      |   |       |
+b: ---X---X-------X---""",
+        use_unicode_characters=False,
+    )
+    cirq.testing.assert_has_diagram(
+        circuit,
+        """
+a b
+| |
+@-X
+| |
+@-X
+| |
+| |
+| |
+@-X
+| |
+""",
+        use_unicode_characters=False,
+        transpose=True,
+    )
+
+
+@pytest.mark.parametrize('circuit_cls', [cirq.Circuit, cirq.FrozenCircuit])
+def test_symbol_addition_in_gate_exponent(circuit_cls):
+    # 1-qubit test
+    qubit = cirq.NamedQubit('a')
+    circuit = circuit_cls(
+        cirq.X(qubit) ** 0.5,
+        cirq.YPowGate(exponent=sympy.Symbol('a') + sympy.Symbol('b')).on(qubit),
+    )
+    cirq.testing.assert_has_diagram(
+        circuit, 'a: ───X^0.5───Y^(a + b)───', use_unicode_characters=True
+    )
+
+    cirq.testing.assert_has_diagram(
+        circuit,
+        """
+a
+│
+X^0.5
+│
+Y^(a + b)
+│
+""",
+        use_unicode_characters=True,
+        transpose=True,
+    )
+
+    cirq.testing.assert_has_diagram(
+        circuit, 'a: ---X^0.5---Y^(a + b)---', use_unicode_characters=False
+    )
+
+    cirq.testing.assert_has_diagram(
+        circuit,
+        """
+a
+|
+X^0.5
+|
+Y^(a + b)
+|
+
+ """,
+        use_unicode_characters=False,
+        transpose=True,
+    )
+
+
+@pytest.mark.parametrize('circuit_cls', [cirq.Circuit, cirq.FrozenCircuit])
+def test_slice(circuit_cls):
+    a = cirq.NamedQubit('a')
+    b = cirq.NamedQubit('b')
+    c = circuit_cls(
+        [
+            cirq.Moment([cirq.H(a), cirq.H(b)]),
+            cirq.Moment([cirq.CZ(a, b)]),
+            cirq.Moment([cirq.H(b)]),
+        ]
+    )
+    assert c[0:1] == circuit_cls([cirq.Moment([cirq.H(a), cirq.H(b)])])
+    assert c[::2] == circuit_cls([cirq.Moment([cirq.H(a), cirq.H(b)]), cirq.Moment([cirq.H(b)])])
+    assert c[0:1:2] == circuit_cls([cirq.Moment([cirq.H(a), cirq.H(b)])])
+    assert c[1:3:] == circuit_cls([cirq.Moment([cirq.CZ(a, b)]), cirq.Moment([cirq.H(b)])])
+    assert c[::-1] == circuit_cls(
+        [
+            cirq.Moment([cirq.H(b)]),
+            cirq.Moment([cirq.CZ(a, b)]),
+            cirq.Moment([cirq.H(a), cirq.H(b)]),
+        ]
+    )
+    assert c[3:0:-1] == circuit_cls([cirq.Moment([cirq.H(b)]), cirq.Moment([cirq.CZ(a, b)])])
+    assert c[0:2:-1] == circuit_cls()
+
+
+def test_concatenate():
+    a = cirq.NamedQubit('a')
+    b = cirq.NamedQubit('b')
+
+    c = cirq.Circuit()
+    d = cirq.Circuit([cirq.Moment([cirq.X(b)])])
+    e = cirq.Circuit([cirq.Moment([cirq.X(a), cirq.X(b)])])
+
+    assert c + d == cirq.Circuit([cirq.Moment([cirq.X(b)])])
+    assert d + c == cirq.Circuit([cirq.Moment([cirq.X(b)])])
+    assert e + d == cirq.Circuit([cirq.Moment([cirq.X(a), cirq.X(b)]), cirq.Moment([cirq.X(b)])])
+
+    d += c
+    assert d == cirq.Circuit([cirq.Moment([cirq.X(b)])])
+
+    c += d
+    assert c == cirq.Circuit([cirq.Moment([cirq.X(b)])])
+
+    f = e + d
+    f += e
+    assert f == cirq.Circuit(
+        [
+            cirq.Moment([cirq.X(a), cirq.X(b)]),
+            cirq.Moment([cirq.X(b)]),
+            cirq.Moment([cirq.X(a), cirq.X(b)]),
+        ]
+    )
+
+    with pytest.raises(TypeError):
+        _ = c + 'a'
+
+
+@pytest.mark.parametrize('circuit_cls', [cirq.Circuit, cirq.FrozenCircuit])
+def test_multiply(circuit_cls):
+    a = cirq.NamedQubit('a')
+
+    c = circuit_cls()
+    d = circuit_cls([cirq.Moment([cirq.X(a)])])
+
+    assert c * 0 == circuit_cls()
+    assert d * 0 == circuit_cls()
+    assert d * 2 == circuit_cls([cirq.Moment([cirq.X(a)]), cirq.Moment([cirq.X(a)])])
+
+    twice_copied_circuit = circuit_cls([cirq.Moment([cirq.X(a)]), cirq.Moment([cirq.X(a)])])
+    for num in [np.int64(2), np.ushort(2), np.int8(2), np.int32(2), np.short(2)]:
+        assert num * d == twice_copied_circuit
+        assert d * num == twice_copied_circuit
+
+    assert np.array([2])[0] * d == circuit_cls([cirq.Moment([cirq.X(a)]), cirq.Moment([cirq.X(a)])])
+    assert 1 * c == circuit_cls()
+    assert -1 * d == circuit_cls()
+    assert 1 * d == circuit_cls([cirq.Moment([cirq.X(a)])])
+
+    d *= 3
+    assert d == circuit_cls(
+        [cirq.Moment([cirq.X(a)]), cirq.Moment([cirq.X(a)]), cirq.Moment([cirq.X(a)])]
+    )
+
+    with pytest.raises(TypeError):
+        _ = c * 'a'
+    with pytest.raises(TypeError):
+        _ = 'a' * c
+    with pytest.raises(TypeError):
+        c *= 'a'
+
+
+@pytest.mark.parametrize('circuit_cls', [cirq.Circuit, cirq.FrozenCircuit])
+def test_container_methods(circuit_cls):
+    a = cirq.NamedQubit('a')
+    b = cirq.NamedQubit('b')
+    c = circuit_cls(
+        [
+            cirq.Moment([cirq.H(a), cirq.H(b)]),
+            cirq.Moment([cirq.CZ(a, b)]),
+            cirq.Moment([cirq.H(b)]),
+        ]
+    )
+    assert list(c) == list(c._moments)
+    # __iter__
+    assert list(iter(c)) == list(c._moments)
+    # __reversed__ for free.
+    assert list(reversed(c)) == list(reversed(c._moments))
+    # __contains__ for free.
+    assert cirq.Moment([cirq.H(b)]) in c
+
+    assert len(c) == 3
+
+
+@pytest.mark.parametrize('circuit_cls', [cirq.Circuit, cirq.FrozenCircuit])
+def test_bad_index(circuit_cls):
+    a = cirq.NamedQubit('a')
+    b = cirq.NamedQubit('b')
+    c = circuit_cls([cirq.Moment([cirq.H(a), cirq.H(b)])])
+    with pytest.raises(TypeError):
+        _ = c['string']
+
+
+def test_append_strategies():
+    a = cirq.NamedQubit('a')
+    b = cirq.NamedQubit('b')
+    stream = [cirq.X(a), cirq.CZ(a, b), cirq.X(b), cirq.X(b), cirq.X(a)]
+
+    c = cirq.Circuit()
+    c.append(stream, cirq.InsertStrateg

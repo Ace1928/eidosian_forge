@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_py39compat_documentation.py
+KIND: code
+
+from typing import TYPE_CHECKING, Any, Optional
+
+    Workaround for ``EntryPoint`` objects without the ``matches`` method.

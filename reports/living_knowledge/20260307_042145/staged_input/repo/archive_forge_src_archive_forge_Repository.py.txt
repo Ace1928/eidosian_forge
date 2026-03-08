@@ -1,0 +1,431 @@
+SOURCE_PATH: archive_forge/src/archive_forge/Repository.py
+KIND: code
+
+############################ Copyrights and license ############################
+#                                                                              #
+# Copyright 2012 Christopher Gilbert <christopher.john.gilbert@gmail.com>      #
+# Copyright 2012 Steve English <steve.english@navetas.com>                     #
+# Copyright 2012 Vincent Jacques <vincent@vincent-jacques.net>                 #
+# Copyright 2012 Zearin <zearin@gonk.net>                                      #
+# Copyright 2013 AKFish <akfish@gmail.com>                                     #
+# Copyright 2013 Adrian Petrescu <adrian.petrescu@maluuba.com>                 #
+# Copyright 2013 Cameron White <cawhite@pdx.edu>                               #
+# Copyright 2013 David Farr <david.farr@sap.com>                               #
+# Copyright 2013 Mark Roddy <markroddy@gmail.com>                              #
+# Copyright 2013 Vincent Jacques <vincent@vincent-jacques.net>                 #
+# Copyright 2013 martinqt <m.ki2@laposte.net>                                  #
+# Copyright 2014 Vincent Jacques <vincent@vincent-jacques.net>                 #
+# Copyright 2015 Aaron Levine <allevin@sandia.gov>                             #
+# Copyright 2015 Christopher Wilcox <git@crwilcox.com>                         #
+# Copyright 2015 Dan Vanderkam <danvdk@gmail.com>                              #
+# Copyright 2015 Ed Holland <eholland@alertlogic.com>                          #
+# Copyright 2015 Enix Yu <enix223@163.com>                                     #
+# Copyright 2015 Jay <ja.geb@me.com>                                           #
+# Copyright 2015 Jonathan Debonis <jon@ip-172-20-10-5.ec2.internal>            #
+# Copyright 2015 Kevin Lewandowski <kevinsl@gmail.com>                         #
+# Copyright 2015 Kyle Hornberg <khornberg@users.noreply.github.com>            #
+# Copyright 2016 @tmshn <tmshn@r.recruit.co.jp>                                #
+# Copyright 2016 Dustin Spicuzza <dustin@virtualroadside.com>                  #
+# Copyright 2016 Enix Yu <enix223@163.com>                                     #
+# Copyright 2016 Jannis Gebauer <ja.geb@me.com>                                #
+# Copyright 2016 Per Øyvind Karlsen <proyvind@moondrake.org>                   #
+# Copyright 2016 Peter Buckley <dx-pbuckley@users.noreply.github.com>          #
+# Copyright 2016 Sylvus <Sylvus@users.noreply.github.com>                      #
+# Copyright 2016 fukatani <nannyakannya@gmail.com>                             #
+# Copyright 2016 ghfan <gavintofan@gmail.com>                                  #
+# Copyright 2017 Andreas Lutro <anlutro@gmail.com>                             #
+# Copyright 2017 Ben Firshman <ben@firshman.co.uk>                             #
+# Copyright 2017 Chris McBride <thehighlander@users.noreply.github.com>        #
+# Copyright 2017 Hugo <hugovk@users.noreply.github.com>                        #
+# Copyright 2017 Jannis Gebauer <ja.geb@me.com>                                #
+# Copyright 2017 Jason White <jasonwhite@users.noreply.github.com>             #
+# Copyright 2017 Jimmy Zelinskie <jimmy.zelinskie+git@gmail.com>               #
+# Copyright 2017 Simon <spam@esemi.ru>                                         #
+# Copyright 2018 Aaron L. Levine <allevin@sandia.gov>                          #
+# Copyright 2018 AetherDeity <aetherdeity+github@gmail.com>                    #
+# Copyright 2018 Alice GIRARD <bouhahah@gmail.com>                             #
+# Copyright 2018 Andrew Smith <espadav8@gmail.com>                             #
+# Copyright 2018 Benoit Latinier <benoit@latinier.fr>                          #
+# Copyright 2018 Brian Torres-Gil <btorres-gil@paloaltonetworks.com>           #
+# Copyright 2018 Hayden Fuss <wifu1234@gmail.com>                              #
+# Copyright 2018 Ilya Konstantinov <ilya.konstantinov@gmail.com>               #
+# Copyright 2018 Jacopo Notarstefano <jacopo.notarstefano@gmail.com>           #
+# Copyright 2018 John Hui <j-hui@users.noreply.github.com>                     #
+# Copyright 2018 Justin Kufro <jkufro@andrew.cmu.edu>                          #
+# Copyright 2018 Mateusz Loskot <mateusz@loskot.net>                           #
+# Copyright 2018 Michael Behrisch <oss@behrisch.de>                            #
+# Copyright 2018 Nicholas Buse <NicholasBuse@users.noreply.github.com>         #
+# Copyright 2018 Philip May <eniak.info@gmail.com>                             #
+# Copyright 2018 Raihaan <31362124+res0nance@users.noreply.github.com>         #
+# Copyright 2018 Shinichi TAMURA <shnch.tmr@gmail.com>                         #
+# Copyright 2018 Steve Kowalik <steven@wedontsleep.org>                        #
+# Copyright 2018 Vinay Hegde <hegde.vi@husky.neu.edu>                          #
+# Copyright 2018 Wan Liuyang <tsfdye@gmail.com>                                #
+# Copyright 2018 Will Yardley <wyardley@users.noreply.github.com>              #
+# Copyright 2018 Yossarian King <yggy@blackbirdinteractive.com>                #
+# Copyright 2018 per1234 <accounts@perglass.com>                               #
+# Copyright 2018 sechastain <sechastain@gmail.com>                             #
+# Copyright 2018 sfdye <tsfdye@gmail.com>                                      #
+# Copyright 2019 Adam Baratz <adam.baratz@gmail.com>                           #
+# Copyright 2019 Alex <alexmusa@users.noreply.github.com>                      #
+# Copyright 2019 Kevin LaFlamme <k@lamfl.am>                                   #
+# Copyright 2019 Olof-Joachim Frahm (欧雅福) <olof@macrolet.net>                  #
+# Copyright 2019 Steve Kowalik <steven@wedontsleep.org>                        #
+# Copyright 2019 Tim Gates <tim.gates@iress.com>                               #
+# Copyright 2019 Wan Liuyang <tsfdye@gmail.com>                                #
+# Copyright 2019 Will Li <cuichen.li94@gmail.com>                              #
+# Copyright 2020 Alice GIRARD <bouhahah@gmail.com>                             #
+# Copyright 2020 Anuj Bansal <bansalanuj1996@gmail.com>                        #
+# Copyright 2020 Chris de Graaf <chrisadegraaf@gmail.com>                      #
+# Copyright 2020 Dhruv Manilawala <dhruvmanila@gmail.com>                      #
+# Copyright 2020 Dominic Davis-Foster <dominic@davis-foster.co.uk>             #
+# Copyright 2020 Florent Clarret <florent.clarret@gmail.com>                   #
+# Copyright 2020 Glenn McDonald <testworksau@users.noreply.github.com>         #
+# Copyright 2020 Huw Jones <huwcbjones@outlook.com>                            #
+# Copyright 2020 Mark Bromell <markbromell.business@gmail.com>                 #
+# Copyright 2020 Max Wittig <max.wittig@siemens.com>                           #
+# Copyright 2020 Pascal Hofmann <mail@pascalhofmann.de>                        #
+# Copyright 2020 Steve Kowalik <steven@wedontsleep.org>                        #
+# Copyright 2020 Tim Gates <tim.gates@iress.com>                               #
+# Copyright 2020 Victor Zeng <zacker150@users.noreply.github.com>              #
+# Copyright 2020 ton-katsu <sakamoto.yoshihisa@gmail.com>                      #
+# Copyright 2021 Chris Keating <christopherkeating@gmail.com>                  #
+# Copyright 2021 Floyd Hightower <floyd.hightower27@gmail.com>                 #
+# Copyright 2021 Mark Walker <mark.walker@realbuzz.com>                        #
+# Copyright 2021 Steve Kowalik <steven@wedontsleep.org>                        #
+# Copyright 2021 Tanner <51724788+lightningboltemoji@users.noreply.github.com> #
+# Copyright 2021 xmo-odoo <xmo@odoo.com>                                       #
+# Copyright 2022 Aleksei Fedotov <lexa@cfotr.com>                              #
+# Copyright 2022 Eric Nieuwland <eric.nieuwland@gmail.com>                     #
+# Copyright 2022 Ibrahim Hussaini <ibrahimhussainialias@outlook.com>           #
+# Copyright 2022 KimSia Sim <245021+simkimsia@users.noreply.github.com>        #
+# Copyright 2022 Marco Köpcke <hello@parakoopa.de>                             #
+# Copyright 2023 Andrew Collington <andy@amnuts.com>                           #
+# Copyright 2023 Andrew Dawes <53574062+AndrewJDawes@users.noreply.github.com> #
+# Copyright 2023 Armen Martirosyan <armartirosyan@gmail.com>                   #
+# Copyright 2023 BradChengIRESS <49461141+BradChengIRESS@users.noreply.github.com>#
+# Copyright 2023 Enrico Minack <github@enrico.minack.dev>                      #
+# Copyright 2023 Felipe Peter <mr-peipei@web.de>                               #
+# Copyright 2023 Jirka Borovec <6035284+Borda@users.noreply.github.com>        #
+# Copyright 2023 Jonathan Greg <31892308+jmgreg31@users.noreply.github.com>    #
+# Copyright 2023 Jonathan Leitschuh <jonathan.leitschuh@gmail.com>             #
+# Copyright 2023 Joseph Henrich <crimsonknave@gmail.com>                       #
+# Copyright 2023 Kevin Grandjean <Muscaw@users.noreply.github.com>             #
+# Copyright 2023 Mark Amery <markamery@btinternet.com>                         #
+# Copyright 2023 Mauricio Alejandro Martínez Pacheco <mauricio.martinez@premise.com>#
+# Copyright 2023 Mauricio Alejandro Martínez Pacheco <n_othing@hotmail.com>    #
+# Copyright 2023 Max Mehl <6170081+mxmehl@users.noreply.github.com>            #
+# Copyright 2023 Micael <10292135+notmicaelfilipe@users.noreply.github.com>    #
+# Copyright 2023 Mikhail f. Shiryaev <mr.felixoid@gmail.com>                   #
+# Copyright 2023 Oskar Jansson <56458534+janssonoskar@users.noreply.github.com>#
+# Copyright 2023 Philipp A <flying-sheep@web.de>                               #
+# Copyright 2023 Roberto Pastor Muela <37798125+RobPasMue@users.noreply.github.com>#
+# Copyright 2023 Sol Redfern <59831933+Tsuesun@users.noreply.github.com>       #
+# Copyright 2023 Trim21 <trim21.me@gmail.com>                                  #
+# Copyright 2023 Wojciech Barczyński <104033489+WojciechBarczynski@users.noreply.github.com>#
+# Copyright 2023 alson <git@alm.nufan.net>                                     #
+# Copyright 2023 chantra <chantra@users.noreply.github.com>                    #
+# Copyright 2024 Enrico Minack <github@enrico.minack.dev>                      #
+# Copyright 2024 Thomas Cooper <coopernetes@proton.me>                         #
+#                                                                              #
+# This file is part of PyGithub.                                               #
+# http://pygithub.readthedocs.io/                                              #
+#                                                                              #
+# PyGithub is free software: you can redistribute it and/or modify it under    #
+# the terms of the GNU Lesser General Public License as published by the Free  #
+# Software Foundation, either version 3 of the License, or (at your option)    #
+# any later version.                                                           #
+#                                                                              #
+# PyGithub is distributed in the hope that it will be useful, but WITHOUT ANY  #
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS    #
+# FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more #
+# details.                                                                     #
+#                                                                              #
+# You should have received a copy of the GNU Lesser General Public License     #
+# along with PyGithub. If not, see <http://www.gnu.org/licenses/>.             #
+#                                                                              #
+################################################################################
+
+from __future__ import annotations
+
+import collections
+import urllib.parse
+from base64 import b64encode
+from collections.abc import Iterable
+from datetime import date, datetime, timezone
+from typing import TYPE_CHECKING, Any
+
+from deprecated import deprecated
+
+import github.AdvisoryCredit
+import github.AdvisoryVulnerability
+import github.Artifact
+import github.AuthenticatedUser
+import github.Autolink
+import github.Branch
+import github.CheckRun
+import github.CheckSuite
+import github.Clones
+import github.CodeScanAlert
+import github.Commit
+import github.CommitComment
+import github.Comparison
+import github.ContentFile
+import github.DependabotAlert
+import github.Deployment
+import github.Download
+import github.Environment
+import github.EnvironmentDeploymentBranchPolicy
+import github.EnvironmentProtectionRule
+import github.EnvironmentProtectionRuleReviewer
+import github.Event
+import github.GitBlob
+import github.GitCommit
+import github.GithubObject
+import github.GitRef
+import github.GitRelease
+import github.GitReleaseAsset
+import github.GitTag
+import github.GitTree
+import github.Hook
+import github.HookDelivery
+import github.Invitation
+import github.Issue
+import github.IssueComment
+import github.IssueEvent
+import github.Label
+import github.License
+import github.Milestone
+import github.NamedUser
+import github.Notification
+import github.Organization
+import github.PaginatedList
+import github.Path
+import github.Permissions
+import github.Project
+import github.PublicKey
+import github.PullRequest
+import github.PullRequestComment
+import github.Referrer
+import github.RepositoryAdvisory
+import github.RepositoryKey
+import github.RepositoryPreferences
+import github.Secret
+import github.SelfHostedActionsRunner
+import github.SourceImport
+import github.Stargazer
+import github.StatsCodeFrequency
+import github.StatsCommitActivity
+import github.StatsContributor
+import github.StatsParticipation
+import github.StatsPunchCard
+import github.Tag
+import github.Team
+import github.Variable
+import github.View
+import github.Workflow
+import github.WorkflowRun
+from github import Consts
+from github.Environment import Environment
+from github.GithubObject import (
+    Attribute,
+    CompletableGithubObject,
+    NotSet,
+    Opt,
+    _NotSetType,
+    is_defined,
+    is_optional,
+    is_optional_list,
+    is_undefined,
+)
+from github.PaginatedList import PaginatedList
+
+if TYPE_CHECKING:
+    from github.Artifact import Artifact
+    from github.AuthenticatedUser import AuthenticatedUser
+    from github.Autolink import Autolink
+    from github.Branch import Branch
+    from github.CheckRun import CheckRun
+    from github.CheckSuite import CheckSuite
+    from github.Clones import Clones
+    from github.CodeScanAlert import CodeScanAlert
+    from github.Commit import Commit
+    from github.CommitComment import CommitComment
+    from github.Comparison import Comparison
+    from github.ContentFile import ContentFile
+    from github.DependabotAlert import DependabotAlert
+    from github.Deployment import Deployment
+    from github.Download import Download
+    from github.EnvironmentDeploymentBranchPolicy import EnvironmentDeploymentBranchPolicyParams
+    from github.EnvironmentProtectionRuleReviewer import ReviewerParams
+    from github.Event import Event
+    from github.GitBlob import GitBlob
+    from github.GitCommit import GitCommit
+    from github.GitRef import GitRef
+    from github.GitRelease import GitRelease
+    from github.GitReleaseAsset import GitReleaseAsset
+    from github.GitTag import GitTag
+    from github.GitTree import GitTree
+    from github.Hook import Hook
+    from github.InputGitAuthor import InputGitAuthor
+    from github.InputGitTreeElement import InputGitTreeElement
+    from github.Invitation import Invitation
+    from github.Issue import Issue
+    from github.IssueComment import IssueComment
+    from github.IssueEvent import IssueEvent
+    from github.Label import Label
+    from github.License import License
+    from github.Milestone import Milestone
+    from github.NamedUser import NamedUser
+    from github.Notification import Notification
+    from github.Organization import Organization
+    from github.Path import Path
+    from github.Permissions import Permissions
+    from github.Project import Project
+    from github.PublicKey import PublicKey
+    from github.PullRequest import PullRequest
+    from github.PullRequestComment import PullRequestComment
+    from github.Referrer import Referrer
+    from github.RepositoryKey import RepositoryKey
+    from github.RepositoryPreferences import RepositoryPreferences
+    from github.SelfHostedActionsRunner import SelfHostedActionsRunner
+    from github.SourceImport import SourceImport
+    from github.Stargazer import Stargazer
+    from github.StatsCodeFrequency import StatsCodeFrequency
+    from github.StatsCommitActivity import StatsCommitActivity
+    from github.StatsContributor import StatsContributor
+    from github.StatsParticipation import StatsParticipation
+    from github.StatsPunchCard import StatsPunchCard
+    from github.Tag import Tag
+    from github.Team import Team
+    from github.View import View
+    from github.Workflow import Workflow
+    from github.WorkflowRun import WorkflowRun
+
+
+class Repository(CompletableGithubObject):
+    """
+    This class represents Repositories. The reference can be found here https://docs.github.com/en/rest/reference/repos
+    """
+
+    def __repr__(self) -> str:
+        return self.get__repr__({"full_name": self._full_name.value})
+
+    @property
+    def allow_auto_merge(self) -> bool:
+        """
+        :type: bool
+        """
+        self._completeIfNotSet(self._allow_auto_merge)
+        return self._allow_auto_merge.value
+
+    @property
+    def allow_forking(self) -> bool:
+        """
+        :type: bool
+        """
+        self._completeIfNotSet(self._allow_forking)
+        return self._allow_forking.value
+
+    @property
+    def allow_merge_commit(self) -> bool:
+        """
+        :type: bool
+        """
+        self._completeIfNotSet(self._allow_merge_commit)
+        return self._allow_merge_commit.value
+
+    @property
+    def allow_rebase_merge(self) -> bool:
+        """
+        :type: bool
+        """
+        self._completeIfNotSet(self._allow_rebase_merge)
+        return self._allow_rebase_merge.value
+
+    @property
+    def allow_squash_merge(self) -> bool:
+        """
+        :type: bool
+        """
+        self._completeIfNotSet(self._allow_squash_merge)
+        return self._allow_squash_merge.value
+
+    @property
+    def allow_update_branch(self) -> bool:
+        """
+        :type: bool
+        """
+        self._completeIfNotSet(self._allow_update_branch)
+        return self._allow_update_branch.value
+
+    @property
+    def archived(self) -> bool:
+        """
+        :type: bool
+        """
+        self._completeIfNotSet(self._archived)
+        return self._archived.value
+
+    @property
+    def archive_url(self) -> str:
+        """
+        :type: string
+        """
+        self._completeIfNotSet(self._archive_url)
+        return self._archive_url.value
+
+    @property
+    def assignees_url(self) -> str:
+        """
+        :type: string
+        """
+        self._completeIfNotSet(self._assignees_url)
+        return self._assignees_url.value
+
+    @property
+    def blobs_url(self) -> str:
+        """
+        :type: string
+        """
+        self._completeIfNotSet(self._blobs_url)
+        return self._blobs_url.value
+
+    @property
+    def branches_url(self) -> str:
+        """
+        :type: string
+        """
+        self._completeIfNotSet(self._branches_url)
+        return self._branches_url.value
+
+    @property
+    def clone_url(self) -> str:
+        """
+        :type: string
+        """
+        self._completeIfNotSet(self._clone_url)
+        return self._clone_url.value
+
+    @property
+    def collaborators_url(self) -> str:
+        """
+        :type: string
+        """
+        self._completeIfNotSet(self._collaborators_url)
+        return self._collaborators_url.value
+
+    @property
+    def comments_url(self) -> str:
+        """
+        :type: string
+        """
+        self._completeIfNotSet(self._comments_url)
+        return self._comments_url.value
+
+    @property
+    def commits_url(self) -> str:
+        """
+        :type: string
+        """
+        self._completeIfNotSet(self._c

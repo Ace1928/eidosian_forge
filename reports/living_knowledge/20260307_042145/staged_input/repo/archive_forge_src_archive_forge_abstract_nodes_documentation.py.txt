@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/abstract_nodes_documentation.py
+KIND: code
+
+from sympy.core.containers import Tuple
+Represents a (frozen) (Python) list (for code printing purposes).

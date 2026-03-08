@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_register_documentation.py
+KIND: code
+
+from ...base import _init_np_op_module
+from ..register import _make_ndarray_function
+Registering numpy_extension ops.

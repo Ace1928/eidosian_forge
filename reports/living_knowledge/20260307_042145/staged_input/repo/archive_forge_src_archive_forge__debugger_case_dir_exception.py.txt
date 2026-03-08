@@ -1,0 +1,16 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_debugger_case_dir_exception.py
+KIND: code
+
+class A():
+
+    def __init__(self):
+        self.var1 = 10
+        self.attr = {}  # Break here
+
+    def __dir__(self):
+        return list(self.attr)
+
+
+if __name__ == '__main__':
+    a = A()
+    print('TEST SUCEEDED!')

@@ -1,0 +1,69 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/IS
+KIND: config
+
+IS&
+dalvíkurbyggðdalvă­kurbyggă°
+kaldrananeshreppur
+hrunamannahreppur 
+akureyrarbærakureyrarbăśr:
+bolungarvíkurkaupstaðurbolungarvă­kurkaupstaă°urD
+sveitarfélagið skagaströnd#sveitarfăšlagiă° skagastrăśnd8
+svalbarðsstrandarhreppursvalbară°sstrandarhreppur"
+langanesbyggðlanganesbyggă°
+árneshreppur(
+eyjafjarðarsveiteyjafjară°arsveit.
+rangárþing eystrarangăąrăžing eystra 
+strandabyggðstrandabyggă°
+
+dalabyggðdalabyggă°
+skorradalshreppur
+ásahreppură�sahreppur*
+bláskógabyggðblăąskăłgabyggă°"
+kópavogsbærkăłpavogsbăśr
+
+garðabærgară°abăśr1
+húnabyggðhúnavatnshreppurhăşnabyggă°
+sveitarfélagið árborg
+ísafjarðarbær 
+reykjanesbærreykjanesbăśr
+eyja og miklaholtshreppurE
+skagafjörðurskagafjăśră°ursveitarfélagið skagafjörður
+tjörneshreppur
+vesturbyggðvesturbyggă°
+fjallabyggðfjallabyggă°(
+seltjarnarnesbærseltjarnarnesbăśr.
+grundarfjarðarbærgrundarfjară°arbăśr@
+skeiða og gnúpverjahreppur skeiă°a og gnăşpverjahreppurJ
+sveitarfélagið hornafjörður'sveitarfăšlagiă° hornafjăśră°ur(
+grindavíkurbærgrindavă­kurbăśr*
+grýtubakkahreppurgră˝tubakkahreppur 
+norðurþingnoră°urăžing4
+sveitarfélagið vogarsveitarfăšlagiă° vogar*
+akraneskaupstaðurakraneskaupstaă°ur"
+snæfellsbærsnăśfellsbăśr0
+súðavíkurhreppursăşă°avă­kurhreppur"
+hörgársveithăśrgăąrsveit*
+fljótsdalshreppurfljăłtsdalshreppurk
+stykkishólmsbærstykkishólmursveitarfélagið stykkishólmur%sveitarfăšlagiă° stykkishăłlmur(
+vestmannaeyjabærvestmannaeyjabăśr*
+húnaþing vestrahăşnaăžing vestra&
+reykhólahreppurreykhăłlahreppur&
+reykjavíkurborgreykjavă­kurborg*
+rangárþing ytrarangăąrăžing ytra
+sveitarfélagið ölfus:
+hafnarfjarðarkaupstaðurhafnarfjară°arkaupstaă°ur&
+suðurnesjabærsuă°urnesjabăśr"
+fjarðabyggðfjară°abyggă°@
+grímsnes og grafningshreppurgră­msnes og grafningshreppur%
+þingeyjarsveită�ingeyjarsveit(
+hveragerðisbærhverageră°isbăśr$
+skaftárhreppurskaftăąrhreppur
+borgarbyggðborgarbyggă°$
+mýrdalshreppurmă˝rdalshreppur"
+kjósarhreppurkjăłsarhreppur
+mosfellsbærmosfellsbăśr(
+hvalfjarðarsveithvalfjară°arsveit
+flóahreppurflăłahreppur
+
+múlaþingmăşlaăžing.
+vopnafjarðarhreppurvopnafjară°arhreppur

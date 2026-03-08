@@ -1,0 +1,537 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_generator.py
+KIND: code
+
+import atexit
+import binascii
+import functools
+import hashlib
+import operator
+import os
+import time
+
+import numpy
+import warnings
+from numpy.linalg import LinAlgError
+
+import cupy
+from cupy import _core
+from cupy import cuda
+from cupy.cuda import curand
+from cupy.cuda import device
+from cupy.random import _kernels
+from cupy import _util
+
+import cupyx
+
+
+_UINT32_MAX = 0xffffffff
+_UINT64_MAX = 0xffffffffffffffff
+
+
+class RandomState(object):
+
+    """Portable container of a pseudo-random number generator.
+
+    An instance of this class holds the state of a random number generator. The
+    state is available only on the device which has been current at the
+    initialization of the instance.
+
+    Functions of :mod:`cupy.random` use global instances of this class.
+    Different instances are used for different devices. The global state for
+    the current device can be obtained by the
+    :func:`cupy.random.get_random_state` function.
+
+    Args:
+        seed (None or int): Seed of the random number generator. See the
+            :meth:`~cupy.random.RandomState.seed` method for detail.
+        method (int): Method of the random number generator. Following values
+            are available::
+
+               cupy.cuda.curand.CURAND_RNG_PSEUDO_DEFAULT
+               cupy.cuda.curand.CURAND_RNG_PSEUDO_XORWOW
+               cupy.cuda.curand.CURAND_RNG_PSEUDO_MRG32K3A
+               cupy.cuda.curand.CURAND_RNG_PSEUDO_MTGP32
+               cupy.cuda.curand.CURAND_RNG_PSEUDO_MT19937
+               cupy.cuda.curand.CURAND_RNG_PSEUDO_PHILOX4_32_10
+
+    """
+
+    def __init__(self, seed=None, method=curand.CURAND_RNG_PSEUDO_DEFAULT):
+        self._generator = curand.createGenerator(method)
+        self.method = method
+        self.seed(seed)
+
+    def __del__(self, is_shutting_down=_util.is_shutting_down):
+        # When createGenerator raises an error, _generator is not initialized
+        if is_shutting_down():
+            return
+        if hasattr(self, '_generator'):
+            curand.destroyGenerator(self._generator)
+
+    def _update_seed(self, size):
+        self._rk_seed = (self._rk_seed + size) % _UINT64_MAX
+
+    def _generate_normal(self, func, size, dtype, *args):
+        # curand functions below don't support odd size.
+        # * curand.generateNormal
+        # * curand.generateNormalDouble
+        # * curand.generateLogNormal
+        # * curand.generateLogNormalDouble
+        size = _core.get_size(size)
+        element_size = _core.internal.prod(size)
+        if element_size % 2 == 0:
+            out = cupy.empty(size, dtype=dtype)
+            func(self._generator, out.data.ptr, out.size, *args)
+            return out
+        else:
+            out = cupy.empty((element_size + 1,), dtype=dtype)
+            func(self._generator, out.data.ptr, out.size, *args)
+            return out[:element_size].reshape(size)
+
+    # NumPy compatible functions
+
+    def beta(self, a, b, size=None, dtype=float):
+        """Returns an array of samples drawn from the beta distribution.
+
+        .. seealso::
+            - :func:`cupy.random.beta` for full documentation
+            - :meth:`numpy.random.RandomState.beta`
+        """
+        a, b = cupy.asarray(a), cupy.asarray(b)
+        if size is None:
+            size = cupy.broadcast(a, b).shape
+        y = cupy.empty(shape=size, dtype=dtype)
+        _kernels.beta_kernel(a, b, self._rk_seed, y)
+        self._update_seed(y.size)
+        return y
+
+    def binomial(self, n, p, size=None, dtype=int):
+        """Returns an array of samples drawn from the binomial distribution.
+
+        .. seealso::
+            - :func:`cupy.random.binomial` for full documentation
+            - :meth:`numpy.random.RandomState.binomial`
+        """
+        n, p = cupy.asarray(n), cupy.asarray(p)
+        if size is None:
+            size = cupy.broadcast(n, p).shape
+        y = cupy.empty(shape=size, dtype=dtype)
+        _kernels.binomial_kernel(n, p, self._rk_seed, y)
+        self._update_seed(y.size)
+        return y
+
+    def chisquare(self, df, size=None, dtype=float):
+        """Returns an array of samples drawn from the chi-square distribution.
+
+        .. seealso::
+            - :func:`cupy.random.chisquare` for full documentation
+            - :meth:`numpy.random.RandomState.chisquare`
+        """
+        df = cupy.asarray(df)
+        if size is None:
+            size = df.shape
+        y = cupy.empty(shape=size, dtype=dtype)
+        _kernels.chisquare_kernel(df, self._rk_seed, y)
+        self._update_seed(y.size)
+        return y
+
+    def dirichlet(self, alpha, size=None, dtype=float):
+        """Returns an array of samples drawn from the dirichlet distribution.
+
+        .. seealso::
+            - :func:`cupy.random.dirichlet` for full documentation
+            - :meth:`numpy.random.RandomState.dirichlet`
+        """
+        alpha = cupy.asarray(alpha)
+        if size is None:
+            size = alpha.shape
+        elif isinstance(size, (int, cupy.integer)):
+            size = (size,) + alpha.shape
+        else:
+            size += alpha.shape
+        y = cupy.empty(shape=size, dtype=dtype)
+        _kernels.standard_gamma_kernel(alpha, self._rk_seed, y)
+        y /= y.sum(axis=-1, keepdims=True)
+        self._update_seed(y.size)
+        return y
+
+    def exponential(self, scale=1.0, size=None, dtype=float):
+        """Returns an array of samples drawn from a exponential distribution.
+
+        .. warning::
+
+            This function may synchronize the device.
+
+        .. seealso::
+            - :func:`cupy.random.exponential` for full documentation
+            - :meth:`numpy.random.RandomState.exponential`
+        """
+        scale = cupy.asarray(scale, dtype)
+        if (scale < 0).any():  # synchronize!
+            raise ValueError('scale < 0')
+        if size is None:
+            size = scale.shape
+        x = self.standard_exponential(size, dtype)
+        x *= scale
+        return x
+
+    def f(self, dfnum, dfden, size=None, dtype=float):
+        """Returns an array of samples drawn from the f distribution.
+
+        .. seealso::
+            - :func:`cupy.random.f` for full documentation
+            - :meth:`numpy.random.RandomState.f`
+        """
+        dfnum, dfden = cupy.asarray(dfnum), cupy.asarray(dfden)
+        if size is None:
+            size = cupy.broadcast(dfnum, dfden).shape
+        y = cupy.empty(shape=size, dtype=dtype)
+        _kernels.f_kernel(dfnum, dfden, self._rk_seed, y)
+        self._update_seed(y.size)
+        return y
+
+    def gamma(self, shape, scale=1.0, size=None, dtype=float):
+        """Returns an array of samples drawn from a gamma distribution.
+
+        .. seealso::
+            - :func:`cupy.random.gamma` for full documentation
+            - :meth:`numpy.random.RandomState.gamma`
+        """
+        shape, scale = cupy.asarray(shape), cupy.asarray(scale)
+        if size is None:
+            size = cupy.broadcast(shape, scale).shape
+        y = cupy.empty(shape=size, dtype=dtype)
+        _kernels.standard_gamma_kernel(shape, self._rk_seed, y)
+        y *= scale
+        self._update_seed(y.size)
+        return y
+
+    def geometric(self, p, size=None, dtype=int):
+        """Returns an array of samples drawn from the geometric distribution.
+
+        .. seealso::
+            - :func:`cupy.random.geometric` for full documentation
+            - :meth:`numpy.random.RandomState.geometric`
+        """
+        p = cupy.asarray(p)
+        if size is None:
+            size = p.shape
+        y = cupy.empty(shape=size, dtype=dtype)
+        _kernels.geometric_kernel(p, self._rk_seed, y)
+        self._update_seed(y.size)
+        return y
+
+    def hypergeometric(self, ngood, nbad, nsample, size=None, dtype=int):
+        """Returns an array of samples drawn from the hypergeometric distribution.
+
+        .. seealso::
+            - :func:`cupy.random.hypergeometric` for full documentation
+            - :meth:`numpy.random.RandomState.hypergeometric`
+        """
+        ngood, nbad, nsample = \
+            cupy.asarray(ngood), cupy.asarray(nbad), cupy.asarray(nsample)
+        if size is None:
+            size = cupy.broadcast(ngood, nbad, nsample).shape
+        y = cupy.empty(shape=size, dtype=dtype)
+        _kernels.hypergeometric_kernel(ngood, nbad, nsample, self._rk_seed, y)
+        self._update_seed(y.size)
+        return y
+
+    _laplace_kernel = _core.ElementwiseKernel(
+        'T x, T loc, T scale', 'T y',
+        'y = loc + scale * ((x <= 0.5) ? log(x + x): -log(x + x - 1.0))',
+        'cupy_laplace_kernel')
+
+    def laplace(self, loc=0.0, scale=1.0, size=None, dtype=float):
+        """Returns an array of samples drawn from the laplace distribution.
+
+        .. seealso::
+            - :func:`cupy.random.laplace` for full documentation
+            - :meth:`numpy.random.RandomState.laplace`
+        """
+        loc = cupy.asarray(loc, dtype)
+        scale = cupy.asarray(scale, dtype)
+        if size is None:
+            size = cupy.broadcast(loc, scale).shape
+        x = self._random_sample_raw(size, dtype)
+        RandomState._laplace_kernel(x, loc, scale, x)
+        return x
+
+    def logistic(self, loc=0.0, scale=1.0, size=None, dtype=float):
+        """Returns an array of samples drawn from the logistic distribution.
+
+        .. seealso::
+            - :func:`cupy.random.logistic` for full documentation
+            - :meth:`numpy.random.RandomState.logistic`
+        """
+        loc, scale = cupy.asarray(loc), cupy.asarray(scale)
+        if size is None:
+            size = cupy.broadcast(loc, scale).shape
+        x = cupy.empty(shape=size, dtype=dtype)
+        _kernels.open_uniform_kernel(self._rk_seed, x)
+        self._update_seed(x.size)
+        x = (1.0 - x) / x
+        cupy.log(x, out=x)
+        cupy.multiply(x, scale, out=x)
+        cupy.add(x, loc, out=x)
+        return x
+
+    def lognormal(self, mean=0.0, sigma=1.0, size=None, dtype=float):
+        """Returns an array of samples drawn from a log normal distribution.
+
+        .. seealso::
+            - :func:`cupy.random.lognormal` for full documentation
+            - :meth:`numpy.random.RandomState.lognormal`
+
+        """
+        if any(isinstance(arg, cupy.ndarray) for arg in (mean, sigma)):
+            x = self.normal(mean, sigma, size, dtype)
+            cupy.exp(x, out=x)
+            return x
+        if size is None:
+            size = ()
+        dtype = _check_and_get_dtype(dtype)
+        if dtype.char == 'f':
+            func = curand.generateLogNormal
+        else:
+            func = curand.generateLogNormalDouble
+        return self._generate_normal(func, size, dtype, mean, sigma)
+
+    def logseries(self, p, size=None, dtype=int):
+        """Returns an array of samples drawn from a log series distribution.
+
+        .. warning::
+
+            This function may synchronize the device.
+
+        .. seealso::
+            - :func:`cupy.random.logseries` for full documentation
+            - :meth:`numpy.random.RandomState.logseries`
+
+        """
+        p = cupy.asarray(p)
+        if cupy.any(p <= 0):  # synchronize!
+            raise ValueError('p <= 0.0')
+        if cupy.any(p >= 1):  # synchronize!
+            raise ValueError('p >= 1.0')
+        if size is None:
+            size = p.shape
+        y = cupy.empty(shape=size, dtype=dtype)
+        _kernels.logseries_kernel(p, self._rk_seed, y)
+        self._update_seed(y.size)
+        return y
+
+    def multivariate_normal(self, mean, cov, size=None, check_valid='ignore',
+                            tol=1e-08, method='cholesky', dtype=float):
+        """Returns an array of samples drawn from the multivariate normal
+        distribution.
+
+        .. warning::
+            This function calls one or more cuSOLVER routine(s) which may yield
+            invalid results if input conditions are not met.
+            To detect these invalid results, you can set the `linalg`
+            configuration to a value that is not `ignore` in
+            :func:`cupyx.errstate` or :func:`cupyx.seterr`.
+
+        .. seealso::
+            - :func:`cupy.random.multivariate_normal` for full documentation
+            - :meth:`numpy.random.RandomState.multivariate_normal`
+        """
+        _util.experimental('cupy.random.RandomState.multivariate_normal')
+        mean = cupy.asarray(mean, dtype=dtype)
+        cov = cupy.asarray(cov, dtype=dtype)
+        if size is None:
+            shape = []
+        elif isinstance(size, (int, cupy.integer)):
+            shape = [size]
+        else:
+            shape = size
+
+        if len(mean.shape) != 1:
+            raise ValueError('mean must be 1 dimensional')
+        if (len(cov.shape) != 2) or (cov.shape[0] != cov.shape[1]):
+            raise ValueError('cov must be 2 dimensional and square')
+        if mean.shape[0] != cov.shape[0]:
+            raise ValueError('mean and cov must have same length')
+
+        final_shape = list(shape[:])
+        final_shape.append(mean.shape[0])
+
+        if method not in {'eigh', 'svd', 'cholesky'}:
+            raise ValueError(
+                "method must be one of {'eigh', 'svd', 'cholesky'}")
+
+        if check_valid != 'ignore':
+            if check_valid != 'warn' and check_valid != 'raise':
+                raise ValueError(
+                    "check_valid must equal 'warn', 'raise', or 'ignore'")
+
+        if check_valid == 'warn':
+            with cupyx.errstate(linalg='raise'):
+                try:
+                    decomp = cupy.linalg.cholesky(cov)
+                except LinAlgError:
+                    with cupyx.errstate(linalg='ignore'):
+                        if method != 'cholesky':
+                            if method == 'eigh':
+                                (s, u) = cupy.linalg.eigh(cov)
+                                psd = not cupy.any(s < -tol)
+                            if method == 'svd':
+                                (u, s, vh) = cupy.linalg.svd(cov)
+                                psd = cupy.allclose(cupy.dot(vh.T * s, vh),
+                                                    cov, rtol=tol, atol=tol)
+                            decomp = u * cupy.sqrt(cupy.abs(s))
+                            if not psd:
+                                warnings.warn("covariance is not positive-" +
+                                              "semidefinite, output may be " +
+                                              "invalid.", RuntimeWarning)
+
+                        else:
+                            warnings.warn("covariance is not positive-" +
+                                          "semidefinite, output *is* " +
+                                          "invalid.", RuntimeWarning)
+                            decomp = cupy.linalg.cholesky(cov)
+
+        else:
+            with cupyx.errstate(linalg=check_valid):
+                try:
+                    if method == 'cholesky':
+                        decomp = cupy.linalg.cholesky(cov)
+                    elif method == 'eigh':
+                        (s, u) = cupy.linalg.eigh(cov)
+                        decomp = u * cupy.sqrt(cupy.abs(s))
+                    elif method == 'svd':
+                        (u, s, vh) = cupy.linalg.svd(cov)
+                        decomp = u * cupy.sqrt(cupy.abs(s))
+
+                except LinAlgError:
+                    raise LinAlgError("Matrix is not positive definite; if " +
+                                      "matrix is positive-semidefinite, set" +
+                                      "'check_valid' to 'warn'")
+
+        x = self.standard_normal(final_shape,
+                                 dtype=dtype).reshape(-1, mean.shape[0])
+        x = cupy.dot(decomp, x.T)
+        x = x.T
+        x += mean
+        x.shape = tuple(final_shape)
+        return x
+
+    def negative_binomial(self, n, p, size=None, dtype=int):
+        """Returns an array of samples drawn from the negative binomial distribution.
+
+        .. warning::
+
+            This function may synchronize the device.
+
+        .. seealso::
+            - :func:`cupy.random.negative_binomial` for full documentation
+            - :meth:`numpy.random.RandomState.negative_binomial`
+        """
+        n = cupy.asarray(n)
+        p = cupy.asarray(p)
+        if cupy.any(n <= 0):  # synchronize!
+            raise ValueError('n <= 0')
+        if cupy.any(p < 0):  # synchronize!
+            raise ValueError('p < 0')
+        if cupy.any(p > 1):  # synchronize!
+            raise ValueError('p > 1')
+        y = self.gamma(n, (1-p)/p, size)
+        return self.poisson(y, dtype=dtype)
+
+    def normal(self, loc=0.0, scale=1.0, size=None, dtype=float):
+        """Returns an array of normally distributed samples.
+
+        .. seealso::
+            - :func:`cupy.random.normal` for full documentation
+            - :meth:`numpy.random.RandomState.normal`
+
+        """
+        dtype = _check_and_get_dtype(dtype)
+        if size is None:
+            size = cupy.broadcast(loc, scale).shape
+        if dtype.char == 'f':
+            func = curand.generateNormal
+        else:
+            func = curand.generateNormalDouble
+        if isinstance(scale, cupy.ndarray):
+            x = self._generate_normal(func, size, dtype, 0.0, 1.0)
+            cupy.multiply(x, scale, out=x)
+            cupy.add(x, loc, out=x)
+        elif isinstance(loc, cupy.ndarray):
+            x = self._generate_normal(func, size, dtype, 0.0, scale)
+            cupy.add(x, loc, out=x)
+        else:
+            x = self._generate_normal(func, size, dtype, loc, scale)
+        return x
+
+    def pareto(self, a, size=None, dtype=float):
+        """Returns an array of samples drawn from the pareto II distribution.
+
+        .. seealso::
+            - :func:`cupy.random.pareto` for full documentation
+            - :meth:`numpy.random.RandomState.pareto`
+        """
+        a = cupy.asarray(a)
+        if size is None:
+            size = a.shape
+        x = self._random_sample_raw(size, dtype)
+        cupy.log(x, out=x)
+        cupy.exp(-x/a, out=x)
+        return x - 1
+
+    def noncentral_chisquare(self, df, nonc, size=None, dtype=float):
+        """Returns an array of samples drawn from the noncentral chi-square
+        distribution.
+
+        .. warning::
+
+            This function may synchronize the device.
+
+        .. seealso::
+            - :func:`cupy.random.noncentral_chisquare` for full documentation
+            - :meth:`numpy.random.RandomState.noncentral_chisquare`
+        """
+        df, nonc = cupy.asarray(df), cupy.asarray(nonc)
+        if cupy.any(df <= 0):  # synchronize!
+            raise ValueError('df <= 0')
+        if cupy.any(nonc < 0):  # synchronize!
+            raise ValueError('nonc < 0')
+        if size is None:
+            size = cupy.broadcast(df, nonc).shape
+        y = cupy.empty(shape=size, dtype=dtype)
+        _kernels.noncentral_chisquare_kernel(df, nonc, self._rk_seed, y)
+        self._update_seed(y.size)
+        return y
+
+    def noncentral_f(self, dfnum, dfden, nonc, size=None, dtype=float):
+        """Returns an array of samples drawn from the noncentral F distribution.
+
+        .. warning::
+
+            This function may synchronize the device.
+
+        .. seealso::
+            - :func:`cupy.random.noncentral_f` for full documentation
+            - :meth:`numpy.random.RandomState.noncentral_f`
+        """
+        dfnum, dfden, nonc = \
+            cupy.asarray(dfnum), cupy.asarray(dfden), cupy.asarray(nonc)
+        if cupy.any(dfnum <= 0):  # synchronize!
+            raise ValueError('dfnum <= 0')
+        if cupy.any(dfden <= 0):  # synchronize!
+            raise ValueError('dfden <= 0')
+        if cupy.any(nonc < 0):  # synchronize!
+            raise ValueError('nonc < 0')
+        if size is None:
+            size = cupy.broadcast(dfnum, dfden, nonc).shape
+        y = cupy.empty(shape=size, dtype=dtype)
+        _kernels.noncentral_f_kernel(dfnum, dfden, nonc, self._rk_seed, y)
+        self._update_seed(y.size)
+        return y
+
+    def poisson(self, lam=1.0, size=None, dtype=int):
+        """Returns an array of samples drawn from the poisson distribution.
+
+        .. seealso::
+            - :func:`cupy.ran

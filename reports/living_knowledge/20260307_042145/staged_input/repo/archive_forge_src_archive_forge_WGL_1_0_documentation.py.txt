@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/WGL_1_0_documentation.py
+KIND: code
+
+from OpenGL import platform, constant, arrays
+from OpenGL import extensions, wrapper
+import ctypes
+from OpenGL.raw.WGL import _types, _glgets
+from OpenGL.raw.WGL.VERSION.WGL_1_0 import *
+from OpenGL.raw.WGL.VERSION.WGL_1_0 import _EXTENSION_NAME
+Return boolean indicating whether this extension is available

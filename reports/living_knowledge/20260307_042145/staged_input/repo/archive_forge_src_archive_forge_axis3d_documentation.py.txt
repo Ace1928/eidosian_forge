@@ -1,0 +1,14 @@
+SOURCE_PATH: archive_forge/src/archive_forge/axis3d_documentation.py
+KIND: code
+
+import inspect
+import numpy as np
+import matplotlib as mpl
+from matplotlib import (
+from . import art3d, proj3d
+
+        Draw pane.
+
+        Parameters
+        ----------
+        renderer : `~matplotlib.backend_bases.RendererBase` subclass

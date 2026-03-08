@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/automail_documentation.py
+KIND: code
+
+import markdown
+import markdown.inlinepatterns
+import xml.etree.ElementTree as etree
+
+    An extension that turns email addresses into links.

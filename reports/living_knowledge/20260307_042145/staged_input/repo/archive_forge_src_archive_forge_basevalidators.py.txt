@@ -1,0 +1,640 @@
+SOURCE_PATH: archive_forge/src/archive_forge/basevalidators.py
+KIND: code
+
+import base64
+import numbers
+import textwrap
+import uuid
+from importlib import import_module
+import copy
+import io
+import re
+import sys
+import warnings
+
+from _plotly_utils.optional_imports import get_module
+
+
+# back-port of fullmatch from Py3.4+
+def fullmatch(regex, string, flags=0):
+    """Emulate python-3.4 re.fullmatch()."""
+    if "pattern" in dir(regex):
+        regex_string = regex.pattern
+    else:
+        regex_string = regex
+    return re.match("(?:" + regex_string + r")\Z", string, flags=flags)
+
+
+# Utility functions
+# -----------------
+def to_scalar_or_list(v):
+    # Handle the case where 'v' is a non-native scalar-like type,
+    # such as numpy.float32. Without this case, the object might be
+    # considered numpy-convertable and therefore promoted to a
+    # 0-dimensional array, but we instead want it converted to a
+    # Python native scalar type ('float' in the example above).
+    # We explicitly check if is has the 'item' method, which conventionally
+    # converts these types to native scalars.
+    np = get_module("numpy", should_load=False)
+    pd = get_module("pandas", should_load=False)
+    if np and np.isscalar(v) and hasattr(v, "item"):
+        return v.item()
+    if isinstance(v, (list, tuple)):
+        return [to_scalar_or_list(e) for e in v]
+    elif np and isinstance(v, np.ndarray):
+        if v.ndim == 0:
+            return v.item()
+        return [to_scalar_or_list(e) for e in v]
+    elif pd and isinstance(v, (pd.Series, pd.Index)):
+        return [to_scalar_or_list(e) for e in v]
+    elif is_numpy_convertable(v):
+        return to_scalar_or_list(np.array(v))
+    else:
+        return v
+
+
+def copy_to_readonly_numpy_array(v, kind=None, force_numeric=False):
+    """
+    Convert an array-like value into a read-only numpy array
+
+    Parameters
+    ----------
+    v : array like
+        Array like value (list, tuple, numpy array, pandas series, etc.)
+    kind : str or tuple of str
+        If specified, the numpy dtype kind (or kinds) that the array should
+        have, or be converted to if possible.
+        If not specified then let numpy infer the datatype
+    force_numeric : bool
+        If true, raise an exception if the resulting numpy array does not
+        have a numeric dtype (i.e. dtype.kind not in ['u', 'i', 'f'])
+    Returns
+    -------
+    np.ndarray
+        Numpy array with the 'WRITEABLE' flag set to False
+    """
+    np = get_module("numpy")
+
+    # Don't force pandas to be loaded, we only want to know if it's already loaded
+    pd = get_module("pandas", should_load=False)
+    assert np is not None
+
+    # ### Process kind ###
+    if not kind:
+        kind = ()
+    elif isinstance(kind, str):
+        kind = (kind,)
+
+    first_kind = kind[0] if kind else None
+
+    # u: unsigned int, i: signed int, f: float
+    numeric_kinds = {"u", "i", "f"}
+    kind_default_dtypes = {
+        "u": "uint32",
+        "i": "int32",
+        "f": "float64",
+        "O": "object",
+    }
+
+    # Handle pandas Series and Index objects
+    if pd and isinstance(v, (pd.Series, pd.Index)):
+        if v.dtype.kind in numeric_kinds:
+            # Get the numeric numpy array so we use fast path below
+            v = v.values
+        elif v.dtype.kind == "M":
+            # Convert datetime Series/Index to numpy array of datetimes
+            if isinstance(v, pd.Series):
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", FutureWarning)
+                    # Series.dt.to_pydatetime will return Index[object]
+                    # https://github.com/pandas-dev/pandas/pull/52459
+                    v = np.array(v.dt.to_pydatetime())
+            else:
+                # DatetimeIndex
+                v = v.to_pydatetime()
+    elif pd and isinstance(v, pd.DataFrame) and len(set(v.dtypes)) == 1:
+        dtype = v.dtypes.tolist()[0]
+        if dtype.kind in numeric_kinds:
+            v = v.values
+        elif dtype.kind == "M":
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", FutureWarning)
+                # Series.dt.to_pydatetime will return Index[object]
+                # https://github.com/pandas-dev/pandas/pull/52459
+                v = [
+                    np.array(row.dt.to_pydatetime()).tolist() for i, row in v.iterrows()
+                ]
+
+    if not isinstance(v, np.ndarray):
+        # v has its own logic on how to convert itself into a numpy array
+        if is_numpy_convertable(v):
+            return copy_to_readonly_numpy_array(
+                np.array(v), kind=kind, force_numeric=force_numeric
+            )
+        else:
+            # v is not homogenous array
+            v_list = [to_scalar_or_list(e) for e in v]
+
+            # Lookup dtype for requested kind, if any
+            dtype = kind_default_dtypes.get(first_kind, None)
+
+            # construct new array from list
+            new_v = np.array(v_list, order="C", dtype=dtype)
+    elif v.dtype.kind in numeric_kinds:
+        # v is a homogenous numeric array
+        if kind and v.dtype.kind not in kind:
+            # Kind(s) were specified and this array doesn't match
+            # Convert to the default dtype for the first kind
+            dtype = kind_default_dtypes.get(first_kind, None)
+            new_v = np.ascontiguousarray(v.astype(dtype))
+        else:
+            # Either no kind was requested or requested kind is satisfied
+            new_v = np.ascontiguousarray(v.copy())
+    else:
+        # v is a non-numeric homogenous array
+        new_v = v.copy()
+
+    # Handle force numeric param
+    # --------------------------
+    if force_numeric and new_v.dtype.kind not in numeric_kinds:
+        raise ValueError(
+            "Input value is not numeric and force_numeric parameter set to True"
+        )
+
+    if "U" not in kind:
+        # Force non-numeric arrays to have object type
+        # --------------------------------------------
+        # Here we make sure that non-numeric arrays have the object
+        # datatype. This works around cases like np.array([1, 2, '3']) where
+        # numpy converts the integers to strings and returns array of dtype
+        # '<U21'
+        if new_v.dtype.kind not in ["u", "i", "f", "O", "M"]:
+            new_v = np.array(v, dtype="object")
+
+    # Set new array to be read-only
+    # -----------------------------
+    new_v.flags["WRITEABLE"] = False
+
+    return new_v
+
+
+def is_numpy_convertable(v):
+    """
+    Return whether a value is meaningfully convertable to a numpy array
+    via 'numpy.array'
+    """
+    return hasattr(v, "__array__") or hasattr(v, "__array_interface__")
+
+
+def is_homogeneous_array(v):
+    """
+    Return whether a value is considered to be a homogeneous array
+    """
+    np = get_module("numpy", should_load=False)
+    pd = get_module("pandas", should_load=False)
+    if (
+        np
+        and isinstance(v, np.ndarray)
+        or (pd and isinstance(v, (pd.Series, pd.Index)))
+    ):
+        return True
+    if is_numpy_convertable(v):
+        np = get_module("numpy", should_load=True)
+        if np:
+            v_numpy = np.array(v)
+            # v is essentially a scalar and so shouldn't count as an array
+            if v_numpy.shape == ():
+                return False
+            else:
+                return True  # v_numpy.dtype.kind in ["u", "i", "f", "M", "U"]
+    return False
+
+
+def is_simple_array(v):
+    """
+    Return whether a value is considered to be an simple array
+    """
+    return isinstance(v, (list, tuple))
+
+
+def is_array(v):
+    """
+    Return whether a value is considered to be an array
+    """
+    return is_simple_array(v) or is_homogeneous_array(v)
+
+
+def type_str(v):
+    """
+    Return a type string of the form module.name for the input value v
+    """
+    if not isinstance(v, type):
+        v = type(v)
+
+    return "'{module}.{name}'".format(module=v.__module__, name=v.__name__)
+
+
+# Validators
+# ----------
+class BaseValidator(object):
+    """
+    Base class for all validator classes
+    """
+
+    def __init__(self, plotly_name, parent_name, role=None, **_):
+        """
+        Construct a validator instance
+
+        Parameters
+        ----------
+        plotly_name : str
+            Name of the property being validated
+        parent_name : str
+            Names of all of the ancestors of this property joined on '.'
+            characters. e.g.
+            plotly_name == 'range' and parent_name == 'layout.xaxis'
+        role : str
+            The role string for the property as specified in
+            plot-schema.json
+        """
+        self.parent_name = parent_name
+        self.plotly_name = plotly_name
+        self.role = role
+        self.array_ok = False
+
+    def description(self):
+        """
+        Returns a string that describes the values that are acceptable
+        to the validator
+
+        Should start with:
+            The '{plotly_name}' property is a...
+
+        For consistancy, string should have leading 4-space indent
+        """
+        raise NotImplementedError()
+
+    def raise_invalid_val(self, v, inds=None):
+        """
+        Helper method to raise an informative exception when an invalid
+        value is passed to the validate_coerce method.
+
+        Parameters
+        ----------
+        v :
+            Value that was input to validate_coerce and could not be coerced
+        inds: list of int or None (default)
+            Indexes to display after property name. e.g. if self.plotly_name
+            is 'prop' and inds=[2, 1] then the name in the validation error
+            message will be 'prop[2][1]`
+        Raises
+        -------
+        ValueError
+        """
+        name = self.plotly_name
+        if inds:
+            for i in inds:
+                name += "[" + str(i) + "]"
+
+        raise ValueError(
+            """
+    Invalid value of type {typ} received for the '{name}' property of {pname}
+        Received value: {v}
+
+{valid_clr_desc}""".format(
+                name=name,
+                pname=self.parent_name,
+                typ=type_str(v),
+                v=repr(v),
+                valid_clr_desc=self.description(),
+            )
+        )
+
+    def raise_invalid_elements(self, invalid_els):
+        if invalid_els:
+            raise ValueError(
+                """
+    Invalid element(s) received for the '{name}' property of {pname}
+        Invalid elements include: {invalid}
+
+{valid_clr_desc}""".format(
+                    name=self.plotly_name,
+                    pname=self.parent_name,
+                    invalid=invalid_els[:10],
+                    valid_clr_desc=self.description(),
+                )
+            )
+
+    def validate_coerce(self, v):
+        """
+        Validate whether an input value is compatible with this property,
+        and coerce the value to be compatible of possible.
+
+        Parameters
+        ----------
+        v
+            The input value to be validated
+
+        Raises
+        ------
+        ValueError
+            if `v` cannot be coerced into a compatible form
+
+        Returns
+        -------
+        The input `v` in a form that's compatible with this property
+        """
+        raise NotImplementedError()
+
+    def present(self, v):
+        """
+        Convert output value of a previous call to `validate_coerce` into a
+        form suitable to be returned to the user on upon property
+        access.
+
+        Note: The value returned by present must be either immutable or an
+        instance of BasePlotlyType, otherwise the value could be mutated by
+        the user and we wouldn't get notified about the change.
+
+        Parameters
+        ----------
+        v
+            A value that was the ouput of a previous call the
+            `validate_coerce` method on the same object
+
+        Returns
+        -------
+
+        """
+        if is_homogeneous_array(v):
+            # Note: numpy array was already coerced into read-only form so
+            # we don't need to copy it here.
+            return v
+        elif is_simple_array(v):
+            return tuple(v)
+        else:
+            return v
+
+
+class DataArrayValidator(BaseValidator):
+    """
+    "data_array": {
+        "description": "An {array} of data. The value MUST be an
+                        {array}, or we ignore it.",
+        "requiredOpts": [],
+        "otherOpts": [
+            "dflt"
+        ]
+    },
+    """
+
+    def __init__(self, plotly_name, parent_name, **kwargs):
+        super(DataArrayValidator, self).__init__(
+            plotly_name=plotly_name, parent_name=parent_name, **kwargs
+        )
+
+        self.array_ok = True
+
+    def description(self):
+        return """\
+    The '{plotly_name}' property is an array that may be specified as a tuple,
+    list, numpy array, or pandas Series""".format(
+            plotly_name=self.plotly_name
+        )
+
+    def validate_coerce(self, v):
+
+        if v is None:
+            # Pass None through
+            pass
+        elif is_homogeneous_array(v):
+            v = copy_to_readonly_numpy_array(v)
+        elif is_simple_array(v):
+            v = to_scalar_or_list(v)
+        else:
+            self.raise_invalid_val(v)
+        return v
+
+
+class EnumeratedValidator(BaseValidator):
+    """
+    "enumerated": {
+        "description": "Enumerated value type. The available values are
+                        listed in `values`.",
+        "requiredOpts": [
+            "values"
+        ],
+        "otherOpts": [
+            "dflt",
+            "coerceNumber",
+            "arrayOk"
+        ]
+    },
+    """
+
+    def __init__(
+        self,
+        plotly_name,
+        parent_name,
+        values,
+        array_ok=False,
+        coerce_number=False,
+        **kwargs,
+    ):
+        super(EnumeratedValidator, self).__init__(
+            plotly_name=plotly_name, parent_name=parent_name, **kwargs
+        )
+
+        # Save params
+        # -----------
+        self.values = values
+        self.array_ok = array_ok
+        # coerce_number is rarely used and not implemented
+        self.coerce_number = coerce_number
+        self.kwargs = kwargs
+
+        # Handle regular expressions
+        # --------------------------
+        # Compiled regexs
+        self.val_regexs = []
+
+        # regex replacements that run before the matching regex
+        # So far, this is only used to cast 'x1' -> 'x' for anchor-style
+        # enumeration properties
+        self.regex_replacements = []
+
+        # Loop over enumeration values
+        # ----------------------------
+        # Look for regular expressions
+        for v in self.values:
+            if v and isinstance(v, str) and v[0] == "/" and v[-1] == "/" and len(v) > 1:
+                # String is a regex with leading and trailing '/' character
+                regex_str = v[1:-1]
+                self.val_regexs.append(re.compile(regex_str))
+                self.regex_replacements.append(
+                    EnumeratedValidator.build_regex_replacement(regex_str)
+                )
+            else:
+                self.val_regexs.append(None)
+                self.regex_replacements.append(None)
+
+    def __deepcopy__(self, memodict={}):
+        """
+        A custom deepcopy method is needed here because compiled regex
+        objects don't support deepcopy
+        """
+        cls = self.__class__
+        return cls(self.plotly_name, self.parent_name, values=self.values)
+
+    @staticmethod
+    def build_regex_replacement(regex_str):
+        # Example: regex_str == r"^y([2-9]|[1-9][0-9]+)?$"
+        #
+        # When we see a regular expression like the one above, we want to
+        # build regular expression replacement params that will remove a
+        # suffix of 1 from the input string ('y1' -> 'y' in this example)
+        #
+        # Why?: Regular expressions like this one are used in enumeration
+        # properties that refer to subplotids (e.g. layout.annotation.xref)
+        # The regular expressions forbid suffixes of 1, like 'x1'. But we
+        # want to accept 'x1' and coerce it into 'x'
+        #
+        # To be cautious, we only perform this conversion for enumerated
+        # values that match the anchor-style regex
+        match = re.match(
+            r"\^(\w)\(\[2\-9\]\|\[1\-9\]\[0\-9\]\+\)\?\( domain\)\?\$", regex_str
+        )
+
+        if match:
+            anchor_char = match.group(1)
+            return "^" + anchor_char + "1$", anchor_char
+        else:
+            return None
+
+    def perform_replacemenet(self, v):
+        """
+        Return v with any applicable regex replacements applied
+        """
+        if isinstance(v, str):
+            for repl_args in self.regex_replacements:
+                if repl_args:
+                    v = re.sub(repl_args[0], repl_args[1], v)
+
+        return v
+
+    def description(self):
+
+        # Separate regular values from regular expressions
+        enum_vals = []
+        enum_regexs = []
+        for v, regex in zip(self.values, self.val_regexs):
+            if regex is not None:
+                enum_regexs.append(regex.pattern)
+            else:
+                enum_vals.append(v)
+        desc = """\
+    The '{name}' property is an enumeration that may be specified as:""".format(
+            name=self.plotly_name
+        )
+
+        if enum_vals:
+            enum_vals_str = "\n".join(
+                textwrap.wrap(
+                    repr(enum_vals),
+                    initial_indent=" " * 12,
+                    subsequent_indent=" " * 12,
+                    break_on_hyphens=False,
+                )
+            )
+
+            desc = (
+                desc
+                + """
+      - One of the following enumeration values:
+{enum_vals_str}""".format(
+                    enum_vals_str=enum_vals_str
+                )
+            )
+
+        if enum_regexs:
+            enum_regexs_str = "\n".join(
+                textwrap.wrap(
+                    repr(enum_regexs),
+                    initial_indent=" " * 12,
+                    subsequent_indent=" " * 12,
+                    break_on_hyphens=False,
+                )
+            )
+
+            desc = (
+                desc
+                + """
+      - A string that matches one of the following regular expressions:
+{enum_regexs_str}""".format(
+                    enum_regexs_str=enum_regexs_str
+                )
+            )
+
+        if self.array_ok:
+            desc = (
+                desc
+                + """
+      - A tuple, list, or one-dimensional numpy array of the above"""
+            )
+
+        return desc
+
+    def in_values(self, e):
+        """
+        Return whether a value matches one of the enumeration options
+        """
+        is_str = isinstance(e, str)
+        for v, regex in zip(self.values, self.val_regexs):
+            if is_str and regex:
+                in_values = fullmatch(regex, e) is not None
+                # in_values = regex.fullmatch(e) is not None
+            else:
+                in_values = e == v
+
+            if in_values:
+                return True
+
+        return False
+
+    def validate_coerce(self, v):
+        if v is None:
+            # Pass None through
+            pass
+        elif self.array_ok and is_array(v):
+            v_replaced = [self.perform_replacemenet(v_el) for v_el in v]
+
+            invalid_els = [e for e in v_replaced if (not self.in_values(e))]
+            if invalid_els:
+                self.raise_invalid_elements(invalid_els[:10])
+
+            if is_homogeneous_array(v):
+                v = copy_to_readonly_numpy_array(v)
+            else:
+                v = to_scalar_or_list(v)
+        else:
+            v = self.perform_replacemenet(v)
+            if not self.in_values(v):
+                self.raise_invalid_val(v)
+        return v
+
+
+class BooleanValidator(BaseValidator):
+    """
+    "boolean": {
+        "description": "A boolean (true/false) value.",
+        "requiredOpts": [],
+        "otherOpts": [
+            "dflt"
+        ]
+    },
+    """
+
+    def __init__(self, plotly_name, parent_name, **kwargs):
+        super(BooleanValidator, self).__init__(
+            plotly_name=plotly_name, parent_name=parent_name, **kwargs
+        )

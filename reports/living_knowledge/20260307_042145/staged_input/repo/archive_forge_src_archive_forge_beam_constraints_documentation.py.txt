@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/beam_constraints_documentation.py
+KIND: code
+
+from abc import ABC, abstractmethod
+from typing import List, Optional
+
+        token_ids: the tokens generated thus far to reset the state of the progress through constraints.

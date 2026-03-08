@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/DbResultSet_documentation.py
+KIND: code
+
+import sys
+from rdkit.Dbase import DbInfo
+ implement in subclasses

@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/Hie_documentation.py
+KIND: code
+
+Represent the SCOP hierarchy record as a string.

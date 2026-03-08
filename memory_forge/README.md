@@ -1,85 +1,77 @@
-# 🧠 Memory Forge
+# 🧠 Memory Forge ⚡
 
-[![Python: 3.12](https://img.shields.io/badge/Python-3.12-blue.svg)](../global_info.py)
-[![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-
-**The Hippocampus of Eidos.**
-
-> _"Memory is not a recording of the past, but a reconstruction for the future."_
+> _"The Stream of Eidos. Tiered, semantic, and persistent episodic recall."_
 
 ## 🧠 Overview
 
-`memory_forge` provides the persistence layer for Eidosian consciousness. It manages:
-- **Episodic Memory**: Vector-based storage and retrieval of specific events and interactions.
-- **Semantic Memory**: Generalized knowledge distilled from episodes.
-- **Working Memory**: Context-limited buffer for immediate processing.
+`memory_forge` provides the episodic memory layer for Eidosian agents. It implements a multi-tiered storage architecture (Working, Short-Term, Long-Term) with semantic compression and vector-backed retrieval. It ensures that every interaction, thought, and sensory input can be retrieved based on relevance and importance.
 
-## 🏗️ Architecture
+```ascii
+      ╭───────────────────────────────────────────╮
+      │               MEMORY FORGE                │
+      │    < Episodes | Tiers | Compression >     │
+      ╰──────────┬─────────────────────┬──────────╯
+                 │                     │
+      ╭──────────┴──────────╮   ╭──────┴──────────╮
+      │   VECTOR RECALL     │   │ SEMANTIC COMP.  │
+      │ (HNSW / Semantic)   │   │ (Context Guard) │
+      ╰─────────────────────╯   ╰─────────────────╯
+```
 
-The system operates on a tiered storage model:
+## ⚡ Current State & Metrics
 
-1.  **Hot Tier (JSON/Memory)**: Fast, volatile storage for active context.
-2.  **Warm Tier (Vector DB)**: **ChromaDB** is used for semantic search and retrieval.
-3.  **Cold Tier (Archive)**: Compressed summaries for long-term retention.
+- **Status**: 🟢 Elevated & Operational
+- **Type**: Episodic Memory & Vector Search
+- **Test Coverage**: Core tiered-memory and JSON storage verified.
+- **MCP Integration**: 11 Tools (`memory_add`, `memory_retrieve`, `tiered_remember`, etc.).
+- **Architecture**:
+  - `core/tiered_memory.py`: Manages importance-weighted promotion between memory tiers.
+  - `backends/json_store.py`: Robust, local-first episodic persistence.
+  - `compression/`: Logic for merging redundant memory traces to save context window space.
+
+## 🚀 Usage & Workflows
+
+### Episodic Memory (Python)
+
+```python
+from memory_forge.core.main import MemoryForge
+
+memory = MemoryForge()
+
+# Record a new interaction
+memory.add("The user preferred 4-space indentation for all Python scripts.")
+
+# Semantic retrieval
+hits = memory.retrieve("indentation preferences")
+for hit in hits:
+    print(f"[{hit.score:.2f}] {hit.content}")
+```
+
+### Tiered Persistence (MCP)
+
+```bash
+# Add an important fact to 'working' memory
+tiered_remember --content "UEO Migration phase 1 is locked." --importance 0.9 --tier working
+
+# Recall from all tiers
+tiered_recall --query "migration status" --tier all
+```
 
 ## 🔗 System Integration
 
-- **Eidos MCP**: Exposes memory tools (`memory_insert`, `memory_search`) to the LLM.
-- **Agent Forge**: Agents use `MemoryForge` to maintain continuity across beats.
-- **Doc Forge**: Documentation of memory schemas and APIs.
+- **Agent Forge**: Provides the immediate "History" and "Context" for reasoning loops.
+- **Knowledge Forge**: Consumes promoted memories to form permanent facts in the semantic graph.
+- **Diagnostics Forge**: Logs system-critical state events into episodic memory for historical triage.
 
-## 🚀 Usage
+## 🎯 Master Plan & Evolution
 
-### Python API
+### Immediate Goals
+- [x] Consolidate legacy docs into unified Eidosian standard.
+- [x] Migrate defaults to canonical 768-dimension vectors.
+- [ ] Implement "Context Rescue" daemon to auto-archive low-importance memories during context window pressure.
 
-```python
-from memory_forge import MemoryForge
+### Future Vector (Phase 3+)
+- Transition episodic storage to a fully encrypted block-chain style ledger to guarantee the immutability of agent history.
 
-# Initialize the forge (auto-detects config from GIS)
-mem = MemoryForge()
-
-# Commit a memory (Episodic)
-mem.remember(
-    content="I generated documentation for the Agent Forge.",
-    tags=["work", "success", "documentation"]
-)
-
-# Recall related memories
-results = mem.search("documentation", limit=5)
-for r in results:
-    print(f"[{r.score}] {r.content}")
-```
-
-### CLI
-
-```bash
-# Search memory via CLI shim
-python -m memory_forge.cli search "project status"
-
-# Preview semantic compression opportunities for old memories
-python -m memory_forge.cli compress --older-than-days 30 --dry-run
-
-# Apply non-destructive semantic compression (marks source memories and writes summary memories)
-python -m memory_forge.cli compress --older-than-days 30 --similarity-threshold 0.55
-```
-
-## 🛠️ Configuration
-
-Configuration is managed via `GIS` or `env`:
-- `MEMORY_BACKEND`: `chromadb` (default) or `json`.
-- `CHROMA_PERSIST_DIRECTORY`: Path to vector store.
-- `EMBEDDING_MODEL`: Default `all-MiniLM-L6-v2`.
-
-## 📱 Termux Chroma Notes
-
-On some ARM Android devices, default `hnswlib` wheels can crash with `Illegal instruction` during vector queries.
-
-If this happens in `eidosian_venv`, rebuild HNSW wheels from source without `-march=native`:
-
-```bash
-cd eidosian_forge
-HNSWLIB_NO_NATIVE=1 ./eidosian_venv/bin/pip install --force-reinstall --no-binary=chroma-hnswlib,hnswlib chroma-hnswlib==0.7.6 hnswlib==0.8.0
-```
-
-Also prefer explicit embeddings (`add(..., embeddings=[...])` + `query_embeddings=[...]`) in Termux workflows.
-`query_texts=[...]` triggers Chroma's default ONNX embedding path (`all-MiniLM-L6-v2`) which may segfault on some Termux builds.
+---
+*Generated and maintained by Eidos.*

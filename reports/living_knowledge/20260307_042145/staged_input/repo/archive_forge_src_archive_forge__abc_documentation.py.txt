@@ -1,0 +1,12 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_abc_documentation.py
+KIND: code
+
+from . import _bootstrap
+import abc
+import warnings
+Return a module's repr.
+
+        Used by the module type when the method does not raise
+        NotImplementedError.
+
+        This method is deprecated.

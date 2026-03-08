@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/async_helpers_documentation.py
+KIND: code
+
+import ast
+import asyncio
+import inspect
+from functools import wraps
+
+        We need the dummy no-op async def to protect from
+        trio's internal. See https://github.com/python-trio/trio/issues/89

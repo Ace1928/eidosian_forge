@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/base_map_provider_documentation.py
+KIND: code
+
+from enum import Enum
+Basemap provider available in pydeck

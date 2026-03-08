@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/Utils_documentation.py
+KIND: code
+
+import copy
+from .. import Options
+
+    returns error message of "" if check Ok

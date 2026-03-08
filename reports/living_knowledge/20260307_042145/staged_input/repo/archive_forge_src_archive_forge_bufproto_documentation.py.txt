@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/bufproto_documentation.py
+KIND: code
+
+import array
+from numba.core import types
+
+    Infer layout of the given memoryview *val*.

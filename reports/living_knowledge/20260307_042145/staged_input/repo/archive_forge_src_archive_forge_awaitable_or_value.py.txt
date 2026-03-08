@@ -1,0 +1,11 @@
+SOURCE_PATH: archive_forge/src/archive_forge/awaitable_or_value.py
+KIND: code
+
+from typing import Awaitable, TypeVar, Union
+
+__all__ = ["AwaitableOrValue"]
+
+
+T = TypeVar("T")
+
+AwaitableOrValue = Union[Awaitable[T], T]

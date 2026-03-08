@@ -1,0 +1,43 @@
+{
+  "contract": "eidos.runtime_coordinator.v1",
+  "state": "running",
+  "task": "living_pipeline",
+  "owner": "eidos_scheduler",
+  "updated_at": "2026-03-07T04:21:44.951686+00:00",
+  "active_models": [
+    {
+      "family": "ollama",
+      "model": "qwen3.5:2b",
+      "role": "living_pipeline"
+    }
+  ],
+  "metadata": {
+    "mode": "scheduler_cycle",
+    "cycle": 1,
+    "interval_sec": 30.0,
+    "doc_model": "qwen3.5:2b"
+  },
+  "history": [
+    {
+      "updated_at": "2026-03-07T04:19:56.433468+00:00",
+      "owner": "eidos_scheduler",
+      "task": "living_pipeline",
+      "state": "running",
+      "active_model_count": 1
+    },
+    {
+      "updated_at": "2026-03-07T04:20:45.984450+00:00",
+      "owner": "eidos_scheduler",
+      "task": "living_pipeline",
+      "state": "running",
+      "active_model_count": 1
+    },
+    {
+      "updated_at": "2026-03-07T04:21:44.951674+00:00",
+      "owner": "eidos_scheduler",
+      "task": "living_pipeline",
+      "state": "running",
+      "active_model_count": 1
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+SOURCE_PATH: agent_forge/src/agent_forge/core/__init__.py
+KIND: code
+
+# Explicit package marker for core. Keep empty on purpose.

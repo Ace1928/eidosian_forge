@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/atari_preprocessing_documentation.py
+KIND: code
+
+import numpy as np
+import gym
+from gym.spaces import Box
+Resets the environment using preprocessing.

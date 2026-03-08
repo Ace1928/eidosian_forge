@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_ANON.py
+KIND: code
+
+import unittest
+import test.support
+from ctypes import *
+class ANON(Union):
+    _fields_ = [('a', c_int), ('b', c_int)]

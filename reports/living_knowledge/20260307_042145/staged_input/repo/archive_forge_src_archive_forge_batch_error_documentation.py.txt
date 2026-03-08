@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/batch_error_documentation.py
+KIND: code
+
+from typing import Optional
+from .._models import BaseModel
+The name of the parameter that caused the error, if applicable.

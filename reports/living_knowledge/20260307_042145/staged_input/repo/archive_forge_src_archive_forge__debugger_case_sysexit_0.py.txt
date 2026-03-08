@@ -1,0 +1,12 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_debugger_case_sysexit_0.py
+KIND: code
+
+import sys
+
+
+def main():
+    print('TEST SUCEEDED!')
+    sys.exit(0)
+
+
+main()  # call_main_line

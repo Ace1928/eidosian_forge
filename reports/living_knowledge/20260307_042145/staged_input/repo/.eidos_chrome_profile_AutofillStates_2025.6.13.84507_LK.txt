@@ -1,0 +1,15 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/LK
+KIND: config
+
+LK�
+western provincewp"மேல் மாகாணம்%බස්නාහිර පළාතDබස්නාහිර පළාත, ශ් රී ලංකාව�
+centralcpcentral provincemadhyamamadhyama palata(மத்திய மாகாணம்මධ්‍යම පළාත@මධ්‍යම පළාත, ශ්‍රී ලංකාවz
+dakunuspdakunu palatasouthernsouthern province"தென் மாகாணம்දකුණු පළාතr
+northernnpnorthern provinceuturuuturu palataவட மாகாணம்උතුරු පළාත�
+easternepeastern province
+negenahiranegenahira palata+கிழக்கு மாகாணம்%නැගෙනහිර පළාතDනැගෙනහිර පළාත, ශ් රී ලංකාව�
+north westernnwnorth western province)வட மேல் மாகாணம்වයඹ පළාත7වයඹ පළාත, ශ්‍රී ලංකාව�
+north centralncnorth central province	uturumedauturumeda palata/வட மத்திய மாகாணம்&උතුරු මැද පළාත
+province of uvaupuva
+uva palatauva provinceஊவா மாகாணம்ඌව පලාතඌව පළාතl
+sabaragamuwa provincesg+சபரகமுவ மாகாணம்"සබරගමුව පළාත

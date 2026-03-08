@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/archetype_documentation.py
+KIND: code
+
+from pygments.lexer import RegexLexer, include, bygroups, using, default
+from pygments.token import Text, Comment, Name, Literal, Number, String, \
+
+    Lexer for ADL syntax.
+
+    .. versionadded:: 2.1

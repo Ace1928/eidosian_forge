@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/LazyGenerator_documentation.py
+KIND: code
+
+from rdkit.Chem.Pharm2D import Matcher, SigFactory
+ allows class to support random access.
+      Calls self.GetBit()

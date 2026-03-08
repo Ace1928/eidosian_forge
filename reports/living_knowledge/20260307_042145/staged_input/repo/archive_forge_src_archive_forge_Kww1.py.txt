@@ -1,0 +1,394 @@
+SOURCE_PATH: archive_forge/src/archive_forge/Kww1.py
+KIND: code
+
+# Importing necessary modules
+import os  # Importing the os module for file and directory operations
+import json  # Importing the json module for handling JSON data
+import logging  # Importing the logging module for logging purposes
+import asyncio  # Importing the asyncio module for asynchronous programming
+import random  # Importing the random module for generating random values
+from typing import (
+    List,
+    Tuple,
+    Dict,
+    Union,
+    Any,
+    Callable,
+    TypeAlias,
+    Optional,
+)  # Importing various types from the typing module for type hinting and annotation
+from itertools import (
+    cycle,
+)  # Importing the cycle function from itertools for creating cyclic iterators
+import multiprocessing  # Importing the multiprocessing module for parallel processing
+import OpenGL.GL as gl  # Importing OpenGL.GL module and aliasing it as gl for OpenGL graphics functionality
+import OpenGL.GLUT as glut  # Importing OpenGL.GLUT module and aliasing it as glut for OpenGL Utility Toolkit functionality
+import OpenGL  # Importing the OpenGL module for OpenGL graphics functionality
+from OpenGL.GL import (
+    GL_COLOR_BUFFER_BIT,
+    GL_DEPTH_BUFFER_BIT,
+    GL_MODELVIEW,
+    GL_PROJECTION,
+)  # Importing specific constants from OpenGL.GL for OpenGL graphics functionality
+import cProfile  # Importing the cProfile module for profiling code execution
+import pstats  # Importing the pstats module for analyzing profiling statistics
+from pstats import (
+    SortKey,
+)  # Importing the SortKey class from pstats for sorting profiling statistics
+# Setup enhanced logging
+logging.basicConfig(
+    level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
+)  # Configuring the logging module with DEBUG level and a specific format for log messages
+"""
+    Configure the logging module with enhanced settings for detailed and informative logging.
+    The `logging.basicConfig()` function is used to set up the basic configuration for the logging module. It takes several parameters to customize the logging behavior:
+    - `level`: Set to `logging.DEBUG` to capture all log messages, including debug-level messages. This ensures that detailed information is logged for debugging and troubleshooting purposes.
+    - `format`: Specifies the format of the log messages. In this case, the format includes the timestamp (`%(asctime)s`), log level (`%(levelname)s`), and the log message itself (`%(message)s`). This format provides comprehensive information for each log entry.
+    By configuring the logging module with these settings, all subsequent log messages will adhere to the specified format and capture detailed information, enabling effective debugging and monitoring of the program's execution.
+    Logging is a crucial aspect of software development, as it helps in understanding the flow of the program, identifying issues, and facilitating problem-solving. With the enhanced logging setup, developers can gain valuable insights into the program's behavior and quickly diagnose and resolve any encountered issues.
+"""
+# Type Aliases for enhanced clarity, type safety, and to avoid type/value/key errors
+ColorName: TypeAlias = str  # Defining a type alias ColorName as str for color names
+RGBValue: TypeAlias = Tuple[
+    int, int, int
+]  # Defining a type alias RGBValue as a tuple of three integers for RGB color values
+ANSIValue: TypeAlias = str  # Defining a type alias ANSIValue as str for ANSI escape codes
+HexValue: TypeAlias = str  # Defining a type alias HexValue as str for hexadecimal color values
+"""
+    Type Aliases for Extended Color Codes and Color Values
+    This section defines type aliases for various color representations and color code structures used throughout the program.
+    Type Aliases:
+    - ExtendedColorCode: Represents an extended color code as a tuple containing RGB, ANSI, HEX, CMYK, Lab, XYZ, and any additional color values.
+    - CMYKValue: Represents a CMYK color value as a tuple of four float values.
+    - LabValue: Represents a Lab color value as a tuple of three float values.
+    - XYZValue: Represents an XYZ color value as a tuple of three float values.
+    - ColorCode: Represents a color code as a tuple of color name and RGB value.
+    - ColorCodesList: Represents a list of color codes.
+    - ColorCodesDict: Represents a dictionary mapping color names to either RGB values or string representations.
+    These type aliases provide a standardized and expressive way to represent and work with color-related data structures in the program.
+"""
+try:
+    CMYKValue: TypeAlias = Tuple[float, float, float, float]
+    """
+        Type alias for a CMYK color value.
+        A CMYK color value is represented as a tuple of four float values, corresponding to the Cyan, Magenta, Yellow, and Key (black) components of the color.
+        This type alias provides a clear and concise way to represent CMYK color values, ensuring type safety and improving code readability.
+        """
+    logging.debug("CMYKValue type alias defined successfully.")
+except TypeError as e:
+    logging.error(f"Error defining CMYKValue type alias: {str(e)}")
+    raise
+try:
+    LabValue: TypeAlias = Tuple[float, float, float]
+    """
+        Type alias for a Lab color value.
+        A Lab color value is represented as a tuple of three float values, corresponding to the L* (lightness), a* (green-red), and b* (blue-yellow) components of the color.
+        This type alias provides a clear and concise way to represent Lab color values, ensuring type safety and improving code readability.
+    """
+    logging.debug("LabValue type alias defined successfully.")
+except TypeError as e:
+    logging.error(f"Error defining LabValue type alias: {str(e)}")
+    raise
+try:
+    XYZValue: TypeAlias = Tuple[float, float, float]
+    """
+        Type alias for an XYZ color value.
+        An XYZ color value is represented as a tuple of three float values, corresponding to the X, Y, and Z components of the color in the CIE XYZ color space.
+        This type alias provides a clear and concise way to represent XYZ color values, ensuring type safety and improving code readability.
+    """
+    logging.debug("XYZValue type alias defined successfully.")
+except TypeError as e:
+    logging.error(f"Error defining XYZValue type alias: {str(e)}")
+    raise
+try:
+    ColorCode: TypeAlias = Tuple[ColorName, RGBValue]
+    """
+        Type alias for a color code.
+        A color code is represented as a tuple containing the following elements:
+        - ColorName: The name of the color
+        - RGBValue: The RGB color value associated with the color name
+        This type alias provides a standardized structure for representing color codes, associating a color name with its corresponding RGB value.
+    """
+    logging.debug("ColorCode type alias defined successfully.")
+except TypeError as e:
+    logging.error(f"Error defining ColorCode type alias: {str(e)}")
+    raise
+try:
+    ColorCodesList: TypeAlias = List[ColorCode]
+    """
+        Type alias for a list of color codes.
+        A color codes list is represented as a list of ColorCode tuples, where each tuple contains a color name and its corresponding RGB value.
+        This type alias provides a clear and concise way to represent a collection of color codes, allowing for easy manipulation and iteration over multiple color codes.
+    """
+    logging.debug("ColorCodesList type alias defined successfully.")
+except TypeError as e:
+    logging.error(f"Error defining ColorCodesList type alias: {str(e)}")
+    raise
+try:
+    ColorCodesDict: TypeAlias = Dict[ColorName, Union[RGBValue, str]]
+    """
+        Type alias for a dictionary of color codes.
+        A color codes dictionary is represented as a dictionary mapping color names (ColorName) to either RGB values (RGBValue) or string representations of colors.
+        This type alias provides a flexible way to represent a collection of color codes, allowing for the association of color names with either RGB values or string representations.
+        The dictionary structure enables efficient lookup and retrieval of color values based on their associated color names.
+    """
+    logging.debug("ColorCodesDict type alias defined successfully.")
+except TypeError as e:
+    logging.error(f"Error defining ColorCodesDict type alias: {str(e)}")
+    raise
+try:
+    ExtendedColorCode: TypeAlias = Tuple[
+        RGBValue,
+        ANSIValue,
+        HexValue,
+        CMYKValue,
+        XYZValue,
+        xyYValue,
+        LabValue,
+        LuvValue,
+        HunterLabValue,
+        sRGBValue,
+        AdobeRGBValue,
+        ProPhotoRGBValue,
+        HSVValue,
+        HSLValue,
+        YUVValue,
+        YCbCrValue,
+        YPbPrValue,
+        YDbDrValue,
+        YIQValue,
+    ]
+    """
+        Type alias for an extended color code.
+        An extended color code is represented as a tuple containing the following color values:
+        - RGBValue: RGB color value
+        - ANSIValue: ANSI escape code
+        - HexValue: Hexadecimal color value
+        - CMYKValue: CMYK color value
+        - XYZValue: XYZ color value
+        - xyYValue: xyY color value
+        - LabValue: Lab color value
+        - LuvValue: Luv color value
+        - HunterLabValue: Hunter Lab color value
+        - sRGBValue: sRGB color value
+        - AdobeRGBValue: Adobe RGB color value
+        - ProPhotoRGBValue: ProPhoto RGB color value
+        - HSVValue: HSV color value
+        - HSLValue: HSL color value
+        - YUVValue: YUV color value
+        - YCbCrValue: YCbCr color value
+        - YPbPrValue: YPbPr color value
+        - YDbDrValue: YDbDr color value
+        - YIQValue: YIQ color value
+        This type alias provides a standardized structure for representing extended color codes, allowing for the inclusion of multiple color representations and any additional color-related data.
+    """
+    logging.debug("ExtendedColorCode type alias defined successfully.")
+except TypeError as e:
+    logging.error(f"Error defining ExtendedColorCode type alias: {str(e)}")
+    raise
+try:
+    """
+        Attempt to initialize the 3D scene by running the generate_scene() function asynchronously.
+        
+        The generate_scene() function is expected to be defined elsewhere in the codebase and should return a valid scene object.
+        
+        If the generate_scene() function is not defined or raises a NameError, the exception will be caught and logged as an error.
+        The exception will then be re-raised to propagate it further up the call stack for appropriate handling.
+        
+        This try-except block ensures that any errors during scene initialization are properly logged and handled, preventing the program from crashing unexpectedly.
+    """
+    logging.info("Initializing the 3D scene by running the generate_scene() function asynchronously.")  # Log an informational message indicating the start of scene initialization
+    
+    scene: Scene = asyncio.run(generate_scene())  # Initialize the 3D scene by running the generate_scene() function asynchronously and assign the returned scene object to the 'scene' variable of type 'Scene'
+    
+    logging.debug(f"3D scene initialized successfully: {scene}")  # Log a debug message with the initialized scene object for detailed tracking and debugging purposes  
+except NameError as name_error:
+    """
+    Catch any NameError exceptions that may occur during the initialization of the 3D scene.
+    If a NameError is raised, it typically indicates that the generate_scene() function is not defined or accessible in the current scope.
+    The NameError exception object is assigned to the 'name_error' variable for further inspection and logging.
+    An error message is logged using the logging module, providing details about the specific NameError that occurred during scene initialization.
+    The exception message is converted to a string using str() to ensure compatibility with the logging format.
+    After logging the error, the exception is re-raised using the 'raise' statement to propagate it further up the call stack.
+    This allows for proper error handling and potentially graceful termination of the program if necessary.
+    """
+    logging.error(f"NameError occurred while initializing the 3D scene: {str(name_error)}")  # Log an error message with details about the NameError that occurred during scene initialization
+    raise  # Re-raise the NameError exception to propagate it further up the call stack for appropriate handling
+# Define the path to the color codes file
+COLOR_CODES_FILE_PATH: str = "/home/lloyd/EVIE/color_codes.json"
+"""
+    Define a constant variable 'COLOR_CODES_FILE_PATH' representing the file path to the color codes JSON file.
+    The 'COLOR_CODES_FILE_PATH' variable is assigned a string value specifying the absolute path to the color codes JSON file.
+    This constant variable allows for easy reference and reuse of the file path throughout the codebase.
+    By defining the file path as a constant, it promotes code maintainability and makes it easier to update the file path if necessary.
+    The type hint 'str' is used to indicate that the 'COLOR_CODES_FILE_PATH' variable is expected to be a string.
+"""
+logging.debug(f"Color codes file path defined: {COLOR_CODES_FILE_PATH}")  # Log a debug message with the defined color codes file path for tracking and debugging purposes
+async def random_color() -> RGBValue:
+    """
+    Asynchronously generates a random RGB color value.
+
+    This coroutine utilizes the random module to asynchronously generate a random RGB color value. It selects random integers between 0 and 255 (inclusive) for each of the red, green, and blue components of the color. The generated color is then returned as a tuple of three integers representing the RGB values.
+
+    Returns:
+        RGBValue: A tuple of three integers representing the random RGB color value, where each component is in the range of 0 to 255 (inclusive).
+
+    Example:
+        >>> import asyncio
+        >>> asyncio.run(random_color())
+        (128, 255, 64)
+    """
+    # Log a debug message indicating the start of the asynchronous random color generation process
+    logging.debug("Asynchronously generating a random color.")
+
+    # Utilize asyncio.sleep to simulate asynchronous execution and yield control back to the event loop
+    await asyncio.sleep(0)  # No actual delay, but allows for asynchronous context switching
+
+    # Generate a random integer between 0 and 255 (inclusive) for the red component of the color
+    red_component: int = random.randint(0, 255)
+    # Log the generated red component value for debugging purposes
+    logging.debug(f"Generated random red component: {red_component}")
+
+    # Generate a random integer between 0 and 255 (inclusive) for the green component of the color
+    green_component: int = random.randint(0, 255)
+    # Log the generated green component value for debugging purposes
+    logging.debug(f"Generated random green component: {green_component}")
+
+    # Generate a random integer between 0 and 255 (inclusive) for the blue component of the color
+    blue_component: int = random.randint(0, 255)
+    # Log the generated blue component value for debugging purposes
+    logging.debug(f"Generated random blue component: {blue_component}")
+
+    # Create a tuple representing the random RGB color value
+    rgb_color: RGBValue = (red_component, green_component, blue_component)
+    # Log the generated random RGB color value for detailed tracking and debugging purposes
+    logging.debug(f"Generated random RGB color: {rgb_color}")
+
+    # Return the random RGB color value as a tuple
+    return rgb_color
+# Placeholder for spectral power distribution (not directly convertible)
+async def spectral_power_distribution(rgb: RGBValue) -> None:
+    """
+    Conceptual function: RGB does not directly convert to Spectral Power Distribution.
+    This is a placeholder to demonstrate that such a conversion typically requires physical data
+    about the light source, not just color information.
+    """
+    logging.debug("RGB to Spectral Power Distribution is not a direct conversion.")
+    return None
+async def rgb_to_xyz(rgb: RGBValue) -> XYZValue:
+    """
+    Asynchronously converts an RGB value to CIE 1931 XYZ.
+
+    Args:
+        rgb (RGBValue): A tuple containing the RGB values.
+
+    Returns:
+        XYZValue: The XYZ representation of the color.
+    """
+    r, g, b = [x / 255.0 for x in rgb]
+    # Assume sRGB
+    r, g, b = [
+        ((v + 0.055) / 1.055) ** 2.4 if v > 0.04045 else v / 12.92 for v in (r, g, b)
+    ]
+    x = r * 0.4124564 + g * 0.3575761 + b * 0.1804375
+    y = r * 0.2126729 + g * 0.7151522 + b * 0.0721750
+    z = r * 0.0193339 + g * 0.1191920 + b * 0.9503041
+    logging.debug(f"Converting RGB {rgb} to XYZ asynchronously.")
+    return (x * 100, y * 100, z * 100)
+async def rgb_to_xyY(rgb: RGBValue) -> xyYValue:
+    """
+    Asynchronously converts an RGB value to CIE 1931 xyY.
+
+    Args:
+        rgb (RGBValue): A tuple containing the RGB values.
+
+    Returns:
+        xyYValue: The xyY representation of the color.
+    """
+    x, y, z = await rgb_to_xyz(rgb)
+    total = x + y + z
+    total = total if total != 0 else 1
+    x = x / total
+    y = y / total
+    logging.debug(f"Converting RGB {rgb} to xyY asynchronously.")
+    return (x, y, y)
+async def rgb_to_lab(rgb: RGBValue) -> LabValue:
+    """
+    Asynchronously converts an RGB value to CIE L*a*b*.
+
+    Args:
+        rgb (RGBValue): A tuple containing the RGB values.
+
+    Returns:
+        LabValue: The Lab representation of the color.
+    """
+    x, y, z = await rgb_to_xyz(rgb)
+    # Normalize for D65 white point
+    x, y, z = x / 95.047, y / 100.000, z / 108.883
+    x, y, z = [
+        v ** (1 / 3) if v > 0.008856 else (7.787 * v) + (16 / 116) for v in (x, y, z)
+    ]
+    L = (116 * y) - 16
+    a = 500 * (x - y)
+    b = 200 * (y - z)
+    logging.debug(f"Converting RGB {rgb} to Lab asynchronously.")
+    return (L, a, b)
+async def rgb_to_luv(rgb: RGBValue) -> LuvValue:
+    """
+    Asynchronously converts an RGB value to CIE L*u*v*.
+
+    Args:
+        rgb (RGBValue): A tuple containing the RGB values.
+
+    Returns:
+        LuvValue: The Luv representation of the color.
+    """
+    x, y, z = await rgb_to_xyz(rgb)
+    u_prime = (4 * x) / (x + (15 * y) + (3 * z))
+    v_prime = (9 * y) / (x + (15 * y) + (3 * z))
+    y = y / 100
+    y = y ** (1 / 3) if y > 0.008856 else (7.787 * y) + (16 / 116)
+    L = (116 * y) - 16
+    ref_U = (4 * 95.047) / (95.047 + (15 * 100.000) + (3 * 108.883))
+    ref_V = (9 * 100.000) / (95.047 + (15 * 100.000) + (3 * 108.883))
+    u = 13 * L * (u_prime - ref_U)
+    v = 13 * L * (v_prime - ref_V)
+    logging.debug(f"Converting RGB {rgb} to Luv asynchronously.")
+    return (L, u, v)
+async def rgb_to_hunterlab(rgb: RGBValue) -> HunterLabValue:
+    """
+    Asynchronously converts an RGB value to Hunter Lab.
+
+    Args:
+        rgb (RGBValue): A tuple containing the RGB values.
+
+    Returns:
+        HunterLabValue: The Hunter Lab representation of the color.
+    """
+    x, y, z = await rgb_to_xyz(rgb)
+    L = 100.0 * np.sqrt(y / 100.0)
+    a = np.where(y != 0, 175.0 * ((x / 100.0) - (y / 100.0)) / np.sqrt(y / 100.0), 0)
+    b = np.where(y != 0, 70.0 * ((y / 100.0) - (z / 100.0)) / np.sqrt(y / 100.0), 0)
+    logging.debug(f"Converting RGB {rgb} to Hunter Lab asynchronously.")
+    return (L, a, b)
+async def rgb_to_srgb(rgb: RGBValue) -> sRGBValue:
+    """
+    Asynchronously converts an RGB value to sRGB.
+
+    Args:
+        rgb (RGBValue): A tuple containing the RGB values.
+
+    Returns:
+        sRGBValue: The sRGB representation of the color.
+    """
+    # This conversion assumes the input is already in sRGB space, and is thus a direct mapping.
+    logging.debug(f"Mapping RGB {rgb} directly to sRGB.")
+    return rgb
+async def rgb_to_adobe_rgb(rgb: RGBValue) -> AdobeRGBValue:
+    """
+    Asynchronously converts an RGB value to Adobe RGB.
+
+    Args:
+        rgb (RGBValue): A tuple containing the RGB values.
+
+    Returns:

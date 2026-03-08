@@ -1,0 +1,16 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/OM
+KIND: config
+
+OMD
+$محافظة جنوب الباطنةal batinah south governorateD
+$محافظة شمال الباطنةal batinah north governorate5
+محافظة البريميal buraimi governorate^
+المنطقة الداخليةad dakhiliyah ‍governorateمحافظة الداخلية+
+محافظة مسقطmuscat governorate;
+محافظة مسندمmusandam governorate
+مسندمG
+$محافظة جنوب الشرقيةash sharqiyah south governoratef
+المنطقة الشرقيةash sharqiyah north governorate$محافظة شمال الشرقيةN
+المنطقة الوسطىal wusta governorateمحافظة الوسطى6
+محافظة الظاهرةad dhahirah governorate5
+ظفارdhofar governorateمحافظة ظفار

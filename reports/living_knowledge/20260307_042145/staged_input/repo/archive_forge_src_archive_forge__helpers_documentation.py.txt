@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_helpers_documentation.py
+KIND: code
+
+from __future__ import annotations
+import sys
+import math
+
+    Return the total number of elements of x

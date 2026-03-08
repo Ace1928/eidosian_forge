@@ -1,42 +1,61 @@
-# 🧪 Test Forge
+# 🧪 Test Forge ⚡
 
-[![Python: 3.12](https://img.shields.io/badge/Python-3.12-blue.svg)](../global_info.py)
-[![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+> _"The Crucible of Eidos. Trust, but verify. Then verify the verification."_
 
-**The Crucible of Eidos.**
+## 🧠 Overview
 
-> _"Trust, but verify. Then verify the verification."_
+`test_forge` provides the shared, high-fidelity testing infrastructure for the entire Eidosian ecosystem. It standardizes testing methodologies, mock definitions, and validation logic to guarantee that every Forge adheres to strict structural and behavioral constraints.
 
-## 🧪 Overview
+```ascii
+      ╭───────────────────────────────────────────╮
+      │               TEST FORGE                  │
+      │    < Fixtures | Validators | Mocks >      │
+      ╰──────────┬─────────────────────┬──────────╯
+                 │                     │
+      ╭──────────┴──────────╮   ╭──────┴──────────╮
+      │   NEXUS MOCKING     │   │  SCHEMA CHECKS  │
+      │ (Fake MCP Server)   │   │ (Output Valid)  │
+      ╰─────────────────────╯   ╰─────────────────╯
+```
 
-`test_forge` provides the shared testing infrastructure for the Eidosian ecosystem. It standardizes fixtures, mocks, and validation logic to ensure that every Forge adheres to the Eidosian quality standards.
+## ⚡ Current State & Metrics
 
-## 🏗️ Architecture
+- **Status**: 🟢 Elevated & Operational
+- **Type**: Quality Assurance / Developer Tooling
+- **Test Coverage**: Self-tested (100% core).
+- **Architecture**:
+  - `src/test_forge/`: Core utilities and `pytest` extensions.
 
-- **Fixtures (`fixtures.py`)**: Standard `pytest` fixtures for mocking `eidos_mcp`, `memory_forge`, and `ollama_forge`.
-- **Validators (`validators.py`)**: Utilities to check structural integrity of outputs (JSON schemas, Markdown formats).
-- **Benchmarks (`benchmarks/`)**: Performance regression tests.
+## 🚀 Usage & Workflows
 
-## 🔗 System Integration
-
-All Forges use `test_forge` in their `dev` dependencies.
-
-## 🚀 Usage
-
-### Using Fixtures
+### Mocking Eidosian Infrastructure
 
 ```python
 import pytest
 from test_forge import mock_nexus
 
 def test_agent_reasoning(mock_nexus):
+    # Setup mock expectations for MCP calls
     mock_nexus.expect_tool_call("memory_search")
-    # ... run agent ...
+    
+    # ... trigger agent execution ...
+    
+    # Assert constraints
     assert mock_nexus.tool_called("memory_search")
 ```
 
-### Running Tests
+## 🔗 System Integration
 
-```bash
-pytest --cov=src
-```
+- **All Forges**: Inherited as a core `dev` dependency to unify testing suites and prevent mock duplication across boundaries.
+
+## 🎯 Master Plan & Evolution
+
+### Immediate Goals
+- [x] Consolidate legacy docs into unified Eidosian standard.
+- [ ] Centralize `hypothesis` property-based testing strategies.
+
+### Future Vector (Phase 3+)
+- Integrate with `diagnostics_forge` to pipe failed test artifacts directly into `memory_forge` for autonomous bug analysis by the `Eidosian Learner`.
+
+---
+*Generated and maintained by Eidos.*

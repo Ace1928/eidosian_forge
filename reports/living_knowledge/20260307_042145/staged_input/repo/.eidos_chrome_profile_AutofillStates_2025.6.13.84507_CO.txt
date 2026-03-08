@@ -1,0 +1,44 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/CO
+KIND: config
+
+CO
+
+amazonas
+	antioquia
+arauca
+
+atlántico	atlantico
+bolívarbolivar
+boyacáboyaca
+caldas
+caquetácaqueta
+
+casanare
+cauca
+cesar
+chocóchoco
+córdobacordoba
+cundinamarcaL
+bogotábogota
+bogotá dcdistrito capitaldistrito capital de bogotá
+guainíaguainia
+
+guaviare
+huila
+
+la guajira
+	magdalena
+meta
+nariñonarino%
+norte de santandernorth santander
+
+putumayo
+quindíoquindio
+	risaralda
+	santanderU
+archipiélago de san andréssan andres and providenciasan andrés y providencia
+sucre
+tolima
+valle del cauca
+vaupésvaupes	
+vichada

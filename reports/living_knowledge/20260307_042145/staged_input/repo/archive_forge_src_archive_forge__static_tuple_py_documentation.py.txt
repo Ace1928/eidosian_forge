@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_static_tuple_py_documentation.py
+KIND: code
+
+import sys
+from typing import Dict
+Convert a sequence object into a StaticTuple instance.

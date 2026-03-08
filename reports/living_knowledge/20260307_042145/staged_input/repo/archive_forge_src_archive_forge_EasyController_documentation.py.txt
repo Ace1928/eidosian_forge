@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/EasyController_documentation.py
+KIND: code
+
+from .Controller import GenePopController
+from Bio.PopGen import GenePop
+Calculate isolation by distance statistics for Diploid or Haploid.

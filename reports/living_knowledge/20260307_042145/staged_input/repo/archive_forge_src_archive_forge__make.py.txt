@@ -1,0 +1,607 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_make.py
+KIND: code
+
+# SPDX-License-Identifier: MIT
+
+import contextlib
+import copy
+import enum
+import functools
+import inspect
+import itertools
+import linecache
+import sys
+import types
+import typing
+
+from operator import itemgetter
+
+# We need to import _compat itself in addition to the _compat members to avoid
+# having the thread-local in the globals here.
+from . import _compat, _config, setters
+from ._compat import (
+    PY310,
+    PY_3_8_PLUS,
+    _AnnotationExtractor,
+    get_generic_base,
+)
+from .exceptions import (
+    DefaultAlreadySetError,
+    FrozenInstanceError,
+    NotAnAttrsClassError,
+    UnannotatedAttributeError,
+)
+
+
+# This is used at least twice, so cache it here.
+_obj_setattr = object.__setattr__
+_init_converter_pat = "__attr_converter_%s"
+_init_factory_pat = "__attr_factory_%s"
+_classvar_prefixes = (
+    "typing.ClassVar",
+    "t.ClassVar",
+    "ClassVar",
+    "typing_extensions.ClassVar",
+)
+# we don't use a double-underscore prefix because that triggers
+# name mangling when trying to create a slot for the field
+# (when slots=True)
+_hash_cache_field = "_attrs_cached_hash"
+
+_empty_metadata_singleton = types.MappingProxyType({})
+
+# Unique object for unequivocal getattr() defaults.
+_sentinel = object()
+
+_ng_default_on_setattr = setters.pipe(setters.convert, setters.validate)
+
+
+class _Nothing(enum.Enum):
+    """
+    Sentinel to indicate the lack of a value when ``None`` is ambiguous.
+
+    If extending attrs, you can use ``typing.Literal[NOTHING]`` to show
+    that a value may be ``NOTHING``.
+
+    .. versionchanged:: 21.1.0 ``bool(NOTHING)`` is now False.
+    .. versionchanged:: 22.2.0 ``NOTHING`` is now an ``enum.Enum`` variant.
+    """
+
+    NOTHING = enum.auto()
+
+    def __repr__(self):
+        return "NOTHING"
+
+    def __bool__(self):
+        return False
+
+
+NOTHING = _Nothing.NOTHING
+"""
+Sentinel to indicate the lack of a value when ``None`` is ambiguous.
+"""
+
+
+class _CacheHashWrapper(int):
+    """
+    An integer subclass that pickles / copies as None
+
+    This is used for non-slots classes with ``cache_hash=True``, to avoid
+    serializing a potentially (even likely) invalid hash value. Since ``None``
+    is the default value for uncalculated hashes, whenever this is copied,
+    the copy's value for the hash should automatically reset.
+
+    See GH #613 for more details.
+    """
+
+    def __reduce__(self, _none_constructor=type(None), _args=()):  # noqa: B008
+        return _none_constructor, _args
+
+
+def attrib(
+    default=NOTHING,
+    validator=None,
+    repr=True,
+    cmp=None,
+    hash=None,
+    init=True,
+    metadata=None,
+    type=None,
+    converter=None,
+    factory=None,
+    kw_only=False,
+    eq=None,
+    order=None,
+    on_setattr=None,
+    alias=None,
+):
+    """
+    Create a new attribute on a class.
+
+    ..  warning::
+
+        Does *not* do anything unless the class is also decorated with `attr.s`
+        / `attrs.define` / and so on!
+
+    Please consider using `attrs.field` in new code (``attr.ib`` will *never*
+    go away, though).
+
+    :param default: A value that is used if an *attrs*-generated ``__init__``
+        is used and no value is passed while instantiating or the attribute is
+        excluded using ``init=False``.
+
+        If the value is an instance of `attrs.Factory`, its callable will be
+        used to construct a new value (useful for mutable data types like lists
+        or dicts).
+
+        If a default is not set (or set manually to `attrs.NOTHING`), a value
+        *must* be supplied when instantiating; otherwise a `TypeError` will be
+        raised.
+
+        The default can also be set using decorator notation as shown below.
+
+        .. seealso:: `defaults`
+
+    :param callable factory: Syntactic sugar for
+        ``default=attr.Factory(factory)``.
+
+    :param validator: `callable` that is called by *attrs*-generated
+        ``__init__`` methods after the instance has been initialized.  They
+        receive the initialized instance, the :func:`~attrs.Attribute`, and the
+        passed value.
+
+        The return value is *not* inspected so the validator has to throw an
+        exception itself.
+
+        If a `list` is passed, its items are treated as validators and must all
+        pass.
+
+        Validators can be globally disabled and re-enabled using
+        `attrs.validators.get_disabled` / `attrs.validators.set_disabled`.
+
+        The validator can also be set using decorator notation as shown below.
+
+        .. seealso:: :ref:`validators`
+
+    :type validator: `callable` or a `list` of `callable`\\ s.
+
+    :param repr: Include this attribute in the generated ``__repr__`` method.
+        If ``True``, include the attribute; if ``False``, omit it. By default,
+        the built-in ``repr()`` function is used. To override how the attribute
+        value is formatted, pass a ``callable`` that takes a single value and
+        returns a string. Note that the resulting string is used as-is, i.e. it
+        will be used directly *instead* of calling ``repr()`` (the default).
+    :type repr: a `bool` or a `callable` to use a custom function.
+
+    :param eq: If ``True`` (default), include this attribute in the generated
+        ``__eq__`` and ``__ne__`` methods that check two instances for
+        equality. To override how the attribute value is compared, pass a
+        ``callable`` that takes a single value and returns the value to be
+        compared.
+
+        .. seealso:: `comparison`
+    :type eq: a `bool` or a `callable`.
+
+    :param order: If ``True`` (default), include this attributes in the
+        generated ``__lt__``, ``__le__``, ``__gt__`` and ``__ge__`` methods. To
+        override how the attribute value is ordered, pass a ``callable`` that
+        takes a single value and returns the value to be ordered.
+
+        .. seealso:: `comparison`
+    :type order: a `bool` or a `callable`.
+
+    :param cmp: Setting *cmp* is equivalent to setting *eq* and *order* to the
+        same value. Must not be mixed with *eq* or *order*.
+
+        .. seealso:: `comparison`
+    :type cmp: a `bool` or a `callable`.
+
+    :param bool | None hash: Include this attribute in the generated
+        ``__hash__`` method.  If ``None`` (default), mirror *eq*'s value.  This
+        is the correct behavior according the Python spec.  Setting this value
+        to anything else than ``None`` is *discouraged*.
+
+        .. seealso:: `hashing`
+    :param bool init: Include this attribute in the generated ``__init__``
+        method.  It is possible to set this to ``False`` and set a default
+        value.  In that case this attributed is unconditionally initialized
+        with the specified default value or factory.
+
+        .. seealso:: `init`
+    :param callable converter: `callable` that is called by *attrs*-generated
+        ``__init__`` methods to convert attribute's value to the desired
+        format.  It is given the passed-in value, and the returned value will
+        be used as the new value of the attribute.  The value is converted
+        before being passed to the validator, if any.
+
+        .. seealso:: :ref:`converters`
+    :param dict | None metadata: An arbitrary mapping, to be used by
+        third-party components.  See `extending-metadata`.
+
+    :param type: The type of the attribute. Nowadays, the preferred method to
+        specify the type is using a variable annotation (see :pep:`526`). This
+        argument is provided for backward compatibility. Regardless of the
+        approach used, the type will be stored on ``Attribute.type``.
+
+        Please note that *attrs* doesn't do anything with this metadata by
+        itself. You can use it as part of your own code or for `static type
+        checking <types>`.
+    :param bool kw_only: Make this attribute keyword-only in the generated
+        ``__init__`` (if ``init`` is ``False``, this parameter is ignored).
+    :param on_setattr: Allows to overwrite the *on_setattr* setting from
+        `attr.s`. If left `None`, the *on_setattr* value from `attr.s` is used.
+        Set to `attrs.setters.NO_OP` to run **no** `setattr` hooks for this
+        attribute -- regardless of the setting in `attr.s`.
+    :type on_setattr: `callable`, or a list of callables, or `None`, or
+        `attrs.setters.NO_OP`
+    :param str | None alias: Override this attribute's parameter name in the
+        generated ``__init__`` method. If left `None`, default to ``name``
+        stripped of leading underscores. See `private-attributes`.
+
+    .. versionadded:: 15.2.0 *convert*
+    .. versionadded:: 16.3.0 *metadata*
+    .. versionchanged:: 17.1.0 *validator* can be a ``list`` now.
+    .. versionchanged:: 17.1.0
+       *hash* is ``None`` and therefore mirrors *eq* by default.
+    .. versionadded:: 17.3.0 *type*
+    .. deprecated:: 17.4.0 *convert*
+    .. versionadded:: 17.4.0 *converter* as a replacement for the deprecated
+       *convert* to achieve consistency with other noun-based arguments.
+    .. versionadded:: 18.1.0
+       ``factory=f`` is syntactic sugar for ``default=attr.Factory(f)``.
+    .. versionadded:: 18.2.0 *kw_only*
+    .. versionchanged:: 19.2.0 *convert* keyword argument removed.
+    .. versionchanged:: 19.2.0 *repr* also accepts a custom callable.
+    .. deprecated:: 19.2.0 *cmp* Removal on or after 2021-06-01.
+    .. versionadded:: 19.2.0 *eq* and *order*
+    .. versionadded:: 20.1.0 *on_setattr*
+    .. versionchanged:: 20.3.0 *kw_only* backported to Python 2
+    .. versionchanged:: 21.1.0
+       *eq*, *order*, and *cmp* also accept a custom callable
+    .. versionchanged:: 21.1.0 *cmp* undeprecated
+    .. versionadded:: 22.2.0 *alias*
+    """
+    eq, eq_key, order, order_key = _determine_attrib_eq_order(
+        cmp, eq, order, True
+    )
+
+    if hash is not None and hash is not True and hash is not False:
+        msg = "Invalid value for hash.  Must be True, False, or None."
+        raise TypeError(msg)
+
+    if factory is not None:
+        if default is not NOTHING:
+            msg = (
+                "The `default` and `factory` arguments are mutually exclusive."
+            )
+            raise ValueError(msg)
+        if not callable(factory):
+            msg = "The `factory` argument must be a callable."
+            raise ValueError(msg)
+        default = Factory(factory)
+
+    if metadata is None:
+        metadata = {}
+
+    # Apply syntactic sugar by auto-wrapping.
+    if isinstance(on_setattr, (list, tuple)):
+        on_setattr = setters.pipe(*on_setattr)
+
+    if validator and isinstance(validator, (list, tuple)):
+        validator = and_(*validator)
+
+    if converter and isinstance(converter, (list, tuple)):
+        converter = pipe(*converter)
+
+    return _CountingAttr(
+        default=default,
+        validator=validator,
+        repr=repr,
+        cmp=None,
+        hash=hash,
+        init=init,
+        converter=converter,
+        metadata=metadata,
+        type=type,
+        kw_only=kw_only,
+        eq=eq,
+        eq_key=eq_key,
+        order=order,
+        order_key=order_key,
+        on_setattr=on_setattr,
+        alias=alias,
+    )
+
+
+def _compile_and_eval(script, globs, locs=None, filename=""):
+    """
+    "Exec" the script with the given global (globs) and local (locs) variables.
+    """
+    bytecode = compile(script, filename, "exec")
+    eval(bytecode, globs, locs)
+
+
+def _make_method(name, script, filename, globs):
+    """
+    Create the method with the script given and return the method object.
+    """
+    locs = {}
+
+    # In order of debuggers like PDB being able to step through the code,
+    # we add a fake linecache entry.
+    count = 1
+    base_filename = filename
+    while True:
+        linecache_tuple = (
+            len(script),
+            None,
+            script.splitlines(True),
+            filename,
+        )
+        old_val = linecache.cache.setdefault(filename, linecache_tuple)
+        if old_val == linecache_tuple:
+            break
+
+        filename = f"{base_filename[:-1]}-{count}>"
+        count += 1
+
+    _compile_and_eval(script, globs, locs, filename)
+
+    return locs[name]
+
+
+def _make_attr_tuple_class(cls_name, attr_names):
+    """
+    Create a tuple subclass to hold `Attribute`s for an `attrs` class.
+
+    The subclass is a bare tuple with properties for names.
+
+    class MyClassAttributes(tuple):
+        __slots__ = ()
+        x = property(itemgetter(0))
+    """
+    attr_class_name = f"{cls_name}Attributes"
+    attr_class_template = [
+        f"class {attr_class_name}(tuple):",
+        "    __slots__ = ()",
+    ]
+    if attr_names:
+        for i, attr_name in enumerate(attr_names):
+            attr_class_template.append(
+                f"    {attr_name} = _attrs_property(_attrs_itemgetter({i}))"
+            )
+    else:
+        attr_class_template.append("    pass")
+    globs = {"_attrs_itemgetter": itemgetter, "_attrs_property": property}
+    _compile_and_eval("\n".join(attr_class_template), globs)
+    return globs[attr_class_name]
+
+
+# Tuple class for extracted attributes from a class definition.
+# `base_attrs` is a subset of `attrs`.
+_Attributes = _make_attr_tuple_class(
+    "_Attributes",
+    [
+        # all attributes to build dunder methods for
+        "attrs",
+        # attributes that have been inherited
+        "base_attrs",
+        # map inherited attributes to their originating classes
+        "base_attrs_map",
+    ],
+)
+
+
+def _is_class_var(annot):
+    """
+    Check whether *annot* is a typing.ClassVar.
+
+    The string comparison hack is used to avoid evaluating all string
+    annotations which would put attrs-based classes at a performance
+    disadvantage compared to plain old classes.
+    """
+    annot = str(annot)
+
+    # Annotation can be quoted.
+    if annot.startswith(("'", '"')) and annot.endswith(("'", '"')):
+        annot = annot[1:-1]
+
+    return annot.startswith(_classvar_prefixes)
+
+
+def _has_own_attribute(cls, attrib_name):
+    """
+    Check whether *cls* defines *attrib_name* (and doesn't just inherit it).
+    """
+    attr = getattr(cls, attrib_name, _sentinel)
+    if attr is _sentinel:
+        return False
+
+    for base_cls in cls.__mro__[1:]:
+        a = getattr(base_cls, attrib_name, None)
+        if attr is a:
+            return False
+
+    return True
+
+
+def _get_annotations(cls):
+    """
+    Get annotations for *cls*.
+    """
+    if _has_own_attribute(cls, "__annotations__"):
+        return cls.__annotations__
+
+    return {}
+
+
+def _collect_base_attrs(cls, taken_attr_names):
+    """
+    Collect attr.ibs from base classes of *cls*, except *taken_attr_names*.
+    """
+    base_attrs = []
+    base_attr_map = {}  # A dictionary of base attrs to their classes.
+
+    # Traverse the MRO and collect attributes.
+    for base_cls in reversed(cls.__mro__[1:-1]):
+        for a in getattr(base_cls, "__attrs_attrs__", []):
+            if a.inherited or a.name in taken_attr_names:
+                continue
+
+            a = a.evolve(inherited=True)  # noqa: PLW2901
+            base_attrs.append(a)
+            base_attr_map[a.name] = base_cls
+
+    # For each name, only keep the freshest definition i.e. the furthest at the
+    # back.  base_attr_map is fine because it gets overwritten with every new
+    # instance.
+    filtered = []
+    seen = set()
+    for a in reversed(base_attrs):
+        if a.name in seen:
+            continue
+        filtered.insert(0, a)
+        seen.add(a.name)
+
+    return filtered, base_attr_map
+
+
+def _collect_base_attrs_broken(cls, taken_attr_names):
+    """
+    Collect attr.ibs from base classes of *cls*, except *taken_attr_names*.
+
+    N.B. *taken_attr_names* will be mutated.
+
+    Adhere to the old incorrect behavior.
+
+    Notably it collects from the front and considers inherited attributes which
+    leads to the buggy behavior reported in #428.
+    """
+    base_attrs = []
+    base_attr_map = {}  # A dictionary of base attrs to their classes.
+
+    # Traverse the MRO and collect attributes.
+    for base_cls in cls.__mro__[1:-1]:
+        for a in getattr(base_cls, "__attrs_attrs__", []):
+            if a.name in taken_attr_names:
+                continue
+
+            a = a.evolve(inherited=True)  # noqa: PLW2901
+            taken_attr_names.add(a.name)
+            base_attrs.append(a)
+            base_attr_map[a.name] = base_cls
+
+    return base_attrs, base_attr_map
+
+
+def _transform_attrs(
+    cls, these, auto_attribs, kw_only, collect_by_mro, field_transformer
+):
+    """
+    Transform all `_CountingAttr`s on a class into `Attribute`s.
+
+    If *these* is passed, use that and don't look for them on the class.
+
+    *collect_by_mro* is True, collect them in the correct MRO order, otherwise
+    use the old -- incorrect -- order.  See #428.
+
+    Return an `_Attributes`.
+    """
+    cd = cls.__dict__
+    anns = _get_annotations(cls)
+
+    if these is not None:
+        ca_list = list(these.items())
+    elif auto_attribs is True:
+        ca_names = {
+            name
+            for name, attr in cd.items()
+            if isinstance(attr, _CountingAttr)
+        }
+        ca_list = []
+        annot_names = set()
+        for attr_name, type in anns.items():
+            if _is_class_var(type):
+                continue
+            annot_names.add(attr_name)
+            a = cd.get(attr_name, NOTHING)
+
+            if not isinstance(a, _CountingAttr):
+                a = attrib() if a is NOTHING else attrib(default=a)
+            ca_list.append((attr_name, a))
+
+        unannotated = ca_names - annot_names
+        if len(unannotated) > 0:
+            raise UnannotatedAttributeError(
+                "The following `attr.ib`s lack a type annotation: "
+                + ", ".join(
+                    sorted(unannotated, key=lambda n: cd.get(n).counter)
+                )
+                + "."
+            )
+    else:
+        ca_list = sorted(
+            (
+                (name, attr)
+                for name, attr in cd.items()
+                if isinstance(attr, _CountingAttr)
+            ),
+            key=lambda e: e[1].counter,
+        )
+
+    own_attrs = [
+        Attribute.from_counting_attr(
+            name=attr_name, ca=ca, type=anns.get(attr_name)
+        )
+        for attr_name, ca in ca_list
+    ]
+
+    if collect_by_mro:
+        base_attrs, base_attr_map = _collect_base_attrs(
+            cls, {a.name for a in own_attrs}
+        )
+    else:
+        base_attrs, base_attr_map = _collect_base_attrs_broken(
+            cls, {a.name for a in own_attrs}
+        )
+
+    if kw_only:
+        own_attrs = [a.evolve(kw_only=True) for a in own_attrs]
+        base_attrs = [a.evolve(kw_only=True) for a in base_attrs]
+
+    attrs = base_attrs + own_attrs
+
+    # Mandatory vs non-mandatory attr order only matters when they are part of
+    # the __init__ signature and when they aren't kw_only (which are moved to
+    # the end and can be mandatory or non-mandatory in any order, as they will
+    # be specified as keyword args anyway). Check the order of those attrs:
+    had_default = False
+    for a in (a for a in attrs if a.init is not False and a.kw_only is False):
+        if had_default is True and a.default is NOTHING:
+            msg = f"No mandatory attributes allowed after an attribute with a default value or factory.  Attribute in question: {a!r}"
+            raise ValueError(msg)
+
+        if had_default is False and a.default is not NOTHING:
+            had_default = True
+
+    if field_transformer is not None:
+        attrs = field_transformer(cls, attrs)
+
+    # Resolve default field alias after executing field_transformer.
+    # This allows field_transformer to differentiate between explicit vs
+    # default aliases and supply their own defaults.
+    attrs = [
+        a.evolve(alias=_default_init_alias_for(a.name)) if not a.alias else a
+        for a in attrs
+    ]
+
+    # Create AttrsClass *after* applying the field_transformer since it may
+    # add or remove attributes!
+    attr_names = [a.name for a in attrs]
+    AttrsClass = _make_attr_tuple_class(cls.__name__, attr_names)
+
+    return _Attributes((AttrsClass(attrs), base_attrs, base_attr_map))
+
+
+def _make_cached_property_getattr(
+    cached_properties,

@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/buffered_logger_documentation.py
+KIND: code
+
+import time
+import pickle
+
+Responsabilities
+
+    Handles accumulation of debug events while playing media_player and  saves
+    when sample's play ends.

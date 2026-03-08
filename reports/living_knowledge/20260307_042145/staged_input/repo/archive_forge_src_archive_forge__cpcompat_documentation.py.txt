@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_cpcompat_documentation.py
+KIND: code
+
+import http.client
+Return the given string as a native string in the given encoding.

@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/ItemGroup_documentation.py
+KIND: code
+
+from ..Qt import QtCore
+from .GraphicsObject import GraphicsObject
+
+    Replacement for QGraphicsItemGroup

@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/KGML_pathway_documentation.py
+KIND: code
+
+import time
+from itertools import chain
+from xml.dom import minidom
+import xml.etree.ElementTree as ET
+Return KGML element describing the Relation.

@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_command_documentation.py
+KIND: code
+
+import logging
+
+Management of Pyomo commands

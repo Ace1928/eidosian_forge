@@ -1,0 +1,341 @@
+SOURCE_PATH: archive_forge/src/archive_forge/62ll.py
+KIND: code
+
+"""
+Module Header:
+This module meticulously implements an advanced, highly sophisticated, and robust sparse, typed, TTL (Time-To-Live), LRU (Least Recently Used) caching system using aiokeydb. It is ingeniously designed for seamless integration with a comprehensive wrapper, ensuring unparalleled performance, reliability, and maintainability for both synchronous and asynchronous functions. The caching system is uniquely capable of handling a diverse array of keys, adeptly distinguishing between keys with identical names but differing argument types, thanks to its innovative ID assignment mechanism. This mechanism meticulously considers a function's name, input names, types, order, values, and the specific sequence of operations, amalgamating these elements into a human-readable unique string ID for each function and its components. The system is not only optimized for performance but also emphasizes detailed logging, error handling, type checking, and profiling for each cached function call, adhering to Python 3.12 standards and PEP8 coding guidelines. It incorporates exhaustive commenting, type hinting, and annotation, ensuring clarity, maintainability, and superior IDE support. The module is a paragon of integration, offering extensive logging and error handling to facilitate debugging and ensure robustness. The caching mechanism, designed with concurrency and scalability in mind, is ideal for high-performance applications requiring detailed profiling and type validation. Multiple instances can be run, each accessing their own caches, which are consolidated into a single file cache for continuity, ensuring no redundancy or duplication.
+TODO:
+- Investigate the integration with distributed caching systems to enhance scalability.
+- Develop a mechanism for collecting metrics on cache hit/miss ratios to optimize caching strategies.
+- Enhance the system with dynamic cache invalidation strategies to maintain cache relevance and efficiency.
+- Integrate with aiokeydb for high-performance asynchronous key-value storage.
+- Implement data compression, serialization, and validation for efficient storage and retrieval.
+- Incorporate memory optimization techniques to minimize memory footprint.
+- Develop a learning and optimization component to adapt caching strategies based on usage patterns.
+Known Issues:
+- Currently undergoing extensive refactoring and upgrade so not functional at all
+    - Data handling logic:
+        - Initial Data Input (Input Data)
+        - Data Preprocessing Steps:
+            - Validate The Input Data for Type, Syntax, Expected Values, and Expected Data Types and all requirements, packages, modules, classes, functions, methods, objects, arguments, keyword arguments, logic, sequence, operations, intermediate products and outputs. Maximum possible verbosity for anything decorated and all context etc. captured (providing not captured prior).
+            - Create unique specific generic identifiers for all information and keep all actual types/values/parameters verbatim and all other information (metadata) to store in the metadata cache/file.
+
+"""
+
+"""
+Fancy ASCII Art Message Box In Progress
+
+"""
+
+###################################################################################################
+#  ████████████████████████████████████████████████████████████████████████████████████████████  #
+#  █▄─▄▄─█▄─▄▄▀█▄─▄▄─███▄─▄▄▀█▄─▄▄▀█▄─▄▄─█▄─▄█▄─▄▄▀███▄─▄▄▀█▄─▄▄▀█▄─▄▄─███▄─▄▄▀█▄─▄▄─█▄─▄▄▀███  #
+#  ██─▄▄▄██─▄─▄██─▄█▀████─██─██─▄─▄██─▄█▀██─███─██─████─▄─▄██─▄─▄██─▄█▀████─██─██─▄█▀██─▄─▄███  #
+#  ▀▄▄▄▀▀▀▄▄█▄▄█▄▄▄▄▄▀▀▄▄▄▄▄▀▄▄▄▄▄▀▄▄▄▄▄▀▄▄▄▄▄▀▄▄▄▄▄▀▄▄▄▄▄▀▄▄▄▄▄▀▄▄▄▄▄▀▄▄▄▄▄▀▄▄▄▄▄▀▄▄▄▄▄▀▀  #
+#  ████▀▀████▀▄─██─▄▄▄▄█─▄▄▄▄█─▄▄▄─█▄─▄███─▄▄▄▄█─▄▄▄▄█─▄▄▄─█─▄▄▄─█─▄▄▄▄█─▄▄▄▄█─▄▄▄─█─▄▄▄▄███  #
+#  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀  #
+##################################################################################################
+# ██████████████████████████████████████████████████████████████████████████████████████████████ #
+# ██╔═══╗██╔══╗██╔═╗╔═╗██╔═╗╔═╗██╔═╗╔═╗██╔═╗╔═╗██╔═╗╔═╗██╔═╗╔═╗██╔═╗╔═╗██╔═╗╔═╗██╔═╗╔═╗██╔═╗╔═╗██ #
+# ██║╔═╗║██║╔╗║██║╚╝╔╝║██║╚╝╔╝║██║╚╝╔╝║██║╚╝╔╝║██║╚╝╔╝║██║╚╝╔╝║██║╚╝╔╝║██║╚╝╔╝║██║╚╝╔╝║██║╚╝╔╝║██ #
+# ██║╚══╗██║╔╗║██║╔╗╔╗║██║╔╗╔╗║██║╔╗╔╗║██║╔╗╔╗║██║╔╗╔╗║██║╔╗╔╗║██║╔╗╔╗║██║╔╗╔╗║██║╔╗╔╗║██║╔╗╔╗║██ #
+# ██║╔══╝██║╚╝║██║║║║║║██║║║║║║██║║║║║║██║║║║║║██║║║║║║██║║║║║║██║║║║║║██║║║║║║██║║║║║║██║║║║║║██ #
+# ██║╚═╗██║╔╗║██║╚╝╚╝║██║╚╝╚╝║██║╚╝╚╝║██║╚╝╚╝║██║╚╝╚╝║██║╚╝╚╝║██║╚╝╚╝║██║╚╝╚╝║██║╚╝╚╝║██║╚╝╚╝║██ #
+# ██╚══╝╚═╝╚═╝╚═╝╔═╗╔═╝╚═╗╔═╗╚═╝╔═╗╔═╝╚═╝╔═╗╔═╝╚═╗╔═╗╚═╝╔═╗╔═╝╚═╗╔═╗╚═╝╔═╗╔═╝╚═╝╔═╗╔═╝╚═╗╔═╗╚═╝ #
+
+
+"""
+This section of the module meticulously implements the foundational imports and decorators necessary for the advanced, highly sophisticated, and robust sparse, typed, TTL (Time-To-Live), LRU (Least Recently Used) caching system. It leverages a diverse array of Python packages to ensure unparalleled performance, reliability, and maintainability for both synchronous and asynchronous functions. The decorators provided herein are designed to enhance logging, error handling, and execution flow visibility, adhering to Python 3.12 standards and PEP8 coding guidelines. This section also establishes a comprehensive logging configuration to facilitate debugging and ensure robustness. The meticulous integration of type hinting and annotation enhances clarity, maintainability, and superior IDE support.
+"""
+
+# Core Python libraries for asynchronous operations, compression, profiling, and file handling
+import asyncio
+import cProfile
+import functools
+import gc
+import io
+import json
+import logging
+import os
+from contextlib import asynccontextmanager
+from datetime import datetime
+from inspect import signature, Parameter
+from pathlib import Path
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Coroutine,
+    Dict,
+    Generic,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+)
+
+# Third-party libraries for data serialization, compression, asynchronous file operations, and type validation
+import aiofiles
+import msgpack
+import zstandard
+from aiokeydb import AsyncKeyDB, KeyDBClient
+from lazyops.utils import logger
+from pydantic import BaseModel, ValidationError
+import msgpack
+import zstandard
+import aiofiles
+import os
+import pstats
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Coroutine,
+    Dict,
+    Generic,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+)
+from lazyops.utils import logger
+import logging
+from typing import Any, Dict, Optional, Coroutine
+from aiokeydb.client import KeyDBClient
+from functools import wraps
+import asyncio
+from functools import wraps
+from typing import Any, Callable, Coroutine, TypeVar, Dict, Awaitable
+import asyncio
+import logging
+from contextlib import asynccontextmanager
+from inspect import signature, Parameter
+import traceback
+from typing import Dict, TypeVar, Callable, Awaitable
+from aiokeydb.client import AsyncKeyDB
+import logging
+
+# Enhancing logging configuration for maximum verbosity and comprehensive profiling and tracing
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s - %(levelname)s - %(module)s - %(funcName)s - %(lineno)d - %(message)s",
+)
+
+# TypeVar for generic type annotation
+T = TypeVar("T")
+
+
+def log_decorator_info(
+    func: Callable[..., Awaitable[T]]
+) -> Callable[..., Awaitable[T]]:
+    """
+    Decorator to log the entry and exit of an asynchronous function, enhancing the visibility of the function's execution flow.
+
+    This decorator is crucial for tracing the execution flow, especially in asynchronous environments where the concurrent execution of tasks can obscure the order of operations. By logging the start and end of a function's execution, it provides a clear, chronological trace of the function's activity, aiding in debugging and performance monitoring.
+
+    Args:
+        func (Callable[..., Awaitable[T]]): The asynchronous function to be decorated, enhancing its logging capabilities.
+
+    Returns:
+        Callable[..., Awaitable[T]]: The original function wrapped with logging functionality, preserving its asynchronous nature.
+
+    Example:
+        @log_decorator_info
+        async def async_function_example(param: int) -> str:
+            return f"Processed {param}"
+    """
+
+    @wraps(func)
+    async def wrapper(*args, **kwargs) -> T:
+        func_signature = signature(func)
+        bound_arguments = func_signature.bind(*args, **kwargs).arguments
+        argument_str = ", ".join([f"{k}={v}" for k, v in bound_arguments.items()])
+        logging.info(f"Entering {func.__name__} with arguments: {argument_str}")
+        try:
+            result: T = await func(*args, **kwargs)
+            logging.info(f"Exiting {func.__name__} with result: {result}")
+            return result
+        except Exception as e:
+            logging.error(
+                f"Exception in {func.__name__} with arguments: {argument_str}. Error: {str(e)}",
+                exc_info=True,
+            )
+            raise
+
+    return wrapper
+
+
+def async_error_handler(
+    func: Callable[..., Awaitable[T]]
+) -> Callable[..., Awaitable[T]]:
+    """
+    Decorator to provide comprehensive error handling and logging for asynchronous functions.
+
+    This decorator wraps asynchronous functions in a try-except block, aiming to catch, log, and re-raise any exceptions that occur during execution. It is crafted to enhance the debugging and maintenance process by providing detailed error information, including the function's name and the error message. This ensures a more reliable execution flow by properly handling any unhandled exceptions, making it a cornerstone for developing high-quality, maintainable, and reliable asynchronous Python applications.
+
+    Furthermore, this decorator supports multiple instances running concurrently, accessing their own caches, and consolidating to a single file cache for continuity, ensuring no redundancy or duplication. It employs advanced programming techniques, ensuring the asynchronous programming paradigm is meticulously adhered to.
+
+    Args:
+        func (Callable[..., Awaitable[T]]): The asynchronous function to be decorated, enhancing its error handling and logging capabilities.
+
+    Returns:
+        Callable[..., Awaitable[T]]: The original function wrapped with comprehensive error handling and logging functionality, preserving its asynchronous nature.
+
+    Raises:
+        Exception: Explicitly re-raises any caught exception to ensure errors are not silently ignored, thereby maintaining the integrity of error handling.
+
+    Example:
+        @async_error_handler
+        async def async_function_example(param: int) -> str:
+            if param < 0:
+                raise ValueError("Parameter must be non-negative.")
+            return f"Processed {param}"
+    """
+
+    @wraps(func)
+    async def wrapper(*args, **kwargs) -> T:
+        try:
+            return await func(*args, **kwargs)
+        except Exception as e:
+            func_signature = signature(func)
+            bound_arguments = func_signature.bind(*args, **kwargs).arguments
+            argument_str = ", ".join([f"{k}={v}" for k, v in bound_arguments.items()])
+            logging.error(
+                f"Error in {func.__name__} with arguments: {argument_str}. Exception: {str(e)}",
+                exc_info=True,
+            )
+            # Re-raise the exception to ensure it's not silently ignored, maintaining the integrity of error handling.
+            raise
+
+    return wrapper
+
+
+# Type Aliases for clarity and type safety
+UriType = str
+SessionNameType = str
+T = TypeVar("T")
+
+# KeyDB Configuration
+# The cache types to choose from are:
+KEYDB_CACHE_URIS: Dict[str, UriType] = {
+    # Extensive list of URIs for various caches
+    "cache_default": "keydb://localhost:6379/0",  # This stores ALL raw information; default database not typically used
+    "cache_dev": "keydb://localhost:6379/1",  # This stores ALL raw information during dev/testing
+    "cache_raw": "keydb://localhost:6379/2",  # This stores ALL raw information
+    "cache_caches": "keydb://localhost:6379/3",  # This stores all the cache information
+    "cache_relationships": "keydb://localhost:6379/4",  # This maps logical relationships and contextual relationships and sequential and temporal relationships between all of the different entries in the cache at each point in time when relationship mapping is called
+    "cache_sessions": "keydb://localhost:6379/5",  # This stores all the session information
+    "cache_users": "keydb://localhost:6379/6",  # This stores all the user information
+    "cache_logs": "keydb://localhost:6379/7",  # This stores all the logs
+    "cache_metrics": "keydb://localhost:6379/8",  # This stores all the metrics
+    "cache_settings": "keydb://localhost:6379/9",  # This stores all the settings
+    "cache_config": "keydb://localhost:6379/10",  # This stores all the configurations
+    "cache_files": "keydb://localhost:6379/11",  # This stores all the files
+    "cache_metadata": "keydb://localhost:6379/12",  # This stores all processed metadata
+}
+
+# The blob types to choose from are:
+KEYDB_BLOB_URIS: Dict[str, UriType] = {
+    # Extensive list of URIs for various blobs
+    "blob_default": "keydb://localhost:6479/0",  # This stores ALL raw information; default database not typically used
+    "blob_dev": "keydb://localhost:6479/1",  # This stores ALL raw information during dev/testing
+    "blob_raw": "keydb://localhost:6479/2",  # This stores ALL raw information
+    "blob_caches": "keydb://localhost:6479/3",  # This stores all the cache information
+    "blob_relationships": "keydb://localhost:6479/4",  # This maps logical relationships and contextual relationships and sequential and temporal relationships between all of the different entries in the cache at each point in time when relationship mapping is called
+    "blob_sessions": "keydb://localhost:6479/5",  # This stores all the session information
+    "blob_users": "keydb://localhost:6479/6",  # This stores all the user information
+    "blob_logs": "keydb://localhost:6479/7",  # This stores all the logs
+    "blob_metrics": "keydb://localhost:6479/8",  # This stores all the metrics
+    "blob_settings": "keydb://localhost:6479/9",  # This stores all the settings
+    "blob_config": "keydb://localhost:6479/10",  # This stores all the configurations
+    "blob_files": "keydb://localhost:6479/11",  # This stores all the files
+    "blob_metadata": "keydb://localhost:6479/12",  # This stores all processed metadata
+}
+
+
+# Initialize KeyDB Client Configuration
+@async_error_handler
+async def configure_keydb_client(
+    default_uri: UriType = KEYDB_CACHE_URIS["cache_default"],
+) -> AsyncKeyDB:
+    """
+    Configures and returns an instance of the AsyncKeyDBClient with the specified default URI.
+
+    This function is responsible for initializing and configuring an AsyncKeyDB client instance using the provided URI. It establishes a connection to the KeyDB server specified by the URI and returns the configured client instance. This function is essential for setting up the KeyDB client that will be used for caching operations within the module. It utilizes the async_error_handler decorator to ensure robust error handling and logging, making the initialization process more reliable.
+
+    Args:
+        default_uri (UriType): The default URI to be used for the KeyDB client. Defaults to the 'cache_default' URI.
+
+    Returns:
+        AsyncKeyDB: The configured KeyDB client instance, ready for use in caching operations.
+
+    Raises:
+        ConnectionError: If there is an issue connecting to the KeyDB server, indicating a potential problem with the server address, port, or network connectivity.
+
+    Example:
+        async_keydb_client = await configure_keydb_client("keydb://localhost:6379/0")
+    """
+    client = await AsyncKeyDB(host="localhost", port=6379, password="yourpassword")
+    logging.info("KeyDB client session initialized.")
+    return client  # Ensure this function returns an instance of AsyncKeyDBClient
+
+
+# Session management
+sessions: Dict[SessionNameType, AsyncKeyDB] = {}
+
+
+@async_error_handler
+async def init_keydb_session(name: SessionNameType, uri: UriType) -> None:
+    """
+    Initializes a KeyDB client session with the specified name and URI.
+
+    This function creates and stores a new KeyDB client session using the provided name and URI. It is designed to support multiple KeyDB client sessions, each identified by a unique name and configured with a specific URI. This allows for flexible and efficient management of different caching strategies and storage locations. The function checks for the existence of a session with the same name to prevent duplicate sessions. It utilizes the async_error_handler decorator to ensure comprehensive error handling and logging.
+
+    Args:
+        name (SessionNameType): The name of the session to initialize. Must be unique across all sessions.
+        uri (UriType): The URI for the KeyDB client session. Specifies the server address and database to connect to.
+
+    Raises:
+        KeyError: If a session with the specified name already exists, indicating a conflict in session naming.
+
+    Example:
+        await init_keydb_session("session1", "keydb://localhost:6379/1")
+    """
+    if name in sessions:
+        raise KeyError(f"Session {name} already exists.")
+    sessions[name] = await configure_keydb_client(uri)
+    logging.info(f"Session {name} initialized with URI: {uri}")
+
+
+# This is the main class that will be used to cache the data
+class AsyncSparseTypedTTLCache(Generic[T]):
+    """
+    Implements an advanced, asynchronous, sparse, typed, TTL (Time-To-Live), LRU (Least Recently Used) caching system using aiokeydb.
+
+    This class is designed to provide an efficient and robust caching mechanism for both synchronous and asynchronous functions,
+    ensuring optimal performance and reliability. It leverages a unique ID assignment mechanism for keys, based on a comprehensive
+    analysis of function characteristics, to maintain a highly organized and efficient cache structure. Multiple instances can be run,
+    each accessing their own caches, which are consolidated into a single file cache for continuity, ensuring no redundancy or duplication.
+
+    Attributes:
+        ttl (int): Time to live for cache entries, dictating their lifespan in the cache.
+        maxsize (int): Maximum size of the cache, determining its capacity.
+        cache_file_path (Path): Path to the consolidated file cache, ensuring continuity and preventing redundancy.
+        lock (asyncio.Lock): An asynchronous lock to ensure thread-safe operations on the cache file.
+        caches (Dict[str, AsyncKeyDB]): A dictionary holding different caches for each key type, facilitating type-specific caching strategies.
+
+    Methods:
+        get_cache(key_type: str) -> AsyncKeyDB: Retrieves or creates a cache for the specified key type.
+        cache_to_file() -> None: Consolidates the current state of all caches to a single file, ensuring data persistence.
+        load_cache_from_file() -> None: Loads the cache state from the file, ensuring continuity across instances.
+        __call__(func: Callable[..., T]) -> Callable[..., Awaitable[T]]: Decorator method to apply caching logic to functions,
+                                                                        enhancing them with asynchronous execution, detailed profiling,
+                                                                        and robust error handling.
+    """
+
+    # Initialize the cache with the specified TTL, maximum size, and cache file path for continuity
+    def __init__(self, ttl: int, maxsize: int, cache_file_path: str) -> None:
+        """
+        Initializes the AsyncSparseTypedTTLCache with specified TTL, maximum size, and cache file path.
+
+        This constructor meticulously sets up the initial state of the AsyncSparseTypedTTLCache instance, ensuring all attributes are properly initialized and the cache is ready for us

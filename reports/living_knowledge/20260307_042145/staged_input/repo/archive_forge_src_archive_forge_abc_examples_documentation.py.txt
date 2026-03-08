@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/abc_examples_documentation.py
+KIND: code
+
+from abc import ABC
+from traits.adaptation.api import PurePythonAdapter as Adapter
+ Test data for testing the protocol manager with ABCs.

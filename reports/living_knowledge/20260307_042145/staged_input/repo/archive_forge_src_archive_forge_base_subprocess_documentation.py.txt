@@ -1,0 +1,12 @@
+SOURCE_PATH: archive_forge/src/archive_forge/base_subprocess_documentation.py
+KIND: code
+
+import collections
+import subprocess
+import warnings
+from . import protocols
+from . import transports
+from .log import logger
+Wait until the process exit and return the process return code.
+
+        This method is a coroutine.

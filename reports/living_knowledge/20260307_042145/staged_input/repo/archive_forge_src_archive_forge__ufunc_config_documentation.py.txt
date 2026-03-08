@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_ufunc_config_documentation.py
+KIND: code
+
+import contextlib
+import threading
+
+    TODO(hvy): Write docs.

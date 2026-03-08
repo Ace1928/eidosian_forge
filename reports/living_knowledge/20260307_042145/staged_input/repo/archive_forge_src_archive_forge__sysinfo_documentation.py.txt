@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_sysinfo_documentation.py
+KIND: code
+
+import os
+import platform
+import subprocess
+import sys
+import jupyter_server
+Return useful information about the system as a dict.

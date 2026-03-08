@@ -1,0 +1,330 @@
+SOURCE_PATH: archive_forge/src/archive_forge/ILjm.py
+KIND: code
+
+"""
+Module Header:
+This module meticulously implements an advanced, highly sophisticated, and robust sparse, typed, TTL (Time-To-Live), LRU (Least Recently Used) caching system using aiokeydb. It is ingeniously designed for seamless integration with a comprehensive wrapper, ensuring unparalleled performance, reliability, and maintainability for both synchronous and asynchronous functions. The caching system is uniquely capable of handling a diverse array of keys, adeptly distinguishing between keys with identical names but differing argument types, thanks to its innovative ID assignment mechanism. This mechanism meticulously considers a function's name, input names, types, order, values, and the specific sequence of operations, amalgamating these elements into a human-readable unique string ID for each function and its components. The system is not only optimized for performance but also emphasizes detailed logging, error handling, type checking, and profiling for each cached function call, adhering to Python 3.12 standards and PEP8 coding guidelines. It incorporates exhaustive commenting, type hinting, and annotation, ensuring clarity, maintainability, and superior IDE support. The module is a paragon of integration, offering extensive logging and error handling to facilitate debugging and ensure robustness. The caching mechanism, designed with concurrency and scalability in mind, is ideal for high-performance applications requiring detailed profiling and type validation. Multiple instances can be run, each accessing their own caches, which are consolidated into a single file cache for continuity, ensuring no redundancy or duplication.
+TODO:
+- Investigate the integration with distributed caching systems to enhance scalability.
+- Develop a mechanism for collecting metrics on cache hit/miss ratios to optimize caching strategies.
+- Enhance the system with dynamic cache invalidation strategies to maintain cache relevance and efficiency.
+- Integrate with aiokeydb for high-performance asynchronous key-value storage.
+- Implement data compression, serialization, and validation for efficient storage and retrieval.
+- Incorporate memory optimization techniques to minimize memory footprint.
+- Develop a learning and optimization component to adapt caching strategies based on usage patterns.
+Known Issues:
+- Currently undergoing extensive refactoring and upgrade so not functional at all
+
+Module Structure:
+        indedatabase.py - KeyDB ASynchronous Sparse Typed TTL Cache System and Database Config/Setup/Management and Session Management:
+            - KeyDB Configuration:
+                - The cache types to choose from are:
+                    - KEYDB_CACHE_URIS: Dict[str, UriType] = {
+                        - "cache_default": "key
+                        - "cache_dev": "keydb://localhost:6379/1",
+                        - "cache_raw": "keydb://localhost:6379/2",
+                        - "cache_caches": "
+                        - "cache_relationships": "keydb://localhost:6379/4",
+                        - "cache_sessions": "keydb://localhost:6379/5",
+                        - "cache_users": "key
+                        - "cache_logs": "key
+                        - "cache_metrics": "key
+                        - "cache_settings": "key
+                        - "cache_config": "key
+                        - "cache_files": "key
+                        - "cache_metadata": "key
+                    }
+                - The blob types to choose from are:
+                    - KEYDB_BLOB_URIS: Dict[str, UriType] = {
+                        - "blob_default": "keydb://localhost:6479/0",
+                        - "blob_dev": "keydb://localhost:6479/1",
+                        - "blob_raw": "keydb
+                        - "blob_caches": "keydb
+                        - "blob_relationships": "keydb
+                        - "blob_sessions": "keydb
+                        - "blob_users": "keydb
+                        - "blob_logs": "keydb
+                        - "blob_metrics": "keydb
+                        - "blob_settings": "keydb
+                        - "blob_config": "keydb
+                        - "blob_files": "keydb
+                        - "blob_metadata": "keydb
+                    }
+            - Initialize KeyDB Client Configuration:
+                - async def configure_keydb_client(default_uri: UriType = KEYDB_CACHE_URIS["cache_default"]) -> AsyncKeyDB:
+                    - client = await AsyncKeyDB(host="localhost", port=6379, password="yourpassword")
+                    - return client
+            - Session management:
+                - sessions: Dict[SessionNameType, AsyncKeyDB] = {}
+                - async def init_keydb_session(name: SessionNameType, uri: UriType) -> None:
+                    - if name in sessions:
+                        - raise KeyError(f"Session {name} already exists.")
+                    - sessions[name] = await configure_keydb_client(uri)
+
+        indeutils.py - Data handling logic
+            - Data Input:
+                validate - Validation - Validate The Input Data for Type, Syntax, Expected Values, and Expected Data Types and all requirements, packages, modules, classes, functions, methods, objects, arguments, keyword arguments, logic, sequence, operations, intermediate products and outputs. Maximum possible verbosity for anything decorated and all context etc. captured (providing not captured prior).
+                    inspect - Create unique specific generic identifiers for all information and keep all actual types/values/parameters verbatim and all other information (metadata) to store in the metadata cache/file.
+                hash - Hashing - Create a unique hash using all of the metadata to verify integrity and uniqueness and ensure no redundancy or duplication.
+                categorize - Categorization - Split the data into its appropriate categories for the different caches.
+                encode - Encoding - Reversibly encode the data to convert it into a bytes format for storage.
+            indebitmatrix.py - Bit Matrix Standardisation - Convert from bytes into bit_matrix for data format standardisation.
+                compress - Compression - Compress the data using the most efficient compression algorithm available.
+                encrypt - Encryption - encrypt the data using the most secure encryption algorithm available.
+            indecache.py - Storage(Cache Logic) - Store the data in the appropriate cache.
+            - Data Retrieval:
+                indecache.py - Storage (Cache Logic) - Retrieve the data from the appropriate cache, if not in cache load from blob into cache and then retrieve.
+                indeencrypt.py - Decryption - Decrypt the data using the most secure decryption algorithm available.
+                indecompress.py - Decompression - Decompress the data using the most efficient decompression algorithm available.
+                indebitmatrix.py - Bit Matrix Standardisation - Convert from bit_matrix into bytes for data format standardisation.
+                indeencode.py - Encoding - Reversibly decode the data to convert it back into its original form.
+                indecategorize.py - Category Consolidation - Consolidate the data from its different categories.
+                indehash.py - Hash Verification - Verify the hash to ensure integrity and uniqueness.
+                indevalidate.py - Validation - Validate the data against the expected schema to ensure integrity and adherence to the expected structure.
+                - Return the validated data for further processing.
+
+        - Sparse Multidimensional Binary Bit Matrix Conversion Logic: From Bytes to Vector to Bit matrix
+                indebytes.py - Universal Data to Bytes Conversion Logic:
+                    - Convert the universal data into bytes format for efficient storage and processing.
+                    - Bytes format allows for compact and efficient storage of data, enabling fast read and write operations.
+                    - Function: data_to_bytes(data: Any) -> bytes
+                    - Arguments: data (Any) - The input data to be converted into bytes format.
+                    - Returns: bytes - The data converted into bytes format.
+                    - Logic: Convert the input data into bytes format for further processing.
+                    -   Serialize the input data using MessagePack to convert it into a binary format.
+                    - Do not compress the data as it will be undergoing further conversion and integrity must be maintained.
+                - Return the serialized data as bytes.
+
+            - From bytes to vector:
+                indevectorize.py - Vectorisation - Convert the bytes into a standardised vector format for data processing.
+                    - Byte to vector conversion is essential for efficient data processing and manipulation.
+                    - The vector format allows for easy indexing, slicing, and transformation of the data.
+                    - Function: bytes_to_vector(bytes_data: bytes) -> Vector
+                    - Arguments: bytes_data (bytes) - The input data in bytes format.
+                    - Returns: Vector - The data converted into a vector format.
+                    - Logic: Convert the bytes data into a vector format for further processing.
+                    - Step 1: Convert the bytes data into a list of integers.
+                    - Step 2: Convert each integer into a binary representation.
+                    - Step 3: Concatenate all the binary representations to form a single binary string.
+                    - Step 4: Create a vector object from the binary string.
+                - Step 5: Return the vector object.
+
+            - From Vector to Bit matrix:
+                indebitmatrix.py - Bit Matrix Creation - Convert the vector data into a sparse multidimensional binary bit matrix for efficient storage and processing.
+                    - The Bit Matrix is a novel data struture that allows for arbitrary efficient matrix manipulation of binary data for processing complex multidimensional multi parameter data.
+                    - Function: vector_to_bit_matrix(vector_data: Vector) -> BitMatrix
+                    - Arguments: vector_data (Vector) - The input data in vector format.
+                    - Returns: BitMatrix - The data converted into a sparse multidimensional binary bit matrix.
+                    - Logic: Convert the vector data into a sparse multidimensional binary bit matrix for further processing.
+                    - Step 1: Determine the dimensions of the bit matrix based on the vector length, number of vectors, imaginary/complex components, and a variety of other attributes:
+                        - The number of vectors in the data.
+                        - The length of each vector.
+                        - The number of imaginary/complex components in each vector.
+                        - The number of parameters in each vector.
+                        - The number of bits required to represent each parameter.
+                    - Step 2: Create an empty sparse multidimensional binary bit matrix with the determined dimensions.
+                    - Step 3: Iterate over the vector data and set the corresponding bits in the bit matrix based on the vector values.
+                - Step 4: Return the sparse multidimensional binary bit matrix.
+        
+        - Sparse Multidimensional Binary Bit Matrix Conversion Logic: From Bit Matrix to Vector To Bytes        
+                indebitmatrix.py - From Bit matrix to Vector:
+                    - Convert the sparse multidimensional binary bit matrix back into a vector for efficient storage and processing.
+                    - The Bit Matrix is a novel data structure that allows for arbitrary efficient matrix manipulation of binary data for processing complex multidimensional multi-parameter data.
+                    - Function: bit_matrix_to_vector(bit_matrix_data: BitMatrix) -> Vector
+                    - Arguments: bit_matrix_data (BitMatrix) - The input data in sparse multidimensional binary bit matrix format.
+                    - Returns: Vector - The data converted into a vector format.
+                    - Logic: Convert the sparse multidimensional binary bit matrix back into a vector for further processing.
+                    - Step 1: Determine the length of the vector based on the dimensions of the bit matrix.
+                    - Step 2: Create an empty vector with the determined length.
+                    - Step 3: Iterate over the bit matrix data and set the corresponding values in the vector based on the bit matrix bits.
+                - Step 4: Return the vector data.
+            
+
+
+    - Cache handling logic:
+
+
+
+        
+
+"""
+
+# Core Python libraries for asynchronous operations, compression, profiling, and file handling
+import asyncio
+import cProfile
+import functools
+import gc
+import io
+import json
+import logging
+import os
+from contextlib import asynccontextmanager
+from datetime import datetime
+from inspect import signature, Parameter
+from pathlib import Path
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Coroutine,
+    Dict,
+    Generic,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+)
+
+# Third-party libraries for data serialization, compression, asynchronous file operations, and type validation
+import aiofiles
+import msgpack
+import zstandard
+from aiokeydb import AsyncKeyDB, KeyDBClient
+from lazyops.utils import logger
+from pydantic import BaseModel, ValidationError
+import msgpack
+import zstandard
+import aiofiles
+import os
+import pstats
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Coroutine,
+    Dict,
+    Generic,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+)
+from lazyops.utils import logger
+import logging
+from typing import Any, Dict, Optional, Coroutine
+from aiokeydb.client import KeyDBClient
+from functools import wraps
+import asyncio
+from functools import wraps
+from typing import Any, Callable, Coroutine, TypeVar, Dict, Awaitable
+import asyncio
+import logging
+from contextlib import asynccontextmanager
+from inspect import signature, Parameter
+import traceback
+from typing import Dict, TypeVar, Callable, Awaitable
+from aiokeydb.client import AsyncKeyDB
+import logging
+
+# Enhancing logging configuration for maximum verbosity and comprehensive profiling and tracing
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s - %(levelname)s - %(module)s - %(funcName)s - %(lineno)d - %(message)s",
+)
+
+# TypeVar for generic type annotation
+T = TypeVar("T")
+
+
+def log_decorator_info(
+    func: Callable[..., Awaitable[T]]
+) -> Callable[..., Awaitable[T]]:
+    """
+    Decorator to log the entry and exit of an asynchronous function, enhancing the visibility of the function's execution flow.
+
+    This decorator is crucial for tracing the execution flow, especially in asynchronous environments where the concurrent execution of tasks can obscure the order of operations. By logging the start and end of a function's execution, it provides a clear, chronological trace of the function's activity, aiding in debugging and performance monitoring.
+
+    Args:
+        func (Callable[..., Awaitable[T]]): The asynchronous function to be decorated, enhancing its logging capabilities.
+
+    Returns:
+        Callable[..., Awaitable[T]]: The original function wrapped with logging functionality, preserving its asynchronous nature.
+
+    Example:
+        @log_decorator_info
+        async def async_function_example(param: int) -> str:
+            return f"Processed {param}"
+    """
+
+    @wraps(func)
+    async def wrapper(*args, **kwargs) -> T:
+        func_signature = signature(func)
+        bound_arguments = func_signature.bind(*args, **kwargs).arguments
+        argument_str = ", ".join([f"{k}={v}" for k, v in bound_arguments.items()])
+        logging.info(f"Entering {func.__name__} with arguments: {argument_str}")
+        try:
+            result: T = await func(*args, **kwargs)
+            logging.info(f"Exiting {func.__name__} with result: {result}")
+            return result
+        except Exception as e:
+            logging.error(
+                f"Exception in {func.__name__} with arguments: {argument_str}. Error: {str(e)}",
+                exc_info=True,
+            )
+            raise
+
+    return wrapper
+
+
+def async_error_handler(
+    func: Callable[..., Awaitable[T]]
+) -> Callable[..., Awaitable[T]]:
+    """
+    Decorator to provide comprehensive error handling and logging for asynchronous functions.
+
+    This decorator wraps asynchronous functions in a try-except block, aiming to catch, log, and re-raise any exceptions that occur during execution. It is crafted to enhance the debugging and maintenance process by providing detailed error information, including the function's name and the error message. This ensures a more reliable execution flow by properly handling any unhandled exceptions, making it a cornerstone for developing high-quality, maintainable, and reliable asynchronous Python applications.
+
+    Furthermore, this decorator supports multiple instances running concurrently, accessing their own caches, and consolidating to a single file cache for continuity, ensuring no redundancy or duplication. It employs advanced programming techniques, ensuring the asynchronous programming paradigm is meticulously adhered to.
+
+    Args:
+        func (Callable[..., Awaitable[T]]): The asynchronous function to be decorated, enhancing its error handling and logging capabilities.
+
+    Returns:
+        Callable[..., Awaitable[T]]: The original function wrapped with comprehensive error handling and logging functionality, preserving its asynchronous nature.
+
+    Raises:
+        Exception: Explicitly re-raises any caught exception to ensure errors are not silently ignored, thereby maintaining the integrity of error handling.
+
+    Example:
+        @async_error_handler
+        async def async_function_example(param: int) -> str:
+            if param < 0:
+                raise ValueError("Parameter must be non-negative.")
+            return f"Processed {param}"
+    """
+
+    @wraps(func)
+    async def wrapper(*args, **kwargs) -> T:
+        try:
+            return await func(*args, **kwargs)
+        except Exception as e:
+            func_signature = signature(func)
+            bound_arguments = func_signature.bind(*args, **kwargs).arguments
+            argument_str = ", ".join([f"{k}={v}" for k, v in bound_arguments.items()])
+            logging.error(
+                f"Error in {func.__name__} with arguments: {argument_str}. Exception: {str(e)}",
+                exc_info=True,
+            )
+            # Re-raise the exception to ensure it's not silently ignored, maintaining the integrity of error handling.
+            raise
+
+    return wrapper
+
+
+# Type Aliases for clarity and type safety
+UriType = str
+SessionNameType = str
+T = TypeVar("T")
+
+# KeyDB Configuration
+# The cache types to choose from are:
+KEYDB_CACHE_URIS: Dict[str, UriType] = {
+    # Extensive list of URIs for various caches
+    "cache_default": "keydb://localhost:6379/0",  # This stores ALL raw information; default database not typically used
+    "cache_dev": "keydb://localhost:6379/1",  # This stores ALL raw information during dev/testing
+    "cache_raw": "keydb://localhost:6379/2",  # This stores ALL raw information
+    "cache_caches": "keydb://localhost:6379/3",  # This stores all the cache information
+    "cache_relationships": "keydb://localhost:6379/4",  # This maps logical relationships and contextual relationships and sequential and temporal relationships between all of the different entries in the cache at each point in time when relationship mapping is called
+    "cache_sessions": "keydb://localhost:6379/5",  # This stores all the session information
+    "cache_users": "keydb://localhost:6379/6",  # This stores all the user information
+    "cache_logs": "keydb://localhost:6379/7",  # Thi

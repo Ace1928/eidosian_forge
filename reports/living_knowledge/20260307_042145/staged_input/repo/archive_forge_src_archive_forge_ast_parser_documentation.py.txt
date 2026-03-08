@@ -1,0 +1,11 @@
+SOURCE_PATH: archive_forge/src/archive_forge/ast_parser_documentation.py
+KIND: code
+
+from sympy.core.basic import Basic
+from sympy.core.sympify import SympifyError
+from ast import parse, NodeTransformer, Call, Name, Load, \
+
+    Converts the string "s" to a SymPy expression, in local_dict.
+
+    It converts all numbers to Integers before feeding it to Python and
+    automatically creates Symbols.

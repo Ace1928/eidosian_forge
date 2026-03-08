@@ -57,7 +57,7 @@ class ModelState:
 
     def __init__(
         self,
-        model_name: str = "qwen/qwen2.5-1.5b-instruct",
+        model_name: str = "qwen/qwen3.5-2b-instruct",
         device: Optional[Any] = None,
     ) -> None:
         self.model_name = model_name

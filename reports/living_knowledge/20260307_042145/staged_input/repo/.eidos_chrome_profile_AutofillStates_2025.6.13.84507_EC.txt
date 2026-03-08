@@ -1,0 +1,33 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/EC
+KIND: config
+
+EC
+azuayprovincia de azuay*
+bolívarbolivarprovincia de bolívar
+carchiprovincia de carchi!
+orellanaprovincia de orellana9
+cantón esmeraldas
+esmeraldasprovincia de esmeraldas
+cañarprovincia de cañar
+guayasprovincia del guayas%
+
+chimborazoprovincia de chimborazo!
+imbaburaprovincia de imbabura
+lojaprovincia de loja
+manabíprovincia de manabí
+napoprovincia de napo
+el oroprovincia de el oro#
+	pichinchaprovincia de pichincha-
+	los ríoslos riosprovincia de los ríos?
+morona santiagomoronasantiagoprovincia de morona santiagoo
+,provincia de santo domingo de los tsáchilassanto domingo de los tsachilassanto domingo de los tsáchilas'
+provincia de santa elenasanta elena%
+provincia de tungurahua
+tungurahua0
+provincia de sucumbíos	sucumbios
+sucumbíosL
+
+galápagosgalápagos provinceislas galápagosprovincia de galápagos!
+cotopaxiprovincia de cotopaxi
+pastazaprovincia de pastazaB
+provincia de zamora chinchipezamora chinchipezamorachinchipe

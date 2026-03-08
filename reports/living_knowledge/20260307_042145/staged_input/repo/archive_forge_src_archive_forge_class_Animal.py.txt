@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_Animal.py
+KIND: code
+
+from enum import Enum
+import torch
+from torch._export.db.case import export_case
+class Animal(Enum):
+    COW = 'moo'

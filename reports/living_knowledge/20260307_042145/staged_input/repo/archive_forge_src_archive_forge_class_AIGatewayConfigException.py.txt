@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AIGatewayConfigException.py
+KIND: code
+
+class AIGatewayConfigException(Exception):
+    pass

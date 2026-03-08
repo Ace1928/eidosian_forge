@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_mlflow_pyfunc_backend_predict_documentation.py
+KIND: code
+
+import argparse
+from mlflow.pyfunc.scoring_server import _predict
+
+This script should be executed in a fresh python interpreter process using `subprocess`.

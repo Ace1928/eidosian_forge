@@ -1,0 +1,554 @@
+SOURCE_PATH: archive_forge/src/archive_forge/animation.py
+KIND: code
+
+# TODO:
+# * Documentation -- this will need a new section of the User's Guide.
+#      Both for Animations and just timers.
+#   - Also need to update
+#     https://scipy-cookbook.readthedocs.io/items/Matplotlib_Animations.html
+# * Blit
+#   * Currently broken with Qt4 for widgets that don't start on screen
+#   * Still a few edge cases that aren't working correctly
+#   * Can this integrate better with existing matplotlib animation artist flag?
+#     - If animated removes from default draw(), perhaps we could use this to
+#       simplify initial draw.
+# * Example
+#   * Frameless animation - pure procedural with no loop
+#   * Need example that uses something like inotify or subprocess
+#   * Complex syncing examples
+# * Movies
+#   * Can blit be enabled for movies?
+# * Need to consider event sources to allow clicking through multiple figures
+
+
+import abc
+import base64
+import contextlib
+from io import BytesIO, TextIOWrapper
+import itertools
+import logging
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+from tempfile import TemporaryDirectory
+import uuid
+import warnings
+
+import numpy as np
+from PIL import Image
+
+import matplotlib as mpl
+from matplotlib._animation_data import (
+    DISPLAY_TEMPLATE, INCLUDED_FRAMES, JS_INCLUDE, STYLE_INCLUDE)
+from matplotlib import _api, cbook
+import matplotlib.colors as mcolors
+
+_log = logging.getLogger(__name__)
+
+# Process creation flag for subprocess to prevent it raising a terminal
+# window. See for example https://stackoverflow.com/q/24130623/
+subprocess_creation_flags = (
+    subprocess.CREATE_NO_WINDOW if sys.platform == 'win32' else 0)
+
+# Other potential writing methods:
+# * http://pymedia.org/
+# * libming (produces swf) python wrappers: https://github.com/libming/libming
+# * Wrap x264 API:
+
+# (https://stackoverflow.com/q/2940671/)
+
+
+def adjusted_figsize(w, h, dpi, n):
+    """
+    Compute figure size so that pixels are a multiple of n.
+
+    Parameters
+    ----------
+    w, h : float
+        Size in inches.
+
+    dpi : float
+        The dpi.
+
+    n : int
+        The target multiple.
+
+    Returns
+    -------
+    wnew, hnew : float
+        The new figure size in inches.
+    """
+
+    # this maybe simplified if / when we adopt consistent rounding for
+    # pixel size across the whole library
+    def correct_roundoff(x, dpi, n):
+        if int(x*dpi) % n != 0:
+            if int(np.nextafter(x, np.inf)*dpi) % n == 0:
+                x = np.nextafter(x, np.inf)
+            elif int(np.nextafter(x, -np.inf)*dpi) % n == 0:
+                x = np.nextafter(x, -np.inf)
+        return x
+
+    wnew = int(w * dpi / n) * n / dpi
+    hnew = int(h * dpi / n) * n / dpi
+    return correct_roundoff(wnew, dpi, n), correct_roundoff(hnew, dpi, n)
+
+
+class MovieWriterRegistry:
+    """Registry of available writer classes by human readable name."""
+
+    def __init__(self):
+        self._registered = dict()
+
+    def register(self, name):
+        """
+        Decorator for registering a class under a name.
+
+        Example use::
+
+            @registry.register(name)
+            class Foo:
+                pass
+        """
+        def wrapper(writer_cls):
+            self._registered[name] = writer_cls
+            return writer_cls
+        return wrapper
+
+    def is_available(self, name):
+        """
+        Check if given writer is available by name.
+
+        Parameters
+        ----------
+        name : str
+
+        Returns
+        -------
+        bool
+        """
+        try:
+            cls = self._registered[name]
+        except KeyError:
+            return False
+        return cls.isAvailable()
+
+    def __iter__(self):
+        """Iterate over names of available writer class."""
+        for name in self._registered:
+            if self.is_available(name):
+                yield name
+
+    def list(self):
+        """Get a list of available MovieWriters."""
+        return [*self]
+
+    def __getitem__(self, name):
+        """Get an available writer class from its name."""
+        if self.is_available(name):
+            return self._registered[name]
+        raise RuntimeError(f"Requested MovieWriter ({name}) not available")
+
+
+writers = MovieWriterRegistry()
+
+
+class AbstractMovieWriter(abc.ABC):
+    """
+    Abstract base class for writing movies, providing a way to grab frames by
+    calling `~AbstractMovieWriter.grab_frame`.
+
+    `setup` is called to start the process and `finish` is called afterwards.
+    `saving` is provided as a context manager to facilitate this process as ::
+
+        with moviewriter.saving(fig, outfile='myfile.mp4', dpi=100):
+            # Iterate over frames
+            moviewriter.grab_frame(**savefig_kwargs)
+
+    The use of the context manager ensures that `setup` and `finish` are
+    performed as necessary.
+
+    An instance of a concrete subclass of this class can be given as the
+    ``writer`` argument of `Animation.save()`.
+    """
+
+    def __init__(self, fps=5, metadata=None, codec=None, bitrate=None):
+        self.fps = fps
+        self.metadata = metadata if metadata is not None else {}
+        self.codec = mpl._val_or_rc(codec, 'animation.codec')
+        self.bitrate = mpl._val_or_rc(bitrate, 'animation.bitrate')
+
+    @abc.abstractmethod
+    def setup(self, fig, outfile, dpi=None):
+        """
+        Setup for writing the movie file.
+
+        Parameters
+        ----------
+        fig : `~matplotlib.figure.Figure`
+            The figure object that contains the information for frames.
+        outfile : str
+            The filename of the resulting movie file.
+        dpi : float, default: ``fig.dpi``
+            The DPI (or resolution) for the file.  This controls the size
+            in pixels of the resulting movie file.
+        """
+        # Check that path is valid
+        Path(outfile).parent.resolve(strict=True)
+        self.outfile = outfile
+        self.fig = fig
+        if dpi is None:
+            dpi = self.fig.dpi
+        self.dpi = dpi
+
+    @property
+    def frame_size(self):
+        """A tuple ``(width, height)`` in pixels of a movie frame."""
+        w, h = self.fig.get_size_inches()
+        return int(w * self.dpi), int(h * self.dpi)
+
+    @abc.abstractmethod
+    def grab_frame(self, **savefig_kwargs):
+        """
+        Grab the image information from the figure and save as a movie frame.
+
+        All keyword arguments in *savefig_kwargs* are passed on to the
+        `~.Figure.savefig` call that saves the figure.  However, several
+        keyword arguments that are supported by `~.Figure.savefig` may not be
+        passed as they are controlled by the MovieWriter:
+
+        - *dpi*, *bbox_inches*:  These may not be passed because each frame of the
+           animation much be exactly the same size in pixels.
+        - *format*: This is controlled by the MovieWriter.
+        """
+
+    @abc.abstractmethod
+    def finish(self):
+        """Finish any processing for writing the movie."""
+
+    @contextlib.contextmanager
+    def saving(self, fig, outfile, dpi, *args, **kwargs):
+        """
+        Context manager to facilitate writing the movie file.
+
+        ``*args, **kw`` are any parameters that should be passed to `setup`.
+        """
+        if mpl.rcParams['savefig.bbox'] == 'tight':
+            _log.info("Disabling savefig.bbox = 'tight', as it may cause "
+                      "frame size to vary, which is inappropriate for "
+                      "animation.")
+
+        # This particular sequence is what contextlib.contextmanager wants
+        self.setup(fig, outfile, dpi, *args, **kwargs)
+        with mpl.rc_context({'savefig.bbox': None}):
+            try:
+                yield self
+            finally:
+                self.finish()
+
+
+class MovieWriter(AbstractMovieWriter):
+    """
+    Base class for writing movies.
+
+    This is a base class for MovieWriter subclasses that write a movie frame
+    data to a pipe. You cannot instantiate this class directly.
+    See examples for how to use its subclasses.
+
+    Attributes
+    ----------
+    frame_format : str
+        The format used in writing frame data, defaults to 'rgba'.
+    fig : `~matplotlib.figure.Figure`
+        The figure to capture data from.
+        This must be provided by the subclasses.
+    """
+
+    # Builtin writer subclasses additionally define the _exec_key and _args_key
+    # attributes, which indicate the rcParams entries where the path to the
+    # executable and additional command-line arguments to the executable are
+    # stored.  Third-party writers cannot meaningfully set these as they cannot
+    # extend rcParams with new keys.
+
+    # Pipe-based writers only support RGBA, but file-based ones support more
+    # formats.
+    supported_formats = ["rgba"]
+
+    def __init__(self, fps=5, codec=None, bitrate=None, extra_args=None,
+                 metadata=None):
+        """
+        Parameters
+        ----------
+        fps : int, default: 5
+            Movie frame rate (per second).
+        codec : str or None, default: :rc:`animation.codec`
+            The codec to use.
+        bitrate : int, default: :rc:`animation.bitrate`
+            The bitrate of the movie, in kilobits per second.  Higher values
+            means higher quality movies, but increase the file size.  A value
+            of -1 lets the underlying movie encoder select the bitrate.
+        extra_args : list of str or None, optional
+            Extra command-line arguments passed to the underlying movie encoder. These
+            arguments are passed last to the encoder, just before the filename. The
+            default, None, means to use :rc:`animation.[name-of-encoder]_args` for the
+            builtin writers.
+        metadata : dict[str, str], default: {}
+            A dictionary of keys and values for metadata to include in the
+            output file. Some keys that may be of use include:
+            title, artist, genre, subject, copyright, srcform, comment.
+        """
+        if type(self) is MovieWriter:
+            # TODO MovieWriter is still an abstract class and needs to be
+            #      extended with a mixin. This should be clearer in naming
+            #      and description. For now, just give a reasonable error
+            #      message to users.
+            raise TypeError(
+                'MovieWriter cannot be instantiated directly. Please use one '
+                'of its subclasses.')
+
+        super().__init__(fps=fps, metadata=metadata, codec=codec,
+                         bitrate=bitrate)
+        self.frame_format = self.supported_formats[0]
+        self.extra_args = extra_args
+
+    def _adjust_frame_size(self):
+        if self.codec == 'h264':
+            wo, ho = self.fig.get_size_inches()
+            w, h = adjusted_figsize(wo, ho, self.dpi, 2)
+            if (wo, ho) != (w, h):
+                self.fig.set_size_inches(w, h, forward=True)
+                _log.info('figure size in inches has been adjusted '
+                          'from %s x %s to %s x %s', wo, ho, w, h)
+        else:
+            w, h = self.fig.get_size_inches()
+        _log.debug('frame size in pixels is %s x %s', *self.frame_size)
+        return w, h
+
+    def setup(self, fig, outfile, dpi=None):
+        # docstring inherited
+        super().setup(fig, outfile, dpi=dpi)
+        self._w, self._h = self._adjust_frame_size()
+        # Run here so that grab_frame() can write the data to a pipe. This
+        # eliminates the need for temp files.
+        self._run()
+
+    def _run(self):
+        # Uses subprocess to call the program for assembling frames into a
+        # movie file.  *args* returns the sequence of command line arguments
+        # from a few configuration options.
+        command = self._args()
+        _log.info('MovieWriter._run: running command: %s',
+                  cbook._pformat_subprocess(command))
+        PIPE = subprocess.PIPE
+        self._proc = subprocess.Popen(
+            command, stdin=PIPE, stdout=PIPE, stderr=PIPE,
+            creationflags=subprocess_creation_flags)
+
+    def finish(self):
+        """Finish any processing for writing the movie."""
+        out, err = self._proc.communicate()
+        # Use the encoding/errors that universal_newlines would use.
+        out = TextIOWrapper(BytesIO(out)).read()
+        err = TextIOWrapper(BytesIO(err)).read()
+        if out:
+            _log.log(
+                logging.WARNING if self._proc.returncode else logging.DEBUG,
+                "MovieWriter stdout:\n%s", out)
+        if err:
+            _log.log(
+                logging.WARNING if self._proc.returncode else logging.DEBUG,
+                "MovieWriter stderr:\n%s", err)
+        if self._proc.returncode:
+            raise subprocess.CalledProcessError(
+                self._proc.returncode, self._proc.args, out, err)
+
+    def grab_frame(self, **savefig_kwargs):
+        # docstring inherited
+        _validate_grabframe_kwargs(savefig_kwargs)
+        _log.debug('MovieWriter.grab_frame: Grabbing frame.')
+        # Readjust the figure size in case it has been changed by the user.
+        # All frames must have the same size to save the movie correctly.
+        self.fig.set_size_inches(self._w, self._h)
+        # Save the figure data to the sink, using the frame format and dpi.
+        self.fig.savefig(self._proc.stdin, format=self.frame_format,
+                         dpi=self.dpi, **savefig_kwargs)
+
+    def _args(self):
+        """Assemble list of encoder-specific command-line arguments."""
+        return NotImplementedError("args needs to be implemented by subclass.")
+
+    @classmethod
+    def bin_path(cls):
+        """
+        Return the binary path to the commandline tool used by a specific
+        subclass. This is a class method so that the tool can be looked for
+        before making a particular MovieWriter subclass available.
+        """
+        return str(mpl.rcParams[cls._exec_key])
+
+    @classmethod
+    def isAvailable(cls):
+        """Return whether a MovieWriter subclass is actually available."""
+        return shutil.which(cls.bin_path()) is not None
+
+
+class FileMovieWriter(MovieWriter):
+    """
+    `MovieWriter` for writing to individual files and stitching at the end.
+
+    This must be sub-classed to be useful.
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.frame_format = mpl.rcParams['animation.frame_format']
+
+    def setup(self, fig, outfile, dpi=None, frame_prefix=None):
+        """
+        Setup for writing the movie file.
+
+        Parameters
+        ----------
+        fig : `~matplotlib.figure.Figure`
+            The figure to grab the rendered frames from.
+        outfile : str
+            The filename of the resulting movie file.
+        dpi : float, default: ``fig.dpi``
+            The dpi of the output file. This, with the figure size,
+            controls the size in pixels of the resulting movie file.
+        frame_prefix : str, optional
+            The filename prefix to use for temporary files.  If *None* (the
+            default), files are written to a temporary directory which is
+            deleted by `finish`; if not *None*, no temporary files are
+            deleted.
+        """
+        # Check that path is valid
+        Path(outfile).parent.resolve(strict=True)
+        self.fig = fig
+        self.outfile = outfile
+        if dpi is None:
+            dpi = self.fig.dpi
+        self.dpi = dpi
+        self._adjust_frame_size()
+
+        if frame_prefix is None:
+            self._tmpdir = TemporaryDirectory()
+            self.temp_prefix = str(Path(self._tmpdir.name, 'tmp'))
+        else:
+            self._tmpdir = None
+            self.temp_prefix = frame_prefix
+        self._frame_counter = 0  # used for generating sequential file names
+        self._temp_paths = list()
+        self.fname_format_str = '%s%%07d.%s'
+
+    def __del__(self):
+        if hasattr(self, '_tmpdir') and self._tmpdir:
+            self._tmpdir.cleanup()
+
+    @property
+    def frame_format(self):
+        """
+        Format (png, jpeg, etc.) to use for saving the frames, which can be
+        decided by the individual subclasses.
+        """
+        return self._frame_format
+
+    @frame_format.setter
+    def frame_format(self, frame_format):
+        if frame_format in self.supported_formats:
+            self._frame_format = frame_format
+        else:
+            _api.warn_external(
+                f"Ignoring file format {frame_format!r} which is not "
+                f"supported by {type(self).__name__}; using "
+                f"{self.supported_formats[0]} instead.")
+            self._frame_format = self.supported_formats[0]
+
+    def _base_temp_name(self):
+        # Generates a template name (without number) given the frame format
+        # for extension and the prefix.
+        return self.fname_format_str % (self.temp_prefix, self.frame_format)
+
+    def grab_frame(self, **savefig_kwargs):
+        # docstring inherited
+        # Creates a filename for saving using basename and counter.
+        _validate_grabframe_kwargs(savefig_kwargs)
+        path = Path(self._base_temp_name() % self._frame_counter)
+        self._temp_paths.append(path)  # Record the filename for later use.
+        self._frame_counter += 1  # Ensures each created name is unique.
+        _log.debug('FileMovieWriter.grab_frame: Grabbing frame %d to path=%s',
+                   self._frame_counter, path)
+        with open(path, 'wb') as sink:  # Save figure to the sink.
+            self.fig.savefig(sink, format=self.frame_format, dpi=self.dpi,
+                             **savefig_kwargs)
+
+    def finish(self):
+        # Call run here now that all frame grabbing is done. All temp files
+        # are available to be assembled.
+        try:
+            self._run()
+            super().finish()
+        finally:
+            if self._tmpdir:
+                _log.debug(
+                    'MovieWriter: clearing temporary path=%s', self._tmpdir
+                )
+                self._tmpdir.cleanup()
+
+
+@writers.register('pillow')
+class PillowWriter(AbstractMovieWriter):
+    @classmethod
+    def isAvailable(cls):
+        return True
+
+    def setup(self, fig, outfile, dpi=None):
+        super().setup(fig, outfile, dpi=dpi)
+        self._frames = []
+
+    def grab_frame(self, **savefig_kwargs):
+        _validate_grabframe_kwargs(savefig_kwargs)
+        buf = BytesIO()
+        self.fig.savefig(
+            buf, **{**savefig_kwargs, "format": "rgba", "dpi": self.dpi})
+        self._frames.append(Image.frombuffer(
+            "RGBA", self.frame_size, buf.getbuffer(), "raw", "RGBA", 0, 1))
+
+    def finish(self):
+        self._frames[0].save(
+            self.outfile, save_all=True, append_images=self._frames[1:],
+            duration=int(1000 / self.fps), loop=0)
+
+
+# Base class of ffmpeg information. Has the config keys and the common set
+# of arguments that controls the *output* side of things.
+class FFMpegBase:
+    """
+    Mixin class for FFMpeg output.
+
+    This is a base class for the concrete `FFMpegWriter` and `FFMpegFileWriter`
+    classes.
+    """
+
+    _exec_key = 'animation.ffmpeg_path'
+    _args_key = 'animation.ffmpeg_args'
+
+    @property
+    def output_args(self):
+        args = []
+        if Path(self.outfile).suffix == '.gif':
+            self.codec = 'gif'
+        else:
+            args.extend(['-vcodec', self.codec])
+        extra_args = (self.extra_args if self.extra_args is not None
+                      else mpl.rcParams[self._args_key])
+        # For h264, the default format is yuv444p, which is not compatible
+        # with quicktime (and others). Specifying yuv420p fixes playback on
+        # iOS, as well as HTML5 video in firefox and safari (on both Win and
+        # OSX). Also fixes internet explorer. This is as of 2015/10/29.
+        if self.codec == 'h264' and '-pix_fmt' not in extra_args:
+            args.extend(['-pix_fmt', 'yuv420p'])
+        # For GIF, we're telling FFMPEG to split the video stream, to generate
+        # a palette, and then use it for encoding.
+        elif self.codec == 'gif' and '-filter_complex' not in extra_args:
+            arg

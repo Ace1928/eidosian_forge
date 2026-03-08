@@ -1,0 +1,36 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/TN
+KIND: config
+
+TNO
+تونسgouvernorat de tunistunistunis governorateولاية تونسT
+أريانةariana governorategouvernorat de l'arianaولاية أريانةe
+بن عروس	ben arousben arous governorategouvernorat de ben arousولاية بن عروس_
+
+منوبةgouvernorat de la manouba
+la manoubamanubah governorateولاية منوبةR
+نابلgouvernorat de nabeulnabeulnabeul governorateولاية نابل`
+
+زغوانgouvernorat de zaghouanzaghouan governorateزَغوانولاية زغوانP
+
+بنزرتbizerte governorategouvernorat de bizerteولاية بنزرتq
+باجةbéjabéja governorategouvernorat de béjaبيجاولاية باجةولاية باجة‎V
+جندوبةgouvernorat de jendoubajendouba governorateولاية جندوبةS
+
+الكافalkāfgouvernorat du kefle kef governorateولاية الكافq
+سليانةgouvernorat de silianasilianasiliana governorateسليانـــةولاية سليانة^
+القيروانgouvernorat de kairouankairouan governorateولاية القيروانh
+القصرينgouvernorat de kasserine	kasserinekassérine governorateولاية القصرينk
+سيدي بوزيدgouvernorat de sidi bouzidsidi bou zid governorateولاية سيدي بوزيدJ
+سوسةgouvernorat de soussesousse governorateولاية سوسةu
+المنستيرalmunastîrgouvernorat de monastirmonastirmonastir governorateولاية المنستيرc
+المهديةalmahdīyahgouvernorat de mahdiamahdia governorateولاية المهديةy
+
+صفاقسgouvernorat de sfaxsfaxsfax governorateصفاقس‎ولاية صفاقسولاية صفاقس‎H
+قفصةgafsa governorategouvernorat de gafsaولاية قفصةR
+توزرgouvernorat de tozeurtozeurtozeur governorateولاية توزرT
+قبليgouvernorat de kébilikebili governoratekébiliولاية قبلي^
+قابسgabèsgabès governorategouvernorat de gabès
+قابِسولاية قابس_
+
+مدنينgouvernorat de médenine	médeninemédenine governorateولاية مدنينc
+تطاوينgouvernorat de tataouine	tataouinetataouine governorateولاية تطاوين

@@ -1,0 +1,573 @@
+SOURCE_PATH: archive_forge/src/archive_forge/azure_rm_virtualmachinescaleset.py
+KIND: code
+
+#!/usr/bin/python
+#
+# Copyright (c) 2016 Sertac Ozercan, <seozerca@microsoft.com>
+#
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+from __future__ import absolute_import, division, print_function
+__metaclass__ = type
+
+
+DOCUMENTATION = '''
+---
+module: azure_rm_virtualmachinescaleset
+
+version_added: "0.1.2"
+
+short_description: Manage Azure virtual machine scale sets
+
+description:
+    - Create and update a virtual machine scale set.
+    - Note that this module was called M(azure.azcollection.azure_rm_virtualmachine_scaleset) before Ansible 2.8. The usage did not change.
+
+options:
+    resource_group:
+        description:
+            - Name of the resource group containing the virtual machine scale set.
+        required: true
+        type: str
+    name:
+        description:
+            - Name of the virtual machine.
+        required: true
+        type: str
+    state:
+        description:
+            - Assert the state of the virtual machine scale set.
+            - State C(present) will check that the machine exists with the requested configuration. If the configuration
+              of the existing machine does not match, the machine will be updated.
+            - State C(absent) will remove the virtual machine scale set.
+        default: present
+        type: str
+        choices:
+            - absent
+            - present
+    location:
+        description:
+            - Valid Azure location. Defaults to location of the resource group.
+        type: str
+    short_hostname:
+        description:
+            - Short host name.
+        type: str
+    vm_size:
+        description:
+            - A valid Azure VM size value. For example, C(Standard_D4).
+            - The list of choices varies depending on the subscription and location. Check your subscription for available choices.
+        type: str
+    capacity:
+        description:
+            - Capacity of VMSS.
+        default: 1
+        type: int
+    tier:
+        description:
+            - SKU Tier.
+        type: str
+        choices:
+            - Basic
+            - Standard
+    upgrade_policy:
+        description:
+            - Upgrade policy.
+            - Required when creating the Azure virtual machine scale sets.
+        type: str
+        choices:
+            - Manual
+            - Automatic
+    priority:
+        description:
+            - Priority of the VMSS.
+            - C(None) is the equivalent of Regular VM.
+        type: str
+        choices:
+            - None
+            - Spot
+    eviction_policy:
+        description:
+            - Specifies the eviction policy for the Azure Spot virtual machine.
+            - Requires priority to be set to Spot.
+        type: str
+        choices:
+            - Deallocate
+            - Delete
+    max_price:
+        description:
+            - Specifies the maximum price you are willing to pay for a Azure Spot VM/VMSS.
+            - This price is in US Dollars.
+            - C(-1) indicates default price to be up-to on-demand.
+            - Requires priority to be set to Spot.
+        default: -1
+        type: float
+    admin_username:
+        description:
+            - Admin username used to access the host after it is created. Required when creating a VM.
+        type: str
+    admin_password:
+        description:
+            - Password for the admin username.
+            - Not required if the os_type is Linux and SSH password authentication is disabled by setting I(ssh_password_enabled=false).
+        type: str
+    ssh_password_enabled:
+        description:
+            - When the os_type is Linux, setting I(ssh_password_enabled=false) will disable SSH password authentication and require use of SSH keys.
+        type: bool
+        default: true
+    ssh_public_keys:
+        description:
+            - For I(os_type=Linux) provide a list of SSH keys.
+            - Each item in the list should be a dictionary where the dictionary contains two keys, C(path) and C(key_data).
+            - Set the C(path) to the default location of the authorized_keys files.
+            - On an Enterprise Linux host, for example, the I(path=/home/<admin username>/.ssh/authorized_keys).
+              Set C(key_data) to the actual value of the public key.
+        type: list
+        elements: dict
+    image:
+        description:
+            - Specifies the image used to build the VM.
+            - If a string, the image is sourced from a custom image based on the name.
+            - If a dict with the keys I(publisher), I(offer), I(sku), and I(version), the image is sourced from a Marketplace image.
+               Note that set I(version=latest) to get the most recent version of a given image.
+            - If a dict with the keys I(name) and I(resource_group), the image is sourced from a custom image based on the I(name) and I(resource_group) set.
+              Note that the key I(resource_group) is optional and if omitted, all images in the subscription will be searched for by I(name).
+            - Custom image support was added in Ansible 2.5.
+            - Required when creating.
+        type: raw
+    os_disk_caching:
+        description:
+            - Type of OS disk caching.
+        type: str
+        choices:
+            - ReadOnly
+            - ReadWrite
+        default: ReadOnly
+        aliases:
+            - disk_caching
+    os_disk_size_gb:
+        description:
+            - Specifies the size of the operating system disk in gigabytes.
+            - This can be used to overwrite the size of the disk in a virtual machine image.
+        type: int
+    os_type:
+        description:
+            - Base type of operating system.
+        type: str
+        choices:
+            - Windows
+            - Linux
+        default: Linux
+    ephemeral_os_disk:
+        description:
+            - Parameters of ephemeral disk settings that can be specified for operating system disk.
+            - Ephemeral OS disk is only supported for VMS Instances using Managed Disk.
+        type: bool
+    managed_disk_type:
+        description:
+            - Managed disk type.
+        type: str
+        choices:
+            - Standard_LRS
+            - Premium_LRS
+            - StandardSSD_LRS
+            - UltraSSD_LRS
+            - Premium_ZRS
+            - StandardSSD_ZRS
+    data_disks:
+        description:
+            - Describes list of data disks.
+        type: list
+        elements: dict
+        suboptions:
+            lun:
+                description:
+                    - The logical unit number for data disk.
+                default: '0'
+                type: str
+            disk_size_gb:
+                description:
+                    - The initial disk size in GB for blank data disks.
+                type: int
+            managed_disk_type:
+                description:
+                    - Managed data disk type.
+                type: str
+                choices:
+                    - Standard_LRS
+                    - Premium_LRS
+                    - StandardSSD_LRS
+                    - UltraSSD_LRS
+                    - Premium_ZRS
+                    - StandardSSD_ZRS
+            caching:
+                description:
+                    - Type of data disk caching.
+                type: str
+                choices:
+                    - ReadOnly
+                    - ReadWrite
+                default: ReadOnly
+    virtual_network_resource_group:
+        description:
+            - When creating a virtual machine, if a specific virtual network from another resource group should be
+              used.
+            - Use this parameter to specify the resource group to use.
+        type: str
+    virtual_network_name:
+        description:
+            - Virtual Network name.
+        aliases:
+            - virtual_network
+        type: str
+    subnet_name:
+        description:
+            - Subnet name.
+        type: str
+        aliases:
+            - subnet
+    public_ip_per_vm:
+        description:
+            - Assign a public IP to each virtual machine of the scale set
+        type: bool
+        default: False
+    load_balancer:
+        description:
+            - Load balancer name.
+        type: str
+    application_gateway:
+        description:
+            - Application gateway name.
+        type: str
+    remove_on_absent:
+        description:
+            - When removing a VM using I(state=absent), also remove associated resources.
+            - It can be C(all) or a list with any of the following ['network_interfaces', 'virtual_storage', 'public_ips'].
+            - Any other input will be ignored.
+        type: list
+        elements: str
+        default: ['all']
+    enable_accelerated_networking:
+        description:
+            - Indicates whether user wants to allow accelerated networking for virtual machines in scaleset being created.
+        type: bool
+    security_group:
+        description:
+            - Existing security group with which to associate the subnet.
+            - It can be the security group name which is in the same resource group.
+            - It can be the resource ID.
+            - It can be a dict which contains I(name) and I(resource_group) of the security group.
+        aliases:
+            - security_group_name
+        type: raw
+    overprovision:
+        description:
+            - Specifies whether the Virtual Machine Scale Set should be overprovisioned.
+        type: bool
+    single_placement_group:
+        description:
+            - When true this limits the scale set to a single placement group, of max size 100 virtual machines.
+        type: bool
+        default: False
+    plan:
+        description:
+            - Third-party billing plan for the VM.
+        type: dict
+        suboptions:
+            name:
+                description:
+                    - Billing plan name.
+                required: true
+                type: str
+            product:
+                description:
+                    - Product name.
+                required: true
+                type: str
+            publisher:
+                description:
+                    - Publisher offering the plan.
+                required: true
+                type: str
+            promotion_code:
+                description:
+                    - Optional promotion code.
+                type: str
+    zones:
+        description:
+            - A list of Availability Zones for your virtual machine scale set.
+        type: list
+        elements: str
+    custom_data:
+        description:
+            - Data which is made available to the virtual machine and used by e.g., C(cloud-init).
+            - Many images in the marketplace are not cloud-init ready. Thus, data sent to I(custom_data) would be ignored.
+            - If the image you are attempting to use is not listed in
+              U(https://docs.microsoft.com/en-us/azure/virtual-machines/linux/using-cloud-init#cloud-init-overview),
+              follow these steps U(https://docs.microsoft.com/en-us/azure/virtual-machines/linux/cloudinit-prepare-custom-image).
+        type: str
+    scale_in_policy:
+        description:
+            - define the order in which vmss instances are scaled-in
+        type: str
+        choices:
+            - Default
+            - NewestVM
+            - OldestVM
+    terminate_event_timeout_minutes:
+        description:
+            - timeout time for termination notification event
+            - in range between 5 and 15
+        type: int
+    platform_fault_domain_count:
+        description:
+            - Fault Domain count for each placement group.
+        type: int
+        default: 1
+    orchestration_mode:
+        description:
+            - Specifies the orchestration mode for the virtual machine scale set.
+            - When I(orchestration_mode=Flexible), I(public_ip_per_vm=True) must be set.
+            - When I(orchestration_mode=Flexible), I(platform_fault_domain_count) must be set.
+            - When I(orchestration_mode=Flexible), I(single_placement_group=False) must be set.
+            - When I(orchestration_mode=Flexible), it cannot be configured I(overprovision).
+            - When I(orchestration_mode=Flexible), it cannot be configured I(upgrade_policy) and configured when I(orchestration_mode=Uniform).
+        type: str
+        choices:
+            - Flexible
+            - Uniform
+    security_profile:
+        description:
+            - Specifies the Security related profile settings for the virtual machine sclaset.
+        type: dict
+        suboptions:
+            encryption_at_host:
+                description:
+                    - This property can be used by user in the request to enable or disable the Host Encryption for the virtual machine sclaset.
+                    - This will enable the encryption for all the disks including Resource/Temp disk at host itself.
+                type: bool
+            security_type:
+                description:
+                    - Specifies the SecurityType of the virtual machine sclaset.
+                    - It is set as TrustedLaunch to enable UefiSettings.
+                type: str
+                choices:
+                    - TrustedLaunch
+            uefi_settings:
+                description:
+                    - Specifies the security settings like secure boot and vTPM used while creating the virtual machine scalset.
+                type: dict
+                suboptions:
+                    secure_boot_enabled:
+                        description:
+                            - Specifies whether secure boot should be enabled on the virtual machine sclaset.
+                        type: bool
+                    v_tpm_enabled:
+                        description:
+                            - Specifies whether vTPM should be enabled on the virtual machine scalset.
+                        type: bool
+
+extends_documentation_fragment:
+    - azure.azcollection.azure
+    - azure.azcollection.azure_tags
+
+author:
+    - Sertac Ozercan (@sozercan)
+
+'''
+EXAMPLES = '''
+
+- name: Create VMSS
+  azure_rm_virtualmachinescaleset:
+    resource_group: myResourceGroup
+    name: testvmss
+    vm_size: Standard_DS1_v2
+    capacity: 2
+    virtual_network_name: testvnet
+    upgrade_policy: Manual
+    subnet_name: testsubnet
+    terminate_event_timeout_minutes: 10
+    scale_in_policy: NewestVM
+    admin_username: "{{ username }}"
+    ssh_password_enabled: false
+    ssh_public_keys:
+      - path: /home/adminUser/.ssh/authorized_keys
+        key_data: < insert your ssh public key here... >
+    managed_disk_type: Standard_LRS
+    image:
+      offer: 0001-com-ubuntu-server-focal
+      publisher: canonical
+      sku: 20_04-lts-gen2
+      version: latest
+    data_disks:
+      - lun: 0
+        disk_size_gb: 64
+        caching: ReadWrite
+        managed_disk_type: Standard_LRS
+
+- name: Create VMSS with an image that requires plan information
+  azure_rm_virtualmachinescaleset:
+    resource_group: myResourceGroup
+    name: testvmss
+    vm_size: Standard_DS1_v2
+    capacity: 3
+    virtual_network_name: testvnet
+    upgrade_policy: Manual
+    subnet_name: testsubnet
+    admin_username: "{{ username }}"
+    ssh_password_enabled: false
+    ssh_public_keys:
+      - path: /home/adminUser/.ssh/authorized_keys
+        key_data: < insert your ssh public key here... >
+    managed_disk_type: Standard_LRS
+    image:
+      offer: cis-ubuntu-linux-1804-l1
+      publisher: center-for-internet-security-inc
+      sku: Stable
+      version: latest
+    plan:
+      name: cis-ubuntu-linux-1804-l1
+      product: cis-ubuntu-linux-1804-l1
+      publisher: center-for-internet-security-inc
+    data_disks:
+      - lun: 0
+        disk_size_gb: 64
+        caching: ReadWrite
+        managed_disk_type: Standard_LRS
+
+- name: Create a VMSS with a custom image
+  azure_rm_virtualmachinescaleset:
+    resource_group: myResourceGroup
+    name: testvmss
+    vm_size: Standard_DS1_v2
+    capacity: 2
+    virtual_network_name: testvnet
+    upgrade_policy: Manual
+    subnet_name: testsubnet
+    admin_username: "{{ username }}"
+    admin_password: "{{ password }}"
+    managed_disk_type: Standard_LRS
+    image: customimage001
+
+- name: Create a VMSS with over 100 instances
+  azure_rm_virtualmachinescaleset:
+    resource_group: myResourceGroup
+    name: testvmss
+    vm_size: Standard_DS1_v2
+    capacity: 120
+    single_placement_group: false
+    virtual_network_name: testvnet
+    upgrade_policy: Manual
+    subnet_name: testsubnet
+    admin_username: "{{ username }}"
+    admin_password: "{{ password }}"
+    managed_disk_type: Standard_LRS
+    image: customimage001
+
+- name: Create a VMSS with a custom image from a particular resource group
+  azure_rm_virtualmachinescaleset:
+    resource_group: myResourceGroup
+    name: testvmss
+    vm_size: Standard_DS1_v2
+    capacity: 2
+    virtual_network_name: testvnet
+    upgrade_policy: Manual
+    subnet_name: testsubnet
+    admin_username: "{{ username }}"
+    admin_password: "{{ password }}"
+    managed_disk_type: Standard_LRS
+    image:
+      name: customimage001
+      resource_group: myResourceGroup
+
+- name: Create a VMSS with Spot Instance
+  azure_rm_virtualmachinescaleset:
+    resource_group: myResourceGroup
+    name: testvmss
+    vm_size: Standard_DS1_v2
+    capacity: 5
+    priority: Spot
+    eviction_policy: Deallocate
+    virtual_network_name: testvnet
+    upgrade_policy: Manual
+    subnet_name: testsubnet
+    admin_username: "{{ username }}"
+    admin_password: "{{ password }}"
+    managed_disk_type: Standard_LRS
+    image: customimage001
+
+- name: Create VMSS with security group
+  azure_rm_virtualmachinescaleset:
+    resource_group: "{{ resource_group }}"
+    name: testVMSS{{ rpfx }}
+    vm_size: Standard_D4s_v3
+    admin_username: testuser
+    single_placement_group: false
+    platform_fault_domain_count: 1
+    public_ip_per_vm: true
+    ssh_password_enabled: false
+    ssh_public_keys:
+      - path: /home/testuser/.ssh/authorized_keys
+        key_data: "ssh-rsa ****"
+    virtual_network_name: VMSStestVnet
+    subnet_name: VMSStestSubnet
+    managed_disk_type: Standard_LRS
+    orchestration_mode: Flexible
+    os_disk_caching: ReadWrite
+    security_profile:
+      uefi_settings:
+        secure_boot_enabled: true
+        v_tpm_enabled: false
+      encryption_at_host: false
+      security_type: TrustedLaunch
+    image:
+      offer: 0001-com-ubuntu-server-jammy
+      publisher: Canonical
+      sku: 22_04-lts-gen2
+      version: latest
+    data_disks:
+      - lun: 0
+        disk_size_gb: 64
+        caching: ReadWrite
+        managed_disk_type: Standard_LRS
+'''
+
+RETURN = '''
+azure_vmss:
+    description:
+        - Facts about the current state of the object.
+        - Note that facts are not part of the registered output but available directly.
+    returned: always
+    type: dict
+    sample: {
+        "properties": {
+            "overprovision": true,
+            "platformFaultDomainCount": 1,
+            "orchestrationMode": "Flexible",
+             "scaleInPolicy": {
+                    "rules": [
+                        "NewestVM"
+                    ]
+            },
+            "singlePlacementGroup": true,
+            "upgradePolicy": {
+                "mode": "Manual"
+            },
+            "virtualMachineProfile": {
+                "networkProfile": {
+                    "networkInterfaceConfigurations": [
+                        {
+                            "name": "testvmss",
+                            "properties": {
+                                "dnsSettings": {
+                                    "dnsServers": []
+                                },
+                                "enableAcceleratedNetworking": false,
+                                "ipConfigurations": [
+                                    {
+                                        "name": "default",
+                                        "properties": {
+                                            "privateIPAddressVersion": "IPv4",
+                                            "subnet": {
+                                                "

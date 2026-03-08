@@ -1,0 +1,20 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/CI
+KIND: config
+
+CI:
+district autonome d'abidjanabidjan autonomous districtX
+bassassandrabassassandra districtdistrict du bassassandrarégion du bassassandra4
+comoecomoécomoé districtdistrict du comoéC
+denguele
+denguélédenguélé districtdistrict du denguéléH
+district du gôhdjiboua
+gohdjibouagôhdjibouagôhdjiboua district:
+district des lacslacslacs districtrégion des lacsF
+district des laguneslaguneslagunes districtrégion des lagunesX
+18 montagnesdistrict des montagnesdixhuit montagnes	montagnesmontagnes districtd
+district du sassandramarahouésassandramarahouesassandramarahouésassandramarahoué districtF
+district des savanesrégion des savanessavanessavanes districtf
+!district de la vallée du bandamavalle du bandamavallée du bandamavallée du bandama district-
+district du worobaworobaworoba districtH
+!district autonome du yamoussoukroyamoussoukroyamoussoukro district-
+district du zanzanzanzanzanzan district

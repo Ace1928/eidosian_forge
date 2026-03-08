@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/avg_documentation.py
+KIND: code
+
+from .sampled_stat import AbstractSampledStat
+
+    An AbstractSampledStat that maintains a simple average over its samples.

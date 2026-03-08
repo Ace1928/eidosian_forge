@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AGLError.py
+KIND: code
+
+from fontTools.misc.textTools import tostr
+import re
+class AGLError(Exception):
+    pass

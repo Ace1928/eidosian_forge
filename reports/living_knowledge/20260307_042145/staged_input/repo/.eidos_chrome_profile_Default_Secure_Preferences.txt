@@ -1,0 +1,4 @@
+SOURCE_PATH: .eidos_chrome_profile/Default/Secure Preferences
+KIND: config
+
+{"protection":{"super_mac":"33F663353631B144EA660B5F809D89BA41CAF954EE5776BE5004BB589CA96BE1"}}

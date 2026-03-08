@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AddInstanceGroupsResponse.py
+KIND: code
+
+from boto.resultset import ResultSet
+class AddInstanceGroupsResponse(EmrObject):
+    Fields = set(['InstanceGroupIds', 'JobFlowId'])

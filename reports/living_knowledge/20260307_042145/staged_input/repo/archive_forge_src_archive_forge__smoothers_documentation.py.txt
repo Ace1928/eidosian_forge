@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_smoothers_documentation.py
+KIND: code
+
+import numpy as np
+
+    Multiplicative and Multiplicative Damped with Additive Seasonal
+    Minimization Function
+    (M,A) & (M,Ad)

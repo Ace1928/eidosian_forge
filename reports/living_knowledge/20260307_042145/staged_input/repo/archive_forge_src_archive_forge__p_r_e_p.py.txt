@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_p_r_e_p.py
+KIND: code
+
+from fontTools import ttLib
+
+superclass = ttLib.getTableClass("fpgm")
+
+
+class table__p_r_e_p(superclass):
+    pass

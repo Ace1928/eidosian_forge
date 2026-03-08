@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/baseauthenticator_documentation.py
+KIND: code
+
+import sys
+Indicates whether the authenticator implementation is available to sign.
+
+    The caller should not call Authenticate() if IsAvailable() returns False
+
+    Returns:
+      True if the authenticator is available to sign and False otherwise.

@@ -1,0 +1,23 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/MR
+KIND: config
+
+MR�
+"ولاية الحوض الشرقيhodh charguihodh ech charguihodh el chargi%ولاية الحوض الشرقي‎"ولاية الحوض الغربيM
+الحوض الغربيhodh el gharbi"ولاية الحوض الغربي/
+
+عصابةassabaولاية العصابة?
+جُرجُولgorgolكوركولولاية كوركول3
+براكْنbraknaولاية البراكنةZ
+الترارزةrégion du trarzatrarzaترارْزاولاية الترارزة*
+
+أدرارadrarولاية أدرارe
+داخلة نواذيبوdakhlet nouadhiboudakhlet nouâdhibouدَخْلِة نواذيبيو-
+تاجانتtagantولاية تكانت[
+جواديماكا
+guidimagha
+guidimakhaغيديماغاولاية غيديماغا\
+تيرس زمورtiris zemmourtiris zemourtiriszemmourولاية تيرس زمورB
+إنشيريinchiriإينشيريولاية إينشيريB
+نواكشوط الغربيةnouakchott ouestnouakchottouestT
+نواكشوط الشماليةnorth nouakchottnouakchott nordnouakchottnordR
+نواكشوط الجنوبيةnouakchott sudnouakchottsudsouth nouakchott

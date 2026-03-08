@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/ExtractMessages_documentation.py
+KIND: code
+
+import sqlite3
+from tkinter import messagebox, Tk, Label, Entry, Button, StringVar
+
+    Creates a graphical user interface for the application.

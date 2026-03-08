@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/annotation_types_documentation.py
+KIND: code
+
+from typing import Generic, TypeVar
+from tensorflow.python.framework import dtypes as _dtypes
+Library of types used for type annotation.

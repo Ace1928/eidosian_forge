@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/baiducloud_vector_search.py
+KIND: code
+
+from langchain_community.vectorstores.baiducloud_vector_search import BESVectorStore
+
+__all__ = ["BESVectorStore"]

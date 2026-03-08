@@ -1,0 +1,11 @@
+SOURCE_PATH: archive_forge/src/archive_forge/buffered_pipe_documentation.py
+KIND: code
+
+import array
+import threading
+import time
+from paramiko.util import b
+
+        Return the number of bytes buffered.
+
+        :return: number (`int`) of bytes buffered

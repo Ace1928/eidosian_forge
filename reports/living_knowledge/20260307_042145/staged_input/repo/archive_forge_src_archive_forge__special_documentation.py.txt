@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_special_documentation.py
+KIND: code
+
+import numpy as np
+from scipy.special import factorial
+clear cache of Sterling numbers

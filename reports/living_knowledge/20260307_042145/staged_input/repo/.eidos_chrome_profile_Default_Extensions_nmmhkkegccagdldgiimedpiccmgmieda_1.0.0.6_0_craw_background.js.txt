@@ -1,0 +1,751 @@
+SOURCE_PATH: .eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/craw_background.js
+KIND: code
+
+/*
+
+ Copyright The Closure Library Authors.
+ SPDX-License-Identifier: Apache-2.0
+*/
+var d,
+  e = e || {};
+e.scope = {};
+e.arrayIteratorImpl = function (a) {
+  var b = 0;
+  return function () {
+    return b < a.length ? { done: !1, value: a[b++] } : { done: !0 };
+  };
+};
+e.arrayIterator = function (a) {
+  return { next: e.arrayIteratorImpl(a) };
+};
+e.ASSUME_ES5 = !1;
+e.ASSUME_NO_NATIVE_MAP = !1;
+e.ASSUME_NO_NATIVE_SET = !1;
+e.SIMPLE_FROUND_POLYFILL = !1;
+e.ISOLATE_POLYFILLS = !1;
+e.FORCE_POLYFILL_PROMISE = !1;
+e.FORCE_POLYFILL_PROMISE_WHEN_NO_UNHANDLED_REJECTION = !1;
+e.defineProperty =
+  e.ASSUME_ES5 || "function" == typeof Object.defineProperties
+    ? Object.defineProperty
+    : function (a, b, c) {
+        if (a == Array.prototype || a == Object.prototype) return a;
+        a[b] = c.value;
+        return a;
+      };
+e.getGlobal = function (a) {
+  a = [
+    "object" == typeof globalThis && globalThis,
+    a,
+    "object" == typeof window && window,
+    "object" == typeof self && self,
+    "object" == typeof global && global,
+  ];
+  for (var b = 0; b < a.length; ++b) {
+    var c = a[b];
+    if (c && c.Math == Math) return c;
+  }
+  throw Error("Cannot find global object");
+};
+e.global = e.getGlobal(this);
+e.IS_SYMBOL_NATIVE =
+  "function" === typeof Symbol && "symbol" === typeof Symbol("x");
+e.TRUST_ES6_POLYFILLS = !e.ISOLATE_POLYFILLS || e.IS_SYMBOL_NATIVE;
+e.polyfills = {};
+e.propertyToPolyfillSymbol = {};
+e.POLYFILL_PREFIX = "$jscp$";
+e.polyfill = function (a, b, c) {
+  b &&
+    (e.ISOLATE_POLYFILLS
+      ? e.polyfillIsolated(a, b, c)
+      : e.polyfillUnisolated(a, b));
+};
+e.polyfillUnisolated = function (a, b) {
+  var c = e.global;
+  a = a.split(".");
+  for (var f = 0; f < a.length - 1; f++) {
+    var g = a[f];
+    if (!(g in c)) return;
+    c = c[g];
+  }
+  a = a[a.length - 1];
+  f = c[a];
+  b = b(f);
+  b != f &&
+    null != b &&
+    e.defineProperty(c, a, { configurable: !0, writable: !0, value: b });
+};
+e.polyfillIsolated = function (a, b, c) {
+  var f = a.split(".");
+  a = 1 === f.length;
+  var g = f[0];
+  g = !a && g in e.polyfills ? e.polyfills : e.global;
+  for (var h = 0; h < f.length - 1; h++) {
+    var l = f[h];
+    if (!(l in g)) return;
+    g = g[l];
+  }
+  f = f[f.length - 1];
+  c = e.IS_SYMBOL_NATIVE && "es6" === c ? g[f] : null;
+  b = b(c);
+  null != b &&
+    (a
+      ? e.defineProperty(e.polyfills, f, {
+          configurable: !0,
+          writable: !0,
+          value: b,
+        })
+      : b !== c &&
+        (void 0 === e.propertyToPolyfillSymbol[f] &&
+          (e.propertyToPolyfillSymbol[f] = e.IS_SYMBOL_NATIVE
+            ? e.global.Symbol(f)
+            : e.POLYFILL_PREFIX + f),
+        e.defineProperty(g, e.propertyToPolyfillSymbol[f], {
+          configurable: !0,
+          writable: !0,
+          value: b,
+        })));
+};
+e.initSymbol = function () {};
+e.polyfill(
+  "Symbol",
+  function (a) {
+    if (a) return a;
+    var b = function (g, h) {
+      this.$jscomp$symbol$id_ = g;
+      e.defineProperty(this, "description", {
+        configurable: !0,
+        writable: !0,
+        value: h,
+      });
+    };
+    b.prototype.toString = function () {
+      return this.$jscomp$symbol$id_;
+    };
+    var c = 0,
+      f = function (g) {
+        if (this instanceof f)
+          throw new TypeError("Symbol is not a constructor");
+        return new b("jscomp_symbol_" + (g || "") + "_" + c++, g);
+      };
+    return f;
+  },
+  "es6",
+);
+e.polyfill(
+  "Symbol.iterator",
+  function (a) {
+    if (a) return a;
+    a = Symbol("Symbol.iterator");
+    for (
+      var b =
+          "Array Int8Array Uint8Array Uint8ClampedArray Int16Array Uint16Array Int32Array Uint32Array Float32Array Float64Array".split(
+            " ",
+          ),
+        c = 0;
+      c < b.length;
+      c++
+    ) {
+      var f = e.global[b[c]];
+      "function" === typeof f &&
+        "function" != typeof f.prototype[a] &&
+        e.defineProperty(f.prototype, a, {
+          configurable: !0,
+          writable: !0,
+          value: function () {
+            return e.iteratorPrototype(e.arrayIteratorImpl(this));
+          },
+        });
+    }
+    return a;
+  },
+  "es6",
+);
+e.iteratorPrototype = function (a) {
+  a = { next: a };
+  a[Symbol.iterator] = function () {
+    return this;
+  };
+  return a;
+};
+e.createTemplateTagFirstArg = function (a) {
+  return (a.raw = a);
+};
+e.createTemplateTagFirstArgWithRaw = function (a, b) {
+  a.raw = b;
+  return a;
+};
+e.makeIterator = function (a) {
+  var b = "undefined" != typeof Symbol && Symbol.iterator && a[Symbol.iterator];
+  return b ? b.call(a) : e.arrayIterator(a);
+};
+e.arrayFromIterator = function (a) {
+  for (var b, c = []; !(b = a.next()).done; ) c.push(b.value);
+  return c;
+};
+e.arrayFromIterable = function (a) {
+  return a instanceof Array ? a : e.arrayFromIterator(e.makeIterator(a));
+};
+e.objectCreate =
+  e.ASSUME_ES5 || "function" == typeof Object.create
+    ? Object.create
+    : function (a) {
+        var b = function () {};
+        b.prototype = a;
+        return new b();
+      };
+e.getConstructImplementation = function () {
+  function a() {
+    function c() {}
+    new c();
+    Reflect.construct(c, [], function () {});
+    return new c() instanceof c;
+  }
+  if (
+    e.TRUST_ES6_POLYFILLS &&
+    "undefined" != typeof Reflect &&
+    Reflect.construct
+  ) {
+    if (a()) return Reflect.construct;
+    var b = Reflect.construct;
+    return function (c, f, g) {
+      c = b(c, f);
+      g && Reflect.setPrototypeOf(c, g.prototype);
+      return c;
+    };
+  }
+  return function (c, f, g) {
+    void 0 === g && (g = c);
+    g = e.objectCreate(g.prototype || Object.prototype);
+    return Function.prototype.apply.call(c, g, f) || g;
+  };
+};
+e.construct = { valueOf: e.getConstructImplementation }.valueOf();
+e.underscoreProtoCanBeSet = function () {
+  var a = { a: !0 },
+    b = {};
+  try {
+    return (b.__proto__ = a), b.a;
+  } catch (c) {}
+  return !1;
+};
+e.setPrototypeOf =
+  e.TRUST_ES6_POLYFILLS && "function" == typeof Object.setPrototypeOf
+    ? Object.setPrototypeOf
+    : e.underscoreProtoCanBeSet()
+      ? function (a, b) {
+          a.__proto__ = b;
+          if (a.__proto__ !== b) throw new TypeError(a + " is not extensible");
+          return a;
+        }
+      : null;
+e.inherits = function (a, b) {
+  a.prototype = e.objectCreate(b.prototype);
+  a.prototype.constructor = a;
+  if (e.setPrototypeOf) {
+    var c = e.setPrototypeOf;
+    c(a, b);
+  } else
+    for (c in b)
+      if ("prototype" != c)
+        if (Object.defineProperties) {
+          var f = Object.getOwnPropertyDescriptor(b, c);
+          f && Object.defineProperty(a, c, f);
+        } else a[c] = b[c];
+  a.superClass_ = b.prototype;
+};
+e.polyfill(
+  "Reflect",
+  function (a) {
+    return a ? a : {};
+  },
+  "es6",
+);
+e.polyfill(
+  "Reflect.construct",
+  function () {
+    return e.construct;
+  },
+  "es6",
+);
+e.polyfill(
+  "Reflect.setPrototypeOf",
+  function (a) {
+    if (a) return a;
+    if (e.setPrototypeOf) {
+      var b = e.setPrototypeOf;
+      return function (c, f) {
+        try {
+          return b(c, f), !0;
+        } catch (g) {
+          return !1;
+        }
+      };
+    }
+    return null;
+  },
+  "es6",
+);
+e.findInternal = function (a, b, c) {
+  a instanceof String && (a = String(a));
+  for (var f = a.length, g = 0; g < f; g++) {
+    var h = a[g];
+    if (b.call(c, h, g, a)) return { i: g, v: h };
+  }
+  return { i: -1, v: void 0 };
+};
+e.checkStringArgs = function (a, b, c) {
+  if (null == a)
+    throw new TypeError(
+      "The 'this' value for String.prototype." +
+        c +
+        " must not be null or undefined",
+    );
+  if (b instanceof RegExp)
+    throw new TypeError(
+      "First argument to String.prototype." +
+        c +
+        " must not be a regular expression",
+    );
+  return a + "";
+};
+e.polyfill(
+  "String.prototype.endsWith",
+  function (a) {
+    return a
+      ? a
+      : function (b, c) {
+          var f = e.checkStringArgs(this, b, "endsWith");
+          b += "";
+          void 0 === c && (c = f.length);
+          c = Math.max(0, Math.min(c | 0, f.length));
+          for (var g = b.length; 0 < g && 0 < c; )
+            if (f[--c] != b[--g]) return !1;
+          return 0 >= g;
+        };
+  },
+  "es6",
+);
+e.polyfill(
+  "String.prototype.startsWith",
+  function (a) {
+    return a
+      ? a
+      : function (b, c) {
+          var f = e.checkStringArgs(this, b, "startsWith");
+          b += "";
+          var g = f.length,
+            h = b.length;
+          c = Math.max(0, Math.min(c | 0, f.length));
+          for (var l = 0; l < h && c < g; ) if (f[c++] != b[l++]) return !1;
+          return l >= h;
+        };
+  },
+  "es6",
+);
+e.polyfill(
+  "String.prototype.repeat",
+  function (a) {
+    return a
+      ? a
+      : function (b) {
+          var c = e.checkStringArgs(this, null, "repeat");
+          if (0 > b || 1342177279 < b)
+            throw new RangeError("Invalid count value");
+          b |= 0;
+          for (var f = ""; b; ) if ((b & 1 && (f += c), (b >>>= 1))) c += c;
+          return f;
+        };
+  },
+  "es6",
+);
+e.polyfill(
+  "String.prototype.trimLeft",
+  function (a) {
+    function b() {
+      return this.replace(/^[\s\xa0]+/, "");
+    }
+    return a || b;
+  },
+  "es_2019",
+);
+e.iteratorFromArray = function (a, b) {
+  a instanceof String && (a += "");
+  var c = 0,
+    f = !1,
+    g = {
+      next: function () {
+        if (!f && c < a.length) {
+          var h = c++;
+          return { value: b(h, a[h]), done: !1 };
+        }
+        f = !0;
+        return { done: !0, value: void 0 };
+      },
+    };
+  g[Symbol.iterator] = function () {
+    return g;
+  };
+  return g;
+};
+e.polyfill(
+  "Array.prototype.entries",
+  function (a) {
+    return a
+      ? a
+      : function () {
+          return e.iteratorFromArray(this, function (b, c) {
+            return [b, c];
+          });
+        };
+  },
+  "es6",
+);
+e.polyfill(
+  "Array.prototype.keys",
+  function (a) {
+    return a
+      ? a
+      : function () {
+          return e.iteratorFromArray(this, function (b) {
+            return b;
+          });
+        };
+  },
+  "es6",
+);
+var k = k || {};
+k.global = this || self;
+k.exportPath_ = function (a, b, c, f) {
+  a = a.split(".");
+  f = f || k.global;
+  a[0] in f ||
+    "undefined" == typeof f.execScript ||
+    f.execScript("var " + a[0]);
+  for (var g; a.length && (g = a.shift()); )
+    if (a.length || void 0 === b)
+      f = f[g] && f[g] !== Object.prototype[g] ? f[g] : (f[g] = {});
+    else if (!c && k.isObject(b) && k.isObject(f[g]))
+      for (var h in b) b.hasOwnProperty(h) && (f[g][h] = b[h]);
+    else f[g] = b;
+};
+k.define = function (a, b) {
+  return b;
+};
+k.FEATURESET_YEAR = 2012;
+k.DEBUG = !0;
+k.LOCALE = "en";
+k.TRUSTED_SITE = !0;
+k.DISALLOW_TEST_ONLY_CODE = !k.DEBUG;
+k.ENABLE_CHROME_APP_SAFE_SCRIPT_LOADING = !1;
+k.provide = function (a) {
+  if (k.isInModuleLoader_())
+    throw Error("goog.provide cannot be used within a module.");
+  k.constructNamespace_(a);
+};
+k.constructNamespace_ = function (a, b, c) {
+  k.exportPath_(a, b, c);
+};
+k.getScriptNonce = function (a) {
+  if (a && a != k.global) return k.getScriptNonce_(a.document);
+  null === k.cspNonce_ && (k.cspNonce_ = k.getScriptNonce_(k.global.document));
+  return k.cspNonce_;
+};
+k.NONCE_PATTERN_ = /^[\w+/_-]+[=]{0,2}$/;
+k.cspNonce_ = null;
+k.getScriptNonce_ = function (a) {
+  return (a = a.querySelector && a.querySelector("script[nonce]")) &&
+    (a = a.nonce || a.getAttribute("nonce")) &&
+    k.NONCE_PATTERN_.test(a)
+    ? a
+    : "";
+};
+k.VALID_MODULE_RE_ = /^[a-zA-Z_$][a-zA-Z0-9._$]*$/;
+k.module = function (a) {
+  if ("string" !== typeof a || !a || -1 == a.search(k.VALID_MODULE_RE_))
+    throw Error("Invalid module identifier");
+  if (!k.isInGoogModuleLoader_())
+    throw Error(
+      "Module " +
+        a +
+        " has been loaded incorrectly. Note, modules cannot be loaded as normal scripts. They require some kind of pre-processing step. You're likely trying to load a module via a script tag or as a part of a concatenated bundle without rewriting the module. For more info see: https://github.com/google/closure-library/wiki/goog.module:-an-ES6-module-like-alternative-to-goog.provide.",
+    );
+  if (k.moduleLoaderState_.moduleName)
+    throw Error("goog.module may only be called once per module.");
+  k.moduleLoaderState_.moduleName = a;
+};
+k.module.get = function () {
+  return null;
+};
+k.module.getInternal_ = function () {
+  return null;
+};
+k.ModuleType = { ES6: "es6", GOOG: "goog" };
+k.moduleLoaderState_ = null;
+k.isInModuleLoader_ = function () {
+  return k.isInGoogModuleLoader_() || k.isInEs6ModuleLoader_();
+};
+k.isInGoogModuleLoader_ = function () {
+  return (
+    !!k.moduleLoaderState_ && k.moduleLoaderState_.type == k.ModuleType.GOOG
+  );
+};
+k.isInEs6ModuleLoader_ = function () {
+  if (k.moduleLoaderState_ && k.moduleLoaderState_.type == k.ModuleType.ES6)
+    return !0;
+  var a = k.global.$jscomp;
+  return a
+    ? "function" != typeof a.getCurrentModulePath
+      ? !1
+      : !!a.getCurrentModulePath()
+    : !1;
+};
+k.module.declareLegacyNamespace = function () {
+  k.moduleLoaderState_.declareLegacyNamespace = !0;
+};
+k.declareModuleId = function (a) {
+  if (k.moduleLoaderState_) k.moduleLoaderState_.moduleName = a;
+  else {
+    var b = k.global.$jscomp;
+    if (!b || "function" != typeof b.getCurrentModulePath)
+      throw Error(
+        'Module with namespace "' + a + '" has been loaded incorrectly.',
+      );
+    b = b.require(b.getCurrentModulePath());
+    k.loadedModules_[a] = { exports: b, type: k.ModuleType.ES6, moduleId: a };
+  }
+};
+k.setTestOnly = function (a) {
+  if (k.DISALLOW_TEST_ONLY_CODE)
+    throw (
+      ((a = a || ""),
+      Error(
+        "Importing test-only code into non-debug environment" +
+          (a ? ": " + a : "."),
+      ))
+    );
+};
+k.forwardDeclare = function () {};
+k.getObjectByName = function (a) {
+  a = a.split(".");
+  for (var b = k.global, c = 0; c < a.length; c++)
+    if (((b = b[a[c]]), null == b)) return null;
+  return b;
+};
+k.addDependency = function () {};
+k.useStrictRequires = !1;
+k.ENABLE_DEBUG_LOADER = !0;
+k.logToConsole_ = function (a) {
+  k.global.console && k.global.console.error(a);
+};
+k.require = function () {};
+k.requireType = function () {
+  return {};
+};
+k.basePath = "";
+k.nullFunction = function () {};
+k.abstractMethod = function () {
+  throw Error("unimplemented abstract method");
+};
+k.addSingletonGetter = function (a) {
+  a.instance_ = void 0;
+  a.getInstance = function () {
+    if (a.instance_) return a.instance_;
+    k.DEBUG &&
+      (k.instantiatedSingletons_[k.instantiatedSingletons_.length] = a);
+    return (a.instance_ = new a());
+  };
+};
+k.instantiatedSingletons_ = [];
+k.LOAD_MODULE_USING_EVAL = !0;
+k.SEAL_MODULE_EXPORTS = k.DEBUG;
+k.loadedModules_ = {};
+k.DEPENDENCIES_ENABLED = !1;
+k.TRANSPILE = "detect";
+k.ASSUME_ES_MODULES_TRANSPILED = !1;
+k.TRANSPILE_TO_LANGUAGE = "";
+k.TRANSPILER = "transpile.js";
+k.hasBadLetScoping = null;
+k.loadModule = function (a) {
+  var b = k.moduleLoaderState_;
+  try {
+    k.moduleLoaderState_ = {
+      moduleName: "",
+      declareLegacyNamespace: !1,
+      type: k.ModuleType.GOOG,
+    };
+    var c = {},
+      f = c;
+    if ("function" === typeof a) f = a.call(void 0, f);
+    else if ("string" === typeof a)
+      f = k.loadModuleFromSource_.call(void 0, f, a);
+    else throw Error("Invalid module definition");
+    var g = k.moduleLoaderState_.moduleName;
+    if ("string" === typeof g && g)
+      k.moduleLoaderState_.declareLegacyNamespace
+        ? k.constructNamespace_(g, f, c !== f)
+        : k.SEAL_MODULE_EXPORTS &&
+          Object.seal &&
+          "object" == typeof f &&
+          null != f &&
+          Object.seal(f),
+        (k.loadedModules_[g] = {
+          exports: f,
+          type: k.ModuleType.GOOG,
+          moduleId: k.moduleLoaderState_.moduleName,
+        });
+    else throw Error('Invalid module name "' + g + '"');
+  } finally {
+    k.moduleLoaderState_ = b;
+  }
+};
+k.loadModuleFromSource_ = function (a, b) {
+  eval(k.CLOSURE_EVAL_PREFILTER_.createScript(b));
+  return a;
+};
+k.normalizePath_ = function (a) {
+  a = a.split("/");
+  for (var b = 0; b < a.length; )
+    "." == a[b]
+      ? a.splice(b, 1)
+      : b && ".." == a[b] && a[b - 1] && ".." != a[b - 1]
+        ? a.splice(--b, 2)
+        : b++;
+  return a.join("/");
+};
+k.loadFileSync_ = function (a) {
+  if (k.global.CLOSURE_LOAD_FILE_SYNC)
+    return k.global.CLOSURE_LOAD_FILE_SYNC(a);
+  try {
+    var b = new k.global.XMLHttpRequest();
+    b.open("get", a, !1);
+    b.send();
+    return 0 == b.status || 200 == b.status ? b.responseText : null;
+  } catch (c) {
+    return null;
+  }
+};
+k.transpile_ = function (a, b, c) {
+  var f = k.global.$jscomp;
+  f || (k.global.$jscomp = f = {});
+  var g = f.transpile;
+  if (!g) {
+    var h = k.basePath + k.TRANSPILER,
+      l = k.loadFileSync_(h);
+    if (l) {
+      (function () {
+        (0, eval)(l + "\n//# sourceURL=" + h);
+      }).call(k.global);
+      if (
+        k.global.$gwtExport &&
+        k.global.$gwtExport.$jscomp &&
+        !k.global.$gwtExport.$jscomp.transpile
+      )
+        throw Error(
+          'The transpiler did not properly export the "transpile" method. $gwtExport: ' +
+            JSON.stringify(k.global.$gwtExport),
+        );
+      k.global.$jscomp.transpile = k.global.$gwtExport.$jscomp.transpile;
+      f = k.global.$jscomp;
+      g = f.transpile;
+    }
+  }
+  if (!g) {
+    var r = " requires transpilation but no transpiler was found.";
+    r +=
+      ' Please add "//javascript/closure:transpiler" as a data dependency to ensure it is included.';
+    g = f.transpile = function (v, E) {
+      k.logToConsole_(E + r);
+      return v;
+    };
+  }
+  return g(a, b, c);
+};
+k.typeOf = function (a) {
+  var b = typeof a;
+  return "object" != b ? b : a ? (Array.isArray(a) ? "array" : b) : "null";
+};
+k.isArrayLike = function (a) {
+  var b = k.typeOf(a);
+  return "array" == b || ("object" == b && "number" == typeof a.length);
+};
+k.isDateLike = function (a) {
+  return k.isObject(a) && "function" == typeof a.getFullYear;
+};
+k.isObject = function (a) {
+  var b = typeof a;
+  return ("object" == b && null != a) || "function" == b;
+};
+k.getUid = function (a) {
+  return (
+    (Object.prototype.hasOwnProperty.call(a, k.UID_PROPERTY_) &&
+      a[k.UID_PROPERTY_]) ||
+    (a[k.UID_PROPERTY_] = ++k.uidCounter_)
+  );
+};
+k.hasUid = function (a) {
+  return !!a[k.UID_PROPERTY_];
+};
+k.removeUid = function (a) {
+  null !== a && "removeAttribute" in a && a.removeAttribute(k.UID_PROPERTY_);
+  try {
+    delete a[k.UID_PROPERTY_];
+  } catch (b) {}
+};
+k.UID_PROPERTY_ = "closure_uid_" + ((1e9 * Math.random()) >>> 0);
+k.uidCounter_ = 0;
+k.cloneObject = function (a) {
+  var b = k.typeOf(a);
+  if ("object" == b || "array" == b) {
+    if ("function" === typeof a.clone) return a.clone();
+    b = "array" == b ? [] : {};
+    for (var c in a) b[c] = k.cloneObject(a[c]);
+    return b;
+  }
+  return a;
+};
+k.bindNative_ = function (a, b, c) {
+  return a.call.apply(a.bind, arguments);
+};
+k.bindJs_ = function (a, b, c) {
+  if (!a) throw Error();
+  if (2 < arguments.length) {
+    var f = Array.prototype.slice.call(arguments, 2);
+    return function () {
+      var g = Array.prototype.slice.call(arguments);
+      Array.prototype.unshift.apply(g, f);
+      return a.apply(b, g);
+    };
+  }
+  return function () {
+    return a.apply(b, arguments);
+  };
+};
+k.bind = function (a, b, c) {
+  Function.prototype.bind &&
+  -1 != Function.prototype.bind.toString().indexOf("native code")
+    ? (k.bind = k.bindNative_)
+    : (k.bind = k.bindJs_);
+  return k.bind.apply(null, arguments);
+};
+k.partial = function (a, b) {
+  var c = Array.prototype.slice.call(arguments, 1);
+  return function () {
+    var f = c.slice();
+    f.push.apply(f, arguments);
+    return a.apply(this, f);
+  };
+};
+k.mixin = function (a, b) {
+  for (var c in b) a[c] = b[c];
+};
+k.now = function () {
+  return Date.now();
+};
+k.globalEval = function (a) {
+  (0, eval)(a);
+};
+k.getCssName = function (a, b) {
+  if ("." == String(a).charAt(0))
+    throw Error(
+      'className passed in goog.getCssName must not start with ".".

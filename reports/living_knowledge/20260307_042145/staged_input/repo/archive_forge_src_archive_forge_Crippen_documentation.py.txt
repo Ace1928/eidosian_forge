@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/Crippen_documentation.py
+KIND: code
+
+import os
+import numpy
+from rdkit import Chem, RDConfig
+from rdkit.Chem import rdMolDescriptors
+ DEPRECATED

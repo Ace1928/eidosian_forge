@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/AlignInfo_documentation.py
+KIND: code
+
+import math
+import sys
+import warnings
+from collections import Counter
+from Bio import BiopythonDeprecationWarning
+from Bio.Seq import Seq
+Return the residue letter at the specified position.

@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/accumulate_documentation.py
+KIND: code
+
+import pytest
+import pandas as pd
+import pandas._testing as tm
+
+    Accumulation specific tests. Generally these only
+    make sense for numeric/boolean operations.

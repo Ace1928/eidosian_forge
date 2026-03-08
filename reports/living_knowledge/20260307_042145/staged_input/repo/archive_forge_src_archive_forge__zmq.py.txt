@@ -1,0 +1,703 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_zmq.py
+KIND: code
+
+"""Cython backend for pyzmq"""
+
+# Copyright (C) PyZMQ Developers
+# Distributed under the terms of the Modified BSD License.
+
+from __future__ import annotations
+
+try:
+    import cython
+
+    if not cython.compiled:
+        raise ImportError()
+except ImportError:
+    raise ImportError("zmq Cython backend has not been compiled") from None
+
+import time
+import warnings
+from threading import Event
+from weakref import ref
+
+import cython as C
+from cython import (
+    NULL,
+    Py_ssize_t,
+    address,
+    bint,
+    cast,
+    cclass,
+    cfunc,
+    char,
+    declare,
+    inline,
+    nogil,
+    p_char,
+    p_void,
+    pointer,
+    size_t,
+    sizeof,
+)
+from cython.cimports.cpython import (
+    PyBytes_AsString,
+    PyBytes_FromStringAndSize,
+    PyBytes_Size,
+    PyErr_CheckSignals,
+)
+from cython.cimports.libc.errno import EAGAIN, EINTR, ENAMETOOLONG, ENOENT, ENOTSOCK
+
+# cimports require Cython 3
+from cython.cimports.libc.stdint import uint32_t
+from cython.cimports.libc.stdio import fprintf
+from cython.cimports.libc.stdio import stderr as cstderr
+from cython.cimports.libc.stdlib import free, malloc
+from cython.cimports.libc.string import memcpy
+from cython.cimports.zmq.backend.cython._externs import (
+    get_ipc_path_max_len,
+    getpid,
+    mutex_allocate,
+    mutex_lock,
+    mutex_t,
+    mutex_unlock,
+)
+from cython.cimports.zmq.backend.cython.libzmq import (
+    ZMQ_ENOTSOCK,
+    ZMQ_ETERM,
+    ZMQ_EVENT_ALL,
+    ZMQ_IDENTITY,
+    ZMQ_IO_THREADS,
+    ZMQ_LINGER,
+    ZMQ_POLLIN,
+    ZMQ_RCVMORE,
+    ZMQ_ROUTER,
+    ZMQ_SNDMORE,
+    ZMQ_TYPE,
+    ZMQ_VERSION_MAJOR,
+    _zmq_version,
+    fd_t,
+    int64_t,
+    zmq_bind,
+    zmq_close,
+    zmq_connect,
+    zmq_ctx_destroy,
+    zmq_ctx_get,
+    zmq_ctx_new,
+    zmq_ctx_set,
+    zmq_curve_keypair,
+    zmq_curve_public,
+    zmq_device,
+    zmq_disconnect,
+    zmq_free_fn,
+    zmq_getsockopt,
+    zmq_has,
+    zmq_init,
+    zmq_join,
+    zmq_leave,
+    zmq_msg_close,
+    zmq_msg_copy,
+    zmq_msg_data,
+    zmq_msg_get,
+    zmq_msg_gets,
+    zmq_msg_group,
+    zmq_msg_init,
+    zmq_msg_init_data,
+    zmq_msg_init_size,
+    zmq_msg_recv,
+    zmq_msg_routing_id,
+    zmq_msg_send,
+    zmq_msg_set,
+    zmq_msg_set_group,
+    zmq_msg_set_routing_id,
+    zmq_msg_size,
+    zmq_msg_t,
+    zmq_pollitem_t,
+    zmq_proxy,
+    zmq_proxy_steerable,
+    zmq_setsockopt,
+    zmq_socket,
+    zmq_socket_monitor,
+    zmq_strerror,
+    zmq_unbind,
+)
+from cython.cimports.zmq.backend.cython.libzmq import zmq_errno as _zmq_errno
+from cython.cimports.zmq.backend.cython.libzmq import zmq_poll as zmq_poll_c
+from cython.cimports.zmq.utils.buffers import asbuffer_r
+
+import zmq
+from zmq.constants import SocketOption, _OptType
+from zmq.error import InterruptedSystemCall, ZMQError, _check_version
+
+IPC_PATH_MAX_LEN = get_ipc_path_max_len()
+
+
+@cfunc
+@inline
+@C.exceptval(-1)
+def _check_rc(rc: C.int, error_without_errno: bint = False) -> C.int:
+    """internal utility for checking zmq return condition
+
+    and raising the appropriate Exception class
+    """
+    errno: C.int = _zmq_errno()
+    PyErr_CheckSignals()
+    if errno == 0 and not error_without_errno:
+        return 0
+    if rc == -1:  # if rc < -1, it's a bug in libzmq. Should we warn?
+        if errno == EINTR:
+            from zmq.error import InterruptedSystemCall
+
+            raise InterruptedSystemCall(errno)
+        elif errno == EAGAIN:
+            from zmq.error import Again
+
+            raise Again(errno)
+        elif errno == ZMQ_ETERM:
+            from zmq.error import ContextTerminated
+
+            raise ContextTerminated(errno)
+        else:
+            from zmq.error import ZMQError
+
+            raise ZMQError(errno)
+    return 0
+
+
+# message Frame class
+
+_zhint = C.struct(
+    sock=p_void,
+    mutex=pointer(mutex_t),
+    id=size_t,
+)
+
+
+@cfunc
+@nogil
+def free_python_msg(data: p_void, vhint: p_void) -> C.int:
+    """A pure-C function for DECREF'ing Python-owned message data.
+
+    Sends a message on a PUSH socket
+
+    The hint is a `zhint` struct with two values:
+
+    sock (void *): pointer to the Garbage Collector's PUSH socket
+    id (size_t): the id to be used to construct a zmq_msg_t that should be sent on a PUSH socket,
+       signaling the Garbage Collector to remove its reference to the object.
+
+    When the Garbage Collector's PULL socket receives the message,
+    it deletes its reference to the object,
+    allowing Python to free the memory.
+    """
+    msg = declare(zmq_msg_t)
+    msg_ptr: pointer(zmq_msg_t) = address(msg)
+    hint: pointer(_zhint) = cast(pointer(_zhint), vhint)
+    rc: C.int
+
+    if hint != NULL:
+        zmq_msg_init_size(msg_ptr, sizeof(size_t))
+        memcpy(zmq_msg_data(msg_ptr), address(hint.id), sizeof(size_t))
+        rc = mutex_lock(hint.mutex)
+        if rc != 0:
+            fprintf(cstderr, "pyzmq-gc mutex lock failed rc=%d\n", rc)
+        rc = zmq_msg_send(msg_ptr, hint.sock, 0)
+        if rc < 0:
+            # gc socket could have been closed, e.g. during process teardown.
+            # If so, ignore the failure because there's nothing to do.
+            if _zmq_errno() != ZMQ_ENOTSOCK:
+                fprintf(
+                    cstderr, "pyzmq-gc send failed: %s\n", zmq_strerror(_zmq_errno())
+                )
+        rc = mutex_unlock(hint.mutex)
+        if rc != 0:
+            fprintf(cstderr, "pyzmq-gc mutex unlock failed rc=%d\n", rc)
+
+        zmq_msg_close(msg_ptr)
+        free(hint)
+        return 0
+
+
+@cfunc
+@inline
+def _copy_zmq_msg_bytes(zmq_msg: pointer(zmq_msg_t)) -> bytes:
+    """Copy the data from a zmq_msg_t"""
+    data_c: p_char = NULL
+    data_len_c: Py_ssize_t
+    data_c = cast(p_char, zmq_msg_data(zmq_msg))
+    data_len_c = zmq_msg_size(zmq_msg)
+    return PyBytes_FromStringAndSize(data_c, data_len_c)
+
+
+_gc = None
+
+
+@cclass
+class Frame:
+    def __init__(
+        self, data=None, track=False, copy=None, copy_threshold=None, **kwargs
+    ):
+        rc: C.int
+        data_c: p_char = NULL
+        data_len_c: Py_ssize_t = 0
+        hint: pointer(_zhint)
+        if copy_threshold is None:
+            copy_threshold = zmq.COPY_THRESHOLD
+
+        zmq_msg_ptr: pointer(zmq_msg_t) = address(self.zmq_msg)
+        # init more as False
+        self.more = False
+
+        # Save the data object in case the user wants the the data as a str.
+        self._data = data
+        self._failed_init = True  # bool switch for dealloc
+        self._buffer = None  # buffer view of data
+        self._bytes = None  # bytes copy of data
+
+        self.tracker_event = None
+        self.tracker = None
+        # self.tracker should start finished
+        # except in the case where we are sharing memory with libzmq
+        if track:
+            self.tracker = zmq._FINISHED_TRACKER
+
+        if isinstance(data, str):
+            raise TypeError("Str objects not allowed. Only: bytes, buffer interfaces.")
+
+        if data is None:
+            rc = zmq_msg_init(zmq_msg_ptr)
+            _check_rc(rc)
+            self._failed_init = False
+            return
+
+        asbuffer_r(data, cast(pointer(p_void), address(data_c)), address(data_len_c))
+
+        # copy unspecified, apply copy_threshold
+        if copy is None:
+            if copy_threshold and data_len_c < copy_threshold:
+                copy = True
+            else:
+                copy = False
+
+        if copy:
+            # copy message data instead of sharing memory
+            rc = zmq_msg_init_size(zmq_msg_ptr, data_len_c)
+            _check_rc(rc)
+            memcpy(zmq_msg_data(zmq_msg_ptr), data_c, data_len_c)
+            self._failed_init = False
+            return
+
+        # Getting here means that we are doing a true zero-copy Frame,
+        # where libzmq and Python are sharing memory.
+        # Hook up garbage collection with MessageTracker and zmq_free_fn
+
+        # Event and MessageTracker for monitoring when zmq is done with data:
+        if track:
+            evt = Event()
+            self.tracker_event = evt
+            self.tracker = zmq.MessageTracker(evt)
+        # create the hint for zmq_free_fn
+        # two pointers: the gc context and a message to be sent to the gc PULL socket
+        # allows libzmq to signal to Python when it is done with Python-owned memory.
+        global _gc
+        if _gc is None:
+            from zmq.utils.garbage import gc as _gc
+
+        hint: pointer(_zhint) = cast(pointer(_zhint), malloc(sizeof(_zhint)))
+        hint.id = _gc.store(data, self.tracker_event)
+        if not _gc._push_mutex:
+            hint.mutex = mutex_allocate()
+            _gc._push_mutex = cast(size_t, hint.mutex)
+        else:
+            hint.mutex = cast(pointer(mutex_t), cast(size_t, _gc._push_mutex))
+        hint.sock = cast(p_void, cast(size_t, _gc._push_socket.underlying))
+
+        rc = zmq_msg_init_data(
+            zmq_msg_ptr,
+            cast(p_void, data_c),
+            data_len_c,
+            cast(pointer(zmq_free_fn), free_python_msg),
+            cast(p_void, hint),
+        )
+        if rc != 0:
+            free(hint)
+            _check_rc(rc)
+        self._failed_init = False
+
+    def __del__(self):
+        if self._failed_init:
+            return
+        # This simply decreases the 0MQ ref-count of zmq_msg.
+        with nogil:
+            rc: C.int = zmq_msg_close(address(self.zmq_msg))
+        _check_rc(rc)
+
+    def __copy__(self):
+        return self.fast_copy()
+
+    def fast_copy(self) -> Frame:
+        new_msg: Frame = Frame()
+        # This does not copy the contents, but just increases the ref-count
+        # of the zmq_msg by one.
+        zmq_msg_copy(address(new_msg.zmq_msg), address(self.zmq_msg))
+        # Copy the ref to data so the copy won't create a copy when str is
+        # called.
+        if self._data is not None:
+            new_msg._data = self._data
+        if self._buffer is not None:
+            new_msg._buffer = self._buffer
+        if self._bytes is not None:
+            new_msg._bytes = self._bytes
+
+        # Frame copies share the tracker and tracker_event
+        new_msg.tracker_event = self.tracker_event
+        new_msg.tracker = self.tracker
+
+        return new_msg
+
+    # buffer interface code adapted from petsc4py by Lisandro Dalcin, a BSD project
+
+    def __getbuffer__(self, buffer: pointer(Py_buffer), flags: C.int):  # noqa: F821
+        # new-style (memoryview) buffer interface
+        buffer.buf = zmq_msg_data(address(self.zmq_msg))
+        buffer.len = zmq_msg_size(address(self.zmq_msg))
+
+        buffer.obj = self
+        buffer.readonly = 0
+        buffer.format = "B"
+        buffer.ndim = 1
+        buffer.shape = address(buffer.len)
+        buffer.strides = NULL
+        buffer.suboffsets = NULL
+        buffer.itemsize = 1
+        buffer.internal = NULL
+
+    def __len__(self) -> size_t:
+        """Return the length of the message in bytes."""
+        sz: size_t = zmq_msg_size(address(self.zmq_msg))
+        return sz
+
+    @property
+    def buffer(self):
+        """A memoryview of the message contents."""
+        _buffer = self._buffer and self._buffer()
+        if _buffer is not None:
+            return _buffer
+        _buffer = memoryview(self)
+        self._buffer = ref(_buffer)
+        return _buffer
+
+    @property
+    def bytes(self):
+        """The message content as a Python bytes object.
+
+        The first time this property is accessed, a copy of the message
+        contents is made. From then on that same copy of the message is
+        returned.
+        """
+        if self._bytes is None:
+            self._bytes = _copy_zmq_msg_bytes(address(self.zmq_msg))
+        return self._bytes
+
+    def get(self, option):
+        """
+        Get a Frame option or property.
+
+        See the 0MQ API documentation for zmq_msg_get and zmq_msg_gets
+        for details on specific options.
+
+        .. versionadded:: libzmq-3.2
+        .. versionadded:: 13.0
+
+        .. versionchanged:: 14.3
+            add support for zmq_msg_gets (requires libzmq-4.1)
+            All message properties are strings.
+
+        .. versionchanged:: 17.0
+            Added support for `routing_id` and `group`.
+            Only available if draft API is enabled
+            with libzmq >= 4.2.
+        """
+        rc: C.int = 0
+        property_c: p_char = NULL
+
+        # zmq_msg_get
+        if isinstance(option, int):
+            rc = zmq_msg_get(address(self.zmq_msg), option)
+            _check_rc(rc)
+            return rc
+
+        if option == 'routing_id':
+            routing_id: uint32_t = zmq_msg_routing_id(address(self.zmq_msg))
+            if routing_id == 0:
+                _check_rc(-1)
+            return routing_id
+        elif option == 'group':
+            buf = zmq_msg_group(address(self.zmq_msg))
+            if buf == NULL:
+                _check_rc(-1)
+            return buf.decode('utf8')
+
+        # zmq_msg_gets
+        _check_version((4, 1), "get string properties")
+        if isinstance(option, str):
+            option = option.encode('utf8')
+
+        if not isinstance(option, bytes):
+            raise TypeError(f"expected str, got: {option!r}")
+
+        property_c = option
+
+        result: p_char = cast(p_char, zmq_msg_gets(address(self.zmq_msg), property_c))
+        if result == NULL:
+            _check_rc(-1)
+        return result.decode('utf8')
+
+    def set(self, option, value):
+        """Set a Frame option.
+
+        See the 0MQ API documentation for zmq_msg_set
+        for details on specific options.
+
+        .. versionadded:: libzmq-3.2
+        .. versionadded:: 13.0
+        .. versionchanged:: 17.0
+            Added support for `routing_id` and `group`.
+            Only available if draft API is enabled
+            with libzmq >= 4.2.
+        """
+        rc: C.int
+
+        if option == 'routing_id':
+            routing_id: uint32_t = value
+            rc = zmq_msg_set_routing_id(address(self.zmq_msg), routing_id)
+            _check_rc(rc)
+            return
+        elif option == 'group':
+            if isinstance(value, str):
+                value = value.encode('utf8')
+            rc = zmq_msg_set_group(address(self.zmq_msg), value)
+            _check_rc(rc)
+            return
+
+        rc = zmq_msg_set(address(self.zmq_msg), option, value)
+        _check_rc(rc)
+
+
+@cclass
+class Context:
+    """
+    Manage the lifecycle of a 0MQ context.
+
+    Parameters
+    ----------
+    io_threads : int
+        The number of IO threads.
+    """
+
+    def __init__(self, io_threads: C.int = 1, shadow: size_t = 0):
+        self.handle = NULL
+        self._pid = 0
+        self._shadow = False
+
+        if shadow:
+            self.handle = cast(p_void, shadow)
+            self._shadow = True
+        else:
+            self._shadow = False
+            if ZMQ_VERSION_MAJOR >= 3:
+                self.handle = zmq_ctx_new()
+            else:
+                self.handle = zmq_init(io_threads)
+
+        if self.handle == NULL:
+            raise ZMQError()
+
+        rc: C.int = 0
+        if ZMQ_VERSION_MAJOR >= 3 and not self._shadow:
+            rc = zmq_ctx_set(self.handle, ZMQ_IO_THREADS, io_threads)
+            _check_rc(rc)
+
+        self.closed = False
+        self._pid = getpid()
+
+    @property
+    def underlying(self):
+        """The address of the underlying libzmq context"""
+        return cast(size_t, self.handle)
+
+    @cfunc
+    @inline
+    def _term(self) -> C.int:
+        rc: C.int = 0
+        if self.handle != NULL and not self.closed and getpid() == self._pid:
+            with nogil:
+                rc = zmq_ctx_destroy(self.handle)
+        self.handle = NULL
+        return rc
+
+    def term(self):
+        """
+        Close or terminate the context.
+
+        This can be called to close the context by hand. If this is not called,
+        the context will automatically be closed when it is garbage collected.
+        """
+        rc: C.int = self._term()
+        try:
+            _check_rc(rc)
+        except InterruptedSystemCall:
+            # ignore interrupted term
+            # see PEP 475 notes about close & EINTR for why
+            pass
+
+        self.closed = True
+
+    def set(self, option: C.int, optval):
+        """
+        Set a context option.
+
+        See the 0MQ API documentation for zmq_ctx_set
+        for details on specific options.
+
+        .. versionadded:: libzmq-3.2
+        .. versionadded:: 13.0
+
+        Parameters
+        ----------
+        option : int
+            The option to set.  Available values will depend on your
+            version of libzmq.  Examples include::
+
+                zmq.IO_THREADS, zmq.MAX_SOCKETS
+
+        optval : int
+            The value of the option to set.
+        """
+        optval_int_c: C.int
+        rc: C.int
+
+        if self.closed:
+            raise RuntimeError("Context has been destroyed")
+
+        if not isinstance(optval, int):
+            raise TypeError(f'expected int, got: {optval!r}')
+        optval_int_c = optval
+        rc = zmq_ctx_set(self.handle, option, optval_int_c)
+        _check_rc(rc)
+
+    def get(self, option: C.int):
+        """
+        Get the value of a context option.
+
+        See the 0MQ API documentation for zmq_ctx_get
+        for details on specific options.
+
+        .. versionadded:: libzmq-3.2
+        .. versionadded:: 13.0
+
+        Parameters
+        ----------
+        option : int
+            The option to get.  Available values will depend on your
+            version of libzmq.  Examples include::
+
+                zmq.IO_THREADS, zmq.MAX_SOCKETS
+
+        Returns
+        -------
+        optval : int
+            The value of the option as an integer.
+        """
+        rc: C.int
+
+        if self.closed:
+            raise RuntimeError("Context has been destroyed")
+
+        rc = zmq_ctx_get(self.handle, option)
+        _check_rc(rc, error_without_errno=False)
+        return rc
+
+
+@cclass
+class Socket:
+    """
+    A 0MQ socket.
+
+    These objects will generally be constructed via the socket() method of a Context object.
+
+    Note: 0MQ Sockets are *not* threadsafe. **DO NOT** share them across threads.
+
+    Parameters
+    ----------
+    context : Context
+        The 0MQ Context this Socket belongs to.
+    socket_type : int
+        The socket type, which can be any of the 0MQ socket types:
+        REQ, REP, PUB, SUB, PAIR, DEALER, ROUTER, PULL, PUSH, XPUB, XSUB.
+
+    See Also
+    --------
+    .Context.socket : method for creating a socket bound to a Context.
+    """
+
+    def __init__(
+        self,
+        context=None,
+        socket_type: C.int = -1,
+        shadow: size_t = 0,
+        copy_threshold=None,
+    ):
+        # pre-init
+        self.handle = NULL
+        self._pid = 0
+        self._shadow = False
+        self.context = None
+
+        if copy_threshold is None:
+            copy_threshold = zmq.COPY_THRESHOLD
+        self.copy_threshold = copy_threshold
+
+        self.handle = NULL
+        self.context = context
+        if shadow:
+            self._shadow = True
+            self.handle = cast(p_void, shadow)
+        else:
+            if context is None:
+                raise TypeError("context must be specified")
+            if socket_type < 0:
+                raise TypeError("socket_type must be specified")
+            self._shadow = False
+            self.handle = zmq_socket(self.context.handle, socket_type)
+        if self.handle == NULL:
+            raise ZMQError()
+        self._closed = False
+        self._pid = getpid()
+
+    @property
+    def underlying(self):
+        """The address of the underlying libzmq socket"""
+        return cast(size_t, self.handle)
+
+    @property
+    def closed(self):
+        """Whether the socket is closed"""
+        return _check_closed_deep(self)
+
+    def close(self, linger=None):
+        """
+        Close the socket.
+
+        If linger is specified, LINGER sockopt will be set prior to closing.
+
+        This can be called to close the socket by hand. If this is not
+        called, the socket will automatically be closed when it is
+        garbage collected.
+        """
+        rc: C.int = 0
+        linger_c: C.int
+        setlinger: bint = False
+
+        if linger is not None:
+            linger_c = li

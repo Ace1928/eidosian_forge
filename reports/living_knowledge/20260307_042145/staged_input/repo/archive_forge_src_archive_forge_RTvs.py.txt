@@ -1,0 +1,228 @@
+SOURCE_PATH: archive_forge/src/archive_forge/RTvs.py
+KIND: code
+
+# Importing necessary modules
+import os  # Importing the os module for file and directory operations
+import json  # Importing the json module for handling JSON data
+import logging  # Importing the logging module for logging purposes
+import asyncio  # Importing the asyncio module for asynchronous programming
+import random  # Importing the random module for generating random values
+from typing import (
+    List,
+    Tuple,
+    Dict,
+    Union,
+    Any,
+    Callable,
+    TypeAlias,
+    Optional,
+)  # Importing various types from the typing module for type hinting and annotation
+from itertools import (
+    cycle,
+)  # Importing the cycle function from itertools for creating cyclic iterators
+import multiprocessing  # Importing the multiprocessing module for parallel processing
+import OpenGL.GL as gl  # Importing OpenGL.GL module and aliasing it as gl for OpenGL graphics functionality
+import OpenGL.GLUT as glut  # Importing OpenGL.GLUT module and aliasing it as glut for OpenGL Utility Toolkit functionality
+import OpenGL  # Importing the OpenGL module for OpenGL graphics functionality
+from OpenGL.GL import (
+    GL_COLOR_BUFFER_BIT,
+    GL_DEPTH_BUFFER_BIT,
+    GL_MODELVIEW,
+    GL_PROJECTION,
+)  # Importing specific constants from OpenGL.GL for OpenGL graphics functionality
+
+import cProfile  # Importing the cProfile module for profiling code execution
+import pstats  # Importing the pstats module for analyzing profiling statistics
+from pstats import (
+    SortKey,
+)  # Importing the SortKey class from pstats for sorting profiling statistics
+
+# Setup enhanced logging
+logging.basicConfig(
+    level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
+)  # Configuring the logging module with DEBUG level and a specific format for log messages
+"""
+Configure the logging module with enhanced settings for detailed and informative logging.
+
+The `logging.basicConfig()` function is used to set up the basic configuration for the logging module. It takes several parameters to customize the logging behavior:
+
+- `level`: Set to `logging.DEBUG` to capture all log messages, including debug-level messages. This ensures that detailed information is logged for debugging and troubleshooting purposes.
+
+- `format`: Specifies the format of the log messages. In this case, the format includes the timestamp (`%(asctime)s`), log level (`%(levelname)s`), and the log message itself (`%(message)s`). This format provides comprehensive information for each log entry.
+
+By configuring the logging module with these settings, all subsequent log messages will adhere to the specified format and capture detailed information, enabling effective debugging and monitoring of the program's execution.
+
+Logging is a crucial aspect of software development, as it helps in understanding the flow of the program, identifying issues, and facilitating problem-solving. With the enhanced logging setup, developers can gain valuable insights into the program's behavior and quickly diagnose and resolve any encountered issues.
+"""
+
+# Type Aliases for enhanced clarity, type safety, and to avoid type/value/key errors
+ColorName: TypeAlias = str  # Defining a type alias ColorName as str for color names
+"""
+Define a type alias `ColorName` as `str` for color names.
+
+Type aliases are used to create more descriptive and meaningful names for existing types. In this case, the type alias `ColorName` is defined as an alias for the built-in `str` type.
+
+By using the `ColorName` type alias, it becomes clear that a variable or parameter represents a color name, enhancing code readability and providing additional context.
+
+Type aliases help in improving code clarity, making the intent of the code more explicit, and reducing the chances of type-related errors. They serve as a form of documentation, conveying the purpose and expected type of a value.
+
+In this specific case, the `ColorName` type alias indicates that a string value represents the name of a color. This information is valuable for developers working with color-related functionality, as it clearly communicates the purpose and expected format of the color name.
+
+Using type aliases consistently throughout the codebase promotes code consistency, improves maintainability, and facilitates better understanding of the code's structure and purpose.
+"""
+
+RGBValue: TypeAlias = Tuple[
+    int, int, int
+]  # Defining a type alias RGBValue as a tuple of three integers for RGB color values
+"""
+Define a type alias `RGBValue` as a tuple of three integers for RGB color values.
+
+The `RGBValue` type alias is defined as a tuple of three integers, representing the red, green, and blue components of an RGB color value.
+
+RGB (Red, Green, Blue) is a color model commonly used in computer graphics and digital imaging. Each color component is represented by an integer value ranging from 0 to 255, where 0 indicates the absence of the color and 255 represents the maximum intensity of the color.
+
+By defining the `RGBValue` type alias as a tuple of three integers, it provides a clear and concise way to represent RGB color values throughout the codebase. It helps in ensuring type safety and avoiding errors related to incorrect color value formats.
+
+Using the `RGBValue` type alias makes the code more expressive and self-explanatory. It communicates the expected structure and format of RGB color values, making it easier for developers to understand and work with color-related functionality.
+
+Moreover, by leveraging type aliases, the codebase becomes more maintainable and adaptable. If the representation of RGB color values needs to change in the future, such as using a different range or data type, the type alias can be updated in a single place, and the change will propagate throughout the codebase.
+
+Overall, the `RGBValue` type alias enhances code clarity, type safety, and maintainability when working with RGB color values in the program.
+"""
+
+CMYKValue: TypeAlias = Tuple[float, float, float, float]  # Defining a type alias CMYKValue as a tuple of four floats for CMYK color values
+"""
+Define a type alias `CMYKValue` as a tuple of four floats for CMYK color values.
+
+The `CMYKValue` type alias represents a color value in the CMYK (Cyan, Magenta, Yellow, Key/Black) color model. It is defined as a tuple of four float values, each representing the intensity of the respective color component.
+
+CMYK is a subtractive color model commonly used in printing and color reproduction. The four components are:
+- Cyan (C): Represents the amount of cyan ink or pigment.
+- Magenta (M): Represents the amount of magenta ink or pigment.
+- Yellow (Y): Represents the amount of yellow ink or pigment.
+- Key/Black (K): Represents the amount of black ink or pigment.
+
+Each component value is typically represented as a float between 0.0 and 1.0, where 0.0 indicates the absence of the color and 1.0 represents the maximum intensity of the color.
+
+By defining the `CMYKValue` type alias, it provides a clear and concise way to represent CMYK color values throughout the codebase. It helps in ensuring type safety and avoiding errors related to incorrect color value formats.
+
+Using the `CMYKValue` type alias makes the code more expressive and self-explanatory. It communicates the expected structure and format of CMYK color values, making it easier for developers to understand and work with color-related functionality.
+
+Moreover, by leveraging type aliases, the codebase becomes more maintainable and adaptable. If the representation of CMYK color values needs to change in the future, such as using a different range or data type, the type alias can be updated in a single place, and the change will propagate throughout the codebase.
+
+Overall, the `CMYKValue` type alias enhances code clarity, type safety, and maintainability when working with CMYK color values in the program.
+"""
+
+LabValue: TypeAlias = Tuple[float, float, float]  # Defining a type alias LabValue as a tuple of three floats for Lab color values
+"""
+Define a type alias `LabValue` as a tuple of three floats for Lab color values.
+
+The `LabValue` type alias represents a color value in the Lab (L*a*b* or CIELAB) color space. It is defined as a tuple of three float values, each representing a specific component of the Lab color space.
+
+The Lab color space is a color model that aims to approximate human vision and perception of color. It is designed to be perceptually uniform, meaning that equal distances in the color space correspond to equal perceived color differences. The three components of the Lab color space are:
+
+- L* (Lightness): Represents the lightness or brightness of the color. It ranges from 0 (black) to 100 (white).
+- a*: Represents the green-red color component. Negative values indicate green, while positive values indicate red.
+- b*: Represents the blue-yellow color component. Negative values indicate blue, while positive values indicate yellow.
+
+The Lab color space is widely used in color management systems and is considered to be device-independent, making it suitable for color communication and conversion between different devices and media.
+
+By defining the `LabValue` type alias, it provides a clear and concise way to represent Lab color values throughout the codebase. It helps in ensuring type safety and avoiding errors related to incorrect color value formats.
+
+Using the `LabValue` type alias makes the code more expressive and self-explanatory. It communicates the expected structure and format of Lab color values, making it easier for developers to understand and work with color-related functionality.
+
+Moreover, by leveraging type aliases, the codebase becomes more maintainable and adaptable. If the representation of Lab color values needs to change in the future, such as using a different range or data type, the type alias can be updated in a single place, and the change will propagate throughout the codebase.
+
+Overall, the `LabValue` type alias enhances code clarity, type safety, and maintainability when working with Lab color values in the program.
+"""
+
+XYZValue: TypeAlias = Tuple[float, float, float]  # Defining a type alias XYZValue as a tuple of three floats for XYZ color values
+"""
+Define a type alias `XYZValue` as a tuple of three floats for XYZ color values.
+
+The `XYZValue` type alias represents a color value in the XYZ color space, also known as the CIE 1931 XYZ color space. It is defined as a tuple of three float values, each representing a specific component of the XYZ color space.
+
+The XYZ color space is a device-independent color space that serves as a reference for defining and communicating colors. It is based on the human visual system and aims to represent all colors that can be perceived by the human eye. The three components of the XYZ color space are:
+
+- X: Represents the amount of red-green color stimulus.
+- Y: Represents the luminance or brightness of the color.
+- Z: Represents the amount of blue-yellow color stimulus.
+
+The XYZ color space is widely used as an intermediate color space for color conversions and calculations. It provides a standardized way to represent colors and is often used as a bridge between different color spaces, such as RGB and CMYK.
+
+By defining the `XYZValue` type alias, it provides a clear and concise way to represent XYZ color values throughout the codebase. It helps in ensuring type safety and avoiding errors related to incorrect color value formats.
+
+Using the `XYZValue` type alias makes the code more expressive and self-explanatory. It communicates the expected structure and format of XYZ color values, making it easier for developers to understand and work with color-related functionality.
+
+Moreover, by leveraging type aliases, the codebase becomes more maintainable and adaptable. If the representation of XYZ color values needs to change in the future, such as using a different range or data type, the type alias can be updated in a single place, and the change will propagate throughout the codebase.
+
+Overall, the `XYZValue` type alias enhances code clarity, type safety, and maintainability when working with XYZ color values in the program.
+"""
+
+ColorCode: TypeAlias = Tuple[ColorName, RGBValue]  # Defining a type alias ColorCode as a tuple of ColorName and RGBValue for color codes
+"""
+Define a type alias `ColorCode` as a tuple of `ColorName` and `RGBValue` for color codes.
+
+The `ColorCode` type alias represents a color code, which is a combination of a color name and its corresponding RGB color value. It is defined as a tuple consisting of two elements:
+
+1. `ColorName`: Represents the name of the color, which is of type `str`. It provides a human-readable and descriptive label for the color.
+2. `RGBValue`: Represents the RGB color value associated with the color name. It is of type `RGBValue`, which is a tuple of three integers representing the red, green, and blue components of the color.
+
+By defining the `ColorCode` type alias, it provides a clear and concise way to represent color codes throughout the codebase. It helps in ensuring type safety and avoiding errors related to incorrect color code formats.
+
+Using the `ColorCode` type alias makes the code more expressive and self-explanatory. It communicates the expected structure and format of color codes, making it easier for developers to understand and work with color-related functionality.
+
+The combination of a color name and its corresponding RGB value in the `ColorCode` type alias allows for easy identification and retrieval of colors based on their names. It provides a convenient way to associate human-readable names with specific color values, enhancing the usability and readability of the code.
+
+Moreover, by leveraging type aliases, the codebase becomes more maintainable and adaptable. If the representation of color codes needs to change in the future, such as adding additional color properties or using a different color model, the type alias can be updated in a single place, and the change will propagate throughout the codebase.
+
+Overall, the `ColorCode` type alias enhances code clarity, type safety, and maintainability when working with color codes in the program. It provides a standardized way to represent and manipulate color information, making the code more expressive and easier to understand.
+"""
+
+ColorCodesList: TypeAlias = List[ColorCode]  # Defining a type alias ColorCodesList as a list of ColorCode for a list of color codes
+"""
+Define a type alias `ColorCodesList` as a list of `ColorCode` for a list of color codes.
+
+The `ColorCodesList` type alias represents a list or collection of color codes. It is defined as a list (`List`) of `ColorCode` elements, where each element represents a specific color code.
+
+By defining the `ColorCodesList` type alias, it provides a clear and concise way to represent a list of color codes throughout the codebase. It helps in ensuring type safety and avoiding errors related to incorrect list formats or element types.
+
+Using the `ColorCodesList` type alias makes the code more expressive and self-explanatory. It communicates the expected structure and format of a list of color codes, making it easier for developers to understand and work with color-related functionality that involves multiple colors.
+
+The `ColorCodesList` type alias allows for convenient manipulation and iteration over a collection of color codes. It provides a standardized way to store, access, and process multiple color codes as a single entity, enhancing the efficiency and readability of the code.
+
+Moreover, by leveraging type aliases, the codebase becomes more maintainable and adaptable. If the representation of a list of color codes needs to change in the future, such as using a different data structure or adding additional properties to each color code, the type alias can be updated in a single place, and the change will propagate throughout the codebase.
+
+Overall, the `ColorCodesList` type alias enhances code clarity, type safety, and maintainability when working with lists of color codes in the program. It provides a standardized way to represent and manipulate collections of color information, making the code more expressive and easier to understand.
+"""
+
+ColorCodesDict: TypeAlias = Dict[ColorName, Union[RGBValue, str]]  # Defining a type alias ColorCodesDict as a dictionary mapping ColorName to either RGBValue or str for color codes dictionary
+"""
+Define a type alias `ColorCodesDict` as a dictionary mapping `ColorName` to either `RGBValue` or `str` for color codes dictionary.
+
+The `ColorCodesDict` type alias represents a dictionary or mapping of color names to their corresponding color values. It is defined as a dictionary (`Dict`) where the keys are of type `ColorName` (which is an alias for `str`) and the values can be either of type `RGBValue` (a tuple of three integers representing the red, green, and blue components of the color) or `str` (a string representation of the color value).
+
+By defining the `ColorCodesDict` type alias, it provides a clear and concise way to represent a dictionary of color codes throughout the codebase. It helps in ensuring type safety and avoiding errors related to incorrect dictionary formats or value types.
+
+Using the `ColorCodesDict` type alias makes the code more expressive and self-explanatory. It communicates the expected structure and format of a dictionary of color codes, making it easier for developers to understand and work with color-related functionality that involves mapping color names to their corresponding values.
+
+The `ColorCodesDict` type alias allows for convenient lookup and retrieval of color values based on their associated color names. It provides a standardized way to store and access color information using a key-value pair structure, enhancing the efficiency and readability of the code.
+
+The flexibility of allowing the values in the `ColorCodesDict` to be either `RGBValue` or `str` provides versatility in representing color values. It allows for storing color values as RGB tuples for precise color representation or as string representations for cases where a more human-readable or alternative format is required.
+
+Moreover, by leveraging type aliases, the codebase becomes more maintainable and adaptable. If the representation of a dictionary of color codes needs to change in the future, such as using a different data structure or adding additional color properties, the type alias can be updated in a single place, and the change will propagate throughout the codebase.
+
+Overall, the `ColorCodesDict` type alias enhances code clarity, type safety, and maintainability when working with dictionaries of color codes in the program. It provides a standardized way to represent and manipulate color information using a key-value pair structure, making the code more expressive and easier to understand.
+"""
+
+ANSIValue: TypeAlias = str  # Defining a type alias ANSIValue as str for ANSI escape codes
+"""
+Define a type alias `ANSIValue` as `str` for ANSI escape codes.
+
+The `ANSIValue` type alias represents ANSI (American National Standards Institute) escape codes, which are special sequences of characters used to control the formatting and appearance of text in command-line interfaces or terminal emulators. It is defined as an alias for the built-in `str` type.
+
+ANSI escape codes are widely used to add colors, styles, and other formatting options to text output in command-line applications. They consist of specific sequences of characters that are interpreted by the terminal to apply the desired formatting.
+
+By defining the `ANSIValue` type alias, it provides a clear and concise way to represent ANSI escape codes throughout the codebase. It helps in ensuring type safety and avoiding errors related to incorrect escape code formats.
+
+Using the `ANSIValue` type alias makes the code more expressive and self-explanatory. It communicates the expected type and purpose of variables or parameters that represent ANSI escape codes, making it easier for developers t

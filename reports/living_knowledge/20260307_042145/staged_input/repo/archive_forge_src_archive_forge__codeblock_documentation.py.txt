@@ -1,0 +1,11 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_codeblock_documentation.py
+KIND: code
+
+from typing import Any, List
+Emit CUDA program like the following format.
+
+        <<head>> {
+          <<begin codes>>
+          ...;
+          <<end codes>>
+        }

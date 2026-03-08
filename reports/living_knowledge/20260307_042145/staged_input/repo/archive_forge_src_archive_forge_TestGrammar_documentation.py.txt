@@ -1,0 +1,11 @@
+SOURCE_PATH: archive_forge/src/archive_forge/TestGrammar_documentation.py
+KIND: code
+
+from __future__ import absolute_import
+import ast
+import textwrap
+from ...TestUtils import CythonTest
+from .. import ExprNodes
+from ..Errors import CompileError
+
+Uses TreeFragment to test invalid syntax.

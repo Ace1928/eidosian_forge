@@ -1,0 +1,13 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/LB
+KIND: config
+
+LB*
+محافظة عكارakkar governorate<
+الشمالnorth governorateمحافظة الشمال9
+
+بيروتbeirut governorateمحافظة بيروتA
+$محافظة بعلبك الهرملbaalbekhermel governorate�
+الهرمل‎beqaa governorateبعلبك  الهرمل‎محافظة البقاعمحافظة الهرمل‎(محافظة بعلبك  الهرمل‎<
+الجنوبsouth governorateمحافظة الجنوبN
+جبل لبنانmount lebanon governorateمحافظة جبل لبنانd
+النبطيةnabatiyeh governorateمحافظة النبطيةمحافظة النبطية‎

@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/KIgm.py
+KIND: code
+
+from typing import Awaitable
+
+ValidationRule = Callable[[Any], Awaitable[bool]]
+
+
+async def is_valid_array(value) -> Awaitable[bool]:
+    return isinstance(value, list)

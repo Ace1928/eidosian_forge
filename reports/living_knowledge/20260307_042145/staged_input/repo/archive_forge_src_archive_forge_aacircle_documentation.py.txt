@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/aacircle_documentation.py
+KIND: code
+
+import pygame
+import pygame.gfxdraw
+Proof of concept gfxdraw example

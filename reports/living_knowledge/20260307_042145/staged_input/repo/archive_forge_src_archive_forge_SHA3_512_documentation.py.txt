@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/SHA3_512_documentation.py
+KIND: code
+
+from Cryptodome.Util.py3compat import bord
+from Cryptodome.Util._raw_api import (load_pycryptodome_raw_lib,
+from Cryptodome.Hash.keccak import _raw_keccak_lib
+Create a fresh SHA3-521 hash object.

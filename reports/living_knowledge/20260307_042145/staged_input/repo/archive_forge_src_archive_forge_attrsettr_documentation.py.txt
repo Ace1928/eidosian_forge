@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/attrsettr_documentation.py
+KIND: code
+
+from __future__ import annotations
+import errno
+from typing import TypeVar, Union
+from .. import constants
+Override in subclass

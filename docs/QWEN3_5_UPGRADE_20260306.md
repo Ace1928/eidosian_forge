@@ -28,7 +28,7 @@ Move Eidosian runtime defaults toward the current small Qwen release while keepi
 
 - Installed Ollama models observed locally:
   - `nomic-embed-text:latest`
-  - `qwen2.5:1.5b`
+  - `qwen3.5:2b`
 - Local GGUF inventory still centers on Qwen2.5 and Llama 3.2 artifacts under `models/`.
 
 ## Runtime Direction
@@ -52,4 +52,4 @@ Move Eidosian runtime defaults toward the current small Qwen release while keepi
 - `qwen3.5:2b` was pulled successfully into Ollama.
 - On this local Termux stack, direct `/api/generate` and `/api/chat` initially appeared broken because the model emitted text into Ollama's `thinking` channel while visible answer fields stayed empty.
 - Sending `think: false` produced normal visible completions immediately.
-- The correct fix was response normalization plus an explicit default thinking policy, not reverting to `qwen2.5:1.5b`.
+- The correct fix was response normalization plus an explicit default thinking policy, not reverting to `qwen3.5:2b`.

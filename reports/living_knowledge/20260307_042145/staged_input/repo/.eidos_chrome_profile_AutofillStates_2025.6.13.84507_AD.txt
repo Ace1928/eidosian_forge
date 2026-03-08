@@ -1,0 +1,12 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/AD
+KIND: config
+
+AD 
+canilloparròquia de canillo
+encampparròquia d'encamp&
+
+la massanaparròquia de la massana
+ordinoparròquia d'ordino<
+#parròquia de sant julià de lòriasant julià de lòria1
+andorra la vellaparròquia d'andorra la vella3
+escaldesengordanyparròquia d'escaldesengordany

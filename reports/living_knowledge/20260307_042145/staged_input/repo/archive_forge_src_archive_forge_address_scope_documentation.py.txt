@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/address_scope_documentation.py
+KIND: code
+
+from openstack import resource
+Address scope extension.

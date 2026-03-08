@@ -1,0 +1,574 @@
+SOURCE_PATH: archive_forge/src/archive_forge/byteflow.py
+KIND: code
+
+"""
+Implement python 3.8+ bytecode analysis
+"""
+import dis
+from pprint import pformat
+import logging
+from collections import namedtuple, defaultdict, deque
+from functools import total_ordering
+
+from numba.core.utils import UniqueDict, PYVERSION, ALL_BINOPS_TO_OPERATORS
+from numba.core.controlflow import NEW_BLOCKERS, CFGraph
+from numba.core.ir import Loc
+from numba.core.errors import UnsupportedError
+
+
+_logger = logging.getLogger(__name__)
+
+_EXCEPT_STACK_OFFSET = 6
+_FINALLY_POP = _EXCEPT_STACK_OFFSET
+_NO_RAISE_OPS = frozenset({
+    'LOAD_CONST',
+    'NOP',
+    'LOAD_DEREF',
+    'PRECALL',
+})
+
+if PYVERSION in ((3, 12), ):
+    from enum import Enum
+
+    # Operands for CALL_INTRINSIC_1
+    class CALL_INTRINSIC_1_Operand(Enum):
+        INTRINSIC_STOPITERATION_ERROR = 3
+        UNARY_POSITIVE = 5
+        INTRINSIC_LIST_TO_TUPLE = 6
+    ci1op = CALL_INTRINSIC_1_Operand
+elif PYVERSION in ((3, 9), (3, 10), (3, 11)):
+    pass
+else:
+    raise NotImplementedError(PYVERSION)
+
+
+@total_ordering
+class BlockKind(object):
+    """Kinds of block to make related code safer than just `str`.
+    """
+    _members = frozenset({
+        'LOOP',
+        'TRY', 'EXCEPT', 'FINALLY',
+        'WITH', 'WITH_FINALLY',
+    })
+
+    def __init__(self, value):
+        assert value in self._members
+        self._value = value
+
+    def __hash__(self):
+        return hash((type(self), self._value))
+
+    def __lt__(self, other):
+        if isinstance(other, BlockKind):
+            return self._value < other._value
+        else:
+            raise TypeError('cannot compare to {!r}'.format(type(other)))
+
+    def __eq__(self, other):
+        if isinstance(other, BlockKind):
+            return self._value == other._value
+        else:
+            raise TypeError('cannot compare to {!r}'.format(type(other)))
+
+    def __repr__(self):
+        return "BlockKind({})".format(self._value)
+
+
+class _lazy_pformat(object):
+    def __init__(self, *args, **kwargs):
+        self.args = args
+        self.kwargs = kwargs
+
+    def __str__(self):
+        return pformat(*self.args, **self.kwargs)
+
+
+class Flow(object):
+    """Data+Control Flow analysis.
+
+    Simulate execution to recover dataflow and controlflow information.
+    """
+    def __init__(self, bytecode):
+        _logger.debug("bytecode dump:\n%s", bytecode.dump())
+        self._bytecode = bytecode
+        self.block_infos = UniqueDict()
+
+    def run(self):
+        """Run a trace over the bytecode over all reachable path.
+
+        The trace starts at bytecode offset 0 and gathers stack and control-
+        flow information by partially interpreting each bytecode.
+        Each ``State`` instance in the trace corresponds to a basic-block.
+        The State instances forks when a jump instruction is encountered.
+        A newly forked state is then added to the list of pending states.
+        The trace ends when there are no more pending states.
+        """
+        firststate = State(bytecode=self._bytecode, pc=0, nstack=0,
+                           blockstack=())
+        runner = TraceRunner(debug_filename=self._bytecode.func_id.filename)
+        runner.pending.append(firststate)
+
+        # Enforce unique-ness on initial PC to avoid re-entering the PC with
+        # a different stack-depth. We don't know if such a case is ever
+        # possible, but no such case has been encountered in our tests.
+        first_encounter = UniqueDict()
+        # Loop over each pending state at a initial PC.
+        # Each state is tracing a basic block
+        while runner.pending:
+            _logger.debug("pending: %s", runner.pending)
+            state = runner.pending.popleft()
+            if state not in runner.finished:
+                _logger.debug("stack: %s", state._stack)
+                _logger.debug("state.pc_initial: %s", state)
+                first_encounter[state.pc_initial] = state
+                # Loop over the state until it is terminated.
+                while True:
+                    runner.dispatch(state)
+                    # Terminated?
+                    if state.has_terminated():
+                        break
+                    else:
+                        if self._run_handle_exception(runner, state):
+                            break
+
+                        if self._is_implicit_new_block(state):
+                            # check if this is a with...as, abort if so
+                            self._guard_with_as(state)
+                            # else split
+                            state.split_new_block()
+                            break
+                _logger.debug("end state. edges=%s", state.outgoing_edges)
+                runner.finished.add(state)
+                out_states = state.get_outgoing_states()
+                runner.pending.extend(out_states)
+
+        # Complete controlflow
+        self._build_cfg(runner.finished)
+        # Prune redundant PHI-nodes
+        self._prune_phis(runner)
+        # Post process
+        for state in sorted(runner.finished, key=lambda x: x.pc_initial):
+            self.block_infos[state.pc_initial] = si = adapt_state_infos(state)
+            _logger.debug("block_infos %s:\n%s", state, si)
+
+    if PYVERSION in ((3, 11), (3, 12)):
+        def _run_handle_exception(self, runner, state):
+            if not state.in_with() and (
+                    state.has_active_try() and
+                    state.get_inst().opname not in _NO_RAISE_OPS):
+                # Is in a *try* block
+                state.fork(pc=state.get_inst().next)
+                runner._adjust_except_stack(state)
+                return True
+            else:
+                state.advance_pc()
+
+                # Must the new PC be a new block?
+                if not state.in_with() and state.is_in_exception():
+                    _logger.debug("3.11 exception %s PC=%s",
+                                  state.get_exception(), state._pc)
+                    eh = state.get_exception()
+                    eh_top = state.get_top_block('TRY')
+                    if eh_top and eh_top['end'] == eh.target:
+                        # Same exception
+                        eh_block = None
+                    else:
+                        eh_block = state.make_block("TRY", end=eh.target)
+                        eh_block['end_offset'] = eh.end
+                        eh_block['stack_depth'] = eh.depth
+                        eh_block['push_lasti'] = eh.lasti
+                        state.fork(pc=state._pc, extra_block=eh_block)
+                        return True
+    elif PYVERSION in ((3, 9), (3, 10)):
+        def _run_handle_exception(self, runner, state):
+            if (state.has_active_try() and
+                    state.get_inst().opname not in _NO_RAISE_OPS):
+                # Is in a *try* block
+                state.fork(pc=state.get_inst().next)
+                tryblk = state.get_top_block('TRY')
+                state.pop_block_and_above(tryblk)
+                nstack = state.stack_depth
+                kwargs = {}
+                if nstack > tryblk['entry_stack']:
+                    kwargs['npop'] = nstack - tryblk['entry_stack']
+                handler = tryblk['handler']
+                kwargs['npush'] = {
+                    BlockKind('EXCEPT'): _EXCEPT_STACK_OFFSET,
+                    BlockKind('FINALLY'): _FINALLY_POP
+                }[handler['kind']]
+                kwargs['extra_block'] = handler
+                state.fork(pc=tryblk['end'], **kwargs)
+                return True
+            else:
+                state.advance_pc()
+    else:
+        raise NotImplementedError(PYVERSION)
+
+    def _build_cfg(self, all_states):
+        graph = CFGraph()
+        for state in all_states:
+            b = state.pc_initial
+            graph.add_node(b)
+        for state in all_states:
+            for edge in state.outgoing_edges:
+                graph.add_edge(state.pc_initial, edge.pc, 0)
+        graph.set_entry_point(0)
+        graph.process()
+        self.cfgraph = graph
+
+    def _prune_phis(self, runner):
+        # Find phis that are unused in the local block
+        _logger.debug("Prune PHIs".center(60, '-'))
+
+        # Compute dataflow for used phis and propagate
+
+        # 1. Get used-phis for each block
+        # Map block to used_phis
+        def get_used_phis_per_state():
+            used_phis = defaultdict(set)
+            phi_set = set()
+            for state in runner.finished:
+                used = set(state._used_regs)
+                phis = set(state._phis)
+                used_phis[state] |= phis & used
+                phi_set |= phis
+            return used_phis, phi_set
+
+        # Find use-defs
+        def find_use_defs():
+            defmap = {}
+            phismap = defaultdict(set)
+            for state in runner.finished:
+                for phi, rhs in state._outgoing_phis.items():
+                    if rhs not in phi_set:
+                        # Is a definition
+                        defmap[phi] = state
+                    phismap[phi].add((rhs, state))
+            _logger.debug("defmap: %s", _lazy_pformat(defmap))
+            _logger.debug("phismap: %s", _lazy_pformat(phismap))
+            return defmap, phismap
+
+        def propagate_phi_map(phismap):
+            """An iterative dataflow algorithm to find the definition
+            (the source) of each PHI node.
+            """
+            blacklist = defaultdict(set)
+
+            while True:
+                changing = False
+                for phi, defsites in sorted(list(phismap.items())):
+                    for rhs, state in sorted(list(defsites)):
+                        if rhs in phi_set:
+                            defsites |= phismap[rhs]
+                            blacklist[phi].add((rhs, state))
+                    to_remove = blacklist[phi]
+                    if to_remove & defsites:
+                        defsites -= to_remove
+                        changing = True
+
+                _logger.debug("changing phismap: %s", _lazy_pformat(phismap))
+                if not changing:
+                    break
+
+        def apply_changes(used_phis, phismap):
+            keep = {}
+            for state, used_set in used_phis.items():
+                for phi in used_set:
+                    keep[phi] = phismap[phi]
+            _logger.debug("keep phismap: %s", _lazy_pformat(keep))
+            new_out = defaultdict(dict)
+            for phi in keep:
+                for rhs, state in keep[phi]:
+                    new_out[state][phi] = rhs
+
+            _logger.debug("new_out: %s", _lazy_pformat(new_out))
+            for state in runner.finished:
+                state._outgoing_phis.clear()
+                state._outgoing_phis.update(new_out[state])
+
+        used_phis, phi_set = get_used_phis_per_state()
+        _logger.debug("Used_phis: %s", _lazy_pformat(used_phis))
+        defmap, phismap = find_use_defs()
+        propagate_phi_map(phismap)
+        apply_changes(used_phis, phismap)
+        _logger.debug("DONE Prune PHIs".center(60, '-'))
+
+    def _is_implicit_new_block(self, state):
+        inst = state.get_inst()
+
+        if inst.offset in self._bytecode.labels:
+            return True
+        elif inst.opname in NEW_BLOCKERS:
+            return True
+        else:
+            return False
+
+    def _guard_with_as(self, state):
+        """Checks if the next instruction after a SETUP_WITH is something other
+        than a POP_TOP, if it is something else it'll be some sort of store
+        which is not supported (this corresponds to `with CTXMGR as VAR(S)`)."""
+        current_inst = state.get_inst()
+        if current_inst.opname in {"SETUP_WITH", "BEFORE_WITH"}:
+            next_op = self._bytecode[current_inst.next].opname
+            if next_op != "POP_TOP":
+                msg = ("The 'with (context manager) as "
+                       "(variable):' construct is not "
+                       "supported.")
+                raise UnsupportedError(msg)
+
+
+def _is_null_temp_reg(reg):
+    return reg.startswith("$null$")
+
+
+class TraceRunner(object):
+    """Trace runner contains the states for the trace and the opcode dispatch.
+    """
+    def __init__(self, debug_filename):
+        self.debug_filename = debug_filename
+        self.pending = deque()
+        self.finished = set()
+
+    def get_debug_loc(self, lineno):
+        return Loc(self.debug_filename, lineno)
+
+    def dispatch(self, state):
+        if PYVERSION in ((3, 11), (3, 12)):
+            if state._blockstack:
+                state: State
+                while state._blockstack:
+                    topblk = state._blockstack[-1]
+                    blk_end = topblk['end']
+                    if blk_end is not None and blk_end <= state.pc_initial:
+                        state._blockstack.pop()
+                    else:
+                        break
+        elif PYVERSION in ((3, 9), (3, 10)):
+            pass
+        else:
+            raise NotImplementedError(PYVERSION)
+        inst = state.get_inst()
+        if inst.opname != "CACHE":
+            _logger.debug("dispatch pc=%s, inst=%s", state._pc, inst)
+            _logger.debug("stack %s", state._stack)
+        fn = getattr(self, "op_{}".format(inst.opname), None)
+        if fn is not None:
+            fn(state, inst)
+        else:
+            msg = "Use of unsupported opcode (%s) found" % inst.opname
+            raise UnsupportedError(msg, loc=self.get_debug_loc(inst.lineno))
+
+    def _adjust_except_stack(self, state):
+        """
+        Adjust stack when entering an exception handler to match expectation
+        by the bytecode.
+        """
+        tryblk = state.get_top_block('TRY')
+        state.pop_block_and_above(tryblk)
+        nstack = state.stack_depth
+        kwargs = {}
+        expected_depth = tryblk['stack_depth']
+        if nstack > expected_depth:
+            # Pop extra item in the stack
+            kwargs['npop'] = nstack - expected_depth
+        # Set extra stack itemcount due to the exception values.
+        extra_stack = 1
+        if tryblk['push_lasti']:
+            extra_stack += 1
+        kwargs['npush'] = extra_stack
+        state.fork(pc=tryblk['end'], **kwargs)
+
+    def op_NOP(self, state, inst):
+        state.append(inst)
+
+    def op_RESUME(self, state, inst):
+        state.append(inst)
+
+    def op_CACHE(self, state, inst):
+        state.append(inst)
+
+    def op_PRECALL(self, state, inst):
+        state.append(inst)
+
+    def op_PUSH_NULL(self, state, inst):
+        state.push(state.make_null())
+        state.append(inst)
+
+    def op_RETURN_GENERATOR(self, state, inst):
+        # This impl doesn't follow what CPython does. CPython is hacking
+        # the frame stack in the interpreter. From usage, it always
+        # has a POP_TOP after it so we push a dummy value to the stack.
+        #
+        # Example bytecode:
+        # >          0	NOP(arg=None, lineno=80)
+        #            2	RETURN_GENERATOR(arg=None, lineno=80)
+        #            4	POP_TOP(arg=None, lineno=80)
+        #            6	RESUME(arg=0, lineno=80)
+        state.push(state.make_temp())
+        state.append(inst)
+
+    def op_FORMAT_VALUE(self, state, inst):
+        """
+        FORMAT_VALUE(flags): flags argument specifies format spec which is
+        not supported yet. Currently, we just call str() on the value.
+        Pops a value from stack and pushes results back.
+        Required for supporting f-strings.
+        https://docs.python.org/3/library/dis.html#opcode-FORMAT_VALUE
+        """
+        if inst.arg != 0:
+            msg = "format spec in f-strings not supported yet"
+            raise UnsupportedError(msg, loc=self.get_debug_loc(inst.lineno))
+        value = state.pop()
+        strvar = state.make_temp()
+        res = state.make_temp()
+        state.append(inst, value=value, res=res, strvar=strvar)
+        state.push(res)
+
+    def op_BUILD_STRING(self, state, inst):
+        """
+        BUILD_STRING(count): Concatenates count strings from the stack and
+        pushes the resulting string onto the stack.
+        Required for supporting f-strings.
+        https://docs.python.org/3/library/dis.html#opcode-BUILD_STRING
+        """
+        count = inst.arg
+        strings = list(reversed([state.pop() for _ in range(count)]))
+        # corner case: f""
+        if count == 0:
+            tmps = [state.make_temp()]
+        else:
+            tmps = [state.make_temp() for _ in range(count - 1)]
+        state.append(inst, strings=strings, tmps=tmps)
+        state.push(tmps[-1])
+
+    def op_POP_TOP(self, state, inst):
+        state.pop()
+
+    if PYVERSION in ((3, 11), (3, 12)):
+        def op_LOAD_GLOBAL(self, state, inst):
+            res = state.make_temp()
+            idx = inst.arg >> 1
+            state.append(inst, idx=idx, res=res)
+            # ignoring the NULL
+            if inst.arg & 1:
+                state.push(state.make_null())
+            state.push(res)
+    elif PYVERSION in ((3, 9), (3, 10)):
+        def op_LOAD_GLOBAL(self, state, inst):
+            res = state.make_temp()
+            state.append(inst, res=res)
+            state.push(res)
+    else:
+        raise NotImplementedError(PYVERSION)
+
+    def op_COPY_FREE_VARS(self, state, inst):
+        state.append(inst)
+
+    def op_MAKE_CELL(self, state, inst):
+        state.append(inst)
+
+    def op_LOAD_DEREF(self, state, inst):
+        res = state.make_temp()
+        state.append(inst, res=res)
+        state.push(res)
+
+    def op_LOAD_CONST(self, state, inst):
+        res = state.make_temp("const")
+        state.push(res)
+        state.append(inst, res=res)
+
+    def op_LOAD_ATTR(self, state, inst):
+        item = state.pop()
+        if PYVERSION in ((3, 12), ):
+            if inst.arg & 1:
+                state.push(state.make_null())
+        elif PYVERSION in ((3, 9), (3, 10), (3, 11)):
+            pass
+        else:
+            raise NotImplementedError(PYVERSION)
+        res = state.make_temp()
+        state.append(inst, item=item, res=res)
+        state.push(res)
+
+    def op_LOAD_FAST(self, state, inst):
+        name = state.get_varname(inst)
+        res = state.make_temp(name)
+        state.append(inst, res=res)
+        state.push(res)
+
+    if PYVERSION in ((3, 12), ):
+        op_LOAD_FAST_CHECK = op_LOAD_FAST
+        op_LOAD_FAST_AND_CLEAR = op_LOAD_FAST
+    elif PYVERSION in ((3, 9), (3, 10), (3, 11)):
+        pass
+    else:
+        raise NotImplementedError(PYVERSION)
+
+    def op_DELETE_FAST(self, state, inst):
+        state.append(inst)
+
+    def op_DELETE_ATTR(self, state, inst):
+        target = state.pop()
+        state.append(inst, target=target)
+
+    def op_STORE_ATTR(self, state, inst):
+        target = state.pop()
+        value = state.pop()
+        state.append(inst, target=target, value=value)
+
+    def op_STORE_DEREF(self, state, inst):
+        value = state.pop()
+        state.append(inst, value=value)
+
+    def op_STORE_FAST(self, state, inst):
+        value = state.pop()
+        state.append(inst, value=value)
+
+    def op_SLICE_1(self, state, inst):
+        """
+        TOS = TOS1[TOS:]
+        """
+        tos = state.pop()
+        tos1 = state.pop()
+        res = state.make_temp()
+        slicevar = state.make_temp()
+        indexvar = state.make_temp()
+        nonevar = state.make_temp()
+        state.append(
+            inst,
+            base=tos1,
+            start=tos,
+            res=res,
+            slicevar=slicevar,
+            indexvar=indexvar,
+            nonevar=nonevar,
+        )
+        state.push(res)
+
+    def op_SLICE_2(self, state, inst):
+        """
+        TOS = TOS1[:TOS]
+        """
+        tos = state.pop()
+        tos1 = state.pop()
+        res = state.make_temp()
+        slicevar = state.make_temp()
+        indexvar = state.make_temp()
+        nonevar = state.make_temp()
+        state.append(
+            inst,
+            base=tos1,
+            stop=tos,
+            res=res,
+            slicevar=slicevar,
+            indexvar=indexvar,
+            nonevar=nonevar,
+        )
+        state.push(res)
+
+    def op_SLICE_3(self, state, inst):
+        """
+        TOS = TOS2[TOS1:TOS]
+        """
+        t

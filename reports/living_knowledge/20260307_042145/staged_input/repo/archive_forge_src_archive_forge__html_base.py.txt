@@ -1,0 +1,464 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_html_base.py
+KIND: code
+
+#!/usr/bin/env python3
+# :Author: David Goodger, Günter Milde
+#          Based on the html4css1 writer by David Goodger.
+# :Maintainer: docutils-develop@lists.sourceforge.net
+# :Revision: $Revision: 9292 $
+# :Date: $Date: 2005-06-28$
+# :Copyright: © 2016 David Goodger, Günter Milde
+# :License: Released under the terms of the `2-Clause BSD license`_, in short:
+#
+#    Copying and distribution of this file, with or without modification,
+#    are permitted in any medium without royalty provided the copyright
+#    notice and this notice are preserved.
+#    This file is offered as-is, without any warranty.
+#
+# .. _2-Clause BSD license: https://opensource.org/licenses/BSD-2-Clause
+
+"""common definitions for Docutils HTML writers"""
+
+import base64
+import mimetypes
+import os
+import os.path
+import re
+from urllib.request import unquote as unquote_url
+from urllib.request import url2pathname  # unquote and use local path sep
+import warnings
+
+import docutils
+from docutils import frontend, languages, nodes, utils, writers
+from docutils.parsers.rst.directives import length_or_percentage_or_unitless
+from docutils.parsers.rst.directives.images import PIL
+from docutils.transforms import writer_aux
+from docutils.utils.math import (unichar2tex, pick_math_environment,
+                                 math2html, latex2mathml, tex2mathml_extern)
+
+
+class Writer(writers.Writer):
+
+    supported = ('html', 'xhtml')  # update in subclass
+    """Formats this writer supports."""
+
+    settings_spec = (
+        'HTML Writer Options',
+        None,
+        (('Specify the template file (UTF-8 encoded). '
+          '(default: writer dependent)',
+          ['--template'],
+          {'metavar': '<file>'}),
+         ('Comma separated list of stylesheet URLs. '
+          'Overrides previous --stylesheet and --stylesheet-path settings.',
+          ['--stylesheet'],
+          {'metavar': '<URL[,URL,...]>', 'overrides': 'stylesheet_path',
+           'validator': frontend.validate_comma_separated_list}),
+         ('Comma separated list of stylesheet paths. '
+          'Relative paths are expanded if a matching file is found in '
+          'the --stylesheet-dirs. With --link-stylesheet, '
+          'the path is rewritten relative to the output HTML file. '
+          '(default: writer dependent)',
+          ['--stylesheet-path'],
+          {'metavar': '<file[,file,...]>', 'overrides': 'stylesheet',
+           'validator': frontend.validate_comma_separated_list}),
+         ('Comma-separated list of directories where stylesheets are found. '
+          'Used by --stylesheet-path when expanding relative path arguments. '
+          '(default: writer dependent)',
+          ['--stylesheet-dirs'],
+          {'metavar': '<dir[,dir,...]>',
+           'validator': frontend.validate_comma_separated_list}),
+         ('Embed the stylesheet(s) in the output HTML file.  The stylesheet '
+          'files must be accessible during processing. (default)',
+          ['--embed-stylesheet'],
+          {'default': 1, 'action': 'store_true',
+           'validator': frontend.validate_boolean}),
+         ('Link to the stylesheet(s) in the output HTML file. ',
+          ['--link-stylesheet'],
+          {'dest': 'embed_stylesheet', 'action': 'store_false'}),
+         ('Specify the initial header level. '
+          'Does not affect document title & subtitle (see --no-doc-title).'
+          '(default: writer dependent).',
+          ['--initial-header-level'],
+          {'choices': '1 2 3 4 5 6'.split(), 'default': '2',
+           'metavar': '<level>'}),
+         ('Format for footnote references: one of "superscript" or '
+          '"brackets". (default: "brackets")',
+          ['--footnote-references'],
+          {'choices': ['superscript', 'brackets'], 'default': 'brackets',
+           'metavar': '<format>',
+           'overrides': 'trim_footnote_reference_space'}),
+         ('Format for block quote attributions: '
+          'one of "dash" (em-dash prefix), "parentheses"/"parens", or "none". '
+          '(default: "dash")',
+          ['--attribution'],
+          {'choices': ['dash', 'parentheses', 'parens', 'none'],
+           'default': 'dash', 'metavar': '<format>'}),
+         ('Remove extra vertical whitespace between items of "simple" bullet '
+          'lists and enumerated lists. (default)',
+          ['--compact-lists'],
+          {'default': True, 'action': 'store_true',
+           'validator': frontend.validate_boolean}),
+         ('Disable compact simple bullet and enumerated lists.',
+          ['--no-compact-lists'],
+          {'dest': 'compact_lists', 'action': 'store_false'}),
+         ('Remove extra vertical whitespace between items of simple field '
+          'lists. (default)',
+          ['--compact-field-lists'],
+          {'default': True, 'action': 'store_true',
+           'validator': frontend.validate_boolean}),
+         ('Disable compact simple field lists.',
+          ['--no-compact-field-lists'],
+          {'dest': 'compact_field_lists', 'action': 'store_false'}),
+         ('Added to standard table classes. '
+          'Defined styles: borderless, booktabs, '
+          'align-left, align-center, align-right, '
+          'colwidths-auto, colwidths-grid.',
+          ['--table-style'],
+          {'default': ''}),
+         ('Math output format (one of "MathML", "HTML", "MathJax", '
+          'or "LaTeX") and option(s). '
+          '(default: "HTML math.css")',
+          ['--math-output'],
+          {'default': 'HTML math.css'}),
+         ('Prepend an XML declaration. ',
+          ['--xml-declaration'],
+          {'default': False, 'action': 'store_true',
+           'validator': frontend.validate_boolean}),
+         ('Omit the XML declaration.',
+          ['--no-xml-declaration'],
+          {'dest': 'xml_declaration', 'action': 'store_false'}),
+         ('Obfuscate email addresses to confuse harvesters while still '
+          'keeping email links usable with standards-compliant browsers.',
+          ['--cloak-email-addresses'],
+          {'action': 'store_true', 'validator': frontend.validate_boolean}),
+         )
+        )
+
+    settings_defaults = {'output_encoding_error_handler': 'xmlcharrefreplace'}
+
+    config_section = 'html base writer'  # overwrite in subclass
+    config_section_dependencies = ('writers', 'html writers')
+
+    visitor_attributes = (
+        'head_prefix', 'head', 'stylesheet', 'body_prefix',
+        'body_pre_docinfo', 'docinfo', 'body', 'body_suffix',
+        'title', 'subtitle', 'header', 'footer', 'meta', 'fragment',
+        'html_prolog', 'html_head', 'html_title', 'html_subtitle',
+        'html_body')
+
+    def get_transforms(self):
+        return super().get_transforms() + [writer_aux.Admonitions]
+
+    def translate(self):
+        self.visitor = visitor = self.translator_class(self.document)
+        self.document.walkabout(visitor)
+        for attr in self.visitor_attributes:
+            setattr(self, attr, getattr(visitor, attr))
+        self.output = self.apply_template()
+
+    def apply_template(self):
+        with open(self.document.settings.template, encoding='utf-8') as fp:
+            template = fp.read()
+        subs = self.interpolation_dict()
+        return template % subs
+
+    def interpolation_dict(self):
+        subs = {}
+        settings = self.document.settings
+        for attr in self.visitor_attributes:
+            subs[attr] = ''.join(getattr(self, attr)).rstrip('\n')
+        subs['encoding'] = settings.output_encoding
+        subs['version'] = docutils.__version__
+        return subs
+
+    def assemble_parts(self):
+        writers.Writer.assemble_parts(self)
+        for part in self.visitor_attributes:
+            self.parts[part] = ''.join(getattr(self, part))
+
+
+class HTMLTranslator(nodes.NodeVisitor):
+
+    """
+    Generic Docutils to HTML translator.
+
+    See the `html4css1` and `html5_polyglot` writers for full featured
+    HTML writers.
+
+    .. IMPORTANT::
+      The `visit_*` and `depart_*` methods use a
+      heterogeneous stack, `self.context`.
+      When subclassing, make sure to be consistent in its use!
+
+      Examples for robust coding:
+
+      a) Override both `visit_*` and `depart_*` methods, don't call the
+         parent functions.
+
+      b) Extend both and unconditionally call the parent functions::
+
+           def visit_example(self, node):
+               if foo:
+                   self.body.append('<div class="foo">')
+               html4css1.HTMLTranslator.visit_example(self, node)
+
+           def depart_example(self, node):
+               html4css1.HTMLTranslator.depart_example(self, node)
+               if foo:
+                   self.body.append('</div>')
+
+      c) Extend both, calling the parent functions under the same
+         conditions::
+
+           def visit_example(self, node):
+               if foo:
+                   self.body.append('<div class="foo">\n')
+               else: # call the parent method
+                   _html_base.HTMLTranslator.visit_example(self, node)
+
+           def depart_example(self, node):
+               if foo:
+                   self.body.append('</div>\n')
+               else: # call the parent method
+                   _html_base.HTMLTranslator.depart_example(self, node)
+
+      d) Extend one method (call the parent), but don't otherwise use the
+         `self.context` stack::
+
+           def depart_example(self, node):
+               _html_base.HTMLTranslator.depart_example(self, node)
+               if foo:
+                   # implementation-specific code
+                   # that does not use `self.context`
+                   self.body.append('</div>\n')
+
+      This way, changes in stack use will not bite you.
+    """
+
+    doctype = '<!DOCTYPE html>\n'
+    doctype_mathml = doctype
+
+    head_prefix_template = ('<html xmlns="http://www.w3.org/1999/xhtml"'
+                            ' xml:lang="%(lang)s" lang="%(lang)s">\n<head>\n')
+    content_type = '<meta charset="%s" />\n'
+    generator = (
+        f'<meta name="generator" content="Docutils {docutils.__version__}: '
+        'https://docutils.sourceforge.io/" />\n')
+    # `starttag()` arguments for the main document (HTML5 uses <main>)
+    documenttag_args = {'tagname': 'div', 'CLASS': 'document'}
+
+    # Template for the MathJax script in the header:
+    mathjax_script = '<script type="text/javascript" src="%s"></script>\n'
+
+    mathjax_url = 'file:/usr/share/javascript/mathjax/MathJax.js'
+    """
+    URL of the MathJax javascript library.
+
+    The MathJax library ought to be installed on the same
+    server as the rest of the deployed site files and specified
+    in the `math-output` setting appended to "mathjax".
+    See `Docutils Configuration`__.
+
+    __ https://docutils.sourceforge.io/docs/user/config.html#math-output
+
+    The fallback tries a local MathJax installation at
+    ``/usr/share/javascript/mathjax/MathJax.js``.
+    """
+
+    stylesheet_link = '<link rel="stylesheet" href="%s" type="text/css" />\n'
+    embedded_stylesheet = '<style type="text/css">\n\n%s\n</style>\n'
+    words_and_spaces = re.compile(r'[^ \n]+| +|\n')
+    # wrap point inside word:
+    in_word_wrap_point = re.compile(r'.+\W\W.+|[-?].+')
+    lang_attribute = 'lang'  # name changes to 'xml:lang' in XHTML 1.1
+
+    special_characters = {ord('&'): '&amp;',
+                          ord('<'): '&lt;',
+                          ord('"'): '&quot;',
+                          ord('>'): '&gt;',
+                          ord('@'): '&#64;',  # may thwart address harvesters
+                          }
+    """Character references for characters with a special meaning in HTML."""
+
+    def __init__(self, document):
+        nodes.NodeVisitor.__init__(self, document)
+        # process settings
+        self.settings = settings = document.settings
+        self.language = languages.get_language(
+                            settings.language_code, document.reporter)
+        self.initial_header_level = int(settings.initial_header_level)
+        # image_loading (only defined for HTML5 writer)
+        self.image_loading = getattr(settings, 'image_loading', None)
+        # legacy setting embed_images:
+        if getattr(settings, 'embed_images', None) is True:
+            warnings.warn('The configuration setting "embed_images" '
+                          'will be removed in Docutils 2.0. '
+                          'Use "image_loading: embed".',
+                          FutureWarning, stacklevel=8)
+            if self.image_loading is None:
+                self.image_loading = 'embed'
+        if getattr(settings, 'embed_images', None) is False:
+            warnings.warn('The configuration setting "embed_images" '
+                          'will be removed in Docutils 2.0. '
+                          'Use "image_loading: link".',
+                          FutureWarning, stacklevel=8)
+        if self.image_loading is None:
+            self.image_loading = 'link'  # default
+        self.math_output = settings.math_output.split()
+        self.math_output_options = self.math_output[1:]
+        self.math_output = self.math_output[0].lower()
+
+        # set up "parts" (cf. docs/api/publisher.html#publish-parts-details)
+        #
+        self.body = []  # equivalent to `fragment`, ≠ `html_body`
+        self.body_prefix = ['</head>\n<body>\n']  # + optional header
+        self.body_pre_docinfo = []  # document heading (title and subtitle)
+        self.body_suffix = ['</body>\n</html>\n']  # + optional footer
+        self.docinfo = []
+        self.footer = []
+        self.fragment = []  # main content of the document ("naked" body)
+        self.head = []
+        self.head_prefix = []  # everything up to and including <head>
+        self.header = []
+        self.html_body = []
+        self.html_head = [self.content_type]  # charset not interpolated
+        self.html_prolog = []
+        self.html_subtitle = []
+        self.html_title = []
+        self.meta = [self.generator]
+        self.stylesheet = [self.stylesheet_call(path)
+                           for path in utils.get_stylesheet_list(settings)]
+        self.title = []
+        self.subtitle = []
+        if settings.xml_declaration:
+            self.head_prefix.append(
+                utils.xml_declaration(settings.output_encoding))
+            self.html_prolog.append(
+                utils.xml_declaration('%s'))  # encoding not interpolated
+        if (settings.output_encoding
+            and settings.output_encoding.lower() != 'unicode'):
+            self.meta.insert(0, self.content_type % settings.output_encoding)
+
+        # bookkeeping attributes; reflect state of translator
+        #
+        self.context = []
+        """Heterogeneous stack.
+
+        Used by visit_* and depart_* functions in conjunction with the tree
+        traversal. Make sure that the pops correspond to the pushes.
+        """
+        self.section_level = 0
+        self.colspecs = []
+        self.compact_p = True
+        self.compact_simple = False
+        self.compact_field_list = False
+        self.in_docinfo = False
+        self.in_sidebar = False
+        self.in_document_title = 0  # len(self.body) or 0
+        self.in_mailto = False
+        self.author_in_authors = False  # for html4css1
+        self.math_header = []
+
+    def astext(self):
+        return ''.join(self.head_prefix + self.head
+                       + self.stylesheet + self.body_prefix
+                       + self.body_pre_docinfo + self.docinfo
+                       + self.body + self.body_suffix)
+
+    def encode(self, text):
+        """Encode special characters in `text` & return."""
+        # Use only named entities known in both XML and HTML
+        # other characters are automatically encoded "by number" if required.
+        # @@@ A codec to do these and all other HTML entities would be nice.
+        text = str(text)
+        return text.translate(self.special_characters)
+
+    def cloak_mailto(self, uri):
+        """Try to hide a mailto: URL from harvesters."""
+        # Encode "@" using a URL octet reference (see RFC 1738).
+        # Further cloaking with HTML entities will be done in the
+        # `attval` function.
+        return uri.replace('@', '%40')
+
+    def cloak_email(self, addr):
+        """Try to hide the link text of a email link from harversters."""
+        # Surround at-signs and periods with <span> tags.  ("@" has
+        # already been encoded to "&#64;" by the `encode` method.)
+        addr = addr.replace('&#64;', '<span>&#64;</span>')
+        return addr.replace('.', '<span>&#46;</span>')
+
+    def attval(self, text,
+               whitespace=re.compile('[\n\r\t\v\f]')):
+        """Cleanse, HTML encode, and return attribute value text."""
+        encoded = self.encode(whitespace.sub(' ', text))
+        if self.in_mailto and self.settings.cloak_email_addresses:
+            # Cloak at-signs ("%40") and periods with HTML entities.
+            encoded = encoded.replace('%40', '&#37;&#52;&#48;')
+            encoded = encoded.replace('.', '&#46;')
+        return encoded
+
+    def stylesheet_call(self, path, adjust_path=None):
+        """Return code to reference or embed stylesheet file `path`"""
+        if adjust_path is None:
+            adjust_path = bool(self.settings.stylesheet_path)
+        if self.settings.embed_stylesheet:
+            try:
+                with open(path, encoding='utf-8') as f:
+                    content = f.read()
+            except OSError as err:
+                msg = f'Cannot embed stylesheet: {err}'
+                self.document.reporter.error(msg)
+                return '<--- %s --->\n' % msg
+            else:
+                self.settings.record_dependencies.add(path)
+            return self.embedded_stylesheet % content
+        # else link to style file:
+        if adjust_path:
+            # rewrite path relative to output (cf. config.html#stylesheet-path)
+            path = utils.relative_path(self.settings._destination, path)
+        return self.stylesheet_link % self.encode(path)
+
+    def starttag(self, node, tagname, suffix='\n', empty=False, **attributes):
+        """
+        Construct and return a start tag given a node (id & class attributes
+        are extracted), tag name, and optional attributes.
+        """
+        tagname = tagname.lower()
+        prefix = []
+        atts = {}
+        for (name, value) in attributes.items():
+            atts[name.lower()] = value
+        classes = atts.pop('classes', [])
+        languages = []
+        # unify class arguments and move language specification
+        for cls in node.get('classes', []) + atts.pop('class', '').split():
+            if cls.startswith('language-'):
+                languages.append(cls[9:])
+            elif cls.strip() and cls not in classes:
+                classes.append(cls)
+        if languages:
+            # attribute name is 'lang' in XHTML 1.0 but 'xml:lang' in 1.1
+            atts[self.lang_attribute] = languages[0]
+        # filter classes that are processed by the writer:
+        internal = ('colwidths-auto', 'colwidths-given', 'colwidths-grid')
+        if isinstance(node, nodes.table):
+            classes = [cls for cls in classes if cls not in internal]
+        if classes:
+            atts['class'] = ' '.join(classes)
+        assert 'id' not in atts
+        ids = node.get('ids', [])
+        ids.extend(atts.pop('ids', []))
+        if ids:
+            atts['id'] = ids[0]
+            for id in ids[1:]:
+                # Add empty "span" elements for additional IDs.  Note
+                # that we cannot use empty "a" elements because there
+                # may be targets inside of references, but nested "a"
+                # elements aren't allowed in XHTML (even if they do
+                # not all have a "href" attribute).
+                if empty or isinstance(node, (nodes.Sequential,
+                                              nodes.docinfo,
+                                              nodes.table)):
+                    # Insert target right in front of element.
+                    prefix.append('<span id="%s"></span>' % id)

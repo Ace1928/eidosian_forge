@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_debug_backends_documentation.py
+KIND: code
+
+import numpy as np
+Backend that just prints the __ua_function__ arguments

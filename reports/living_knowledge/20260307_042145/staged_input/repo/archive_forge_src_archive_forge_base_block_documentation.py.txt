@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/base_block_documentation.py
+KIND: code
+
+Base class for block matrices

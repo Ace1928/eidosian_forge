@@ -1,0 +1,528 @@
+SOURCE_PATH: archive_forge/src/archive_forge/apt.py
+KIND: code
+
+# -*- coding: utf-8 -*-
+
+# Copyright: (c) 2012, Flowroute LLC
+# Written by Matthew Williams <matthew@flowroute.com>
+# Based on yum module written by Seth Vidal <skvidal at fedoraproject.org>
+
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+from __future__ import absolute_import, division, print_function
+__metaclass__ = type
+
+
+DOCUMENTATION = '''
+---
+module: apt
+short_description: Manages apt-packages
+description:
+  - Manages I(apt) packages (such as for Debian/Ubuntu).
+version_added: "0.0.2"
+options:
+  name:
+    description:
+      - A list of package names, like V(foo), or package specifier with version, like V(foo=1.0) or V(foo>=1.0).
+        Name wildcards (fnmatch) like V(apt*) and version wildcards like V(foo=1.0*) are also supported.
+    aliases: [ package, pkg ]
+    type: list
+    elements: str
+  state:
+    description:
+      - Indicates the desired package state. V(latest) ensures that the latest version is installed. V(build-dep) ensures the package build dependencies
+        are installed. V(fixed) attempt to correct a system with broken dependencies in place.
+    type: str
+    default: present
+    choices: [ absent, build-dep, latest, present, fixed ]
+  update_cache:
+    description:
+      - Run the equivalent of C(apt-get update) before the operation. Can be run as part of the package installation or as a separate step.
+      - Default is not to update the cache.
+    aliases: [ update-cache ]
+    type: bool
+  update_cache_retries:
+    description:
+      - Amount of retries if the cache update fails. Also see O(update_cache_retry_max_delay).
+    type: int
+    default: 5
+    version_added: '2.10'
+  update_cache_retry_max_delay:
+    description:
+      - Use an exponential backoff delay for each retry (see O(update_cache_retries)) up to this max delay in seconds.
+    type: int
+    default: 12
+    version_added: '2.10'
+  cache_valid_time:
+    description:
+      - Update the apt cache if it is older than the O(cache_valid_time). This option is set in seconds.
+      - As of Ansible 2.4, if explicitly set, this sets O(update_cache=yes).
+    type: int
+    default: 0
+  purge:
+    description:
+     - Will force purging of configuration files if O(state=absent) or O(autoremove=yes).
+    type: bool
+    default: 'no'
+  default_release:
+    description:
+      - Corresponds to the C(-t) option for I(apt) and sets pin priorities
+    aliases: [ default-release ]
+    type: str
+  install_recommends:
+    description:
+      - Corresponds to the C(--no-install-recommends) option for I(apt). V(true) installs recommended packages.  V(false) does not install
+        recommended packages. By default, Ansible will use the same defaults as the operating system. Suggested packages are never installed.
+    aliases: [ install-recommends ]
+    type: bool
+  force:
+    description:
+      - 'Corresponds to the C(--force-yes) to I(apt-get) and implies O(allow_unauthenticated=yes) and O(allow_downgrade=yes)'
+      - "This option will disable checking both the packages' signatures and the certificates of the
+        web servers they are downloaded from."
+      - 'This option *is not* the equivalent of passing the C(-f) flag to I(apt-get) on the command line'
+      - '**This is a destructive operation with the potential to destroy your system, and it should almost never be used.**
+         Please also see C(man apt-get) for more information.'
+    type: bool
+    default: 'no'
+  clean:
+    description:
+      - Run the equivalent of C(apt-get clean) to clear out the local repository of retrieved package files. It removes everything but
+        the lock file from /var/cache/apt/archives/ and /var/cache/apt/archives/partial/.
+      - Can be run as part of the package installation (clean runs before install) or as a separate step.
+    type: bool
+    default: 'no'
+    version_added: "2.13"
+  allow_unauthenticated:
+    description:
+      - Ignore if packages cannot be authenticated. This is useful for bootstrapping environments that manage their own apt-key setup.
+      - 'O(allow_unauthenticated) is only supported with O(state): V(install)/V(present)'
+    aliases: [ allow-unauthenticated ]
+    type: bool
+    default: 'no'
+    version_added: "2.1"
+  allow_downgrade:
+    description:
+      - Corresponds to the C(--allow-downgrades) option for I(apt).
+      - This option enables the named package and version to replace an already installed higher version of that package.
+      - Note that setting O(allow_downgrade=true) can make this module behave in a non-idempotent way.
+      - (The task could end up with a set of packages that does not match the complete list of specified packages to install).
+      - 'O(allow_downgrade) is only supported by C(apt) and will be ignored if C(aptitude) is detected or specified.'
+    aliases: [ allow-downgrade, allow_downgrades, allow-downgrades ]
+    type: bool
+    default: 'no'
+    version_added: "2.12"
+  allow_change_held_packages:
+    description:
+      - Allows changing the version of a package which is on the apt hold list
+    type: bool
+    default: 'no'
+    version_added: '2.13'
+  upgrade:
+    description:
+      - If yes or safe, performs an aptitude safe-upgrade.
+      - If full, performs an aptitude full-upgrade.
+      - If dist, performs an apt-get dist-upgrade.
+      - 'Note: This does not upgrade a specific package, use state=latest for that.'
+      - 'Note: Since 2.4, apt-get is used as a fall-back if aptitude is not present.'
+    version_added: "1.1"
+    choices: [ dist, full, 'no', safe, 'yes' ]
+    default: 'no'
+    type: str
+  dpkg_options:
+    description:
+      - Add dpkg options to apt command. Defaults to '-o "Dpkg::Options::=--force-confdef" -o "Dpkg::Options::=--force-confold"'
+      - Options should be supplied as comma separated list
+    default: force-confdef,force-confold
+    type: str
+  deb:
+     description:
+       - Path to a .deb package on the remote machine.
+       - If :// in the path, ansible will attempt to download deb before installing. (Version added 2.1)
+       - Requires the C(xz-utils) package to extract the control file of the deb package to install.
+     type: path
+     required: false
+     version_added: "1.6"
+  autoremove:
+    description:
+      - If V(true), remove unused dependency packages for all module states except V(build-dep). It can also be used as the only option.
+      - Previous to version 2.4, autoclean was also an alias for autoremove, now it is its own separate command. See documentation for further information.
+    type: bool
+    default: 'no'
+    version_added: "2.1"
+  autoclean:
+    description:
+      - If V(true), cleans the local repository of retrieved package files that can no longer be downloaded.
+    type: bool
+    default: 'no'
+    version_added: "2.4"
+  policy_rc_d:
+    description:
+      - Force the exit code of /usr/sbin/policy-rc.d.
+      - For example, if I(policy_rc_d=101) the installed package will not trigger a service start.
+      - If /usr/sbin/policy-rc.d already exists, it is backed up and restored after the package installation.
+      - If V(null), the /usr/sbin/policy-rc.d isn't created/changed.
+    type: int
+    default: null
+    version_added: "2.8"
+  only_upgrade:
+    description:
+      - Only upgrade a package if it is already installed.
+    type: bool
+    default: 'no'
+    version_added: "2.1"
+  fail_on_autoremove:
+    description:
+      - 'Corresponds to the C(--no-remove) option for C(apt).'
+      - 'If V(true), it is ensured that no packages will be removed or the task will fail.'
+      - 'O(fail_on_autoremove) is only supported with O(state) except V(absent).'
+      - 'O(fail_on_autoremove) is only supported by C(apt) and will be ignored if C(aptitude) is detected or specified.'
+    type: bool
+    default: 'no'
+    version_added: "2.11"
+  force_apt_get:
+    description:
+      - Force usage of apt-get instead of aptitude
+    type: bool
+    default: 'no'
+    version_added: "2.4"
+  lock_timeout:
+    description:
+      - How many seconds will this action wait to acquire a lock on the apt db.
+      - Sometimes there is a transitory lock and this will retry at least until timeout is hit.
+    type: int
+    default: 60
+    version_added: "2.12"
+requirements:
+   - python-apt (python 2)
+   - python3-apt (python 3)
+   - aptitude (before 2.4)
+author: "Matthew Williams (@mgwilliams)"
+extends_documentation_fragment: action_common_attributes
+attributes:
+    check_mode:
+        support: full
+    diff_mode:
+        support: full
+    platform:
+        platforms: debian
+notes:
+   - Three of the upgrade modes (V(full), V(safe) and its alias V(true)) required C(aptitude) up to 2.3, since 2.4 C(apt-get) is used as a fall-back.
+   - In most cases, packages installed with apt will start newly installed services by default. Most distributions have mechanisms to avoid this.
+     For example when installing Postgresql-9.5 in Debian 9, creating an excutable shell script (/usr/sbin/policy-rc.d) that throws
+     a return code of 101 will stop Postgresql 9.5 starting up after install. Remove the file or remove its execute permission afterwards.
+   - The apt-get commandline supports implicit regex matches here but we do not because it can let typos through easier
+     (If you typo C(foo) as C(fo) apt-get would install packages that have "fo" in their name with a warning and a prompt for the user.
+     Since we don't have warnings and prompts before installing we disallow this.Use an explicit fnmatch pattern if you want wildcarding)
+   - When used with a C(loop:) each package will be processed individually, it is much more efficient to pass the list directly to the O(name) option.
+   - When O(default_release) is used, an implicit priority of 990 is used. This is the same behavior as C(apt-get -t).
+   - When an exact version is specified, an implicit priority of 1001 is used.
+'''
+
+EXAMPLES = '''
+- name: Install apache httpd  (state=present is optional)
+  ansible.builtin.apt:
+    name: apache2
+    state: present
+
+- name: Update repositories cache and install "foo" package
+  ansible.builtin.apt:
+    name: foo
+    update_cache: yes
+
+- name: Remove "foo" package
+  ansible.builtin.apt:
+    name: foo
+    state: absent
+
+- name: Install the package "foo"
+  ansible.builtin.apt:
+    name: foo
+
+- name: Install a list of packages
+  ansible.builtin.apt:
+    pkg:
+    - foo
+    - foo-tools
+
+- name: Install the version '1.00' of package "foo"
+  ansible.builtin.apt:
+    name: foo=1.00
+
+- name: Update the repository cache and update package "nginx" to latest version using default release squeeze-backport
+  ansible.builtin.apt:
+    name: nginx
+    state: latest
+    default_release: squeeze-backports
+    update_cache: yes
+
+- name: Install the version '1.18.0' of package "nginx" and allow potential downgrades
+  ansible.builtin.apt:
+    name: nginx=1.18.0
+    state: present
+    allow_downgrade: yes
+
+- name: Install zfsutils-linux with ensuring conflicted packages (e.g. zfs-fuse) will not be removed.
+  ansible.builtin.apt:
+    name: zfsutils-linux
+    state: latest
+    fail_on_autoremove: yes
+
+- name: Install latest version of "openjdk-6-jdk" ignoring "install-recommends"
+  ansible.builtin.apt:
+    name: openjdk-6-jdk
+    state: latest
+    install_recommends: no
+
+- name: Update all packages to their latest version
+  ansible.builtin.apt:
+    name: "*"
+    state: latest
+
+- name: Upgrade the OS (apt-get dist-upgrade)
+  ansible.builtin.apt:
+    upgrade: dist
+
+- name: Run the equivalent of "apt-get update" as a separate step
+  ansible.builtin.apt:
+    update_cache: yes
+
+- name: Only run "update_cache=yes" if the last one is more than 3600 seconds ago
+  ansible.builtin.apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Pass options to dpkg on run
+  ansible.builtin.apt:
+    upgrade: dist
+    update_cache: yes
+    dpkg_options: 'force-confold,force-confdef'
+
+- name: Install a .deb package
+  ansible.builtin.apt:
+    deb: /tmp/mypackage.deb
+
+- name: Install the build dependencies for package "foo"
+  ansible.builtin.apt:
+    pkg: foo
+    state: build-dep
+
+- name: Install a .deb package from the internet
+  ansible.builtin.apt:
+    deb: https://example.com/python-ppq_0.1-1_all.deb
+
+- name: Remove useless packages from the cache
+  ansible.builtin.apt:
+    autoclean: yes
+
+- name: Remove dependencies that are no longer required
+  ansible.builtin.apt:
+    autoremove: yes
+
+- name: Remove dependencies that are no longer required and purge their configuration files
+  ansible.builtin.apt:
+    autoremove: yes
+    purge: true
+
+- name: Run the equivalent of "apt-get clean" as a separate step
+  apt:
+    clean: yes
+'''
+
+RETURN = '''
+cache_updated:
+    description: if the cache was updated or not
+    returned: success, in some cases
+    type: bool
+    sample: True
+cache_update_time:
+    description: time of the last cache update (0 if unknown)
+    returned: success, in some cases
+    type: int
+    sample: 1425828348000
+stdout:
+    description: output from apt
+    returned: success, when needed
+    type: str
+    sample: |-
+        Reading package lists...
+        Building dependency tree...
+        Reading state information...
+        The following extra packages will be installed:
+          apache2-bin ...
+stderr:
+    description: error output from apt
+    returned: success, when needed
+    type: str
+    sample: "AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 127.0.1.1. Set the 'ServerName' directive globally to ..."
+'''  # NOQA
+
+# added to stave off future warnings about apt api
+import warnings
+warnings.filterwarnings('ignore', "apt API not stable yet", FutureWarning)
+
+import datetime
+import fnmatch
+import locale as locale_module
+import os
+import random
+import re
+import shutil
+import sys
+import tempfile
+import time
+
+from ansible.module_utils.basic import AnsibleModule
+from ansible.module_utils.common.locale import get_best_parsable_locale
+from ansible.module_utils.common.respawn import has_respawned, probe_interpreters_for_module, respawn_module
+from ansible.module_utils.common.text.converters import to_native, to_text
+from ansible.module_utils.six import PY3, string_types
+from ansible.module_utils.urls import fetch_file
+
+DPKG_OPTIONS = 'force-confdef,force-confold'
+APT_GET_ZERO = "\n0 upgraded, 0 newly installed"
+APTITUDE_ZERO = "\n0 packages upgraded, 0 newly installed"
+APT_LISTS_PATH = "/var/lib/apt/lists"
+APT_UPDATE_SUCCESS_STAMP_PATH = "/var/lib/apt/periodic/update-success-stamp"
+APT_MARK_INVALID_OP = 'Invalid operation'
+APT_MARK_INVALID_OP_DEB6 = 'Usage: apt-mark [options] {markauto|unmarkauto} packages'
+
+CLEAN_OP_CHANGED_STR = dict(
+    autoremove='The following packages will be REMOVED',
+    # "Del python3-q 2.4-1 [24 kB]"
+    autoclean='Del ',
+)
+
+
+HAS_PYTHON_APT = False
+try:
+    import apt
+    import apt.debfile
+    import apt_pkg
+    HAS_PYTHON_APT = True
+except ImportError:
+    apt = apt_pkg = None
+
+
+class PolicyRcD(object):
+    """
+    This class is a context manager for the /usr/sbin/policy-rc.d file.
+    It allow the user to prevent dpkg to start the corresponding service when installing
+    a package.
+    https://people.debian.org/~hmh/invokerc.d-policyrc.d-specification.txt
+    """
+
+    def __init__(self, module):
+        # we need the module for later use (eg. fail_json)
+        self.m = module
+
+        # if policy_rc_d is null then we don't need to modify policy-rc.d
+        if self.m.params['policy_rc_d'] is None:
+            return
+
+        # if the /usr/sbin/policy-rc.d already exists
+        # we will back it up during package installation
+        # then restore it
+        if os.path.exists('/usr/sbin/policy-rc.d'):
+            self.backup_dir = tempfile.mkdtemp(prefix="ansible")
+        else:
+            self.backup_dir = None
+
+    def __enter__(self):
+        """
+        This method will be called when we enter the context, before we call `apt-get …`
+        """
+
+        # if policy_rc_d is null then we don't need to modify policy-rc.d
+        if self.m.params['policy_rc_d'] is None:
+            return
+
+        # if the /usr/sbin/policy-rc.d already exists we back it up
+        if self.backup_dir:
+            try:
+                shutil.move('/usr/sbin/policy-rc.d', self.backup_dir)
+            except Exception:
+                self.m.fail_json(msg="Fail to move /usr/sbin/policy-rc.d to %s" % self.backup_dir)
+
+        # we write /usr/sbin/policy-rc.d so it always exits with code policy_rc_d
+        try:
+            with open('/usr/sbin/policy-rc.d', 'w') as policy_rc_d:
+                policy_rc_d.write('#!/bin/sh\nexit %d\n' % self.m.params['policy_rc_d'])
+
+            os.chmod('/usr/sbin/policy-rc.d', 0o0755)
+        except Exception:
+            self.m.fail_json(msg="Failed to create or chmod /usr/sbin/policy-rc.d")
+
+    def __exit__(self, type, value, traceback):
+        """
+        This method will be called when we exit the context, after `apt-get …` is done
+        """
+
+        # if policy_rc_d is null then we don't need to modify policy-rc.d
+        if self.m.params['policy_rc_d'] is None:
+            return
+
+        if self.backup_dir:
+            # if /usr/sbin/policy-rc.d already exists before the call to __enter__
+            # we restore it (from the backup done in __enter__)
+            try:
+                shutil.move(os.path.join(self.backup_dir, 'policy-rc.d'),
+                            '/usr/sbin/policy-rc.d')
+                os.rmdir(self.backup_dir)
+            except Exception:
+                self.m.fail_json(msg="Fail to move back %s to /usr/sbin/policy-rc.d"
+                                     % os.path.join(self.backup_dir, 'policy-rc.d'))
+        else:
+            # if there wasn't a /usr/sbin/policy-rc.d file before the call to __enter__
+            # we just remove the file
+            try:
+                os.remove('/usr/sbin/policy-rc.d')
+            except Exception:
+                self.m.fail_json(msg="Fail to remove /usr/sbin/policy-rc.d (after package manipulation)")
+
+
+def package_split(pkgspec):
+    parts = re.split(r'(>?=)', pkgspec, 1)
+    if len(parts) > 1:
+        return parts
+    return parts[0], None, None
+
+
+def package_version_compare(version, other_version):
+    try:
+        return apt_pkg.version_compare(version, other_version)
+    except AttributeError:
+        return apt_pkg.VersionCompare(version, other_version)
+
+
+def package_best_match(pkgname, version_cmp, version, release, cache):
+    policy = apt_pkg.Policy(cache)
+
+    policy.read_pinfile(apt_pkg.config.find_file("Dir::Etc::preferences"))
+    policy.read_pindir(apt_pkg.config.find_file("Dir::Etc::preferencesparts"))
+
+    if release:
+        # 990 is the priority used in `apt-get -t`
+        policy.create_pin('Release', pkgname, release, 990)
+    if version_cmp == "=":
+        # Installing a specific version from command line overrides all pinning
+        # We don't mimmic this exactly, but instead set a priority which is higher than all APT built-in pin priorities.
+        policy.create_pin('Version', pkgname, version, 1001)
+    pkg = cache[pkgname]
+    pkgver = policy.get_candidate_ver(pkg)
+    if not pkgver:
+        return None
+    if version_cmp == "=" and not fnmatch.fnmatch(pkgver.ver_str, version):
+        # Even though we put in a pin policy, it can be ignored if there is no
+        # possible candidate.
+        return None
+    return pkgver.ver_str
+
+
+def package_status(m, pkgname, version_cmp, version, default_release, cache, state):
+    """
+    :return: A tuple of (installed, installed_version, version_installable, has_files). *installed* indicates whether
+    the package (regardless of version) is installed. *installed_version* indicates whether the installed package
+    matches the provided version criteria. *version_installable* provides the latest matching version that can be
+    installed. In the case of virtual packages where we can't determine an applicable match, True is returned.
+    *has_files* indicates whether the package has files on the filesystem (even

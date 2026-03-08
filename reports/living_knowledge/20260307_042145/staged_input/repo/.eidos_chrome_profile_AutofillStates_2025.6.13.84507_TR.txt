@@ -1,0 +1,98 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/TR
+KIND: config
+
+TR
+adana
+	adıyaman
+afyonkarahisar
+ağrı
+amasya
+ankara	
+antalya
+artvin
+aydın
+
+balıkesir	
+bilecik	
+bingöl
+bitlis
+bolu
+burdur
+bursa
+
+çanakkale
+
+çankırı
+çorum	
+denizli
+diyarbakır
+edirne
+
+elazığ
+
+erzincan	
+erzurum
+
+eskişehir
+	gaziantep	
+giresun
+gümüşhane	
+hakkari
+hatay	
+isparta
+mersin
+istanbul
+i̇stanbul	
+i̇zmir
+kars
+	kastamonu	
+kayseri
+kırklareli
+
+kırşehir	
+kocaeli
+konya
+
+kütahya	
+malatya
+manisa
+kahramanmaraş
+mardin
+muğla
+muş
+	nevşehir
+niğde
+ordu
+rize
+rize i̇li	
+sakarya
+samsun
+siirt
+sinop
+sivas
+	tekirdağ
+tokat	
+trabzon	
+tunceli
+şanlıurfa
+uşak
+van
+yozgat
+	zonguldak	
+aksaray	
+bayburt	
+karaman
+kırıkkale
+batman
+
+şırnak	
+bartın	
+ardahan	
+iğdır
+yalova
+
+karabük
+kilis
+
+osmaniye
+düzce

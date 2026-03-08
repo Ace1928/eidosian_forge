@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/buffered_stream_documentation.py
+KIND: code
+
+from apitools.base.py import exceptions
+Reads from the buffer.

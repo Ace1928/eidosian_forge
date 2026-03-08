@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AmountCollection.py
+KIND: code
+
+from decimal import Decimal
+from boto.compat import filter, map
+class AmountCollection(ResponseElement):
+
+    def startElement(self, name, attrs, connection):
+        setattr(self, name, ComplexAmount(name=name))
+        return getattr(self, name)

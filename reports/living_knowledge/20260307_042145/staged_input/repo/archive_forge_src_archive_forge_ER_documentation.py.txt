@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/ER_documentation.py
+KIND: code
+
+Usage: python ER.py [/path/to/mysql/mysqld_error.h ...] >> ER.py

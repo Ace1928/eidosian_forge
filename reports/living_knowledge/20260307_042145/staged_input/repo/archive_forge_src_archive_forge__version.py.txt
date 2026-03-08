@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_version.py
+KIND: code
+
+# This file is protected via CODEOWNERS
+__version__ = "1.26.16"

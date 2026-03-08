@@ -1,0 +1,11 @@
+SOURCE_PATH: archive_forge/src/archive_forge/alias_generators_documentation.py
+KIND: code
+
+import re
+Convert a PascalCase or camelCase string to snake_case.
+
+    Args:
+        camel: The string to convert.
+
+    Returns:
+        The converted string in snake_case.

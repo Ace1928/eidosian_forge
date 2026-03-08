@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_frontend.py
+KIND: code
+
+module_name = "jupyter-datawidgets"
+EXTENSION_SPEC_VERSION = "^5.1.0"

@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_gen_files_documentation.py
+KIND: code
+
+import os
+import textwrap
+from passlib.utils.compat import irange
+ident block of text

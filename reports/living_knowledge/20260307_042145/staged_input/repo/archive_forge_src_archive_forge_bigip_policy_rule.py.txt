@@ -1,0 +1,527 @@
+SOURCE_PATH: archive_forge/src/archive_forge/bigip_policy_rule.py
+KIND: code
+
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# Copyright: (c) 2017, F5 Networks Inc.
+# GNU General Public License v3.0 (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+from __future__ import absolute_import, division, print_function
+
+__metaclass__ = type
+
+
+DOCUMENTATION = r'''
+---
+module: bigip_policy_rule
+short_description: Manage LTM policy rules on a BIG-IP
+description:
+  - This module manages LTM policy rules on a BIG-IP.
+version_added: "1.0.0"
+options:
+  name:
+    description:
+      - The name of the rule.
+    type: str
+    required: True
+  policy:
+    description:
+      - The name of the policy with which you want to associate this rule.
+    type: str
+    required: True
+  replace_with:
+    description:
+      - Specifies if the C(conditions)/C(actions) given by the user should overwrite what exists on the device.
+      - The option is useful when a subset of C(conditions)/C(actions) needs to be removed. This option is similar to the
+        replace-all-with flag available in TMSH commands.
+      - Using this option is not idempotent.
+    type: bool
+    default: false
+  rule_order:
+    description:
+      - Specifies a number that indicates the order of this rule relative to other rules in the policy.
+      - When not set, the device sets the parameter to 0.
+      - If there are rules with the same rule order number, the device uses rule names
+        to determine how the rules are ordered.
+      - The lower the number, the lower the rule is in the general order, with the lowest number C(0) being the
+        topmost rule.
+      - Valid range of values is between C(0) and C(4294967295) inclusive.
+    type: int
+    version_added: "1.10.0"
+  description:
+    description:
+      - Description of the policy rule.
+    type: str
+  actions:
+    description:
+      - The actions you want the policy rule to perform.
+      - The available attributes vary by the action, however, each action requires
+        you specify a C(type).
+      - These conditions can be specified in any order. Despite the fact they are in a list,
+        the order in the list does not matter to the BIG-IP.
+    type: list
+    elements: dict
+    suboptions:
+      type:
+        description:
+          - The action type. This value controls which of the following options are required.
+          - When C(type) is C(forward), the system associates a given C(pool), or C(virtual),
+            or C(node) with this rule.
+          - When C(type) is C(enable), the system associates a given C(asm_policy) with
+            this rule.
+          - When C(type) is C(ignore), the system removes all existing actions from this
+            rule.
+          - When C(type) is C(redirect), the system redirects an HTTP request to a different URL.
+          - When C(type) is C(reset), the system resets the connection upon C(event).
+          - When C(type) is C(persist), the system associates C(cookie_insert) and C(cookie_expiry) with this rule.
+          - When C(type) is C(set_variable), the system sets a variable based on the evaluated Tcl C(expression) based on C(event).
+          - When C(type) is C(remove), the system removes C(http_set_cookie), C(http_referer), C(http_header) or C(http_cookie) with this rule.
+          - When C(type) is C(insert), the system inserts C(http_set_cookie), C(http_referer), C(http_header) or C(http_cookie) with this rule.
+          - When C(type) is C(replace), the system replaces C(http_connect), C(http_referer), C(http_header), C(http_uri) or C(http_host) with this rule.
+          - When C(type) is C(disable), the system disables C(disable_target) with this rule.
+        type: str
+        required: true
+        choices:
+          - forward
+          - enable
+          - ignore
+          - redirect
+          - reset
+          - persist
+          - set_variable
+          - remove
+          - insert
+          - replace
+          - disable
+      pool:
+        description:
+          - Pool to which you want to forward traffic.
+          - This parameter is only valid with the C(forward) type.
+        type: str
+      virtual:
+        description:
+          - Virtual server to which you want to forward traffic.
+          - This parameter is only valid with the C(forward) type.
+        type: str
+      node:
+        description:
+          - Node to which you want to forward traffic.
+          - This parameter is only valid with the C(forward) type.
+        type: str
+        version_added: "1.2.0"
+      disable_target:
+        description:
+          - Target you want to disable.
+          - This parameter is only valid with the C(disable) type.
+        type: str
+        version_added: "1.8.0"
+        choices:
+          - server_ssl
+          - persist
+          - asm
+      asm_policy:
+        description:
+          - ASM policy to enable.
+          - This parameter is only valid with the C(enable) type.
+        type: str
+      location:
+        description:
+          - The new URL for which a redirect response is sent.
+          - A Tcl command substitution can be used for this field.
+        type: str
+      event:
+        description:
+          - Events on which actions, such as reset and forward, can be triggered.
+          - With the C(set_variable) action, it is used for specifying
+            an action event, such as request or response.
+          - "Valid event choices for C(forward) action type are: client_accepted, proxy_request
+            request, ssl_client_hello and ssl_client_server_hello_send."
+          - "Valid event choices for C(reset) acton type are: client_accepted, proxy_connect
+            proxy_request, proxy_response, request, response, server_connected, ssl_client_hello,
+            ssl_client_server_hello_send, ssl_server_handshake, ssl_server_hello, websocket_request,
+            websocket_response."
+          - "Valid event choices for C(disable) acton type are: client_accepted, proxy_connect
+            proxy_request, proxy_response, request, server_connected."
+        type: str
+      expression:
+        description:
+          - A Tcl expression used with the C(set_variable) action.
+        type: str
+      variable_name:
+        description:
+           - Variable name used with the C(set_variable) action.
+        type: str
+      cookie_insert:
+        description:
+          - Cookie name on which you want to persist.
+          - This parameter is only valid with the C(persist) type.
+        type: str
+        version_added: "1.1.0"
+      cookie_expiry:
+        description:
+          - Optional argument, specifying the time for which the session is persisted.
+          - This parameter is only valid with the C(persist) type.
+        type: int
+        version_added: "1.1.0"
+      http_header:
+        description:
+          - HTTP Header that you want to remove or insert.
+          - This parameter is only valid with the C(remove), C(insert) and C(replace) type.
+        type: dict
+        suboptions:
+          event:
+            description:
+              - Type of event when the C(http_header) is removed, replaced, or inserted.
+              - The C(request) and C(response) events are only choices with C(remove) and C(insert) type.
+              - All of events are valid with C(replace) type action.
+            type: str
+            required: True
+            choices:
+              - request
+              - response
+              - proxy_connect
+              - proxy_request
+              - proxy_response
+          name:
+            description:
+              - The name of C(http_header).
+            type: str
+            required: True
+          value:
+            description:
+              - The value of C(http_header).
+              - Mandatory parameter when configured with C(insert) or C(replace) type.
+            type: str
+        version_added: "1.8.0"
+      http_referer:
+        description:
+          - HTTP Referer header you want to remove, replace, or insert.
+          - This parameter is only valid with the C(remove), C(insert) and C(replace) type.
+        type: dict
+        suboptions:
+          event:
+            description:
+              - Type of event when the c(http_referer) is removed, replaced, or inserted.
+            required: True
+            type: str
+            choices:
+              - request
+              - proxy_connect
+              - proxy_request
+          value:
+            description:
+              - The value of C(http_referer).
+              - This is a mandatory parameter when configured with C(insert) type action.
+              - This parameter is ignored for the C(remove) type.
+              - This parameter is optional for the C(replace) type.
+            type: str
+        version_added: "1.8.0"
+      http_set_cookie:
+        description:
+          - HTTP Set-Cookie header you want to remove or insert.
+          - This parameter is only valid with the C(remove) or c(insert) type.
+        type: dict
+        suboptions:
+          name:
+            description:
+              - The name of C(http_set_cookie).
+            type: str
+            required: True
+          value:
+            description:
+              - The value of C(http_set_cookie).
+              - This is a mandatory parameter when configured with C(insert) type action.
+            type: str
+        version_added: "1.8.0"
+      http_cookie:
+        description:
+          - HTTP Cookie header you want to remove or insert.
+          - This parameter is only valid with the C(remove) and C(insert) type.
+        type: dict
+        suboptions:
+          event:
+            description:
+              - Type of event when the C(http_cookie) is removed or inserted.
+            type: str
+            required: True
+            choices:
+              - request
+              - proxy_connect
+              - proxy_request
+          name:
+            description:
+              - The name of C(http_cookie).
+            type: str
+            required: True
+          value:
+            description:
+              - The value of C(http_cookie).
+              - This is a mandatory parameter when configured with C(insert) type action.
+            type: str
+        version_added: "1.8.0"
+      http_connect:
+        description:
+          - HTTP Connect header you want to replace.
+          - This parameter is only valid with the C(replace) type.
+        type: dict
+        suboptions:
+          event:
+            description:
+              - Type of event when the C(http_connect) header is replaced.
+            required: True
+            type: str
+            choices:
+              - client_accepted
+              - proxy_connect
+              - proxy_request
+              - proxy_response
+              - request
+              - server_connected
+              - ssl_client_hello
+          value:
+            description:
+              - The value of C(http_connect).
+            type: str
+            required: True
+          port:
+            description:
+              - The port number.
+              - If a port number is not provided, the value is set to 0 by default.
+              - Be explicit when defining rules, so the system does not override port values.
+            type: int
+        version_added: "1.8.0"
+      http_host:
+        description:
+          - HTTP Host header you want to replace.
+          - This parameter is only valid with the C(replace) type.
+        type: dict
+        suboptions:
+          event:
+            description:
+              - Type of event when the C(http_host) is replaced.
+            type: str
+            required: True
+            choices:
+              - request
+              - proxy_connect
+              - proxy_request
+          value:
+            description:
+              - The value of C(http_host).
+            type: str
+            required: True
+        version_added: "1.8.0"
+      http_uri:
+        description:
+          - Replaces HTTP URI, path, or string.
+          - This parameter is only valid with the C(replace) type.
+        type: dict
+        suboptions:
+          event:
+            description:
+              - Type of event when the C(http_uri) is replaced.
+            type: str
+            required: True
+            choices:
+              - request
+              - proxy_connect
+              - proxy_request
+          type:
+            description:
+              - Specifies the part of the C(http_uri) to be replaced.
+            type: str
+            required: True
+            choices:
+              - path
+              - query_string
+              - full_string
+          value:
+            description:
+              - The value of C(http_uri).
+            type: str
+            required: True
+        version_added: "1.8.0"
+  conditions:
+    description:
+      - A list of attributes that describe the condition.
+      - See sub-options for details on how to construct each list entry.
+      - The ordering of this list is important, the module ensures the order is
+        kept when modifying the task.
+      - The following sub-options are not required for all condition types,
+        read the description for more details.
+      - These conditions can be specified in any order. Despite the fact they are in a list,
+        the order in the list does not matter to the BIG-IP.
+    type: list
+    elements: dict
+    suboptions:
+      type:
+        description:
+          - The condition type. This value controls which of the following options are required.
+          - "When C(type) is C(http_uri), the valid choices are: C(path_begins_with_any), C(path_contains) or
+            C(path_is_any)."
+          - "When C(type) is C(http_host), the valid choices are: C(host_is_any), C(host_is_not_any), C(host_contains)
+            C(host_begins_with_any), C(host_begins_not_with_any), C(host_ends_with_any) or C(host_ends_not_with_any)"
+          - "When C(type) is C(http_header), the C(header_name) parameter is mandatory and the valid choice is:
+            C(header_is_any)."
+          - "When C(type) is C(http_method), the valid choices are: C(method_matches_with_any)."
+          - When C(type) is C(all_traffic), the system removes all existing conditions from
+            this rule.
+        type: str
+        required: True
+        choices:
+          - http_uri
+          - all_traffic
+          - http_host
+          - http_header
+          - http_method
+          - ssl_extension
+          - tcp
+      path_begins_with_any:
+        description:
+          - A list of strings of characters with which the HTTP URI should begin.
+          - This parameter is only valid with the C(http_uri) type.
+        type: list
+        elements: str
+      path_contains:
+        description:
+          - A list of strings of characters the HTTP URI should contain.
+          - This parameter is only valid with the C(http_uri) type.
+        type: list
+        elements: str
+        version_added: "1.8.0"
+      path_is_any:
+        description:
+          - A list of strings of characters the HTTP URI should match.
+          - This parameter is only valid with the C(http_uri) type.
+        type: list
+        elements: str
+        version_added: "1.8.0"
+      host_is_any:
+        description:
+          - A list of strings of characters the HTTP Host should match.
+          - This parameter is only valid with the C(http_host) type.
+        type: list
+        elements: str
+      host_is_not_any:
+        description:
+          - A list of strings of characters the HTTP Host should not match.
+          - This parameter is only valid with the C(http_host) type.
+        type: list
+        elements: str
+      host_contains:
+        description:
+          - A list of strings of characters the HTTP Host contain.
+          - This parameter is only valid with the C(http_host) type.
+        type: list
+        elements: str
+        version_added: "1.23.0"
+      host_begins_with_any:
+        description:
+          - A list of strings of characters with which the HTTP Host should begin.
+          - This parameter is only valid with the C(http_host) type.
+        type: list
+        elements: str
+      host_begins_not_with_any:
+        description:
+          - A list of strings of characters with which the HTTP Host should NOT begin.
+          - This parameter is only valid with the C(http_host) type.
+        type: list
+        elements: str
+        version_added: "1.22.0"
+      host_ends_not_with_any:
+        description:
+          - A list of strings of characters with which the HTTP Host should NOT begin.
+          - This parameter is only valid with the C(http_host) type.
+        type: list
+        elements: str
+        version_added: "1.22.0"
+      host_ends_with_any:
+        description:
+          - A list of strings of characters with which the HTTP Host should end.
+          - This parameter is only valid with the C(http_host) type.
+        type: list
+        elements: str
+        version_added: "1.8.0"
+      header_is_any:
+        description:
+          - A list of strings of characters the HTTP Header value should match.
+          - This parameter is only valid with the C(http_header) type.
+        type: list
+        elements: str
+        version_added: "1.8.0"
+      header_name:
+        description:
+          - A name of C(http_header).
+          - This parameter is only valid with the C(http_header) type.
+        type: str
+        version_added: "1.8.0"
+      method_matches_with_any:
+        description:
+          - A list of strings of characters the HTTP Method value should match.
+          - This parameter is only valid with the C(http_method) type.
+        type: list
+        elements: str
+        version_added: "1.10.0"
+      server_name_is_any:
+        description:
+          - A list of names that includes the server name.
+          - This parameter is only valid with the C(ssl_extension) type.
+        type: list
+        elements: str
+      server_name_is_not_any:
+        description:
+          - A list of names that does NOT include the server name.
+          - This parameter is only valid with the C(ssl_extension) type.
+        type: list
+        elements: str
+        version_added: "1.27.0"
+      server_name_begins_with_any:
+        description:
+          - A list of names with which the server name should begin.
+          - This parameter is only valid with the C(ssl_extension) type.
+        type: list
+        elements: str
+        version_added: "1.27.0"
+      server_name_begins_not_with_any:
+        description:
+          - A list of names with which the server name should NOT begin.
+          - This parameter is only valid with the C(ssl_extension) type.
+        type: list
+        elements: str
+        version_added: "1.27.0"
+      server_name_ends_with_any:
+        description:
+          - A list of names with which the server name should end.
+          - This parameter is only valid with the C(ssl_extension) type.
+        type: list
+        elements: str
+        version_added: "1.27.0"
+      server_name_ends_not_with_any:
+        description:
+          - A list of names with which the server name should NOT end.
+          - This parameter is only valid with the C(ssl_extension) type.
+        type: list
+        elements: str
+        version_added: "1.27.0"
+      server_name_contains:
+        description:
+          - A list of names the server name should contain.
+          - This parameter is only valid with the C(ssl_extension) type.
+        type: list
+        elements: str
+        version_added: "1.27.0"
+      address_matches_with_any:
+        description:
+          - A list of IP Subnet address strings that the IP address should match.
+          - This parameter is only valid with the C(tcp) type.
+        type: list
+        elements: str
+        version_added: "1.8.0"
+      address_matches_with_datagroup:
+        description:
+          - A list of internal data group strings that the IP address should match.
+          - This parameter is only valid with the C(tcp) type.
+        type: list
+        elements: str
+        versio

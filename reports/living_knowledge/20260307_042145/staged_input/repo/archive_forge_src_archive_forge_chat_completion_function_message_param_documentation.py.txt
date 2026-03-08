@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/chat_completion_function_message_param_documentation.py
+KIND: code
+
+from __future__ import annotations
+from typing import Optional
+from typing_extensions import Literal, Required, TypedDict
+The role of the messages author, in this case `function`.

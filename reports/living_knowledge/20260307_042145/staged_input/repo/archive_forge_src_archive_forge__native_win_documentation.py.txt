@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_native_win_documentation.py
+KIND: code
+
+import sys, ctypes
+import pymsgbox
+Displays a message box with OK and Cancel buttons. Number and text of buttons can be customized. Returns the text of the button clicked on.

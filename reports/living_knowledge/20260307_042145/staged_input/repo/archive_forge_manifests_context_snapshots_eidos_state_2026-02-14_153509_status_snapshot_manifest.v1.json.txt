@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/manifests/context_snapshots/eidos_state_2026-02-14_153509/status/snapshot_manifest.v1.json
+KIND: config
+
+version https://git-lfs.github.com/spec/v1
+oid sha256:315db437e6c36c554ff6eefb22ed9f8fd4e41395c545f0847465254d361564cf
+size 264

@@ -1,0 +1,9 @@
+SOURCE_PATH: .eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/offscreendocument.html
+KIND: config
+
+<!DOCTYPE html>
+<html>
+<body>
+  <script src="offscreendocument_main.js"></script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/DBUtils_documentation.py
+KIND: code
+
+import os
+from typing import Dict, Type
+Set autocommit on the database connection. Currently not implemented.

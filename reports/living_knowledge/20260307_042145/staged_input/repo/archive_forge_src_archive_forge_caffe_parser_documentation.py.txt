@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/caffe_parser_documentation.py
+KIND: code
+
+import re
+from google.protobuf import text_format # pylint: disable=relative-import
+Iterate over all layers

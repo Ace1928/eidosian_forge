@@ -1,0 +1,23 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/LA
+KIND: config
+
+LAb
+xaisômbounxaisomboun province$ແຂວງໄຊສົມບູນໄຊສົມບູນx
+attapuattapeu provinceອັດຕະປື"ແຂວງ ອັດຕະປື!ແຂວງອັດຕະປືR
+bokèobokeo provinceບໍ່ແກ້ວ!ແຂວງບໍ່ແກ້ວ�
+bolikhamxaibolikhamsai provinceບໍລິຄຳໄຊບໍລິຄໍາໄຊ'ແຂວງບໍລິຄໍາໄຊ\
+	champasakchampasak provinceຈຳປາສັກ$ແຂວງຈໍາປາສັກR
+houaphanhouaphanh provinceຫົວພັນແຂວງຫົວພັນT
+	khammouankhammouane provinceຄຳມ່ວນແຂວງຄຳມ່ວນ�
+louang namthaluang namtha provinceຫລວງນໍ້າທາຫຼວງນ້ຳທາ*ແຂວງຫຼວງນໍ້າທາ!ແຂວງອັດຕະປືm
+louangphabangluang prabang provinceຫຼວງພະບາງ'ແຂວງຫຼວງພະບາງX
+	oudômxaioudomxay provinceອຸດົມໄຊ!ແຂວງອຸດົມໄຊ`
+
+phôngsaliphongsaly provinceຜົ້ງສາລີ$ແຂວງຜົ້ງສາລີU
+salavansalavan provinceສາລະວັນ!ແຂວງສາລະວັນv
+savannakhétsavannakhet province!ສະຫວັນນະເຂດ-ແຂວງສະຫວັນນະເຂດS
+	viangchanvientiane provinceວຽງຈັນແຂວງວຽງຈັນs
+	viangchan!เวียงจันทน์vientiane prefecture-ນະຄອນຫຼວງວຽງຈັນb
+xaignaboulisainyabuli province$ແຂວງໄຊຍະບູລີໄຊຍະບູລີH
+xékongsekong provinceເຊກອງແຂວງເຊກອງ_
+xiangkhouangxiangkhouang provinceຊຽງຂວາງ!ແຂວງຊຽງຂວາງ

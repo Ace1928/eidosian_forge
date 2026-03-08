@@ -1,0 +1,505 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_complex.py
+KIND: code
+
+"""Base classes for low memory simplicial complex structures."""
+import copy
+import logging
+import itertools
+import decimal
+from functools import cache
+
+import numpy
+
+from ._vertex import (VertexCacheField, VertexCacheIndex)
+
+
+class Complex:
+    """
+    Base class for a simplicial complex described as a cache of vertices
+    together with their connections.
+
+    Important methods:
+        Domain triangulation:
+                Complex.triangulate, Complex.split_generation
+        Triangulating arbitrary points (must be traingulable,
+            may exist outside domain):
+                Complex.triangulate(sample_set)
+        Converting another simplicial complex structure data type to the
+            structure used in Complex (ex. OBJ wavefront)
+                Complex.convert(datatype, data)
+
+    Important objects:
+        HC.V: The cache of vertices and their connection
+        HC.H: Storage structure of all vertex groups
+
+    Parameters
+    ----------
+    dim : int
+        Spatial dimensionality of the complex R^dim
+    domain : list of tuples, optional
+        The bounds [x_l, x_u]^dim of the hyperrectangle space
+        ex. The default domain is the hyperrectangle [0, 1]^dim
+        Note: The domain must be convex, non-convex spaces can be cut
+              away from this domain using the non-linear
+              g_cons functions to define any arbitrary domain
+              (these domains may also be disconnected from each other)
+    sfield :
+        A scalar function defined in the associated domain f: R^dim --> R
+    sfield_args : tuple
+        Additional arguments to be passed to `sfield`
+    vfield :
+        A scalar function defined in the associated domain
+                       f: R^dim --> R^m
+                   (for example a gradient function of the scalar field)
+    vfield_args : tuple
+        Additional arguments to be passed to vfield
+    symmetry : None or list
+            Specify if the objective function contains symmetric variables.
+            The search space (and therefore performance) is decreased by up to
+            O(n!) times in the fully symmetric case.
+
+            E.g.  f(x) = (x_1 + x_2 + x_3) + (x_4)**2 + (x_5)**2 + (x_6)**2
+
+            In this equation x_2 and x_3 are symmetric to x_1, while x_5 and
+             x_6 are symmetric to x_4, this can be specified to the solver as:
+
+            symmetry = [0,  # Variable 1
+                        0,  # symmetric to variable 1
+                        0,  # symmetric to variable 1
+                        3,  # Variable 4
+                        3,  # symmetric to variable 4
+                        3,  # symmetric to variable 4
+                        ]
+
+    constraints : dict or sequence of dict, optional
+        Constraints definition.
+        Function(s) ``R**n`` in the form::
+
+            g(x) <= 0 applied as g : R^n -> R^m
+            h(x) == 0 applied as h : R^n -> R^p
+
+        Each constraint is defined in a dictionary with fields:
+
+            type : str
+                Constraint type: 'eq' for equality, 'ineq' for inequality.
+            fun : callable
+                The function defining the constraint.
+            jac : callable, optional
+                The Jacobian of `fun` (only for SLSQP).
+            args : sequence, optional
+                Extra arguments to be passed to the function and Jacobian.
+
+        Equality constraint means that the constraint function result is to
+        be zero whereas inequality means that it is to be
+        non-negative.constraints : dict or sequence of dict, optional
+        Constraints definition.
+        Function(s) ``R**n`` in the form::
+
+            g(x) <= 0 applied as g : R^n -> R^m
+            h(x) == 0 applied as h : R^n -> R^p
+
+        Each constraint is defined in a dictionary with fields:
+
+            type : str
+                Constraint type: 'eq' for equality, 'ineq' for inequality.
+            fun : callable
+                The function defining the constraint.
+            jac : callable, optional
+                The Jacobian of `fun` (unused).
+            args : sequence, optional
+                Extra arguments to be passed to the function and Jacobian.
+
+        Equality constraint means that the constraint function result is to
+        be zero whereas inequality means that it is to be non-negative.
+
+    workers : int  optional
+        Uses `multiprocessing.Pool <multiprocessing>`) to compute the field
+         functions in parallel.
+    """
+    def __init__(self, dim, domain=None, sfield=None, sfield_args=(),
+                 symmetry=None, constraints=None, workers=1):
+        self.dim = dim
+
+        # Domains
+        self.domain = domain
+        if domain is None:
+            self.bounds = [(0.0, 1.0), ] * dim
+        else:
+            self.bounds = domain
+        self.symmetry = symmetry
+        #      here in init to avoid if checks
+
+        # Field functions
+        self.sfield = sfield
+        self.sfield_args = sfield_args
+
+        # Process constraints
+        # Constraints
+        # Process constraint dict sequence:
+        if constraints is not None:
+            self.min_cons = constraints
+            self.g_cons = []
+            self.g_args = []
+            if not isinstance(constraints, (tuple, list)):
+                constraints = (constraints,)
+
+            for cons in constraints:
+                if cons['type'] in ('ineq'):
+                    self.g_cons.append(cons['fun'])
+                    try:
+                        self.g_args.append(cons['args'])
+                    except KeyError:
+                        self.g_args.append(())
+            self.g_cons = tuple(self.g_cons)
+            self.g_args = tuple(self.g_args)
+        else:
+            self.g_cons = None
+            self.g_args = None
+
+        # Homology properties
+        self.gen = 0
+        self.perm_cycle = 0
+
+        # Every cell is stored in a list of its generation,
+        # ex. the initial cell is stored in self.H[0]
+        # 1st get new cells are stored in self.H[1] etc.
+        # When a cell is sub-generated it is removed from this list
+
+        self.H = []  # Storage structure of vertex groups
+
+        # Cache of all vertices
+        if (sfield is not None) or (self.g_cons is not None):
+            # Initiate a vertex cache and an associated field cache, note that
+            # the field case is always initiated inside the vertex cache if an
+            # associated field scalar field is defined:
+            if sfield is not None:
+                self.V = VertexCacheField(field=sfield, field_args=sfield_args,
+                                          g_cons=self.g_cons,
+                                          g_cons_args=self.g_args,
+                                          workers=workers)
+            elif self.g_cons is not None:
+                self.V = VertexCacheField(field=sfield, field_args=sfield_args,
+                                          g_cons=self.g_cons,
+                                          g_cons_args=self.g_args,
+                                          workers=workers)
+        else:
+            self.V = VertexCacheIndex()
+
+        self.V_non_symm = []  # List of non-symmetric vertices
+
+    def __call__(self):
+        return self.H
+
+    # %% Triangulation methods
+    def cyclic_product(self, bounds, origin, supremum, centroid=True):
+        """Generate initial triangulation using cyclic product"""
+        # Define current hyperrectangle
+        vot = tuple(origin)
+        vut = tuple(supremum)  # Hyperrectangle supremum
+        self.V[vot]
+        vo = self.V[vot]
+        yield vo.x
+        self.V[vut].connect(self.V[vot])
+        yield vut
+        # Cyclic group approach with second x_l --- x_u operation.
+
+        # These containers store the "lower" and "upper" vertices
+        # corresponding to the origin or supremum of every C2 group.
+        # It has the structure of `dim` times embedded lists each containing
+        # these vertices as the entire complex grows. Bounds[0] has to be done
+        # outside the loops before we have symmetric containers.
+        # NOTE: This means that bounds[0][1] must always exist
+        C0x = [[self.V[vot]]]
+        a_vo = copy.copy(list(origin))
+        a_vo[0] = vut[0]  # Update aN Origin
+        a_vo = self.V[tuple(a_vo)]
+        # self.V[vot].connect(self.V[tuple(a_vo)])
+        self.V[vot].connect(a_vo)
+        yield a_vo.x
+        C1x = [[a_vo]]
+        # C1x = [[self.V[tuple(a_vo)]]]
+        ab_C = []  # Container for a + b operations
+
+        # Loop over remaining bounds
+        for i, x in enumerate(bounds[1:]):
+            # Update lower and upper containers
+            C0x.append([])
+            C1x.append([])
+            # try to access a second bound (if not, C1 is symmetric)
+            try:
+                # Early try so that we don't have to copy the cache before
+                # moving on to next C1/C2: Try to add the operation of a new
+                # C2 product by accessing the upper bound
+                x[1]
+                # Copy lists for iteration
+                cC0x = [x[:] for x in C0x[:i + 1]]
+                cC1x = [x[:] for x in C1x[:i + 1]]
+                for j, (VL, VU) in enumerate(zip(cC0x, cC1x)):
+                    for k, (vl, vu) in enumerate(zip(VL, VU)):
+                        # Build aN vertices for each lower-upper pair in N:
+                        a_vl = list(vl.x)
+                        a_vu = list(vu.x)
+                        a_vl[i + 1] = vut[i + 1]
+                        a_vu[i + 1] = vut[i + 1]
+                        a_vl = self.V[tuple(a_vl)]
+
+                        # Connect vertices in N to corresponding vertices
+                        # in aN:
+                        vl.connect(a_vl)
+
+                        yield a_vl.x
+
+                        a_vu = self.V[tuple(a_vu)]
+                        # Connect vertices in N to corresponding vertices
+                        # in aN:
+                        vu.connect(a_vu)
+
+                        # Connect new vertex pair in aN:
+                        a_vl.connect(a_vu)
+
+                        # Connect lower pair to upper (triangulation
+                        # operation of a + b (two arbitrary operations):
+                        vl.connect(a_vu)
+                        ab_C.append((vl, a_vu))
+
+                        # Update the containers
+                        C0x[i + 1].append(vl)
+                        C0x[i + 1].append(vu)
+                        C1x[i + 1].append(a_vl)
+                        C1x[i + 1].append(a_vu)
+
+                        # Update old containers
+                        C0x[j].append(a_vl)
+                        C1x[j].append(a_vu)
+
+                        # Yield new points
+                        yield a_vu.x
+
+                # Try to connect aN lower source of previous a + b
+                # operation with a aN vertex
+                ab_Cc = copy.copy(ab_C)
+
+                for vp in ab_Cc:
+                    b_v = list(vp[0].x)
+                    ab_v = list(vp[1].x)
+                    b_v[i + 1] = vut[i + 1]
+                    ab_v[i + 1] = vut[i + 1]
+                    b_v = self.V[tuple(b_v)]  # b + vl
+                    ab_v = self.V[tuple(ab_v)]  # b + a_vl
+                    # Note o---o is already connected
+                    vp[0].connect(ab_v)  # o-s
+                    b_v.connect(ab_v)  # s-s
+
+                    # Add new list of cross pairs
+                    ab_C.append((vp[0], ab_v))
+                    ab_C.append((b_v, ab_v))
+
+            except IndexError:
+                cC0x = C0x[i]
+                cC1x = C1x[i]
+                VL, VU = cC0x, cC1x
+                for k, (vl, vu) in enumerate(zip(VL, VU)):
+                    # Build aN vertices for each lower-upper pair in N:
+                    a_vu = list(vu.x)
+                    a_vu[i + 1] = vut[i + 1]
+                    # Connect vertices in N to corresponding vertices
+                    # in aN:
+                    a_vu = self.V[tuple(a_vu)]
+                    # Connect vertices in N to corresponding vertices
+                    # in aN:
+                    vu.connect(a_vu)
+                    # Connect new vertex pair in aN:
+                    # a_vl.connect(a_vu)
+                    # Connect lower pair to upper (triangulation
+                    # operation of a + b (two arbitrary operations):
+                    vl.connect(a_vu)
+                    ab_C.append((vl, a_vu))
+                    C0x[i + 1].append(vu)
+                    C1x[i + 1].append(a_vu)
+                    # Yield new points
+                    a_vu.connect(self.V[vut])
+                    yield a_vu.x
+                    ab_Cc = copy.copy(ab_C)
+                    for vp in ab_Cc:
+                        if vp[1].x[i] == vut[i]:
+                            ab_v = list(vp[1].x)
+                            ab_v[i + 1] = vut[i + 1]
+                            ab_v = self.V[tuple(ab_v)]  # b + a_vl
+                            # Note o---o is already connected
+                            vp[0].connect(ab_v)  # o-s
+
+                            # Add new list of cross pairs
+                            ab_C.append((vp[0], ab_v))
+
+        # Clean class trash
+        try:
+            del C0x
+            del cC0x
+            del C1x
+            del cC1x
+            del ab_C
+            del ab_Cc
+        except UnboundLocalError:
+            pass
+
+        # Extra yield to ensure that the triangulation is completed
+        if centroid:
+            vo = self.V[vot]
+            vs = self.V[vut]
+            # Disconnect the origin and supremum
+            vo.disconnect(vs)
+            # Build centroid
+            vc = self.split_edge(vot, vut)
+            for v in vo.nn:
+                v.connect(vc)
+            yield vc.x
+            return vc.x
+        else:
+            yield vut
+            return vut
+
+    def triangulate(self, n=None, symmetry=None, centroid=True,
+                    printout=False):
+        """
+        Triangulate the initial domain, if n is not None then a limited number
+        of points will be generated
+
+        Parameters
+        ----------
+        n : int, Number of points to be sampled.
+        symmetry :
+
+            Ex. Dictionary/hashtable
+            f(x) = (x_1 + x_2 + x_3) + (x_4)**2 + (x_5)**2 + (x_6)**2
+
+            symmetry = symmetry[0]: 0,  # Variable 1
+                       symmetry[1]: 0,  # symmetric to variable 1
+                       symmetry[2]: 0,  # symmetric to variable 1
+                       symmetry[3]: 3,  # Variable 4
+                       symmetry[4]: 3,  # symmetric to variable 4
+                       symmetry[5]: 3,  # symmetric to variable 4
+                        }
+        centroid : bool, if True add a central point to the hypercube
+        printout : bool, if True print out results
+
+        NOTES:
+        ------
+        Rather than using the combinatorial algorithm to connect vertices we
+        make the following observation:
+
+        The bound pairs are similar a C2 cyclic group and the structure is
+        formed using the cartesian product:
+
+        H = C2 x C2 x C2 ... x C2 (dim times)
+
+        So construct any normal subgroup N and consider H/N first, we connect
+        all vertices within N (ex. N is C2 (the first dimension), then we move
+        to a left coset aN (an operation moving around the defined H/N group by
+        for example moving from the lower bound in C2 (dimension 2) to the
+        higher bound in C2. During this operation connection all the vertices.
+        Now repeat the N connections. Note that these elements can be connected
+        in parallel.
+        """
+        # Inherit class arguments
+        if symmetry is None:
+            symmetry = self.symmetry
+        # Build origin and supremum vectors
+        origin = [i[0] for i in self.bounds]
+        self.origin = origin
+        supremum = [i[1] for i in self.bounds]
+
+        self.supremum = supremum
+
+        if symmetry is None:
+            cbounds = self.bounds
+        else:
+            cbounds = copy.copy(self.bounds)
+            for i, j in enumerate(symmetry):
+                if i is not j:
+                    # pop second entry on second symmetry vars
+                    cbounds[i] = [self.bounds[symmetry[i]][0]]
+                    # Sole (first) entry is the sup value and there is no
+                    # origin:
+                    cbounds[i] = [self.bounds[symmetry[i]][1]]
+                    if (self.bounds[symmetry[i]] is not
+                            self.bounds[symmetry[j]]):
+                        logging.warning(f"Variable {i} was specified as "
+                                        f"symmetetric to variable {j}, however"
+                                        f", the bounds {i} ="
+                                        f" {self.bounds[symmetry[i]]} and {j}"
+                                        f" ="
+                                        f" {self.bounds[symmetry[j]]} do not "
+                                        f"match, the mismatch was ignored in "
+                                        f"the initial triangulation.")
+                        cbounds[i] = self.bounds[symmetry[j]]
+
+        if n is None:
+            # Build generator
+            self.cp = self.cyclic_product(cbounds, origin, supremum, centroid)
+            for i in self.cp:
+                i
+
+            try:
+                self.triangulated_vectors.append((tuple(self.origin),
+                                                  tuple(self.supremum)))
+            except (AttributeError, KeyError):
+                self.triangulated_vectors = [(tuple(self.origin),
+                                              tuple(self.supremum))]
+
+        else:
+            # Check if generator already exists
+            try:
+                self.cp
+            except (AttributeError, KeyError):
+                self.cp = self.cyclic_product(cbounds, origin, supremum,
+                                              centroid)
+
+            try:
+                while len(self.V.cache) < n:
+                    next(self.cp)
+            except StopIteration:
+                try:
+                    self.triangulated_vectors.append((tuple(self.origin),
+                                                      tuple(self.supremum)))
+                except (AttributeError, KeyError):
+                    self.triangulated_vectors = [(tuple(self.origin),
+                                                  tuple(self.supremum))]
+
+        if printout:
+            # for v in self.C0():
+            #   v.print_out()
+            for v in self.V.cache:
+                self.V[v].print_out()
+
+        return
+
+    def refine(self, n=1):
+        if n is None:
+            try:
+                self.triangulated_vectors
+                self.refine_all()
+                return
+            except AttributeError as ae:
+                if str(ae) == "'Complex' object has no attribute " \
+                              "'triangulated_vectors'":
+                    self.triangulate(symmetry=self.symmetry)
+                    return
+                else:
+                    raise
+
+        nt = len(self.V.cache) + n  # Target number of total vertices
+        # In the outer while loop we iterate until we have added an extra `n`
+        # vertices to the complex:
+        while len(self.V.cache) < nt:  # while loop 1
+            try:  # try 1
+                # Try to access triangulated_vectors, this should only be
+                # defined if an initial triangulation has already been
+                # performed:
+                self.triangulated_vectors
+                # Try a usual iteration of the current generator, if it
+                # does not exist or is exhausted then produce a new generator
+                try:  # try 2
+                    next(self.rls)
+                except (AttributeError, StopIteration, KeyError):
+                    vp = self.triangulated_vectors[0]
+                    self.rls = self.refine_local_sp

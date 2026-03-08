@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/G_P_O_S_.py
+KIND: code
+
+from .otBase import BaseTTXConverter
+
+
+class table_G_P_O_S_(BaseTTXConverter):
+    pass

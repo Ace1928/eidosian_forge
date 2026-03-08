@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_deprecated_documentation.py
+KIND: code
+
+import warnings
+from typing import Any, List
+import torch
+from torchvision.transforms import functional as _F
+[BETA] [DEPREACTED] Use to_image() and to_dtype() instead.

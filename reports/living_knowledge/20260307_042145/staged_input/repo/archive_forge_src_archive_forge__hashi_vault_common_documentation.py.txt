@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_hashi_vault_common_documentation.py
+KIND: code
+
+from __future__ import absolute_import, division, print_function
+import os
+Authenticates against Vault, returns a token.

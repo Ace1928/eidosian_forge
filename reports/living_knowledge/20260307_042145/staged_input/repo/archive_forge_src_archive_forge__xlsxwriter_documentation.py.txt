@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_xlsxwriter_documentation.py
+KIND: code
+
+from __future__ import annotations
+import json
+from typing import (
+from pandas.io.excel._base import ExcelWriter
+from pandas.io.excel._util import (
+
+        Save workbook to disk.

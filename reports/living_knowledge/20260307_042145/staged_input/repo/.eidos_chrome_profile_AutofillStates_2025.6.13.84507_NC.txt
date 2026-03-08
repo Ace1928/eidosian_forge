@@ -1,0 +1,7 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/NC
+KIND: config
+
+NC7
+province des îles loyautéloyalty islands province
+province sudsouth province
+province nordnorth province

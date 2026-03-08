@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/arithmetic_documentation.py
+KIND: code
+
+from cupy import _core
+from cupy._core import fusion
+Returns the imaginary part of the elements of the array.
+
+    .. seealso:: :func:`numpy.imag`

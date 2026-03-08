@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_frontend_documentation.py
+KIND: code
+
+from ..frontend_semver import DECKGL_SEMVER
+
+Information about the frontend package of the widget.

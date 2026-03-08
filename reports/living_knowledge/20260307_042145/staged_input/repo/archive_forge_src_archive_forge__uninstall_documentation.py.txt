@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_uninstall_documentation.py
+KIND: code
+
+import argparse
+import ensurepip
+import sys
+Basic pip uninstallation support, helper for the Windows uninstaller

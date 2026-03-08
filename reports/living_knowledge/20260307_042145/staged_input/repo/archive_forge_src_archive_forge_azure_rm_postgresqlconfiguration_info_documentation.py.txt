@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/azure_rm_postgresqlconfiguration_info_documentation.py
+KIND: code
+
+from __future__ import absolute_import, division, print_function
+
+        Gets facts of the specified PostgreSQL Configuration.
+
+        :return: deserialized PostgreSQL Configurationinstance state dictionary

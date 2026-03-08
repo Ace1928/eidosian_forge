@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/accelerator.py
+KIND: code
+
+import abc
+
+
+class Accelerator(abc.ABC):
+    """A utility that contains methods to accelerate training."""

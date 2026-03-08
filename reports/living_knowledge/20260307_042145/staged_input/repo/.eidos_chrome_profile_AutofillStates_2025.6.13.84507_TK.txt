@@ -1,0 +1,8 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/TK
+KIND: config
+
+TK
+atafu	
+fakaofo
+
+nukunonu

@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/artifact_ttl_documentation.py
+KIND: code
+
+from enum import Enum
+Artifact TTL.

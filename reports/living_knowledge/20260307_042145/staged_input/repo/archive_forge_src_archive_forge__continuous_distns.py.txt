@@ -1,0 +1,744 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_continuous_distns.py
+KIND: code
+
+#
+# Author:  Travis Oliphant  2002-2011 with contributions from
+#          SciPy Developers 2004-2011
+#
+import warnings
+from collections.abc import Iterable
+from functools import wraps, cached_property
+import ctypes
+
+import numpy as np
+from numpy.polynomial import Polynomial
+from scipy._lib.doccer import (extend_notes_in_docstring,
+                               replace_notes_in_docstring,
+                               inherit_docstring_from)
+from scipy._lib._ccallback import LowLevelCallable
+from scipy import optimize
+from scipy import integrate
+import scipy.special as sc
+
+import scipy.special._ufuncs as scu
+from scipy._lib._util import _lazyselect, _lazywhere
+
+from . import _stats
+from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
+                                 tukeylambda_kurtosis as _tlkurt)
+from ._distn_infrastructure import (
+    get_distribution_names, _kurtosis,
+    rv_continuous, _skew, _get_fixed_fit_value, _check_shape, _ShapeInfo)
+from ._ksstats import kolmogn, kolmognp, kolmogni
+from ._constants import (_XMIN, _LOGXMIN, _EULER, _ZETA3, _SQRT_PI,
+                         _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
+from ._censored_data import CensoredData
+import scipy.stats._boost as _boost
+from scipy.optimize import root_scalar
+from scipy.stats._warnings_errors import FitError
+import scipy.stats as stats
+
+
+def _remove_optimizer_parameters(kwds):
+    """
+    Remove the optimizer-related keyword arguments 'loc', 'scale' and
+    'optimizer' from `kwds`.  Then check that `kwds` is empty, and
+    raise `TypeError("Unknown arguments: %s." % kwds)` if it is not.
+
+    This function is used in the fit method of distributions that override
+    the default method and do not use the default optimization code.
+
+    `kwds` is modified in-place.
+    """
+    kwds.pop('loc', None)
+    kwds.pop('scale', None)
+    kwds.pop('optimizer', None)
+    kwds.pop('method', None)
+    if kwds:
+        raise TypeError("Unknown arguments: %s." % kwds)
+
+
+def _call_super_mom(fun):
+    # If fit method is overridden only for MLE and doesn't specify what to do
+    # if method == 'mm' or with censored data, this decorator calls the generic
+    # implementation.
+    @wraps(fun)
+    def wrapper(self, data, *args, **kwds):
+        method = kwds.get('method', 'mle').lower()
+        censored = isinstance(data, CensoredData)
+        if method == 'mm' or (censored and data.num_censored() > 0):
+            return super(type(self), self).fit(data, *args, **kwds)
+        else:
+            if censored:
+                # data is an instance of CensoredData, but actually holds
+                # no censored values, so replace it with the array of
+                # uncensored values.
+                data = data._uncensored
+            return fun(self, data, *args, **kwds)
+
+    return wrapper
+
+
+def _get_left_bracket(fun, rbrack, lbrack=None):
+    # find left bracket for `root_scalar`. A guess for lbrack may be provided.
+    lbrack = lbrack or rbrack - 1
+    diff = rbrack - lbrack
+
+    # if there is no sign change in `fun` between the brackets, expand
+    # rbrack - lbrack until a sign change occurs
+    def interval_contains_root(lbrack, rbrack):
+        # return true if the signs disagree.
+        return np.sign(fun(lbrack)) != np.sign(fun(rbrack))
+
+    while not interval_contains_root(lbrack, rbrack):
+        diff *= 2
+        lbrack = rbrack - diff
+
+        msg = ("The solver could not find a bracket containing a "
+               "root to an MLE first order condition.")
+        if np.isinf(lbrack):
+            raise FitSolverError(msg)
+
+    return lbrack
+
+
+class ksone_gen(rv_continuous):
+    r"""Kolmogorov-Smirnov one-sided test statistic distribution.
+
+    This is the distribution of the one-sided Kolmogorov-Smirnov (KS)
+    statistics :math:`D_n^+` and :math:`D_n^-`
+    for a finite sample size ``n >= 1`` (the shape parameter).
+
+    %(before_notes)s
+
+    See Also
+    --------
+    kstwobign, kstwo, kstest
+
+    Notes
+    -----
+    :math:`D_n^+` and :math:`D_n^-` are given by
+
+    .. math::
+
+        D_n^+ &= \text{sup}_x (F_n(x) - F(x)),\\
+        D_n^- &= \text{sup}_x (F(x) - F_n(x)),\\
+
+    where :math:`F` is a continuous CDF and :math:`F_n` is an empirical CDF.
+    `ksone` describes the distribution under the null hypothesis of the KS test
+    that the empirical CDF corresponds to :math:`n` i.i.d. random variates
+    with CDF :math:`F`.
+
+    %(after_notes)s
+
+    References
+    ----------
+    .. [1] Birnbaum, Z. W. and Tingey, F.H. "One-sided confidence contours
+       for probability distribution functions", The Annals of Mathematical
+       Statistics, 22(4), pp 592-596 (1951).
+
+    %(example)s
+
+    """
+    def _argcheck(self, n):
+        return (n >= 1) & (n == np.round(n))
+
+    def _shape_info(self):
+        return [_ShapeInfo("n", True, (1, np.inf), (True, False))]
+
+    def _pdf(self, x, n):
+        return -scu._smirnovp(n, x)
+
+    def _cdf(self, x, n):
+        return scu._smirnovc(n, x)
+
+    def _sf(self, x, n):
+        return sc.smirnov(n, x)
+
+    def _ppf(self, q, n):
+        return scu._smirnovci(n, q)
+
+    def _isf(self, q, n):
+        return sc.smirnovi(n, q)
+
+
+ksone = ksone_gen(a=0.0, b=1.0, name='ksone')
+
+
+class kstwo_gen(rv_continuous):
+    r"""Kolmogorov-Smirnov two-sided test statistic distribution.
+
+    This is the distribution of the two-sided Kolmogorov-Smirnov (KS)
+    statistic :math:`D_n` for a finite sample size ``n >= 1``
+    (the shape parameter).
+
+    %(before_notes)s
+
+    See Also
+    --------
+    kstwobign, ksone, kstest
+
+    Notes
+    -----
+    :math:`D_n` is given by
+
+    .. math::
+
+        D_n = \text{sup}_x |F_n(x) - F(x)|
+
+    where :math:`F` is a (continuous) CDF and :math:`F_n` is an empirical CDF.
+    `kstwo` describes the distribution under the null hypothesis of the KS test
+    that the empirical CDF corresponds to :math:`n` i.i.d. random variates
+    with CDF :math:`F`.
+
+    %(after_notes)s
+
+    References
+    ----------
+    .. [1] Simard, R., L'Ecuyer, P. "Computing the Two-Sided
+       Kolmogorov-Smirnov Distribution",  Journal of Statistical Software,
+       Vol 39, 11, 1-18 (2011).
+
+    %(example)s
+
+    """
+    def _argcheck(self, n):
+        return (n >= 1) & (n == np.round(n))
+
+    def _shape_info(self):
+        return [_ShapeInfo("n", True, (1, np.inf), (True, False))]
+
+    def _get_support(self, n):
+        return (0.5/(n if not isinstance(n, Iterable) else np.asanyarray(n)),
+                1.0)
+
+    def _pdf(self, x, n):
+        return kolmognp(n, x)
+
+    def _cdf(self, x, n):
+        return kolmogn(n, x)
+
+    def _sf(self, x, n):
+        return kolmogn(n, x, cdf=False)
+
+    def _ppf(self, q, n):
+        return kolmogni(n, q, cdf=True)
+
+    def _isf(self, q, n):
+        return kolmogni(n, q, cdf=False)
+
+
+# Use the pdf, (not the ppf) to compute moments
+kstwo = kstwo_gen(momtype=0, a=0.0, b=1.0, name='kstwo')
+
+
+class kstwobign_gen(rv_continuous):
+    r"""Limiting distribution of scaled Kolmogorov-Smirnov two-sided test statistic.
+
+    This is the asymptotic distribution of the two-sided Kolmogorov-Smirnov
+    statistic :math:`\sqrt{n} D_n` that measures the maximum absolute
+    distance of the theoretical (continuous) CDF from the empirical CDF.
+    (see `kstest`).
+
+    %(before_notes)s
+
+    See Also
+    --------
+    ksone, kstwo, kstest
+
+    Notes
+    -----
+    :math:`\sqrt{n} D_n` is given by
+
+    .. math::
+
+        D_n = \text{sup}_x |F_n(x) - F(x)|
+
+    where :math:`F` is a continuous CDF and :math:`F_n` is an empirical CDF.
+    `kstwobign`  describes the asymptotic distribution (i.e. the limit of
+    :math:`\sqrt{n} D_n`) under the null hypothesis of the KS test that the
+    empirical CDF corresponds to i.i.d. random variates with CDF :math:`F`.
+
+    %(after_notes)s
+
+    References
+    ----------
+    .. [1] Feller, W. "On the Kolmogorov-Smirnov Limit Theorems for Empirical
+       Distributions",  Ann. Math. Statist. Vol 19, 177-189 (1948).
+
+    %(example)s
+
+    """
+    def _shape_info(self):
+        return []
+
+    def _pdf(self, x):
+        return -scu._kolmogp(x)
+
+    def _cdf(self, x):
+        return scu._kolmogc(x)
+
+    def _sf(self, x):
+        return sc.kolmogorov(x)
+
+    def _ppf(self, q):
+        return scu._kolmogci(q)
+
+    def _isf(self, q):
+        return sc.kolmogi(q)
+
+
+kstwobign = kstwobign_gen(a=0.0, name='kstwobign')
+
+
+## Normal distribution
+
+# loc = mu, scale = std
+# Keep these implementations out of the class definition so they can be reused
+# by other distributions.
+_norm_pdf_C = np.sqrt(2*np.pi)
+_norm_pdf_logC = np.log(_norm_pdf_C)
+
+
+def _norm_pdf(x):
+    return np.exp(-x**2/2.0) / _norm_pdf_C
+
+
+def _norm_logpdf(x):
+    return -x**2 / 2.0 - _norm_pdf_logC
+
+
+def _norm_cdf(x):
+    return sc.ndtr(x)
+
+
+def _norm_logcdf(x):
+    return sc.log_ndtr(x)
+
+
+def _norm_ppf(q):
+    return sc.ndtri(q)
+
+
+def _norm_sf(x):
+    return _norm_cdf(-x)
+
+
+def _norm_logsf(x):
+    return _norm_logcdf(-x)
+
+
+def _norm_isf(q):
+    return -_norm_ppf(q)
+
+
+class norm_gen(rv_continuous):
+    r"""A normal continuous random variable.
+
+    The location (``loc``) keyword specifies the mean.
+    The scale (``scale``) keyword specifies the standard deviation.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `norm` is:
+
+    .. math::
+
+        f(x) = \frac{\exp(-x^2/2)}{\sqrt{2\pi}}
+
+    for a real number :math:`x`.
+
+    %(after_notes)s
+
+    %(example)s
+
+    """
+    def _shape_info(self):
+        return []
+
+    def _rvs(self, size=None, random_state=None):
+        return random_state.standard_normal(size)
+
+    def _pdf(self, x):
+        # norm.pdf(x) = exp(-x**2/2)/sqrt(2*pi)
+        return _norm_pdf(x)
+
+    def _logpdf(self, x):
+        return _norm_logpdf(x)
+
+    def _cdf(self, x):
+        return _norm_cdf(x)
+
+    def _logcdf(self, x):
+        return _norm_logcdf(x)
+
+    def _sf(self, x):
+        return _norm_sf(x)
+
+    def _logsf(self, x):
+        return _norm_logsf(x)
+
+    def _ppf(self, q):
+        return _norm_ppf(q)
+
+    def _isf(self, q):
+        return _norm_isf(q)
+
+    def _stats(self):
+        return 0.0, 1.0, 0.0, 0.0
+
+    def _entropy(self):
+        return 0.5*(np.log(2*np.pi)+1)
+
+    @_call_super_mom
+    @replace_notes_in_docstring(rv_continuous, notes="""\
+        For the normal distribution, method of moments and maximum likelihood
+        estimation give identical fits, and explicit formulas for the estimates
+        are available.
+        This function uses these explicit formulas for the maximum likelihood
+        estimation of the normal distribution parameters, so the
+        `optimizer` and `method` arguments are ignored.\n\n""")
+    def fit(self, data, **kwds):
+        floc = kwds.pop('floc', None)
+        fscale = kwds.pop('fscale', None)
+
+        _remove_optimizer_parameters(kwds)
+
+        if floc is not None and fscale is not None:
+            # This check is for consistency with `rv_continuous.fit`.
+            # Without this check, this function would just return the
+            # parameters that were given.
+            raise ValueError("All parameters fixed. There is nothing to "
+                             "optimize.")
+
+        data = np.asarray(data)
+
+        if not np.isfinite(data).all():
+            raise ValueError("The data contains non-finite values.")
+
+        if floc is None:
+            loc = data.mean()
+        else:
+            loc = floc
+
+        if fscale is None:
+            scale = np.sqrt(((data - loc)**2).mean())
+        else:
+            scale = fscale
+
+        return loc, scale
+
+    def _munp(self, n):
+        """
+        @returns Moments of standard normal distribution for integer n >= 0
+
+        See eq. 16 of https://arxiv.org/abs/1209.4340v2
+        """
+        if n % 2 == 0:
+            return sc.factorial2(n - 1)
+        else:
+            return 0.
+
+
+norm = norm_gen(name='norm')
+
+
+class alpha_gen(rv_continuous):
+    r"""An alpha continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `alpha` ([1]_, [2]_) is:
+
+    .. math::
+
+        f(x, a) = \frac{1}{x^2 \Phi(a) \sqrt{2\pi}} *
+                  \exp(-\frac{1}{2} (a-1/x)^2)
+
+    where :math:`\Phi` is the normal CDF, :math:`x > 0`, and :math:`a > 0`.
+
+    `alpha` takes ``a`` as a shape parameter.
+
+    %(after_notes)s
+
+    References
+    ----------
+    .. [1] Johnson, Kotz, and Balakrishnan, "Continuous Univariate
+           Distributions, Volume 1", Second Edition, John Wiley and Sons,
+           p. 173 (1994).
+    .. [2] Anthony A. Salvia, "Reliability applications of the Alpha
+           Distribution", IEEE Transactions on Reliability, Vol. R-34,
+           No. 3, pp. 251-252 (1985).
+
+    %(example)s
+
+    """
+    _support_mask = rv_continuous._open_support_mask
+
+    def _shape_info(self):
+        return [_ShapeInfo("a", False, (0, np.inf), (False, False))]
+
+    def _pdf(self, x, a):
+        # alpha.pdf(x, a) = 1/(x**2*Phi(a)*sqrt(2*pi)) * exp(-1/2 * (a-1/x)**2)
+        return 1.0/(x**2)/_norm_cdf(a)*_norm_pdf(a-1.0/x)
+
+    def _logpdf(self, x, a):
+        return -2*np.log(x) + _norm_logpdf(a-1.0/x) - np.log(_norm_cdf(a))
+
+    def _cdf(self, x, a):
+        return _norm_cdf(a-1.0/x) / _norm_cdf(a)
+
+    def _ppf(self, q, a):
+        return 1.0/np.asarray(a - _norm_ppf(q*_norm_cdf(a)))
+
+    def _stats(self, a):
+        return [np.inf]*2 + [np.nan]*2
+
+
+alpha = alpha_gen(a=0.0, name='alpha')
+
+
+class anglit_gen(rv_continuous):
+    r"""An anglit continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `anglit` is:
+
+    .. math::
+
+        f(x) = \sin(2x + \pi/2) = \cos(2x)
+
+    for :math:`-\pi/4 \le x \le \pi/4`.
+
+    %(after_notes)s
+
+    %(example)s
+
+    """
+    def _shape_info(self):
+        return []
+
+    def _pdf(self, x):
+        # anglit.pdf(x) = sin(2*x + \pi/2) = cos(2*x)
+        return np.cos(2*x)
+
+    def _cdf(self, x):
+        return np.sin(x+np.pi/4)**2.0
+
+    def _sf(self, x):
+        return np.cos(x + np.pi / 4) ** 2.0
+
+    def _ppf(self, q):
+        return np.arcsin(np.sqrt(q))-np.pi/4
+
+    def _stats(self):
+        return 0.0, np.pi*np.pi/16-0.5, 0.0, -2*(np.pi**4 - 96)/(np.pi*np.pi-8)**2
+
+    def _entropy(self):
+        return 1-np.log(2)
+
+
+anglit = anglit_gen(a=-np.pi/4, b=np.pi/4, name='anglit')
+
+
+class arcsine_gen(rv_continuous):
+    r"""An arcsine continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `arcsine` is:
+
+    .. math::
+
+        f(x) = \frac{1}{\pi \sqrt{x (1-x)}}
+
+    for :math:`0 < x < 1`.
+
+    %(after_notes)s
+
+    %(example)s
+
+    """
+    def _shape_info(self):
+        return []
+
+    def _pdf(self, x):
+        # arcsine.pdf(x) = 1/(pi*sqrt(x*(1-x)))
+        with np.errstate(divide='ignore'):
+            return 1.0/np.pi/np.sqrt(x*(1-x))
+
+    def _cdf(self, x):
+        return 2.0/np.pi*np.arcsin(np.sqrt(x))
+
+    def _ppf(self, q):
+        return np.sin(np.pi/2.0*q)**2.0
+
+    def _stats(self):
+        mu = 0.5
+        mu2 = 1.0/8
+        g1 = 0
+        g2 = -3.0/2.0
+        return mu, mu2, g1, g2
+
+    def _entropy(self):
+        return -0.24156447527049044468
+
+
+arcsine = arcsine_gen(a=0.0, b=1.0, name='arcsine')
+
+
+class FitDataError(ValueError):
+    """Raised when input data is inconsistent with fixed parameters."""
+    # This exception is raised by, for example, beta_gen.fit when both floc
+    # and fscale are fixed and there are values in the data not in the open
+    # interval (floc, floc+fscale).
+    def __init__(self, distr, lower, upper):
+        self.args = (
+            "Invalid values in `data`.  Maximum likelihood "
+            f"estimation with {distr!r} requires that {lower!r} < "
+            f"(x - loc)/scale  < {upper!r} for each x in `data`.",
+        )
+
+
+class FitSolverError(FitError):
+    """
+    Raised when a solver fails to converge while fitting a distribution.
+    """
+    # This exception is raised by, for example, beta_gen.fit when
+    # optimize.fsolve returns with ier != 1.
+    def __init__(self, mesg):
+        emsg = "Solver for the MLE equations failed to converge: "
+        emsg += mesg.replace('\n', '')
+        self.args = (emsg,)
+
+
+def _beta_mle_a(a, b, n, s1):
+    # The zeros of this function give the MLE for `a`, with
+    # `b`, `n` and `s1` given.  `s1` is the sum of the logs of
+    # the data. `n` is the number of data points.
+    psiab = sc.psi(a + b)
+    func = s1 - n * (-psiab + sc.psi(a))
+    return func
+
+
+def _beta_mle_ab(theta, n, s1, s2):
+    # Zeros of this function are critical points of
+    # the maximum likelihood function.  Solving this system
+    # for theta (which contains a and b) gives the MLE for a and b
+    # given `n`, `s1` and `s2`.  `s1` is the sum of the logs of the data,
+    # and `s2` is the sum of the logs of 1 - data.  `n` is the number
+    # of data points.
+    a, b = theta
+    psiab = sc.psi(a + b)
+    func = [s1 - n * (-psiab + sc.psi(a)),
+            s2 - n * (-psiab + sc.psi(b))]
+    return func
+
+
+class beta_gen(rv_continuous):
+    r"""A beta continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `beta` is:
+
+    .. math::
+
+        f(x, a, b) = \frac{\Gamma(a+b) x^{a-1} (1-x)^{b-1}}
+                          {\Gamma(a) \Gamma(b)}
+
+    for :math:`0 <= x <= 1`, :math:`a > 0`, :math:`b > 0`, where
+    :math:`\Gamma` is the gamma function (`scipy.special.gamma`).
+
+    `beta` takes :math:`a` and :math:`b` as shape parameters.
+
+    %(after_notes)s
+
+    %(example)s
+
+    """
+    def _shape_info(self):
+        ia = _ShapeInfo("a", False, (0, np.inf), (False, False))
+        ib = _ShapeInfo("b", False, (0, np.inf), (False, False))
+        return [ia, ib]
+
+    def _rvs(self, a, b, size=None, random_state=None):
+        return random_state.beta(a, b, size)
+
+    def _pdf(self, x, a, b):
+        #                     gamma(a+b) * x**(a-1) * (1-x)**(b-1)
+        # beta.pdf(x, a, b) = ------------------------------------
+        #                              gamma(a)*gamma(b)
+        with np.errstate(over='ignore'):
+            return _boost._beta_pdf(x, a, b)
+
+    def _logpdf(self, x, a, b):
+        lPx = sc.xlog1py(b - 1.0, -x) + sc.xlogy(a - 1.0, x)
+        lPx -= sc.betaln(a, b)
+        return lPx
+
+    def _cdf(self, x, a, b):
+        return _boost._beta_cdf(x, a, b)
+
+    def _sf(self, x, a, b):
+        return _boost._beta_sf(x, a, b)
+
+    def _isf(self, x, a, b):
+        with np.errstate(over='ignore'):  # see gh-17432
+            return _boost._beta_isf(x, a, b)
+
+    def _ppf(self, q, a, b):
+        with np.errstate(over='ignore'):  # see gh-17432
+            return _boost._beta_ppf(q, a, b)
+
+    def _stats(self, a, b):
+        return (
+            _boost._beta_mean(a, b),
+            _boost._beta_variance(a, b),
+            _boost._beta_skewness(a, b),
+            _boost._beta_kurtosis_excess(a, b))
+
+    def _fitstart(self, data):
+        if isinstance(data, CensoredData):
+            data = data._uncensor()
+
+        g1 = _skew(data)
+        g2 = _kurtosis(data)
+
+        def func(x):
+            a, b = x
+            sk = 2*(b-a)*np.sqrt(a + b + 1) / (a + b + 2) / np.sqrt(a*b)
+            ku = a**3 - a**2*(2*b-1) + b**2*(b+1) - 2*a*b*(b+2)
+            ku /= a*b*(a+b+2)*(a+b+3)
+            ku *= 6
+            return [sk-g1, ku-g2]
+        a, b = optimize.fsolve(func, (1.0, 1.0))
+        return super()._fitstart(data, args=(a, b))
+
+    @_call_super_mom
+    @extend_notes_in_docstring(rv_continuous, notes="""\
+        In the special case where `method="MLE"` and
+        both `floc` and `fscale` are given, a
+        `ValueError` is raised if any value `x` in `data` does not satisfy
+        `floc < x < floc + fscale`.\n\n""")
+    def fit(self, data, *args, **kwds):
+        # Override rv_continuous.fit, so we can more efficiently handle the
+        # case where floc and fscale are given.
+
+        floc = kwds.get('floc', None)
+        fscale = kwds.get('fscale', None)
+
+        if floc is None or fscale is None:
+            # do general fit
+            return super().fit(data, *args, *

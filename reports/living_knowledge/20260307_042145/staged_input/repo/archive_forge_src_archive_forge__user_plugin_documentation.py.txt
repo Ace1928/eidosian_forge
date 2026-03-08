@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_user_plugin_documentation.py
+KIND: code
+
+from keystoneauth1.identity import base as base_identity
+Did this authentication request contained a service token.

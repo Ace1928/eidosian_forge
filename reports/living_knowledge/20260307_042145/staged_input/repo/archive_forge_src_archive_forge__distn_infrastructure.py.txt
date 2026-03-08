@@ -1,0 +1,643 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_distn_infrastructure.py
+KIND: code
+
+#
+# Author:  Travis Oliphant  2002-2011 with contributions from
+#          SciPy Developers 2004-2011
+#
+from scipy._lib._util import getfullargspec_no_self as _getfullargspec
+
+import sys
+import keyword
+import re
+import types
+import warnings
+from itertools import zip_longest
+
+from scipy._lib import doccer
+from ._distr_params import distcont, distdiscrete
+from scipy._lib._util import check_random_state
+
+from scipy.special import comb, entr
+
+
+# for root finding for continuous distribution ppf, and maximum likelihood
+# estimation
+from scipy import optimize
+
+# for functions of continuous distributions (e.g. moments, entropy, cdf)
+from scipy import integrate
+
+# to approximate the pdf of a continuous distribution given its cdf
+from scipy._lib._finite_differences import _derivative
+
+# for scipy.stats.entropy. Attempts to import just that function or file
+# have cause import problems
+from scipy import stats
+
+from numpy import (arange, putmask, ones, shape, ndarray, zeros, floor,
+                   logical_and, log, sqrt, place, argmax, vectorize, asarray,
+                   nan, inf, isinf, empty)
+
+import numpy as np
+from ._constants import _XMAX, _LOGXMAX
+from ._censored_data import CensoredData
+from scipy.stats._warnings_errors import FitError
+
+# These are the docstring parts used for substitution in specific
+# distribution docstrings
+
+docheaders = {'methods': """\nMethods\n-------\n""",
+              'notes': """\nNotes\n-----\n""",
+              'examples': """\nExamples\n--------\n"""}
+
+_doc_rvs = """\
+rvs(%(shapes)s, loc=0, scale=1, size=1, random_state=None)
+    Random variates.
+"""
+_doc_pdf = """\
+pdf(x, %(shapes)s, loc=0, scale=1)
+    Probability density function.
+"""
+_doc_logpdf = """\
+logpdf(x, %(shapes)s, loc=0, scale=1)
+    Log of the probability density function.
+"""
+_doc_pmf = """\
+pmf(k, %(shapes)s, loc=0, scale=1)
+    Probability mass function.
+"""
+_doc_logpmf = """\
+logpmf(k, %(shapes)s, loc=0, scale=1)
+    Log of the probability mass function.
+"""
+_doc_cdf = """\
+cdf(x, %(shapes)s, loc=0, scale=1)
+    Cumulative distribution function.
+"""
+_doc_logcdf = """\
+logcdf(x, %(shapes)s, loc=0, scale=1)
+    Log of the cumulative distribution function.
+"""
+_doc_sf = """\
+sf(x, %(shapes)s, loc=0, scale=1)
+    Survival function  (also defined as ``1 - cdf``, but `sf` is sometimes more accurate).
+"""  # noqa: E501
+_doc_logsf = """\
+logsf(x, %(shapes)s, loc=0, scale=1)
+    Log of the survival function.
+"""
+_doc_ppf = """\
+ppf(q, %(shapes)s, loc=0, scale=1)
+    Percent point function (inverse of ``cdf`` --- percentiles).
+"""
+_doc_isf = """\
+isf(q, %(shapes)s, loc=0, scale=1)
+    Inverse survival function (inverse of ``sf``).
+"""
+_doc_moment = """\
+moment(order, %(shapes)s, loc=0, scale=1)
+    Non-central moment of the specified order.
+"""
+_doc_stats = """\
+stats(%(shapes)s, loc=0, scale=1, moments='mv')
+    Mean('m'), variance('v'), skew('s'), and/or kurtosis('k').
+"""
+_doc_entropy = """\
+entropy(%(shapes)s, loc=0, scale=1)
+    (Differential) entropy of the RV.
+"""
+_doc_fit = """\
+fit(data)
+    Parameter estimates for generic data.
+    See `scipy.stats.rv_continuous.fit <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.rv_continuous.fit.html#scipy.stats.rv_continuous.fit>`__ for detailed documentation of the
+    keyword arguments.
+"""  # noqa: E501
+_doc_expect = """\
+expect(func, args=(%(shapes_)s), loc=0, scale=1, lb=None, ub=None, conditional=False, **kwds)
+    Expected value of a function (of one argument) with respect to the distribution.
+"""  # noqa: E501
+_doc_expect_discrete = """\
+expect(func, args=(%(shapes_)s), loc=0, lb=None, ub=None, conditional=False)
+    Expected value of a function (of one argument) with respect to the distribution.
+"""
+_doc_median = """\
+median(%(shapes)s, loc=0, scale=1)
+    Median of the distribution.
+"""
+_doc_mean = """\
+mean(%(shapes)s, loc=0, scale=1)
+    Mean of the distribution.
+"""
+_doc_var = """\
+var(%(shapes)s, loc=0, scale=1)
+    Variance of the distribution.
+"""
+_doc_std = """\
+std(%(shapes)s, loc=0, scale=1)
+    Standard deviation of the distribution.
+"""
+_doc_interval = """\
+interval(confidence, %(shapes)s, loc=0, scale=1)
+    Confidence interval with equal areas around the median.
+"""
+_doc_allmethods = ''.join([docheaders['methods'], _doc_rvs, _doc_pdf,
+                           _doc_logpdf, _doc_cdf, _doc_logcdf, _doc_sf,
+                           _doc_logsf, _doc_ppf, _doc_isf, _doc_moment,
+                           _doc_stats, _doc_entropy, _doc_fit,
+                           _doc_expect, _doc_median,
+                           _doc_mean, _doc_var, _doc_std, _doc_interval])
+
+_doc_default_longsummary = """\
+As an instance of the `rv_continuous` class, `%(name)s` object inherits from it
+a collection of generic methods (see below for the full list),
+and completes them with details specific for this particular distribution.
+"""
+
+_doc_default_frozen_note = """
+Alternatively, the object may be called (as a function) to fix the shape,
+location, and scale parameters returning a "frozen" continuous RV object:
+
+rv = %(name)s(%(shapes)s, loc=0, scale=1)
+    - Frozen RV object with the same methods but holding the given shape,
+      location, and scale fixed.
+"""
+_doc_default_example = """\
+Examples
+--------
+>>> import numpy as np
+>>> from scipy.stats import %(name)s
+>>> import matplotlib.pyplot as plt
+>>> fig, ax = plt.subplots(1, 1)
+
+Calculate the first four moments:
+
+%(set_vals_stmt)s
+>>> mean, var, skew, kurt = %(name)s.stats(%(shapes)s, moments='mvsk')
+
+Display the probability density function (``pdf``):
+
+>>> x = np.linspace(%(name)s.ppf(0.01, %(shapes)s),
+...                 %(name)s.ppf(0.99, %(shapes)s), 100)
+>>> ax.plot(x, %(name)s.pdf(x, %(shapes)s),
+...        'r-', lw=5, alpha=0.6, label='%(name)s pdf')
+
+Alternatively, the distribution object can be called (as a function)
+to fix the shape, location and scale parameters. This returns a "frozen"
+RV object holding the given parameters fixed.
+
+Freeze the distribution and display the frozen ``pdf``:
+
+>>> rv = %(name)s(%(shapes)s)
+>>> ax.plot(x, rv.pdf(x), 'k-', lw=2, label='frozen pdf')
+
+Check accuracy of ``cdf`` and ``ppf``:
+
+>>> vals = %(name)s.ppf([0.001, 0.5, 0.999], %(shapes)s)
+>>> np.allclose([0.001, 0.5, 0.999], %(name)s.cdf(vals, %(shapes)s))
+True
+
+Generate random numbers:
+
+>>> r = %(name)s.rvs(%(shapes)s, size=1000)
+
+And compare the histogram:
+
+>>> ax.hist(r, density=True, bins='auto', histtype='stepfilled', alpha=0.2)
+>>> ax.set_xlim([x[0], x[-1]])
+>>> ax.legend(loc='best', frameon=False)
+>>> plt.show()
+
+"""
+
+_doc_default_locscale = """\
+The probability density above is defined in the "standardized" form. To shift
+and/or scale the distribution use the ``loc`` and ``scale`` parameters.
+Specifically, ``%(name)s.pdf(x, %(shapes)s, loc, scale)`` is identically
+equivalent to ``%(name)s.pdf(y, %(shapes)s) / scale`` with
+``y = (x - loc) / scale``. Note that shifting the location of a distribution
+does not make it a "noncentral" distribution; noncentral generalizations of
+some distributions are available in separate classes.
+"""
+
+_doc_default = ''.join([_doc_default_longsummary,
+                        _doc_allmethods,
+                        '\n',
+                        _doc_default_example])
+
+_doc_default_before_notes = ''.join([_doc_default_longsummary,
+                                     _doc_allmethods])
+
+docdict = {
+    'rvs': _doc_rvs,
+    'pdf': _doc_pdf,
+    'logpdf': _doc_logpdf,
+    'cdf': _doc_cdf,
+    'logcdf': _doc_logcdf,
+    'sf': _doc_sf,
+    'logsf': _doc_logsf,
+    'ppf': _doc_ppf,
+    'isf': _doc_isf,
+    'stats': _doc_stats,
+    'entropy': _doc_entropy,
+    'fit': _doc_fit,
+    'moment': _doc_moment,
+    'expect': _doc_expect,
+    'interval': _doc_interval,
+    'mean': _doc_mean,
+    'std': _doc_std,
+    'var': _doc_var,
+    'median': _doc_median,
+    'allmethods': _doc_allmethods,
+    'longsummary': _doc_default_longsummary,
+    'frozennote': _doc_default_frozen_note,
+    'example': _doc_default_example,
+    'default': _doc_default,
+    'before_notes': _doc_default_before_notes,
+    'after_notes': _doc_default_locscale
+}
+
+# Reuse common content between continuous and discrete docs, change some
+# minor bits.
+docdict_discrete = docdict.copy()
+
+docdict_discrete['pmf'] = _doc_pmf
+docdict_discrete['logpmf'] = _doc_logpmf
+docdict_discrete['expect'] = _doc_expect_discrete
+_doc_disc_methods = ['rvs', 'pmf', 'logpmf', 'cdf', 'logcdf', 'sf', 'logsf',
+                     'ppf', 'isf', 'stats', 'entropy', 'expect', 'median',
+                     'mean', 'var', 'std', 'interval']
+for obj in _doc_disc_methods:
+    docdict_discrete[obj] = docdict_discrete[obj].replace(', scale=1', '')
+
+_doc_disc_methods_err_varname = ['cdf', 'logcdf', 'sf', 'logsf']
+for obj in _doc_disc_methods_err_varname:
+    docdict_discrete[obj] = docdict_discrete[obj].replace('(x, ', '(k, ')
+
+docdict_discrete.pop('pdf')
+docdict_discrete.pop('logpdf')
+
+_doc_allmethods = ''.join([docdict_discrete[obj] for obj in _doc_disc_methods])
+docdict_discrete['allmethods'] = docheaders['methods'] + _doc_allmethods
+
+docdict_discrete['longsummary'] = _doc_default_longsummary.replace(
+    'rv_continuous', 'rv_discrete')
+
+_doc_default_frozen_note = """
+Alternatively, the object may be called (as a function) to fix the shape and
+location parameters returning a "frozen" discrete RV object:
+
+rv = %(name)s(%(shapes)s, loc=0)
+    - Frozen RV object with the same methods but holding the given shape and
+      location fixed.
+"""
+docdict_discrete['frozennote'] = _doc_default_frozen_note
+
+_doc_default_discrete_example = """\
+Examples
+--------
+>>> import numpy as np
+>>> from scipy.stats import %(name)s
+>>> import matplotlib.pyplot as plt
+>>> fig, ax = plt.subplots(1, 1)
+
+Calculate the first four moments:
+
+%(set_vals_stmt)s
+>>> mean, var, skew, kurt = %(name)s.stats(%(shapes)s, moments='mvsk')
+
+Display the probability mass function (``pmf``):
+
+>>> x = np.arange(%(name)s.ppf(0.01, %(shapes)s),
+...               %(name)s.ppf(0.99, %(shapes)s))
+>>> ax.plot(x, %(name)s.pmf(x, %(shapes)s), 'bo', ms=8, label='%(name)s pmf')
+>>> ax.vlines(x, 0, %(name)s.pmf(x, %(shapes)s), colors='b', lw=5, alpha=0.5)
+
+Alternatively, the distribution object can be called (as a function)
+to fix the shape and location. This returns a "frozen" RV object holding
+the given parameters fixed.
+
+Freeze the distribution and display the frozen ``pmf``:
+
+>>> rv = %(name)s(%(shapes)s)
+>>> ax.vlines(x, 0, rv.pmf(x), colors='k', linestyles='-', lw=1,
+...         label='frozen pmf')
+>>> ax.legend(loc='best', frameon=False)
+>>> plt.show()
+
+Check accuracy of ``cdf`` and ``ppf``:
+
+>>> prob = %(name)s.cdf(x, %(shapes)s)
+>>> np.allclose(x, %(name)s.ppf(prob, %(shapes)s))
+True
+
+Generate random numbers:
+
+>>> r = %(name)s.rvs(%(shapes)s, size=1000)
+"""
+
+
+_doc_default_discrete_locscale = """\
+The probability mass function above is defined in the "standardized" form.
+To shift distribution use the ``loc`` parameter.
+Specifically, ``%(name)s.pmf(k, %(shapes)s, loc)`` is identically
+equivalent to ``%(name)s.pmf(k - loc, %(shapes)s)``.
+"""
+
+docdict_discrete['example'] = _doc_default_discrete_example
+docdict_discrete['after_notes'] = _doc_default_discrete_locscale
+
+_doc_default_before_notes = ''.join([docdict_discrete['longsummary'],
+                                     docdict_discrete['allmethods']])
+docdict_discrete['before_notes'] = _doc_default_before_notes
+
+_doc_default_disc = ''.join([docdict_discrete['longsummary'],
+                             docdict_discrete['allmethods'],
+                             docdict_discrete['frozennote'],
+                             docdict_discrete['example']])
+docdict_discrete['default'] = _doc_default_disc
+
+# clean up all the separate docstring elements, we do not need them anymore
+for obj in [s for s in dir() if s.startswith('_doc_')]:
+    exec('del ' + obj)
+del obj
+
+
+def _moment(data, n, mu=None):
+    if mu is None:
+        mu = data.mean()
+    return ((data - mu)**n).mean()
+
+
+def _moment_from_stats(n, mu, mu2, g1, g2, moment_func, args):
+    if (n == 0):
+        return 1.0
+    elif (n == 1):
+        if mu is None:
+            val = moment_func(1, *args)
+        else:
+            val = mu
+    elif (n == 2):
+        if mu2 is None or mu is None:
+            val = moment_func(2, *args)
+        else:
+            val = mu2 + mu*mu
+    elif (n == 3):
+        if g1 is None or mu2 is None or mu is None:
+            val = moment_func(3, *args)
+        else:
+            mu3 = g1 * np.power(mu2, 1.5)  # 3rd central moment
+            val = mu3+3*mu*mu2+mu*mu*mu  # 3rd non-central moment
+    elif (n == 4):
+        if g1 is None or g2 is None or mu2 is None or mu is None:
+            val = moment_func(4, *args)
+        else:
+            mu4 = (g2+3.0)*(mu2**2.0)  # 4th central moment
+            mu3 = g1*np.power(mu2, 1.5)  # 3rd central moment
+            val = mu4+4*mu*mu3+6*mu*mu*mu2+mu*mu*mu*mu
+    else:
+        val = moment_func(n, *args)
+
+    return val
+
+
+def _skew(data):
+    """
+    skew is third central moment / variance**(1.5)
+    """
+    data = np.ravel(data)
+    mu = data.mean()
+    m2 = ((data - mu)**2).mean()
+    m3 = ((data - mu)**3).mean()
+    return m3 / np.power(m2, 1.5)
+
+
+def _kurtosis(data):
+    """kurtosis is fourth central moment / variance**2 - 3."""
+    data = np.ravel(data)
+    mu = data.mean()
+    m2 = ((data - mu)**2).mean()
+    m4 = ((data - mu)**4).mean()
+    return m4 / m2**2 - 3
+
+
+def _fit_determine_optimizer(optimizer):
+    if not callable(optimizer) and isinstance(optimizer, str):
+        if not optimizer.startswith('fmin_'):
+            optimizer = "fmin_"+optimizer
+        if optimizer == 'fmin_':
+            optimizer = 'fmin'
+        try:
+            optimizer = getattr(optimize, optimizer)
+        except AttributeError as e:
+            raise ValueError("%s is not a valid optimizer" % optimizer) from e
+    return optimizer
+
+
+def _sum_finite(x):
+    """
+    For a 1D array x, return a tuple containing the sum of the
+    finite values of x and the number of nonfinite values.
+
+    This is a utility function used when evaluating the negative
+    loglikelihood for a distribution and an array of samples.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.stats._distn_infrastructure import _sum_finite
+    >>> tot, nbad = _sum_finite(np.array([-2, -np.inf, 5, 1]))
+    >>> tot
+    4.0
+    >>> nbad
+    1
+    """
+    finite_x = np.isfinite(x)
+    bad_count = finite_x.size - np.count_nonzero(finite_x)
+    return np.sum(x[finite_x]), bad_count
+
+
+# Frozen RV class
+class rv_frozen:
+
+    def __init__(self, dist, *args, **kwds):
+        self.args = args
+        self.kwds = kwds
+
+        # create a new instance
+        self.dist = dist.__class__(**dist._updated_ctor_param())
+
+        shapes, _, _ = self.dist._parse_args(*args, **kwds)
+        self.a, self.b = self.dist._get_support(*shapes)
+
+    @property
+    def random_state(self):
+        return self.dist._random_state
+
+    @random_state.setter
+    def random_state(self, seed):
+        self.dist._random_state = check_random_state(seed)
+
+    def cdf(self, x):
+        return self.dist.cdf(x, *self.args, **self.kwds)
+
+    def logcdf(self, x):
+        return self.dist.logcdf(x, *self.args, **self.kwds)
+
+    def ppf(self, q):
+        return self.dist.ppf(q, *self.args, **self.kwds)
+
+    def isf(self, q):
+        return self.dist.isf(q, *self.args, **self.kwds)
+
+    def rvs(self, size=None, random_state=None):
+        kwds = self.kwds.copy()
+        kwds.update({'size': size, 'random_state': random_state})
+        return self.dist.rvs(*self.args, **kwds)
+
+    def sf(self, x):
+        return self.dist.sf(x, *self.args, **self.kwds)
+
+    def logsf(self, x):
+        return self.dist.logsf(x, *self.args, **self.kwds)
+
+    def stats(self, moments='mv'):
+        kwds = self.kwds.copy()
+        kwds.update({'moments': moments})
+        return self.dist.stats(*self.args, **kwds)
+
+    def median(self):
+        return self.dist.median(*self.args, **self.kwds)
+
+    def mean(self):
+        return self.dist.mean(*self.args, **self.kwds)
+
+    def var(self):
+        return self.dist.var(*self.args, **self.kwds)
+
+    def std(self):
+        return self.dist.std(*self.args, **self.kwds)
+
+    def moment(self, order=None):
+        return self.dist.moment(order, *self.args, **self.kwds)
+
+    def entropy(self):
+        return self.dist.entropy(*self.args, **self.kwds)
+
+    def interval(self, confidence=None):
+        return self.dist.interval(confidence, *self.args, **self.kwds)
+
+    def expect(self, func=None, lb=None, ub=None, conditional=False, **kwds):
+        # expect method only accepts shape parameters as positional args
+        # hence convert self.args, self.kwds, also loc/scale
+        # See the .expect method docstrings for the meaning of
+        # other parameters.
+        a, loc, scale = self.dist._parse_args(*self.args, **self.kwds)
+        if isinstance(self.dist, rv_discrete):
+            return self.dist.expect(func, a, loc, lb, ub, conditional, **kwds)
+        else:
+            return self.dist.expect(func, a, loc, scale, lb, ub,
+                                    conditional, **kwds)
+
+    def support(self):
+        return self.dist.support(*self.args, **self.kwds)
+
+
+class rv_discrete_frozen(rv_frozen):
+
+    def pmf(self, k):
+        return self.dist.pmf(k, *self.args, **self.kwds)
+
+    def logpmf(self, k):  # No error
+        return self.dist.logpmf(k, *self.args, **self.kwds)
+
+
+class rv_continuous_frozen(rv_frozen):
+
+    def pdf(self, x):
+        return self.dist.pdf(x, *self.args, **self.kwds)
+
+    def logpdf(self, x):
+        return self.dist.logpdf(x, *self.args, **self.kwds)
+
+
+def argsreduce(cond, *args):
+    """Clean arguments to:
+
+    1. Ensure all arguments are iterable (arrays of dimension at least one
+    2. If cond != True and size > 1, ravel(args[i]) where ravel(condition) is
+       True, in 1D.
+
+    Return list of processed arguments.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.stats._distn_infrastructure import argsreduce
+    >>> rng = np.random.default_rng()
+    >>> A = rng.random((4, 5))
+    >>> B = 2
+    >>> C = rng.random((1, 5))
+    >>> cond = np.ones(A.shape)
+    >>> [A1, B1, C1] = argsreduce(cond, A, B, C)
+    >>> A1.shape
+    (4, 5)
+    >>> B1.shape
+    (1,)
+    >>> C1.shape
+    (1, 5)
+    >>> cond[2,:] = 0
+    >>> [A1, B1, C1] = argsreduce(cond, A, B, C)
+    >>> A1.shape
+    (15,)
+    >>> B1.shape
+    (1,)
+    >>> C1.shape
+    (15,)
+
+    """
+    # some distributions assume arguments are iterable.
+    newargs = np.atleast_1d(*args)
+
+    # np.atleast_1d returns an array if only one argument, or a list of arrays
+    # if more than one argument.
+    if not isinstance(newargs, (list, tuple)):
+        newargs = (newargs,)
+
+    if np.all(cond):
+        # broadcast arrays with cond
+        *newargs, cond = np.broadcast_arrays(*newargs, cond)
+        return [arg.ravel() for arg in newargs]
+
+    s = cond.shape
+    # np.extract returns flattened arrays, which are not broadcastable together
+    # unless they are either the same size or size == 1.
+    return [(arg if np.size(arg) == 1
+            else np.extract(cond, np.broadcast_to(arg, s)))
+            for arg in newargs]
+
+
+parse_arg_template = """
+def _parse_args(self, %(shape_arg_str)s %(locscale_in)s):
+    return (%(shape_arg_str)s), %(locscale_out)s
+
+def _parse_args_rvs(self, %(shape_arg_str)s %(locscale_in)s, size=None):
+    return self._argcheck_rvs(%(shape_arg_str)s %(locscale_out)s, size=size)
+
+def _parse_args_stats(self, %(shape_arg_str)s %(locscale_in)s, moments='mv'):
+    return (%(shape_arg_str)s), %(locscale_out)s, moments
+"""
+
+
+class rv_generic:
+    """Class which encapsulates common functionality between rv_discrete
+    and rv_continuous.
+
+    """
+
+    def __init__(self, seed=None):
+        super().__init__()
+
+        # figure out if _stats signature has 'moments' keyword
+        sig = _getfullargspec(self._stats)
+        self._stats_has_moments = ((sig.varkw is not None) or

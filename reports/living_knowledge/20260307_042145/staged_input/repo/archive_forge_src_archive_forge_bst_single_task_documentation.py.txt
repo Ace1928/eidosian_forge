@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/bst_single_task_documentation.py
+KIND: code
+
+from parlai.core.build_data import download_models
+
+Pretrained polyencoder retrieval model on the BlendedSkillTalk dialogue task.

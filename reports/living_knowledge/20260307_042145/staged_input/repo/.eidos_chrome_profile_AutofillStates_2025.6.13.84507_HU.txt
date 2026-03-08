@@ -1,0 +1,28 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/HU
+KIND: config
+
+HU
+baranyabaranya megye(
+békésbékés countybékés megye 
+bácskiskunbácskiskun megye
+
+budapest2
+borsodabaújzemplénborsodabaújzemplén megye
+	csongrádcsongrád megye
+fejérfejér megye#
+győrmosonsoprongyormosonsopron 
+hajdúbiharhajdúbihar megye"
+hevesheves countyheves megye0
+jásznagykunszolnokjásznagykunszolnok megye,
+komáromesztergomkomáromesztergom megye!
+nógrád megyenógrád county
+pestpest county
+pest megye%
+somogysomogy countysomogy megye4
+szabolcsszatmárberegszabolcsszatmárbereg megye"
+tolnatolna countytolna megye
+vas
+vas county	vas megye
+	veszprémveszprém megye
+zalazala county
+zala megye

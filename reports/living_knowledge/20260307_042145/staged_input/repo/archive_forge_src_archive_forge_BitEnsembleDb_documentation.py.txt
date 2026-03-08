@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/BitEnsembleDb_documentation.py
+KIND: code
+
+from rdkit.DataStructs.BitEnsemble import BitEnsemble
+ scores the "signature" that is passed in and puts the
+  results in the db table

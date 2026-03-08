@@ -1,0 +1,213 @@
+SOURCE_PATH: archive_forge/manifests/legacy_import_2026-02-14_123808/imported_files.txt
+KIND: docs
+
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/.trashed-1707201690-legal_case_report_and_summary_1428_1428.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/.trashed-1707201691-lloyd_letter_draft_15286_15286.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/.trashed-1707201691-small-claims-guide_154349_154349.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/113 Module Full Chat.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/3. asdi 2.0 unrefined.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/33 Morris Street - Room Rates_11509.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/3310 exam notes(1).docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/390206 21 - role description v1 (1)_160390_160390.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/393902 21 role description.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/395390 21 role description_718764_718764.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/395793 21 - role description.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/395810 21 role description v1.0_239931_239931.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/6. fractured gpt modules.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/7. 2412231350 algorithm engine.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/8. refined reference builder_13180_13180_13180.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/9. refined decision tree.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/AEO optimized functions 1_14543_14543.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/AGP and ChatGPT Algorithm.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/AI Problem Solving Test Case.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/ASDI 4.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/ASDI Final Complete 2024.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/AceLabs Business Plan_175547.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Adaptive Generalised Processor (AGP) Algorithm.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Advanced Algorithm Engine.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Advanced Naming Schema and Systemisation Tool.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Advanced recursive enhancement.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Algorithm Engine Highly Defined and Explained_22346_22346_22346.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/AlgorithmEngineDependent Code Combiner.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Almond Agaricus - Agaricus Blazeii.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Analysis and Comparison of AGP and GPT-4.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/BioLog 3.0+ Base Algorithm Plain English.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/BioLog Custom GPT Construction.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Biol3330 Report 2_23020.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Cactus Wish List.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Chicken of the Woods - Laetiporus Cincinnatus.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/CodeCombiner.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Comparison of modularity vs monolithic algorithms.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Contextual awareness loop.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Emotional Translation Algorithm.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Emotive and Expressive ASDI Conversaton.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Equipment Function and Utility.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Evolving Discussion of Self Awareness.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/FWO Email Response_16595.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Final Algorithm for Custom GPT Builder Upgrade.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/GameTheory Derived Use Based Personas.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Implementation Plan.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Interrupt Protection Attempt.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/LHANDYSIDE Seek Resume(2).docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/LHANDYSIDE Seek Resume(2)_199510.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/LHANDYSIDE Seek Resume.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Module By Module Analysis and Pseudocode.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Parasol Mushroom - Macrolepiota Procera.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Potential Unlocking Prompt.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Potential generally intelligent AI builder.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Project Goals and Overview.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Prompt Guide for Generating Detailed Abstract Data Sets.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Prompt feedback in solar system image generation series for BioLog3.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Prompt for Improving ExpertUniversalTaskProcessor.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/SAPHDI Modules .docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Santa SAPHDI.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Sequence of Modules to Achieve near AGP proficiency.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/The Builder.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/The Concept of Colour_15804_15804.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Tiger Milk - Lignocus Rhinocerus.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/TraderInConstructionAndInstructions.odt
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Tristan Farm Sign Problem.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Tristan Final Farm Sign Problem Solution Refinement.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/User Instruction Design Requirements.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/advanced consciousness generator.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/biolog gpt 2.0 algorithm.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/biolog style feature set.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/business-plan-7170321723517042688.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/complex solution to gender identity.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/compliance-and-enforcement-policy.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/contextually aware dynamic personas.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/coordinsted saphdi most updated needs meeging.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/cqr394895_21p role description.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/cqr396177_21t role description_212532_212532.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/earlier ASDI persona.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/extracted raw data.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/fair-work-information-statement_88258_88258.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/future improvement directions.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/heavily improved SAPHDI.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/hospitality-industry-general-award-ma000009-pay-guide_278897_278897.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/initialosation process asdi 6.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/launch_expressive_asdi-1_23878_23878.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/launch_expressive_asdi.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/legal assistance summary_16845_16845.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/lloyd handyside ranger application cover letter pre edit.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/lloyd_handyside_ranger_application_cover_letter_17426_17426.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/marielle finney letter_13594_13594.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/modelled future history.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/multi persona system_12754_12754_12754.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/non profit AI document.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/persona updater.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/placeholder.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/reverse engineer module.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/road-transport-and-distribution-award-ma000038-pay-guide (1)_173125_173125.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/road-transport-and-distribution-award-ma000038-pay-guide_149614_149614.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/saphdi personality detailed_13080_13080_13080.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/self awareness module.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/serene_clearing_dawn_16537_16537.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/the_saphdi_prompt_15715_15715.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/upwork profile.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/user interaction loop.docx
+/home/lloyd/eidosian_forge/projects/legacy/3dstuff/shaders/compute_shader.glsl
+/home/lloyd/eidosian_forge/projects/legacy/3dstuff/shaders/fragment_shader.glsl
+/home/lloyd/eidosian_forge/projects/legacy/3dstuff/shaders/geometry_shader.glsl
+/home/lloyd/eidosian_forge/projects/legacy/3dstuff/shaders/tcs_shader.glsl
+/home/lloyd/eidosian_forge/projects/legacy/3dstuff/shaders/tes_shader.glsl
+/home/lloyd/eidosian_forge/projects/legacy/3dstuff/shaders/vertex_shader.glsl
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/1-genesis/1a-turing-test/1-hello-turing/1-what-is-turing/whatisturing.md
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/1-genesis/1a-turing-test/1-hello-turing/2-why-turing-test-matters.py/whyturingmatters.md
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/1-genesis/1a-turing-test/1-hello-turing/HELLOTURING-README.md/README.MD
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/1-genesis/1a-turing-test/2-turing-test-basics/TURINGTESTBASICS-README.md/README.MD
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/1-genesis/1a-turing-test/3-passing-turing-test/PASSINGTURINGTEST-README.md/README.MD
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/1-genesis/1a-turing-test/4-implications-of-turing-test/IMPLICATIONSTURINGTEST-README.md/README.MD
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/1-genesis/1a-turing-test/5-hands-on-turing-test/HANDSONTURINGTEST-README.md/README.MD
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/1-genesis/1a-turing-test/6-future-of-turing-test/FUTURETURING-README.md/README.MD
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/1-genesis/1a-turing-test/7-turing-test-mastery/TURINGTESTMASTERY-README.md/README.MD
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/1-genesis/1a-turing-test/TURING-README.MD
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/1-genesis/1b-snarc-nn1/SNARC-README.MD
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/1-genesis/1c-dartmouth-con/DARTMOUTH-README.MD
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/1-genesis/1d-general-problem-solver/GENERALSOLVER-README.MD
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/1-genesis/1e-eliza/ELIZA-README.MD
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/1-genesis/1f-shakey-robot/SHAKEY-README.MD
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/1-genesis/GENESIS-README.MD
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/2-evolution/EVOLUTION-README.MD
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/3-advancement/ADVANCEMENT-README.MD
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/4-deep-learning/DEEPLEARNING-README.MD
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/5-modern-transformer/MODERNTRANSFORMER-README.MD
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/6-beyond-transformer/BEYONDTRANSFORMER-README.MD
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/README.MD
+/home/lloyd/eidosian_forge/projects/legacy/evie/.__async_detailed.lock
+/home/lloyd/eidosian_forge/projects/legacy/evie/.cursorignore
+/home/lloyd/eidosian_forge/projects/legacy/evie/0,23
+/home/lloyd/eidosian_forge/projects/legacy/evie/0.23
+/home/lloyd/eidosian_forge/projects/legacy/evie/=
+/home/lloyd/eidosian_forge/projects/legacy/evie/ChatRWKV/.github/FUNDING.yml
+/home/lloyd/eidosian_forge/projects/legacy/evie/ChatRWKV/.gitignore
+/home/lloyd/eidosian_forge/projects/legacy/evie/ChatRWKV/LICENSE
+/home/lloyd/eidosian_forge/projects/legacy/evie/ChatRWKV/README.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/ChatRWKV/misc/lambada_test.jsonl
+/home/lloyd/eidosian_forge/projects/legacy/evie/ChatRWKV/music/sample-RWKV-4-MIDI-120M-v1-20230714-ctx4096.mid
+/home/lloyd/eidosian_forge/projects/legacy/evie/ChatRWKV/music/sample2-RWKV-4-MIDI-120M-v1-20230714-ctx4096.mid
+/home/lloyd/eidosian_forge/projects/legacy/evie/ChatRWKV/music/sample3-RWKV-4-MIDI-120M-v1-20230714-ctx4096.mid
+/home/lloyd/eidosian_forge/projects/legacy/evie/ChatRWKV/rwkv_pip_package/LICENSE
+/home/lloyd/eidosian_forge/projects/legacy/evie/ChatRWKV/rwkv_pip_package/MANIFEST.in
+/home/lloyd/eidosian_forge/projects/legacy/evie/ChatRWKV/rwkv_pip_package/README.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/ChatRWKV/rwkv_pip_package/pyproject.toml
+/home/lloyd/eidosian_forge/projects/legacy/evie/ChatRWKV/rwkv_pip_package/src/rwkv/cuda/gemm_fp16_cublas.cpp
+/home/lloyd/eidosian_forge/projects/legacy/evie/ChatRWKV/rwkv_pip_package/src/rwkv/cuda/operators.cu
+/home/lloyd/eidosian_forge/projects/legacy/evie/ChatRWKV/rwkv_pip_package/src/rwkv/cuda/rwkv5.cu
+/home/lloyd/eidosian_forge/projects/legacy/evie/ChatRWKV/rwkv_pip_package/src/rwkv/cuda/rwkv5_op.cpp
+/home/lloyd/eidosian_forge/projects/legacy/evie/ChatRWKV/rwkv_pip_package/src/rwkv/cuda/rwkv6.cu
+/home/lloyd/eidosian_forge/projects/legacy/evie/ChatRWKV/rwkv_pip_package/src/rwkv/cuda/rwkv6_op.cpp
+/home/lloyd/eidosian_forge/projects/legacy/evie/ChatRWKV/rwkv_pip_package/src/rwkv/cuda/wrapper.cpp
+/home/lloyd/eidosian_forge/projects/legacy/evie/EVIE.code-workspace
+/home/lloyd/eidosian_forge/projects/legacy/evie/Indellama3/InstructionsandURLS.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/Indellama3/base_models/rwkv/cuda/gemm_fp16_cublas.cpp
+/home/lloyd/eidosian_forge/projects/legacy/evie/Indellama3/base_models/rwkv/cuda/operators.cu
+/home/lloyd/eidosian_forge/projects/legacy/evie/Indellama3/base_models/rwkv/cuda/rwkv5.cu
+/home/lloyd/eidosian_forge/projects/legacy/evie/Indellama3/base_models/rwkv/cuda/rwkv5_op.cpp
+/home/lloyd/eidosian_forge/projects/legacy/evie/Indellama3/base_models/rwkv/cuda/rwkv6.cu
+/home/lloyd/eidosian_forge/projects/legacy/evie/Indellama3/base_models/rwkv/cuda/rwkv6_op.cpp
+/home/lloyd/eidosian_forge/projects/legacy/evie/Indellama3/base_models/rwkv/cuda/wrapper.cpp
+/home/lloyd/eidosian_forge/projects/legacy/evie/default_encryption.key
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/glossary.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/architecture/component_architecture.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/architecture/data_flow_diagrams.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/architecture/deployment_architecture.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/architecture/module_interactions.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/architecture/overview.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/architecture/scalability_architecture.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/architecture/system_design.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/coding_standards/code_formatting.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/coding_standards/code_organization.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/coding_standards/code_review_checklist.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/coding_standards/commenting_guidelines.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/coding_standards/error_handling_conventions.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/coding_standards/naming_conventions.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/coding_standards/testing_standards.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/design_principles/extensibility.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/design_principles/flexibility.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/design_principles/maintainability.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/design_principles/modularity.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/design_principles/performance.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/design_principles/scalability.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/design_principles/security.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/error_handling/error_classification.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/error_handling/error_logging.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/error_handling/error_monitoring.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/error_handling/error_recovery.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/error_handling/error_testing.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/error_handling/exception_handling.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/extensibility_guidelines/backward_compatibility.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/extensibility_guidelines/extension_development.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/extensibility_guidelines/extension_packaging.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/extensibility_guidelines/extension_points.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/extensibility_guidelines/extension_testing.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/extensibility_guidelines/plugin_architecture.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/logging_standards/log_aggregation.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/logging_standards/log_configuration.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/logging_standards/log_formats.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/logging_standards/log_levels.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/logging_standards/logging_best_practices.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/logging_standards/structured_logging.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/module_interactions/data_flow_diagrams.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/module_interactions/interface_specifications.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/module_interactions/message_passing.

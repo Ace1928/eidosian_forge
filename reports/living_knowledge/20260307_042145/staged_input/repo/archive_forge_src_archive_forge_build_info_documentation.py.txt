@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/build_info_documentation.py
+KIND: code
+
+import collections
+Auto-generated module providing information about the build.

@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/__init__.py
+KIND: code
+
+from .core import *

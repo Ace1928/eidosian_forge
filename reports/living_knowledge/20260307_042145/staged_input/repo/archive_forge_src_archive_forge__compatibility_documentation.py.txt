@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_compatibility_documentation.py
+KIND: code
+
+import errno
+import sys
+import pickle
+
+This module is here to ensure compatibility of Windows/Linux/MacOS and
+different Python versions.

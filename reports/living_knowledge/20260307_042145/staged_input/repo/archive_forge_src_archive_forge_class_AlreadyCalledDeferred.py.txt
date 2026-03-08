@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AlreadyCalledDeferred.py
+KIND: code
+
+from . import version
+import collections
+from functools import wraps
+import sys
+import warnings
+class AlreadyCalledDeferred(Exception):
+    """The Deferred is already running a callback."""

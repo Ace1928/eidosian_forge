@@ -1,0 +1,10 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/KW
+KIND: config
+
+KWD
+الأحمديal ahmadi governorateمحافظة الأحمديP
+الفروانيةal farwaniyah governorateمحافظة الفروانية
+حوليhawalli governorateC
+الجهراءal jahra governorateمحافظة الجهراءB
+العاصمةal asimah governateمحافظة العاصمة]
+مبارك الكبيرmubarak alkabeer governorate$محافظة مبارك الكبير

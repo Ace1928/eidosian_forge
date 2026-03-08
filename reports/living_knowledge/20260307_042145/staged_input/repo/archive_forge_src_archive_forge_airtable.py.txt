@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/airtable.py
+KIND: code
+
+from langchain_community.document_loaders.airtable import AirtableLoader
+
+__all__ = ["AirtableLoader"]

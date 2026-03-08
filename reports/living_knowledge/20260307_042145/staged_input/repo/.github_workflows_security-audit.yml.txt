@@ -1,0 +1,458 @@
+SOURCE_PATH: .github/workflows/security-audit.yml
+KIND: config
+
+name: Security Dependency Audit
+
+on:
+  schedule:
+    - cron: "29 3 * * *"
+  workflow_dispatch:
+    inputs:
+      state:
+        description: "Dependabot alert state filter"
+        required: false
+        default: "open"
+        type: choice
+        options:
+          - open
+          - fixed
+          - dismissed
+          - auto_dismissed
+      fail_on_critical:
+        description: "Fail workflow when open critical alerts exist"
+        required: false
+        default: false
+        type: boolean
+      fail_on_high:
+        description: "Fail workflow when open high alerts exist"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  security-events: read
+  issues: write
+
+concurrency:
+  group: security-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dependabot-audit:
+    name: Dependabot Alert Inventory
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Collect Dependabot Summary
+        id: collect
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_STATE: ${{ github.event.inputs.state }}
+        run: |
+          set -eu
+          mkdir -p reports/security
+          STATE="${INPUT_STATE:-open}"
+          REPORT_PATH="reports/security/dependabot_alerts_${STATE}.json"
+          RAW_LOG="reports/security/dependabot_alerts_${STATE}.log"
+
+          if python scripts/dependabot_alert_inventory.py \
+            --repo "${{ github.repository }}" \
+            --state "$STATE" \
+            --json-out "$REPORT_PATH" > "$RAW_LOG" 2>&1; then
+            echo "report_path=$REPORT_PATH" >> "$GITHUB_OUTPUT"
+            echo "state=$STATE" >> "$GITHUB_OUTPUT"
+            echo "::notice::Dependabot summary generated at $REPORT_PATH"
+          else
+            echo "::warning::Dependabot summary failed; writing fallback report"
+            python - <<'PY'
+          import json
+          from pathlib import Path
+
+          out = Path("reports/security/dependabot_alerts_error.json")
+          out.write_text(
+              json.dumps(
+                  {
+                      "error": "dependabot_alert_inventory_failed",
+                      "hint": "Ensure workflow token has security-events:read or use a PAT with security_events scope.",
+                  },
+                  indent=2,
+              ),
+              encoding="utf-8",
+          )
+          PY
+            echo "report_path=reports/security/dependabot_alerts_error.json" >> "$GITHUB_OUTPUT"
+            echo "state=$STATE" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build Remediation Batch Plan
+        id: remediation_plan
+        env:
+          REPORT_PATH: ${{ steps.collect.outputs.report_path }}
+        run: |
+          set -eu
+          PLAN_JSON="reports/security/dependabot_remediation_plan.json"
+          PLAN_MD="reports/security/dependabot_remediation_plan.md"
+          python scripts/dependabot_remediation_plan.py \
+            --summary-json "$REPORT_PATH" \
+            --repo "${{ github.repository }}" \
+            --severity "critical,high" \
+            --max-batches 30 \
+            --json-out "$PLAN_JSON" \
+            --md-out "$PLAN_MD"
+          echo "plan_json=$PLAN_JSON" >> "$GITHUB_OUTPUT"
+          echo "plan_md=$PLAN_MD" >> "$GITHUB_OUTPUT"
+
+      - name: Collect Dependabot Raw Alerts
+        id: collect_raw
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATE: ${{ steps.collect.outputs.state }}
+        run: |
+          set -eu
+          mkdir -p reports/security
+          RAW_PATH="reports/security/dependabot_alerts_${STATE}_raw.json"
+          RAW_LOG="reports/security/dependabot_alerts_${STATE}_raw.log"
+          if gh api -X GET "repos/${{ github.repository }}/dependabot/alerts" -F "state=${STATE}" --paginate > "$RAW_PATH" 2> "$RAW_LOG"; then
+            echo "raw_path=$RAW_PATH" >> "$GITHUB_OUTPUT"
+            echo "::notice::Dependabot raw alert export generated at $RAW_PATH"
+          else
+            echo "::warning::Dependabot raw export failed; writing empty fallback payload"
+            printf '[]\n' > "$RAW_PATH"
+            echo "raw_path=$RAW_PATH" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build Requirement Auto-Patch Dry-Run
+        id: autopatch
+        env:
+          RAW_PATH: ${{ steps.collect_raw.outputs.raw_path }}
+          STATE: ${{ steps.collect.outputs.state }}
+        run: |
+          set -eu
+          PATCH_JSON="reports/security/dependabot_autopatch_${STATE}.json"
+          PATCH_MD="reports/security/dependabot_autopatch_${STATE}.md"
+          python scripts/dependabot_autopatch_requirements.py \
+            --alerts-json "$RAW_PATH" \
+            --repo-root . \
+            --severity "critical,high" \
+            --state "$STATE" \
+            --ecosystem "pip" \
+            --json-out "$PATCH_JSON" \
+            --md-out "$PATCH_MD"
+          echo "autopatch_json=$PATCH_JSON" >> "$GITHUB_OUTPUT"
+          echo "autopatch_md=$PATCH_MD" >> "$GITHUB_OUTPUT"
+
+      - name: Sync Remediation Batch Issues
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PLAN_JSON: ${{ steps.remediation_plan.outputs.plan_json }}
+        run: |
+          set -eu
+          python scripts/sync_security_remediation_issues.py \
+            --repo "${{ github.repository }}" \
+            --plan-json "$PLAN_JSON" \
+            --token-env GITHUB_TOKEN \
+            --json-out reports/security/dependabot_remediation_sync.json
+
+      - name: Publish Summary
+        env:
+          REPORT_PATH: ${{ steps.collect.outputs.report_path }}
+          STATE: ${{ steps.collect.outputs.state }}
+          PLAN_JSON: ${{ steps.remediation_plan.outputs.plan_json }}
+          AUTOPATCH_JSON: ${{ steps.autopatch.outputs.autopatch_json }}
+        run: |
+          set -eu
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path(os.environ.get("REPORT_PATH", ""))
+          state = os.environ.get("STATE", "open")
+          summary_lines = ["## Security Dependency Audit", "", f"- state: `{state}`", f"- report: `{path}`"]
+
+          if path.exists():
+              data = json.loads(path.read_text(encoding="utf-8"))
+              if "error" in data:
+                  summary_lines.extend(
+                      [
+                          "- status: `warning`",
+                          f"- error: `{data.get('error')}`",
+                          f"- hint: `{data.get('hint')}`",
+                      ]
+                  )
+              else:
+                  totals = data.get("totals") or {}
+                  open_by_severity = data.get("open_by_severity") or {}
+                  summary_lines.extend(
+                      [
+                          f"- alerts: `{totals.get('alerts', 0)}`",
+                          f"- open: `{totals.get('open', 0)}`",
+                          f"- fixed: `{totals.get('fixed', 0)}`",
+                          f"- open_critical: `{open_by_severity.get('critical', 0)}`",
+                          f"- open_high: `{open_by_severity.get('high', 0)}`",
+                      ]
+                  )
+                  plan_path = Path(os.environ.get("PLAN_JSON", ""))
+                  if plan_path.exists():
+                      plan = json.loads(plan_path.read_text(encoding="utf-8"))
+                      summary_lines.extend(
+                          [
+                              f"- remediation_batch_count: `{plan.get('batch_count', 0)}`",
+                              f"- remediation_alerts_batched: `{plan.get('total_batched_alerts', 0)}`",
+                          ]
+                      )
+                  autopatch_path = Path(os.environ.get("AUTOPATCH_JSON", ""))
+                  if autopatch_path.exists():
+                      autopatch = json.loads(autopatch_path.read_text(encoding="utf-8"))
+                      autopatch_totals = autopatch.get("totals") or {}
+                      summary_lines.extend(
+                          [
+                              f"- autopatch_manifest_count: `{autopatch_totals.get('manifest_count', 0)}`",
+                              f"- autopatch_changed_manifest_count: `{autopatch_totals.get('changed_manifest_count', 0)}`",
+                              f"- autopatch_updates_needed: `{autopatch_totals.get('updated_requirements_count', 0)}`",
+                              f"- autopatch_unresolved_missing: `{autopatch_totals.get('unresolved_missing_count', 0)}`",
+                              f"- autopatch_unresolved_unpinned: `{autopatch_totals.get('unresolved_unpinned_count', 0)}`",
+                          ]
+                      )
+          else:
+              summary_lines.append("- status: `error` (report missing)")
+
+          summary_path = Path(os.environ.get("GITHUB_STEP_SUMMARY", ""))
+          if summary_path:
+              with summary_path.open("a", encoding="utf-8") as fh:
+                  fh.write("\n".join(summary_lines) + "\n")
+          PY
+
+      - name: Upload security audit artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-audit-${{ github.run_number }}
+          if-no-files-found: warn
+          path: |
+            reports/security/*.json
+            reports/security/*.md
+            reports/security/*.log
+
+      - name: Enforce Critical/High Gates
+        env:
+          REPORT_PATH: ${{ steps.collect.outputs.report_path }}
+          FAIL_ON_CRITICAL: ${{ github.event.inputs.fail_on_critical }}
+          FAIL_ON_HIGH: ${{ github.event.inputs.fail_on_high }}
+        run: |
+          set -eu
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path(os.environ.get("REPORT_PATH", ""))
+          if not path.exists():
+              raise SystemExit(0)
+          data = json.loads(path.read_text(encoding="utf-8"))
+          if "error" in data:
+              raise SystemExit(0)
+          open_by_severity = data.get("open_by_severity") or {}
+          critical = int(open_by_severity.get("critical", 0))
+          high = int(open_by_severity.get("high", 0))
+          fail_on_critical = str(os.environ.get("FAIL_ON_CRITICAL", "")).lower() == "true"
+          fail_on_high = str(os.environ.get("FAIL_ON_HIGH", "")).lower() == "true"
+          if fail_on_critical and critical > 0:
+              raise SystemExit(f"Open critical Dependabot alerts: {critical}")
+          if fail_on_high and high > 0:
+              raise SystemExit(f"Open high Dependabot alerts: {high}")
+          PY
+
+      - name: Create or Update Security Delta Issue
+        uses: actions/github-script@v7
+        env:
+          REPORT_PATH: ${{ steps.collect.outputs.report_path }}
+          ISSUE_TITLE: Security Dependency Delta Report
+        with:
+          script: |
+            const fs = require("fs");
+
+            const reportPath = process.env.REPORT_PATH || "";
+            if (!reportPath || !fs.existsSync(reportPath)) {
+              core.warning(`security report missing at '${reportPath}'`);
+              return;
+            }
+            let payload = {};
+            try {
+              payload = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+            } catch (err) {
+              core.warning(`failed to parse report JSON: ${err}`);
+              return;
+            }
+            if (payload.error) {
+              core.warning(`security report contains error: ${payload.error}`);
+              return;
+            }
+
+            const totals = payload.totals || {};
+            const openBySeverity = payload.open_by_severity || {};
+            const current = {
+              open: Number(totals.open || 0),
+              critical: Number(openBySeverity.critical || 0),
+              high: Number(openBySeverity.high || 0),
+              moderate: Number(openBySeverity.moderate || 0),
+              low: Number(openBySeverity.low || 0),
+            };
+
+            const marker = "<!-- eidos-security-audit -->";
+            const baselinePrefix = "<!-- eidos-security-baseline:";
+            const baselineSuffix = "-->";
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const title = process.env.ISSUE_TITLE || "Security Dependency Delta Report";
+
+            function parseBaseline(body) {
+              const empty = { open: 0, critical: 0, high: 0, moderate: 0, low: 0 };
+              const text = String(body || "");
+              const start = text.indexOf(baselinePrefix);
+              if (start < 0) return empty;
+              const jsonStart = start + baselinePrefix.length;
+              const end = text.indexOf(baselineSuffix, jsonStart);
+              if (end < 0) return empty;
+              try {
+                const parsed = JSON.parse(text.slice(jsonStart, end));
+                return {
+                  open: Number(parsed.open || 0),
+                  critical: Number(parsed.critical || 0),
+                  high: Number(parsed.high || 0),
+                  moderate: Number(parsed.moderate || 0),
+                  low: Number(parsed.low || 0),
+                };
+              } catch (err) {
+                core.warning(`failed to parse prior baseline marker: ${err}`);
+                return empty;
+              }
+            }
+
+            function renderBody(previous, now, delta) {
+              const ts = new Date().toISOString();
+              return [
+                marker,
+                `${baselinePrefix}${JSON.stringify(now)}${baselineSuffix}`,
+                `# Security Dependency Delta Report`,
+                ``,
+                `Automated update from \`security-audit.yml\` at \`${ts}\`.`,
+                ``,
+                `## Current Open Alerts`,
+                `- critical: \`${now.critical}\``,
+                `- high: \`${now.high}\``,
+                `- moderate: \`${now.moderate}\``,
+                `- low: \`${now.low}\``,
+                `- total_open: \`${now.open}\``,
+                ``,
+                `## Delta Since Previous Baseline`,
+                `- critical_delta: \`${delta.critical}\``,
+                `- high_delta: \`${delta.high}\``,
+                `- moderate_delta: \`${delta.moderate}\``,
+                `- low_delta: \`${delta.low}\``,
+                `- open_total_delta: \`${delta.open}\``,
+                ``,
+                `## Previous Baseline`,
+                `- critical: \`${previous.critical}\``,
+                `- high: \`${previous.high}\``,
+                `- moderate: \`${previous.moderate}\``,
+                `- low: \`${previous.low}\``,
+                `- total_open: \`${previous.open}\``,
+              ].join("\n");
+            }
+
+            const openIssues = await github.paginate(github.rest.issues.listForRepo, {
+              owner,
+              repo,
+              state: "open",
+              labels: "security-audit",
+              per_page: 100,
+            });
+            let issue = openIssues.find((row) => row.title === title);
+            if (!issue) {
+              issue = openIssues.find((row) => String(row.body || "").includes(marker));
+            }
+
+            const baseline = parseBaseline(issue ? issue.body : "");
+            const delta = {
+              open: current.open - baseline.open,
+              critical: current.critical - baseline.critical,
+              high: current.high - baseline.high,
+              moderate: current.moderate - baseline.moderate,
+              low: current.low - baseline.low,
+            };
+            const riskActive = current.critical > 0 || current.high > 0;
+            const regression = delta.critical > 0 || delta.high > 0;
+            const body = renderBody(baseline, current, delta);
+
+            if (issue) {
+              if (String(issue.body || "") !== body) {
+                await github.rest.issues.update({
+                  owner,
+                  repo,
+                  issue_number: issue.number,
+                  body,
+                });
+              }
+              if (!riskActive && !regression) {
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: issue.number,
+                  body: "Security audit reports no active high/critical dependency alerts. Closing issue.",
+                });
+                await github.rest.issues.update({
+                  owner,
+                  repo,
+                  issue_number: issue.number,
+                  state: "closed",
+                });
+                core.notice(`closed issue #${issue.number} because security risk is clear`);
+              } else {
+                core.notice(`updated issue #${issue.number} for current dependency risk baseline`);
+              }
+              return;
+            }
+
+            if (!riskActive && !regression) {
+              core.notice("no open high/critical risk and no regression; no issue created");
+              return;
+            }
+
+            try {
+              const created = await github.rest.issues.create({
+                owner,
+                repo,
+                title,
+                body,
+                labels: ["security-audit", "dependencies"],
+              });
+              core.notice(`created issue #${created.data.number} for dependency security delta tracking`);
+            } catch (err) {
+              const created = await github.rest.issues.create({
+                owner,
+                repo,
+                title,
+                body,
+              });
+              core.notice(`created unlabeled issue #${created.data.number} after label failure: ${err}`);
+            }
+
+      - name: Upload Security Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-dependabot-audit-${{ github.run_number }}
+          if-no-files-found: warn
+          path: |
+            reports/security/*.json
+            reports/security/*.md
+            reports/security/*.log

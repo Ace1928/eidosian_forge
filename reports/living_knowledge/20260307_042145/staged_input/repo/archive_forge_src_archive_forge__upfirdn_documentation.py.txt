@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_upfirdn_documentation.py
+KIND: code
+
+from math import ceil
+import cupy
+Apply the prepared filter to the specified axis of a nD signal x

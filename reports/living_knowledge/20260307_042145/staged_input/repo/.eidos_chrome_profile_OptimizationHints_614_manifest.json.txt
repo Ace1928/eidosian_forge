@@ -1,0 +1,9 @@
+SOURCE_PATH: .eidos_chrome_profile/OptimizationHints/614/manifest.json
+KIND: config
+
+{
+  "manifest_version": 2,
+  "name": "Optimization Hints",
+  "version": "614",
+  "ruleset_format": "1.0.0"
+}

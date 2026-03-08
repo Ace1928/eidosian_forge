@@ -1,0 +1,14 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AliasStatement.py
+KIND: code
+
+import enum
+from typing import Optional, List, Union, Iterable, Tuple
+class AliasStatement(ASTNode):
+    """
+    aliasStatement
+        : 'let' Identifier EQUALS indexIdentifier SEMICOLON
+    """
+
+    def __init__(self, identifier: Identifier, value: Expression):
+        self.identifier = identifier
+        self.value = value

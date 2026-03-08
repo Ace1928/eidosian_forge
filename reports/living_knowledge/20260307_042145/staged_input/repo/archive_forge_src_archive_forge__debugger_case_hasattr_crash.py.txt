@@ -1,0 +1,13 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_debugger_case_hasattr_crash.py
+KIND: code
+
+class MyClass(object):
+
+    def __getattribute__(self, attr):
+        raise RuntimeError()
+
+
+obj = MyClass()
+
+if __name__ == '__main__':
+    print('TEST SUCEEDED')  # break here

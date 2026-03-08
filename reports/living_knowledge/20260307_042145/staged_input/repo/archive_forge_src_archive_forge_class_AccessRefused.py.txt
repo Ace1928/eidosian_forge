@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AccessRefused.py
+KIND: code
+
+from struct import pack, unpack
+class AccessRefused(IrrecoverableChannelError):
+    """AMQP Access Refused Error."""
+    code = 403

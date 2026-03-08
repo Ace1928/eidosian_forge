@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_tzpath_documentation.py
+KIND: code
+
+import os
+import sysconfig
+Warning raised if an invalid path is specified in PYTHONTZPATH.

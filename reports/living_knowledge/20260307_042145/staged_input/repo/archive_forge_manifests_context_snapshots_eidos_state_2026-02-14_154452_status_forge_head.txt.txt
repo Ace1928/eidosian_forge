@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/manifests/context_snapshots/eidos_state_2026-02-14_154452/status/forge_head.txt
+KIND: docs
+
+6950c8ed1e988a5d9cb102b43581c251b29050c6

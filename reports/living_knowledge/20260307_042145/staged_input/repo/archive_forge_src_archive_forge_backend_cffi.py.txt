@@ -1,0 +1,644 @@
+SOURCE_PATH: archive_forge/src/archive_forge/backend_cffi.py
+KIND: code
+
+# Copyright (c) 2016-present, Gregory Szorc
+# All rights reserved.
+#
+# This software may be modified and distributed under the terms
+# of the BSD license. See the LICENSE file for details.
+
+"""Python interface to the Zstandard (zstd) compression library."""
+
+from __future__ import absolute_import, unicode_literals
+
+# This should match what the C extension exports.
+__all__ = [
+    "BufferSegment",
+    "BufferSegments",
+    "BufferWithSegments",
+    "BufferWithSegmentsCollection",
+    "ZstdCompressionChunker",
+    "ZstdCompressionDict",
+    "ZstdCompressionObj",
+    "ZstdCompressionParameters",
+    "ZstdCompressionReader",
+    "ZstdCompressionWriter",
+    "ZstdCompressor",
+    "ZstdDecompressionObj",
+    "ZstdDecompressionReader",
+    "ZstdDecompressionWriter",
+    "ZstdDecompressor",
+    "ZstdError",
+    "FrameParameters",
+    "backend_features",
+    "estimate_decompression_context_size",
+    "frame_content_size",
+    "frame_header_size",
+    "get_frame_parameters",
+    "train_dictionary",
+    # Constants.
+    "FLUSH_BLOCK",
+    "FLUSH_FRAME",
+    "COMPRESSOBJ_FLUSH_FINISH",
+    "COMPRESSOBJ_FLUSH_BLOCK",
+    "ZSTD_VERSION",
+    "FRAME_HEADER",
+    "CONTENTSIZE_UNKNOWN",
+    "CONTENTSIZE_ERROR",
+    "MAX_COMPRESSION_LEVEL",
+    "COMPRESSION_RECOMMENDED_INPUT_SIZE",
+    "COMPRESSION_RECOMMENDED_OUTPUT_SIZE",
+    "DECOMPRESSION_RECOMMENDED_INPUT_SIZE",
+    "DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE",
+    "MAGIC_NUMBER",
+    "BLOCKSIZELOG_MAX",
+    "BLOCKSIZE_MAX",
+    "WINDOWLOG_MIN",
+    "WINDOWLOG_MAX",
+    "CHAINLOG_MIN",
+    "CHAINLOG_MAX",
+    "HASHLOG_MIN",
+    "HASHLOG_MAX",
+    "MINMATCH_MIN",
+    "MINMATCH_MAX",
+    "SEARCHLOG_MIN",
+    "SEARCHLOG_MAX",
+    "SEARCHLENGTH_MIN",
+    "SEARCHLENGTH_MAX",
+    "TARGETLENGTH_MIN",
+    "TARGETLENGTH_MAX",
+    "LDM_MINMATCH_MIN",
+    "LDM_MINMATCH_MAX",
+    "LDM_BUCKETSIZELOG_MAX",
+    "STRATEGY_FAST",
+    "STRATEGY_DFAST",
+    "STRATEGY_GREEDY",
+    "STRATEGY_LAZY",
+    "STRATEGY_LAZY2",
+    "STRATEGY_BTLAZY2",
+    "STRATEGY_BTOPT",
+    "STRATEGY_BTULTRA",
+    "STRATEGY_BTULTRA2",
+    "DICT_TYPE_AUTO",
+    "DICT_TYPE_RAWCONTENT",
+    "DICT_TYPE_FULLDICT",
+    "FORMAT_ZSTD1",
+    "FORMAT_ZSTD1_MAGICLESS",
+]
+
+import io
+import os
+
+from ._cffi import (  # type: ignore
+    ffi,
+    lib,
+)
+
+
+backend_features = set()  # type: ignore
+
+COMPRESSION_RECOMMENDED_INPUT_SIZE = lib.ZSTD_CStreamInSize()
+COMPRESSION_RECOMMENDED_OUTPUT_SIZE = lib.ZSTD_CStreamOutSize()
+DECOMPRESSION_RECOMMENDED_INPUT_SIZE = lib.ZSTD_DStreamInSize()
+DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE = lib.ZSTD_DStreamOutSize()
+
+new_nonzero = ffi.new_allocator(should_clear_after_alloc=False)
+
+
+MAX_COMPRESSION_LEVEL = lib.ZSTD_maxCLevel()
+MAGIC_NUMBER = lib.ZSTD_MAGICNUMBER
+FRAME_HEADER = b"\x28\xb5\x2f\xfd"
+CONTENTSIZE_UNKNOWN = lib.ZSTD_CONTENTSIZE_UNKNOWN
+CONTENTSIZE_ERROR = lib.ZSTD_CONTENTSIZE_ERROR
+ZSTD_VERSION = (
+    lib.ZSTD_VERSION_MAJOR,
+    lib.ZSTD_VERSION_MINOR,
+    lib.ZSTD_VERSION_RELEASE,
+)
+
+BLOCKSIZELOG_MAX = lib.ZSTD_BLOCKSIZELOG_MAX
+BLOCKSIZE_MAX = lib.ZSTD_BLOCKSIZE_MAX
+WINDOWLOG_MIN = lib.ZSTD_WINDOWLOG_MIN
+WINDOWLOG_MAX = lib.ZSTD_WINDOWLOG_MAX
+CHAINLOG_MIN = lib.ZSTD_CHAINLOG_MIN
+CHAINLOG_MAX = lib.ZSTD_CHAINLOG_MAX
+HASHLOG_MIN = lib.ZSTD_HASHLOG_MIN
+HASHLOG_MAX = lib.ZSTD_HASHLOG_MAX
+MINMATCH_MIN = lib.ZSTD_MINMATCH_MIN
+MINMATCH_MAX = lib.ZSTD_MINMATCH_MAX
+SEARCHLOG_MIN = lib.ZSTD_SEARCHLOG_MIN
+SEARCHLOG_MAX = lib.ZSTD_SEARCHLOG_MAX
+SEARCHLENGTH_MIN = lib.ZSTD_MINMATCH_MIN
+SEARCHLENGTH_MAX = lib.ZSTD_MINMATCH_MAX
+TARGETLENGTH_MIN = lib.ZSTD_TARGETLENGTH_MIN
+TARGETLENGTH_MAX = lib.ZSTD_TARGETLENGTH_MAX
+LDM_MINMATCH_MIN = lib.ZSTD_LDM_MINMATCH_MIN
+LDM_MINMATCH_MAX = lib.ZSTD_LDM_MINMATCH_MAX
+LDM_BUCKETSIZELOG_MAX = lib.ZSTD_LDM_BUCKETSIZELOG_MAX
+
+STRATEGY_FAST = lib.ZSTD_fast
+STRATEGY_DFAST = lib.ZSTD_dfast
+STRATEGY_GREEDY = lib.ZSTD_greedy
+STRATEGY_LAZY = lib.ZSTD_lazy
+STRATEGY_LAZY2 = lib.ZSTD_lazy2
+STRATEGY_BTLAZY2 = lib.ZSTD_btlazy2
+STRATEGY_BTOPT = lib.ZSTD_btopt
+STRATEGY_BTULTRA = lib.ZSTD_btultra
+STRATEGY_BTULTRA2 = lib.ZSTD_btultra2
+
+DICT_TYPE_AUTO = lib.ZSTD_dct_auto
+DICT_TYPE_RAWCONTENT = lib.ZSTD_dct_rawContent
+DICT_TYPE_FULLDICT = lib.ZSTD_dct_fullDict
+
+FORMAT_ZSTD1 = lib.ZSTD_f_zstd1
+FORMAT_ZSTD1_MAGICLESS = lib.ZSTD_f_zstd1_magicless
+
+FLUSH_BLOCK = 0
+FLUSH_FRAME = 1
+
+COMPRESSOBJ_FLUSH_FINISH = 0
+COMPRESSOBJ_FLUSH_BLOCK = 1
+
+
+def _cpu_count():
+    # os.cpu_count() was introducd in Python 3.4.
+    try:
+        return os.cpu_count() or 0
+    except AttributeError:
+        pass
+
+    # Linux.
+    try:
+        return os.sysconf("SC_NPROCESSORS_ONLN")
+    except (AttributeError, ValueError):
+        pass
+
+    # TODO implement on other platforms.
+    return 0
+
+
+class BufferSegment:
+    """Represents a segment within a ``BufferWithSegments``.
+
+    This type is essentially a reference to N bytes within a
+    ``BufferWithSegments``.
+
+    The object conforms to the buffer protocol.
+    """
+
+    @property
+    def offset(self):
+        """The byte offset of this segment within its parent buffer."""
+        raise NotImplementedError()
+
+    def __len__(self):
+        """Obtain the length of the segment, in bytes."""
+        raise NotImplementedError()
+
+    def tobytes(self):
+        """Obtain bytes copy of this segment."""
+        raise NotImplementedError()
+
+
+class BufferSegments:
+    """Represents an array of ``(offset, length)`` integers.
+
+    This type is effectively an index used by :py:class:`BufferWithSegments`.
+
+    The array members are 64-bit unsigned integers using host/native bit order.
+
+    Instances conform to the buffer protocol.
+    """
+
+
+class BufferWithSegments:
+    """A memory buffer containing N discrete items of known lengths.
+
+    This type is essentially a fixed size memory address and an array
+    of 2-tuples of ``(offset, length)`` 64-bit unsigned native-endian
+    integers defining the byte offset and length of each segment within
+    the buffer.
+
+    Instances behave like containers.
+
+    Instances also conform to the buffer protocol. So a reference to the
+    backing bytes can be obtained via ``memoryview(o)``. A *copy* of the
+    backing bytes can be obtained via ``.tobytes()``.
+
+    This type exists to facilitate operations against N>1 items without
+    the overhead of Python object creation and management. Used with
+    APIs like :py:meth:`ZstdDecompressor.multi_decompress_to_buffer`, it
+    is possible to decompress many objects in parallel without the GIL
+    held, leading to even better performance.
+    """
+
+    @property
+    def size(self):
+        """Total sizein bytes of the backing buffer."""
+        raise NotImplementedError()
+
+    def __len__(self):
+        raise NotImplementedError()
+
+    def __getitem__(self, i):
+        """Obtains a segment within the buffer.
+
+        The returned object references memory within this buffer.
+
+        :param i:
+           Integer index of segment to retrieve.
+        :return:
+           :py:class:`BufferSegment`
+        """
+        raise NotImplementedError()
+
+    def segments(self):
+        """Obtain the array of ``(offset, length)`` segments in the buffer.
+
+        :return:
+           :py:class:`BufferSegments`
+        """
+        raise NotImplementedError()
+
+    def tobytes(self):
+        """Obtain bytes copy of this instance."""
+        raise NotImplementedError()
+
+
+class BufferWithSegmentsCollection:
+    """A virtual spanning view over multiple BufferWithSegments.
+
+    Instances are constructed from 1 or more :py:class:`BufferWithSegments`
+    instances. The resulting object behaves like an ordered sequence whose
+    members are the segments within each ``BufferWithSegments``.
+
+    If the object is composed of 2 ``BufferWithSegments`` instances with the
+    first having 2 segments and the second have 3 segments, then ``b[0]``
+    and ``b[1]`` access segments in the first object and ``b[2]``, ``b[3]``,
+    and ``b[4]`` access segments from the second.
+    """
+
+    def __len__(self):
+        """The number of segments within all ``BufferWithSegments``."""
+        raise NotImplementedError()
+
+    def __getitem__(self, i):
+        """Obtain the ``BufferSegment`` at an offset."""
+        raise NotImplementedError()
+
+
+class ZstdError(Exception):
+    pass
+
+
+def _zstd_error(zresult):
+    # Resolves to bytes on Python 2 and 3. We use the string for formatting
+    # into error messages, which will be literal unicode. So convert it to
+    # unicode.
+    return ffi.string(lib.ZSTD_getErrorName(zresult)).decode("utf-8")
+
+
+def _make_cctx_params(params):
+    res = lib.ZSTD_createCCtxParams()
+    if res == ffi.NULL:
+        raise MemoryError()
+
+    res = ffi.gc(res, lib.ZSTD_freeCCtxParams)
+
+    attrs = [
+        (lib.ZSTD_c_format, params.format),
+        (lib.ZSTD_c_compressionLevel, params.compression_level),
+        (lib.ZSTD_c_windowLog, params.window_log),
+        (lib.ZSTD_c_hashLog, params.hash_log),
+        (lib.ZSTD_c_chainLog, params.chain_log),
+        (lib.ZSTD_c_searchLog, params.search_log),
+        (lib.ZSTD_c_minMatch, params.min_match),
+        (lib.ZSTD_c_targetLength, params.target_length),
+        (lib.ZSTD_c_strategy, params.strategy),
+        (lib.ZSTD_c_contentSizeFlag, params.write_content_size),
+        (lib.ZSTD_c_checksumFlag, params.write_checksum),
+        (lib.ZSTD_c_dictIDFlag, params.write_dict_id),
+        (lib.ZSTD_c_nbWorkers, params.threads),
+        (lib.ZSTD_c_jobSize, params.job_size),
+        (lib.ZSTD_c_overlapLog, params.overlap_log),
+        (lib.ZSTD_c_forceMaxWindow, params.force_max_window),
+        (lib.ZSTD_c_enableLongDistanceMatching, params.enable_ldm),
+        (lib.ZSTD_c_ldmHashLog, params.ldm_hash_log),
+        (lib.ZSTD_c_ldmMinMatch, params.ldm_min_match),
+        (lib.ZSTD_c_ldmBucketSizeLog, params.ldm_bucket_size_log),
+        (lib.ZSTD_c_ldmHashRateLog, params.ldm_hash_rate_log),
+    ]
+
+    for param, value in attrs:
+        _set_compression_parameter(res, param, value)
+
+    return res
+
+
+class ZstdCompressionParameters(object):
+    """Low-level zstd compression parameters.
+
+    This type represents a collection of parameters to control how zstd
+    compression is performed.
+
+    Instances can be constructed from raw parameters or derived from a
+    base set of defaults specified from a compression level (recommended)
+    via :py:meth:`ZstdCompressionParameters.from_level`.
+
+    >>> # Derive compression settings for compression level 7.
+    >>> params = zstandard.ZstdCompressionParameters.from_level(7)
+
+    >>> # With an input size of 1MB
+    >>> params = zstandard.ZstdCompressionParameters.from_level(7, source_size=1048576)
+
+    Using ``from_level()``, it is also possible to override individual compression
+    parameters or to define additional settings that aren't automatically derived.
+    e.g.:
+
+    >>> params = zstandard.ZstdCompressionParameters.from_level(4, window_log=10)
+    >>> params = zstandard.ZstdCompressionParameters.from_level(5, threads=4)
+
+    Or you can define low-level compression settings directly:
+
+    >>> params = zstandard.ZstdCompressionParameters(window_log=12, enable_ldm=True)
+
+    Once a ``ZstdCompressionParameters`` instance is obtained, it can be used to
+    configure a compressor:
+
+    >>> cctx = zstandard.ZstdCompressor(compression_params=params)
+
+    Some of these are very low-level settings. It may help to consult the official
+    zstandard documentation for their behavior. Look for the ``ZSTD_p_*`` constants
+    in ``zstd.h`` (https://github.com/facebook/zstd/blob/dev/lib/zstd.h).
+    """
+
+    @staticmethod
+    def from_level(level, source_size=0, dict_size=0, **kwargs):
+        """Create compression parameters from a compression level.
+
+        :param level:
+           Integer compression level.
+        :param source_size:
+           Integer size in bytes of source to be compressed.
+        :param dict_size:
+           Integer size in bytes of compression dictionary to use.
+        :return:
+           :py:class:`ZstdCompressionParameters`
+        """
+        params = lib.ZSTD_getCParams(level, source_size, dict_size)
+
+        args = {
+            "window_log": "windowLog",
+            "chain_log": "chainLog",
+            "hash_log": "hashLog",
+            "search_log": "searchLog",
+            "min_match": "minMatch",
+            "target_length": "targetLength",
+            "strategy": "strategy",
+        }
+
+        for arg, attr in args.items():
+            if arg not in kwargs:
+                kwargs[arg] = getattr(params, attr)
+
+        return ZstdCompressionParameters(**kwargs)
+
+    def __init__(
+        self,
+        format=0,
+        compression_level=0,
+        window_log=0,
+        hash_log=0,
+        chain_log=0,
+        search_log=0,
+        min_match=0,
+        target_length=0,
+        strategy=-1,
+        write_content_size=1,
+        write_checksum=0,
+        write_dict_id=0,
+        job_size=0,
+        overlap_log=-1,
+        force_max_window=0,
+        enable_ldm=0,
+        ldm_hash_log=0,
+        ldm_min_match=0,
+        ldm_bucket_size_log=0,
+        ldm_hash_rate_log=-1,
+        threads=0,
+    ):
+        params = lib.ZSTD_createCCtxParams()
+        if params == ffi.NULL:
+            raise MemoryError()
+
+        params = ffi.gc(params, lib.ZSTD_freeCCtxParams)
+
+        self._params = params
+
+        if threads < 0:
+            threads = _cpu_count()
+
+        # We need to set ZSTD_c_nbWorkers before ZSTD_c_jobSize and ZSTD_c_overlapLog
+        # because setting ZSTD_c_nbWorkers resets the other parameters.
+        _set_compression_parameter(params, lib.ZSTD_c_nbWorkers, threads)
+
+        _set_compression_parameter(params, lib.ZSTD_c_format, format)
+        _set_compression_parameter(
+            params, lib.ZSTD_c_compressionLevel, compression_level
+        )
+        _set_compression_parameter(params, lib.ZSTD_c_windowLog, window_log)
+        _set_compression_parameter(params, lib.ZSTD_c_hashLog, hash_log)
+        _set_compression_parameter(params, lib.ZSTD_c_chainLog, chain_log)
+        _set_compression_parameter(params, lib.ZSTD_c_searchLog, search_log)
+        _set_compression_parameter(params, lib.ZSTD_c_minMatch, min_match)
+        _set_compression_parameter(
+            params, lib.ZSTD_c_targetLength, target_length
+        )
+
+        if strategy == -1:
+            strategy = 0
+
+        _set_compression_parameter(params, lib.ZSTD_c_strategy, strategy)
+        _set_compression_parameter(
+            params, lib.ZSTD_c_contentSizeFlag, write_content_size
+        )
+        _set_compression_parameter(
+            params, lib.ZSTD_c_checksumFlag, write_checksum
+        )
+        _set_compression_parameter(params, lib.ZSTD_c_dictIDFlag, write_dict_id)
+        _set_compression_parameter(params, lib.ZSTD_c_jobSize, job_size)
+
+        if overlap_log == -1:
+            overlap_log = 0
+
+        _set_compression_parameter(params, lib.ZSTD_c_overlapLog, overlap_log)
+        _set_compression_parameter(
+            params, lib.ZSTD_c_forceMaxWindow, force_max_window
+        )
+        _set_compression_parameter(
+            params, lib.ZSTD_c_enableLongDistanceMatching, enable_ldm
+        )
+        _set_compression_parameter(params, lib.ZSTD_c_ldmHashLog, ldm_hash_log)
+        _set_compression_parameter(
+            params, lib.ZSTD_c_ldmMinMatch, ldm_min_match
+        )
+        _set_compression_parameter(
+            params, lib.ZSTD_c_ldmBucketSizeLog, ldm_bucket_size_log
+        )
+
+        if ldm_hash_rate_log == -1:
+            ldm_hash_rate_log = 0
+
+        _set_compression_parameter(
+            params, lib.ZSTD_c_ldmHashRateLog, ldm_hash_rate_log
+        )
+
+    @property
+    def format(self):
+        return _get_compression_parameter(self._params, lib.ZSTD_c_format)
+
+    @property
+    def compression_level(self):
+        return _get_compression_parameter(
+            self._params, lib.ZSTD_c_compressionLevel
+        )
+
+    @property
+    def window_log(self):
+        return _get_compression_parameter(self._params, lib.ZSTD_c_windowLog)
+
+    @property
+    def hash_log(self):
+        return _get_compression_parameter(self._params, lib.ZSTD_c_hashLog)
+
+    @property
+    def chain_log(self):
+        return _get_compression_parameter(self._params, lib.ZSTD_c_chainLog)
+
+    @property
+    def search_log(self):
+        return _get_compression_parameter(self._params, lib.ZSTD_c_searchLog)
+
+    @property
+    def min_match(self):
+        return _get_compression_parameter(self._params, lib.ZSTD_c_minMatch)
+
+    @property
+    def target_length(self):
+        return _get_compression_parameter(self._params, lib.ZSTD_c_targetLength)
+
+    @property
+    def strategy(self):
+        return _get_compression_parameter(self._params, lib.ZSTD_c_strategy)
+
+    @property
+    def write_content_size(self):
+        return _get_compression_parameter(
+            self._params, lib.ZSTD_c_contentSizeFlag
+        )
+
+    @property
+    def write_checksum(self):
+        return _get_compression_parameter(self._params, lib.ZSTD_c_checksumFlag)
+
+    @property
+    def write_dict_id(self):
+        return _get_compression_parameter(self._params, lib.ZSTD_c_dictIDFlag)
+
+    @property
+    def job_size(self):
+        return _get_compression_parameter(self._params, lib.ZSTD_c_jobSize)
+
+    @property
+    def overlap_log(self):
+        return _get_compression_parameter(self._params, lib.ZSTD_c_overlapLog)
+
+    @property
+    def force_max_window(self):
+        return _get_compression_parameter(
+            self._params, lib.ZSTD_c_forceMaxWindow
+        )
+
+    @property
+    def enable_ldm(self):
+        return _get_compression_parameter(
+            self._params, lib.ZSTD_c_enableLongDistanceMatching
+        )
+
+    @property
+    def ldm_hash_log(self):
+        return _get_compression_parameter(self._params, lib.ZSTD_c_ldmHashLog)
+
+    @property
+    def ldm_min_match(self):
+        return _get_compression_parameter(self._params, lib.ZSTD_c_ldmMinMatch)
+
+    @property
+    def ldm_bucket_size_log(self):
+        return _get_compression_parameter(
+            self._params, lib.ZSTD_c_ldmBucketSizeLog
+        )
+
+    @property
+    def ldm_hash_rate_log(self):
+        return _get_compression_parameter(
+            self._params, lib.ZSTD_c_ldmHashRateLog
+        )
+
+    @property
+    def threads(self):
+        return _get_compression_parameter(self._params, lib.ZSTD_c_nbWorkers)
+
+    def estimated_compression_context_size(self):
+        """Estimated size in bytes needed to compress with these parameters."""
+        return lib.ZSTD_estimateCCtxSize_usingCCtxParams(self._params)
+
+
+def estimate_decompression_context_size():
+    """Estimate the memory size requirements for a decompressor instance.
+
+    :return:
+       Integer number of bytes.
+    """
+    return lib.ZSTD_estimateDCtxSize()
+
+
+def _set_compression_parameter(params, param, value):
+    zresult = lib.ZSTD_CCtxParams_setParameter(params, param, value)
+    if lib.ZSTD_isError(zresult):
+        raise ZstdError(
+            "unable to set compression context parameter: %s"
+            % _zstd_error(zresult)
+        )
+
+
+def _get_compression_parameter(params, param):
+    result = ffi.new("int *")
+
+    zresult = lib.ZSTD_CCtxParams_getParameter(params, param, result)
+    if lib.ZSTD_isError(zresult):
+        raise ZstdError(
+            "unable to get compression context parameter: %s"
+            % _zstd_error(zresult)
+        )
+
+    return result[0]
+
+
+class ZstdCompressionWriter(object):
+    """Writable compressing stream wrapper.
+
+    ``ZstdCompressionWriter`` is a write-only stream interface for writing
+    compressed data to another stream.
+
+    This type conforms to the ``io.RawIOBase`` interface and should be usable
+    by any type that operates against a *file-object* (``typing.BinaryIO``
+    in Python type hinting speak). Only methods that involve writing will do
+    useful things.
+
+    As data is written to this stream (e.g. via ``write()``), that data
+    is sent to the compressor. As compressed data becomes available from
+    the compressor, it is sent to the underlying stream by calling its
+    ``write()`` method.
+
+    Both `

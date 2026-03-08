@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_contextlib_chdir_documentation.py
+KIND: code
+
+import os
+from contextlib import AbstractContextManager
+Exit the context.

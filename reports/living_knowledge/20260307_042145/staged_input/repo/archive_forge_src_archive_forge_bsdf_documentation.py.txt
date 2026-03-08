@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/bsdf_documentation.py
+KIND: code
+
+import numpy as np
+from ..core import Format
+We implement two extensions that trigger on the Image classes.

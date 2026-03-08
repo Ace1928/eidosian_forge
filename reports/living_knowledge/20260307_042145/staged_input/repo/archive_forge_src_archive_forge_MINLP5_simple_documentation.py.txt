@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/MINLP5_simple_documentation.py
+KIND: code
+
+from pyomo.environ import (
+from pyomo.common.collections import ComponentMap
+Create the problem.

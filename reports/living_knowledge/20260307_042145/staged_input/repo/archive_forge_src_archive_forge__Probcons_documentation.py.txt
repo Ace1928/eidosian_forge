@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_Probcons_documentation.py
+KIND: code
+
+from Bio.Application import _Option, _Switch, _Argument, AbstractCommandline
+Initialize the class.

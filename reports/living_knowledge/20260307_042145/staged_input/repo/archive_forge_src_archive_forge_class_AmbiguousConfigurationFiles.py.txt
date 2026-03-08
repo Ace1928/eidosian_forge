@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AmbiguousConfigurationFiles.py
+KIND: code
+
+class AmbiguousConfigurationFiles(Error):
+    """Both YAML and XML files exist for the same configuration information."""

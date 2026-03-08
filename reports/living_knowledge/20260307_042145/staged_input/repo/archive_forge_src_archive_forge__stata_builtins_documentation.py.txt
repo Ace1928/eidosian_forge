@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_stata_builtins_documentation.py
+KIND: code
+
+pygments.lexers._stata_builtins
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    Builtins for Stata
+
+    :copyright: Copyright 2006-2017 by the Pygments team, see AUTHORS.
+    :license: BSD, see LICENSE for details.

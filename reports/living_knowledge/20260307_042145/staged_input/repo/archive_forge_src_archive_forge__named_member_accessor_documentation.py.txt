@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_named_member_accessor_documentation.py
+KIND: code
+
+from typing import Dict, Iterable, List, Tuple
+import torch
+Iterate over all the modules in the module.

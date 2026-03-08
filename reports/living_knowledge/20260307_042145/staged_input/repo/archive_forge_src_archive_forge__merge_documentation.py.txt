@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_merge_documentation.py
+KIND: code
+
+from __future__ import annotations
+from typing import Any, Dict, List, Optional
+Add two lists, handling None.

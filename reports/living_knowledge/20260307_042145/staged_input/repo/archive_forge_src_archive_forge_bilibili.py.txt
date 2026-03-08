@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/bilibili.py
+KIND: code
+
+from langchain_community.document_loaders.bilibili import BiliBiliLoader
+
+__all__ = ["BiliBiliLoader"]

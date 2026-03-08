@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_package.py
+KIND: code
+
+npm_pkg_name = 'jupyter-threejs'
+py_pkg_name = 'pythreejs'

@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/MultiplePlotAxes_documentation.py
+KIND: code
+
+import pyqtgraph as pg
+
+Demonstrates a way to put multiple axes around a single plot. 
+
+(This will eventually become a built-in feature of PlotItem)

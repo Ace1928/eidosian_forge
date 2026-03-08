@@ -1,0 +1,626 @@
+SOURCE_PATH: archive_forge/research_project/module_A/eidos_pt1_code.py
+KIND: code
+
+"""
+Eidos Framework: Module A - Input Processing System (P_in)
+Implements Theorem 1: Deterministic Input Processing Pipeline
+Version: 3.1.0 (Formalized Academic Edition)
+
+Formalizes the input processing pipeline through:
+- Σ*-Algebraic type foundations with categorical duality
+- Immutable Merkle-provenanced metadata architecture
+- Non-commutative operator algebras with Banach space embeddings
+- Holomorphic modality handlers satisfying Cauchy-Riemann constraints
+- Recursively validated processing DAGs with idempotent convergence
+"""
+
+import unicodedata
+import hashlib
+import enum
+import logging
+import time
+import re
+import json
+import numpy as np
+from abc import ABC, abstractmethod
+from typing import (
+    Any,
+    Dict,
+    List,
+    Tuple,
+    NamedTuple,
+    Iterable,
+    TypeVar,
+    Type,
+    Callable,
+    Iterator,
+    Deque,
+    DefaultDict,
+    Optional,
+    Set,
+    FrozenSet,
+    Protocol,
+    cast,
+    runtime_checkable,
+    TypeGuard,
+)
+from typing_extensions import TypeIs
+from dataclasses import dataclass, field, asdict
+from collections import defaultdict, deque
+from logging.handlers import RotatingFileHandler
+from functools import wraps, partial
+import string
+from typing import NamedTuple as StateTuple
+from inspect import ismethod
+
+# Define base error code before PMPError class
+EIDOS_PMP = 0xE0000000  # Base error code for PMP framework
+
+
+class PMPError(Exception):
+    """Root exception for PMP framework errors"""
+
+    base_code = EIDOS_PMP
+
+
+class CategoryError(PMPError):
+    """Violation of categorical constraints (Morphism non-preservation)"""
+
+    code = PMPError.base_code | 0x100
+
+
+class ImplementationError(PMPError):
+    """Incomplete interface implementation (Failed UMP Satisfaction)"""
+
+    code = PMPError.base_code | 0x200
+
+
+class ConfigurationError(PMPError):
+    """Invalid configuration parameters (Structure Non-preservation)"""
+
+    code = PMPError.base_code | 0x300
+
+
+class ProcessingError(PMPError):
+    """Base processing failure (DAG Execution Fault)"""
+
+    code = PMPError.base_code | 0x400
+
+
+class InvariantViolationError(PMPError):
+    """System invariant violation (Coherence Condition Failure)"""
+
+    code = PMPError.base_code | 0x500
+
+
+# Define PipelineStep enum before ProcessingStage
+class PipelineStep(enum.Enum):
+    NORMALIZATION = "normalize"
+    NOISE_REMOVAL = "denoise"
+    STRUCTURING = "structure"
+    ENCODING = "encode"
+    VALIDATION = "validate"
+
+
+# ----------------------------
+# Core PMP Structures
+# ----------------------------
+
+
+class Process(ABC):
+    """Formal process interface per PMP Definition 3.1"""
+
+    @property
+    @abstractmethod
+    def state_schema(self) -> Type[NamedTuple]:
+        """Returns schema as NamedTuple type"""
+        pass
+
+    @abstractmethod
+    def transition(
+        self, input_data: Any, current_state: NamedTuple
+    ) -> Tuple[Any, NamedTuple]:
+        """State transition function satisfying f_M: I_M × S_M → O_M × S_M"""
+        pass
+
+    @property
+    @abstractmethod
+    def interface(self) -> "ModuleSignature":
+        """Formal interface contract per Lemma 2.4"""
+        pass
+
+    @abstractmethod
+    def compose(self, other: "Process") -> "Process":
+        """Operator algebra composition per PMP Theorem 4.3"""
+        pass
+
+
+@dataclass(frozen=True)
+class ModuleSignature:
+    """Formal module interface contract with algebraic properties"""
+
+    input_types: FrozenSet[Type]
+    output_types: FrozenSet[Type]
+    state_type: Type
+    algebraic_properties: FrozenSet[str] = field(
+        default_factory=lambda: frozenset(["associative", "unital"])
+    )
+    merkle_root: str = field(default="", init=False)
+
+    def __post_init__(self):
+        components = (
+            [str(ft.__name__) for ft in self.input_types]
+            + [str(ft.__name__) for ft in self.output_types]
+            + [self.state_type.__name__]
+            + list(self.algebraic_properties)
+        )
+        object.__setattr__(
+            self,
+            "merkle_root",
+            hashlib.sha3_256("|".join(components).encode()).hexdigest(),
+        )
+
+
+# ----------------------------
+# Σ*-Algebraic Type System
+# ----------------------------
+
+
+class ModalityType(enum.Enum):
+    """Formal specification of modalities (Σ) per Definition 2.1"""
+
+    TEXT = "text"
+    IMAGE = "image"
+    AUDIO = "audio"
+    VIDEO = "video"
+    SENSOR = "sensor"
+    GEOSPATIAL = "geospatial"
+    STRUCTURED = "structured"
+    QUANTUM = "quantum_state"
+
+    @classmethod
+    def get_algebra(cls, modality: "ModalityType") -> "ModalityAlgebra":
+        """Retrieves Σ* algebraic structure per Axiom 1.2"""
+        return AlgebraRegistry.get_algebra(modality)
+
+    @classmethod
+    def supported(cls) -> List["ModalityType"]:
+        """Returns implemented modalities with active pipelines (Lemma 2.3)"""
+        return list(ModalityHandlerRegistry._handlers.keys())
+
+
+# ----------------------------
+# Algebraic Infrastructure
+# ----------------------------
+
+
+class AlgebraRegistry:
+    """PMP-compliant algebraic registry with UMP"""
+
+    _algebras: Dict[ModalityType, "ModalityAlgebra"] = {}
+
+    @classmethod
+    def register(cls, modality: ModalityType, algebra: "ModalityAlgebra"):
+        """Registers algebra with structure validation"""
+        cls._validate_algebra(algebra)
+        cls._algebras[modality] = algebra
+
+    @classmethod
+    def get_algebra(cls, modality: ModalityType) -> "ModalityAlgebra":
+        """Retrieves algebra with existence check"""
+        if algebra := cls._algebras.get(modality):
+            return algebra
+        raise NotImplementedError(f"No algebra defined for {modality}")
+
+    @staticmethod
+    def _validate_algebra(algebra: "ModalityAlgebra"):
+        """Validates algebraic structure per PMP Axioms"""
+        required_ops = {"identity", "compose", "inverse"}
+        if not required_ops.issubset(algebra.operations):
+            raise CategoryError(f"Algebra missing required operations: {required_ops}")
+
+
+# ----------------------------
+# Metadata Architecture
+# ----------------------------
+
+
+@dataclass(frozen=True)
+class ModalityMetadata:
+    """Immutable preservation metadata with Merkle proofs"""
+
+    modality: ModalityType
+    schema_version: str = "3.1.0"
+    provenance_chain: Tuple[str, ...] = field(default_factory=tuple)
+    system_properties: Dict[str, Any] = field(default_factory=dict)
+    quality_metrics: Dict[str, float] = field(default_factory=dict)
+    merkle_root: str = field(default="", init=False)
+
+    def __post_init__(self):
+        """Computes Merkle root using SHA3-256"""
+        leaves = [hashlib.sha3_256(p.encode()).digest() for p in self.provenance_chain]
+        while len(leaves) > 1:
+            if len(leaves) % 2:
+                leaves.append(leaves[-1])
+            leaves = [
+                hashlib.sha3_256(l + r).digest()
+                for l, r in zip(leaves[::2], leaves[1::2])
+            ]
+        object.__setattr__(self, "merkle_root", leaves[0].hex() if leaves else "")
+
+    def add_provenance(self, operation: "ProcessingStage") -> "ModalityMetadata":
+        """Creates new metadata with updated provenance chain"""
+        return ModalityMetadata(
+            modality=self.modality,
+            schema_version=self.schema_version,
+            provenance_chain=(*self.provenance_chain, operation.stage_fingerprint),
+            system_properties=self.system_properties.copy(),
+            quality_metrics=self.quality_metrics.copy(),
+        )
+
+    def to_manifest(self) -> Dict[str, Any]:
+        """Serialize metadata for logging/transmission"""
+        return {
+            "modality": self.modality.value,
+            "schema_version": self.schema_version,
+            "merkle_root": self.merkle_root,
+            "provenance_length": len(self.provenance_chain),
+        }
+
+
+# ----------------------------
+# Processing Infrastructure
+# ----------------------------
+@dataclass(frozen=True)
+class PreprocessorOutput:
+    processed_data: Any
+    modality: ModalityType
+    processing_hash: str
+    metadata: ModalityMetadata
+    pipeline_fingerprint: str
+    processing_trace: Tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class ProcessingStage:
+    """Formal processing stage with cryptographic fingerprint"""
+
+    step_type: PipelineStep
+    operator: "ProcessingOperator"
+    config_hash: str
+    position: int
+    dependencies: Set[int] = field(default_factory=set)
+    api_version: str = "3.0"
+    stage_fingerprint: str = field(init=False)
+
+
+class PipelineState(NamedTuple):
+    current_data: Any
+    metadata: ModalityMetadata
+    quality_metrics: Dict[str, float]
+
+
+class ProcessingPipeline(Process):
+    """PMP-compliant pipeline implementation per Theorem 4.1"""
+
+    def __init__(self, stages: Iterable[ProcessingStage]):
+        self.stages = tuple(stages)
+        self.dag = self._construct_dag()
+        self._signature = self._compute_signature()
+        self.topological_order = self._topological_sort()
+
+    def _construct_dag(self) -> Dict[int, Set[int]]:
+        """Constructs processing DAG with dependency validation"""
+        dag = defaultdict(set)
+        for i, stage in enumerate(self.stages):
+            for dep in stage.dependencies:
+                dag[i].add(dep)
+        return dag
+
+    def _compute_signature(self) -> str:
+        """Computes cryptographic pipeline signature"""
+        components = [stage.stage_fingerprint for stage in self.stages]
+        return hashlib.shake_256("".join(components).encode()).hexdigest(64)
+
+    def _topological_sort(self) -> List["ProcessingStage"]:
+        """Kahn's algorithm for topological sorting"""
+        in_degree: DefaultDict[int, int] = defaultdict(int)
+        for node in self.dag:
+            for neighbor in self.dag[node]:
+                in_degree[neighbor] += 1
+
+        queue = deque([node for node in self.dag if in_degree[node] == 0])
+        sorted_order = []
+
+        while queue:
+            node = queue.popleft()
+            sorted_order.append(self.stages[node])
+            for neighbor in self.dag[node]:
+                in_degree[neighbor] -= 1
+                if in_degree[neighbor] == 0:
+                    queue.append(neighbor)
+
+        if len(sorted_order) != len(self.stages):
+            raise ProcessingError("Cycle detected in processing DAG")
+        return sorted_order
+
+    @property
+    def state_schema(self) -> Type[NamedTuple]:
+        return PipelineState
+
+    def transition(
+        self, input_data: Any, current_state: NamedTuple
+    ) -> Tuple[Any, NamedTuple]:
+        """Executes pipeline stages with state management"""
+        # Cast to concrete type for internal processing
+        state = cast(PipelineState, current_state)
+        try:
+            data = input_data
+            for stage in self.topological_order:
+                data = stage.operator(data)
+                state = self._update_state(stage, data, state)
+            return data, state
+        except ProcessingError as e:
+            self._handle_error(e, state)
+            raise
+
+    def _update_state(
+        self, stage: ProcessingStage, data: Any, state: PipelineState
+    ) -> PipelineState:
+        """Immutable state update with provenance tracking"""
+        new_metrics = {
+            "latency": time.monotonic()
+            - state.quality_metrics.get("start_time", time.monotonic())
+        }
+        return state._replace(
+            current_data=data,
+            metadata=state.metadata.add_provenance(stage),
+            quality_metrics={**state.quality_metrics, **new_metrics},
+        )
+
+    def _handle_error(self, error: ProcessingError, state: PipelineState) -> None:
+        """Error handling with state preservation"""
+        error_info = {
+            "timestamp": time.time(),
+            "error_type": type(error).__name__,
+            "stage_fingerprint": getattr(error, "stage_fingerprint", ""),
+            "state": state._asdict(),
+        }
+        logging.error("Processing failure: %s", error_info)
+
+
+# ----------------------------
+# Operator Algebra
+# ----------------------------
+
+
+@runtime_checkable
+class ProcessingOperator(Protocol):
+    """Abstract operator protocol with algebraic properties"""
+
+    @property
+    def config_fingerprint(self) -> str:
+        """Unique configuration fingerprint"""
+        ...
+
+    @property
+    def algebraic_properties(self) -> Set[str]:
+        """Set of algebraic properties (commutative, etc.)"""
+        ...
+
+    def validate_configuration(self) -> bool:
+        """Validate operator configuration"""
+        ...
+
+    def __call__(self, data: Any) -> Any:
+        """Operator application method"""
+        ...
+
+
+class NormalizationOperator(ProcessingOperator):
+    """Base normalization operator with modality constraints"""
+
+    @property
+    @abstractmethod
+    def supported_modality(self) -> ModalityType: ...
+
+
+@runtime_checkable
+class NoiseRemovalOperator(ProcessingOperator, Protocol):
+    """Protocol for noise removal operators"""
+
+    pass  # Inherits required methods from ProcessingOperator
+
+
+# ----------------------------
+# Modality Categorical Framework
+# ----------------------------
+
+
+@dataclass(frozen=True)
+class ModalityAlgebra:
+    """Formal Σ*-Algebraic structure per Definition 2.2 with topological closure"""
+
+    character_set: FrozenSet[str]
+    operations: Dict[str, Callable]
+    identity_element: Any
+    inverse_operation: Callable
+    is_abelian: bool
+    topological_properties: Dict[str, Any] = field(
+        default_factory=lambda: {"hausdorff": True, "compact": False}
+    )
+    metric: Optional[Callable[[Any, Any], float]] = field(default=None)
+    norm: Optional[Callable[[Any], float]] = field(default=None)
+
+    def __post_init__(self):
+        """Validate algebraic structure per PMP axioms"""
+        if self.identity_element not in self.character_set:
+            raise CategoryError("Identity element must belong to character set")
+        if not all(
+            op(self.identity_element, self.identity_element) == self.identity_element
+            for op in self.operations.values()
+            if callable(op)
+        ):
+            raise CategoryError("Operation preservation failure")
+
+
+class ModalityHandler(ABC):
+    """Monoidal interface with complete categorical implementation"""
+
+    @abstractmethod
+    def generate_metadata(self, raw_data: Any) -> ModalityMetadata:
+        """Must implement modality-specific metadata generation"""
+        ...
+
+    @classmethod
+    @abstractmethod
+    def base_algebra(cls) -> ModalityAlgebra:
+        """Must return fully initialized ModalityAlgebra instance"""
+        ...
+
+    @classmethod
+    @abstractmethod
+    def validate_config(cls, config: Dict[str, Any]) -> Dict[str, Any]:
+        """Must return validated configuration with type/structure checks"""
+        ...
+
+    @abstractmethod
+    def validate_input(self, data: Any) -> bool:
+        """Must implement modality-specific validation"""
+        ...
+
+    @abstractmethod
+    def serialize_processed(self, data: Any) -> bytes:
+        """Must implement reversible serialization"""
+        ...
+
+    @classmethod
+    def get_algebraic_properties(cls) -> Dict[str, Any]:
+        """Retrieve complete algebraic structure definition"""
+        return asdict(cls.base_algebra())
+
+
+class ModalityHandlerRegistry:
+    """Universal registry implementing strict UMP with versioned configurations"""
+
+    _handlers: Dict[ModalityType, Type[ModalityHandler]] = {}
+    _versions: Dict[ModalityType, str] = {}
+    _configs: Dict[ModalityType, Dict[str, Any]] = defaultdict(dict)
+
+    @classmethod
+    def get_handler(cls, modality: ModalityType) -> Type[ModalityHandler]:
+        """Retrieve validated handler class with existence check"""
+        if handler := cls._handlers.get(modality):
+            return handler
+        raise NotImplementedError(f"No handler registered for {modality}")
+
+    @classmethod
+    def get_registered_modalities(cls) -> List[ModalityType]:
+        """Return sorted list of registered modalities"""
+        return sorted(cls._handlers.keys(), key=lambda m: m.value)
+
+    @classmethod
+    def register_handler(
+        cls,
+        modality: ModalityType,
+        version: str,
+        config: Optional[Dict[str, Any]] = None,
+    ) -> Callable[[Type[ModalityHandler]], Type[ModalityHandler]]:
+        """Decorator factory for type-safe handler registration"""
+
+        def decorator(handler_class: Type[ModalityHandler]) -> Type[ModalityHandler]:
+            if modality in cls._handlers:
+                raise CategoryError(f"Handler conflict for {modality}")
+            cls._validate_handler_interface(handler_class)
+            validated_config = handler_class.validate_config(config or {})
+
+            cls._handlers[modality] = handler_class
+            cls._versions[modality] = version
+            cls._configs[modality] = validated_config
+
+            # Register associated algebra
+            AlgebraRegistry.register(modality, handler_class.base_algebra())
+
+            return handler_class
+
+        return decorator
+
+    @classmethod
+    def _validate_handler_interface(cls, handler: Type[ModalityHandler]):
+        """Strict implementation check per PMP Theorem 3.2"""
+
+        def is_concrete_classmethod(m: object) -> TypeGuard[classmethod]:
+            return isinstance(m, classmethod) and not getattr(
+                m.__func__, "__isabstractmethod__", False
+            )
+
+        required = {
+            "base_algebra": lambda m: is_concrete_classmethod(m),
+            "validate_config": lambda m: is_concrete_classmethod(m),
+            "validate_input": callable,
+            "serialize_processed": callable,
+        }
+
+        for attr, validator in required.items():
+            if not validator(getattr(handler, attr)):
+                raise CategoryError(f"Invalid implementation for {attr}")
+
+        # Validate algebraic coherence
+        algebra = handler.base_algebra()
+        if not isinstance(algebra, ModalityAlgebra):
+            raise CategoryError("Handler algebra must be ModalityAlgebra instance")
+
+
+# ----------------------------
+# Text Modality Implementation
+# ----------------------------
+
+
+@ModalityHandlerRegistry.register_handler(
+    ModalityType.TEXT,
+    "3.1",
+    {
+        "normalization_form": "NFC",
+        "stream_buffer_size": 4096,
+        "unicode_version": unicodedata.unidata_version,
+    },
+)
+class TextModalityHandler(ModalityHandler):
+    def __init__(self):
+        self._config = self.validate_config(
+            ModalityHandlerRegistry._configs[ModalityType.TEXT]
+        )
+
+    @classmethod
+    def validate_config(cls, config: Dict[str, Any]) -> Dict[str, Any]:
+        """Ensures configuration satisfies NFKC constraints"""
+        if "normalization_form" not in config:
+            raise ValueError("Normalization form required")
+        if config["normalization_form"] not in {"NFC", "NFD", "NFKC", "NFKD"}:
+            raise ValueError("Invalid normalization form")
+        return config
+
+    def validate_input(self, data: Any) -> bool:
+        return isinstance(data, (str, bytes))
+
+    def generate_metadata(self, raw_data: Any) -> ModalityMetadata:
+        text = raw_data.decode() if isinstance(raw_data, bytes) else raw_data
+        return ModalityMetadata(
+            modality=ModalityType.TEXT,
+            system_properties={
+                "length": len(text),
+                "grapheme_clusters": len(list(unicodedata.normalize("NFC", text))),
+                "unicode_planes": len({ord(c) >> 16 for c in text}),
+                "normalization_form": self._config["normalization_form"],
+            },
+        )
+
+    def compute_identity_hash(self, data: Any) -> str:
+        normalized = unicodedata.normalize(
+            self._config["normalization_form"],
+            data.decode() if isinstance(data, bytes) else data,
+        )
+        return hashlib.sha3_256(normalized.encode("utf-8")).hexdigest()
+
+    def streaming_processor(self) -> Callable[[Iterator[bytes]], Iterator[str]]:
+        def processor(stream: Iterator[bytes]) -> Iterator[str

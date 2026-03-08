@@ -1,0 +1,37 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/EG
+KIND: config
+
+EG}
+الأسكندريةalexandria governorateالإسكندريةالاسكندرية!محافظة الإسكندريةD
+
+أسوانaswan governorate
+اسوانمحافظة أسوان9
+
+أسيوطassiut governorateمحافظة أسيوطT
+البحر الأحمرred sea governorate$محافظة البحر الأحمرB
+البحيرةbeheira governorateمحافظة البحيرةW
+بنى سويفbeni suef governorateبني سويفمحافظة بني سويفC
+القاهرةcairo governorateمحافظة القاهرة‬G
+الدقهليةdakahlia governorateمحافظة الدقهلية;
+
+دمياطdamietta governorateمحافظة دمياط=
+الفيومfaiyum governorateمحافظة الفيومB
+الغربيةgharbia governorateمحافظة الغربية;
+الجيزةgiza governorateمحافظة الجيزةS
+الإسماعيليةismailia governorate#محافظة الإسماعيليةP
+جنوب سيناءsouth sinai governorate محافظة جنوب سيناءM
+القليوبيةalqalyubia governorateمحافظة القليوبيةN
+كفر الشيخkafr elsheikh governorateمحافظة كفر الشيخ/
+قناqena governorateمحافظة قناJ
+الأقصرluxor governorateالاقصرمحافظة الأقصر<
+المنياminya governorateمحافظة المنياF
+المنوفيةmenofia governorateمحافظة المنوفية@
+محافظة مطروحmarsa matrouh governorate
+مطروحD
+بورسعيدport said governorateمحافظة بورسعيد8
+
+سوهاجsohag governorateمحافظة سوهاجD
+الشرقيةalsharqia governorateمحافظة الشرقيةP
+شمال سيناءnorth sinai governorate محافظة شمال سيناء;
+السويسsuez governorateمحافظة السويس_
+الوادي الجديدthe new valley governorate&محافظة الوادي الجديد

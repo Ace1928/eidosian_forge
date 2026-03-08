@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_handle_coroutine.py
+KIND: code
+
+async def handle_coroutine(vcr, fn):
+    with vcr as cassette:
+        return await fn(cassette)

@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/PhyloXMLIO_documentation.py
+KIND: code
+
+from xml.etree import ElementTree
+from Bio.Phylo import PhyloXML as PX
+Get binary characters from subnodes.

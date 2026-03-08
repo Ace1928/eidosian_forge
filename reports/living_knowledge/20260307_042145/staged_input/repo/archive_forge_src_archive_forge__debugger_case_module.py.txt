@@ -1,0 +1,20 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_debugger_case_module.py
+KIND: code
+
+class MyVersion(object):
+    pass
+
+
+class MyPackage(object):
+    pass
+
+
+class MyName(object):
+    pass
+
+
+__version__ = MyVersion()
+__package__ = MyPackage()
+__name__ = MyName()
+
+print('TEST SUCEEDED')  # Break here

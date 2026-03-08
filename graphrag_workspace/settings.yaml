@@ -38,7 +38,7 @@ completion_models:
   default_completion_model:
     type: litellm
     model_provider: openai
-    model: qwen2.5:1.5b
+    model: qwen3.5:2b
     auth_method: api_key
     api_key: ollama
     api_base: http://127.0.0.1:11434/v1

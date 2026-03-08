@@ -1,0 +1,9 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/AS
+KIND: config
+
+AS
+manu'amanu'a district
+easterneastern district
+rose island
+westernwestern district
+swains island

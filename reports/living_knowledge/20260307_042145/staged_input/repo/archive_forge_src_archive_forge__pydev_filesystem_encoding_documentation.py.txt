@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_pydev_filesystem_encoding_documentation.py
+KIND: code
+
+import sys
+
+    Note: there's a copy of this method in interpreterInfo.py

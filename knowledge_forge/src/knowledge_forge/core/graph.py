@@ -57,7 +57,17 @@ class KnowledgeForge:
         self.nodes: Dict[str, KnowledgeNode] = {}
         self.concept_map: Dict[str, List[str]] = {}
         self.persistence_path = Path(persistence_path) if persistence_path else None
-        self.embedder = embedder
+        
+        # Use unified model config if no embedder provided
+        if embedder is None:
+            try:
+                from eidos_mcp.config.models import model_config
+                self.embedder = model_config
+            except ImportError:
+                self.embedder = None
+        else:
+            self.embedder = embedder
+
         self._thread_lock = threading.RLock()
         self._lock_handle = None
         self._lock_depth = 0

@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/c88cdce8f248_remove_duplicate_constraints_documentation.py
+KIND: code
+
+from alembic import op
+from sqlalchemy.engine import reflection
+Remove duplicate constraints.
+
+Revision ID: c88cdce8f248
+Revises: 99de3849d860
+Create Date: 2023-03-15 13:17:44.060715

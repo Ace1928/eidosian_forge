@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_suppress_documentation.py
+KIND: code
+
+import sys
+from contextlib import AbstractContextManager
+Backport of :class:`contextlib.suppress` from Python 3.12.1.

@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_win32_opener_documentation.py
+KIND: code
+
+import errno
+import time
+import pywintypes
+import win32con
+import win32file
+from oauth2client.contrib import locked_file
+Close and unlock the file using the win32 primitive.

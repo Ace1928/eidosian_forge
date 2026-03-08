@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/assets.py
+KIND: code
+
+from weasel.cli.assets import *

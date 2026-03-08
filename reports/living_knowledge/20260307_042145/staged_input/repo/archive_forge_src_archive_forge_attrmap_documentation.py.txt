@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/attrmap_documentation.py
+KIND: code
+
+from reportlab.lib.validators import isAnything, DerivedValue
+from reportlab.lib.utils import isSeq
+from reportlab import rl_config
+
+    Add a proxy attribute 'name' to src with targets dst

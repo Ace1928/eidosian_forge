@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/assistant_tool_choice_function_documentation.py
+KIND: code
+
+from ..._models import BaseModel
+The name of the function to call.

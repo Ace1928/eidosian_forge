@@ -1,0 +1,695 @@
+SOURCE_PATH: archive_forge/src/archive_forge/Parsing.py
+KIND: code
+
+# cython: auto_cpdef=True, infer_types=True, language_level=3, py2_import=True
+#
+#   Parser
+#
+
+from __future__ import absolute_import
+
+# This should be done automatically
+import cython
+cython.declare(Nodes=object, ExprNodes=object, EncodedString=object,
+               bytes_literal=object, StringEncoding=object,
+               FileSourceDescriptor=object, lookup_unicodechar=object, unicode_category=object,
+               Future=object, Options=object, error=object, warning=object,
+               Builtin=object, ModuleNode=object, Utils=object, _unicode=object, _bytes=object,
+               re=object, sys=object, _parse_escape_sequences=object, _parse_escape_sequences_raw=object,
+               partial=object, reduce=object, _IS_PY3=cython.bint, _IS_2BYTE_UNICODE=cython.bint,
+               _CDEF_MODIFIERS=tuple)
+
+from io import StringIO
+import re
+import sys
+from unicodedata import lookup as lookup_unicodechar, category as unicode_category
+from functools import partial, reduce
+
+from .Scanning import PyrexScanner, FileSourceDescriptor, StringSourceDescriptor
+from . import Nodes
+from . import ExprNodes
+from . import Builtin
+from . import StringEncoding
+from .StringEncoding import EncodedString, bytes_literal, _unicode, _bytes
+from .ModuleNode import ModuleNode
+from .Errors import error, warning
+from .. import Utils
+from . import Future
+from . import Options
+
+_IS_PY3 = sys.version_info[0] >= 3
+_IS_2BYTE_UNICODE = sys.maxunicode == 0xffff
+_CDEF_MODIFIERS = ('inline', 'nogil', 'api')
+
+
+class Ctx(object):
+    #  Parsing context
+    level = 'other'
+    visibility = 'private'
+    cdef_flag = 0
+    typedef_flag = 0
+    api = 0
+    overridable = 0
+    nogil = 0
+    namespace = None
+    templates = None
+    allow_struct_enum_decorator = False
+
+    def __init__(self, **kwds):
+        self.__dict__.update(kwds)
+
+    def __call__(self, **kwds):
+        ctx = Ctx()
+        d = ctx.__dict__
+        d.update(self.__dict__)
+        d.update(kwds)
+        return ctx
+
+
+def p_ident(s, message="Expected an identifier"):
+    if s.sy == 'IDENT':
+        name = s.systring
+        s.next()
+        return name
+    else:
+        s.error(message)
+
+def p_ident_list(s):
+    names = []
+    while s.sy == 'IDENT':
+        names.append(s.systring)
+        s.next()
+        if s.sy != ',':
+            break
+        s.next()
+    return names
+
+#------------------------------------------
+#
+#   Expressions
+#
+#------------------------------------------
+
+def p_binop_operator(s):
+    pos = s.position()
+    op = s.sy
+    s.next()
+    return op, pos
+
+def p_binop_expr(s, ops, p_sub_expr):
+    n1 = p_sub_expr(s)
+    while s.sy in ops:
+        op, pos = p_binop_operator(s)
+        n2 = p_sub_expr(s)
+        n1 = ExprNodes.binop_node(pos, op, n1, n2)
+        if op == '/':
+            if Future.division in s.context.future_directives:
+                n1.truedivision = True
+            else:
+                n1.truedivision = None # unknown
+    return n1
+
+#lambdef: 'lambda' [varargslist] ':' test
+
+def p_lambdef(s, allow_conditional=True):
+    # s.sy == 'lambda'
+    pos = s.position()
+    s.next()
+    if s.sy == ':':
+        args = []
+        star_arg = starstar_arg = None
+    else:
+        args, star_arg, starstar_arg = p_varargslist(
+            s, terminator=':', annotated=False)
+    s.expect(':')
+    if allow_conditional:
+        expr = p_test(s)
+    else:
+        expr = p_test_nocond(s)
+    return ExprNodes.LambdaNode(
+        pos, args = args,
+        star_arg = star_arg, starstar_arg = starstar_arg,
+        result_expr = expr)
+
+#lambdef_nocond: 'lambda' [varargslist] ':' test_nocond
+
+def p_lambdef_nocond(s):
+    return p_lambdef(s, allow_conditional=False)
+
+#test: or_test ['if' or_test 'else' test] | lambdef
+
+def p_test(s):
+    if s.sy == 'lambda':
+        return p_lambdef(s)
+    pos = s.position()
+    expr = p_or_test(s)
+    if s.sy == 'if':
+        s.next()
+        test = p_or_test(s)
+        s.expect('else')
+        other = p_test(s)
+        return ExprNodes.CondExprNode(pos, test=test, true_val=expr, false_val=other)
+    else:
+        return expr
+
+#test_nocond: or_test | lambdef_nocond
+
+def p_test_nocond(s):
+    if s.sy == 'lambda':
+        return p_lambdef_nocond(s)
+    else:
+        return p_or_test(s)
+
+#or_test: and_test ('or' and_test)*
+
+def p_or_test(s):
+    return p_rassoc_binop_expr(s, ('or',), p_and_test)
+
+def p_rassoc_binop_expr(s, ops, p_subexpr):
+    n1 = p_subexpr(s)
+    if s.sy in ops:
+        pos = s.position()
+        op = s.sy
+        s.next()
+        n2 = p_rassoc_binop_expr(s, ops, p_subexpr)
+        n1 = ExprNodes.binop_node(pos, op, n1, n2)
+    return n1
+
+#and_test: not_test ('and' not_test)*
+
+def p_and_test(s):
+    #return p_binop_expr(s, ('and',), p_not_test)
+    return p_rassoc_binop_expr(s, ('and',), p_not_test)
+
+#not_test: 'not' not_test | comparison
+
+def p_not_test(s):
+    if s.sy == 'not':
+        pos = s.position()
+        s.next()
+        return ExprNodes.NotNode(pos, operand = p_not_test(s))
+    else:
+        return p_comparison(s)
+
+#comparison: expr (comp_op expr)*
+#comp_op: '<'|'>'|'=='|'>='|'<='|'<>'|'!='|'in'|'not' 'in'|'is'|'is' 'not'
+
+def p_comparison(s):
+    n1 = p_starred_expr(s)
+    if s.sy in comparison_ops:
+        pos = s.position()
+        op = p_cmp_op(s)
+        n2 = p_starred_expr(s)
+        n1 = ExprNodes.PrimaryCmpNode(pos,
+            operator = op, operand1 = n1, operand2 = n2)
+        if s.sy in comparison_ops:
+            n1.cascade = p_cascaded_cmp(s)
+    return n1
+
+def p_test_or_starred_expr(s):
+    if s.sy == '*':
+        return p_starred_expr(s)
+    else:
+        return p_test(s)
+
+def p_starred_expr(s):
+    pos = s.position()
+    if s.sy == '*':
+        starred = True
+        s.next()
+    else:
+        starred = False
+    expr = p_bit_expr(s)
+    if starred:
+        expr = ExprNodes.StarredUnpackingNode(pos, expr)
+    return expr
+
+def p_cascaded_cmp(s):
+    pos = s.position()
+    op = p_cmp_op(s)
+    n2 = p_starred_expr(s)
+    result = ExprNodes.CascadedCmpNode(pos,
+        operator = op, operand2 = n2)
+    if s.sy in comparison_ops:
+        result.cascade = p_cascaded_cmp(s)
+    return result
+
+def p_cmp_op(s):
+    if s.sy == 'not':
+        s.next()
+        s.expect('in')
+        op = 'not_in'
+    elif s.sy == 'is':
+        s.next()
+        if s.sy == 'not':
+            s.next()
+            op = 'is_not'
+        else:
+            op = 'is'
+    else:
+        op = s.sy
+        s.next()
+    if op == '<>':
+        op = '!='
+    return op
+
+comparison_ops = cython.declare(set, set([
+    '<', '>', '==', '>=', '<=', '<>', '!=',
+    'in', 'is', 'not'
+]))
+
+#expr: xor_expr ('|' xor_expr)*
+
+def p_bit_expr(s):
+    return p_binop_expr(s, ('|',), p_xor_expr)
+
+#xor_expr: and_expr ('^' and_expr)*
+
+def p_xor_expr(s):
+    return p_binop_expr(s, ('^',), p_and_expr)
+
+#and_expr: shift_expr ('&' shift_expr)*
+
+def p_and_expr(s):
+    return p_binop_expr(s, ('&',), p_shift_expr)
+
+#shift_expr: arith_expr (('<<'|'>>') arith_expr)*
+
+def p_shift_expr(s):
+    return p_binop_expr(s, ('<<', '>>'), p_arith_expr)
+
+#arith_expr: term (('+'|'-') term)*
+
+def p_arith_expr(s):
+    return p_binop_expr(s, ('+', '-'), p_term)
+
+#term: factor (('*'|'@'|'/'|'%'|'//') factor)*
+
+def p_term(s):
+    return p_binop_expr(s, ('*', '@', '/', '%', '//'), p_factor)
+
+#factor: ('+'|'-'|'~'|'&'|typecast|sizeof) factor | power
+
+def p_factor(s):
+    # little indirection for C-ification purposes
+    return _p_factor(s)
+
+def _p_factor(s):
+    sy = s.sy
+    if sy in ('+', '-', '~'):
+        op = s.sy
+        pos = s.position()
+        s.next()
+        return ExprNodes.unop_node(pos, op, p_factor(s))
+    elif not s.in_python_file:
+        if sy == '&':
+            pos = s.position()
+            s.next()
+            arg = p_factor(s)
+            return ExprNodes.AmpersandNode(pos, operand = arg)
+        elif sy == "<":
+            return p_typecast(s)
+        elif sy == 'IDENT' and s.systring == "sizeof":
+            return p_sizeof(s)
+    return p_power(s)
+
+def p_typecast(s):
+    # s.sy == "<"
+    pos = s.position()
+    s.next()
+    base_type = p_c_base_type(s)
+    is_memslice = isinstance(base_type, Nodes.MemoryViewSliceTypeNode)
+    is_template = isinstance(base_type, Nodes.TemplatedTypeNode)
+    is_const = isinstance(base_type, Nodes.CConstTypeNode)
+    if (not is_memslice and not is_template and not is_const
+        and base_type.name is None):
+        s.error("Unknown type")
+    declarator = p_c_declarator(s, empty = 1)
+    if s.sy == '?':
+        s.next()
+        typecheck = 1
+    else:
+        typecheck = 0
+    s.expect(">")
+    operand = p_factor(s)
+    if is_memslice:
+        return ExprNodes.CythonArrayNode(pos, base_type_node=base_type,
+                                         operand=operand)
+
+    return ExprNodes.TypecastNode(pos,
+        base_type = base_type,
+        declarator = declarator,
+        operand = operand,
+        typecheck = typecheck)
+
+def p_sizeof(s):
+    # s.sy == ident "sizeof"
+    pos = s.position()
+    s.next()
+    s.expect('(')
+    # Here we decide if we are looking at an expression or type
+    # If it is actually a type, but parsable as an expression,
+    # we treat it as an expression here.
+    if looking_at_expr(s):
+        operand = p_test(s)
+        node = ExprNodes.SizeofVarNode(pos, operand = operand)
+    else:
+        base_type = p_c_base_type(s)
+        declarator = p_c_declarator(s, empty = 1)
+        node = ExprNodes.SizeofTypeNode(pos,
+            base_type = base_type, declarator = declarator)
+    s.expect(')')
+    return node
+
+
+def p_yield_expression(s):
+    # s.sy == "yield"
+    pos = s.position()
+    s.next()
+    is_yield_from = False
+    if s.sy == 'from':
+        is_yield_from = True
+        s.next()
+    if s.sy != ')' and s.sy not in statement_terminators:
+        # "yield from" does not support implicit tuples, but "yield" does ("yield 1,2")
+        arg = p_test(s) if is_yield_from else p_testlist(s)
+    else:
+        if is_yield_from:
+            s.error("'yield from' requires a source argument",
+                    pos=pos, fatal=False)
+        arg = None
+    if is_yield_from:
+        return ExprNodes.YieldFromExprNode(pos, arg=arg)
+    else:
+        return ExprNodes.YieldExprNode(pos, arg=arg)
+
+
+def p_yield_statement(s):
+    # s.sy == "yield"
+    yield_expr = p_yield_expression(s)
+    return Nodes.ExprStatNode(yield_expr.pos, expr=yield_expr)
+
+
+def p_async_statement(s, ctx, decorators):
+    # s.sy >> 'async' ...
+    if s.sy == 'def':
+        # 'async def' statements aren't allowed in pxd files
+        if 'pxd' in ctx.level:
+            s.error('def statement not allowed here')
+        s.level = ctx.level
+        return p_def_statement(s, decorators, is_async_def=True)
+    elif decorators:
+        s.error("Decorators can only be followed by functions or classes")
+    elif s.sy == 'for':
+        return p_for_statement(s, is_async=True)
+    elif s.sy == 'with':
+        s.next()
+        return p_with_items(s, is_async=True)
+    else:
+        s.error("expected one of 'def', 'for', 'with' after 'async'")
+
+
+#power: atom_expr ('**' factor)*
+#atom_expr: ['await'] atom trailer*
+
+def p_power(s):
+    if s.systring == 'new' and s.peek()[0] == 'IDENT':
+        return p_new_expr(s)
+    await_pos = None
+    if s.sy == 'await':
+        await_pos = s.position()
+        s.next()
+    n1 = p_atom(s)
+    while s.sy in ('(', '[', '.'):
+        n1 = p_trailer(s, n1)
+    if await_pos:
+        n1 = ExprNodes.AwaitExprNode(await_pos, arg=n1)
+    if s.sy == '**':
+        pos = s.position()
+        s.next()
+        n2 = p_factor(s)
+        n1 = ExprNodes.binop_node(pos, '**', n1, n2)
+    return n1
+
+
+def p_new_expr(s):
+    # s.systring == 'new'.
+    pos = s.position()
+    s.next()
+    cppclass = p_c_base_type(s)
+    return p_call(s, ExprNodes.NewExprNode(pos, cppclass = cppclass))
+
+#trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME
+
+def p_trailer(s, node1):
+    pos = s.position()
+    if s.sy == '(':
+        return p_call(s, node1)
+    elif s.sy == '[':
+        return p_index(s, node1)
+    else: # s.sy == '.'
+        s.next()
+        name = p_ident(s)
+        return ExprNodes.AttributeNode(pos,
+            obj=node1, attribute=name)
+
+
+# arglist:  argument (',' argument)* [',']
+# argument: [test '='] test       # Really [keyword '='] test
+
+# since PEP 448:
+# argument: ( test [comp_for] |
+#             test '=' test |
+#             '**' expr |
+#             star_expr )
+
+def p_call_parse_args(s, allow_genexp=True):
+    # s.sy == '('
+    pos = s.position()
+    s.next()
+    positional_args = []
+    keyword_args = []
+    starstar_seen = False
+    last_was_tuple_unpack = False
+    while s.sy != ')':
+        if s.sy == '*':
+            if starstar_seen:
+                s.error("Non-keyword arg following keyword arg", pos=s.position())
+            s.next()
+            positional_args.append(p_test(s))
+            last_was_tuple_unpack = True
+        elif s.sy == '**':
+            s.next()
+            keyword_args.append(p_test(s))
+            starstar_seen = True
+        else:
+            arg = p_test(s)
+            if s.sy == '=':
+                s.next()
+                if not arg.is_name:
+                    s.error("Expected an identifier before '='",
+                            pos=arg.pos)
+                encoded_name = s.context.intern_ustring(arg.name)
+                keyword = ExprNodes.IdentifierStringNode(
+                    arg.pos, value=encoded_name)
+                arg = p_test(s)
+                keyword_args.append((keyword, arg))
+            else:
+                if keyword_args:
+                    s.error("Non-keyword arg following keyword arg", pos=arg.pos)
+                if positional_args and not last_was_tuple_unpack:
+                    positional_args[-1].append(arg)
+                else:
+                    positional_args.append([arg])
+                last_was_tuple_unpack = False
+        if s.sy != ',':
+            break
+        s.next()
+
+    if s.sy in ('for', 'async'):
+        if not keyword_args and not last_was_tuple_unpack:
+            if len(positional_args) == 1 and len(positional_args[0]) == 1:
+                positional_args = [[p_genexp(s, positional_args[0][0])]]
+    s.expect(')')
+    return positional_args or [[]], keyword_args
+
+
+def p_call_build_packed_args(pos, positional_args, keyword_args):
+    keyword_dict = None
+
+    subtuples = [
+        ExprNodes.TupleNode(pos, args=arg) if isinstance(arg, list) else ExprNodes.AsTupleNode(pos, arg=arg)
+        for arg in positional_args
+    ]
+    # TODO: implement a faster way to join tuples than creating each one and adding them
+    arg_tuple = reduce(partial(ExprNodes.binop_node, pos, '+'), subtuples)
+
+    if keyword_args:
+        kwargs = []
+        dict_items = []
+        for item in keyword_args:
+            if isinstance(item, tuple):
+                key, value = item
+                dict_items.append(ExprNodes.DictItemNode(pos=key.pos, key=key, value=value))
+            elif item.is_dict_literal:
+                # unpack "**{a:b}" directly
+                dict_items.extend(item.key_value_pairs)
+            else:
+                if dict_items:
+                    kwargs.append(ExprNodes.DictNode(
+                        dict_items[0].pos, key_value_pairs=dict_items, reject_duplicates=True))
+                    dict_items = []
+                kwargs.append(item)
+
+        if dict_items:
+            kwargs.append(ExprNodes.DictNode(
+                dict_items[0].pos, key_value_pairs=dict_items, reject_duplicates=True))
+
+        if kwargs:
+            if len(kwargs) == 1 and kwargs[0].is_dict_literal:
+                # only simple keyword arguments found -> one dict
+                keyword_dict = kwargs[0]
+            else:
+                # at least one **kwargs
+                keyword_dict = ExprNodes.MergedDictNode(pos, keyword_args=kwargs)
+
+    return arg_tuple, keyword_dict
+
+
+def p_call(s, function):
+    # s.sy == '('
+    pos = s.position()
+    positional_args, keyword_args = p_call_parse_args(s)
+
+    if not keyword_args and len(positional_args) == 1 and isinstance(positional_args[0], list):
+        return ExprNodes.SimpleCallNode(pos, function=function, args=positional_args[0])
+    else:
+        arg_tuple, keyword_dict = p_call_build_packed_args(pos, positional_args, keyword_args)
+        return ExprNodes.GeneralCallNode(
+            pos, function=function, positional_args=arg_tuple, keyword_args=keyword_dict)
+
+
+#lambdef: 'lambda' [varargslist] ':' test
+
+#subscriptlist: subscript (',' subscript)* [',']
+
+def p_index(s, base):
+    # s.sy == '['
+    pos = s.position()
+    s.next()
+    subscripts, is_single_value = p_subscript_list(s)
+    if is_single_value and len(subscripts[0]) == 2:
+        start, stop = subscripts[0]
+        result = ExprNodes.SliceIndexNode(pos,
+            base = base, start = start, stop = stop)
+    else:
+        indexes = make_slice_nodes(pos, subscripts)
+        if is_single_value:
+            index = indexes[0]
+        else:
+            index = ExprNodes.TupleNode(pos, args = indexes)
+        result = ExprNodes.IndexNode(pos,
+            base = base, index = index)
+    s.expect(']')
+    return result
+
+def p_subscript_list(s):
+    is_single_value = True
+    items = [p_subscript(s)]
+    while s.sy == ',':
+        is_single_value = False
+        s.next()
+        if s.sy == ']':
+            break
+        items.append(p_subscript(s))
+    return items, is_single_value
+
+#subscript: '.' '.' '.' | test | [test] ':' [test] [':' [test]]
+
+def p_subscript(s):
+    # Parse a subscript and return a list of
+    # 1, 2 or 3 ExprNodes, depending on how
+    # many slice elements were encountered.
+    pos = s.position()
+    start = p_slice_element(s, (':',))
+    if s.sy != ':':
+        return [start]
+    s.next()
+    stop = p_slice_element(s, (':', ',', ']'))
+    if s.sy != ':':
+        return [start, stop]
+    s.next()
+    step = p_slice_element(s, (':', ',', ']'))
+    return [start, stop, step]
+
+def p_slice_element(s, follow_set):
+    # Simple expression which may be missing iff
+    # it is followed by something in follow_set.
+    if s.sy not in follow_set:
+        return p_test(s)
+    else:
+        return None
+
+def expect_ellipsis(s):
+    s.expect('.')
+    s.expect('.')
+    s.expect('.')
+
+def make_slice_nodes(pos, subscripts):
+    # Convert a list of subscripts as returned
+    # by p_subscript_list into a list of ExprNodes,
+    # creating SliceNodes for elements with 2 or
+    # more components.
+    result = []
+    for subscript in subscripts:
+        if len(subscript) == 1:
+            result.append(subscript[0])
+        else:
+            result.append(make_slice_node(pos, *subscript))
+    return result
+
+def make_slice_node(pos, start, stop = None, step = None):
+    if not start:
+        start = ExprNodes.NoneNode(pos)
+    if not stop:
+        stop = ExprNodes.NoneNode(pos)
+    if not step:
+        step = ExprNodes.NoneNode(pos)
+    return ExprNodes.SliceNode(pos,
+        start = start, stop = stop, step = step)
+
+#atom: '(' [yield_expr|testlist_comp] ')' | '[' [listmaker] ']' | '{' [dict_or_set_maker] '}' | '`' testlist '`' | NAME | NUMBER | STRING+
+
+def p_atom(s):
+    pos = s.position()
+    sy = s.sy
+    if sy == '(':
+        s.next()
+        if s.sy == ')':
+            result = ExprNodes.TupleNode(pos, args = [])
+        elif s.sy == 'yield':
+            result = p_yield_expression(s)
+        else:
+            result = p_testlist_comp(s)
+        s.expect(')')
+        return result
+    elif sy == '[':
+        return p_list_maker(s)
+    elif sy == '{':
+        return p_dict_or_set_maker(s)
+    elif sy == '`':
+        return p_backquote_expr(s)
+    elif sy == '.':
+        expect_ellipsis(s)
+        return ExprNodes.EllipsisNode(pos)
+    elif sy == 'INT':
+        return p_int_literal(s)
+    elif sy == 'FLOAT':
+        value = s.systring
+        s.next()
+        return ExprNodes.FloatNode(pos, value = value)
+    elif sy == 'IMAG':
+        value = s.systring[:-1]
+        s.next()
+        return ExprNodes.ImagNode(pos, value = value)
+    elif sy

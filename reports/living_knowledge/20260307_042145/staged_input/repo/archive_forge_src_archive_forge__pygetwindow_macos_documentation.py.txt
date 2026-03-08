@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_pygetwindow_macos_documentation.py
+KIND: code
+
+import Quartz
+import pygetwindow
+Returns the window title as a string.

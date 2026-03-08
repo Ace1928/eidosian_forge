@@ -1,0 +1,11 @@
+SOURCE_PATH: archive_forge/src/archive_forge/activate_this.py
+KIND: code
+
+#!/usr/bin/env bash
+set -e
+[ -n "$PYENV_DEBUG" ] && set -x
+
+program="${0##*/}"
+
+export PYENV_ROOT="/home/lloyd/.pyenv"
+exec "/home/lloyd/.pyenv/libexec/pyenv" exec "$program" "$@"

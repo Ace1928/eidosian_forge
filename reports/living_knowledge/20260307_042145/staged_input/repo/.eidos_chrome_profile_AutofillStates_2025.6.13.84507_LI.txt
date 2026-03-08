@@ -1,0 +1,15 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/LI
+KIND: config
+
+LI	
+balzers
+eschen	
+gamprin
+mauren	
+planken	
+ruggell
+schaan
+schellenberg	
+triesen
+triesenberg
+vaduz

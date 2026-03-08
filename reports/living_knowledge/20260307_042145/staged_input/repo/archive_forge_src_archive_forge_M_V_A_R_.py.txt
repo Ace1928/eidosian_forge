@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/M_V_A_R_.py
+KIND: code
+
+from .otBase import BaseTTXConverter
+
+
+class table_M_V_A_R_(BaseTTXConverter):
+    pass

@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/arraydemo_documentation.py
+KIND: code
+
+import os
+import pygame as pg
+from pygame import surfarray
+show various surfarray effects

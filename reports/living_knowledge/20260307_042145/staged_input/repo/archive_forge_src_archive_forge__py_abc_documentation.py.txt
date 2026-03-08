@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_py_abc_documentation.py
+KIND: code
+
+from _weakrefset import WeakSet
+Override for issubclass(subclass, cls).

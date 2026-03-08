@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AThing.py
+KIND: code
+
+import os
+import sys
+from breezy import branch, osutils, registry, tests
+class AThing:
+    """Something"""

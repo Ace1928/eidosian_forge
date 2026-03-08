@@ -1,0 +1,2 @@
+file_path,label,rule_id,confidence,language,category,unit_count,duplicate_pressure,avg_complexity,max_complexity,exact_duplicate_hits,normalized_duplicate_hits,structural_duplicate_hits,near_duplicate_hits,reason_1,reason_2
+.pre-commit-config.yaml,quarantine,RULE_Q0_NO_INDEXED_UNITS,0.97,yaml,config,0,0.0,0.0,0.0,0,0,0,0,No indexed code units detected for file,

@@ -1,0 +1,11 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AddrConversionError.py
+KIND: code
+
+import sys as _sys
+import pprint as _pprint
+class AddrConversionError(Exception):
+    """
+    An Exception indicating a failure to convert between address types or
+    notations.
+    """
+    pass

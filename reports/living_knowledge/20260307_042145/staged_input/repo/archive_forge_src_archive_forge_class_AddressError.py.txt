@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AddressError.py
+KIND: code
+
+from typing import Optional
+class AddressError(SMTPError):
+    """
+    Parse error in address
+    """

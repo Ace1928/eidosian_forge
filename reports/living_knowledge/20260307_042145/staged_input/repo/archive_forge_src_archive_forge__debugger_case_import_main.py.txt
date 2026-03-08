@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_debugger_case_import_main.py
+KIND: code
+
+import _debugger_case_import_imported  # break here
+
+print('TEST SUCEEDED')

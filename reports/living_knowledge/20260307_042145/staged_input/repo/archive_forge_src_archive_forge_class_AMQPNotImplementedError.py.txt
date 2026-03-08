@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AMQPNotImplementedError.py
+KIND: code
+
+from struct import pack, unpack
+class AMQPNotImplementedError(IrrecoverableConnectionError):
+    """AMQP Not Implemented Error."""
+    code = 540

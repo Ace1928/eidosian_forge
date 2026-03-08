@@ -1,0 +1,12 @@
+SOURCE_PATH: archive_forge/src/archive_forge/backgroundjobs_documentation.py
+KIND: code
+
+import sys
+import threading
+from IPython import get_ipython
+from IPython.core.ultratb import AutoFormattedTB
+from logging import error, debug
+Create a new job from a callable object.
+
+        Any positional arguments and keyword args given to this constructor
+        after the initial callable are passed directly to it.

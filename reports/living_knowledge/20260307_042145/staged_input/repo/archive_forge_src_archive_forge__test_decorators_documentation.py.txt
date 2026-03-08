@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_test_decorators_documentation.py
+KIND: code
+
+import cherrypy
+from cherrypy import expose, tools
+Test module for the @-decorator syntax, which is version-specific

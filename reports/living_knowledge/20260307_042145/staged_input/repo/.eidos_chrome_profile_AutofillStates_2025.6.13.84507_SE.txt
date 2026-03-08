@@ -1,0 +1,25 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/SE
+KIND: config
+
+SE#
+stockholms länstockholm county+
+västerbottens länvästerbotten county%
+norrbottens lännorrbotten county
+uppsala länuppsala county+
+södermanlands länsödermanland county-
+östergötlands länöstergötland county%
+jönköpings länjonkoping county#
+kronobergs länkronoberg county
+kalmar länkalmar county
+gotlands längotland county 
+blekinge länblekinge county
+skåne länskåne county
+hallands länhalland county3
+västra götalands länvästra götaland county"
+värmlands länvarmland county
+örebro länörebro county)
+västmanlands länvästmanland county
+dalarnas ländalarna county$
+gävleborgs längavleborg county/
+västernorrlands länvästernorrland county"
+jämtlands länjamtland county

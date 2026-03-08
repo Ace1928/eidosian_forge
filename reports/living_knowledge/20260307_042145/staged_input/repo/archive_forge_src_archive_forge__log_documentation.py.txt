@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_log_documentation.py
+KIND: code
+
+import logging
+import collections
+from .case import _BaseTestCaseContext
+A context manager for assertLogs() and assertNoLogs()

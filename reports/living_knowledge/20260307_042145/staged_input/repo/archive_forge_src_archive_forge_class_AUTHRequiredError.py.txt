@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AUTHRequiredError.py
+KIND: code
+
+from typing import Optional
+class AUTHRequiredError(ESMTPClientError):
+    """
+    Authentication was required but the server does not support it.
+
+    This is considered a non-fatal error (the connection will not be dropped).
+    """

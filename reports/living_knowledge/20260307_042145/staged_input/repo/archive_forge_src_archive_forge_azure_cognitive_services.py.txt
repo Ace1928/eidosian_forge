@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/azure_cognitive_services.py
+KIND: code
+
+from langchain_community.agent_toolkits.azure_cognitive_services import (
+    AzureCognitiveServicesToolkit,
+)
+
+__all__ = ["AzureCognitiveServicesToolkit"]

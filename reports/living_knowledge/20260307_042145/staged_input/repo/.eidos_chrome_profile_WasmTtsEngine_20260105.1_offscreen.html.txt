@@ -1,0 +1,5 @@
+SOURCE_PATH: .eidos_chrome_profile/WasmTtsEngine/20260105.1/offscreen.html
+KIND: config
+
+<head><script src="./bindings_main.js"></script></head>
+<body><script src="offscreen_compiled.js"></script></body>

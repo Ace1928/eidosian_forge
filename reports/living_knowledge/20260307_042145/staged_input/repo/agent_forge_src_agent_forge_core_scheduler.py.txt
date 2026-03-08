@@ -1,0 +1,187 @@
+SOURCE_PATH: agent_forge/src/agent_forge/core/scheduler.py
+KIND: code
+
+#!/usr/bin/env python3
+"""Simple scheduler loop utilities for eidosd."""
+
+from __future__ import annotations
+
+import json
+import random
+import signal
+import time
+from dataclasses import dataclass
+from typing import Any, Callable, Mapping
+
+from eidosian_core import eidosian
+
+from agent_forge.actuators.shell_exec import run_step
+from agent_forge.core.state import (
+    add_plan,
+    add_step,
+    list_plans,
+    list_runs,
+)
+from agent_forge.planners.htn import materialize
+from agent_forge.planners.registry import choose
+
+from . import events as BUS
+
+STATE_DIR = "state"
+
+
+@dataclass
+class BeatCfg:
+    tick_secs: float
+    jitter_ms: int = 0
+    max_backoff_secs: float = 30.0
+    max_beats: int = 0  # 0 = infinite
+
+
+class StopToken:
+    """Cooperative stop helper."""
+
+    def __init__(self) -> None:
+        self._stopped = False
+
+    @eidosian()
+    def stop(self) -> None:
+        self._stopped = True
+
+    @eidosian()
+    def stopped(self) -> bool:
+        return self._stopped
+
+
+@eidosian()
+def run_loop(cfg: BeatCfg, beat_fn: Callable[[], None], *, stop: StopToken) -> None:
+    """Run ``beat_fn`` in a loop with jitter and exponential backoff."""
+
+    beats = 0
+    backoff = 1.0
+    while not stop.stopped():
+        if cfg.max_beats and beats >= cfg.max_beats:
+            break
+        try:
+            beat_fn()
+            beats += 1
+            backoff = 1.0
+            if cfg.tick_secs > 0:
+                jitter = 0.0
+                if cfg.jitter_ms:
+                    jitter = random.uniform(-cfg.jitter_ms / 1000.0, cfg.jitter_ms / 1000.0)
+                time.sleep(max(cfg.tick_secs + jitter, 0.0))
+            continue
+        except Exception:
+            time.sleep(backoff)
+            backoff = min(backoff * 2, cfg.max_backoff_secs)
+            continue
+
+
+@eidosian()
+def install_sigint(stop: StopToken) -> None:
+    """Install SIGINT/SIGTERM handlers that set ``stop``."""
+
+    @eidosian()
+    def handler(signum, frame):  # pragma: no cover - simple forwarding
+        stop.stop()
+
+    signal.signal(signal.SIGINT, handler)
+    signal.signal(signal.SIGTERM, handler)
+
+
+@eidosian()
+def sense(ctx):  # existing hook: leave as-is if already present
+    BUS.append(STATE_DIR, "tick.sense")
+
+
+@eidosian()
+def create_plan_for_goal(
+    state_dir: str,
+    goal,
+    *,
+    kind: str = "htn",
+    template: str,
+    vars: Mapping[str, Any] | None = None,
+    meta: Mapping[str, Any] | None = None,
+):
+    steps = materialize(template, goal.title, vars=vars)
+    retries: dict[str, int] = {}
+    for s in steps:
+        retries[str(s["idx"])] = 1 if "test" in s["name"] else 0
+    plan_meta = dict(meta or {})
+    plan_meta["template"] = template
+    plan_meta["vars"] = dict(vars or {})
+    plan_meta["retries"] = retries
+    p = add_plan(state_dir, goal.id, kind, plan_meta)
+    for s in steps:
+        add_step(state_dir, p.id, s["idx"], s["name"], json.dumps(s["cmd"]), s["budget_s"], "todo")
+    BUS.append(state_dir, "plan.created", {"goal_id": goal.id, "plan_id": p.id, "template": template})
+    return p
+
+
+@eidosian()
+def plan(ctx, goal):
+    kind, meta = choose(goal)
+    return create_plan_for_goal(
+        STATE_DIR,
+        goal,
+        kind=kind,
+        template=meta["template"],
+        vars=meta.get("vars"),
+        meta=meta,
+    )
+
+
+@eidosian()
+def gate(ctx, step_row):
+    # approvals handled inside shell_exec.run_step; we still log intent
+    BUS.append(STATE_DIR, "gate.checked", {"step_id": step_row.id})
+    return True
+
+
+@eidosian()
+def act(ctx, step_row):
+    cmd = json.loads(step_row.cmd)
+    import pathlib
+    import sqlite3
+
+    db = pathlib.Path(STATE_DIR) / "e3.sqlite"
+    conn = sqlite3.connect(db)
+    try:
+        conn.execute("UPDATE steps SET status=? WHERE id=?", ("running", step_row.id))
+        conn.commit()
+    finally:
+        conn.close()
+    plan = next((p for p in list_plans(STATE_DIR) if p.id == step_row.plan_id), None)
+    template = plan.meta.get("template") if plan else None
+    cwd = str(plan.meta.get("cwd", ".")) if plan else "."
+    res = run_step(STATE_DIR, step_row.id, cmd, cwd=cwd, budget_s=step_row.budget_s, template=template)
+    BUS.append(STATE_DIR, "act.exec", {"step_id": step_row.id, "res": res})
+    return res
+
+
+@eidosian()
+def verify(ctx, step_row, res):
+    import pathlib
+    import sqlite3
+
+    db = pathlib.Path(STATE_DIR) / "e3.sqlite"
+    conn = sqlite3.connect(db)
+    try:
+        status = "ok" if res.get("rc", 1) == 0 and res.get("status") == "ok" else "fail"
+        if status == "fail":
+            runs = list_runs(STATE_DIR, step_row.id)
+            plan = next((p for p in list_plans(STATE_DIR) if p.id == step_row.plan_id), None)
+            retries = int(plan.meta.get("retries", {}).get(str(step_row.idx), 0)) if plan else 0
+            attempts = len(runs)
+            if attempts <= retries:
+                conn.execute("UPDATE steps SET status=? WHERE id=?", ("todo", step_row.id))
+                conn.commit()
+                BUS.append(STATE_DIR, "verify.retry", {"step_id": step_row.id, "attempt": attempts})
+                return
+        conn.execute("UPDATE steps SET status=? WHERE id=?", (status, step_row.id))
+        conn.commit()
+    finally:
+        conn.close()
+    BUS.append(STATE_DIR, "verify.done", {"step_id": step_row.id, "status": status})

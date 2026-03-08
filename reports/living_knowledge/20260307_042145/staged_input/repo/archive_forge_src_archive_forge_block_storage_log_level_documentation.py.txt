@@ -1,0 +1,11 @@
+SOURCE_PATH: archive_forge/src/archive_forge/block_storage_log_level_documentation.py
+KIND: code
+
+from cinderclient import api_versions
+from osc_lib.command import command
+from osc_lib import exceptions
+from osc_lib import utils
+from openstackclient.i18n import _
+Set log level of block storage service
+
+    Supported by --os-volume-api-version 3.32 or greater.

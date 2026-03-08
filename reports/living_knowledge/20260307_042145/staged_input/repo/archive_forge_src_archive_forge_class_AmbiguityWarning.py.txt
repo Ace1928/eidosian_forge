@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AmbiguityWarning.py
+KIND: code
+
+from .utils import _toposort, groupby
+class AmbiguityWarning(Warning):
+    pass

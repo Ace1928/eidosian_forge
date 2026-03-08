@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_cpdispatch_documentation.py
+KIND: code
+
+import string
+import sys
+import types
+import cherrypy
+Collapse all object_trail config into cherrypy.request.config.

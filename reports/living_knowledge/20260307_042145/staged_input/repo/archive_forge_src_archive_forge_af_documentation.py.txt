@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/af_documentation.py
+KIND: code
+
+Mapping of Afrikaans role names to canonical role names for interpreted text.

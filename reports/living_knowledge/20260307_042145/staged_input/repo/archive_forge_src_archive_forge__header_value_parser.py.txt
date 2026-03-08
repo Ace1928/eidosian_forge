@@ -1,0 +1,744 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_header_value_parser.py
+KIND: code
+
+"""Header value parser implementing various email-related RFC parsing rules.
+
+The parsing methods defined in this module implement various email related
+parsing rules.  Principal among them is RFC 5322, which is the followon
+to RFC 2822 and primarily a clarification of the former.  It also implements
+RFC 2047 encoded word decoding.
+
+RFC 5322 goes to considerable trouble to maintain backward compatibility with
+RFC 822 in the parse phase, while cleaning up the structure on the generation
+phase.  This parser supports correct RFC 5322 generation by tagging white space
+as folding white space only when folding is allowed in the non-obsolete rule
+sets.  Actually, the parser is even more generous when accepting input than RFC
+5322 mandates, following the spirit of Postel's Law, which RFC 5322 encourages.
+Where possible deviations from the standard are annotated on the 'defects'
+attribute of tokens that deviate.
+
+The general structure of the parser follows RFC 5322, and uses its terminology
+where there is a direct correspondence.  Where the implementation requires a
+somewhat different structure than that used by the formal grammar, new terms
+that mimic the closest existing terms are used.  Thus, it really helps to have
+a copy of RFC 5322 handy when studying this code.
+
+Input to the parser is a string that has already been unfolded according to
+RFC 5322 rules.  According to the RFC this unfolding is the very first step, and
+this parser leaves the unfolding step to a higher level message parser, which
+will have already detected the line breaks that need unfolding while
+determining the beginning and end of each header.
+
+The output of the parser is a TokenList object, which is a list subclass.  A
+TokenList is a recursive data structure.  The terminal nodes of the structure
+are Terminal objects, which are subclasses of str.  These do not correspond
+directly to terminal objects in the formal grammar, but are instead more
+practical higher level combinations of true terminals.
+
+All TokenList and Terminal objects have a 'value' attribute, which produces the
+semantically meaningful value of that part of the parse subtree.  The value of
+all whitespace tokens (no matter how many sub-tokens they may contain) is a
+single space, as per the RFC rules.  This includes 'CFWS', which is herein
+included in the general class of whitespace tokens.  There is one exception to
+the rule that whitespace tokens are collapsed into single spaces in values: in
+the value of a 'bare-quoted-string' (a quoted-string with no leading or
+trailing whitespace), any whitespace that appeared between the quotation marks
+is preserved in the returned value.  Note that in all Terminal strings quoted
+pairs are turned into their unquoted values.
+
+All TokenList and Terminal objects also have a string value, which attempts to
+be a "canonical" representation of the RFC-compliant form of the substring that
+produced the parsed subtree, including minimal use of quoted pair quoting.
+Whitespace runs are not collapsed.
+
+Comment tokens also have a 'content' attribute providing the string found
+between the parens (including any nested comments) with whitespace preserved.
+
+All TokenList and Terminal objects have a 'defects' attribute which is a
+possibly empty list all of the defects found while creating the token.  Defects
+may appear on any token in the tree, and a composite list of all defects in the
+subtree is available through the 'all_defects' attribute of any node.  (For
+Terminal notes x.defects == x.all_defects.)
+
+Each object in a parse tree is called a 'token', and each has a 'token_type'
+attribute that gives the name from the RFC 5322 grammar that it represents.
+Not all RFC 5322 nodes are produced, and there is one non-RFC 5322 node that
+may be produced: 'ptext'.  A 'ptext' is a string of printable ascii characters.
+It is returned in place of lists of (ctext/quoted-pair) and
+(qtext/quoted-pair).
+
+XXX: provide complete list of token types.
+"""
+
+import re
+import sys
+import urllib   # For urllib.parse.unquote
+from string import hexdigits
+from operator import itemgetter
+from email import _encoded_words as _ew
+from email import errors
+from email import utils
+
+#
+# Useful constants and functions
+#
+
+WSP = set(' \t')
+CFWS_LEADER = WSP | set('(')
+SPECIALS = set(r'()<>@,:;.\"[]')
+ATOM_ENDS = SPECIALS | WSP
+DOT_ATOM_ENDS = ATOM_ENDS - set('.')
+# '.', '"', and '(' do not end phrases in order to support obs-phrase
+PHRASE_ENDS = SPECIALS - set('."(')
+TSPECIALS = (SPECIALS | set('/?=')) - set('.')
+TOKEN_ENDS = TSPECIALS | WSP
+ASPECIALS = TSPECIALS | set("*'%")
+ATTRIBUTE_ENDS = ASPECIALS | WSP
+EXTENDED_ATTRIBUTE_ENDS = ATTRIBUTE_ENDS - set('%')
+
+def quote_string(value):
+    return '"'+str(value).replace('\\', '\\\\').replace('"', r'\"')+'"'
+
+# Match a RFC 2047 word, looks like =?utf-8?q?someword?=
+rfc2047_matcher = re.compile(r'''
+   =\?            # literal =?
+   [^?]*          # charset
+   \?             # literal ?
+   [qQbB]         # literal 'q' or 'b', case insensitive
+   \?             # literal ?
+  .*?             # encoded word
+  \?=             # literal ?=
+''', re.VERBOSE | re.MULTILINE)
+
+
+#
+# TokenList and its subclasses
+#
+
+class TokenList(list):
+
+    token_type = None
+    syntactic_break = True
+    ew_combine_allowed = True
+
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+        self.defects = []
+
+    def __str__(self):
+        return ''.join(str(x) for x in self)
+
+    def __repr__(self):
+        return '{}({})'.format(self.__class__.__name__,
+                             super().__repr__())
+
+    @property
+    def value(self):
+        return ''.join(x.value for x in self if x.value)
+
+    @property
+    def all_defects(self):
+        return sum((x.all_defects for x in self), self.defects)
+
+    def startswith_fws(self):
+        return self[0].startswith_fws()
+
+    @property
+    def as_ew_allowed(self):
+        """True if all top level tokens of this part may be RFC2047 encoded."""
+        return all(part.as_ew_allowed for part in self)
+
+    @property
+    def comments(self):
+        comments = []
+        for token in self:
+            comments.extend(token.comments)
+        return comments
+
+    def fold(self, *, policy):
+        return _refold_parse_tree(self, policy=policy)
+
+    def pprint(self, indent=''):
+        print(self.ppstr(indent=indent))
+
+    def ppstr(self, indent=''):
+        return '\n'.join(self._pp(indent=indent))
+
+    def _pp(self, indent=''):
+        yield '{}{}/{}('.format(
+            indent,
+            self.__class__.__name__,
+            self.token_type)
+        for token in self:
+            if not hasattr(token, '_pp'):
+                yield (indent + '    !! invalid element in token '
+                                        'list: {!r}'.format(token))
+            else:
+                yield from token._pp(indent+'    ')
+        if self.defects:
+            extra = ' Defects: {}'.format(self.defects)
+        else:
+            extra = ''
+        yield '{}){}'.format(indent, extra)
+
+
+class WhiteSpaceTokenList(TokenList):
+
+    @property
+    def value(self):
+        return ' '
+
+    @property
+    def comments(self):
+        return [x.content for x in self if x.token_type=='comment']
+
+
+class UnstructuredTokenList(TokenList):
+    token_type = 'unstructured'
+
+
+class Phrase(TokenList):
+    token_type = 'phrase'
+
+class Word(TokenList):
+    token_type = 'word'
+
+
+class CFWSList(WhiteSpaceTokenList):
+    token_type = 'cfws'
+
+
+class Atom(TokenList):
+    token_type = 'atom'
+
+
+class Token(TokenList):
+    token_type = 'token'
+    encode_as_ew = False
+
+
+class EncodedWord(TokenList):
+    token_type = 'encoded-word'
+    cte = None
+    charset = None
+    lang = None
+
+
+class QuotedString(TokenList):
+
+    token_type = 'quoted-string'
+
+    @property
+    def content(self):
+        for x in self:
+            if x.token_type == 'bare-quoted-string':
+                return x.value
+
+    @property
+    def quoted_value(self):
+        res = []
+        for x in self:
+            if x.token_type == 'bare-quoted-string':
+                res.append(str(x))
+            else:
+                res.append(x.value)
+        return ''.join(res)
+
+    @property
+    def stripped_value(self):
+        for token in self:
+            if token.token_type == 'bare-quoted-string':
+                return token.value
+
+
+class BareQuotedString(QuotedString):
+
+    token_type = 'bare-quoted-string'
+
+    def __str__(self):
+        return quote_string(''.join(str(x) for x in self))
+
+    @property
+    def value(self):
+        return ''.join(str(x) for x in self)
+
+
+class Comment(WhiteSpaceTokenList):
+
+    token_type = 'comment'
+
+    def __str__(self):
+        return ''.join(sum([
+                            ["("],
+                            [self.quote(x) for x in self],
+                            [")"],
+                            ], []))
+
+    def quote(self, value):
+        if value.token_type == 'comment':
+            return str(value)
+        return str(value).replace('\\', '\\\\').replace(
+                                  '(', r'\(').replace(
+                                  ')', r'\)')
+
+    @property
+    def content(self):
+        return ''.join(str(x) for x in self)
+
+    @property
+    def comments(self):
+        return [self.content]
+
+class AddressList(TokenList):
+
+    token_type = 'address-list'
+
+    @property
+    def addresses(self):
+        return [x for x in self if x.token_type=='address']
+
+    @property
+    def mailboxes(self):
+        return sum((x.mailboxes
+                    for x in self if x.token_type=='address'), [])
+
+    @property
+    def all_mailboxes(self):
+        return sum((x.all_mailboxes
+                    for x in self if x.token_type=='address'), [])
+
+
+class Address(TokenList):
+
+    token_type = 'address'
+
+    @property
+    def display_name(self):
+        if self[0].token_type == 'group':
+            return self[0].display_name
+
+    @property
+    def mailboxes(self):
+        if self[0].token_type == 'mailbox':
+            return [self[0]]
+        elif self[0].token_type == 'invalid-mailbox':
+            return []
+        return self[0].mailboxes
+
+    @property
+    def all_mailboxes(self):
+        if self[0].token_type == 'mailbox':
+            return [self[0]]
+        elif self[0].token_type == 'invalid-mailbox':
+            return [self[0]]
+        return self[0].all_mailboxes
+
+class MailboxList(TokenList):
+
+    token_type = 'mailbox-list'
+
+    @property
+    def mailboxes(self):
+        return [x for x in self if x.token_type=='mailbox']
+
+    @property
+    def all_mailboxes(self):
+        return [x for x in self
+            if x.token_type in ('mailbox', 'invalid-mailbox')]
+
+
+class GroupList(TokenList):
+
+    token_type = 'group-list'
+
+    @property
+    def mailboxes(self):
+        if not self or self[0].token_type != 'mailbox-list':
+            return []
+        return self[0].mailboxes
+
+    @property
+    def all_mailboxes(self):
+        if not self or self[0].token_type != 'mailbox-list':
+            return []
+        return self[0].all_mailboxes
+
+
+class Group(TokenList):
+
+    token_type = "group"
+
+    @property
+    def mailboxes(self):
+        if self[2].token_type != 'group-list':
+            return []
+        return self[2].mailboxes
+
+    @property
+    def all_mailboxes(self):
+        if self[2].token_type != 'group-list':
+            return []
+        return self[2].all_mailboxes
+
+    @property
+    def display_name(self):
+        return self[0].display_name
+
+
+class NameAddr(TokenList):
+
+    token_type = 'name-addr'
+
+    @property
+    def display_name(self):
+        if len(self) == 1:
+            return None
+        return self[0].display_name
+
+    @property
+    def local_part(self):
+        return self[-1].local_part
+
+    @property
+    def domain(self):
+        return self[-1].domain
+
+    @property
+    def route(self):
+        return self[-1].route
+
+    @property
+    def addr_spec(self):
+        return self[-1].addr_spec
+
+
+class AngleAddr(TokenList):
+
+    token_type = 'angle-addr'
+
+    @property
+    def local_part(self):
+        for x in self:
+            if x.token_type == 'addr-spec':
+                return x.local_part
+
+    @property
+    def domain(self):
+        for x in self:
+            if x.token_type == 'addr-spec':
+                return x.domain
+
+    @property
+    def route(self):
+        for x in self:
+            if x.token_type == 'obs-route':
+                return x.domains
+
+    @property
+    def addr_spec(self):
+        for x in self:
+            if x.token_type == 'addr-spec':
+                if x.local_part:
+                    return x.addr_spec
+                else:
+                    return quote_string(x.local_part) + x.addr_spec
+        else:
+            return '<>'
+
+
+class ObsRoute(TokenList):
+
+    token_type = 'obs-route'
+
+    @property
+    def domains(self):
+        return [x.domain for x in self if x.token_type == 'domain']
+
+
+class Mailbox(TokenList):
+
+    token_type = 'mailbox'
+
+    @property
+    def display_name(self):
+        if self[0].token_type == 'name-addr':
+            return self[0].display_name
+
+    @property
+    def local_part(self):
+        return self[0].local_part
+
+    @property
+    def domain(self):
+        return self[0].domain
+
+    @property
+    def route(self):
+        if self[0].token_type == 'name-addr':
+            return self[0].route
+
+    @property
+    def addr_spec(self):
+        return self[0].addr_spec
+
+
+class InvalidMailbox(TokenList):
+
+    token_type = 'invalid-mailbox'
+
+    @property
+    def display_name(self):
+        return None
+
+    local_part = domain = route = addr_spec = display_name
+
+
+class Domain(TokenList):
+
+    token_type = 'domain'
+    as_ew_allowed = False
+
+    @property
+    def domain(self):
+        return ''.join(super().value.split())
+
+
+class DotAtom(TokenList):
+    token_type = 'dot-atom'
+
+
+class DotAtomText(TokenList):
+    token_type = 'dot-atom-text'
+    as_ew_allowed = True
+
+
+class NoFoldLiteral(TokenList):
+    token_type = 'no-fold-literal'
+    as_ew_allowed = False
+
+
+class AddrSpec(TokenList):
+
+    token_type = 'addr-spec'
+    as_ew_allowed = False
+
+    @property
+    def local_part(self):
+        return self[0].local_part
+
+    @property
+    def domain(self):
+        if len(self) < 3:
+            return None
+        return self[-1].domain
+
+    @property
+    def value(self):
+        if len(self) < 3:
+            return self[0].value
+        return self[0].value.rstrip()+self[1].value+self[2].value.lstrip()
+
+    @property
+    def addr_spec(self):
+        nameset = set(self.local_part)
+        if len(nameset) > len(nameset-DOT_ATOM_ENDS):
+            lp = quote_string(self.local_part)
+        else:
+            lp = self.local_part
+        if self.domain is not None:
+            return lp + '@' + self.domain
+        return lp
+
+
+class ObsLocalPart(TokenList):
+
+    token_type = 'obs-local-part'
+    as_ew_allowed = False
+
+
+class DisplayName(Phrase):
+
+    token_type = 'display-name'
+    ew_combine_allowed = False
+
+    @property
+    def display_name(self):
+        res = TokenList(self)
+        if len(res) == 0:
+            return res.value
+        if res[0].token_type == 'cfws':
+            res.pop(0)
+        else:
+            if res[0][0].token_type == 'cfws':
+                res[0] = TokenList(res[0][1:])
+        if res[-1].token_type == 'cfws':
+            res.pop()
+        else:
+            if res[-1][-1].token_type == 'cfws':
+                res[-1] = TokenList(res[-1][:-1])
+        return res.value
+
+    @property
+    def value(self):
+        quote = False
+        if self.defects:
+            quote = True
+        else:
+            for x in self:
+                if x.token_type == 'quoted-string':
+                    quote = True
+        if len(self) != 0 and quote:
+            pre = post = ''
+            if self[0].token_type=='cfws' or self[0][0].token_type=='cfws':
+                pre = ' '
+            if self[-1].token_type=='cfws' or self[-1][-1].token_type=='cfws':
+                post = ' '
+            return pre+quote_string(self.display_name)+post
+        else:
+            return super().value
+
+
+class LocalPart(TokenList):
+
+    token_type = 'local-part'
+    as_ew_allowed = False
+
+    @property
+    def value(self):
+        if self[0].token_type == "quoted-string":
+            return self[0].quoted_value
+        else:
+            return self[0].value
+
+    @property
+    def local_part(self):
+        # Strip whitespace from front, back, and around dots.
+        res = [DOT]
+        last = DOT
+        last_is_tl = False
+        for tok in self[0] + [DOT]:
+            if tok.token_type == 'cfws':
+                continue
+            if (last_is_tl and tok.token_type == 'dot' and
+                    last[-1].token_type == 'cfws'):
+                res[-1] = TokenList(last[:-1])
+            is_tl = isinstance(tok, TokenList)
+            if (is_tl and last.token_type == 'dot' and
+                    tok[0].token_type == 'cfws'):
+                res.append(TokenList(tok[1:]))
+            else:
+                res.append(tok)
+            last = res[-1]
+            last_is_tl = is_tl
+        res = TokenList(res[1:-1])
+        return res.value
+
+
+class DomainLiteral(TokenList):
+
+    token_type = 'domain-literal'
+    as_ew_allowed = False
+
+    @property
+    def domain(self):
+        return ''.join(super().value.split())
+
+    @property
+    def ip(self):
+        for x in self:
+            if x.token_type == 'ptext':
+                return x.value
+
+
+class MIMEVersion(TokenList):
+
+    token_type = 'mime-version'
+    major = None
+    minor = None
+
+
+class Parameter(TokenList):
+
+    token_type = 'parameter'
+    sectioned = False
+    extended = False
+    charset = 'us-ascii'
+
+    @property
+    def section_number(self):
+        # Because the first token, the attribute (name) eats CFWS, the second
+        # token is always the section if there is one.
+        return self[1].number if self.sectioned else 0
+
+    @property
+    def param_value(self):
+        # This is part of the "handle quoted extended parameters" hack.
+        for token in self:
+            if token.token_type == 'value':
+                return token.stripped_value
+            if token.token_type == 'quoted-string':
+                for token in token:
+                    if token.token_type == 'bare-quoted-string':
+                        for token in token:
+                            if token.token_type == 'value':
+                                return token.stripped_value
+        return ''
+
+
+class InvalidParameter(Parameter):
+
+    token_type = 'invalid-parameter'
+
+
+class Attribute(TokenList):
+
+    token_type = 'attribute'
+
+    @property
+    def stripped_value(self):
+        for token in self:
+            if token.token_type.endswith('attrtext'):
+                return token.value
+
+class Section(TokenList):
+
+    token_type = 'section'
+    number = None
+
+
+class Value(TokenList):
+
+    token_type = 'value'
+
+    @property
+    def stripped_value(self):
+        token = self[0]
+        if token.token_type == 'cfws':
+            token = self[1]
+        if token.token_type.endswith(
+                ('quoted-string', 'attribute', 'extended-attribute')):
+            return token.stripped_value
+        return self.value
+
+
+class MimeParameters(TokenList):
+
+    token_type = 'mime-parameters'
+    syntactic_break = False
+
+    @property
+    def params(self):
+        # The RFC specifically states that the ordering of parameters is not
+        # guaranteed and may be reordered by the transport layer.  So we have
+        # to assume the RFC 2231 pieces can come in any order.  However, we
+        # output them in the order that we first see a given name, which gives
+        # us a stable __str__.
+        params = {}  # Using order preserving dict from Python 3.7+
+        for token in self:
+            if not token.token_type.endswith('parameter'):
+                continue
+            if token[0].token_type != 'attribute':
+                continue
+            name = token[0].value.strip()
+            if name not in params:
+                params[name]

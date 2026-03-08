@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/LP_duals_minimize_documentation.py
+KIND: code
+
+import pyomo.kernel as pmo
+from pyomo.core import (
+from pyomo.solvers.tests.models.base import _BaseTestModel, register_model
+
+    A continuous linear model designed to test every form of
+    constraint when collecting duals for a minimization
+    objective

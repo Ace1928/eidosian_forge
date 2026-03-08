@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/base_language.py
+KIND: code
+
+"""Deprecated module for BaseLanguageModel class, kept for backwards compatibility."""
+from __future__ import annotations
+
+from langchain_core.language_models import BaseLanguageModel
+
+__all__ = ["BaseLanguageModel"]

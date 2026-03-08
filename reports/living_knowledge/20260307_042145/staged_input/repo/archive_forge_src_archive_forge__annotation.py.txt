@@ -1,0 +1,564 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_annotation.py
+KIND: code
+
+from plotly.basedatatypes import BaseLayoutHierarchyType as _BaseLayoutHierarchyType
+import copy as _copy
+
+
+class Annotation(_BaseLayoutHierarchyType):
+
+    # class properties
+    # --------------------
+    _parent_path_str = "layout"
+    _path_str = "layout.annotation"
+    _valid_props = {
+        "align",
+        "arrowcolor",
+        "arrowhead",
+        "arrowside",
+        "arrowsize",
+        "arrowwidth",
+        "ax",
+        "axref",
+        "ay",
+        "ayref",
+        "bgcolor",
+        "bordercolor",
+        "borderpad",
+        "borderwidth",
+        "captureevents",
+        "clicktoshow",
+        "font",
+        "height",
+        "hoverlabel",
+        "hovertext",
+        "name",
+        "opacity",
+        "showarrow",
+        "standoff",
+        "startarrowhead",
+        "startarrowsize",
+        "startstandoff",
+        "templateitemname",
+        "text",
+        "textangle",
+        "valign",
+        "visible",
+        "width",
+        "x",
+        "xanchor",
+        "xclick",
+        "xref",
+        "xshift",
+        "y",
+        "yanchor",
+        "yclick",
+        "yref",
+        "yshift",
+    }
+
+    # align
+    # -----
+    @property
+    def align(self):
+        """
+        Sets the horizontal alignment of the `text` within the box. Has
+        an effect only if `text` spans two or more lines (i.e. `text`
+        contains one or more <br> HTML tags) or if an explicit width is
+        set to override the text width.
+
+        The 'align' property is an enumeration that may be specified as:
+          - One of the following enumeration values:
+                ['left', 'center', 'right']
+
+        Returns
+        -------
+        Any
+        """
+        return self["align"]
+
+    @align.setter
+    def align(self, val):
+        self["align"] = val
+
+    # arrowcolor
+    # ----------
+    @property
+    def arrowcolor(self):
+        """
+        Sets the color of the annotation arrow.
+
+        The 'arrowcolor' property is a color and may be specified as:
+          - A hex string (e.g. '#ff0000')
+          - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+          - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+          - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+          - A named CSS color:
+                aliceblue, antiquewhite, aqua, aquamarine, azure,
+                beige, bisque, black, blanchedalmond, blue,
+                blueviolet, brown, burlywood, cadetblue,
+                chartreuse, chocolate, coral, cornflowerblue,
+                cornsilk, crimson, cyan, darkblue, darkcyan,
+                darkgoldenrod, darkgray, darkgrey, darkgreen,
+                darkkhaki, darkmagenta, darkolivegreen, darkorange,
+                darkorchid, darkred, darksalmon, darkseagreen,
+                darkslateblue, darkslategray, darkslategrey,
+                darkturquoise, darkviolet, deeppink, deepskyblue,
+                dimgray, dimgrey, dodgerblue, firebrick,
+                floralwhite, forestgreen, fuchsia, gainsboro,
+                ghostwhite, gold, goldenrod, gray, grey, green,
+                greenyellow, honeydew, hotpink, indianred, indigo,
+                ivory, khaki, lavender, lavenderblush, lawngreen,
+                lemonchiffon, lightblue, lightcoral, lightcyan,
+                lightgoldenrodyellow, lightgray, lightgrey,
+                lightgreen, lightpink, lightsalmon, lightseagreen,
+                lightskyblue, lightslategray, lightslategrey,
+                lightsteelblue, lightyellow, lime, limegreen,
+                linen, magenta, maroon, mediumaquamarine,
+                mediumblue, mediumorchid, mediumpurple,
+                mediumseagreen, mediumslateblue, mediumspringgreen,
+                mediumturquoise, mediumvioletred, midnightblue,
+                mintcream, mistyrose, moccasin, navajowhite, navy,
+                oldlace, olive, olivedrab, orange, orangered,
+                orchid, palegoldenrod, palegreen, paleturquoise,
+                palevioletred, papayawhip, peachpuff, peru, pink,
+                plum, powderblue, purple, red, rosybrown,
+                royalblue, rebeccapurple, saddlebrown, salmon,
+                sandybrown, seagreen, seashell, sienna, silver,
+                skyblue, slateblue, slategray, slategrey, snow,
+                springgreen, steelblue, tan, teal, thistle, tomato,
+                turquoise, violet, wheat, white, whitesmoke,
+                yellow, yellowgreen
+
+        Returns
+        -------
+        str
+        """
+        return self["arrowcolor"]
+
+    @arrowcolor.setter
+    def arrowcolor(self, val):
+        self["arrowcolor"] = val
+
+    # arrowhead
+    # ---------
+    @property
+    def arrowhead(self):
+        """
+        Sets the end annotation arrow head style.
+
+        The 'arrowhead' property is a integer and may be specified as:
+          - An int (or float that will be cast to an int)
+            in the interval [0, 8]
+
+        Returns
+        -------
+        int
+        """
+        return self["arrowhead"]
+
+    @arrowhead.setter
+    def arrowhead(self, val):
+        self["arrowhead"] = val
+
+    # arrowside
+    # ---------
+    @property
+    def arrowside(self):
+        """
+        Sets the annotation arrow head position.
+
+        The 'arrowside' property is a flaglist and may be specified
+        as a string containing:
+          - Any combination of ['end', 'start'] joined with '+' characters
+            (e.g. 'end+start')
+            OR exactly one of ['none'] (e.g. 'none')
+
+        Returns
+        -------
+        Any
+        """
+        return self["arrowside"]
+
+    @arrowside.setter
+    def arrowside(self, val):
+        self["arrowside"] = val
+
+    # arrowsize
+    # ---------
+    @property
+    def arrowsize(self):
+        """
+        Sets the size of the end annotation arrow head, relative to
+        `arrowwidth`. A value of 1 (default) gives a head about 3x as
+        wide as the line.
+
+        The 'arrowsize' property is a number and may be specified as:
+          - An int or float in the interval [0.3, inf]
+
+        Returns
+        -------
+        int|float
+        """
+        return self["arrowsize"]
+
+    @arrowsize.setter
+    def arrowsize(self, val):
+        self["arrowsize"] = val
+
+    # arrowwidth
+    # ----------
+    @property
+    def arrowwidth(self):
+        """
+        Sets the width (in px) of annotation arrow line.
+
+        The 'arrowwidth' property is a number and may be specified as:
+          - An int or float in the interval [0.1, inf]
+
+        Returns
+        -------
+        int|float
+        """
+        return self["arrowwidth"]
+
+    @arrowwidth.setter
+    def arrowwidth(self, val):
+        self["arrowwidth"] = val
+
+    # ax
+    # --
+    @property
+    def ax(self):
+        """
+        Sets the x component of the arrow tail about the arrow head. If
+        `axref` is `pixel`, a positive (negative) component corresponds
+        to an arrow pointing from right to left (left to right). If
+        `axref` is not `pixel` and is exactly the same as `xref`, this
+        is an absolute value on that axis, like `x`, specified in the
+        same coordinates as `xref`.
+
+        The 'ax' property accepts values of any type
+
+        Returns
+        -------
+        Any
+        """
+        return self["ax"]
+
+    @ax.setter
+    def ax(self, val):
+        self["ax"] = val
+
+    # axref
+    # -----
+    @property
+    def axref(self):
+        """
+        Indicates in what coordinates the tail of the annotation
+        (ax,ay) is specified. If set to a x axis id (e.g. "x" or "x2"),
+        the `x` position refers to a x coordinate. If set to "paper",
+        the `x` position refers to the distance from the left of the
+        plotting area in normalized coordinates where 0 (1) corresponds
+        to the left (right). If set to a x axis ID followed by "domain"
+        (separated by a space), the position behaves like for "paper",
+        but refers to the distance in fractions of the domain length
+        from the left of the domain of that axis: e.g., *x2 domain*
+        refers to the domain of the second x  axis and a x position of
+        0.5 refers to the point between the left and the right of the
+        domain of the second x axis. In order for absolute positioning
+        of the arrow to work, "axref" must be exactly the same as
+        "xref", otherwise "axref" will revert to "pixel" (explained
+        next). For relative positioning, "axref" can be set to "pixel",
+        in which case the "ax" value is specified in pixels relative to
+        "x". Absolute positioning is useful for trendline annotations
+        which should continue to indicate the correct trend when
+        zoomed. Relative positioning is useful for specifying the text
+        offset for an annotated point.
+
+        The 'axref' property is an enumeration that may be specified as:
+          - One of the following enumeration values:
+                ['pixel']
+          - A string that matches one of the following regular expressions:
+                ['^x([2-9]|[1-9][0-9]+)?( domain)?$']
+
+        Returns
+        -------
+        Any
+        """
+        return self["axref"]
+
+    @axref.setter
+    def axref(self, val):
+        self["axref"] = val
+
+    # ay
+    # --
+    @property
+    def ay(self):
+        """
+        Sets the y component of the arrow tail about the arrow head. If
+        `ayref` is `pixel`, a positive (negative) component corresponds
+        to an arrow pointing from bottom to top (top to bottom). If
+        `ayref` is not `pixel` and is exactly the same as `yref`, this
+        is an absolute value on that axis, like `y`, specified in the
+        same coordinates as `yref`.
+
+        The 'ay' property accepts values of any type
+
+        Returns
+        -------
+        Any
+        """
+        return self["ay"]
+
+    @ay.setter
+    def ay(self, val):
+        self["ay"] = val
+
+    # ayref
+    # -----
+    @property
+    def ayref(self):
+        """
+        Indicates in what coordinates the tail of the annotation
+        (ax,ay) is specified. If set to a y axis id (e.g. "y" or "y2"),
+        the `y` position refers to a y coordinate. If set to "paper",
+        the `y` position refers to the distance from the bottom of the
+        plotting area in normalized coordinates where 0 (1) corresponds
+        to the bottom (top). If set to a y axis ID followed by "domain"
+        (separated by a space), the position behaves like for "paper",
+        but refers to the distance in fractions of the domain length
+        from the bottom of the domain of that axis: e.g., *y2 domain*
+        refers to the domain of the second y  axis and a y position of
+        0.5 refers to the point between the bottom and the top of the
+        domain of the second y axis. In order for absolute positioning
+        of the arrow to work, "ayref" must be exactly the same as
+        "yref", otherwise "ayref" will revert to "pixel" (explained
+        next). For relative positioning, "ayref" can be set to "pixel",
+        in which case the "ay" value is specified in pixels relative to
+        "y". Absolute positioning is useful for trendline annotations
+        which should continue to indicate the correct trend when
+        zoomed. Relative positioning is useful for specifying the text
+        offset for an annotated point.
+
+        The 'ayref' property is an enumeration that may be specified as:
+          - One of the following enumeration values:
+                ['pixel']
+          - A string that matches one of the following regular expressions:
+                ['^y([2-9]|[1-9][0-9]+)?( domain)?$']
+
+        Returns
+        -------
+        Any
+        """
+        return self["ayref"]
+
+    @ayref.setter
+    def ayref(self, val):
+        self["ayref"] = val
+
+    # bgcolor
+    # -------
+    @property
+    def bgcolor(self):
+        """
+        Sets the background color of the annotation.
+
+        The 'bgcolor' property is a color and may be specified as:
+          - A hex string (e.g. '#ff0000')
+          - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+          - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+          - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+          - A named CSS color:
+                aliceblue, antiquewhite, aqua, aquamarine, azure,
+                beige, bisque, black, blanchedalmond, blue,
+                blueviolet, brown, burlywood, cadetblue,
+                chartreuse, chocolate, coral, cornflowerblue,
+                cornsilk, crimson, cyan, darkblue, darkcyan,
+                darkgoldenrod, darkgray, darkgrey, darkgreen,
+                darkkhaki, darkmagenta, darkolivegreen, darkorange,
+                darkorchid, darkred, darksalmon, darkseagreen,
+                darkslateblue, darkslategray, darkslategrey,
+                darkturquoise, darkviolet, deeppink, deepskyblue,
+                dimgray, dimgrey, dodgerblue, firebrick,
+                floralwhite, forestgreen, fuchsia, gainsboro,
+                ghostwhite, gold, goldenrod, gray, grey, green,
+                greenyellow, honeydew, hotpink, indianred, indigo,
+                ivory, khaki, lavender, lavenderblush, lawngreen,
+                lemonchiffon, lightblue, lightcoral, lightcyan,
+                lightgoldenrodyellow, lightgray, lightgrey,
+                lightgreen, lightpink, lightsalmon, lightseagreen,
+                lightskyblue, lightslategray, lightslategrey,
+                lightsteelblue, lightyellow, lime, limegreen,
+                linen, magenta, maroon, mediumaquamarine,
+                mediumblue, mediumorchid, mediumpurple,
+                mediumseagreen, mediumslateblue, mediumspringgreen,
+                mediumturquoise, mediumvioletred, midnightblue,
+                mintcream, mistyrose, moccasin, navajowhite, navy,
+                oldlace, olive, olivedrab, orange, orangered,
+                orchid, palegoldenrod, palegreen, paleturquoise,
+                palevioletred, papayawhip, peachpuff, peru, pink,
+                plum, powderblue, purple, red, rosybrown,
+                royalblue, rebeccapurple, saddlebrown, salmon,
+                sandybrown, seagreen, seashell, sienna, silver,
+                skyblue, slateblue, slategray, slategrey, snow,
+                springgreen, steelblue, tan, teal, thistle, tomato,
+                turquoise, violet, wheat, white, whitesmoke,
+                yellow, yellowgreen
+
+        Returns
+        -------
+        str
+        """
+        return self["bgcolor"]
+
+    @bgcolor.setter
+    def bgcolor(self, val):
+        self["bgcolor"] = val
+
+    # bordercolor
+    # -----------
+    @property
+    def bordercolor(self):
+        """
+        Sets the color of the border enclosing the annotation `text`.
+
+        The 'bordercolor' property is a color and may be specified as:
+          - A hex string (e.g. '#ff0000')
+          - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+          - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+          - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+          - A named CSS color:
+                aliceblue, antiquewhite, aqua, aquamarine, azure,
+                beige, bisque, black, blanchedalmond, blue,
+                blueviolet, brown, burlywood, cadetblue,
+                chartreuse, chocolate, coral, cornflowerblue,
+                cornsilk, crimson, cyan, darkblue, darkcyan,
+                darkgoldenrod, darkgray, darkgrey, darkgreen,
+                darkkhaki, darkmagenta, darkolivegreen, darkorange,
+                darkorchid, darkred, darksalmon, darkseagreen,
+                darkslateblue, darkslategray, darkslategrey,
+                darkturquoise, darkviolet, deeppink, deepskyblue,
+                dimgray, dimgrey, dodgerblue, firebrick,
+                floralwhite, forestgreen, fuchsia, gainsboro,
+                ghostwhite, gold, goldenrod, gray, grey, green,
+                greenyellow, honeydew, hotpink, indianred, indigo,
+                ivory, khaki, lavender, lavenderblush, lawngreen,
+                lemonchiffon, lightblue, lightcoral, lightcyan,
+                lightgoldenrodyellow, lightgray, lightgrey,
+                lightgreen, lightpink, lightsalmon, lightseagreen,
+                lightskyblue, lightslategray, lightslategrey,
+                lightsteelblue, lightyellow, lime, limegreen,
+                linen, magenta, maroon, mediumaquamarine,
+                mediumblue, mediumorchid, mediumpurple,
+                mediumseagreen, mediumslateblue, mediumspringgreen,
+                mediumturquoise, mediumvioletred, midnightblue,
+                mintcream, mistyrose, moccasin, navajowhite, navy,
+                oldlace, olive, olivedrab, orange, orangered,
+                orchid, palegoldenrod, palegreen, paleturquoise,
+                palevioletred, papayawhip, peachpuff, peru, pink,
+                plum, powderblue, purple, red, rosybrown,
+                royalblue, rebeccapurple, saddlebrown, salmon,
+                sandybrown, seagreen, seashell, sienna, silver,
+                skyblue, slateblue, slategray, slategrey, snow,
+                springgreen, steelblue, tan, teal, thistle, tomato,
+                turquoise, violet, wheat, white, whitesmoke,
+                yellow, yellowgreen
+
+        Returns
+        -------
+        str
+        """
+        return self["bordercolor"]
+
+    @bordercolor.setter
+    def bordercolor(self, val):
+        self["bordercolor"] = val
+
+    # borderpad
+    # ---------
+    @property
+    def borderpad(self):
+        """
+        Sets the padding (in px) between the `text` and the enclosing
+        border.
+
+        The 'borderpad' property is a number and may be specified as:
+          - An int or float in the interval [0, inf]
+
+        Returns
+        -------
+        int|float
+        """
+        return self["borderpad"]
+
+    @borderpad.setter
+    def borderpad(self, val):
+        self["borderpad"] = val
+
+    # borderwidth
+    # -----------
+    @property
+    def borderwidth(self):
+        """
+        Sets the width (in px) of the border enclosing the annotation
+        `text`.
+
+        The 'borderwidth' property is a number and may be specified as:
+          - An int or float in the interval [0, inf]
+
+        Returns
+        -------
+        int|float
+        """
+        return self["borderwidth"]
+
+    @borderwidth.setter
+    def borderwidth(self, val):
+        self["borderwidth"] = val
+
+    # captureevents
+    # -------------
+    @property
+    def captureevents(self):
+        """
+        Determines whether the annotation text box captures mouse move
+        and click events, or allows those events to pass through to
+        data points in the plot that may be behind the annotation. By
+        default `captureevents` is False unless `hovertext` is
+        provided. If you use the event `plotly_clickannotation` without
+        `hovertext` you must explicitly enable `captureevents`.
+
+        The 'captureevents' property must be specified as a bool
+        (either True, or False)
+
+        Returns
+        -------
+        bool
+        """
+        return self["captureevents"]
+
+    @captureevents.setter
+    def captureevents(self, val):
+        self["captureevents"] = val
+
+    # clicktoshow
+    # -----------
+    @property
+    def clicktoshow(self):
+        """
+        Makes this annotation respond to clicks on the plot. If you
+        click a data point that exactly matches the `x` and `y` values
+        of this annotation, and it is hidden (visible: false), it will
+        appear. In "onoff" mode, you must click the same point again to
+        make it disappear, so if you click multiple points, you can
+        show multiple annotations. In "onout" mode, a click anywhere
+        else in the plot (on another data point or not) will hide this
+        annotation. If you need to show/hide this annotation in
+        response to different `x` or `y` values, you can set `xclick`
+        and/or `yclick`. This is useful for example to label the side
+        of a bar. To label markers though, `standoff` is preferred over
+        `xclick` and `yclick`.
+
+        The 'clicktoshow' prop

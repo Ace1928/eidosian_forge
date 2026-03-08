@@ -1,0 +1,7 @@
+SOURCE_PATH: .eidos_chrome_profile/optimization_guide_model_store/15/A3BFD4A403A877EC/0169356A198C1317/VERSION.txt
+KIND: docs
+
+This is the model for the Browsing Topics Privacy Sandbox feature.
+
+Model Version: 5
+Taxonomy Version: v2

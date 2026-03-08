@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/MultiGraph_documentation.py
+KIND: code
+
+from functools import reduce
+Remove edge (NOT IMPLEMENTED).

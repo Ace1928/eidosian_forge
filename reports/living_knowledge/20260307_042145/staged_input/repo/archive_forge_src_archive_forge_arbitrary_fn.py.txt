@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/arbitrary_fn.py
+KIND: code
+
+from langchain_community.docstore.arbitrary_fn import DocstoreFn
+
+__all__ = ["DocstoreFn"]

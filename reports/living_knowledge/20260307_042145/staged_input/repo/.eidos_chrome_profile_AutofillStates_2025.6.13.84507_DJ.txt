@@ -1,0 +1,13 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/DJ
+KIND: config
+
+DJ5
+أرتاartarégion d'artaإقليم عرتاO
+إقليم على صبيح
+ali sabiehrégion d'ali sabiehعلي صبيح<
+إقليم دخيلdikhilrégion de dikhil
+دِخيل
+جيبوتيdjibouti;
+
+أوبوكobockrégion d'obockإقليم أوبوخ_
+إقليم تاجورةrégion de tadjourah	tadjourahإقليم تجرةتادجورا

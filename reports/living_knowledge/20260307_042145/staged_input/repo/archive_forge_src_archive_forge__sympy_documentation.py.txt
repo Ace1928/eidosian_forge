@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_sympy_documentation.py
+KIND: code
+
+from sympy.printing.latex import LatexPrinter
+ SymPy printer used to allow pretty-printing of SymbolicSys in Jupyter notebooks.

@@ -1,0 +1,600 @@
+SOURCE_PATH: archive_forge/src/archive_forge/Dependencies.py
+KIND: code
+
+from __future__ import absolute_import, print_function
+
+import cython
+from .. import __version__
+
+import collections
+import contextlib
+import hashlib
+import os
+import shutil
+import subprocess
+import re, sys, time
+import warnings
+from glob import iglob
+from io import open as io_open
+from os.path import relpath as _relpath
+from distutils.extension import Extension
+from distutils.util import strtobool
+import zipfile
+
+try:
+    from collections.abc import Iterable
+except ImportError:
+    from collections import Iterable
+
+try:
+    import gzip
+    gzip_open = gzip.open
+    gzip_ext = '.gz'
+except ImportError:
+    gzip_open = open
+    gzip_ext = ''
+
+try:
+    import zlib
+    zipfile_compression_mode = zipfile.ZIP_DEFLATED
+except ImportError:
+    zipfile_compression_mode = zipfile.ZIP_STORED
+
+try:
+    import pythran
+except:
+    pythran = None
+
+from .. import Utils
+from ..Utils import (cached_function, cached_method, path_exists, write_depfile,
+    safe_makedirs, copy_file_to_dir_if_newer, is_package_dir, replace_suffix)
+from ..Compiler.Main import Context, CompilationOptions, default_options
+
+join_path = cached_function(os.path.join)
+copy_once_if_newer = cached_function(copy_file_to_dir_if_newer)
+safe_makedirs_once = cached_function(safe_makedirs)
+
+if sys.version_info[0] < 3:
+    # stupid Py2 distutils enforces str type in list of sources
+    _fs_encoding = sys.getfilesystemencoding()
+    if _fs_encoding is None:
+        _fs_encoding = sys.getdefaultencoding()
+    def encode_filename_in_py2(filename):
+        if not isinstance(filename, bytes):
+            return filename.encode(_fs_encoding)
+        return filename
+else:
+    def encode_filename_in_py2(filename):
+        return filename
+    basestring = str
+
+
+def _make_relative(file_paths, base=None):
+    if not base:
+        base = os.getcwd()
+    if base[-1] != os.path.sep:
+        base += os.path.sep
+    return [_relpath(path, base) if path.startswith(base) else path
+            for path in file_paths]
+
+
+def extended_iglob(pattern):
+    if '{' in pattern:
+        m = re.match('(.*){([^}]+)}(.*)', pattern)
+        if m:
+            before, switch, after = m.groups()
+            for case in switch.split(','):
+                for path in extended_iglob(before + case + after):
+                    yield path
+            return
+    if '**/' in pattern:
+        seen = set()
+        first, rest = pattern.split('**/', 1)
+        if first:
+            first = iglob(first+'/')
+        else:
+            first = ['']
+        for root in first:
+            for path in extended_iglob(join_path(root, rest)):
+                if path not in seen:
+                    seen.add(path)
+                    yield path
+            for path in extended_iglob(join_path(root, '*', '**/' + rest)):
+                if path not in seen:
+                    seen.add(path)
+                    yield path
+    else:
+        for path in iglob(pattern):
+            yield path
+
+
+def nonempty(it, error_msg="expected non-empty iterator"):
+    empty = True
+    for value in it:
+        empty = False
+        yield value
+    if empty:
+        raise ValueError(error_msg)
+
+
+@cached_function
+def file_hash(filename):
+    path = os.path.normpath(filename)
+    prefix = ('%d:%s' % (len(path), path)).encode("UTF-8")
+    m = hashlib.md5(prefix)
+    with open(path, 'rb') as f:
+        data = f.read(65000)
+        while data:
+            m.update(data)
+            data = f.read(65000)
+    return m.hexdigest()
+
+
+def update_pythran_extension(ext):
+    if pythran is None:
+        raise RuntimeError("You first need to install Pythran to use the np_pythran directive.")
+    try:
+        pythran_ext = pythran.config.make_extension(python=True)
+    except TypeError:  # older pythran version only
+        pythran_ext = pythran.config.make_extension()
+
+    ext.include_dirs.extend(pythran_ext['include_dirs'])
+    ext.extra_compile_args.extend(pythran_ext['extra_compile_args'])
+    ext.extra_link_args.extend(pythran_ext['extra_link_args'])
+    ext.define_macros.extend(pythran_ext['define_macros'])
+    ext.undef_macros.extend(pythran_ext['undef_macros'])
+    ext.library_dirs.extend(pythran_ext['library_dirs'])
+    ext.libraries.extend(pythran_ext['libraries'])
+    ext.language = 'c++'
+
+    # These options are not compatible with the way normal Cython extensions work
+    for bad_option in ["-fwhole-program", "-fvisibility=hidden"]:
+        try:
+            ext.extra_compile_args.remove(bad_option)
+        except ValueError:
+            pass
+
+
+def parse_list(s):
+    """
+    >>> parse_list("")
+    []
+    >>> parse_list("a")
+    ['a']
+    >>> parse_list("a b c")
+    ['a', 'b', 'c']
+    >>> parse_list("[a, b, c]")
+    ['a', 'b', 'c']
+    >>> parse_list('a " " b')
+    ['a', ' ', 'b']
+    >>> parse_list('[a, ",a", "a,", ",", ]')
+    ['a', ',a', 'a,', ',']
+    """
+    if len(s) >= 2 and s[0] == '[' and s[-1] == ']':
+        s = s[1:-1]
+        delimiter = ','
+    else:
+        delimiter = ' '
+    s, literals = strip_string_literals(s)
+    def unquote(literal):
+        literal = literal.strip()
+        if literal[0] in "'\"":
+            return literals[literal[1:-1]]
+        else:
+            return literal
+    return [unquote(item) for item in s.split(delimiter) if item.strip()]
+
+
+transitive_str = object()
+transitive_list = object()
+bool_or = object()
+
+distutils_settings = {
+    'name':                 str,
+    'sources':              list,
+    'define_macros':        list,
+    'undef_macros':         list,
+    'libraries':            transitive_list,
+    'library_dirs':         transitive_list,
+    'runtime_library_dirs': transitive_list,
+    'include_dirs':         transitive_list,
+    'extra_objects':        list,
+    'extra_compile_args':   transitive_list,
+    'extra_link_args':      transitive_list,
+    'export_symbols':       list,
+    'depends':              transitive_list,
+    'language':             transitive_str,
+    'np_pythran':           bool_or
+}
+
+
+@cython.locals(start=cython.Py_ssize_t, end=cython.Py_ssize_t)
+def line_iter(source):
+    if isinstance(source, basestring):
+        start = 0
+        while True:
+            end = source.find('\n', start)
+            if end == -1:
+                yield source[start:]
+                return
+            yield source[start:end]
+            start = end+1
+    else:
+        for line in source:
+            yield line
+
+
+class DistutilsInfo(object):
+
+    def __init__(self, source=None, exn=None):
+        self.values = {}
+        if source is not None:
+            for line in line_iter(source):
+                line = line.lstrip()
+                if not line:
+                    continue
+                if line[0] != '#':
+                    break
+                line = line[1:].lstrip()
+                kind = next((k for k in ("distutils:","cython:") if line.startswith(k)), None)
+                if kind is not None:
+                    key, _, value = [s.strip() for s in line[len(kind):].partition('=')]
+                    type = distutils_settings.get(key, None)
+                    if line.startswith("cython:") and type is None: continue
+                    if type in (list, transitive_list):
+                        value = parse_list(value)
+                        if key == 'define_macros':
+                            value = [tuple(macro.split('=', 1))
+                                     if '=' in macro else (macro, None)
+                                     for macro in value]
+                    if type is bool_or:
+                        value = strtobool(value)
+                    self.values[key] = value
+        elif exn is not None:
+            for key in distutils_settings:
+                if key in ('name', 'sources','np_pythran'):
+                    continue
+                value = getattr(exn, key, None)
+                if value:
+                    self.values[key] = value
+
+    def merge(self, other):
+        if other is None:
+            return self
+        for key, value in other.values.items():
+            type = distutils_settings[key]
+            if type is transitive_str and key not in self.values:
+                self.values[key] = value
+            elif type is transitive_list:
+                if key in self.values:
+                    # Change a *copy* of the list (Trac #845)
+                    all = self.values[key][:]
+                    for v in value:
+                        if v not in all:
+                            all.append(v)
+                    value = all
+                self.values[key] = value
+            elif type is bool_or:
+                self.values[key] = self.values.get(key, False) | value
+        return self
+
+    def subs(self, aliases):
+        if aliases is None:
+            return self
+        resolved = DistutilsInfo()
+        for key, value in self.values.items():
+            type = distutils_settings[key]
+            if type in [list, transitive_list]:
+                new_value_list = []
+                for v in value:
+                    if v in aliases:
+                        v = aliases[v]
+                    if isinstance(v, list):
+                        new_value_list += v
+                    else:
+                        new_value_list.append(v)
+                value = new_value_list
+            else:
+                if value in aliases:
+                    value = aliases[value]
+            resolved.values[key] = value
+        return resolved
+
+    def apply(self, extension):
+        for key, value in self.values.items():
+            type = distutils_settings[key]
+            if type in [list, transitive_list]:
+                value = getattr(extension, key) + list(value)
+            setattr(extension, key, value)
+
+
+@cython.locals(start=cython.Py_ssize_t, q=cython.Py_ssize_t,
+               single_q=cython.Py_ssize_t, double_q=cython.Py_ssize_t,
+               hash_mark=cython.Py_ssize_t, end=cython.Py_ssize_t,
+               k=cython.Py_ssize_t, counter=cython.Py_ssize_t, quote_len=cython.Py_ssize_t)
+def strip_string_literals(code, prefix='__Pyx_L'):
+    """
+    Normalizes every string literal to be of the form '__Pyx_Lxxx',
+    returning the normalized code and a mapping of labels to
+    string literals.
+    """
+    new_code = []
+    literals = {}
+    counter = 0
+    start = q = 0
+    in_quote = False
+    hash_mark = single_q = double_q = -1
+    code_len = len(code)
+    quote_type = None
+    quote_len = -1
+
+    while True:
+        if hash_mark < q:
+            hash_mark = code.find('#', q)
+        if single_q < q:
+            single_q = code.find("'", q)
+        if double_q < q:
+            double_q = code.find('"', q)
+        q = min(single_q, double_q)
+        if q == -1:
+            q = max(single_q, double_q)
+
+        # We're done.
+        if q == -1 and hash_mark == -1:
+            new_code.append(code[start:])
+            break
+
+        # Try to close the quote.
+        elif in_quote:
+            if code[q-1] == u'\\':
+                k = 2
+                while q >= k and code[q-k] == u'\\':
+                    k += 1
+                if k % 2 == 0:
+                    q += 1
+                    continue
+            if code[q] == quote_type and (
+                    quote_len == 1 or (code_len > q + 2 and quote_type == code[q+1] == code[q+2])):
+                counter += 1
+                label = "%s%s_" % (prefix, counter)
+                literals[label] = code[start+quote_len:q]
+                full_quote = code[q:q+quote_len]
+                new_code.append(full_quote)
+                new_code.append(label)
+                new_code.append(full_quote)
+                q += quote_len
+                in_quote = False
+                start = q
+            else:
+                q += 1
+
+        # Process comment.
+        elif -1 != hash_mark and (hash_mark < q or q == -1):
+            new_code.append(code[start:hash_mark+1])
+            end = code.find('\n', hash_mark)
+            counter += 1
+            label = "%s%s_" % (prefix, counter)
+            if end == -1:
+                end_or_none = None
+            else:
+                end_or_none = end
+            literals[label] = code[hash_mark+1:end_or_none]
+            new_code.append(label)
+            if end == -1:
+                break
+            start = q = end
+
+        # Open the quote.
+        else:
+            if code_len >= q+3 and (code[q] == code[q+1] == code[q+2]):
+                quote_len = 3
+            else:
+                quote_len = 1
+            in_quote = True
+            quote_type = code[q]
+            new_code.append(code[start:q])
+            start = q
+            q += quote_len
+
+    return "".join(new_code), literals
+
+
+# We need to allow spaces to allow for conditional compilation like
+# IF ...:
+#     cimport ...
+dependency_regex = re.compile(r"(?:^\s*from +([0-9a-zA-Z_.]+) +cimport)|"
+                              r"(?:^\s*cimport +([0-9a-zA-Z_.]+(?: *, *[0-9a-zA-Z_.]+)*))|"
+                              r"(?:^\s*cdef +extern +from +['\"]([^'\"]+)['\"])|"
+                              r"(?:^\s*include +['\"]([^'\"]+)['\"])", re.M)
+dependency_after_from_regex = re.compile(
+    r"(?:^\s+\(([0-9a-zA-Z_., ]*)\)[#\n])|"
+    r"(?:^\s+([0-9a-zA-Z_., ]*)[#\n])",
+    re.M)
+
+
+def normalize_existing(base_path, rel_paths):
+    return normalize_existing0(os.path.dirname(base_path), tuple(set(rel_paths)))
+
+
+@cached_function
+def normalize_existing0(base_dir, rel_paths):
+    """
+    Given some base directory ``base_dir`` and a list of path names
+    ``rel_paths``, normalize each relative path name ``rel`` by
+    replacing it by ``os.path.join(base, rel)`` if that file exists.
+
+    Return a couple ``(normalized, needed_base)`` where ``normalized``
+    if the list of normalized file names and ``needed_base`` is
+    ``base_dir`` if we actually needed ``base_dir``. If no paths were
+    changed (for example, if all paths were already absolute), then
+    ``needed_base`` is ``None``.
+    """
+    normalized = []
+    needed_base = None
+    for rel in rel_paths:
+        if os.path.isabs(rel):
+            normalized.append(rel)
+            continue
+        path = join_path(base_dir, rel)
+        if path_exists(path):
+            normalized.append(os.path.normpath(path))
+            needed_base = base_dir
+        else:
+            normalized.append(rel)
+    return (normalized, needed_base)
+
+
+def resolve_depends(depends, include_dirs):
+    include_dirs = tuple(include_dirs)
+    resolved = []
+    for depend in depends:
+        path = resolve_depend(depend, include_dirs)
+        if path is not None:
+            resolved.append(path)
+    return resolved
+
+
+@cached_function
+def resolve_depend(depend, include_dirs):
+    if depend[0] == '<' and depend[-1] == '>':
+        return None
+    for dir in include_dirs:
+        path = join_path(dir, depend)
+        if path_exists(path):
+            return os.path.normpath(path)
+    return None
+
+
+@cached_function
+def package(filename):
+    dir = os.path.dirname(os.path.abspath(str(filename)))
+    if dir != filename and is_package_dir(dir):
+        return package(dir) + (os.path.basename(dir),)
+    else:
+        return ()
+
+
+@cached_function
+def fully_qualified_name(filename):
+    module = os.path.splitext(os.path.basename(filename))[0]
+    return '.'.join(package(filename) + (module,))
+
+
+@cached_function
+def parse_dependencies(source_filename):
+    # Actual parsing is way too slow, so we use regular expressions.
+    # The only catch is that we must strip comments and string
+    # literals ahead of time.
+    with Utils.open_source_file(source_filename, error_handling='ignore') as fh:
+        source = fh.read()
+    distutils_info = DistutilsInfo(source)
+    source, literals = strip_string_literals(source)
+    source = source.replace('\\\n', ' ').replace('\t', ' ')
+
+    # TODO: pure mode
+    cimports = []
+    includes = []
+    externs  = []
+    for m in dependency_regex.finditer(source):
+        cimport_from, cimport_list, extern, include = m.groups()
+        if cimport_from:
+            cimports.append(cimport_from)
+            m_after_from = dependency_after_from_regex.search(source, pos=m.end())
+            if m_after_from:
+                multiline, one_line = m_after_from.groups()
+                subimports = multiline or one_line
+                cimports.extend("{0}.{1}".format(cimport_from, s.strip())
+                                for s in subimports.split(','))
+
+        elif cimport_list:
+            cimports.extend(x.strip() for x in cimport_list.split(","))
+        elif extern:
+            externs.append(literals[extern])
+        else:
+            includes.append(literals[include])
+    return cimports, includes, externs, distutils_info
+
+
+class DependencyTree(object):
+
+    def __init__(self, context, quiet=False):
+        self.context = context
+        self.quiet = quiet
+        self._transitive_cache = {}
+
+    def parse_dependencies(self, source_filename):
+        if path_exists(source_filename):
+            source_filename = os.path.normpath(source_filename)
+        return parse_dependencies(source_filename)
+
+    @cached_method
+    def included_files(self, filename):
+        # This is messy because included files are textually included, resolving
+        # cimports (but not includes) relative to the including file.
+        all = set()
+        for include in self.parse_dependencies(filename)[1]:
+            include_path = join_path(os.path.dirname(filename), include)
+            if not path_exists(include_path):
+                include_path = self.context.find_include_file(include, None)
+            if include_path:
+                if '.' + os.path.sep in include_path:
+                    include_path = os.path.normpath(include_path)
+                all.add(include_path)
+                all.update(self.included_files(include_path))
+            elif not self.quiet:
+                print("Unable to locate '%s' referenced from '%s'" % (filename, include))
+        return all
+
+    @cached_method
+    def cimports_externs_incdirs(self, filename):
+        # This is really ugly. Nested cimports are resolved with respect to the
+        # includer, but includes are resolved with respect to the includee.
+        cimports, includes, externs = self.parse_dependencies(filename)[:3]
+        cimports = set(cimports)
+        externs = set(externs)
+        incdirs = set()
+        for include in self.included_files(filename):
+            included_cimports, included_externs, included_incdirs = self.cimports_externs_incdirs(include)
+            cimports.update(included_cimports)
+            externs.update(included_externs)
+            incdirs.update(included_incdirs)
+        externs, incdir = normalize_existing(filename, externs)
+        if incdir:
+            incdirs.add(incdir)
+        return tuple(cimports), externs, incdirs
+
+    def cimports(self, filename):
+        return self.cimports_externs_incdirs(filename)[0]
+
+    def package(self, filename):
+        return package(filename)
+
+    def fully_qualified_name(self, filename):
+        return fully_qualified_name(filename)
+
+    @cached_method
+    def find_pxd(self, module, filename=None):
+        is_relative = module[0] == '.'
+        if is_relative and not filename:
+            raise NotImplementedError("New relative imports.")
+        if filename is not None:
+            module_path = module.split('.')
+            if is_relative:
+                module_path.pop(0)  # just explicitly relative
+            package_path = list(self.package(filename))
+            while module_path and not module_path[0]:
+                try:
+                    package_path.pop()
+                except IndexError:
+                    return None   # FIXME: error?
+                module_path.pop(0)
+            relative = '.'.join(package_path + module_path)
+            pxd = self.context.find_pxd_file(relative, None)
+            if pxd:
+                return pxd
+        if is_relative:
+            return None   # FIXME: error?
+        return self.context.find_pxd_file(module, None)
+
+    @cached_method
+    def cimported_files

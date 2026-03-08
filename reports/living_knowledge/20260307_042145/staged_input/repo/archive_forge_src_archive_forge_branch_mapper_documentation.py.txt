@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/branch_mapper_documentation.py
+KIND: code
+
+import re
+Map a git reference name to a Bazaar branch name.

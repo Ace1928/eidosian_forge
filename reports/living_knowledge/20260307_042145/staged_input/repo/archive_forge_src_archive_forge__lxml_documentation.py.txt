@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_lxml_documentation.py
+KIND: code
+
+from io import BytesIO
+from io import StringIO
+from lxml import etree
+from bs4.element import (
+from bs4.builder import (
+from bs4.dammit import EncodingDetector
+See `TreeBuilder`.

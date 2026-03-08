@@ -1,0 +1,493 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_client.py
+KIND: code
+
+# coding=utf-8
+# Copyright 2023-present, the HuggingFace Inc. team.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# Related resources:
+#    https://huggingface.co/tasks
+#    https://huggingface.co/docs/huggingface.js/inference/README
+#    https://github.com/huggingface/huggingface.js/tree/main/packages/inference/src
+#    https://github.com/huggingface/text-generation-inference/tree/main/clients/python
+#    https://github.com/huggingface/text-generation-inference/blob/main/clients/python/text_generation/client.py
+#    https://huggingface.slack.com/archives/C03E4DQ9LAJ/p1680169099087869
+#    https://github.com/huggingface/unity-api#tasks
+#
+# Some TODO:
+# - add all tasks
+#
+# NOTE: the philosophy of this client is "let's make it as easy as possible to use it, even if less optimized". Some
+# examples of how it translates:
+# - Timeout / Server unavailable is handled by the client in a single "timeout" parameter.
+# - Files can be provided as bytes, file paths, or URLs and the client will try to "guess" the type.
+# - Images are parsed as PIL.Image for easier manipulation.
+# - Provides a "recommended model" for each task => suboptimal but user-wise quicker to get a first script running.
+# - Only the main parameters are publicly exposed. Power users can always read the docs for more options.
+import base64
+import logging
+import time
+import warnings
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Literal,
+    Optional,
+    Union,
+    overload,
+)
+
+from requests import HTTPError
+from requests.structures import CaseInsensitiveDict
+
+from huggingface_hub.constants import ALL_INFERENCE_API_FRAMEWORKS, INFERENCE_ENDPOINT, MAIN_INFERENCE_API_FRAMEWORKS
+from huggingface_hub.errors import InferenceTimeoutError
+from huggingface_hub.inference._common import (
+    TASKS_EXPECTING_IMAGES,
+    ContentT,
+    ModelStatus,
+    _b64_encode,
+    _b64_to_image,
+    _bytes_to_dict,
+    _bytes_to_image,
+    _bytes_to_list,
+    _fetch_recommended_models,
+    _import_numpy,
+    _is_chat_completion_server,
+    _is_tgi_server,
+    _open_as_binary,
+    _set_as_non_chat_completion_server,
+    _set_as_non_tgi,
+    _stream_chat_completion_response_from_bytes,
+    _stream_chat_completion_response_from_text_generation,
+    _stream_text_generation_response,
+    raise_text_generation_error,
+)
+from huggingface_hub.inference._generated.types import (
+    AudioClassificationOutputElement,
+    AudioToAudioOutputElement,
+    AutomaticSpeechRecognitionOutput,
+    ChatCompletionOutput,
+    ChatCompletionOutputChoice,
+    ChatCompletionOutputChoiceMessage,
+    ChatCompletionStreamOutput,
+    DocumentQuestionAnsweringOutputElement,
+    FillMaskOutputElement,
+    ImageClassificationOutputElement,
+    ImageSegmentationOutputElement,
+    ImageToTextOutput,
+    ObjectDetectionOutputElement,
+    QuestionAnsweringOutputElement,
+    SummarizationOutput,
+    TableQuestionAnsweringOutputElement,
+    TextClassificationOutputElement,
+    TextGenerationOutput,
+    TextGenerationStreamOutput,
+    TokenClassificationOutputElement,
+    TranslationOutput,
+    VisualQuestionAnsweringOutputElement,
+    ZeroShotClassificationOutputElement,
+    ZeroShotImageClassificationOutputElement,
+)
+from huggingface_hub.inference._templating import render_chat_prompt
+from huggingface_hub.inference._types import (
+    ConversationalOutput,  # soon to be removed
+)
+from huggingface_hub.utils import (
+    BadRequestError,
+    build_hf_headers,
+    get_session,
+    hf_raise_for_status,
+)
+
+
+if TYPE_CHECKING:
+    import numpy as np
+    from PIL import Image
+
+logger = logging.getLogger(__name__)
+
+
+class InferenceClient:
+    """
+    Initialize a new Inference Client.
+
+    [`InferenceClient`] aims to provide a unified experience to perform inference. The client can be used
+    seamlessly with either the (free) Inference API or self-hosted Inference Endpoints.
+
+    Args:
+        model (`str`, `optional`):
+            The model to run inference with. Can be a model id hosted on the Hugging Face Hub, e.g. `bigcode/starcoder`
+            or a URL to a deployed Inference Endpoint. Defaults to None, in which case a recommended model is
+            automatically selected for the task.
+        token (`str` or `bool`, *optional*):
+            Hugging Face token. Will default to the locally saved token if not provided.
+            Pass `token=False` if you don't want to send your token to the server.
+        timeout (`float`, `optional`):
+            The maximum number of seconds to wait for a response from the server. Loading a new model in Inference
+            API can take up to several minutes. Defaults to None, meaning it will loop until the server is available.
+        headers (`Dict[str, str]`, `optional`):
+            Additional headers to send to the server. By default only the authorization and user-agent headers are sent.
+            Values in this dictionary will override the default values.
+        cookies (`Dict[str, str]`, `optional`):
+            Additional cookies to send to the server.
+    """
+
+    def __init__(
+        self,
+        model: Optional[str] = None,
+        token: Union[str, bool, None] = None,
+        timeout: Optional[float] = None,
+        headers: Optional[Dict[str, str]] = None,
+        cookies: Optional[Dict[str, str]] = None,
+    ) -> None:
+        self.model: Optional[str] = model
+        self.token: Union[str, bool, None] = token
+        self.headers = CaseInsensitiveDict(build_hf_headers(token=token))  # contains 'authorization' + 'user-agent'
+        if headers is not None:
+            self.headers.update(headers)
+        self.cookies = cookies
+        self.timeout = timeout
+
+    def __repr__(self):
+        return f"<InferenceClient(model='{self.model if self.model else ''}', timeout={self.timeout})>"
+
+    @overload
+    def post(  # type: ignore[misc]
+        self,
+        *,
+        json: Optional[Union[str, Dict, List]] = None,
+        data: Optional[ContentT] = None,
+        model: Optional[str] = None,
+        task: Optional[str] = None,
+        stream: Literal[False] = ...,
+    ) -> bytes: ...
+
+    @overload
+    def post(  # type: ignore[misc]
+        self,
+        *,
+        json: Optional[Union[str, Dict, List]] = None,
+        data: Optional[ContentT] = None,
+        model: Optional[str] = None,
+        task: Optional[str] = None,
+        stream: Literal[True] = ...,
+    ) -> Iterable[bytes]: ...
+
+    @overload
+    def post(
+        self,
+        *,
+        json: Optional[Union[str, Dict, List]] = None,
+        data: Optional[ContentT] = None,
+        model: Optional[str] = None,
+        task: Optional[str] = None,
+        stream: bool = False,
+    ) -> Union[bytes, Iterable[bytes]]: ...
+
+    def post(
+        self,
+        *,
+        json: Optional[Union[str, Dict, List]] = None,
+        data: Optional[ContentT] = None,
+        model: Optional[str] = None,
+        task: Optional[str] = None,
+        stream: bool = False,
+    ) -> Union[bytes, Iterable[bytes]]:
+        """
+        Make a POST request to the inference server.
+
+        Args:
+            json (`Union[str, Dict, List]`, *optional*):
+                The JSON data to send in the request body, specific to each task. Defaults to None.
+            data (`Union[str, Path, bytes, BinaryIO]`, *optional*):
+                The content to send in the request body, specific to each task.
+                It can be raw bytes, a pointer to an opened file, a local file path,
+                or a URL to an online resource (image, audio file,...). If both `json` and `data` are passed,
+                `data` will take precedence. At least `json` or `data` must be provided. Defaults to None.
+            model (`str`, *optional*):
+                The model to use for inference. Can be a model ID hosted on the Hugging Face Hub or a URL to a deployed
+                Inference Endpoint. Will override the model defined at the instance level. Defaults to None.
+            task (`str`, *optional*):
+                The task to perform on the inference. All available tasks can be found
+                [here](https://huggingface.co/tasks). Used only to default to a recommended model if `model` is not
+                provided. At least `model` or `task` must be provided. Defaults to None.
+            stream (`bool`, *optional*):
+                Whether to iterate over streaming APIs.
+
+        Returns:
+            bytes: The raw bytes returned by the server.
+
+        Raises:
+            [`InferenceTimeoutError`]:
+                If the model is unavailable or the request times out.
+            `HTTPError`:
+                If the request fails with an HTTP error status code other than HTTP 503.
+        """
+        url = self._resolve_url(model, task)
+
+        if data is not None and json is not None:
+            warnings.warn("Ignoring `json` as `data` is passed as binary.")
+
+        # Set Accept header if relevant
+        headers = self.headers.copy()
+        if task in TASKS_EXPECTING_IMAGES and "Accept" not in headers:
+            headers["Accept"] = "image/png"
+
+        t0 = time.time()
+        timeout = self.timeout
+        while True:
+            with _open_as_binary(data) as data_as_binary:
+                try:
+                    response = get_session().post(
+                        url,
+                        json=json,
+                        data=data_as_binary,
+                        headers=headers,
+                        cookies=self.cookies,
+                        timeout=self.timeout,
+                        stream=stream,
+                    )
+                except TimeoutError as error:
+                    # Convert any `TimeoutError` to a `InferenceTimeoutError`
+                    raise InferenceTimeoutError(f"Inference call timed out: {url}") from error  # type: ignore
+
+            try:
+                hf_raise_for_status(response)
+                return response.iter_lines() if stream else response.content
+            except HTTPError as error:
+                if error.response.status_code == 422 and task is not None:
+                    error.args = (
+                        f"{error.args[0]}\nMake sure '{task}' task is supported by the model.",
+                    ) + error.args[1:]
+                if error.response.status_code == 503:
+                    # If Model is unavailable, either raise a TimeoutError...
+                    if timeout is not None and time.time() - t0 > timeout:
+                        raise InferenceTimeoutError(
+                            f"Model not loaded on the server: {url}. Please retry with a higher timeout (current:"
+                            f" {self.timeout}).",
+                            request=error.request,
+                            response=error.response,
+                        ) from error
+                    # ...or wait 1s and retry
+                    logger.info(f"Waiting for model to be loaded on the server: {error}")
+                    time.sleep(1)
+                    if timeout is not None:
+                        timeout = max(self.timeout - (time.time() - t0), 1)  # type: ignore
+                    continue
+                raise
+
+    def audio_classification(
+        self,
+        audio: ContentT,
+        *,
+        model: Optional[str] = None,
+    ) -> List[AudioClassificationOutputElement]:
+        """
+        Perform audio classification on the provided audio content.
+
+        Args:
+            audio (Union[str, Path, bytes, BinaryIO]):
+                The audio content to classify. It can be raw audio bytes, a local audio file, or a URL pointing to an
+                audio file.
+            model (`str`, *optional*):
+                The model to use for audio classification. Can be a model ID hosted on the Hugging Face Hub
+                or a URL to a deployed Inference Endpoint. If not provided, the default recommended model for
+                audio classification will be used.
+
+        Returns:
+            `List[AudioClassificationOutputElement]`: List of [`AudioClassificationOutputElement`] items containing the predicted labels and their confidence.
+
+        Raises:
+            [`InferenceTimeoutError`]:
+                If the model is unavailable or the request times out.
+            `HTTPError`:
+                If the request fails with an HTTP error status code other than HTTP 503.
+
+        Example:
+        ```py
+        >>> from huggingface_hub import InferenceClient
+        >>> client = InferenceClient()
+        >>> client.audio_classification("audio.flac")
+        [
+            AudioClassificationOutputElement(score=0.4976358711719513, label='hap'),
+            AudioClassificationOutputElement(score=0.3677836060523987, label='neu'),
+            ...
+        ]
+        ```
+        """
+        response = self.post(data=audio, model=model, task="audio-classification")
+        return AudioClassificationOutputElement.parse_obj_as_list(response)
+
+    def audio_to_audio(
+        self,
+        audio: ContentT,
+        *,
+        model: Optional[str] = None,
+    ) -> List[AudioToAudioOutputElement]:
+        """
+        Performs multiple tasks related to audio-to-audio depending on the model (eg: speech enhancement, source separation).
+
+        Args:
+            audio (Union[str, Path, bytes, BinaryIO]):
+                The audio content for the model. It can be raw audio bytes, a local audio file, or a URL pointing to an
+                audio file.
+            model (`str`, *optional*):
+                The model can be any model which takes an audio file and returns another audio file. Can be a model ID hosted on the Hugging Face Hub
+                or a URL to a deployed Inference Endpoint. If not provided, the default recommended model for
+                audio_to_audio will be used.
+
+        Returns:
+            `List[AudioToAudioOutputElement]`: A list of [`AudioToAudioOutputElement`] items containing audios label, content-type, and audio content in blob.
+
+        Raises:
+            `InferenceTimeoutError`:
+                If the model is unavailable or the request times out.
+            `HTTPError`:
+                If the request fails with an HTTP error status code other than HTTP 503.
+
+        Example:
+        ```py
+        >>> from huggingface_hub import InferenceClient
+        >>> client = InferenceClient()
+        >>> audio_output = client.audio_to_audio("audio.flac")
+        >>> for i, item in enumerate(audio_output):
+        >>>     with open(f"output_{i}.flac", "wb") as f:
+                    f.write(item.blob)
+        ```
+        """
+        response = self.post(data=audio, model=model, task="audio-to-audio")
+        audio_output = AudioToAudioOutputElement.parse_obj_as_list(response)
+        for item in audio_output:
+            item.blob = base64.b64decode(item.blob)
+        return audio_output
+
+    def automatic_speech_recognition(
+        self,
+        audio: ContentT,
+        *,
+        model: Optional[str] = None,
+    ) -> AutomaticSpeechRecognitionOutput:
+        """
+        Perform automatic speech recognition (ASR or audio-to-text) on the given audio content.
+
+        Args:
+            audio (Union[str, Path, bytes, BinaryIO]):
+                The content to transcribe. It can be raw audio bytes, local audio file, or a URL to an audio file.
+            model (`str`, *optional*):
+                The model to use for ASR. Can be a model ID hosted on the Hugging Face Hub or a URL to a deployed
+                Inference Endpoint. If not provided, the default recommended model for ASR will be used.
+
+        Returns:
+            [`AutomaticSpeechRecognitionOutput`]: An item containing the transcribed text and optionally the timestamp chunks.
+
+        Raises:
+            [`InferenceTimeoutError`]:
+                If the model is unavailable or the request times out.
+            `HTTPError`:
+                If the request fails with an HTTP error status code other than HTTP 503.
+
+        Example:
+        ```py
+        >>> from huggingface_hub import InferenceClient
+        >>> client = InferenceClient()
+        >>> client.automatic_speech_recognition("hello_world.flac").text
+        "hello world"
+        ```
+        """
+        response = self.post(data=audio, model=model, task="automatic-speech-recognition")
+        return AutomaticSpeechRecognitionOutput.parse_obj_as_instance(response)
+
+    @overload
+    def chat_completion(  # type: ignore
+        self,
+        messages: List[Dict[str, str]],
+        *,
+        model: Optional[str] = None,
+        stream: Literal[False] = False,
+        max_tokens: int = 20,
+        seed: Optional[int] = None,
+        stop: Optional[Union[List[str], str]] = None,
+        temperature: float = 1.0,
+        top_p: Optional[float] = None,
+    ) -> ChatCompletionOutput: ...
+
+    @overload
+    def chat_completion(  # type: ignore
+        self,
+        messages: List[Dict[str, str]],
+        *,
+        model: Optional[str] = None,
+        stream: Literal[True] = True,
+        max_tokens: int = 20,
+        seed: Optional[int] = None,
+        stop: Optional[Union[List[str], str]] = None,
+        temperature: float = 1.0,
+        top_p: Optional[float] = None,
+    ) -> Iterable[ChatCompletionStreamOutput]: ...
+
+    @overload
+    def chat_completion(
+        self,
+        messages: List[Dict[str, str]],
+        *,
+        model: Optional[str] = None,
+        stream: bool = False,
+        max_tokens: int = 20,
+        seed: Optional[int] = None,
+        stop: Optional[Union[List[str], str]] = None,
+        temperature: float = 1.0,
+        top_p: Optional[float] = None,
+    ) -> Union[ChatCompletionOutput, Iterable[ChatCompletionStreamOutput]]: ...
+
+    def chat_completion(
+        self,
+        messages: List[Dict[str, str]],
+        *,
+        model: Optional[str] = None,
+        stream: bool = False,
+        max_tokens: int = 20,
+        seed: Optional[int] = None,
+        stop: Optional[Union[List[str], str]] = None,
+        temperature: float = 1.0,
+        top_p: Optional[float] = None,
+    ) -> Union[ChatCompletionOutput, Iterable[ChatCompletionStreamOutput]]:
+        """
+        A method for completing conversations using a specified language model.
+
+        <Tip>
+
+        If the model is served by a server supporting chat-completion, the method will directly call the server's
+        `/v1/chat/completions` endpoint. If the server does not support chat-completion, the method will render the
+        chat template client-side based on the information fetched from the Hub API. In this case, you will need to
+        have `minijinja` template engine installed. Run `pip install "huggingface_hub[inference]"` or `pip install minijinja`
+        to install it.
+
+        </Tip>
+
+        Args:
+            messages (List[Union[`SystemMessage`, `UserMessage`, `AssistantMessage`]]):
+                Conversation history consisting of roles and content pairs.
+            model (`str`, *optional*):
+                The model to use for chat-completion. Can be a model ID hosted on the Hugging Face Hub or a URL to a deployed
+                Inference Endpoint. If not provided, the default recommended model for chat-based text-generation will be used.
+                See https://huggingface.co/tasks/text-generation for more details.
+            frequency_penalty (`float`, optional):
+                Penalizes new tokens based on their existing frequency
+                in the text so far. Range: [-2.0, 2.0]. Defaults to 0.0.
+            max_tokens (`int`, optional):
+                Maximum nu

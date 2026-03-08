@@ -1,0 +1,33 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/BR
+KIND: config
+
+BR
+acreacstate of acre
+alagoasalstate of alagoas!
+amazonasamstate of amazonas
+amapáapstate of amapá"
+bahiababaíastate of bahia
+cearáce(
+distrito federaldffederal district?
+espirito santoesespírito santostate of espírito santo
+goiásgostate of goiás#
+	maranhãomastate of maranhão0
+minasmgminas geraisstate of minas gerais5
+mato grosso do sulmsstate of mato grosso do sul'
+mato grossomtstate of mato grosso
+parápastate of pará!
+paraíbapbstate of paraíba%
+
+pernambucopestate of pernambuco
+piauípistate of piauí
+paranáprstate of paranáA
+baixada fluminenserjrio de janeirostate of rio de janeiro7
+rio grande do norternstate of rio grande do norte#
+	rondôniarostate of rondônia
+roraimarrstate of roraima3
+rio grande do sulrsstate of rio grande do sul-
+santa catarinascstate of santa catarina
+sergipesestate of sergipe%
+
+são paulospstate of são paulo#
+	tocantinstostate of tocantins

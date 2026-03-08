@@ -1,0 +1,14 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/LT
+KIND: config
+
+LT"
+alytaus apskritisalytus county(
+klaipėdos apskritisklaipėda county 
+kauno apskritiskaunas county.
+marijampolės apskritismarijampolė county+
+panevėžio apskritispanevėžys county'
+šiaulių apskritisšiauliai county&
+tauragės apskritistauragė county%
+telšių apskritistelšiai county 
+utenos apskritisutena county$
+vilniaus apskritisvilnius county

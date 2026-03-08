@@ -1,0 +1,491 @@
+SOURCE_PATH: archive_forge/src/archive_forge/M7fL.py
+KIND: code
+
+import pygame
+import random
+import heapq
+import logging
+from typing import List, Optional, Dict, Any, Tuple
+import cProfile
+from collections import deque
+import numpy as np
+import time
+import torch
+from functools import lru_cache as LRUCache
+import math
+import asyncio
+from scipy.spatial import Delaunay
+import networkx as nx
+import numpy as np
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+
+
+# Color constants using numpy arrays for optimal performance and consistency:
+BG_LIGHT_GREEN = np.array([137, 200, 80])
+BG_DARK_GREEN = np.array([123, 181, 70])
+BLUE = np.array([47, 174, 232])
+DARK_BLUE = np.array([44, 163, 217])
+RED = np.array([217, 42, 42])
+DARK_RED = np.array([197, 38, 38])
+GRAY = np.array([155, 155, 155])
+BLACK = np.array([0, 0, 0])
+
+# Game constants defined with numpy for precision and efficiency:
+TILE_SIZE = 10
+HEIGHT = 100
+WIDTH = 100
+WIN_HEIGHT, WIN_WIDTH = HEIGHT * TILE_SIZE, WIDTH * TILE_SIZE
+WIN = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
+pygame.display.set_caption("Snake")
+FPS = 60
+CLOCK = pygame.time.Clock()
+
+
+# Setup logging
+def configure_logging():
+    """
+    Configures the logging settings for this module. This function sets the logging level to DEBUG and specifies the format
+    for logging messages. This configuration is encapsulated within this function to prevent side effects on logging settings
+    in other modules when this module is imported.
+    """
+    logging.basicConfig(
+        level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
+    )
+
+
+class Grid:
+    def __init__(self, width, height):
+        """
+        Initializes the Grid object with specified width and height.
+
+        Args:
+            width (int): The width of the grid in terms of number of cells.
+            height (int): The height of the grid in terms of number of cells.
+        """
+        self.width = width
+        self.height = height
+        self.cells = np.zeros((height, width), dtype=int)  # Initialize a grid of zeros
+        logging.debug(f"Grid created with dimensions {width}x{height}")
+
+    def is_position_free(self, position):
+        """
+        Checks if a given position is free (not occupied) on the grid.
+
+        Args:
+            position (numpy array): The position to check on the grid.
+
+        Returns:
+            bool: True if the position is free, False otherwise.
+        """
+        x, y = position
+        return self.cells[y, x] == 0
+
+    def get_points(self):
+        """
+        Generates a list of all coordinate points within the grid.
+
+        Returns:
+            list of tuples: A list containing all (x, y) coordinates in the grid.
+        """
+        points = [(x, y) for x in range(WIDTH) for y in range(HEIGHT)]
+        logging.debug(f"Generated {len(points)} points for the grid.")
+        return points
+
+    def update_position(self, position, value):
+        """
+        Updates the grid cell at a given position with a specified value.
+
+        Args:
+            position (numpy array): The position to update on the grid.
+            value (int): The value to set at the given position.
+        """
+        x, y = position
+        self.cells[y, x] = value
+        logging.debug(f"Grid position {position} updated with value {value}")
+
+    def reset_grid(self):
+        """
+        Resets the entire grid to zero values, effectively clearing the grid.
+        """
+        self.cells.fill(0)
+        logging.debug("Grid has been reset to zero values.")
+
+    def is_near_obstacle(self, position, obstacle_positions=None):
+        """
+        Checks if a given position is near an obstacle on the grid.
+
+        Args:
+            position (tuple): The (x, y) position to check.
+            obstacle_positions (list of tuples, optional): A list of obstacle positions to consider. If not provided, the method will use the grid's cells to determine obstacles.
+
+        Returns:
+            bool: True if the position is near an obstacle, False otherwise.
+        """
+        if obstacle_positions is None:
+            obstacle_positions = [(x, y) for x in range(self.width) for y in range(self.height) if self.cells[y, x] != 0]
+
+        for obstacle in obstacle_positions:
+            if np.linalg.norm(np.array(position) - np.array(obstacle)) <= 1:
+                logging.debug(f"Position {position} is near an obstacle at {obstacle}")
+                return True
+
+        logging.debug(f"Position {position} is not near any obstacles")
+        return False
+
+    def get_obstacles(self):
+        """
+        Returns a list of all obstacle positions on the grid.
+
+        Returns:
+            list of tuples: A list containing (x, y) coordinates of all obstacles on the grid.
+        """
+        obstacles = [(x, y) for x in range(self.width) for y in range(self.height) if self.cells[y, x] != 0]
+        logging.debug(f"Found {len(obstacles)} obstacles on the grid")
+        return obstacles
+
+
+class Food:
+    def __init__(self, position=None):
+        """
+        Initializes the Food object with an optional position.
+
+        Args:
+            position (numpy array, optional): The initial position of the food. If not provided, a random position will be generated.
+        """
+        self.position = position if position is not None else self.generate_random_position()
+        logging.debug(f"Food created at position {self.position}")
+
+    def generate_random_position(self):
+        """
+        Generates a random position for the food within the grid boundaries.
+
+        Returns:
+            numpy array: The generated random position.
+        """
+        x = np.random.randint(0, WIDTH)
+        y = np.random.randint(0, HEIGHT)
+        position = np.array([x, y])
+        logging.debug(f"Generated random food position: {position}")
+        return position
+
+    def draw(self, WIN):
+        """
+        Draws the food on the game window.
+
+        Args:
+            WIN (pygame.Surface): The game window surface to draw on.
+        """
+        x, y = self.position
+        pygame.draw.rect(WIN, RED, (x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
+        logging.debug(f"Food drawn at position {self.position}")
+
+
+class Snake:
+    def __init__(self, grid_width=WIDTH, grid_height=HEIGHT):
+        """
+        Initializes the Snake object with default settings. The snake is initially set to be alive with its segments
+        positioned centrally on the game grid. The snake starts without any movement direction and is in a frozen state
+        until the game begins. The default color of the snake is set to BLUE, and it can operate in different modes,
+        initially set to 'hamiltonian'.
+
+        Args:
+            grid_width (int): Width of the game grid.
+            grid_height (int): Height of the game grid.
+        """
+        logging.debug("Initializing Snake object with default settings.")
+        try:
+            self.alive = True
+            self.segments = deque(
+                [np.array([grid_width // 2, grid_height // 2 - i]) for i in range(3)]
+            )
+            self.direction = "right"  # Initial direction
+            self.frozen = True
+            self.color = BLUE  # Default color
+            self.mode = "hamiltonian"  # Modes: 'hamiltonian', 'astar'
+            self.color_phase = [
+                random.randint(0, 360) for _ in self.segments
+            ]  # HSV phase for each segment
+            logging.info(
+                "Snake object initialized successfully with attributes: alive=True, segments=central, direction=right, frozen=True, color=BLUE, mode=hamiltonian."
+            )
+        except Exception as e:
+            logging.error(f"Failed to initialize Snake object: {e}")
+            raise Exception(f"Snake initialization error: {e}")
+
+    def get_head_position(self):
+        return self.segments[-1]
+
+    def get_tail_position(self):
+        return self.segments[0]
+
+    def move(self):
+        """
+        Updates the position of the snake based on its current direction. This method efficiently manages the segments
+        deque by appending the new head position and popping the tail position when moving, ensuring optimal memory usage
+        and performance.
+        """
+        logging.debug(
+            "Attempting to update the position of the snake based on its current direction."
+        )
+        try:
+            if self.frozen or not self.alive:
+                logging.info("Snake movement aborted: Snake is frozen or not alive.")
+                return
+
+            new_head = np.copy(self.segments[-1])
+            if self.direction == "up":
+                new_head[1] -= 1
+            elif self.direction == "down":
+                new_head[1] += 1
+            elif self.direction == "left":
+                new_head[0] -= 1
+            elif self.direction == "right":
+                new_head[0] += 1
+
+            # Check if the new head position is out of bounds or collides with the snake's body
+            if not (0 <= new_head[0] < WIDTH and 0 <= new_head[1] < HEIGHT) or np.any(
+                [np.array_equal(new_head, segment) for segment in self.segments]
+            ):
+                self.alive = False
+                logging.info("Snake has collided with the wall or itself and died.")
+                return
+
+            self.segments.append(new_head)
+            self.segments.popleft()  # Remove the tail segment
+            logging.info(f"Snake moved successfully in direction: {self.direction}.")
+        except Exception as e:
+            logging.error(f"Failed to move the snake: {e}")
+            raise Exception(f"Snake movement error: {e}")
+
+    def change_direction(self, direction):
+        """
+        Changes the direction of the snake's movement if the new direction is not directly opposite to the current direction,
+        preventing the snake from reversing onto itself.
+        """
+        logging.debug(
+            f"Attempting to change the direction of the snake's movement to: {direction}."
+        )
+        try:
+            opposite_directions = {
+                "up": "down",
+                "down": "up",
+                "left": "right",
+                "right": "left",
+            }
+            if direction != opposite_directions.get(self.direction, ""):
+                self.direction = direction
+                logging.info(
+                    f"Snake direction changed successfully to: {self.direction}."
+                )
+        except Exception as e:
+            logging.error(f"Failed to change the direction of the snake: {e}")
+            raise Exception(f"Snake direction change error: {e}")
+
+    def draw(self, WIN):
+        """
+        Draws each segment of the snake with a cycling color spectrum and applies glow effects based on the mode.
+        """
+        hue_step = 1  # Define how fast the color cycles through the spectrum
+        for i, segment in enumerate(self.segments):
+            # Update color phase
+            self.color_phase[i] = (self.color_phase[i] + hue_step) % 360
+            color = pygame.Color(0)
+            color.hsva = (
+                self.color_phase[i],
+                100,
+                100,
+            )  # Full saturation and value for vivid colors
+
+            # Draw the segment
+            pygame.draw.rect(
+                WIN,
+                color,
+                (segment[0] * TILE_SIZE, segment[1] * TILE_SIZE, TILE_SIZE, TILE_SIZE),
+            )
+
+            # Apply glow effect based on the mode
+            if self.mode == "hamiltonian":
+                self.apply_glow(WIN, segment, (255, 0, 0))  # Red glow
+            elif self.mode == "astar":
+                self.apply_glow(WIN, segment, (0, 0, 255))  # Blue glow
+
+    def apply_glow(self, WIN, position, glow_color):
+        """
+        Applies a glow effect around a given position with the specified glow color.
+        """
+        glow_radius = 10  # Radius of the glow effect
+        for radius in range(glow_radius, 0, -1):
+            alpha = (1 - (radius / glow_radius)) * 255
+            glow_surface = pygame.Surface(
+                (TILE_SIZE + radius * 2, TILE_SIZE + radius * 2), pygame.SRCALPHA
+            )
+            pygame.draw.circle(
+                glow_surface,
+                glow_color + (int(alpha),),
+                (glow_radius, glow_radius),
+                radius,
+            )
+            WIN.blit(
+                glow_surface,
+                (position[0] * TILE_SIZE - radius, position[1] * TILE_SIZE - radius),
+            )
+
+        pygame.display.update()
+
+
+class DecisionMaker:
+    def __init__(self, snake=None, food=None, grid=None):
+        """
+        Initializes the DecisionMaker object which controls the snake's movement strategy with optional parameters.
+        This constructor meticulously sets up the snake, food, and grid objects, and initializes pathfinders for various strategies,
+        ensuring that each component is optimally configured for high-performance gameplay.
+
+        Args:
+            snake (Snake): The snake object. Defaults to a new Snake instance if not provided.
+            food (Food): The food object. Defaults to a new Food instance positioned at the center if not provided.
+            grid (Grid): The grid object representing the game area. Defaults to a new Grid instance with predefined width and height if not provided.
+        """
+        self.snake = snake if snake is not None else Snake()
+        self.food = (
+            food
+            if food is not None
+            else Food(position=np.array([WIDTH // 2, HEIGHT // 2]))
+        )
+        self.grid = grid if grid is not None else Grid(WIDTH, HEIGHT)
+        self.pathfinders = {
+            "CDP": ConstrainedDelaunayPathfinder(
+                Grid.get_points(self.grid), Grid.get_obstacles(self.grid)
+            ),
+            "AHP": AmoebaHamiltonianPathfinder(self.snake, self.grid, self.food),
+            "ThetaStar": ThetaStar(self.grid),
+        }
+
+    async def decide_next_move(self):
+        """
+        Asynchronously decides the next move for the snake based on the current game state and the selected strategy.
+        It evaluates potential paths using multiple pathfinding algorithms, compares their costs, and selects the optimal path.
+        This method continuously updates its assessments to look ahead multiple steps based on the game's complexity and dynamics.
+
+        Returns:
+            str: The next direction for the snake to move, determined by the optimal pathfinding strategy.
+        """
+        current_position = self.snake.get_head_position()
+        food_position = self.food.position
+        paths = {}
+        costs = {}
+
+        # Generate paths from each pathfinding strategy
+        for name, pathfinder in self.pathfinders.items():
+            path = await pathfinder.find_path(current_position, food_position)
+            paths[name] = path
+            costs[name] = await self.calculate_path_cost(path)
+
+        # Determine the optimal path with the lowest cost
+        optimal_strategy = min(costs, key=costs.get)
+        optimal_path = paths[optimal_strategy]
+
+        # Decide the next move based on the optimal path
+        next_move = await self.determine_next_move_from_path(optimal_path)
+        return next_move
+
+    def calculate_path_cost(self, path):
+        """
+        Calculates the cost of a given path based on length, proximity to dangers, and strategic advantages.
+        This method employs a detailed and comprehensive cost analysis to ensure optimal path selection.
+
+        Args:
+            path (list): The path as a list of grid positions.
+
+        Returns:
+            float: The calculated cost of the path.
+        """
+        length_cost = len(path) * 10
+        danger_cost = sum(self.grid.is_near_obstacle(point) for point in path) * 20
+        strategic_cost = self.evaluate_strategic_advantages(path)
+        return length_cost + danger_cost + strategic_cost
+
+    def evaluate_strategic_advantages(self, path):
+        """
+        Evaluates the strategic advantages of a given path, considering factors such as game-winning alignment and future food positions.
+        This method performs a thorough analysis of the path's potential to lead to a winning game state.
+
+        Args:
+            path (list): The path as a list of grid positions.
+
+        Returns:
+            float: The strategic advantage score of the path.
+        """
+        game_winning_alignment_cost = self.evaluate_game_winning_strategy_alignment(
+            path
+        )
+        future_food_proximity_cost = self.calculate_future_food_proximity_cost(path)
+        strategic_cost = game_winning_alignment_cost + future_food_proximity_cost
+        logging.debug(f"Total strategic cost calculated: {strategic_cost}")
+        return strategic_cost
+
+    def calculate_future_food_proximity_cost(self, path):
+        """
+        Calculates the cost associated with the proximity to predicted future food positions along the given path.
+        This method leverages advanced predictive modeling techniques to anticipate the likelihood of food appearing in certain positions.
+
+        Args:
+            path (list): The path as a list of grid positions.
+
+        Returns:
+            float: The cost based on the path's proximity to predicted future food positions.
+        """
+        future_food_positions = self.predict_future_food_positions()
+        proximity_cost = sum(
+            self.calculate_position_proximity_cost(position, future_food_positions)
+            for position in path
+        )
+        logging.debug(
+            f"Calculated future food proximity cost for path: {proximity_cost}"
+        )
+        return proximity_cost
+
+    def calculate_position_proximity_cost(self, position, target_positions):
+        """
+        Calculates the cost associated with the proximity of a given position to a set of target positions.
+        This method assesses the strategic value of a position based on its distance from important target locations.
+
+        Args:
+            position (tuple): The position to evaluate.
+            target_positions (list): A list of target positions to consider.
+
+        Returns:
+            float: The proximity cost of the position relative to the target positions.
+        """
+        min_distance = min(
+            np.linalg.norm(np.array(position) - np.array(target))
+            for target in target_positions
+        )
+        proximity_cost = 10 / (min_distance + 1)  # Inverse proportional to distance
+        logging.debug(
+            f"Calculated proximity cost for position {position}: {proximity_cost}"
+        )
+        return proximity_cost
+
+    def predict_future_food_positions(self):
+        """
+        Predicts future food positions based on a comprehensive analysis of historical game data and the current game state,
+        utilizing a sophisticated machine learning model. This method integrates complex data analysis techniques to forecast
+        the probable locations where food might appear on the game grid, thereby enabling strategic planning for the snake's movements.
+
+        Returns:
+            list: A meticulously compiled list of predicted future food positions, each represented as a tuple of coordinates.
+        """
+        # Logging the initiation of the food position prediction process
+         logging.debug("Initiating the prediction of future food positions.")
+        # Extract historical food position data and current game state
+        historical_data = self.retrieve_historical_food_positions()
+        current_state_features = self.extract_features_from_current_state()
+        # Combine historical data with current state for prediction
+        features = np.concatenate((historical_data, current_state_features), axis=0)
+        # Normalize the feature set
+        scaler = StandardScaler()
+        scaled_features = scaler.fit_transform(features)
+        # Split data into training and testing sets
+        X_train

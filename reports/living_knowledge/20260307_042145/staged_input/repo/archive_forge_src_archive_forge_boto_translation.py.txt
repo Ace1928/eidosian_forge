@@ -1,0 +1,461 @@
+SOURCE_PATH: archive_forge/src/archive_forge/boto_translation.py
+KIND: code
+
+# -*- coding: utf-8 -*-
+# Copyright 2013 Google Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""XML/boto gsutil Cloud API implementation for GCS and Amazon S3."""
+
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+
+import base64
+import binascii
+import datetime
+import errno
+import json
+import os
+import pickle
+import random
+import re
+import socket
+import tempfile
+import textwrap
+import threading
+import time
+import xml
+from xml.dom.minidom import parseString as XmlParseString
+from xml.sax import _exceptions as SaxExceptions
+
+import six
+from six.moves import http_client
+import boto
+from boto import config
+from boto import handler
+from boto.gs.cors import Cors
+from boto.gs.lifecycle import LifecycleConfig
+from boto.s3.cors import CORSConfiguration as S3Cors
+from boto.s3.deletemarker import DeleteMarker
+from boto.s3.lifecycle import Lifecycle as S3Lifecycle
+from boto.s3.prefix import Prefix
+from boto.s3.tagging import Tags
+import boto.exception
+import boto.utils
+from gslib.boto_resumable_upload import BotoResumableUpload
+from gslib.cloud_api import AccessDeniedException
+from gslib.cloud_api import ArgumentException
+from gslib.cloud_api import BadRequestException
+from gslib.cloud_api import CloudApi
+from gslib.cloud_api import NotEmptyException
+from gslib.cloud_api import NotFoundException
+from gslib.cloud_api import PreconditionException
+from gslib.cloud_api import ResumableDownloadException
+from gslib.cloud_api import ResumableUploadAbortException
+from gslib.cloud_api import ResumableUploadException
+from gslib.cloud_api import ResumableUploadStartOverException
+from gslib.cloud_api import ServiceException
+# Imported for boto AuthHandler purposes.
+import gslib.devshell_auth_plugin  # pylint: disable=unused-import
+from gslib.exception import CommandException
+from gslib.exception import InvalidUrlError
+from gslib.project_id import GOOG_PROJ_ID_HDR
+from gslib.project_id import PopulateProjectId
+from gslib.storage_url import GenerationFromUrlAndString
+from gslib.storage_url import StorageUrlFromString
+from gslib.third_party.storage_apitools import storage_v1_messages as apitools_messages
+from gslib.utils import parallelism_framework_util
+from gslib.utils.boto_util import ConfigureNoOpAuthIfNeeded
+from gslib.utils.boto_util import GetMaxRetryDelay
+from gslib.utils.boto_util import GetNumRetries
+from gslib.utils.cloud_api_helper import ListToGetFields
+from gslib.utils.cloud_api_helper import ValidateDstObjectMetadata
+from gslib.utils.constants import DEFAULT_FILE_BUFFER_SIZE
+from gslib.utils.constants import REQUEST_REASON_ENV_VAR
+from gslib.utils.constants import REQUEST_REASON_HEADER_KEY
+from gslib.utils.constants import S3_DELETE_MARKER_GUID
+from gslib.utils.constants import UTF8
+from gslib.utils.constants import XML_PROGRESS_CALLBACKS
+from gslib.utils.hashing_helper import Base64EncodeHash
+from gslib.utils.hashing_helper import Base64ToHexHash
+from gslib.utils.metadata_util import AddAcceptEncodingGzipIfNeeded
+from gslib.utils.parallelism_framework_util import multiprocessing_context
+from gslib.utils.text_util import EncodeStringAsLong
+from gslib.utils.translation_helper import AclTranslation
+from gslib.utils.translation_helper import AddS3MarkerAclToObjectMetadata
+from gslib.utils.translation_helper import CorsTranslation
+from gslib.utils.translation_helper import CreateBucketNotFoundException
+from gslib.utils.translation_helper import CreateNotFoundExceptionForObjectWrite
+from gslib.utils.translation_helper import CreateObjectNotFoundException
+from gslib.utils.translation_helper import DEFAULT_CONTENT_TYPE
+from gslib.utils.translation_helper import HeadersFromObjectMetadata
+from gslib.utils.translation_helper import LabelTranslation
+from gslib.utils.translation_helper import LifecycleTranslation
+from gslib.utils.translation_helper import REMOVE_CORS_CONFIG
+from gslib.utils.translation_helper import S3MarkerAclFromObjectMetadata
+from gslib.utils.translation_helper import UnaryDictToXml
+from gslib.utils.unit_util import TWO_MIB
+
+if six.PY3:
+  long = int
+
+TRANSLATABLE_BOTO_EXCEPTIONS = (boto.exception.BotoServerError,
+                                boto.exception.InvalidUriError,
+                                boto.exception.ResumableDownloadException,
+                                boto.exception.ResumableUploadException,
+                                boto.exception.StorageCreateError,
+                                boto.exception.StorageResponseError)
+
+# pylint: disable=global-at-module-level
+global boto_auth_initialized, boto_auth_initialized_lock
+# If multiprocessing is available, these will be overridden to process-safe
+# variables in InitializeMultiprocessingVariables.
+boto_auth_initialized_lock = threading.Lock()
+boto_auth_initialized = False
+
+NON_EXISTENT_OBJECT_REGEX = re.compile(r'.*non-\s*existent\s*object',
+                                       flags=re.DOTALL)
+# Determines whether an etag is a valid MD5.
+MD5_REGEX = re.compile(r'^"*[a-fA-F0-9]{32}"*$')
+
+
+def _AddCustomEndpointToKey(key):
+  """Update Boto Key object with user config's custom endpoint."""
+  user_setting_to_key_attribute = {
+      'gs_host': 'host',
+      'gs_port': 'port',
+      'gs_host_header': 'host_header',
+  }
+  for user_setting, key_attribute in user_setting_to_key_attribute.items():
+    user_setting_value = config.get('Credentials', user_setting, None)
+    if user_setting_value is not None:
+      setattr(key.bucket.connection, key_attribute, user_setting_value)
+
+
+def InitializeMultiprocessingVariables():  # pylint: disable=invalid-name
+  """Perform necessary initialization for multiprocessing.
+
+    See gslib.command.InitializeMultiprocessingVariables for an explanation
+    of why this is necessary.
+  """
+  # pylint: disable=global-variable-undefined
+  global boto_auth_initialized, boto_auth_initialized_lock
+  boto_auth_initialized_lock = parallelism_framework_util.CreateLock()
+  boto_auth_initialized = multiprocessing_context.Value('i', 0)
+
+
+class DownloadProxyCallbackHandler(object):
+  """Intermediary callback to keep track of the number of bytes downloaded."""
+
+  def __init__(self, start_byte, callback):
+    self._start_byte = start_byte
+    self._callback = callback
+
+  def call(self, bytes_downloaded, total_size):
+    """Saves necessary data and then calls the given Cloud API callback.
+
+    Args:
+      bytes_downloaded: Number of bytes processed so far.
+      total_size: Total size of the ongoing operation.
+    """
+    if self._callback:
+      self._callback(self._start_byte + bytes_downloaded, total_size)
+
+
+class BotoTranslation(CloudApi):
+  """Boto-based XML translation implementation of gsutil Cloud API.
+
+  This class takes gsutil Cloud API objects, translates them to XML service
+  calls, and translates the results back into gsutil Cloud API objects for
+  use by the caller.
+
+  This class does not support encryption and ignores encryption and decryption
+  parameters. Behavior when encountering encrypted objects is undefined.
+  TODO: Implement support.
+
+  This class does not support handling a Requester Pays user project for
+  billing, and any given user project will be ignored.
+  TODO: Support user_project.
+  """
+
+  def __init__(self,
+               bucket_storage_uri_class,
+               logger,
+               status_queue,
+               provider=None,
+               credentials=None,
+               debug=0,
+               http_headers=None,
+               trace_token=None,
+               perf_trace_token=None,
+               user_project=None):
+    """Performs necessary setup for interacting with the cloud storage provider.
+
+    Args:
+      bucket_storage_uri_class: boto storage_uri class, used by APIs that
+                                provide boto translation or mocking.
+      logger: logging.logger for outputting log messages.
+      status_queue: Queue for relaying status to UI.
+      provider: Provider prefix describing cloud storage provider to connect to.
+                'gs' and 's3' are supported. Function implementations ignore
+                the provider argument and use this one instead.
+      credentials: Unused.
+      debug: Debug level for the API implementation (0..3).
+      http_headers (dict|None): Arbitrary headers to be included in every request. 
+      trace_token: Unused in this subclass.
+      perf_trace_token: Performance trace token to use when making API calls
+          ('gs' provider only).
+      user_project: Unused in this subclass
+    """
+    super(BotoTranslation, self).__init__(bucket_storage_uri_class,
+                                          logger,
+                                          status_queue,
+                                          provider=provider,
+                                          debug=debug,
+                                          http_headers=http_headers,
+                                          trace_token=trace_token,
+                                          perf_trace_token=perf_trace_token)
+    _ = credentials
+    # pylint: disable=global-variable-undefined, global-variable-not-assigned
+    global boto_auth_initialized, boto_auth_initialized_lock
+    with boto_auth_initialized_lock:
+      ConfigureNoOpAuthIfNeeded()
+      if isinstance(boto_auth_initialized, bool):
+        boto_auth_initialized = True
+      else:
+        boto_auth_initialized.value = 1
+    self.api_version = boto.config.get_value('GSUtil', 'default_api_version',
+                                             '1')
+
+  def GetServiceAccountId(self):
+    """Service account credentials unused for S3."""
+    return None
+
+  def GetBucket(self, bucket_name, provider=None, fields=None):
+    """See CloudApi class for function doc strings."""
+    _ = provider
+    bucket_uri = self._StorageUriForBucket(bucket_name)
+    headers = self._CreateBaseHeaders()
+    try:
+      return self._BotoBucketToBucket(bucket_uri.get_bucket(validate=True,
+                                                            headers=headers),
+                                      fields=fields)
+    except TRANSLATABLE_BOTO_EXCEPTIONS as e:
+      self._TranslateExceptionAndRaise(e, bucket_name=bucket_name)
+
+  def ListBuckets(self, project_id=None, provider=None, fields=None):
+    """See CloudApi class for function doc strings."""
+    _ = provider
+    get_fields = ListToGetFields(list_fields=fields)
+    headers = self._CreateBaseHeaders()
+    if self.provider == 'gs':
+      headers[GOOG_PROJ_ID_HDR] = PopulateProjectId(project_id)
+    try:
+      provider_uri = boto.storage_uri(
+          '%s://' % self.provider,
+          suppress_consec_slashes=False,
+          bucket_storage_uri_class=self.bucket_storage_uri_class,
+          debug=self.debug)
+
+      buckets_iter = provider_uri.get_all_buckets(headers=headers)
+      for bucket in buckets_iter:
+        if self.provider == 's3' and bucket.name.lower() != bucket.name:
+          # S3 listings can return buckets with upper-case names, but boto
+          # can't successfully call them.
+          continue
+        yield self._BotoBucketToBucket(bucket, fields=get_fields)
+    except TRANSLATABLE_BOTO_EXCEPTIONS as e:
+      self._TranslateExceptionAndRaise(e)
+
+  def PatchBucket(self,
+                  bucket_name,
+                  metadata,
+                  canned_acl=None,
+                  canned_def_acl=None,
+                  preconditions=None,
+                  provider=None,
+                  fields=None):
+    """See CloudApi class for function doc strings."""
+    _ = provider
+    bucket_uri = self._StorageUriForBucket(bucket_name)
+    headers = self._CreateBaseHeaders()
+    self._AddPreconditionsToHeaders(preconditions, headers)
+    try:
+      if metadata.acl:
+        boto_acl = AclTranslation.BotoAclFromMessage(metadata.acl)
+        bucket_uri.set_xml_acl(boto_acl.to_xml(), headers=headers)
+      if canned_acl:
+        canned_acls = bucket_uri.canned_acls()
+        if canned_acl not in canned_acls:
+          raise CommandException('Invalid canned ACL "%s".' % canned_acl)
+        bucket_uri.set_acl(canned_acl, bucket_uri.object_name, headers=headers)
+      if canned_def_acl:
+        canned_acls = bucket_uri.canned_acls()
+        if canned_def_acl not in canned_acls:
+          raise CommandException('Invalid canned ACL "%s".' % canned_def_acl)
+        bucket_uri.set_def_acl(canned_def_acl,
+                               bucket_uri.object_name,
+                               headers=headers)
+      if metadata.cors:
+        if metadata.cors == REMOVE_CORS_CONFIG:
+          metadata.cors = []
+        boto_cors = CorsTranslation.BotoCorsFromMessage(metadata.cors)
+        bucket_uri.set_cors(boto_cors, False, headers=headers)
+      if metadata.defaultObjectAcl:
+        boto_acl = AclTranslation.BotoAclFromMessage(metadata.defaultObjectAcl)
+        bucket_uri.set_def_xml_acl(boto_acl.to_xml(), headers=headers)
+      if metadata.labels:
+        boto_tags = LabelTranslation.BotoTagsFromMessage(metadata.labels)
+        # TODO: Define tags-related methods on storage_uri objects. The set_tags
+        # method raises an exception if the response differs from the style of
+        # S3, which uses a 204 response code upon success. That method
+        # should be okay with a 200 instead of a 204 for GS responses. In the
+        # meantime, we invoke the underlying bucket's methods directly and
+        # bypass manually raised exceptions from 200 responses.
+        try:
+          bucket_uri.get_bucket().set_tags(boto_tags, headers=headers)
+        except boto.exception.GSResponseError as e:
+          if e.status != 200:
+            raise
+      if metadata.lifecycle:
+        boto_lifecycle = LifecycleTranslation.BotoLifecycleFromMessage(
+            metadata.lifecycle)
+        bucket_uri.configure_lifecycle(boto_lifecycle, False, headers=headers)
+      if metadata.logging:
+        if metadata.logging.logBucket and metadata.logging.logObjectPrefix:
+          bucket_uri.enable_logging(metadata.logging.logBucket,
+                                    metadata.logging.logObjectPrefix,
+                                    False,
+                                    headers=headers)
+        else:  # Logging field is present and empty.  Disable logging.
+          bucket_uri.disable_logging(False, headers=headers)
+      if metadata.storageClass:
+        bucket_uri.set_storage_class(metadata.storageClass, headers=headers)
+      if metadata.versioning:
+        bucket_uri.configure_versioning(metadata.versioning.enabled,
+                                        headers=headers)
+      if metadata.website:
+        main_page_suffix = metadata.website.mainPageSuffix
+        error_page = metadata.website.notFoundPage
+        bucket_uri.set_website_config(main_page_suffix,
+                                      error_page,
+                                      headers=headers)
+      return self.GetBucket(bucket_name, fields=fields)
+    except TRANSLATABLE_BOTO_EXCEPTIONS as e:
+      self._TranslateExceptionAndRaise(e, bucket_name=bucket_name)
+
+  def CreateBucket(self,
+                   bucket_name,
+                   project_id=None,
+                   metadata=None,
+                   provider=None,
+                   fields=None):
+    """See CloudApi class for function doc strings."""
+    _ = provider
+    bucket_uri = self._StorageUriForBucket(bucket_name)
+    location = ''
+    if metadata and metadata.location:
+      location = metadata.location.lower()
+    # Pass storage_class param only if this is a GCS bucket. (In S3 the
+    # storage class is specified on the key object.)
+    headers = self._CreateBaseHeaders()
+    if bucket_uri.scheme == 'gs':
+      headers[GOOG_PROJ_ID_HDR] = PopulateProjectId(project_id)
+      storage_class = ''
+      if metadata and metadata.storageClass:
+        storage_class = metadata.storageClass
+      if (metadata and metadata.retentionPolicy and
+          metadata.retentionPolicy.retentionPeriod):
+        headers['x-goog-bucket-retention-period'] = str(
+            metadata.retentionPolicy.retentionPeriod)
+      try:
+        bucket_uri.create_bucket(headers=headers,
+                                 location=location,
+                                 storage_class=storage_class)
+      except TRANSLATABLE_BOTO_EXCEPTIONS as e:
+        self._TranslateExceptionAndRaise(e, bucket_name=bucket_name)
+    else:
+      try:
+        bucket_uri.create_bucket(headers=headers, location=location)
+      except TRANSLATABLE_BOTO_EXCEPTIONS as e:
+        self._TranslateExceptionAndRaise(e, bucket_name=bucket_name)
+    return self.GetBucket(bucket_name, fields=fields)
+
+  def DeleteBucket(self, bucket_name, preconditions=None, provider=None):
+    """See CloudApi class for function doc strings."""
+    _ = provider, preconditions
+    bucket_uri = self._StorageUriForBucket(bucket_name)
+    headers = self._CreateBaseHeaders()
+    try:
+      bucket_uri.delete_bucket(headers=headers)
+    except TRANSLATABLE_BOTO_EXCEPTIONS as e:
+      translated_exception = self._TranslateBotoException(
+          e, bucket_name=bucket_name)
+      if (translated_exception and
+          'BucketNotEmpty' in translated_exception.reason):
+        try:
+          if bucket_uri.get_versioning_config():
+            if self.provider == 's3':
+              raise NotEmptyException(
+                  'VersionedBucketNotEmpty (%s). Currently, gsutil does not '
+                  'support listing or removing S3 DeleteMarkers, so you may '
+                  'need to delete these using another tool to successfully '
+                  'delete this bucket.' % bucket_name,
+                  status=e.status,
+              )
+            raise NotEmptyException(
+                'VersionedBucketNotEmpty (%s)' % bucket_name,
+                status=e.status,
+            )
+          else:
+            raise NotEmptyException(
+                'BucketNotEmpty (%s)' % bucket_name,
+                status=e.status,
+            )
+        except TRANSLATABLE_BOTO_EXCEPTIONS as e2:
+          self._TranslateExceptionAndRaise(e2, bucket_name=bucket_name)
+      elif translated_exception and translated_exception.status == 404:
+        raise NotFoundException('Bucket %s does not exist.' % bucket_name)
+      else:
+        self._TranslateExceptionAndRaise(e, bucket_name=bucket_name)
+
+  def ListObjects(self,
+                  bucket_name,
+                  prefix=None,
+                  delimiter=None,
+                  all_versions=None,
+                  provider=None,
+                  fields=None):
+    """See CloudApi class for function doc strings."""
+    _ = provider
+    get_fields = ListToGetFields(list_fields=fields)
+    bucket_uri = self._StorageUriForBucket(bucket_name)
+    headers = self._CreateBaseHeaders()
+    yield_prefixes = fields is None or 'prefixes' in fields
+    yield_objects = fields is None or any(
+        field.startswith('items/') for field in fields)
+    try:
+      objects_iter = bucket_uri.list_bucket(prefix=prefix or '',
+                                            delimiter=delimiter or '',
+                                            all_versions=all_versions,
+                                            headers=headers)
+    except TRANSLATABLE_BOTO_EXCEPTIONS as e:
+      self._TranslateExceptionAndRaise(e, bucket_name=bucket_name)
+
+    try:
+      for key in objects_iter:
+        if yield_prefixes and isinstance(key, Prefix):
+          yield CloudApi.CsObjectOrPrefix(key.name,
+                                          CloudApi.CsOb

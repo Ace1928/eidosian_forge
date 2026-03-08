@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_endian_documentation.py
+KIND: code
+
+import sys
+from ctypes import *
+Union with little endian byte order

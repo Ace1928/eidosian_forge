@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_translation_maps_documentation.py
+KIND: code
+
+from string import ascii_lowercase
+
+Translation maps for XPath 3.0+ format functions. Add languages with pull-requests.

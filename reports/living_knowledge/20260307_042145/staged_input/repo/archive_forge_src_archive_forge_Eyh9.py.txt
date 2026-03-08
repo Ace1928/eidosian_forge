@@ -1,0 +1,491 @@
+SOURCE_PATH: archive_forge/src/archive_forge/Eyh9.py
+KIND: code
+
+# Importing necessary modules
+import os  # Importing the os module for file and directory operations
+import json  # Importing the json module for handling JSON data
+import logging  # Importing the logging module for logging purposes
+import sys  # Importing the sys module for system-specific parameters and functions
+import random  # Importing the random module for random number generation
+import numpy as np  # Importing the numpy module and aliasing it as np for numerical computing
+from numpy import (
+    pi,
+)  # Importing the pi constant from numpy for mathematical calculations
+from numpy.linalg import norm  # Importing the norm function from numpy.linalg for vector normalization
+import asyncio  # Importing the asyncio module for asynchronous programming
+from asyncio import (
+    sleep,
+)  # Importing the sleep function from asyncio for asynchronous sleep operations
+from typing import (
+    List,
+    Tuple,
+    Dict,
+    Union,
+    Any,
+    Callable,
+    TypeAlias,
+    Optional,
+)  # Importing various types from the typing module for type hinting and annotation
+from itertools import (
+    cycle,
+)  # Importing the cycle function from itertools for creating cyclic iterators
+import multiprocessing  # Importing the multiprocessing module for parallel processing
+import OpenGL.GL as gl  # Importing OpenGL.GL module and aliasing it as gl for OpenGL graphics functionality
+import OpenGL.GLUT as glut  # Importing OpenGL.GLUT module and aliasing it as glut for OpenGL Utility Toolkit functionality
+import OpenGL  # Importing the OpenGL module for OpenGL graphics functionality
+from OpenGL.GL import (
+    GL_COLOR_BUFFER_BIT,
+    GL_DEPTH_BUFFER_BIT,
+    GL_MODELVIEW,
+    GL_PROJECTION,
+)  # Importing specific constants from OpenGL.GL for OpenGL graphics functionality
+import cProfile  # Importing the cProfile module for profiling code execution
+import pstats  # Importing the pstats module for analyzing profiling statistics
+from pstats import (
+    SortKey,
+)  # Importing the SortKey class from pstats
+
+"""
+Module: color_fun.py
+
+Author: [Your Name]
+Created: [Creation Date]
+
+Description:
+This module provides a comprehensive set of functions and utilities for color manipulation, conversion, and visualization.
+It leverages various Python modules, including OpenGL, asyncio, and numpy, to create dynamic and interactive color spectacles.
+The module supports a wide range of color spaces and formats, allowing for seamless conversion between different color representations.
+Additionally, it includes functionality for generating color codes, extending color information, and creating dynamic 3D scenes with color-changing elements.
+
+Features:
+- Color conversion between RGB, ANSI, HEX, CMYK, Lab, XYZ, xyY, Luv, Hunter Lab, sRGB, Adobe RGB, ProPhoto RGB, HSV, HSL, YUV, YCbCr, YPbPr, YDbDr, and YIQ color spaces.
+- Generation of comprehensive color codes spanning a granular color spectrum.
+- Extension of color codes with additional color formats and information.
+- Asynchronous generation of dynamic colors for 3D color spectacles.
+- Validation and loading of color codes from a JSON file, with the ability to regenerate and save new color codes if the file is invalid or not found.
+- Generation of an initial 3D scene with various objects and shapes, including a rotating cube, a sphere with a dynamic color material, a particle system, and a color-changing torus.
+- Rendering and updating the 3D scene using OpenGL, with smooth color transitions and animations.
+- Profiling of code execution using cProfile and pstats for performance analysis and optimization.
+
+Usage:
+1. Import the module: `import color_fun`
+2. Use the provided functions and utilities as needed, such as `color_fun.rgb_to_hex()` or `color_fun.generate_dynamic_colors()`.
+3. Refer to the function docstrings and inline comments for detailed usage instructions and examples.
+
+Note: This module requires the following dependencies to be installed:
+- numpy
+- OpenGL
+- asyncio
+- cProfile
+- pstats
+"""
+
+# Setup enhanced logging
+logging.basicConfig(
+    level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
+)  # Configuring the logging module with DEBUG level and a specific format for log messages
+class Omniverse:
+
+class Multiverse:
+
+class Universe:
+
+class MegaCluster:
+
+class KiloCluster:
+
+class Cluster:
+
+class MilliCluster:
+
+class MicroCluster:
+
+class Galaxy:
+
+class Quadrant:
+
+class Sector:
+
+class Region:
+
+class Area:
+
+class Zone:
+
+class Location:
+
+class Scene:
+
+class Relationship:
+        
+class Interaction:
+
+class Consequence:
+
+class RecursiveRelationship:
+
+class RecursiveInteraction:
+
+class RecursiveConsequence:
+
+class Coordinate_System:
+        
+class Field:
+        
+class Dimension:
+        
+class Time:
+        
+class Energy:
+
+class Fundamental_Constant:
+        
+class Space:
+        
+class Matter:
+
+class 
+
+    
+        
+
+    
+
+
+
+
+
+
+
+class Light:
+        
+
+class Camera:
+
+
+class Object:
+        def __init__(self):
+            self.name = "Object"
+            self.type = "Object"
+            self.location = (0.0, 0.0, 0.0)
+            self.rotation = (0.0, 0.0, 0.0)
+            self.scale = (1.0, 1.0, 1.0)    
+            self.color = (1.0, 1.0, 1.0)
+            self.material = None
+            self.shape = None
+            self.particle_system = None
+            self.effect = None
+            self.filter = None
+            self.texture = None
+            self.shader = None
+            self.function = None
+            self.generator = None
+            self.renderer = None
+            self.updater = None
+            self.deformer = None
+            self.constraint = None
+            self.controller = None
+            self.modifier = None
+            self.handler = None
+            self.sensor = None
+            self.actuator = None
+            self.parent = None
+            self.children = []
+            self.index = 0
+            self.name_index = 0
+            self.type_index = 0
+            self.location_index = 0
+            self.rotation_index = 0
+            self.scale_index = 0
+            self.color_index = 0
+            self.material_index = 0
+            self.shape_index = 0
+            self.particle_system_index = 0
+            self.effect_index = 0
+            self.filter_index = 0
+            self.texture_index = 0
+            self.shader_index = 0
+            self.function_index = 0
+            self.generator_index = 0
+            self.renderer_index = 0
+            self.updater_index = 0
+            self.deformer_index = 0
+            self.constraint_index = 0
+            self.controller_index = 0
+            self.modifier_index = 0
+            self.handler_index = 0
+            self.sensor_index = 0
+            self.actuator_index = 0
+            self.parent_index = 0
+            self.children_index = 0
+            self.index_index = 0
+
+# Type Aliases for enhanced clarity, type safety, and to avoid type/value/key errors
+try:
+    ColorName: TypeAlias = str  # Defining a type alias ColorName as str for color names
+    logging.debug("ColorName type alias defined successfully.")
+except TypeError as e:
+    logging.error(f"Error defining ColorName type alias: {str(e)}")
+    raise
+
+try:
+    RGBValue: TypeAlias = Tuple[
+        int, int, int
+    ]  # Defining a type alias RGBValue as a tuple of three integers for RGB color values
+    logging.debug("RGBValue type alias defined successfully.")
+except TypeError as e:
+    logging.error(f"Error defining RGBValue type alias: {str(e)}")
+    raise
+
+try:
+    ANSIValue: TypeAlias = str  # Defining a type alias ANSIValue as str for ANSI escape codes
+    logging.debug("ANSIValue type alias defined successfully.")
+except TypeError as e:
+    logging.error(f"Error defining ANSIValue type alias: {str(e)}")
+    raise
+
+try:
+    HexValue: TypeAlias = str  # Defining a type alias HexValue as str for hexadecimal color values
+    logging.debug("HexValue type alias defined successfully.")
+except TypeError as e:
+    logging.error(f"Error defining HexValue type alias: {str(e)}")
+    raise
+
+"""
+    Type Aliases for Extended Color Codes and Color Values
+    This section defines type aliases for various color representations and color code structures used throughout the program.
+    Type Aliases:
+    - ExtendedColorCode: Represents an extended color code as a tuple containing RGB, ANSI, HEX, CMYK, Lab, XYZ, and any additional color values.
+    - CMYKValue: Represents a CMYK color value as a tuple of four float values.
+    - LabValue: Represents a Lab color value as a tuple of three float values.
+    - XYZValue: Represents an XYZ color value as a tuple of three float values.
+    - ColorCode: Represents a color code as a tuple of color name and RGB value.
+    - ColorCodesList: Represents a list of color codes.
+    - ColorCodesDict: Represents a dictionary mapping color names to either RGB values or string representations.
+    These type aliases provide a standardized and expressive way to represent and work with color-related data structures in the program.
+"""
+
+try:
+    xyYValue: TypeAlias = Tuple[float, float, float]
+    """
+        Type alias for an xyY color value.
+        An xyY color value is represented as a tuple of three float values, corresponding to the x, y, and Y components of the color.
+        This type alias provides a clear and concise way to represent xyY color values, ensuring type safety and improving code readability.
+    """
+    logging.debug("xyYValue type alias defined successfully.")
+except TypeError as e:
+    logging.error(f"Error defining xyYValue type alias: {str(e)}")
+    raise
+
+try:
+    LuvValue: TypeAlias = Tuple[float, float, float]
+    """
+        Type alias for an Luv color value.
+        An Luv color value is represented as a tuple of three float values, corresponding to the L* (lightness), u* (green-red), and v* (blue-yellow) components of the color.
+        This type alias provides a clear and concise way to represent Luv color values, ensuring type safety and improving code readability.
+    """
+    logging.debug("LuvValue type alias defined successfully.")
+except TypeError as e:
+    logging.error(f"Error defining LuvValue type alias: {str(e)}")
+    raise
+
+try:
+    HunterLabValue: TypeAlias = Tuple[float, float, float]
+    """
+        Type alias for a Hunter Lab color value.
+        A Hunter Lab color value is represented as a tuple of three float values, corresponding to the L, a, and b components of the color.
+        This type alias provides a clear and concise way to represent Hunter Lab color values, ensuring type safety and improving code readability.
+    """
+    logging.debug("HunterLabValue type alias defined successfully.")
+except TypeError as e:
+    logging.error(f"Error defining HunterLabValue type alias: {str(e)}")
+    raise
+
+try:
+    sRGBValue: TypeAlias = RGBValue
+    """
+        Type alias for an sRGB color value.
+        An sRGB color value is represented as a tuple of three integers corresponding to the red, green, and blue components of the color.
+        This type alias provides a clear and concise way to represent sRGB color values, ensuring type safety and improving code readability.
+    """
+    logging.debug("sRGBValue type alias defined successfully.")
+except TypeError as e:
+    logging.error(f"Error defining sRGBValue type alias: {str(e)}")
+    raise
+
+try:
+    AdobeRGBValue: TypeAlias = RGBValue
+    """
+        Type alias for an Adobe RGB color value.
+        An Adobe RGB color value is represented as a tuple of three integers corresponding to the red, green, and blue components of the color.
+        This type alias provides a clear and concise way to represent Adobe RGB color values, ensuring type safety and improving code readability.
+    """
+    logging.debug("AdobeRGBValue type alias defined successfully.")
+except TypeError as e:
+    logging.error(f"Error defining AdobeRGBValue type alias: {str(e)}")
+    raise
+
+try:
+    ProPhotoRGBValue: TypeAlias = RGBValue
+    """
+        Type alias for a ProPhoto RGB color value.
+        A ProPhoto RGB color value is represented as a tuple of three integers corresponding to the red, green, and blue components of the color.
+        This type alias provides a clear and concise way to represent ProPhoto RGB color values, ensuring type safety and improving code readability.
+    """
+    logging.debug("ProPhotoRGBValue type alias defined successfully.")
+except TypeError as e:
+    logging.error(f"Error defining ProPhotoRGBValue type alias: {str(e)}")
+    raise
+
+try:
+    HSVValue: TypeAlias = Tuple[float, float, float]
+    """
+        Type alias for an HSV color value.
+        An HSV color value is represented as a tuple of three float values, corresponding to the Hue, Saturation, and Value components of the color.
+        This type alias provides a clear and concise way to represent HSV color values, ensuring type safety and improving code readability.
+    """
+    logging.debug("HSVValue type alias defined successfully.")
+except TypeError as e:
+    logging.error(f"Error defining HSVValue type alias: {str(e)}")
+    raise
+
+try:
+    HSLValue: TypeAlias = Tuple[float, float, float]
+    """
+        Type alias for an HSL color value.
+        An HSL color value is represented as a tuple of three float values, corresponding to the Hue, Saturation, and Lightness components of the color.
+        This type alias provides a clear and concise way to represent HSL color values, ensuring type safety and improving code readability.
+    """
+    logging.debug("HSLValue type alias defined successfully.")
+except TypeError as e:
+    logging.error(f"Error defining HSLValue type alias: {str(e)}")
+    raise
+
+try:
+    YUVValue: TypeAlias = Tuple[float, float, float]
+    """
+        Type alias for a YUV color value.
+        A YUV color value is represented as a tuple of three float values, corresponding to the Y (luma), U (chrominance), and V (chrominance) components of the color.
+        This type alias provides a clear and concise way to represent YUV color values, ensuring type safety and improving code readability.
+    """
+    logging.debug("YUVValue type alias defined successfully.")
+except TypeError as e:
+    logging.error(f"Error defining YUVValue type alias: {str(e)}")
+    raise
+
+try:
+    YCbCrValue: TypeAlias = Tuple[float, float, float]
+    """
+        Type alias for a YCbCr color value.
+        A YCbCr color value is represented as a tuple of three float values, corresponding to the Y (luma), Cb (blue-difference chroma), and Cr (red-difference chroma) components of the color.
+        This type alias provides a clear and concise way to represent YCbCr color values, ensuring type safety and improving code readability.
+    """
+    logging.debug("YCbCrValue type alias defined successfully.")
+except TypeError as e:
+    logging.error(f"Error defining YCbCrValue type alias: {str(e)}")
+    raise
+
+try:
+    YPbPrValue: TypeAlias = Tuple[float, float, float]
+    """
+        Type alias for a YPbPr color value.
+        A YPbPr color value is represented as a tuple of three float values, corresponding to the Y (luma), Pb (blue-difference chroma), and Pr (red-difference chroma) components of the color.
+        This type alias provides a clear and concise way to represent YPbPr color values, ensuring type safety and improving code readability.
+    """
+    logging.debug("YPbPrValue type alias defined successfully.")
+except TypeError as e:
+    logging.error(f"Error defining YPbPrValue type alias: {str(e)}")
+    raise
+
+try:
+    YDbDrValue: TypeAlias = Tuple[float, float, float]
+    """
+        Type alias for a YDbDr color value.
+        A YDbDr color value is represented as a tuple of three float values, corresponding to the Y (luma), Db (blue-difference), and Dr (red-difference) components of the color.
+        This type alias provides a clear and concise way to represent YDbDr color values, ensuring type safety and improving code readability.
+    """
+    logging.debug("YDbDrValue type alias defined successfully.")
+except TypeError as e:
+    logging.error(f"Error defining YDbDrValue type alias: {str(e)}")
+    raise
+
+try:
+    YIQValue: TypeAlias = Tuple[float, float, float]
+    """
+        Type alias for a YIQ color value.
+        A YIQ color value is represented as a tuple of three float values, corresponding to the Y (luma), I (in-phase chrominance), and Q (quadrature-phase chrominance) components of the color.
+        This type alias provides a clear and concise way to represent YIQ color values, ensuring type safety and improving code readability.
+    """
+    logging.debug("YIQValue type alias defined successfully.")
+except TypeError as e:
+    logging.error(f"Error defining YIQValue type alias: {str(e)}")
+    raise
+
+try:
+    CMYKValue: TypeAlias = Tuple[float, float, float, float]
+    """
+        Type alias for a CMYK color value.
+        A CMYK color value is represented as a tuple of four float values, corresponding to the Cyan, Magenta, Yellow, and Key (black) components of the color.
+        This type alias provides a clear and concise way to represent CMYK color values, ensuring type safety and improving code readability.
+    """
+    logging.debug("CMYKValue type alias defined successfully.")
+except TypeError as e:
+    logging.error(f"Error defining CMYKValue type alias: {str(e)}")
+    raise
+
+try:
+    LabValue: TypeAlias = Tuple[float, float, float]
+    """
+        Type alias for a Lab color value.
+        A Lab color value is represented as a tuple of three float values, corresponding to the L* (lightness), a* (green-red), and b* (blue-yellow) components of the color.
+        This type alias provides a clear and concise way to represent Lab color values, ensuring type safety and improving code readability.
+    """
+    logging.debug("LabValue type alias defined successfully.")
+except TypeError as e:
+    logging.error(f"Error defining LabValue type alias: {str(e)}")
+    raise
+
+try:
+    XYZValue: TypeAlias = Tuple[float, float, float]
+    """
+        Type alias for an XYZ color value.
+        An XYZ color value is represented as a tuple of three float values, corresponding to the X, Y, and Z components of the color in the CIE XYZ color space.
+        This type alias provides a clear and concise way to represent XYZ color values, ensuring type safety and improving code readability.
+    """
+    logging.debug("XYZValue type alias defined successfully.")
+except TypeError as e:
+    logging.error(f"Error defining XYZValue type alias: {str(e)}")
+    raise
+
+try:
+    ColorCode: TypeAlias = Tuple[ColorName, RGBValue]
+    """
+        Type alias for a color code.
+        A color code is represented as a tuple containing the following elements:
+        - ColorName: The name of the color
+        - RGBValue: The RGB color value associated with the color name
+        This type alias provides a standardized structure for representing color codes, associating a color name with its corresponding RGB value.
+    """
+    logging.debug("ColorCode type alias defined successfully.")
+except TypeError as e:
+    logging.error(f"Error defining ColorCode type alias: {str(e)}")
+    raise
+
+try:
+    ColorCodesList: TypeAlias = List[ColorCode]
+    """
+        Type alias for a list of color codes.
+        A color codes list is represented as a list of ColorCode tuples, where each tuple contains a color name and its corresponding RGB value.
+        This type alias provides a clear and concise way to represent a collection of color codes, allowing for easy manipulation and iteration over multiple color codes.
+    """
+    logging.debug("ColorCodesList type alias defined successfully.")
+except TypeError as e:
+    logging.error(f"Error defining ColorCodesList type alias: {str(e)}")
+    raise
+
+try:
+    ColorCodesDict: TypeAlias = Dict[ColorName, Union[RGBValue, str]]
+    """
+        Type alias for a dictionary of color codes.
+        A color codes dictionary is represented as a dictionary mapping color names (ColorName) to either RGB values (RGBValue) or string representations of colors.
+        This type alias provides a fle

@@ -1,27 +1,57 @@
-# Figlet Forge
+# 🎨 Figlet Forge ⚡
 
-[![Python: 3.12](https://img.shields.io/badge/Python-3.12-blue.svg)](../global_info.py)
-[![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+> _"Typography for the Digital Soul. Shaping the visual identity of the Eidosian runtime."_
 
-**Typography for the Digital Soul.**
+## 🧠 Overview
 
-## 🎨 Overview
+`figlet_forge` is the Eidosian engine for text art and terminal typography. It acts as an advanced wrapper and extension of `pyfiglet`, providing a strict, stylized visual interface for CLI outputs and structural logs.
 
-`figlet_forge` is the Eidosian engine for text art.
-It extends `pyfiglet` with:
-- **ANSI Color**: Rich terminal output.
-- **Eidosian Styles**: Custom frames and headers (Simple, Bold, Elegant).
-- **Unicode Support**: Better handling of non-ASCII characters.
+```ascii
+      ╭───────────────────────────────────────────╮
+      │               FIGLET FORGE                │
+      │    < Typography | Color | Formatting >    │
+      ╰──────────┬─────────────────────┬──────────╯
+                 │                     │
+      ╭──────────┴──────────╮   ╭──────┴──────────╮
+      │   ASCII FRAMES      │   │   ANSI STYLES   │
+      │ (Structural Art)    │   │ (Rich Output)   │
+      ╰─────────────────────╯   ╰─────────────────╯
+```
 
-## 🏗️ Architecture
-- `figlet_core.py`: Frame generation logic.
-- `src/figlet_forge/`: Main package (wrapping `pyfiglet`).
+## ⚡ Current State & Metrics
 
-## 🚀 Usage
+- **Status**: 🟢 Elevated & Operational
+- **Type**: Visual & Output Formatting
+- **Test Coverage**: Extensive integration and compat suites passing (562+ tests).
+- **Core Capabilities**:
+  - **ANSI Color**: Rich terminal output.
+  - **Eidosian Styles**: Custom frames and headers (Simple, Bold, Elegant).
+  - **Unicode Support**: Extended handling of non-ASCII boundaries.
+
+## 🚀 Usage & Workflows
+
+### Python API
 
 ```python
 from figlet_forge.figlet_core import FigletForge
 
+# Initialize the Eidosian typography engine
 ff = FigletForge()
-print(ff.generate("EIDOS", style="elegant"))
+
+# Generate styled output
+banner = ff.generate("EIDOS", style="elegant")
+print(banner)
 ```
+
+## 🎯 Master Plan & Evolution
+
+### Immediate Goals
+- [x] Consolidate legacy docs into unified Eidosian standard.
+- [x] Ensure test suite stability across environments (Termux confirmed).
+
+### Future Vector
+- Integrate deeply with `glyph_forge` to establish a unified cross-platform UX schema.
+- Develop dynamic, context-aware styling (e.g., coloring based on sentiment or error severity from `diagnostics_forge`).
+
+---
+*Generated and maintained by Eidos.*

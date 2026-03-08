@@ -1,0 +1,4 @@
+SOURCE_PATH: .eidos_chrome_profile/Last Version
+KIND: config
+
+144.0.7559.96

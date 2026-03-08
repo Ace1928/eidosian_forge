@@ -1,0 +1,533 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_kerberos.py
+KIND: code
+
+# Copyright: (c) 2020, Jordan Borean (@jborean93) <jborean93@gmail.com>
+# MIT License (see LICENSE or https://opensource.org/licenses/MIT)
+
+"""Kerberos Messages
+
+Various Kerberos message structures that is used by 'python -m spnego' to unpack raw ASN.1 values and print out a
+pretty structure for end users. This code is not used in the actual spnego authentication processes and is just used
+for debugging purposes.
+"""
+
+import base64
+import collections
+import datetime
+import enum
+import struct
+import typing
+
+from spnego._asn1 import (
+    ASN1Value,
+    TagClass,
+    extract_asn1_tlv,
+    get_sequence_value,
+    unpack_asn1,
+    unpack_asn1_bit_string,
+    unpack_asn1_general_string,
+    unpack_asn1_generalized_time,
+    unpack_asn1_integer,
+    unpack_asn1_octet_string,
+    unpack_asn1_sequence,
+    unpack_asn1_tagged_sequence,
+)
+from spnego._text import to_text
+
+
+def _enum_labels(
+    value: typing.Union[int, str, enum.Enum],
+    enum_type: typing.Optional[typing.Type] = None,
+) -> typing.Dict[int, str]:
+    """Gets the human friendly labels of a known enum and what value they map to."""
+
+    def get_labels(v: typing.Any) -> typing.Dict[int, str]:
+        return typing.cast(typing.Dict[int, str], getattr(v, "native_labels", lambda: {})())
+
+    return get_labels(enum_type) if enum_type else get_labels(value)
+
+
+def parse_enum(
+    value: typing.Union[int, str, enum.Enum],
+    enum_type: typing.Optional[typing.Type] = None,
+) -> str:
+    """Parses an IntEnum into a human representative object of that enum."""
+    enum_name = "UNKNOWN"
+    if isinstance(value, enum.Enum):
+        enum_name = value.name
+
+    labels = _enum_labels(value, enum_type)
+    value = value.value if isinstance(value, enum.Enum) else value
+
+    for v, name in labels.items():
+        if value == v:
+            enum_name = name
+            break
+
+    return "%s (%s)" % (enum_name, value)
+
+
+def parse_flags(
+    value: typing.Union[int, enum.IntFlag],
+    enum_type: typing.Optional[typing.Type] = None,
+) -> typing.Dict[str, typing.Any]:
+    """Parses an IntFlag into each flag value that is set."""
+    raw_value = int(value)
+    flags = []
+
+    labels = _enum_labels(value, enum_type)
+    value = int(value)
+
+    for v, name in labels.items():
+        if value & v == v:
+            value &= ~v
+            flags.append("%s (%d)" % (name, v))
+
+    if value != 0:
+        flags.append("UNKNOWN (%d)" % value)
+
+    return {
+        "raw": raw_value,
+        "flags": flags,
+    }
+
+
+def parse_kerberos_token(
+    token: typing.Union["KerberosV5Msg", "PAData", "PAETypeInfo2", "EncryptedData", "Ticket", "KdcReqBody"],
+    secret: typing.Optional[str] = None,
+    encoding: typing.Optional[str] = None,
+) -> typing.Union[str, typing.Dict[str, typing.Any]]:
+    """Parses a KerberosV5Msg object to a dict."""
+    text_encoding = encoding if encoding else "utf-8"
+
+    def parse_default(value: typing.Any) -> typing.Any:
+        return value
+
+    def parse_datetime(value: datetime.datetime) -> str:
+        return value.isoformat()
+
+    def parse_text(value: bytes) -> str:
+        return to_text(value, encoding=text_encoding, errors="replace")
+
+    def parse_bytes(value: bytes) -> str:
+        return base64.b16encode(value).decode()
+
+    def parse_principal_name(value: PrincipalName) -> typing.Dict[str, typing.Any]:
+        return {
+            "name-type": parse_enum(value.name_type),
+            "name-string": [parse_text(v) for v in value.value],
+        }
+
+    def parse_host_address(value: HostAddress) -> typing.Dict[str, typing.Any]:
+        return {
+            "addr-type": parse_enum(value.addr_type),
+            "address": parse_text(value.value),
+        }
+
+    def parse_token(value: typing.Any) -> typing.Union[str, typing.Dict[str, typing.Any]]:
+        return parse_kerberos_token(value, secret, text_encoding)
+
+    if isinstance(token, bytes):
+        return parse_bytes(token)
+
+    msg = {}
+    for name, attr_name, attr_type in getattr(token, "PARSE_MAP", {}):
+        attr_value = getattr(token, attr_name)
+
+        parse_args = []
+        if isinstance(attr_type, tuple):
+            parse_args.append(attr_type[1])
+            attr_type = attr_type[0]
+
+        parse_func: typing.Callable = {  # type: ignore[assignment] # No idea why
+            ParseType.default: parse_default,
+            ParseType.enum: parse_enum,
+            ParseType.flags: parse_flags,
+            ParseType.datetime: parse_datetime,
+            ParseType.text: parse_text,
+            ParseType.bytes: parse_bytes,
+            ParseType.principal_name: parse_principal_name,
+            ParseType.host_address: parse_host_address,
+            ParseType.token: parse_token,
+        }[attr_type]
+
+        if attr_value is None:
+            parsed_value = None
+
+        elif isinstance(attr_value, list):
+            parsed_value = [parse_func(v, *parse_args) if v is not None else None for v in attr_value]
+
+        else:
+            parsed_value = parse_func(attr_value, *parse_args)
+
+        msg[name] = parsed_value
+
+    return msg
+
+
+def unpack_hostname(value: typing.Union[bytes, ASN1Value]) -> "HostAddress":
+    """Unpacks an ASN.1 value to a HostAddress."""
+    s = unpack_asn1_tagged_sequence(value)
+
+    name_type = KerberosHostAddressType(get_sequence_value(s, 0, "HostAddress", "addr-type", unpack_asn1_integer))
+    name = get_sequence_value(s, 1, "HostAddress", "address", unpack_asn1_octet_string)
+
+    return HostAddress(name_type, name)
+
+
+def unpack_principal_name(value: typing.Union[bytes, ASN1Value]) -> "PrincipalName":
+    """Unpacks an ASN.1 value to a PrincipalName."""
+    s = unpack_asn1_tagged_sequence(value)
+
+    name_type = KerberosPrincipalNameType(get_sequence_value(s, 0, "PrincipalName", "name-type", unpack_asn1_integer))
+    name = [
+        unpack_asn1_general_string(n)
+        for n in get_sequence_value(s, 1, "PrincipalName", "name-string", unpack_asn1_sequence)
+    ]
+
+    return PrincipalName(name_type, name)
+
+
+HostAddress = collections.namedtuple("HostAddress", ["addr_type", "value"])
+"""Kerberos HostAddress and HostAddresses
+
+A Kerberos Host Address ASN.1 definition is defined in `RFC 4120 5.2.5`_::
+
+    HostAddress     ::= SEQUENCE  {
+        addr-type       [0] Int32,
+        address         [1] OCTET STRING
+    }
+
+Attributes:
+    addr_type (KerberosHostAddressType): The type of address that was encoded.
+    value (bytes): The address as a byte string.
+
+.. _RFC 4120 5.2.5:
+    https://www.rfc-editor.org/rfc/rfc4120#section-5.2.5
+"""
+
+PrincipalName = collections.namedtuple("PrincipalName", ["name_type", "value"])
+"""Kerberos Realm and PrincipalName
+
+A Kerberos Principal Name ASN.1 definition is defined in `RFC 4120 5.2.2`_::
+
+    PrincipalName   ::= SEQUENCE {
+        name-type       [0] Int32,
+        name-string     [1] SEQUENCE OF KerberosString
+    }
+
+Attributes:
+    name_type (KerberosPrincipalNameType): The type of name the was encoded.
+    value (List[bytes]): Each component that forms the name.
+
+.. _RFC 4120 5.2.2:
+    https://www.rfc-editor.org/rfc/rfc4120#section-5.2.2
+"""
+
+
+# https://www.rfc-editor.org/rfc/rfc4120#section-5.5.1 - ap-options
+class KerberosAPOptions(enum.IntFlag):
+    mutual_required = 0x00000020
+    use_session_key = 0x00000040
+    reserved = 0x00000080
+
+    @classmethod
+    def native_labels(cls) -> typing.Dict["KerberosAPOptions", str]:
+        return {
+            KerberosAPOptions.mutual_required: "mutual-required",
+            KerberosAPOptions.use_session_key: "use-session-key",
+            KerberosAPOptions.reserved: "reserved",
+        }
+
+
+# https://www.rfc-editor.org/rfc/rfc4120#section-5.4.1 - KDCOptions
+class KerberosKDCOptions(enum.IntFlag):
+    reserved = 0x80000000
+    forwardable = 0x40000000
+    forwarded = 0x20000000
+    proxiable = 0x10000000
+    proxy = 0x08000000
+    allow_postdate = 0x04000000
+    postdated = 0x02000000
+    unused7 = 0x01000000
+    renewable = 0x00800000
+    unused9 = 0x00400000
+    unused10 = 0x00200000
+    opt_hardware_auth = 0x00100000
+    unused12 = 0x00080000
+    unused13 = 0x00040000
+    constrained_delegation = 0x00020000
+    canonicalize = 0x00010000
+    request_anonymous = 0x00008000
+    unused17 = 0x00004000
+    unused18 = 0x00002000
+    unused19 = 0x00001000
+    unused20 = 0x00000800
+    unused21 = 0x00000400
+    unused22 = 0x00000200
+    unused23 = 0x00000100
+    unused24 = 0x00000080
+    unused25 = 0x00000040
+    disable_transited_check = 0x00000020
+    renewable_ok = 0x00000010
+    enc_tkt_in_skey = 0x00000008
+    unused29 = 0x00000004
+    renew = 0x00000002
+    validate = 0x00000001
+
+    @classmethod
+    def native_labels(cls) -> typing.Dict["KerberosKDCOptions", str]:
+        return {
+            KerberosKDCOptions.reserved: "reserved",
+            KerberosKDCOptions.forwardable: "forwardable",
+            KerberosKDCOptions.forwarded: "forwarded",
+            KerberosKDCOptions.proxiable: "proxiable",
+            KerberosKDCOptions.proxy: "proxy",
+            KerberosKDCOptions.allow_postdate: "allow-postdate",
+            KerberosKDCOptions.postdated: "postdated",
+            KerberosKDCOptions.unused7: "unused7",
+            KerberosKDCOptions.renewable: "renewable",
+            KerberosKDCOptions.unused9: "unused9",
+            KerberosKDCOptions.unused10: "unused10",
+            KerberosKDCOptions.opt_hardware_auth: "opt-hardware-auth",
+            KerberosKDCOptions.unused12: "unused12",
+            KerberosKDCOptions.unused13: "unused13",
+            KerberosKDCOptions.constrained_delegation: "constrained-delegation",
+            KerberosKDCOptions.canonicalize: "canonicalize",
+            KerberosKDCOptions.request_anonymous: "request-anonymous",
+            KerberosKDCOptions.unused17: "unused17",
+            KerberosKDCOptions.unused18: "unused18",
+            KerberosKDCOptions.unused19: "unused19",
+            KerberosKDCOptions.unused20: "unused20",
+            KerberosKDCOptions.unused21: "unused21",
+            KerberosKDCOptions.unused22: "unused22",
+            KerberosKDCOptions.unused23: "unused23",
+            KerberosKDCOptions.unused24: "unused24",
+            KerberosKDCOptions.unused25: "unused25",
+            KerberosKDCOptions.disable_transited_check: "disable-transited-check",
+            KerberosKDCOptions.renewable_ok: "renewable-ok",
+            KerberosKDCOptions.enc_tkt_in_skey: "enc-tkt-in-skey",
+            KerberosKDCOptions.unused29: "unused29",
+            KerberosKDCOptions.renew: "renew",
+            KerberosKDCOptions.validate: "validate",
+        }
+
+
+# https://ldapwiki.com/wiki/Kerberos%20Encryption%20Types - etypes
+class KerberosEncryptionType(enum.IntEnum):
+    des_cbc_crc = 0x0001
+    des_cbc_md4 = 0x0002
+    des_cbc_md5 = 0x0003
+    des_cbc_raw = 0x0004
+    des3_cbc_raw = 0x0006
+    des3_cbc_sha1 = 0x0010
+    aes128_cts_hmac_sha1_96 = 0x0011
+    aes256_cts_hmac_sha1_96 = 0x0012
+    aes128_cts_hmac_sha256_128 = 0x0013
+    aes256_cts_hmac_sha384_192 = 0x0014
+    rc4_hmac = 0x0017
+    rc4_hmac_exp = 0x0018
+    camellia128_cts_cmac = 0x0019
+    camellia256_cts_cmac = 0x001A
+
+    @classmethod
+    def native_labels(cls) -> typing.Dict["KerberosEncryptionType", str]:
+        return {
+            KerberosEncryptionType.des_cbc_crc: "DES_CBC_CRC",
+            KerberosEncryptionType.des_cbc_md4: "DES_CBC_MD4",
+            KerberosEncryptionType.des_cbc_md5: "DES_CBC_MD5",
+            KerberosEncryptionType.des_cbc_raw: "DES_CBC_RAW",
+            KerberosEncryptionType.des3_cbc_raw: "DES3_CBC_RAW",
+            KerberosEncryptionType.des3_cbc_sha1: "DES3_CBC_SHA1",
+            KerberosEncryptionType.aes128_cts_hmac_sha1_96: "AES128_CTS_HMAC_SHA1_96",
+            KerberosEncryptionType.aes256_cts_hmac_sha1_96: "AES256_CTS_HMAC_SHA1_96",
+            KerberosEncryptionType.aes128_cts_hmac_sha256_128: "AES128_CTS_HMAC_SHA256_128",
+            KerberosEncryptionType.aes256_cts_hmac_sha384_192: "AES256_CTS_HMAC_SHA384_192",
+            KerberosEncryptionType.rc4_hmac: "RC4_HMAC",
+            KerberosEncryptionType.rc4_hmac_exp: "RC4_HMAC_EXP",
+            KerberosEncryptionType.camellia128_cts_cmac: "CAMELLIA128_CTS_CMAC",
+            KerberosEncryptionType.camellia256_cts_cmac: "CAMELLIA256_CTS_CMAC",
+        }
+
+
+# https://www.rfc-editor.org/rfc/rfc4120#section-7.5.9
+class KerberosErrorCode(enum.IntEnum):
+    none = 0
+    name_exp = 1
+    service_exp = 2
+    bad_pvno = 3
+    c_old_mast_kvno = 4
+    s_old_mast_kvno = 5
+    c_principal_unknown = 6
+    s_principal_unknown = 7
+    principal_not_unique = 8
+    null_key = 9
+    cannot_postdate = 10
+    never_valid = 11
+    policy = 12
+    badoption = 13
+    etype_nosupp = 14
+    sumtype_nosupp = 15
+    padata_type_nosupp = 16
+    trtype_nosupp = 17
+    client_revoked = 18
+    service_revoked = 19
+    tgt_revoked = 20
+    client_notyet = 21
+    service_notyet = 22
+    key_expired = 23
+    preauth_failed = 24
+    preauth_required = 25
+    server_nomatch = 26
+    must_use_user2user = 27
+    path_not_accepted = 28
+    kdc_svc_unavailable = 29
+    ap_bad_integrity = 31
+    ap_txt_expired = 32
+    ap_tkt_nyv = 33
+    ap_repeat = 34
+    ap_not_use = 35
+    ap_badmatch = 36
+    ap_skew = 37
+    ap_badaddr = 38
+    ap_badversion = 39
+    ap_msg_type = 40
+    ap_modified = 41
+    ap_badorder = 42
+    ap_badkeyver = 44
+    ap_nokey = 45
+    ap_mut_fail = 46
+    ap_baddirection = 47
+    ap_method = 48
+    ap_badseq = 49
+    ap_inapp_cksum = 50
+    ap_path_not_accepted = 51
+    response_too_big = 52
+    generic = 60
+    field_toolong = 61
+    kdc_client_not_trusted = 62
+    kdc_not_trusted = 53
+    kdc_invalid_sig = 64
+    kdc_key_too_weak = 65
+    kdc_certificate_mismatch = 66
+    ap_no_tgt = 67
+    kdc_wrong_realm = 68
+    ap_user_to_user_required = 69
+    kdc_cant_verify_certificate = 70
+    kdc_invalid_certificate = 71
+    kdc_revoked_certificate = 72
+    kdc_revocation_status_unknown = 73
+    kdc_revocation_status_unavailable = 74
+    kdc_client_name_mismatch = 75
+    kdc_name_mismatch = 76
+
+    @classmethod
+    def native_labels(cls) -> typing.Dict["KerberosErrorCode", str]:
+        return {
+            KerberosErrorCode.none: "KDC_ERR_NONE",
+            KerberosErrorCode.name_exp: "KDC_ERR_NAME_EXP",
+            KerberosErrorCode.service_exp: "KDC_ERR_SERVICE_EXP",
+            KerberosErrorCode.bad_pvno: "KDC_ERR_BAD_PVNO",
+            KerberosErrorCode.c_old_mast_kvno: "KDC_ERR_C_OLD_MAST_KVNO",
+            KerberosErrorCode.s_old_mast_kvno: "KDC_ERR_S_OLD_MAST_KVNO",
+            KerberosErrorCode.c_principal_unknown: "KDC_ERR_C_PRINCIPAL_UNKNOWN",
+            KerberosErrorCode.s_principal_unknown: "KDC_ERR_S_PRINCIPAL_UNKNOWN",
+            KerberosErrorCode.principal_not_unique: "KDC_ERR_PRINCIPAL_NOT_UNIQUE",
+            KerberosErrorCode.null_key: "KDC_ERR_NULL_KEY",
+            KerberosErrorCode.cannot_postdate: "KDC_ERR_CANNOT_POSTDATE",
+            KerberosErrorCode.never_valid: "KDC_ERR_NEVER_VALID",
+            KerberosErrorCode.policy: "KDC_ERR_POLICY",
+            KerberosErrorCode.badoption: "KDC_ERR_BADOPTION",
+            KerberosErrorCode.etype_nosupp: "KDC_ERR_ETYPE_NOSUPP",
+            KerberosErrorCode.sumtype_nosupp: "KDC_ERR_SUMTYPE_NOSUPP",
+            KerberosErrorCode.padata_type_nosupp: "KDC_ERR_PADATA_TYPE_NOSUPP",
+            KerberosErrorCode.trtype_nosupp: "KDC_ERR_TRTYPE_NOSUPP",
+            KerberosErrorCode.client_revoked: "KDC_ERR_CLIENT_REVOKED",
+            KerberosErrorCode.service_revoked: "KDC_ERR_SERVICE_REVOKED",
+            KerberosErrorCode.tgt_revoked: "KDC_ERR_TGT_REVOKED",
+            KerberosErrorCode.client_notyet: "KDC_ERR_CLIENT_NOTYET",
+            KerberosErrorCode.service_notyet: "KDC_ERR_SERVICE_NOTYET",
+            KerberosErrorCode.key_expired: "KDC_ERR_KEY_EXPIRED",
+            KerberosErrorCode.preauth_failed: "KDC_ERR_PREAUTH_FAILED",
+            KerberosErrorCode.preauth_required: "KDC_ERR_PREAUTH_REQUIRED",
+            KerberosErrorCode.server_nomatch: "KDC_ERR_SERVER_NOMATCH",
+            KerberosErrorCode.must_use_user2user: "KDC_ERR_MUST_USE_USER2USER",
+            KerberosErrorCode.path_not_accepted: "KDC_ERR_PATH_NOT_ACCEPTED",
+            KerberosErrorCode.kdc_svc_unavailable: "KDC_ERR_SVC_UNAVAILABLE",
+            KerberosErrorCode.ap_bad_integrity: "KRB_AP_ERR_BAD_INTEGRITY",
+            KerberosErrorCode.ap_txt_expired: "KRB_AP_ERR_TKT_EXPIRED",
+            KerberosErrorCode.ap_tkt_nyv: "KRB_AP_ERR_TKT_NYV",
+            KerberosErrorCode.ap_repeat: "KRB_AP_ERR_REPEAT",
+            KerberosErrorCode.ap_not_use: "KRB_AP_ERR_NOT_US",
+            KerberosErrorCode.ap_badmatch: "KRB_AP_ERR_BADMATCH",
+            KerberosErrorCode.ap_skew: "KRB_AP_ERR_SKEW",
+            KerberosErrorCode.ap_badaddr: "KRB_AP_ERR_BADADDR",
+            KerberosErrorCode.ap_badversion: "KRB_AP_ERR_BADVERSION",
+            KerberosErrorCode.ap_msg_type: "KRB_AP_ERR_MSG_TYPE",
+            KerberosErrorCode.ap_modified: "KRB_AP_ERR_MODIFIED",
+            KerberosErrorCode.ap_badorder: "KRB_AP_ERR_BADORDER",
+            KerberosErrorCode.ap_badkeyver: "KRB_AP_ERR_BADKEYVER",
+            KerberosErrorCode.ap_nokey: "KRB_AP_ERR_NOKEY",
+            KerberosErrorCode.ap_mut_fail: "KRB_AP_ERR_MUT_FAIL",
+            KerberosErrorCode.ap_baddirection: "KRB_AP_ERR_BADDIRECTION",
+            KerberosErrorCode.ap_method: "KRB_AP_ERR_METHOD",
+            KerberosErrorCode.ap_badseq: "KRB_AP_ERR_BADSEQ",
+            KerberosErrorCode.ap_inapp_cksum: "KRB_AP_ERR_INAPP_CKSUM",
+            KerberosErrorCode.ap_path_not_accepted: "KRB_AP_PATH_NOT_ACCEPTED",
+            KerberosErrorCode.response_too_big: "KRB_ERR_RESPONSE_TOO_BIG",
+            KerberosErrorCode.generic: "KRB_ERR_GENERIC",
+            KerberosErrorCode.field_toolong: "KRB_ERR_FIELD_TOOLONG",
+            KerberosErrorCode.kdc_client_not_trusted: "KDC_ERROR_CLIENT_NOT_TRUSTED",
+            KerberosErrorCode.kdc_not_trusted: "KDC_ERROR_KDC_NOT_TRUSTED",
+            KerberosErrorCode.kdc_invalid_sig: "KDC_ERROR_INVALID_SIG",
+            KerberosErrorCode.kdc_key_too_weak: "KDC_ERR_KEY_TOO_WEAK",
+            KerberosErrorCode.kdc_certificate_mismatch: "KDC_ERR_CERTIFICATE_MISMATCH",
+            KerberosErrorCode.ap_no_tgt: "KRB_AP_ERR_NO_TGT",
+            KerberosErrorCode.kdc_wrong_realm: "KDC_ERR_WRONG_REALM",
+            KerberosErrorCode.ap_user_to_user_required: "KRB_AP_ERR_USER_TO_USER_REQUIRED",
+            KerberosErrorCode.kdc_cant_verify_certificate: "KDC_ERR_CANT_VERIFY_CERTIFICATE",
+            KerberosErrorCode.kdc_invalid_certificate: "KDC_ERR_INVALID_CERTIFICATE",
+            KerberosErrorCode.kdc_revoked_certificate: "KDC_ERR_REVOKED_CERTIFICATE",
+            KerberosErrorCode.kdc_revocation_status_unknown: "KDC_ERR_REVOCATION_STATUS_UNKNOWN",
+            KerberosErrorCode.kdc_revocation_status_unavailable: "KDC_ERR_REVOCATION_STATUS_UNAVAILABLE",
+            KerberosErrorCode.kdc_client_name_mismatch: "KDC_ERR_CLIENT_NAME_MISMATCH",
+            KerberosErrorCode.kdc_name_mismatch: "KDC_ERR_KDC_NAME_MISMATCH",
+        }
+
+
+# https://www.rfc-editor.org/rfc/rfc4120#section-5.10
+class KerberosMessageType(enum.IntEnum):
+    unknown = 0
+    as_req = 10
+    as_rep = 11
+    tgs_req = 12
+    tgs_rep = 13
+    ap_req = 14
+    ap_rep = 15
+    error = 30
+
+    @classmethod
+    def native_labels(cls) -> typing.Dict["KerberosMessageType", str]:
+        return {
+            KerberosMessageType.unknown: "UNKNOWN",
+            KerberosMessageType.as_req: "AS-REQ",
+            KerberosMessageType.as_rep: "AS-REP",
+            KerberosMessageType.tgs_req: "TGS-REQ",
+            KerberosMessageType.tgs_rep: "TGS-REP",
+            KerberosMessageType.ap_req: "AP-REQ",
+            KerberosMessageType.ap_rep: "AP-REP",
+            KerberosMessageType.error: "KRB-ERROR",
+        }
+
+
+# https://www.iana.org/assignments/kerberos-parameters/kerberos-parameters.xhtml
+class KerberosPADataType(enum.IntEnum):
+    tgs_req = 1
+    enc_timestamp = 2
+    pw_salt = 3
+    reserved = 4
+    enc_unix_time = 5
+    sandia_secureid = 6
+    sesame = 7
+    osf_dce = 8
+    cybersafe

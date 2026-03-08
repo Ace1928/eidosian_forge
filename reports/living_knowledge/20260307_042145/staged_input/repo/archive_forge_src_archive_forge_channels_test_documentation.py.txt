@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/channels_test_documentation.py
+KIND: code
+
+from typing import Iterable, Sequence
+import numpy as np
+import pytest
+import cirq
+Checks cirq.operation_to_superoperator on the completely dephasing channel.

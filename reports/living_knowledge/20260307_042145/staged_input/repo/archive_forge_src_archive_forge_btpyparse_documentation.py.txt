@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/btpyparse_documentation.py
+KIND: code
+
+from pyparsing import (Regex, Suppress, ZeroOrMore, Group, Optional, Forward,
+ Return matcher for `expr` between curly brackets or parentheses

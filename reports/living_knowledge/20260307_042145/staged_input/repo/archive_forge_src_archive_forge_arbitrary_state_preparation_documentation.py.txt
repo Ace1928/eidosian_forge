@@ -1,0 +1,13 @@
+SOURCE_PATH: archive_forge/src/archive_forge/arbitrary_state_preparation_documentation.py
+KIND: code
+
+import functools
+import pennylane as qml
+from pennylane.operation import Operation, AnyWires
+Returns the required shape for the weight tensor.
+
+        Args:
+                n_wires (int): number of wires
+
+        Returns:
+            tuple[int]: shape

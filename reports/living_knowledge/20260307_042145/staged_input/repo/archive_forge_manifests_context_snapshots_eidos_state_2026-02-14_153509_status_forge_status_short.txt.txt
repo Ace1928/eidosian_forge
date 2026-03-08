@@ -1,0 +1,11 @@
+SOURCE_PATH: archive_forge/manifests/context_snapshots/eidos_state_2026-02-14_153509/status/forge_status_short.txt
+KIND: docs
+
+M .gitignore
+ M data/tiered_memory/self.json
+?? archive_forge/manifests/
+?? data/shared_state/
+?? docs/legacy/
+?? projects/legacy/
+?? projects/research/
+?? scripts/machine_clone/

@@ -1,0 +1,23 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/AO
+KIND: config
+
+AO
+bengobengo province
+benguelabenguela province
+biébié province
+cabindacabinda province(
+cuandocubangocuando cubango province
+cunenecunene province1
+cuanzanortecuanza norte provincekwanzanorte+
+	cuanzasulcuanza sul province	kwanzasul
+huambohuambo province
+huílahuila province/
+lunda nortelunda norte province
+lundanorte
+lundasullunda sul province
+luandaluanda province
+malanjemalanje province
+moxicomoxico province&
+moçâmedesnamibenamibe province
+uígeuíge province
+zairezaire province

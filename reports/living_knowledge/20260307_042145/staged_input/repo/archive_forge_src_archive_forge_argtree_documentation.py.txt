@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/argtree_documentation.py
+KIND: code
+
+:param tdict: a dictionary representing a argument tree
+    :param path: a path list
+    :return: True/False if the value is set

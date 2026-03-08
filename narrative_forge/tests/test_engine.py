@@ -9,14 +9,14 @@ def test_narrative_engine_real():
         models = client.list_models()
     except Exception as exc:
         pytest.skip(f"Ollama server unavailable: {exc}")
-    if "qwen2.5:0.5b" not in models:
-        pytest.skip("Model qwen2.5:0.5b not found")
+    if "qwen3.5:2b" not in models:
+        pytest.skip("Model qwen3.5:2b not found")
 
     engine = NarrativeEngine(
         memory_path=":memory:", 
         think_interval=100,
         provider="ollama",
-        model_name="qwen2.5:0.5b"
+        model_name="qwen3.5:2b"
     )
     
     resp = engine.respond("Say 'I am Eidos'")

@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/auto_init_hook_documentation.py
+KIND: code
+
+import ray
+import os
+from functools import wraps
+import threading
+Wrap public APIs with automatic ray.init.

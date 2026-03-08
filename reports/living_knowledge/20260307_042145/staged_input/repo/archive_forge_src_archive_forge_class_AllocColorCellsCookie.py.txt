@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AllocColorCellsCookie.py
+KIND: code
+
+import xcffib
+import struct
+import io
+class AllocColorCellsCookie(xcffib.Cookie):
+    reply_type = AllocColorCellsReply

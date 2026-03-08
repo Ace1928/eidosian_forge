@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/manifests/schemas/sync_mesh_manifest.v1.json
+KIND: config
+
+version https://git-lfs.github.com/spec/v1
+oid sha256:2521e88ff9dd2a9fa4e9bc43eed258d00f8e6a65a1932d2693d6764814be1dcf
+size 643

@@ -1,0 +1,18 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/UZ
+KIND: config
+
+UZ
+toshkenttashkentJ
+andijonandijan regionandijon viloyatiандижон вилояти)
+buxorobukhara regionbuxoro viloyati^
+farg'onafarg'ona viloyatifargona viloyatifergana regionфаргона вилоятиF
+jizzaxjizzakh regionjizzax viloyatiжиззах вилоятиO
+namangannamangan regionnamangan viloyatiнаманган вилоятиE
+navoiynavoiy regionnavoiy viloyatiнавоий вилояти7
+qashqadaryoqashqadaryo regionqashqadaryo viloyati�
+qoraqalpog'istonqoraqalpog’iston respublikasirepublic of karakalpakstan7қоракалпоғистон республикасиT
+	samarqandsamarqand regionsamarqand viloyati!самарқанд вилоятиM
+sirdaryosirdaryo regionsirdaryo viloyatiсирдарё вилояти7
+surxondaryosurxondaryo regionsurxondaryo viloyati.
+toshkenttashkent regiontoshkent viloyatiE
+xorazmxorazm regionxorazm viloyatiхоразм вилояти

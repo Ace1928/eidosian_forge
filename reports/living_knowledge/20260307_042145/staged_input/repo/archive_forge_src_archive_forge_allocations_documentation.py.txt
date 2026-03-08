@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/allocations_documentation.py
+KIND: code
+
+import logging
+from blazarclient import command
+from blazarclient import utils
+List allocations for all resources of a type.

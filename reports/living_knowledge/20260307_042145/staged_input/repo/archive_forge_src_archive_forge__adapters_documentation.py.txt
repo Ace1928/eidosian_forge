@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_adapters_documentation.py
+KIND: code
+
+import re
+import textwrap
+import email.message
+from ._text import FoldedCase
+Correct for RFC822 indentation

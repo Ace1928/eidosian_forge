@@ -1,0 +1,4 @@
+SOURCE_PATH: .eidos_chrome_profile/Default/shared_proto_db/metadata/CURRENT
+KIND: config
+
+MANIFEST-000001

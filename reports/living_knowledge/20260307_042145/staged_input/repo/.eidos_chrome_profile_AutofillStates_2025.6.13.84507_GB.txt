@@ -1,0 +1,10 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/GB
+KIND: config
+
+GB�
+_περιοχές κυρίαρχων βάσεων ακρωτηρίου και δεκέλειαςakrotiri and dhekeliaağrotur ve dikelya	
+england
+northern ireland
+
+scotland
+walescymru

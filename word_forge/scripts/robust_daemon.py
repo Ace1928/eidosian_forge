@@ -173,7 +173,7 @@ class Monitor:
             "queue_size": self.queue_size,
             "last_term": self.last_term,
             "last_heartbeat": datetime.now().isoformat(),
-            "model": "qwen/qwen2.5-1.5b-instruct",
+            "model": "qwen/qwen3.5-2b-instruct",
         }
         with open(self.status_file, "w") as f:
             json.dump(status_data, f, indent=2)
@@ -602,7 +602,7 @@ class LLMFillWorker(threading.Thread):
         self.db = db_manager
         self.graph = graph_manager
         self.monitor = monitor
-        self.model_state = ModelState(model_name="ollama:qwen2.5:1.5b-Instruct")
+        self.model_state = ModelState(model_name="ollama:qwen3.5:2b-Instruct")
         self._stop_event = threading.Event()
 
     def _entry_complete(self, entry: Dict[str, Any]) -> bool:
@@ -614,7 +614,7 @@ class LLMFillWorker(threading.Thread):
         return bool(definition and has_examples)
 
     def run(self):
-        LOGGER.info("LLMFillWorker started with qwen/qwen2.5-1.5b-instruct")
+        LOGGER.info("LLMFillWorker started with qwen/qwen3.5-2b-instruct")
         if not self.model_state.initialize():
             LOGGER.error("LLM model initialization failed. LLMFillWorker stopping.")
             return

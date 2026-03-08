@@ -1,0 +1,11 @@
+SOURCE_PATH: archive_forge/src/archive_forge/MauveIO_documentation.py
+KIND: code
+
+import re
+from typing import List
+from Bio.Align import MultipleSeqAlignment
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
+from .Interfaces import AlignmentIterator
+from .Interfaces import SequentialAlignmentWriter
+Parse the next alignment from the handle.

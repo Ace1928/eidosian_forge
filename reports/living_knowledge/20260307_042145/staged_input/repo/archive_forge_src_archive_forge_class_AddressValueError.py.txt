@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AddressValueError.py
+KIND: code
+
+import functools
+class AddressValueError(ValueError):
+    """A Value Error related to the address."""

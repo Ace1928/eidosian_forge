@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/arn_documentation.py
+KIND: code
+
+import re
+
+    Validates that the ARN is for an AWS Outpost
+
+
+    API Specification Document:
+    https://docs.aws.amazon.com/outposts/latest/APIReference/API_Outpost.html

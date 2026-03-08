@@ -1,0 +1,461 @@
+SOURCE_PATH: archive_forge/src/archive_forge/audio_utils.py
+KIND: code
+
+# coding=utf-8
+# Copyright 2023 The HuggingFace Inc. team and the librosa & torchaudio authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""
+Audio processing functions to extract features from audio waveforms. This code is pure numpy to support all frameworks
+and remove unnecessary dependencies.
+"""
+import warnings
+from typing import Optional, Tuple, Union
+
+import numpy as np
+
+
+def hertz_to_mel(freq: Union[float, np.ndarray], mel_scale: str = "htk") -> Union[float, np.ndarray]:
+    """
+    Convert frequency from hertz to mels.
+
+    Args:
+        freq (`float` or `np.ndarray`):
+            The frequency, or multiple frequencies, in hertz (Hz).
+        mel_scale (`str`, *optional*, defaults to `"htk"`):
+            The mel frequency scale to use, `"htk"`, `"kaldi"` or `"slaney"`.
+
+    Returns:
+        `float` or `np.ndarray`: The frequencies on the mel scale.
+    """
+
+    if mel_scale not in ["slaney", "htk", "kaldi"]:
+        raise ValueError('mel_scale should be one of "htk", "slaney" or "kaldi".')
+
+    if mel_scale == "htk":
+        return 2595.0 * np.log10(1.0 + (freq / 700.0))
+    elif mel_scale == "kaldi":
+        return 1127.0 * np.log(1.0 + (freq / 700.0))
+
+    min_log_hertz = 1000.0
+    min_log_mel = 15.0
+    logstep = 27.0 / np.log(6.4)
+    mels = 3.0 * freq / 200.0
+
+    if isinstance(freq, np.ndarray):
+        log_region = freq >= min_log_hertz
+        mels[log_region] = min_log_mel + np.log(freq[log_region] / min_log_hertz) * logstep
+    elif freq >= min_log_hertz:
+        mels = min_log_mel + np.log(freq / min_log_hertz) * logstep
+
+    return mels
+
+
+def mel_to_hertz(mels: Union[float, np.ndarray], mel_scale: str = "htk") -> Union[float, np.ndarray]:
+    """
+    Convert frequency from mels to hertz.
+
+    Args:
+        mels (`float` or `np.ndarray`):
+            The frequency, or multiple frequencies, in mels.
+        mel_scale (`str`, *optional*, `"htk"`):
+            The mel frequency scale to use, `"htk"`, `"kaldi"` or `"slaney"`.
+
+    Returns:
+        `float` or `np.ndarray`: The frequencies in hertz.
+    """
+
+    if mel_scale not in ["slaney", "htk", "kaldi"]:
+        raise ValueError('mel_scale should be one of "htk", "slaney" or "kaldi".')
+
+    if mel_scale == "htk":
+        return 700.0 * (np.power(10, mels / 2595.0) - 1.0)
+    elif mel_scale == "kaldi":
+        return 700.0 * (np.exp(mels / 1127.0) - 1.0)
+
+    min_log_hertz = 1000.0
+    min_log_mel = 15.0
+    logstep = np.log(6.4) / 27.0
+    freq = 200.0 * mels / 3.0
+
+    if isinstance(mels, np.ndarray):
+        log_region = mels >= min_log_mel
+        freq[log_region] = min_log_hertz * np.exp(logstep * (mels[log_region] - min_log_mel))
+    elif mels >= min_log_mel:
+        freq = min_log_hertz * np.exp(logstep * (mels - min_log_mel))
+
+    return freq
+
+
+def hertz_to_octave(
+    freq: Union[float, np.ndarray], tuning: Optional[float] = 0.0, bins_per_octave: Optional[int] = 12
+):
+    """
+    Convert frequency from hertz to fractional octave numbers.
+    Adapted from *librosa*.
+
+    Args:
+        freq (`float` or `np.ndarray`):
+            The frequency, or multiple frequencies, in hertz (Hz).
+        tuning (`float`, defaults to `0.`):
+            Tuning deviation from the Stuttgart pitch (A440) in (fractional) bins per octave.
+        bins_per_octave (`int`, defaults to `12`):
+            Number of bins per octave.
+
+    Returns:
+        `float` or `np.ndarray`: The frequencies on the octave scale.
+    """
+    stuttgart_pitch = 440.0 * 2.0 ** (tuning / bins_per_octave)
+    octave = np.log2(freq / (float(stuttgart_pitch) / 16))
+    return octave
+
+
+def _create_triangular_filter_bank(fft_freqs: np.ndarray, filter_freqs: np.ndarray) -> np.ndarray:
+    """
+    Creates a triangular filter bank.
+
+    Adapted from *torchaudio* and *librosa*.
+
+    Args:
+        fft_freqs (`np.ndarray` of shape `(num_frequency_bins,)`):
+            Discrete frequencies of the FFT bins in Hz.
+        filter_freqs (`np.ndarray` of shape `(num_mel_filters,)`):
+            Center frequencies of the triangular filters to create, in Hz.
+
+    Returns:
+        `np.ndarray` of shape `(num_frequency_bins, num_mel_filters)`
+    """
+    filter_diff = np.diff(filter_freqs)
+    slopes = np.expand_dims(filter_freqs, 0) - np.expand_dims(fft_freqs, 1)
+    down_slopes = -slopes[:, :-2] / filter_diff[:-1]
+    up_slopes = slopes[:, 2:] / filter_diff[1:]
+    return np.maximum(np.zeros(1), np.minimum(down_slopes, up_slopes))
+
+
+def chroma_filter_bank(
+    num_frequency_bins: int,
+    num_chroma: int,
+    sampling_rate: int,
+    tuning: float = 0.0,
+    power: Optional[float] = 2.0,
+    weighting_parameters: Optional[Tuple[float]] = (5.0, 2),
+    start_at_c_chroma: Optional[bool] = True,
+):
+    """
+    Creates a chroma filter bank, i.e a linear transformation to project spectrogram bins onto chroma bins.
+
+    Adapted from *librosa*.
+
+    Args:
+        num_frequency_bins (`int`):
+            Number of frequencies used to compute the spectrogram (should be the same as in `stft`).
+        num_chroma (`int`):
+            Number of chroma bins (i.e pitch classes).
+        sampling_rate (`float`):
+            Sample rate of the audio waveform.
+        tuning (`float`):
+            Tuning deviation from A440 in fractions of a chroma bin.
+        power (`float`, *optional*, defaults to 2.0):
+            If 12.0, normalizes each column with their L2 norm. If 1.0, normalizes each column with their L1 norm.
+        weighting_parameters (`Tuple[float]`, *optional*, defaults to `(5., 2.)`):
+            If specified, apply a Gaussian weighting parameterized by the first element of the tuple being the center and
+            the second element being the Gaussian half-width.
+        start_at_c_chroma (`float`, *optional*, defaults to `True`):
+            If True, the filter bank will start at the 'C' pitch class. Otherwise, it will start at 'A'.
+    Returns:
+        `np.ndarray` of shape `(num_frequency_bins, num_chroma)`
+    """
+    # Get the FFT bins, not counting the DC component
+    frequencies = np.linspace(0, sampling_rate, num_frequency_bins, endpoint=False)[1:]
+
+    freq_bins = num_chroma * hertz_to_octave(frequencies, tuning=tuning, bins_per_octave=num_chroma)
+
+    # make up a value for the 0 Hz bin = 1.5 octaves below bin 1
+    # (so chroma is 50% rotated from bin 1, and bin width is broad)
+    freq_bins = np.concatenate(([freq_bins[0] - 1.5 * num_chroma], freq_bins))
+
+    bins_width = np.concatenate((np.maximum(freq_bins[1:] - freq_bins[:-1], 1.0), [1]))
+
+    chroma_filters = np.subtract.outer(freq_bins, np.arange(0, num_chroma, dtype="d")).T
+
+    num_chroma2 = np.round(float(num_chroma) / 2)
+
+    # Project into range -num_chroma/2 .. num_chroma/2
+    # add on fixed offset of 10*num_chroma to ensure all values passed to
+    # rem are positive
+    chroma_filters = np.remainder(chroma_filters + num_chroma2 + 10 * num_chroma, num_chroma) - num_chroma2
+
+    # Gaussian bumps - 2*D to make them narrower
+    chroma_filters = np.exp(-0.5 * (2 * chroma_filters / np.tile(bins_width, (num_chroma, 1))) ** 2)
+
+    # normalize each column
+    if power is not None:
+        chroma_filters = chroma_filters / np.sum(chroma_filters**power, axis=0, keepdims=True) ** (1.0 / power)
+
+    # Maybe apply scaling for fft bins
+    if weighting_parameters is not None:
+        center, half_width = weighting_parameters
+        chroma_filters *= np.tile(
+            np.exp(-0.5 * (((freq_bins / num_chroma - center) / half_width) ** 2)),
+            (num_chroma, 1),
+        )
+
+    if start_at_c_chroma:
+        chroma_filters = np.roll(chroma_filters, -3 * (num_chroma // 12), axis=0)
+
+    # remove aliasing columns, copy to ensure row-contiguity
+    return np.ascontiguousarray(chroma_filters[:, : int(1 + num_frequency_bins / 2)])
+
+
+def mel_filter_bank(
+    num_frequency_bins: int,
+    num_mel_filters: int,
+    min_frequency: float,
+    max_frequency: float,
+    sampling_rate: int,
+    norm: Optional[str] = None,
+    mel_scale: str = "htk",
+    triangularize_in_mel_space: bool = False,
+) -> np.ndarray:
+    """
+    Creates a frequency bin conversion matrix used to obtain a mel spectrogram. This is called a *mel filter bank*, and
+    various implementation exist, which differ in the number of filters, the shape of the filters, the way the filters
+    are spaced, the bandwidth of the filters, and the manner in which the spectrum is warped. The goal of these
+    features is to approximate the non-linear human perception of the variation in pitch with respect to the frequency.
+
+    Different banks of mel filters were introduced in the literature. The following variations are supported:
+
+    - MFCC FB-20: introduced in 1980 by Davis and Mermelstein, it assumes a sampling frequency of 10 kHz and a speech
+      bandwidth of `[0, 4600]` Hz.
+    - MFCC FB-24 HTK: from the Cambridge HMM Toolkit (HTK) (1995) uses a filter bank of 24 filters for a speech
+      bandwidth of `[0, 8000]` Hz. This assumes sampling rate ≥ 16 kHz.
+    - MFCC FB-40: from the Auditory Toolbox for MATLAB written by Slaney in 1998, assumes a sampling rate of 16 kHz and
+      speech bandwidth of `[133, 6854]` Hz. This version also includes area normalization.
+    - HFCC-E FB-29 (Human Factor Cepstral Coefficients) of Skowronski and Harris (2004), assumes a sampling rate of
+      12.5 kHz and speech bandwidth of `[0, 6250]` Hz.
+
+    This code is adapted from *torchaudio* and *librosa*. Note that the default parameters of torchaudio's
+    `melscale_fbanks` implement the `"htk"` filters while librosa uses the `"slaney"` implementation.
+
+    Args:
+        num_frequency_bins (`int`):
+            Number of frequencies used to compute the spectrogram (should be the same as in `stft`).
+        num_mel_filters (`int`):
+            Number of mel filters to generate.
+        min_frequency (`float`):
+            Lowest frequency of interest in Hz.
+        max_frequency (`float`):
+            Highest frequency of interest in Hz. This should not exceed `sampling_rate / 2`.
+        sampling_rate (`int`):
+            Sample rate of the audio waveform.
+        norm (`str`, *optional*):
+            If `"slaney"`, divide the triangular mel weights by the width of the mel band (area normalization).
+        mel_scale (`str`, *optional*, defaults to `"htk"`):
+            The mel frequency scale to use, `"htk"`, `"kaldi"` or `"slaney"`.
+        triangularize_in_mel_space (`bool`, *optional*, defaults to `False`):
+            If this option is enabled, the triangular filter is applied in mel space rather than frequency space. This
+            should be set to `true` in order to get the same results as `torchaudio` when computing mel filters.
+
+    Returns:
+        `np.ndarray` of shape (`num_frequency_bins`, `num_mel_filters`): Triangular filter bank matrix. This is a
+        projection matrix to go from a spectrogram to a mel spectrogram.
+    """
+    if norm is not None and norm != "slaney":
+        raise ValueError('norm must be one of None or "slaney"')
+
+    # center points of the triangular mel filters
+    mel_min = hertz_to_mel(min_frequency, mel_scale=mel_scale)
+    mel_max = hertz_to_mel(max_frequency, mel_scale=mel_scale)
+    mel_freqs = np.linspace(mel_min, mel_max, num_mel_filters + 2)
+    filter_freqs = mel_to_hertz(mel_freqs, mel_scale=mel_scale)
+
+    if triangularize_in_mel_space:
+        # frequencies of FFT bins in Hz, but filters triangularized in mel space
+        fft_bin_width = sampling_rate / (num_frequency_bins * 2)
+        fft_freqs = hertz_to_mel(fft_bin_width * np.arange(num_frequency_bins), mel_scale=mel_scale)
+        filter_freqs = mel_freqs
+    else:
+        # frequencies of FFT bins in Hz
+        fft_freqs = np.linspace(0, sampling_rate // 2, num_frequency_bins)
+
+    mel_filters = _create_triangular_filter_bank(fft_freqs, filter_freqs)
+
+    if norm is not None and norm == "slaney":
+        # Slaney-style mel is scaled to be approx constant energy per channel
+        enorm = 2.0 / (filter_freqs[2 : num_mel_filters + 2] - filter_freqs[:num_mel_filters])
+        mel_filters *= np.expand_dims(enorm, 0)
+
+    if (mel_filters.max(axis=0) == 0.0).any():
+        warnings.warn(
+            "At least one mel filter has all zero values. "
+            f"The value for `num_mel_filters` ({num_mel_filters}) may be set too high. "
+            f"Or, the value for `num_frequency_bins` ({num_frequency_bins}) may be set too low."
+        )
+
+    return mel_filters
+
+
+def optimal_fft_length(window_length: int) -> int:
+    """
+    Finds the best FFT input size for a given `window_length`. This function takes a given window length and, if not
+    already a power of two, rounds it up to the next power or two.
+
+    The FFT algorithm works fastest when the length of the input is a power of two, which may be larger than the size
+    of the window or analysis frame. For example, if the window is 400 samples, using an FFT input size of 512 samples
+    is more optimal than an FFT size of 400 samples. Using a larger FFT size does not affect the detected frequencies,
+    it simply gives a higher frequency resolution (i.e. the frequency bins are smaller).
+    """
+    return 2 ** int(np.ceil(np.log2(window_length)))
+
+
+def window_function(
+    window_length: int,
+    name: str = "hann",
+    periodic: bool = True,
+    frame_length: Optional[int] = None,
+    center: bool = True,
+) -> np.ndarray:
+    """
+    Returns an array containing the specified window. This window is intended to be used with `stft`.
+
+    The following window types are supported:
+
+        - `"boxcar"`: a rectangular window
+        - `"hamming"`: the Hamming window
+        - `"hann"`: the Hann window
+        - `"povey"`: the Povey window
+
+    Args:
+        window_length (`int`):
+            The length of the window in samples.
+        name (`str`, *optional*, defaults to `"hann"`):
+            The name of the window function.
+        periodic (`bool`, *optional*, defaults to `True`):
+            Whether the window is periodic or symmetric.
+        frame_length (`int`, *optional*):
+            The length of the analysis frames in samples. Provide a value for `frame_length` if the window is smaller
+            than the frame length, so that it will be zero-padded.
+        center (`bool`, *optional*, defaults to `True`):
+            Whether to center the window inside the FFT buffer. Only used when `frame_length` is provided.
+
+    Returns:
+        `np.ndarray` of shape `(window_length,)` or `(frame_length,)` containing the window.
+    """
+    length = window_length + 1 if periodic else window_length
+
+    if name == "boxcar":
+        window = np.ones(length)
+    elif name in ["hamming", "hamming_window"]:
+        window = np.hamming(length)
+    elif name in ["hann", "hann_window"]:
+        window = np.hanning(length)
+    elif name in ["povey"]:
+        window = np.power(np.hanning(length), 0.85)
+    else:
+        raise ValueError(f"Unknown window function '{name}'")
+
+    if periodic:
+        window = window[:-1]
+
+    if frame_length is None:
+        return window
+
+    if window_length > frame_length:
+        raise ValueError(
+            f"Length of the window ({window_length}) may not be larger than frame_length ({frame_length})"
+        )
+
+    padded_window = np.zeros(frame_length)
+    offset = (frame_length - window_length) // 2 if center else 0
+    padded_window[offset : offset + window_length] = window
+    return padded_window
+
+
+# TODO This method does not support batching yet as we are mainly focused on inference.
+def spectrogram(
+    waveform: np.ndarray,
+    window: np.ndarray,
+    frame_length: int,
+    hop_length: int,
+    fft_length: Optional[int] = None,
+    power: Optional[float] = 1.0,
+    center: bool = True,
+    pad_mode: str = "reflect",
+    onesided: bool = True,
+    preemphasis: Optional[float] = None,
+    mel_filters: Optional[np.ndarray] = None,
+    mel_floor: float = 1e-10,
+    log_mel: Optional[str] = None,
+    reference: float = 1.0,
+    min_value: float = 1e-10,
+    db_range: Optional[float] = None,
+    remove_dc_offset: Optional[bool] = None,
+    dtype: np.dtype = np.float32,
+) -> np.ndarray:
+    """
+    Calculates a spectrogram over one waveform using the Short-Time Fourier Transform.
+
+    This function can create the following kinds of spectrograms:
+
+      - amplitude spectrogram (`power = 1.0`)
+      - power spectrogram (`power = 2.0`)
+      - complex-valued spectrogram (`power = None`)
+      - log spectrogram (use `log_mel` argument)
+      - mel spectrogram (provide `mel_filters`)
+      - log-mel spectrogram (provide `mel_filters` and `log_mel`)
+
+    How this works:
+
+      1. The input waveform is split into frames of size `frame_length` that are partially overlapping by `frame_length
+         - hop_length` samples.
+      2. Each frame is multiplied by the window and placed into a buffer of size `fft_length`.
+      3. The DFT is taken of each windowed frame.
+      4. The results are stacked into a spectrogram.
+
+    We make a distinction between the following "blocks" of sample data, each of which may have a different lengths:
+
+      - The analysis frame. This is the size of the time slices that the input waveform is split into.
+      - The window. Each analysis frame is multiplied by the window to avoid spectral leakage.
+      - The FFT input buffer. The length of this determines how many frequency bins are in the spectrogram.
+
+    In this implementation, the window is assumed to be zero-padded to have the same size as the analysis frame. A
+    padded window can be obtained from `window_function()`. The FFT input buffer may be larger than the analysis frame,
+    typically the next power of two.
+
+    Note: This function is not optimized for speed yet. It should be mostly compatible with `librosa.stft` and
+    `torchaudio.functional.transforms.Spectrogram`, although it is more flexible due to the different ways spectrograms
+    can be constructed.
+
+    Args:
+        waveform (`np.ndarray` of shape `(length,)`):
+            The input waveform. This must be a single real-valued, mono waveform.
+        window (`np.ndarray` of shape `(frame_length,)`):
+            The windowing function to apply, including zero-padding if necessary. The actual window length may be
+            shorter than `frame_length`, but we're assuming the array has already been zero-padded.
+        frame_length (`int`):
+            The length of the analysis frames in samples. With librosa this is always equal to `fft_length` but we also
+            allow smaller sizes.
+        hop_length (`int`):
+            The stride between successive analysis frames in samples.
+        fft_length (`int`, *optional*):
+            The size of the FFT buffer in samples. This determines how many frequency bins the spectrogram will have.
+            For optimal speed, this should be a power of two. If `None`, uses `frame_length`.
+        power (`float`, *optional*, defaults to 1.0):
+            If 1.0, returns the amplitude spectrogram. If 2.0, returns the power spectrogram. If `None`, returns
+            complex numbers.
+        center (`bool`, *optional*, defaults to `True`):
+            Whether to pad the waveform so that frame `t` is centered around time `t * hop_length`. If `False`, frame
+            `t` will start at time `t * hop_length`.
+        pad_mode (`str`, *optional*, defaults to `"reflect"`):
+            Padding mode used when `center` is `True`. Possible values are: `"constant"` (pad with zeros), `"edge"`
+            (pad with edge values), `"reflect"` (pads w

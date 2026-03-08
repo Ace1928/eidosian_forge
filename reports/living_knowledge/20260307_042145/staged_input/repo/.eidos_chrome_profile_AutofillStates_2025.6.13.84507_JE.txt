@@ -1,0 +1,22 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/JE
+KIND: config
+
+JE
+
+saint johnst john
+saint brélade
+st brelade
+saint lawrencest lawrence
+	st helier
+saint martin	st martin
+saint saviour
+st saviour
+saint peterst peter
+	grouville
+
+saint maryst mary	
+trinity
+saint clement
+st clement
+
+saint ouenst ouen

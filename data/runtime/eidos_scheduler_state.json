@@ -1,0 +1,16 @@
+{
+  "contract": "eidos.scheduler.state.v1",
+  "updated_at": "2026-03-08T10:19:39.745903+00:00",
+  "cycle": 81,
+  "state": "waiting",
+  "interval_sec": 900.0,
+  "model": "qwen3.5:2b",
+  "run_graphrag": true,
+  "code_max_files": null,
+  "consecutive_failures": 0,
+  "last_result": {
+    "status": "waiting",
+    "reason": "instance_budget_exceeded"
+  },
+  "stop_requested": false
+}

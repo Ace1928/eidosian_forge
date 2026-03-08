@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/SimilarityScreener_documentation.py
+KIND: code
+
+from rdkit import DataStructs
+from rdkit.DataStructs import TopNContainer
+ required part of iterator interface

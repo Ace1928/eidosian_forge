@@ -1,30 +1,71 @@
-# 📖 Narrative Forge
+# 📖 Narrative Forge ⚡
 
-[![Python: 3.12](https://img.shields.io/badge/Python-3.12-blue.svg)](../global_info.py)
-[![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+> _"The Storyteller of Eidos. We are the stories we tell ourselves."_
 
-**The Storyteller of Eidos.**
+## 🧠 Overview
 
-> _"We are the stories we tell ourselves."_
+`narrative_forge` is the cognitive engine for long-form coherence, world-building, and thematic storytelling. While `agent_forge` handles immediate execution cycles (beats), `narrative_forge` maintains the broader "arc" of an interaction, ensuring logical and atmospheric consistency over extended sessions.
 
-## 📖 Overview
+```ascii
+      ╭───────────────────────────────────────────╮
+      │             NARRATIVE FORGE               │
+      │    < Plot | Character | State Machine >   │
+      ╰──────────┬─────────────────────┬──────────╯
+                 │                     │
+      ╭──────────┴──────────╮   ╭──────┴──────────╮
+      │  NARRATIVE MEMORY   │   │ THEMATIC ENGINE │
+      │ (Context Window)    │   │ (LLM Grounding) │
+      ╰─────────────────────╯   ╰─────────────────╯
+```
 
-`narrative_forge` is the engine for long-form coherence and storytelling. Unlike `agent_forge`, which focuses on immediate execution cycles (`beats`), `narrative_forge` maintains the "arc" of interaction, ensuring thematic consistency over time.
+## ⚡ Current State & Metrics
 
-## 🏗️ Architecture
+- **Status**: 🟢 Elevated & Operational
+- **Type**: Cognitive/Generative Structuring
+- **Test Coverage**: Core narrative loop verified.
+- **Architecture**:
+  - `engine.py`: Manages the narrative state machine and context generation via `llm_forge`.
+  - `memory.py`: Dedicated, linear context window for tracking story beats (distinct from semantic graphs).
+  - `cli.py`: Interactive interactive storytelling interface.
 
-- **Engine (`engine.py`)**: Manages the narrative state machine.
-- **Memory (`memory.py`)**: A dedicated context window for story beats (distinct from `memory_forge`'s vector store).
-- **CLI (`cli.py`)**: Interactive storytelling interface.
+## 🚀 Usage & Workflows
+
+### Interactive Session
+
+Launch an interactive narrative session powered by the local LLM:
+```bash
+python -m narrative_forge.cli chat --model "local"
+```
+
+### Python API
+
+```python
+from narrative_forge.engine import NarrativeEngine
+
+engine = NarrativeEngine(model_name="local")
+
+response = engine.generate_response(
+    prompt="You stand before the gates of the Eidosian Citadel.",
+    character="The Architect"
+)
+print(response)
+```
 
 ## 🔗 System Integration
 
-- **Agent Forge**: Agents can query the narrative engine to understand "where they are" in the larger plot.
-- **Word Forge**: Uses the semantic lexicon to enrich descriptions.
+- **Agent Forge**: Agents query the narrative engine to understand their position in the larger "plot" of a task.
+- **Word Forge**: Leverages semantic lexicons to enforce specific thematic vocabularies.
+- **Game Forge**: Drives the underlying lore and interaction text for environments like `eidosian_universe`.
 
-## 🚀 Usage
+## 🎯 Master Plan & Evolution
 
-```bash
-# Start an interactive narrative session
-python -m narrative_forge.cli chat --model "local"
-```
+### Immediate Goals
+- [x] Consolidate fragmented legacy documentation.
+- [x] Verify local integration loop.
+
+### Future Vector (Phase 3+)
+- Integrate natively with `knowledge_forge` to automatically pull in world-building lore as contextual grounding.
+- Implement explicit branching narrative trees using a state-graph schema.
+
+---
+*Generated and maintained by Eidos.*

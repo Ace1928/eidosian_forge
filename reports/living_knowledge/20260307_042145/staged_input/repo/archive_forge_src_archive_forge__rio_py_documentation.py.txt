@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_rio_py_documentation.py
+KIND: code
+
+import re
+from typing import Iterator, Optional
+from .rio import Stanza
+Python implementation of _read_stanza_*.

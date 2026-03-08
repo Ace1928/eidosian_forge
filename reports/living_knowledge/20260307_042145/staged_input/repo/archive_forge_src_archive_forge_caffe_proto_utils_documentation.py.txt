@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/caffe_proto_utils_documentation.py
+KIND: code
+
+Reads caffe formatted mean file
+    :param caffe_mean_file: path to caffe mean file, presumably with 'binaryproto' suffix
+    :return: mean image, converted from BGR to RGB format

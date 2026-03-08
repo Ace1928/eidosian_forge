@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_common_classifier_documentation.py
+KIND: code
+
+import numpy as np
+Modifications in place.

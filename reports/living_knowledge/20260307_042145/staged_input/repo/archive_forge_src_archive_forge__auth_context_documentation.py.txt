@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_auth_context_documentation.py
+KIND: code
+
+Creates a context key using the given name. The name is
+     only for informational purposes.

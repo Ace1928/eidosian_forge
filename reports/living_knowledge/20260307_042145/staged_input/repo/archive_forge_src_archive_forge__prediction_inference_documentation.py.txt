@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_prediction_inference_documentation.py
+KIND: code
+
+import numpy as np
+from scipy import stats
+import pandas as pd
+Prediction function as function of params

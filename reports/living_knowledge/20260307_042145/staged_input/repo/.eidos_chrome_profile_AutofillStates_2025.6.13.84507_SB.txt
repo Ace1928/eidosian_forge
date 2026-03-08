@@ -1,0 +1,14 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/SB
+KIND: config
+
+SB
+centralcentral province
+choiseulchoiseul province
+capital territoryhoniara#
+guadalcanalguadalcanal province
+isabelisabel province1
+makiraulawamakiraulawa provincemakiraulawas
+malaitamalaita province
+rennell and bellona province-
+snata cruz islandstemotutemotu province
+westernwestern province

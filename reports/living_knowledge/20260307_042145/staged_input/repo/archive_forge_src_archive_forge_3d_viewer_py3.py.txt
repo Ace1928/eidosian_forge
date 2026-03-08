@@ -1,0 +1,667 @@
+SOURCE_PATH: archive_forge/src/archive_forge/3d_viewer_py3.py
+KIND: code
+
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+
+""" This program loads a model with PyASSIMP, and display it.
+
+Based on:
+- pygame code from http://3dengine.org/Spectator_%28PyOpenGL%29
+- http://www.lighthouse3d.com/tutorials
+- http://www.songho.ca/opengl/gl_transform.html
+- http://code.activestate.com/recipes/325391/
+- ASSIMP's C++ SimpleOpenGL viewer
+
+Authors: Séverin Lemaignan, 2012-2016
+"""
+import sys
+import logging
+
+from functools import reduce
+
+logger = logging.getLogger("pyassimp")
+gllogger = logging.getLogger("OpenGL")
+gllogger.setLevel(logging.WARNING)
+logging.basicConfig(level=logging.INFO)
+
+import OpenGL
+
+OpenGL.ERROR_CHECKING = False
+OpenGL.ERROR_LOGGING = False
+# OpenGL.ERROR_ON_COPY = True
+# OpenGL.FULL_LOGGING = True
+from OpenGL.GL import *
+from OpenGL.arrays import vbo
+from OpenGL.GL import shaders
+
+import pygame
+import pygame.font
+import pygame.image
+
+import math, random
+from numpy import linalg
+
+import pyassimp
+from pyassimp.postprocess import *
+from pyassimp.helper import *
+import transformations
+
+ROTATION_180_X = numpy.array([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]], dtype=numpy.float32)
+
+# rendering mode
+BASE = "BASE"
+COLORS = "COLORS"
+SILHOUETTE = "SILHOUETTE"
+HELPERS = "HELPERS"
+
+# Entities type
+ENTITY = "entity"
+CAMERA = "camera"
+MESH = "mesh"
+
+FLAT_VERTEX_SHADER_120 = """
+#version 120
+
+uniform mat4 u_viewProjectionMatrix;
+uniform mat4 u_modelMatrix;
+
+uniform vec4 u_materialDiffuse;
+
+attribute vec3 a_vertex;
+
+varying vec4 v_color;
+
+void main(void)
+{
+    v_color = u_materialDiffuse;
+    gl_Position = u_viewProjectionMatrix * u_modelMatrix * vec4(a_vertex, 1.0);
+}
+"""
+
+FLAT_VERTEX_SHADER_130 = """
+#version 130
+
+uniform mat4 u_viewProjectionMatrix;
+uniform mat4 u_modelMatrix;
+
+uniform vec4 u_materialDiffuse;
+
+in vec3 a_vertex;
+
+out vec4 v_color;
+
+void main(void)
+{
+    v_color = u_materialDiffuse;
+    gl_Position = u_viewProjectionMatrix * u_modelMatrix * vec4(a_vertex, 1.0);
+}
+"""
+
+BASIC_VERTEX_SHADER_120 = """
+#version 120
+
+uniform mat4 u_viewProjectionMatrix;
+uniform mat4 u_modelMatrix;
+uniform mat3 u_normalMatrix;
+uniform vec3 u_lightPos;
+
+uniform vec4 u_materialDiffuse;
+
+attribute vec3 a_vertex;
+attribute vec3 a_normal;
+
+varying vec4 v_color;
+
+void main(void)
+{
+    // Now the normal is in world space, as we pass the light in world space.
+    vec3 normal = u_normalMatrix * a_normal;
+
+    float dist = distance(a_vertex, u_lightPos);
+
+    // go to https://www.desmos.com/calculator/nmnaud1hrw to play with the parameters
+    // att is not used for now
+    float att=1.0/(1.0+0.8*dist*dist);
+
+    vec3 surf2light = normalize(u_lightPos - a_vertex);
+    vec3 norm = normalize(normal);
+    float dcont=max(0.0,dot(norm,surf2light));
+
+    float ambient = 0.3;
+    float intensity = dcont + 0.3 + ambient;
+
+    v_color = u_materialDiffuse  * intensity;
+
+    gl_Position = u_viewProjectionMatrix * u_modelMatrix * vec4(a_vertex, 1.0);
+}
+"""
+
+BASIC_VERTEX_SHADER_130 = """
+#version 130
+
+uniform mat4 u_viewProjectionMatrix;
+uniform mat4 u_modelMatrix;
+uniform mat3 u_normalMatrix;
+uniform vec3 u_lightPos;
+
+uniform vec4 u_materialDiffuse;
+
+in vec3 a_vertex;
+in vec3 a_normal;
+
+out vec4 v_color;
+
+void main(void)
+{
+    // Now the normal is in world space, as we pass the light in world space.
+    vec3 normal = u_normalMatrix * a_normal;
+
+    float dist = distance(a_vertex, u_lightPos);
+
+    // go to https://www.desmos.com/calculator/nmnaud1hrw to play with the parameters
+    // att is not used for now
+    float att=1.0/(1.0+0.8*dist*dist);
+
+    vec3 surf2light = normalize(u_lightPos - a_vertex);
+    vec3 norm = normalize(normal);
+    float dcont=max(0.0,dot(norm,surf2light));
+
+    float ambient = 0.3;
+    float intensity = dcont + 0.3 + ambient;
+
+    v_color = u_materialDiffuse  * intensity;
+
+    gl_Position = u_viewProjectionMatrix * u_modelMatrix * vec4(a_vertex, 1.0);
+}
+"""
+
+BASIC_FRAGMENT_SHADER_120 = """
+#version 120
+
+varying vec4 v_color;
+
+void main() {
+    gl_FragColor = v_color;
+}
+"""
+
+BASIC_FRAGMENT_SHADER_130 = """
+#version 130
+
+in vec4 v_color;
+
+void main() {
+    gl_FragColor = v_color;
+}
+"""
+
+GOOCH_VERTEX_SHADER_120 = """
+#version 120
+
+// attributes
+attribute vec3 a_vertex; // xyz - position
+attribute vec3 a_normal; // xyz - normal
+
+// uniforms
+uniform mat4 u_modelMatrix;
+uniform mat4 u_viewProjectionMatrix;
+uniform mat3 u_normalMatrix;
+uniform vec3 u_lightPos;
+uniform vec3 u_camPos;
+
+// output data from vertex to fragment shader
+varying vec3 o_normal;
+varying vec3 o_lightVector;
+
+///////////////////////////////////////////////////////////////////
+
+void main(void)
+{
+   // transform position and normal to world space
+   vec4 positionWorld = u_modelMatrix * vec4(a_vertex, 1.0);
+   vec3 normalWorld = u_normalMatrix * a_normal;
+
+   // calculate and pass vectors required for lighting
+   o_lightVector = u_lightPos - positionWorld.xyz;
+   o_normal = normalWorld;
+
+   // project world space position to the screen and output it
+   gl_Position = u_viewProjectionMatrix * positionWorld;
+}
+"""
+
+GOOCH_VERTEX_SHADER_130 = """
+#version 130
+
+// attributes
+in vec3 a_vertex; // xyz - position
+in vec3 a_normal; // xyz - normal
+
+// uniforms
+uniform mat4 u_modelMatrix;
+uniform mat4 u_viewProjectionMatrix;
+uniform mat3 u_normalMatrix;
+uniform vec3 u_lightPos;
+uniform vec3 u_camPos;
+
+// output data from vertex to fragment shader
+out vec3 o_normal;
+out vec3 o_lightVector;
+
+///////////////////////////////////////////////////////////////////
+
+void main(void)
+{
+   // transform position and normal to world space
+   vec4 positionWorld = u_modelMatrix * vec4(a_vertex, 1.0);
+   vec3 normalWorld = u_normalMatrix * a_normal;
+
+   // calculate and pass vectors required for lighting
+   o_lightVector = u_lightPos - positionWorld.xyz;
+   o_normal = normalWorld;
+
+   // project world space position to the screen and output it
+   gl_Position = u_viewProjectionMatrix * positionWorld;
+}
+"""
+
+GOOCH_FRAGMENT_SHADER_120 = """
+#version 120
+
+// data from vertex shader
+varying vec3 o_normal;
+varying vec3 o_lightVector;
+
+// diffuse color of the object
+uniform vec4 u_materialDiffuse;
+// cool color of gooch shading
+uniform vec3 u_coolColor;
+// warm color of gooch shading
+uniform vec3 u_warmColor;
+// how much to take from object color in final cool color
+uniform float u_alpha;
+// how much to take from object color in final warm color
+uniform float u_beta;
+
+///////////////////////////////////////////////////////////
+
+void main(void)
+{
+   // normlize vectors for lighting
+   vec3 normalVector = normalize(o_normal);
+   vec3 lightVector = normalize(o_lightVector);
+   // intensity of diffuse lighting [-1, 1]
+   float diffuseLighting = dot(lightVector, normalVector);
+   // map intensity of lighting from range [-1; 1] to [0, 1]
+   float interpolationValue = (1.0 + diffuseLighting)/2;
+
+   //////////////////////////////////////////////////////////////////
+
+   // cool color mixed with color of the object
+   vec3 coolColorMod = u_coolColor + vec3(u_materialDiffuse) * u_alpha;
+   // warm color mixed with color of the object
+   vec3 warmColorMod = u_warmColor + vec3(u_materialDiffuse) * u_beta;
+   // interpolation of cool and warm colors according
+   // to lighting intensity. The lower the light intensity,
+   // the larger part of the cool color is used
+   vec3 colorOut = mix(coolColorMod, warmColorMod, interpolationValue);
+
+   //////////////////////////////////////////////////////////////////
+
+   // save color
+   gl_FragColor.rgb = colorOut;
+   gl_FragColor.a = 1;
+}
+"""
+
+GOOCH_FRAGMENT_SHADER_130 = """
+#version 130
+
+// data from vertex shader
+in vec3 o_normal;
+in vec3 o_lightVector;
+
+// diffuse color of the object
+uniform vec4 u_materialDiffuse;
+// cool color of gooch shading
+uniform vec3 u_coolColor;
+// warm color of gooch shading
+uniform vec3 u_warmColor;
+// how much to take from object color in final cool color
+uniform float u_alpha;
+// how much to take from object color in final warm color
+uniform float u_beta;
+
+// output to framebuffer
+out vec4 resultingColor;
+
+///////////////////////////////////////////////////////////
+
+void main(void)
+{
+   // normlize vectors for lighting
+   vec3 normalVector = normalize(o_normal);
+   vec3 lightVector = normalize(o_lightVector);
+   // intensity of diffuse lighting [-1, 1]
+   float diffuseLighting = dot(lightVector, normalVector);
+   // map intensity of lighting from range [-1; 1] to [0, 1]
+   float interpolationValue = (1.0 + diffuseLighting)/2;
+
+   //////////////////////////////////////////////////////////////////
+
+   // cool color mixed with color of the object
+   vec3 coolColorMod = u_coolColor + vec3(u_materialDiffuse) * u_alpha;
+   // warm color mixed with color of the object
+   vec3 warmColorMod = u_warmColor + vec3(u_materialDiffuse) * u_beta;
+   // interpolation of cool and warm colors according
+   // to lighting intensity. The lower the light intensity,
+   // the larger part of the cool color is used
+   vec3 colorOut = mix(coolColorMod, warmColorMod, interpolationValue);
+
+   //////////////////////////////////////////////////////////////////
+
+   // save color
+   resultingColor.rgb = colorOut;
+   resultingColor.a = 1;
+}
+"""
+
+SILHOUETTE_VERTEX_SHADER_120 = """
+#version 120
+
+attribute vec3 a_vertex; // xyz - position
+attribute vec3 a_normal; // xyz - normal
+
+uniform mat4 u_modelMatrix;
+uniform mat4 u_viewProjectionMatrix;
+uniform mat4 u_modelViewMatrix;
+uniform vec4 u_materialDiffuse;
+uniform float u_bordersize; // width of the border
+
+varying vec4 v_color;
+
+void main(void){
+   v_color = u_materialDiffuse;
+   float distToCamera = -(u_modelViewMatrix * vec4(a_vertex, 1.0)).z;
+   vec4 tPos   = vec4(a_vertex + a_normal * u_bordersize * distToCamera, 1.0);
+   gl_Position = u_viewProjectionMatrix * u_modelMatrix * tPos;
+}
+"""
+
+SILHOUETTE_VERTEX_SHADER_130 = """
+#version 130
+
+in vec3 a_vertex; // xyz - position
+in vec3 a_normal; // xyz - normal
+
+uniform mat4 u_modelMatrix;
+uniform mat4 u_viewProjectionMatrix;
+uniform mat4 u_modelViewMatrix;
+uniform vec4 u_materialDiffuse;
+uniform float u_bordersize; // width of the border
+
+out vec4 v_color;
+
+void main(void){
+   v_color = u_materialDiffuse;
+   float distToCamera = -(u_modelViewMatrix * vec4(a_vertex, 1.0)).z;
+   vec4 tPos   = vec4(a_vertex + a_normal * u_bordersize * distToCamera, 1.0);
+   gl_Position = u_viewProjectionMatrix * u_modelMatrix * tPos;
+}
+"""
+DEFAULT_CLIP_PLANE_NEAR = 0.001
+DEFAULT_CLIP_PLANE_FAR = 1000.0
+
+
+def get_world_transform(scene, node):
+    if node == scene.rootnode:
+        return numpy.identity(4, dtype=numpy.float32)
+
+    parents = reversed(_get_parent_chain(scene, node, []))
+    parent_transform = reduce(numpy.dot, [p.transformation for p in parents])
+    return numpy.dot(parent_transform, node.transformation)
+
+
+def _get_parent_chain(scene, node, parents):
+    parent = node.parent
+
+    parents.append(parent)
+
+    if parent == scene.rootnode:
+        return parents
+
+    return _get_parent_chain(scene, parent, parents)
+
+
+class DefaultCamera:
+    def __init__(self, w, h, fov):
+        self.name = "default camera"
+        self.type = CAMERA
+        self.clipplanenear = DEFAULT_CLIP_PLANE_NEAR
+        self.clipplanefar = DEFAULT_CLIP_PLANE_FAR
+        self.aspect = w / h
+        self.horizontalfov = fov * math.pi / 180
+        self.transformation = numpy.array([[0.68, -0.32, 0.65, 7.48],
+                                           [0.73, 0.31, -0.61, -6.51],
+                                           [-0.01, 0.89, 0.44, 5.34],
+                                           [0., 0., 0., 1.]], dtype=numpy.float32)
+
+        self.transformation = numpy.dot(self.transformation, ROTATION_180_X)
+
+    def __str__(self):
+        return self.name
+
+
+class PyAssimp3DViewer:
+    base_name = "PyASSIMP 3D viewer"
+
+    def __init__(self, model, w=1024, h=768):
+
+        self.w = w
+        self.h = h
+
+        pygame.init()
+        pygame.display.set_caption(self.base_name)
+        pygame.display.set_mode((w, h), pygame.OPENGL | pygame.DOUBLEBUF)
+
+        glClearColor(0.18, 0.18, 0.18, 1.0)
+
+        shader_compilation_succeeded = False
+        try:
+            self.set_shaders_v130()
+            self.prepare_shaders()
+        except RuntimeError as message:
+            sys.stderr.write("%s\n" % message)
+            sys.stdout.write("Could not compile shaders in version 1.30, trying version 1.20\n")
+
+        if not shader_compilation_succeeded:
+            self.set_shaders_v120()
+            self.prepare_shaders()
+
+        self.scene = None
+        self.meshes = {}  # stores the OpenGL vertex/faces/normals buffers pointers
+
+        self.node2colorid = {}  # stores a color ID for each node. Useful for mouse picking and visibility checking
+        self.colorid2node = {}  # reverse dict of node2colorid
+
+        self.currently_selected = None
+        self.moving = False
+        self.moving_situation = None
+
+        self.default_camera = DefaultCamera(self.w, self.h, fov=70)
+        self.cameras = [self.default_camera]
+
+        self.current_cam_index = 0
+        self.current_cam = self.default_camera
+        self.set_camera_projection()
+
+        self.load_model(model)
+
+        # user interactions
+        self.focal_point = [0, 0, 0]
+        self.is_rotating = False
+        self.is_panning = False
+        self.is_zooming = False
+
+    def set_shaders_v120(self):
+      self.BASIC_VERTEX_SHADER = BASIC_VERTEX_SHADER_120
+      self.FLAT_VERTEX_SHADER = FLAT_VERTEX_SHADER_120
+      self.SILHOUETTE_VERTEX_SHADER = SILHOUETTE_VERTEX_SHADER_120
+      self.GOOCH_VERTEX_SHADER = GOOCH_VERTEX_SHADER_120
+
+      self.BASIC_FRAGMENT_SHADER = BASIC_FRAGMENT_SHADER_120
+      self.GOOCH_FRAGMENT_SHADER = GOOCH_FRAGMENT_SHADER_120
+
+    def set_shaders_v130(self):
+      self.BASIC_VERTEX_SHADER = BASIC_VERTEX_SHADER_130
+      self.FLAT_VERTEX_SHADER = FLAT_VERTEX_SHADER_130
+      self.SILHOUETTE_VERTEX_SHADER = SILHOUETTE_VERTEX_SHADER_130
+      self.GOOCH_VERTEX_SHADER = GOOCH_VERTEX_SHADER_130
+
+      self.BASIC_FRAGMENT_SHADER = BASIC_FRAGMENT_SHADER_130
+      self.GOOCH_FRAGMENT_SHADER = GOOCH_FRAGMENT_SHADER_130
+
+    def prepare_shaders(self):
+
+        ### Base shader
+        vertex = shaders.compileShader(self.BASIC_VERTEX_SHADER, GL_VERTEX_SHADER)
+        fragment = shaders.compileShader(self.BASIC_FRAGMENT_SHADER, GL_FRAGMENT_SHADER)
+
+        self.shader = shaders.compileProgram(vertex, fragment)
+
+        self.set_shader_accessors(('u_modelMatrix',
+                                   'u_viewProjectionMatrix',
+                                   'u_normalMatrix',
+                                   'u_lightPos',
+                                   'u_materialDiffuse'),
+                                  ('a_vertex',
+                                   'a_normal'), self.shader)
+
+        ### Flat shader
+        flatvertex = shaders.compileShader(self.FLAT_VERTEX_SHADER, GL_VERTEX_SHADER)
+        self.flatshader = shaders.compileProgram(flatvertex, fragment)
+
+        self.set_shader_accessors(('u_modelMatrix',
+                                   'u_viewProjectionMatrix',
+                                   'u_materialDiffuse',),
+                                  ('a_vertex',), self.flatshader)
+
+        ### Silhouette shader
+        silh_vertex = shaders.compileShader(self.SILHOUETTE_VERTEX_SHADER, GL_VERTEX_SHADER)
+        self.silhouette_shader = shaders.compileProgram(silh_vertex, fragment)
+
+        self.set_shader_accessors(('u_modelMatrix',
+                                   'u_viewProjectionMatrix',
+                                   'u_modelViewMatrix',
+                                   'u_materialDiffuse',
+                                   'u_bordersize'  # width of the silhouette
+                                   ),
+                                  ('a_vertex',
+                                   'a_normal'), self.silhouette_shader)
+
+        ### Gooch shader
+        gooch_vertex = shaders.compileShader(self.GOOCH_VERTEX_SHADER, GL_VERTEX_SHADER)
+        gooch_fragment = shaders.compileShader(self.GOOCH_FRAGMENT_SHADER, GL_FRAGMENT_SHADER)
+        self.gooch_shader = shaders.compileProgram(gooch_vertex, gooch_fragment)
+
+        self.set_shader_accessors(('u_modelMatrix',
+                                   'u_viewProjectionMatrix',
+                                   'u_normalMatrix',
+                                   'u_lightPos',
+                                   'u_materialDiffuse',
+                                   'u_coolColor',
+                                   'u_warmColor',
+                                   'u_alpha',
+                                   'u_beta'
+                                   ),
+                                  ('a_vertex',
+                                   'a_normal'), self.gooch_shader)
+
+    @staticmethod
+    def set_shader_accessors(uniforms, attributes, shader):
+        # add accessors to the shaders uniforms and attributes
+        for uniform in uniforms:
+            location = glGetUniformLocation(shader, uniform)
+            if location in (None, -1):
+                raise RuntimeError('No uniform: %s (maybe it is not used '
+                                   'anymore and has been optimized out by'
+                                   ' the shader compiler)' % uniform)
+            setattr(shader, uniform, location)
+
+        for attribute in attributes:
+            location = glGetAttribLocation(shader, attribute)
+            if location in (None, -1):
+                raise RuntimeError('No attribute: %s' % attribute)
+            setattr(shader, attribute, location)
+
+    @staticmethod
+    def prepare_gl_buffers(mesh):
+
+        mesh.gl = {}
+
+        # Fill the buffer for vertex and normals positions
+        v = numpy.array(mesh.vertices, 'f')
+        n = numpy.array(mesh.normals, 'f')
+
+        mesh.gl["vbo"] = vbo.VBO(numpy.hstack((v, n)))
+
+        # Fill the buffer for vertex positions
+        mesh.gl["faces"] = glGenBuffers(1)
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.gl["faces"])
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                     numpy.array(mesh.faces, dtype=numpy.int32),
+                     GL_STATIC_DRAW)
+
+        mesh.gl["nbfaces"] = len(mesh.faces)
+
+        # Unbind buffers
+        glBindBuffer(GL_ARRAY_BUFFER, 0)
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
+
+    @staticmethod
+    def get_rgb_from_colorid(colorid):
+        r = (colorid >> 0) & 0xff
+        g = (colorid >> 8) & 0xff
+        b = (colorid >> 16) & 0xff
+
+        return r, g, b
+
+    def get_color_id(self):
+        id = random.randint(0, 256 * 256 * 256)
+        if id not in self.colorid2node:
+            return id
+        else:
+            return self.get_color_id()
+
+    def glize(self, scene, node):
+
+        logger.info("Loading node <%s>" % node)
+        node.selected = True if self.currently_selected and self.currently_selected == node else False
+
+        node.transformation = node.transformation.astype(numpy.float32)
+
+        if node.meshes:
+            node.type = MESH
+            colorid = self.get_color_id()
+            self.colorid2node[colorid] = node
+            self.node2colorid[node.name] = colorid
+
+        elif node.name in [c.name for c in scene.cameras]:
+
+            # retrieve the ASSIMP camera object
+            [cam] = [c for c in scene.cameras if c.name == node.name]
+            node.type = CAMERA
+            logger.info("Added camera <%s>" % node.name)
+            logger.info("Camera position: %.3f, %.3f, %.3f" % tuple(node.transformation[:, 3][:3].tolist()))
+            self.cameras.append(node)
+            node.clipplanenear = cam.clipplanenear
+            node.clipplanefar = cam.clipplanefar
+
+            if numpy.allclose(cam.lookat, [0, 0, -1]) and numpy.allclose(cam.up, [0, 1, 0]):  # Cameras in .blend files
+
+                # Rotate by 180deg around X to have Z pointing forward
+                node.transformation = numpy.dot(node.transformation, ROTATION_180_X)
+            else:
+                raise RuntimeError(
+                    "I do not know how to normalize this camera orientation: lookat=%s, up=%s" % (cam.lookat, cam.up))

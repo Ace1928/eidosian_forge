@@ -1,0 +1,580 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_t_sne.py
+KIND: code
+
+# Author: Alexander Fabisch  -- <afabisch@informatik.uni-bremen.de>
+# Author: Christopher Moody <chrisemoody@gmail.com>
+# Author: Nick Travers <nickt@squareup.com>
+# License: BSD 3 clause (C) 2014
+
+# This is the exact and Barnes-Hut t-SNE implementation. There are other
+# modifications of the algorithm:
+# * Fast Optimization for t-SNE:
+#   https://cseweb.ucsd.edu/~lvdmaaten/workshops/nips2010/papers/vandermaaten.pdf
+
+from numbers import Integral, Real
+from time import time
+
+import numpy as np
+from scipy import linalg
+from scipy.sparse import csr_matrix, issparse
+from scipy.spatial.distance import pdist, squareform
+
+from ..base import (
+    BaseEstimator,
+    ClassNamePrefixFeaturesOutMixin,
+    TransformerMixin,
+    _fit_context,
+)
+from ..decomposition import PCA
+from ..metrics.pairwise import _VALID_METRICS, pairwise_distances
+from ..neighbors import NearestNeighbors
+from ..utils import check_random_state
+from ..utils._openmp_helpers import _openmp_effective_n_threads
+from ..utils._param_validation import Interval, StrOptions, validate_params
+from ..utils.validation import _num_samples, check_non_negative
+
+# mypy error: Module 'sklearn.manifold' has no attribute '_utils'
+# mypy error: Module 'sklearn.manifold' has no attribute '_barnes_hut_tsne'
+from . import _barnes_hut_tsne, _utils  # type: ignore
+
+MACHINE_EPSILON = np.finfo(np.double).eps
+
+
+def _joint_probabilities(distances, desired_perplexity, verbose):
+    """Compute joint probabilities p_ij from distances.
+
+    Parameters
+    ----------
+    distances : ndarray of shape (n_samples * (n_samples-1) / 2,)
+        Distances of samples are stored as condensed matrices, i.e.
+        we omit the diagonal and duplicate entries and store everything
+        in a one-dimensional array.
+
+    desired_perplexity : float
+        Desired perplexity of the joint probability distributions.
+
+    verbose : int
+        Verbosity level.
+
+    Returns
+    -------
+    P : ndarray of shape (n_samples * (n_samples-1) / 2,)
+        Condensed joint probability matrix.
+    """
+    # Compute conditional probabilities such that they approximately match
+    # the desired perplexity
+    distances = distances.astype(np.float32, copy=False)
+    conditional_P = _utils._binary_search_perplexity(
+        distances, desired_perplexity, verbose
+    )
+    P = conditional_P + conditional_P.T
+    sum_P = np.maximum(np.sum(P), MACHINE_EPSILON)
+    P = np.maximum(squareform(P) / sum_P, MACHINE_EPSILON)
+    return P
+
+
+def _joint_probabilities_nn(distances, desired_perplexity, verbose):
+    """Compute joint probabilities p_ij from distances using just nearest
+    neighbors.
+
+    This method is approximately equal to _joint_probabilities. The latter
+    is O(N), but limiting the joint probability to nearest neighbors improves
+    this substantially to O(uN).
+
+    Parameters
+    ----------
+    distances : sparse matrix of shape (n_samples, n_samples)
+        Distances of samples to its n_neighbors nearest neighbors. All other
+        distances are left to zero (and are not materialized in memory).
+        Matrix should be of CSR format.
+
+    desired_perplexity : float
+        Desired perplexity of the joint probability distributions.
+
+    verbose : int
+        Verbosity level.
+
+    Returns
+    -------
+    P : sparse matrix of shape (n_samples, n_samples)
+        Condensed joint probability matrix with only nearest neighbors. Matrix
+        will be of CSR format.
+    """
+    t0 = time()
+    # Compute conditional probabilities such that they approximately match
+    # the desired perplexity
+    distances.sort_indices()
+    n_samples = distances.shape[0]
+    distances_data = distances.data.reshape(n_samples, -1)
+    distances_data = distances_data.astype(np.float32, copy=False)
+    conditional_P = _utils._binary_search_perplexity(
+        distances_data, desired_perplexity, verbose
+    )
+    assert np.all(np.isfinite(conditional_P)), "All probabilities should be finite"
+
+    # Symmetrize the joint probability distribution using sparse operations
+    P = csr_matrix(
+        (conditional_P.ravel(), distances.indices, distances.indptr),
+        shape=(n_samples, n_samples),
+    )
+    P = P + P.T
+
+    # Normalize the joint probability distribution
+    sum_P = np.maximum(P.sum(), MACHINE_EPSILON)
+    P /= sum_P
+
+    assert np.all(np.abs(P.data) <= 1.0)
+    if verbose >= 2:
+        duration = time() - t0
+        print("[t-SNE] Computed conditional probabilities in {:.3f}s".format(duration))
+    return P
+
+
+def _kl_divergence(
+    params,
+    P,
+    degrees_of_freedom,
+    n_samples,
+    n_components,
+    skip_num_points=0,
+    compute_error=True,
+):
+    """t-SNE objective function: gradient of the KL divergence
+    of p_ijs and q_ijs and the absolute error.
+
+    Parameters
+    ----------
+    params : ndarray of shape (n_params,)
+        Unraveled embedding.
+
+    P : ndarray of shape (n_samples * (n_samples-1) / 2,)
+        Condensed joint probability matrix.
+
+    degrees_of_freedom : int
+        Degrees of freedom of the Student's-t distribution.
+
+    n_samples : int
+        Number of samples.
+
+    n_components : int
+        Dimension of the embedded space.
+
+    skip_num_points : int, default=0
+        This does not compute the gradient for points with indices below
+        `skip_num_points`. This is useful when computing transforms of new
+        data where you'd like to keep the old data fixed.
+
+    compute_error: bool, default=True
+        If False, the kl_divergence is not computed and returns NaN.
+
+    Returns
+    -------
+    kl_divergence : float
+        Kullback-Leibler divergence of p_ij and q_ij.
+
+    grad : ndarray of shape (n_params,)
+        Unraveled gradient of the Kullback-Leibler divergence with respect to
+        the embedding.
+    """
+    X_embedded = params.reshape(n_samples, n_components)
+
+    # Q is a heavy-tailed distribution: Student's t-distribution
+    dist = pdist(X_embedded, "sqeuclidean")
+    dist /= degrees_of_freedom
+    dist += 1.0
+    dist **= (degrees_of_freedom + 1.0) / -2.0
+    Q = np.maximum(dist / (2.0 * np.sum(dist)), MACHINE_EPSILON)
+
+    # Optimization trick below: np.dot(x, y) is faster than
+    # np.sum(x * y) because it calls BLAS
+
+    # Objective: C (Kullback-Leibler divergence of P and Q)
+    if compute_error:
+        kl_divergence = 2.0 * np.dot(P, np.log(np.maximum(P, MACHINE_EPSILON) / Q))
+    else:
+        kl_divergence = np.nan
+
+    # Gradient: dC/dY
+    # pdist always returns double precision distances. Thus we need to take
+    grad = np.ndarray((n_samples, n_components), dtype=params.dtype)
+    PQd = squareform((P - Q) * dist)
+    for i in range(skip_num_points, n_samples):
+        grad[i] = np.dot(np.ravel(PQd[i], order="K"), X_embedded[i] - X_embedded)
+    grad = grad.ravel()
+    c = 2.0 * (degrees_of_freedom + 1.0) / degrees_of_freedom
+    grad *= c
+
+    return kl_divergence, grad
+
+
+def _kl_divergence_bh(
+    params,
+    P,
+    degrees_of_freedom,
+    n_samples,
+    n_components,
+    angle=0.5,
+    skip_num_points=0,
+    verbose=False,
+    compute_error=True,
+    num_threads=1,
+):
+    """t-SNE objective function: KL divergence of p_ijs and q_ijs.
+
+    Uses Barnes-Hut tree methods to calculate the gradient that
+    runs in O(NlogN) instead of O(N^2).
+
+    Parameters
+    ----------
+    params : ndarray of shape (n_params,)
+        Unraveled embedding.
+
+    P : sparse matrix of shape (n_samples, n_sample)
+        Sparse approximate joint probability matrix, computed only for the
+        k nearest-neighbors and symmetrized. Matrix should be of CSR format.
+
+    degrees_of_freedom : int
+        Degrees of freedom of the Student's-t distribution.
+
+    n_samples : int
+        Number of samples.
+
+    n_components : int
+        Dimension of the embedded space.
+
+    angle : float, default=0.5
+        This is the trade-off between speed and accuracy for Barnes-Hut T-SNE.
+        'angle' is the angular size (referred to as theta in [3]) of a distant
+        node as measured from a point. If this size is below 'angle' then it is
+        used as a summary node of all points contained within it.
+        This method is not very sensitive to changes in this parameter
+        in the range of 0.2 - 0.8. Angle less than 0.2 has quickly increasing
+        computation time and angle greater 0.8 has quickly increasing error.
+
+    skip_num_points : int, default=0
+        This does not compute the gradient for points with indices below
+        `skip_num_points`. This is useful when computing transforms of new
+        data where you'd like to keep the old data fixed.
+
+    verbose : int, default=False
+        Verbosity level.
+
+    compute_error: bool, default=True
+        If False, the kl_divergence is not computed and returns NaN.
+
+    num_threads : int, default=1
+        Number of threads used to compute the gradient. This is set here to
+        avoid calling _openmp_effective_n_threads for each gradient step.
+
+    Returns
+    -------
+    kl_divergence : float
+        Kullback-Leibler divergence of p_ij and q_ij.
+
+    grad : ndarray of shape (n_params,)
+        Unraveled gradient of the Kullback-Leibler divergence with respect to
+        the embedding.
+    """
+    params = params.astype(np.float32, copy=False)
+    X_embedded = params.reshape(n_samples, n_components)
+
+    val_P = P.data.astype(np.float32, copy=False)
+    neighbors = P.indices.astype(np.int64, copy=False)
+    indptr = P.indptr.astype(np.int64, copy=False)
+
+    grad = np.zeros(X_embedded.shape, dtype=np.float32)
+    error = _barnes_hut_tsne.gradient(
+        val_P,
+        X_embedded,
+        neighbors,
+        indptr,
+        grad,
+        angle,
+        n_components,
+        verbose,
+        dof=degrees_of_freedom,
+        compute_error=compute_error,
+        num_threads=num_threads,
+    )
+    c = 2.0 * (degrees_of_freedom + 1.0) / degrees_of_freedom
+    grad = grad.ravel()
+    grad *= c
+
+    return error, grad
+
+
+def _gradient_descent(
+    objective,
+    p0,
+    it,
+    n_iter,
+    n_iter_check=1,
+    n_iter_without_progress=300,
+    momentum=0.8,
+    learning_rate=200.0,
+    min_gain=0.01,
+    min_grad_norm=1e-7,
+    verbose=0,
+    args=None,
+    kwargs=None,
+):
+    """Batch gradient descent with momentum and individual gains.
+
+    Parameters
+    ----------
+    objective : callable
+        Should return a tuple of cost and gradient for a given parameter
+        vector. When expensive to compute, the cost can optionally
+        be None and can be computed every n_iter_check steps using
+        the objective_error function.
+
+    p0 : array-like of shape (n_params,)
+        Initial parameter vector.
+
+    it : int
+        Current number of iterations (this function will be called more than
+        once during the optimization).
+
+    n_iter : int
+        Maximum number of gradient descent iterations.
+
+    n_iter_check : int, default=1
+        Number of iterations before evaluating the global error. If the error
+        is sufficiently low, we abort the optimization.
+
+    n_iter_without_progress : int, default=300
+        Maximum number of iterations without progress before we abort the
+        optimization.
+
+    momentum : float within (0.0, 1.0), default=0.8
+        The momentum generates a weight for previous gradients that decays
+        exponentially.
+
+    learning_rate : float, default=200.0
+        The learning rate for t-SNE is usually in the range [10.0, 1000.0]. If
+        the learning rate is too high, the data may look like a 'ball' with any
+        point approximately equidistant from its nearest neighbours. If the
+        learning rate is too low, most points may look compressed in a dense
+        cloud with few outliers.
+
+    min_gain : float, default=0.01
+        Minimum individual gain for each parameter.
+
+    min_grad_norm : float, default=1e-7
+        If the gradient norm is below this threshold, the optimization will
+        be aborted.
+
+    verbose : int, default=0
+        Verbosity level.
+
+    args : sequence, default=None
+        Arguments to pass to objective function.
+
+    kwargs : dict, default=None
+        Keyword arguments to pass to objective function.
+
+    Returns
+    -------
+    p : ndarray of shape (n_params,)
+        Optimum parameters.
+
+    error : float
+        Optimum.
+
+    i : int
+        Last iteration.
+    """
+    if args is None:
+        args = []
+    if kwargs is None:
+        kwargs = {}
+
+    p = p0.copy().ravel()
+    update = np.zeros_like(p)
+    gains = np.ones_like(p)
+    error = np.finfo(float).max
+    best_error = np.finfo(float).max
+    best_iter = i = it
+
+    tic = time()
+    for i in range(it, n_iter):
+        check_convergence = (i + 1) % n_iter_check == 0
+        # only compute the error when needed
+        kwargs["compute_error"] = check_convergence or i == n_iter - 1
+
+        error, grad = objective(p, *args, **kwargs)
+
+        inc = update * grad < 0.0
+        dec = np.invert(inc)
+        gains[inc] += 0.2
+        gains[dec] *= 0.8
+        np.clip(gains, min_gain, np.inf, out=gains)
+        grad *= gains
+        update = momentum * update - learning_rate * grad
+        p += update
+
+        if check_convergence:
+            toc = time()
+            duration = toc - tic
+            tic = toc
+            grad_norm = linalg.norm(grad)
+
+            if verbose >= 2:
+                print(
+                    "[t-SNE] Iteration %d: error = %.7f,"
+                    " gradient norm = %.7f"
+                    " (%s iterations in %0.3fs)"
+                    % (i + 1, error, grad_norm, n_iter_check, duration)
+                )
+
+            if error < best_error:
+                best_error = error
+                best_iter = i
+            elif i - best_iter > n_iter_without_progress:
+                if verbose >= 2:
+                    print(
+                        "[t-SNE] Iteration %d: did not make any progress "
+                        "during the last %d episodes. Finished."
+                        % (i + 1, n_iter_without_progress)
+                    )
+                break
+            if grad_norm <= min_grad_norm:
+                if verbose >= 2:
+                    print(
+                        "[t-SNE] Iteration %d: gradient norm %f. Finished."
+                        % (i + 1, grad_norm)
+                    )
+                break
+
+    return p, error, i
+
+
+@validate_params(
+    {
+        "X": ["array-like", "sparse matrix"],
+        "X_embedded": ["array-like", "sparse matrix"],
+        "n_neighbors": [Interval(Integral, 1, None, closed="left")],
+        "metric": [StrOptions(set(_VALID_METRICS) | {"precomputed"}), callable],
+    },
+    prefer_skip_nested_validation=True,
+)
+def trustworthiness(X, X_embedded, *, n_neighbors=5, metric="euclidean"):
+    r"""Indicate to what extent the local structure is retained.
+
+    The trustworthiness is within [0, 1]. It is defined as
+
+    .. math::
+
+        T(k) = 1 - \frac{2}{nk (2n - 3k - 1)} \sum^n_{i=1}
+            \sum_{j \in \mathcal{N}_{i}^{k}} \max(0, (r(i, j) - k))
+
+    where for each sample i, :math:`\mathcal{N}_{i}^{k}` are its k nearest
+    neighbors in the output space, and every sample j is its :math:`r(i, j)`-th
+    nearest neighbor in the input space. In other words, any unexpected nearest
+    neighbors in the output space are penalised in proportion to their rank in
+    the input space.
+
+    Parameters
+    ----------
+    X : {array-like, sparse matrix} of shape (n_samples, n_features) or \
+        (n_samples, n_samples)
+        If the metric is 'precomputed' X must be a square distance
+        matrix. Otherwise it contains a sample per row.
+
+    X_embedded : {array-like, sparse matrix} of shape (n_samples, n_components)
+        Embedding of the training data in low-dimensional space.
+
+    n_neighbors : int, default=5
+        The number of neighbors that will be considered. Should be fewer than
+        `n_samples / 2` to ensure the trustworthiness to lies within [0, 1], as
+        mentioned in [1]_. An error will be raised otherwise.
+
+    metric : str or callable, default='euclidean'
+        Which metric to use for computing pairwise distances between samples
+        from the original input space. If metric is 'precomputed', X must be a
+        matrix of pairwise distances or squared distances. Otherwise, for a list
+        of available metrics, see the documentation of argument metric in
+        `sklearn.pairwise.pairwise_distances` and metrics listed in
+        `sklearn.metrics.pairwise.PAIRWISE_DISTANCE_FUNCTIONS`. Note that the
+        "cosine" metric uses :func:`~sklearn.metrics.pairwise.cosine_distances`.
+
+        .. versionadded:: 0.20
+
+    Returns
+    -------
+    trustworthiness : float
+        Trustworthiness of the low-dimensional embedding.
+
+    References
+    ----------
+    .. [1] Jarkko Venna and Samuel Kaski. 2001. Neighborhood
+           Preservation in Nonlinear Projection Methods: An Experimental Study.
+           In Proceedings of the International Conference on Artificial Neural Networks
+           (ICANN '01). Springer-Verlag, Berlin, Heidelberg, 485-491.
+
+    .. [2] Laurens van der Maaten. Learning a Parametric Embedding by Preserving
+           Local Structure. Proceedings of the Twelfth International Conference on
+           Artificial Intelligence and Statistics, PMLR 5:384-391, 2009.
+
+    Examples
+    --------
+    >>> from sklearn.datasets import make_blobs
+    >>> from sklearn.decomposition import PCA
+    >>> from sklearn.manifold import trustworthiness
+    >>> X, _ = make_blobs(n_samples=100, n_features=10, centers=3, random_state=42)
+    >>> X_embedded = PCA(n_components=2).fit_transform(X)
+    >>> print(f"{trustworthiness(X, X_embedded, n_neighbors=5):.2f}")
+    0.92
+    """
+    n_samples = _num_samples(X)
+    if n_neighbors >= n_samples / 2:
+        raise ValueError(
+            f"n_neighbors ({n_neighbors}) should be less than n_samples / 2"
+            f" ({n_samples / 2})"
+        )
+    dist_X = pairwise_distances(X, metric=metric)
+    if metric == "precomputed":
+        dist_X = dist_X.copy()
+    # we set the diagonal to np.inf to exclude the points themselves from
+    # their own neighborhood
+    np.fill_diagonal(dist_X, np.inf)
+    ind_X = np.argsort(dist_X, axis=1)
+    # `ind_X[i]` is the index of sorted distances between i and other samples
+    ind_X_embedded = (
+        NearestNeighbors(n_neighbors=n_neighbors)
+        .fit(X_embedded)
+        .kneighbors(return_distance=False)
+    )
+
+    # We build an inverted index of neighbors in the input space: For sample i,
+    # we define `inverted_index[i]` as the inverted index of sorted distances:
+    # inverted_index[i][ind_X[i]] = np.arange(1, n_sample + 1)
+    inverted_index = np.zeros((n_samples, n_samples), dtype=int)
+    ordered_indices = np.arange(n_samples + 1)
+    inverted_index[ordered_indices[:-1, np.newaxis], ind_X] = ordered_indices[1:]
+    ranks = (
+        inverted_index[ordered_indices[:-1, np.newaxis], ind_X_embedded] - n_neighbors
+    )
+    t = np.sum(ranks[ranks > 0])
+    t = 1.0 - t * (
+        2.0 / (n_samples * n_neighbors * (2.0 * n_samples - 3.0 * n_neighbors - 1.0))
+    )
+    return t
+
+
+class TSNE(ClassNamePrefixFeaturesOutMixin, TransformerMixin, BaseEstimator):
+    """T-distributed Stochastic Neighbor Embedding.
+
+    t-SNE [1] is a tool to visualize high-dimensional data. It converts
+    similarities between data points to joint probabilities and tries
+    to minimize the Kullback-Leibler divergence between the joint
+    probabilities of the low-dimensional embedding and the
+    high-dimensional data. t-SNE has a cost function that is not convex,
+    i.e. with different initializations we can get different results.
+
+    It is highly recommended to use another dimensionality reduction
+    method (e.g. PCA for dense data or TruncatedSVD for sparse data)
+    to reduce the number of dimensions to a reasonable amount (e.g. 50)
+    if the number of features is very high. This will suppress some
+    noise and speed up the computation of pairwise distances between
+    samples. For more tips see Laurens van der Maaten'

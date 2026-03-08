@@ -1,0 +1,52 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/NG
+KIND: config
+
+NG2
+abiaababiyaìpínlẹ̀ ábíá	ȯra abia4
+adamawaadìpínlẹ̀ adámáwáȯra adamawa:
+	akwa ibomakìpínlẹ̀ akwa íbọmȯra akwa ibom2
+anambraanìpínlẹ̀ anámbraȯra anambra.
+bauchibaìpínlẹ̀ bauchiȯra bauchi1
+benuebnìpínlẹ̀ bẹ́núé
+ȯra benue=
+bornobrjihar bornoìpínlẹ̀ bọ̀rnó
+ȯra borno4
+bayelsabyìpínlẹ̀ bàyélsàȯra bayelsa=
+cross rivercrìpínlẹ̀ cross riverȯra cross river0
+deltadtìpínlẹ̀ dẹ́ltà
+ȯra delta7
+ebonyiebìpínlẹ̀ ẹ̀bọ́nyìȯra ebonyi(
+edoedìpínlẹ̀ ẹdóȯra edo.
+ekitiktìpínlẹ̀ èkìtì
+ȯra ekiti.
+enuguenìpínlẹ̀ ẹnúgu
+ȯra enuguQ
+fct/agbègbè olúìlú ìjọba àpapọ̀ abùjáfederal capital territory-
+gombegmìpínlẹ̀ gòmbè
+ȯra gombe'
+imoimìpínlẹ̀ ímòȯra imo1
+jigawajgìpínlẹ̀ jígàwàȯra jigawa1
+kadunakdìpínlẹ̀ kàdúnáȯra kaduna-
+kebbikbìpínlẹ̀ kébbí
+ȯra kebbi9
+kanoknnkeji ochíchííwu kanoìpínlẹ̀ kánò)
+kogikgìpínlẹ̀ kogí	ȯra kogiC
+katsinaktjihar katsinaìpínlẹ̀ kàtsínàȯra katsina-
+kwarakwìpínlẹ̀ kwárà
+ȯra kwara+
+lagoslaìpínlẹ̀ èkó
+ȯra lagos8
+nasarawansìpínlẹ̀ násáráwáȯra nasarawa1
+nigerngnejaìpínlẹ̀ niger
+ȯra niger6
+ogunog
+ogun stateìpínlẹ̀ ògùn	ȯra ogun*
+ondondìpínlẹ̀ òndó	ȯra ondo.
+osunosìpínlẹ̀ ọ̀ṣun	ȯra osun1
+oyoyoìpínlẹ̀ ọ̀yọ́ȯra ọyọ1
+plateauplìpínlẹ̀ plateauȯra plateau.
+riversrvìpínlẹ̀ riversȯra rivers?
+sokotoskjihar sokotoìpínlẹ̀ sókótóȯra sokoto1
+tarabatrìpínlẹ̀ tàràbàȯra taraba/
+yobeybybeìpínlẹ̀ yòbè	ȯra yobe1
+zamfarazaìpínlẹ̀ zamfaraȯra zamfara

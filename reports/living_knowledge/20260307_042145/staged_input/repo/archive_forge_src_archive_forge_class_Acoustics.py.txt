@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_Acoustics.py
+KIND: code
+
+class Acoustics:
+    """The branch of physics that deals with the behavior of sound."""
+
+    def __init__(self):
+        self.theories = []

@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_carpet.py
+KIND: code
+
+from plotly.graph_objs import Carpet

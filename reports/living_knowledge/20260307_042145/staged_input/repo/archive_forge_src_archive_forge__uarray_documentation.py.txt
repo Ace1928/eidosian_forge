@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_uarray_documentation.py
+KIND: code
+
+import numpy as np
+import cupy
+import cupy.linalg as _cp_linalg
+Decorator adds function to the dictionary of implemented functions

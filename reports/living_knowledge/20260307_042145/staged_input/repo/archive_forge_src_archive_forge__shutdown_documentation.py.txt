@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_shutdown_documentation.py
+KIND: code
+
+import threading
+import time
+from twisted.python import log
+
+        Run all registered functions in reverse order of registration.

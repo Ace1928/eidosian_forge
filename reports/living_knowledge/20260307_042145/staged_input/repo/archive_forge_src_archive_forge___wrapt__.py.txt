@@ -1,0 +1,17 @@
+SOURCE_PATH: archive_forge/src/archive_forge/__wrapt__.py
+KIND: code
+
+import os
+
+from .wrappers import (ObjectProxy, CallableObjectProxy,
+        PartialCallableObjectProxy, FunctionWrapper,
+        BoundFunctionWrapper, _FunctionWrapperBase)
+
+try:
+    if not os.environ.get('WRAPT_DISABLE_EXTENSIONS'):
+        from ._wrappers import (ObjectProxy, CallableObjectProxy,
+            PartialCallableObjectProxy, FunctionWrapper,
+            BoundFunctionWrapper, _FunctionWrapperBase)
+
+except ImportError:
+    pass

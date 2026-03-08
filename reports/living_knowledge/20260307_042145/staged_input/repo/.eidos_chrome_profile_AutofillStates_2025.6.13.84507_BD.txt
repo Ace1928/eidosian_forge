@@ -1,0 +1,12 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/BD
+KIND: config
+
+BD6
+"বরিশাল বিভাগbarisal division_
++চট্টগ্রাম বিভাগchittagong divisionচট্রগ্রাম.
+ঢাকা বিভাগdhaka division2
+খুলনা বিভাগkhulna divisionQ
+রাজশাহীrajshahi division%রাজশাহী বিভাগD
+রংপুরrangpur divisionরংপুর বিভাগ2
+সিলেট বিভাগsylhet divisionB
++ময়মনসিংহ বিভাগmymensingh division

@@ -1,0 +1,207 @@
+SOURCE_PATH: .github/workflows/lint.yml
+KIND: config
+
+name: Lint Code
+
+on:
+  push:
+    branches: [main, master, develop]
+    paths:
+      - "**/*.py"
+      - "**/*.ts"
+      - "**/*.tsx"
+      - "**/*.js"
+      - "**/*.jsx"
+      - "pyproject.toml"
+      - "ruff.toml"
+      - ".prettierrc*"
+  pull_request:
+    branches: [main, master, develop]
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: Lint scope
+        required: false
+        default: changed
+        type: choice
+        options:
+          - changed
+          - all
+
+env:
+  PYTHONUNBUFFERED: 1
+  FORCE_COLOR: 1
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Resolve Lint Scope
+    runs-on: ubuntu-latest
+    outputs:
+      manifest: ${{ steps.manifest.outputs.manifest }}
+      has_python_components: ${{ steps.manifest.outputs.has_python_components }}
+      has_typescript_projects: ${{ steps.manifest.outputs.has_typescript_projects }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - id: manifest
+        name: Build changed manifest
+        shell: bash
+        run: |
+          set -eu
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.scope }}" = "all" ]; then
+            MANIFEST="$(python scripts/ci/changed_manifest.py --all)"
+          else
+            if [ "${{ github.event_name }}" = "pull_request" ]; then
+              BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            elif [ -n "${{ github.event.before }}" ] && [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
+              BASE_SHA="${{ github.event.before }}"
+            else
+              BASE_SHA=""
+            fi
+
+            if [ -n "$BASE_SHA" ]; then
+              git diff --name-only "$BASE_SHA" "${{ github.sha }}" > changed_files.txt || true
+            else
+              git ls-files > changed_files.txt
+            fi
+            MANIFEST="$(python scripts/ci/changed_manifest.py --changed-files changed_files.txt)"
+          fi
+          {
+            echo "manifest<<EOF"
+            echo "$MANIFEST"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+          MANIFEST_JSON="$MANIFEST" python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          import os
+          payload = json.loads(os.environ["MANIFEST_JSON"])
+          python_components = payload.get("python_components", {}).get("include", [])
+          ts_projects = payload.get("typescript_projects", {}).get("include", [])
+          print(f"has_python_components={str(bool(python_components)).lower()}")
+          print(f"has_typescript_projects={str(bool(ts_projects)).lower()}")
+          PY
+
+  lint-python:
+    name: "Lint Python · ${{ matrix.component }}"
+    needs: validate
+    if: needs.validate.outputs.has_python_components == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.validate.outputs.manifest).python_components.include }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install linters
+        run: |
+          python -m pip install --upgrade pip
+          pip install black isort ruff flake8
+
+      - name: Lint component
+        shell: bash
+        env:
+          MANIFEST_JSON: ${{ needs.validate.outputs.manifest }}
+        run: |
+          set -eu
+          python - <<'PY' > lint_targets.txt
+          import json
+          import os
+          payload = json.loads(os.environ["MANIFEST_JSON"])
+          prefix = "${{ matrix.root }}/"
+          for path in payload.get("python_files", []):
+              if path == "${{ matrix.root }}" or path.startswith(prefix):
+                  print(path)
+          PY
+          mapfile -t TARGETS < lint_targets.txt
+          if [ "${#TARGETS[@]}" -eq 0 ]; then
+            echo "::notice::No changed Python files for ${{ matrix.component }}; skipping."
+            exit 0
+          fi
+
+          BLACK_STATUS=0
+          ISORT_STATUS=0
+          FLAKE8_STATUS=0
+
+          black "${TARGETS[@]}" --check --diff --line-length=120 || BLACK_STATUS=$?
+          isort "${TARGETS[@]}" --check --diff --profile=black --line-length=120 --filter-files || ISORT_STATUS=$?
+          ruff check "${TARGETS[@]}" --config=ruff.toml
+          flake8 "${TARGETS[@]}" --count --statistics --show-source --max-line-length=120 --exclude=.git,.venv,venv,eidosian_venv,node_modules,.cache,dist,build,__pycache__ || FLAKE8_STATUS=$?
+
+          {
+            echo "### Python lint · ${{ matrix.component }}"
+            echo ""
+            echo "- black: $BLACK_STATUS"
+            echo "- isort: $ISORT_STATUS"
+            echo "- flake8: $FLAKE8_STATUS"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$BLACK_STATUS" -ne 0 ] || [ "$ISORT_STATUS" -ne 0 ] || [ "$FLAKE8_STATUS" -ne 0 ]; then
+            echo "::warning::Advisory lint drift detected in ${{ matrix.component }}."
+          fi
+
+  lint-typescript:
+    name: "Lint TypeScript · ${{ matrix.project }}"
+    needs: validate
+    if: needs.validate.outputs.has_typescript_projects == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.validate.outputs.manifest).typescript_projects.include }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: game_forge/src/autoseed/package-lock.json
+
+      - name: Install project dependencies
+        working-directory: ${{ matrix.root }}
+        run: npm install
+
+      - name: Run project lint
+        working-directory: ${{ matrix.root }}
+        run: npm run lint
+
+      - name: Run project typecheck
+        working-directory: ${{ matrix.root }}
+        run: npm run typecheck
+
+  lint-summary:
+    name: Lint Summary
+    needs: [validate, lint-python, lint-typescript]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Summary
+        run: |
+          echo "## Lint Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Surface | Status |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---------|--------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Scope resolution | ${{ needs.validate.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Python lint | ${{ needs.lint-python.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| TypeScript lint | ${{ needs.lint-typescript.result }} |" >> "$GITHUB_STEP_SUMMARY"

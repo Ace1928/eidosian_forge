@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_pathcompat_documentation.py
+KIND: code
+
+Given a sequence of path names, returns the longest common sub-path.

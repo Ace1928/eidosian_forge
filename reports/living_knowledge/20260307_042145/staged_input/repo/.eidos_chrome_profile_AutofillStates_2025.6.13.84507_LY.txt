@@ -1,0 +1,28 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/LY
+KIND: config
+
+LY:
+بنغازيbenghazi districtشعبية بنغازي?
+البطنان‎butnan districtشعبية البطنان/
+درنةderna districtشعبية درنة*
+شعبية غاتghat districtغاتp
+الجبل الأخضرjabal al akhdar districtالجبل الاخضر"شعبية الجبل الأخضرW
+الجبل الغربيjabal al gharbi district"شعبية الجبل الغربي<
+الجفارةjafara districtشعبية الجفارة7
+الجفرةjufra districtشعبية الجفرةE
+الجفرةkufra districtالكفرةشعبية الكفرة8
+المرقبmurqub districtشعبية المرقب9
+شعبية مصراتةmisrata districtمصراتة2
+
+المرجmarj districtشعبية المرج0
+شعبية مرزقmurzuq districtمرزق3
+شعبية نالوتnalut district
+نالوتV
+النقاط الخمسnuqat al khams district"شعبية النقاط الخمس/
+سبهاsabha districtشعبية سبها5
+سرتsirte districtسُرتشعبية سرت9
+شعبية طرابلسtripoli districtطرابلس>
+الواحاتal wahat districtشعبية الواحاتQ
+ شعبية وادي الحياةwadi al hayaa districtوادي الحياة`
+الشاطئwadi al shatii district شعبية وادي الشاطئوادي الشاطئ<
+الزاويةzawiya districtشعبية الزاوية

@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_capabilities_documentation.py
+KIND: code
+
+import re
+from collections import OrderedDict
+Terminal capability builder patterns.

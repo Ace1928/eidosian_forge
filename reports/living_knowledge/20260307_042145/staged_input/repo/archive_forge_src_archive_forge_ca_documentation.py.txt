@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/ca_documentation.py
+KIND: code
+
+Mapping of Catalan role names to canonical role names for interpreted text.

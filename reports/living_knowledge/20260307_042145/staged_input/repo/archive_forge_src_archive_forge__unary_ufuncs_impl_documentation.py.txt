@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_unary_ufuncs_impl_documentation.py
+KIND: code
+
+import torch
+from torch import (  # noqa: F401
+Export torch work functions for unary ufuncs, rename/tweak to match numpy.
+This listing is further exported to public symbols in the `_numpy/_ufuncs.py` module.

@@ -1,0 +1,12 @@
+SOURCE_PATH: archive_forge/src/archive_forge/OPENPGPKEY_documentation.py
+KIND: code
+
+import base64
+import dns.exception
+import dns.rdata
+import dns.tokenizer
+OPENPGPKEY record
+
+    @ivar key: the key
+    @type key: bytes
+    @see: RFC 7929

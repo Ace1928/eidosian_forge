@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/by_documentation.py
+KIND: code
+
+Set of supported locator strategies.

@@ -1,0 +1,407 @@
+SOURCE_PATH: archive_forge/src/archive_forge/JsV4.py
+KIND: code
+
+import os  # Importing the os module for file and directory operations
+import json  # Importing the json module for handling JSON data
+import logging  # Importing the logging module for logging purposes
+import asyncio  # Importing the asyncio module for asynchronous programming
+import random  # Importing the random module for generating random values
+from typing import (
+    List,
+    Tuple,
+    Dict,
+    Union,
+    Any,
+    Callable,
+    TypeAlias,
+    Optional,
+)  # Importing various types from the typing module for type hinting and annotation
+from itertools import (
+    cycle,
+)  # Importing the cycle function from itertools for creating cyclic iterators
+import multiprocessing  # Importing the multiprocessing module for parallel processing
+import OpenGL.GL as gl  # Importing OpenGL.GL module and aliasing it as gl for OpenGL graphics functionality
+import OpenGL.GLUT as glut  # Importing OpenGL.GLUT module and aliasing it as glut for OpenGL Utility Toolkit functionality
+import OpenGL  # Importing the OpenGL module for OpenGL graphics functionality
+from OpenGL.GL import (
+    GL_COLOR_BUFFER_BIT,
+    GL_DEPTH_BUFFER_BIT,
+    GL_MODELVIEW,
+    GL_PROJECTION,
+)  # Importing specific constants from OpenGL.GL for OpenGL graphics functionality
+
+import cProfile  # Importing the cProfile module for profiling code execution
+import pstats  # Importing the pstats module for analyzing profiling statistics
+from pstats import (
+    SortKey,
+)  # Importing the SortKey class from pstats for sorting profiling statistics
+
+
+# Setup enhanced logging
+logging.basicConfig(
+    level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
+)  # Configuring the logging module with DEBUG level and a specific format for log messages
+
+
+# Type Aliases for enhanced clarity, type safety, and to avoid type/value/key errors
+ColorName: TypeAlias = str  # Defining a type alias ColorName as str for color names
+RGBValue: TypeAlias = Tuple[
+    int, int, int
+]  # Defining a type alias RGBValue as a tuple of three integers for RGB color values
+CMYKValue: TypeAlias = Tuple[
+    float, float, float, float
+]  # Defining a type alias CMYKValue as a tuple of four floats for CMYK color values
+LabValue: TypeAlias = Tuple[
+    float, float, float
+]  # Defining a type alias LabValue as a tuple of three floats for Lab color values
+XYZValue: TypeAlias = Tuple[
+    float, float, float
+]  # Defining a type alias XYZValue as a tuple of three floats for XYZ color values
+ColorCode: TypeAlias = Tuple[
+    ColorName, RGBValue
+]  # Defining a type alias ColorCode as a tuple of ColorName and RGBValue for color codes
+ColorCodesList: TypeAlias = List[
+    ColorCode
+]  # Defining a type alias ColorCodesList as a list of ColorCode for a list of color codes
+ColorCodesDict: TypeAlias = Dict[
+    ColorName, Union[RGBValue, str]
+]  # Defining a type alias ColorCodesDict as a dictionary mapping ColorName to either RGBValue or str for color codes dictionary
+ANSIValue: TypeAlias = (
+    str  # Defining a type alias ANSIValue as str for ANSI escape codes
+)
+HexValue: TypeAlias = (
+    str  # Defining a type alias HexValue as str for hexadecimal color values
+)
+ExtendedColorCode: TypeAlias = Tuple[
+    RGBValue, ANSIValue, HexValue, CMYKValue, LabValue, XYZValue, Any
+]  # Defining a type alias ExtendedColorCode as a tuple of RGBValue, ANSIValue, HexValue, CMYKValue, LabValue, XYZValue, and Any for extended color codes
+ExtendedColorCodesDict: TypeAlias = Dict[
+    ColorName, ExtendedColorCode
+]  # Defining a type alias ExtendedColorCodesDict as a dictionary mapping ColorName to ExtendedColorCode for extended color codes dictionary
+
+# Initialize your 3D scene and objects here
+try:
+    scene = asyncio.run(
+        generate_scene()
+    )  # Initializing the 3D scene by running the generate_scene() function asynchronously
+except NameError as e:
+    logging.error(
+        f"NameError occurred while initializing the 3D scene: {str(e)}"
+    )  # Logging an error message if a NameError occurs during scene initialization
+    raise  # Re-raising the exception to propagate it further
+
+# Define the path to the color codes file
+COLOR_CODES_FILE_PATH: str = (
+    "/home/lloyd/EVIE/color_codes.json"  # Defining a constant variable COLOR_CODES_FILE_PATH as a string representing the path to the color codes JSON file
+)
+
+
+def random_color() -> RGBValue:
+    """
+    Generates a random RGB color value.
+
+    Returns:
+        RGBValue: A tuple of three integers representing the random RGB color value.
+    """
+    logging.debug(
+        "Generating a random color."
+    )  # Logging a debug message indicating that a random color is being generated
+    r: int = random.randint(
+        0, 255
+    )  # Generating a random integer between 0 and 255 (inclusive) for the red component of the color
+    g: int = random.randint(
+        0, 255
+    )  # Generating a random integer between 0 and 255 (inclusive) for the green component of the color
+    b: int = random.randint(
+        0, 255
+    )  # Generating a random integer between 0 and 255 (inclusive) for the blue component of the color
+    logging.debug(
+        f"Generated random color: ({r}, {g}, {b})"
+    )  # Logging a debug message with the generated random color values
+    return (r, g, b)  # Returning the random RGB color value as a tuple
+
+
+def generate_color_codes() -> ColorCodesList:
+    """
+    Generates a comprehensive list of color codes spanning a granular color spectrum.
+    Each color is associated with a systematic name for easy identification and retrieval.
+    Additionally, it includes the ANSI escape character, hex code, CMYK values, Lab values, XYZ values, and future extensions for each color.
+
+    Returns:
+        ColorCodesList: A list of tuples containing color names, their RGB values, ANSI escape codes, hex codes, CMYK values, Lab values, XYZ values, and placeholders for future extensions.
+    """
+    logging.info(
+        "Generating basic color codes list."
+    )  # Logging an info message indicating that the basic color codes list is being generated
+    colors: ColorCodesList = [
+        ("black0", (0, 0, 0))
+    ]  # Initializing the colors list with the absolute black color code
+    # Incrementally increasing shades of grey
+    colors += [
+        (f"grey{i}", (i, i, i)) for i in range(1, 256)
+    ]  # Generating color codes for incrementally increasing shades of grey
+    # Detailed Red to Orange spectrum
+    colors += [
+        (f"red{i}", (255, i, 0)) for i in range(0, 256)
+    ]  # Generating color codes for the detailed Red to Orange spectrum
+    # Detailed Orange to Yellow spectrum
+    colors += [
+        (f"yellow{i}", (255, 255, i)) for i in range(0, 256)
+    ]  # Generating color codes for the detailed Orange to Yellow spectrum
+    # Detailed Yellow to Green spectrum
+    colors += [
+        (f"green{i}", (255 - i, 255, 0)) for i in range(0, 256)
+    ]  # Generating color codes for the detailed Yellow to Green spectrum
+    # Detailed Green to Blue spectrum
+    colors += [
+        (f"blue{i}", (0, 255, i)) for i in range(0, 256)
+    ]  # Generating color codes for the detailed Green to Blue spectrum
+    # Detailed Blue to Indigo spectrum
+    colors += [
+        (f"indigo{i}", (0, 255 - i, 255)) for i in range(0, 256)
+    ]  # Generating color codes for the detailed Blue to Indigo spectrum
+    # Detailed Indigo to Violet spectrum
+    colors += [
+        (f"violet{i}", (i, 0, 255)) for i in range(0, 256)
+    ]  # Generating color codes for the detailed Indigo to Violet spectrum
+    # Detailed Violet to White spectrum
+    colors += [
+        (f"white{i}", (255, i, 255)) for i in range(0, 256)
+    ]  # Generating color codes for the detailed Violet to White spectrum
+    colors.append(
+        ("white255", (255, 255, 255))
+    )  # Appending the pure white color code to the colors list
+    logging.debug(
+        f"Generated {len(colors)} color codes."
+    )  # Logging a debug message with the total number of generated color codes
+    return colors  # Returning the generated color codes list
+
+
+# Asynchronous function to convert RGB to Hex
+async def rgb_to_hex(rgb: RGBValue) -> HexValue:
+    """
+    Asynchronously converts an RGB value to its hexadecimal representation.
+
+    This function takes an RGB value as input, which is a tuple containing three integers representing the red, green, and blue color components. It then converts the RGB value to its equivalent hexadecimal color code representation.
+
+    The conversion is performed asynchronously, allowing for non-blocking execution and efficient utilization of system resources. The function uses string formatting to construct the hexadecimal color code by converting each RGB component to its two-digit hexadecimal representation.
+
+    Args:
+        rgb (RGBValue): A tuple containing the RGB values (red, green, blue), where each component is an integer in the range of 0 to 255.
+
+    Returns:
+        HexValue: The hexadecimal representation of the RGB color, as a string in the format "#RRGGBB".
+
+    Example:
+        >>> await rgb_to_hex((255, 128, 64))
+        '#ff8040'
+    """
+    # Log a debug message indicating the RGB value being converted to hex asynchronously
+    logging.debug(f"Converting RGB {rgb} to Hex asynchronously.")
+
+    try:
+        # Convert the RGB value to its hexadecimal representation using string formatting
+        hex_value: HexValue = "#{:02x}{:02x}{:02x}".format(*rgb)
+        return hex_value
+    except Exception as e:
+        # Log an error message if an exception occurs during the conversion process
+        logging.error(f"Error occurred while converting RGB to Hex: {str(e)}")
+        raise e
+
+
+# Asynchronous function to generate ANSI escape code for color
+async def rgb_to_ansi(rgb: RGBValue) -> ANSIValue:
+    """
+    Asynchronously generates the ANSI escape code for a given RGB color.
+
+    This function takes an RGB value as input, which is a tuple containing three integers representing the red, green, and blue color components. It then generates the corresponding ANSI escape code for the RGB color.
+
+    The ANSI escape code is a sequence of characters that can be used to control the formatting and appearance of text in compatible terminals or consoles. The generated escape code sets the foreground color of the text to the specified RGB color.
+
+    The function constructs the ANSI escape code by combining the appropriate escape sequence ("\033[38;2;") with the RGB component values separated by semicolons.
+
+    Args:
+        rgb (RGBValue): A tuple containing the RGB values (red, green, blue), where each component is an integer in the range of 0 to 255.
+
+    Returns:
+        ANSIValue: The ANSI escape code for the RGB color, as a string.
+
+    Example:
+        >>> await rgb_to_ansi((255, 128, 64))
+        '\033[38;2;255;128;64m'
+    """
+    # Log a debug message indicating the RGB value for which the ANSI code is being generated asynchronously
+    logging.debug(f"Generating ANSI code for RGB {rgb} asynchronously.")
+
+    try:
+        # Generate the ANSI escape code for the RGB color
+        ansi_code: ANSIValue = f"\033[38;2;{rgb[0]};{rgb[1]};{rgb[2]}m"
+        return ansi_code
+    except Exception as e:
+        # Log an error message if an exception occurs during the ANSI code generation process
+        logging.error(f"Error occurred while generating ANSI code for RGB: {str(e)}")
+        raise e
+
+
+# Asynchronous function to convert RGB to CMYK
+async def rgb_to_cmyk(rgb: RGBValue) -> CMYKValue:
+    """
+    Asynchronously converts an RGB value to its corresponding CMYK representation.
+
+    This function takes an RGB value as input, which is a tuple containing three integers representing the red, green, and blue color components. It then converts the RGB value to its equivalent CMYK (Cyan, Magenta, Yellow, Key/Black) color model representation.
+
+    The conversion process involves normalizing the RGB values to the range of 0 to 1, calculating the key (black) component, and then determining the cyan, magenta, and yellow components based on the normalized RGB values and the key component.
+
+    The function handles the special case of pure black (RGB: 0, 0, 0) separately to avoid division by zero.
+
+    Args:
+        rgb (RGBValue): A tuple containing the RGB values (red, green, blue), where each component is an integer in the range of 0 to 255.
+
+    Returns:
+        CMYKValue: A tuple containing the CMYK values (cyan, magenta, yellow, key), where each component is a float in the range of 0 to 1.
+
+    Example:
+        >>> await rgb_to_cmyk((255, 128, 64))
+        (0.0, 0.5, 0.75, 0.0)
+    """
+    # Log a debug message indicating the RGB value being converted to CMYK asynchronously
+    logging.debug(f"Converting RGB {rgb} to CMYK asynchronously.")
+
+    try:
+        # Normalize the RGB values to the range of 0 to 1
+        r: float
+        g: float
+        b: float
+        r, g, b = [x / 255.0 for x in rgb]
+
+        # Calculate the key (black) component
+        k: float = 1 - max(r, g, b)
+
+        # Handle the special case of pure black (RGB: 0, 0, 0)
+        if k == 1:
+            return 0.0, 0.0, 0.0, 1.0
+
+        # Calculate the cyan, magenta, and yellow components
+        c: float = (1 - r - k) / (1 - k)
+        m: float = (1 - g - k) / (1 - k)
+        y: float = (1 - b - k) / (1 - k)
+
+        return c, m, y, k
+    except Exception as e:
+        # Log an error message if an exception occurs during the RGB to CMYK conversion process
+        logging.error(f"Error occurred while converting RGB to CMYK: {str(e)}")
+        raise e
+
+
+# Function to extend color codes with additional types and future extensions
+async def extend_color_codes(
+    color_codes_list: ColorCodesList,
+) -> ExtendedColorCodesDict:
+    """
+    Asynchronously extends the basic color codes with additional color representations and placeholders for future extensions.
+
+    This function takes a list of basic color codes as input, where each color code is represented as a tuple containing the color name and its corresponding RGB values. It then extends each color code by generating additional color representations such as ANSI escape codes, hexadecimal codes, CMYK values, and placeholders for future extensions.
+
+    The function iterates over each color code in the input list and asynchronously calls the respective conversion functions (`rgb_to_ansi`, `rgb_to_hex`, `rgb_to_cmyk`) to generate the additional color representations. The extended color code is then stored in a dictionary with the color name as the key and a tuple containing the RGB values, ANSI escape code, hexadecimal code, CMYK values, and placeholders for future extensions as the value.
+
+    Args:
+        color_codes_list (ColorCodesList): A list of basic color codes, where each color code is a tuple containing the color name and its RGB values.
+
+    Returns:
+        ExtendedColorCodesDict: A dictionary of extended color codes, where each key is the color name and the value is a tuple containing the RGB values, ANSI escape code, hexadecimal code, CMYK values, and placeholders for future extensions.
+
+    Example:
+        >>> basic_color_codes = [("red", (255, 0, 0)), ("green", (0, 255, 0)), ("blue", (0, 0, 255))]
+        >>> extended_color_codes = await extend_color_codes(basic_color_codes)
+        >>> extended_color_codes
+        {
+            "red": ((255, 0, 0), "\033[38;2;255;0;0m", "#ff0000", (0.0, 1.0, 1.0, 0.0), (0.0, 0.0, 0.0), (0.0, 0.0, 0.0), None),
+            "green": ((0, 255, 0), "\033[38;2;0;255;0m", "#00ff00", (1.0, 0.0, 1.0, 0.0), (0.0, 0.0, 0.0), (0.0, 0.0, 0.0), None),
+            "blue": ((0, 0, 255), "\033[38;2;0;0;255m", "#0000ff", (1.0, 1.0, 0.0, 0.0), (0.0, 0.0, 0.0), (0.0, 0.0, 0.0), None)
+        }
+    """
+    # Log an info message indicating that the basic color codes are being extended asynchronously with additional types
+    logging.info("Asynchronously extending basic color codes with additional types.")
+
+    try:
+        # Initialize an empty dictionary to store the extended color codes
+        extended_color_codes: ExtendedColorCodesDict = {}
+
+        # Iterate over each color code in the input list
+        for name, rgb in color_codes_list:
+            # Generate the ANSI escape code for the RGB color asynchronously
+            ansi: ANSIValue = await rgb_to_ansi(rgb)
+
+            # Generate the hexadecimal code for the RGB color asynchronously
+            hex_code: HexValue = await rgb_to_hex(rgb)
+
+            # Generate the CMYK values for the RGB color asynchronously
+            cmyk: CMYKValue = await rgb_to_cmyk(rgb)
+
+            # Create a tuple containing the RGB values, ANSI escape code, hexadecimal code, CMYK values, and placeholders for future extensions
+            extended_color_code: ExtendedColorCode = (
+                rgb,
+                ansi,
+                hex_code,
+                cmyk,
+                (0.0, 0.0, 0.0),  # Placeholder for Lab values
+                (0.0, 0.0, 0.0),  # Placeholder for XYZ values
+                None,  # Placeholder for future extensions
+            )
+
+            # Add the extended color code to the dictionary with the color name as the key
+            extended_color_codes[name] = extended_color_code
+
+        # Log a debug message indicating the number of color codes that were extended asynchronously
+        logging.debug(f"Extended {len(extended_color_codes)} color codes asynchronously.")
+
+        return extended_color_codes
+    except Exception as e:
+        # Log an error message if an exception occurs during the color code extension process
+        logging.error(f"Error occurred while extending color codes: {str(e)}")
+        raise e
+
+
+async def generate_dynamic_colors(extended_color_codes: ExtendedColorCodesDict) -> None:
+    """
+    Asynchronously generates dynamic colors for the 3D color spectacle.
+
+    This function continuously selects random colors from the extended color codes dictionary and applies them to various elements in the 3D scene, such as the background color, particle clouds, and randomly generated shapes. The colors are smoothly transitioned using asynchronous sleep intervals to create a mesmerizing and dynamic color spectacle.
+
+    Args:
+        extended_color_codes (ExtendedColorCodesDict): The dictionary of extended color codes containing color names mapped to their corresponding color values in various formats (RGB, ANSI, HEX, CMYK, Lab, XYZ).
+
+    Returns:
+        None
+    """
+    # Log an info message indicating the start of dynamic color generation
+    logging.info("Starting dynamic color generation.")
+    
+    # Enter an infinite loop to continuously generate dynamic colors
+    while True:
+        # Select a random color name from the keys of the extended color codes dictionary
+        color_name: ColorName = random.choice(list(extended_color_codes.keys()))
+        
+        # Log a debug message with the selected color name
+        logging.debug(f"Selected color name: {color_name}")
+
+        try:
+            # Retrieve the color information tuple for the selected color name from the extended color codes dictionary
+            color_info: ExtendedColorCode = extended_color_codes[color_name]
+            
+            # Extract the RGB values from the color information tuple
+            rgb: RGBValue = color_info[0]
+            
+            # Normalize the RGB values to a range of 0.0 to 1.0 for use in the 3D scene
+            color: Tuple[float, float, float] = (
+                rgb[0] / 255.0,
+                rgb[1] / 255.0,
+                rgb[2] / 255.0,
+            )
+            
+            # Log a debug message with the original RGB values and the normalized color tuple
+            logging.debug(f"RGB color: {rgb}, Normalized color: {color}")
+        except KeyError as e:
+            # Log an error message if the selected color name is not found in the extended color codes dictionary
+            logging.error(f"Color name '{color_name}' not found in extended color codes dictionary.")
+            # Re-raise the excepti

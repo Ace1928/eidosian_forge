@@ -1,0 +1,26 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/BT
+KIND: config
+
+BT>
+paroparo district'སྤ་རོ་རྫོང་ཁགH
+chhukhachukhachukha district$ཆུ་ཁ་རྫོང་ཁག	
+hahaaP
+samchisamtsesamtse district-བསམ་རྩེ་རྫོང་ཁགf
+thimphuthimphu districtthimpu*ཐིམ་ཕུ་རྫོང་ཁགཐིམ་ཕུགP
+chirangtsirangtsirang district*རྩི་རང་རྫོང་ཁགT
+dagadaganadagana district3དར་དཀར་ནང་རྫོང་ཁགJ
+punakhapunakha district-སྤུ་ན་ཁ་རྫོང་ཁགt
+wangdue phodrangwangdue phodrang districtEདབང་འདུས་ཕོ་བྲང་རྫོང་ཁགJ
+sarpangsarpang district-གསར་སྤང་རྫོང་ཁགU
+tongsatrongsatrongsa district0ཀྲོང་གསར་རྫོང་ཁགI
+bumthangbumthang district*བུམ་ཐང་རྫོང་ཁགR
+zhemgangzhemgang district3གཞམས་སྒང་རྫོང་ཁག་a
+	tashigang
+trashigangtrashigang district3བཀྲིས་སྒང་རྫོང་ཁགH
+mongarmongar district-མོང་སྒར་རྫོང་ཁགu
+
+pemagatselpemagatshelpemagatshel districtpremagalshel6པདྨ་དགའ་ཚལ་རྫོང་ཁག%
+lhuntselhuntse districtlhuntshi}
+samdrup jongkharsamdrup jongkhar districtNབསམ་གྲུབ་ལྗོངས་མཁར་རྫོང་ཁག
+gasagasa district'
+tashi yangtsetrashiyangtseyangtse

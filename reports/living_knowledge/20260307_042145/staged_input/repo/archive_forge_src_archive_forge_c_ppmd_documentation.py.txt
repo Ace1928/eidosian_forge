@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/c_ppmd_documentation.py
+KIND: code
+
+from ._ppmd import (
+Call to the underlying PPMd library failed.

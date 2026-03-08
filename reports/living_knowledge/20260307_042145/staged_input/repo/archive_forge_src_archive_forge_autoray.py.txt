@@ -1,0 +1,641 @@
+SOURCE_PATH: archive_forge/src/archive_forge/autoray.py
+KIND: code
+
+"""
+AUTORAY - backend agnostic array operations.
+
+
+Copyright 2019-2023 Johnnie Gray
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
+import math
+import importlib
+import functools
+import itertools
+import threading
+import contextlib
+from inspect import signature
+from collections import OrderedDict, defaultdict
+
+
+def do(fn, *args, like=None, **kwargs):
+    """Do function named ``fn`` on ``(*args, **kwargs)``, peforming single
+    dispatch to retrieve ``fn`` based on whichever library defines the class of
+    the ``args[0]``, or the ``like`` keyword argument if specified.
+
+    Examples
+    --------
+
+    Works on numpy arrays:
+
+        >>> import numpy as np
+        >>> x_np = np.random.uniform(size=[5])
+        >>> y_np = do('sqrt', x_np)
+        >>> y_np
+        array([0.32464973, 0.90379787, 0.85037325, 0.88729814, 0.46768083])
+
+        >>> type(y_np)
+        numpy.ndarray
+
+    Works on cupy arrays:
+
+        >>> import cupy as cp
+        >>> x_cp = cp.random.uniform(size=[5])
+        >>> y_cp = do('sqrt', x_cp)
+        >>> y_cp
+        array([0.44541656, 0.88713113, 0.92626237, 0.64080557, 0.69620767])
+
+        >>> type(y_cp)
+        cupy.core.core.ndarray
+
+    Works on tensorflow arrays:
+
+        >>> import tensorflow as tf
+        >>> x_tf = tf.random.uniform(shape=[5])
+        >>> y_tf = do('sqrt', x_tf)
+        >>> y_tf
+        <tf.Tensor 'Sqrt_1:0' shape=(5,) dtype=float32>
+
+        >>> type(y_tf)
+        tensorflow.python.framework.ops.Tensor
+
+    You get the idea.
+
+    For functions that don't dispatch on the first argument you can use the
+    ``like`` keyword:
+
+        >>> do('eye', 3, like=x_tf)
+        <tf.Tensor: id=91, shape=(3, 3), dtype=float32>
+    """
+    backend = choose_backend(fn, *args, like=like, **kwargs)
+    return get_lib_fn(backend, fn)(*args, **kwargs)
+
+
+# ------------------------- efficiently dispatching ------------------------- #
+
+
+def _default_infer_from_sig(fn, *args, **kwargs):
+    """This is the default backend dispatcher, used if no global backend has
+    been set. Hot swapping this function out as below avoids having to check
+    manually for a global backend or worse, a thread aware global backend, on
+    every call to ``do``.
+    """
+    return _DISPATCHERS[fn](*args, **kwargs)
+
+
+_global_backend = None
+_inferrer_global = _default_infer_from_sig
+
+# this is the function that autoray uses when `do` is called without an
+# explicit like/backend argument. It is set to `_default_infer_from_sig` by
+# default, but can be set to `_always_the_same` if a global backend is set e.g.
+_infer_auto = _inferrer_global
+
+# if a thread that isn't the 'importing' thread tries to set a backend, this
+# by default turns on thread aware dispatching, but once such custom sub
+# backends have been reset, the global values above are used again.
+_global_backends_threadaware = {}
+_inferrers_threadaware = {}
+_importing_thrid = threading.get_ident()
+_backend_lock = threading.Lock()
+
+
+def _default_infer_from_sig_threadaware(fn, *args, **kwargs):
+    # check for a thread aware inferrer, default to the global inferrer
+    thrid = threading.get_ident()
+    return _inferrers_threadaware.get(thrid, _inferrer_global)(
+        fn, *args, **kwargs
+    )
+
+
+def _always_the_same(*args, x, **kwargs):
+    return x
+
+
+def get_backend(get_globally="auto"):
+    """Return the universally set backend, if any.
+
+    Parameters
+    ----------
+    get_globally : {"auto", False, True}, optional
+        Which backend to return:
+
+        - True: return the globally set backend, if any.
+        - False: return the backend set for the current thread, if any.
+        - "auto": return the globally set backend, if this thread is the thread
+          that imported autoray. Otherwise return the backend set for the
+          current thread, if any.
+
+    Returns
+    -------
+    backend : str or None
+        The name of the backend, or None if no backend is set.
+    """
+    if get_globally == "auto":
+        get_globally = threading.get_ident() == _importing_thrid
+
+    if get_globally:
+        backend = _global_backend
+    else:
+        thrid = threading.get_ident()
+        backend = _global_backends_threadaware.get(thrid, None)
+
+    return backend
+
+
+def set_backend(like, set_globally="auto"):
+    """Set a default global backend. The argument ``like`` can be an explicit
+    backend name or an ``array``.
+
+    Parameters
+    ----------
+    like : str or array
+        The backend to set. If an array, the backend of the array's class will
+        be set.
+    set_globally : {"auto", False, True}, optional
+        Whether to set the backend globally or for the current thread:
+
+        - True: set the backend globally.
+        - False: set the backend for the current thread.
+        - "auto": set the backend globally if this thread is the thread that
+          imported autoray. Otherwise set the backend for the current thread.
+
+        Only one thread should ever call this function with
+        ``set_globally=True``, (by default this is importing thread).
+    """
+    global _global_backend
+    global _infer_auto
+    global _inferrer_global
+
+    if like is None:
+        backend = None
+        inferrer = _default_infer_from_sig
+    elif isinstance(like, str):
+        backend = like
+        inferrer = functools.partial(_always_the_same, x=backend)
+    else:
+        backend = infer_backend(like)
+        inferrer = functools.partial(_always_the_same, x=backend)
+
+    if set_globally == "auto":
+        set_globally = threading.get_ident() == _importing_thrid
+
+    if set_globally:
+        _global_backend = backend
+        _inferrer_global = inferrer
+        if not _inferrers_threadaware:
+            # only revert the actual function if no subthread backends set
+            _infer_auto = inferrer
+    else:
+        thrid = threading.get_ident()
+        _backend_lock.acquire()
+        if backend is None:
+            _global_backends_threadaware.pop(thrid)
+            _inferrers_threadaware.pop(thrid)
+        else:
+            _global_backends_threadaware[thrid] = backend
+            _inferrers_threadaware[thrid] = inferrer
+
+        if _inferrers_threadaware:
+            # a subthread backend has been set, so we need to be thread aware
+            _infer_auto = _default_infer_from_sig_threadaware
+        else:
+            # no subthread backend has been set anymore, so we can ignore
+            # threads and just use the global inferrer
+            _infer_auto = _inferrer_global
+        _backend_lock.release()
+
+
+@contextlib.contextmanager
+def backend_like(like, set_globally="auto"):
+    """Context manager for setting a default backend. The argument ``like`` can
+    be an explicit backend name or an ``array`` to infer it from.
+
+    Parameters
+    ----------
+    like : str or array
+        The backend to set. If an array, the backend of the array's class will
+        be set.
+    set_globally : {"auto", False, True}, optional
+        Whether to set the backend globally or for the current thread:
+
+        - True: set the backend globally.
+        - False: set the backend for the current thread.
+        - "auto": set the backend globally if this thread is the thread that
+          imported autoray. Otherwise set the backend for the current thread.
+
+        Only one thread should ever call this function with
+        ``set_globally=True``, (by default this is importing thread).
+    """
+    if set_globally == "auto":
+        set_globally = threading.get_ident() == _importing_thrid
+
+    old_backend = get_backend(get_globally=set_globally)
+    try:
+        set_backend(like, set_globally)
+        yield
+    finally:
+        set_backend(old_backend, set_globally)
+
+
+_CUSTOM_BACKENDS = {}
+
+
+def register_backend(cls, name):
+    """Register the name (and by default the module or submodule) of a custom
+    array class.
+
+    Parameters
+    ----------
+    cls : type
+        The array class itself.
+    name : str
+        The name of the backend that should be used for this class. By default
+        this wil be assumed to be the location of the relevant functions for
+        this class, but this can be overridden.
+    """
+    if not isinstance(cls, type):
+        raise TypeError("The array class itself should be supplied.")
+
+    global _CUSTOM_BACKENDS
+    _CUSTOM_BACKENDS[cls] = name
+
+
+@functools.lru_cache(None)
+def _infer_class_backend_cached(cls):
+    try:
+        import numpy as _numpy
+
+        if issubclass(cls, _numpy.ndarray):
+            return "numpy"
+    except ImportError:
+        # numpy not installed
+        pass
+
+    if cls in _CUSTOM_BACKENDS:
+        return _CUSTOM_BACKENDS[cls]
+
+    lib = cls.__module__.split(".")[0]
+
+    # check if lib should mapped entirely to another lib
+    backend = _BACKEND_ALIASES.get(lib, lib)
+
+    return backend
+
+
+def infer_backend(array):
+    """Get the name of the library that defined the class of ``array`` - unless
+    ``array`` is directly a subclass of ``numpy.ndarray``, in which case assume
+    ``numpy`` is the desired backend.
+    """
+    return _infer_class_backend_cached(array.__class__)
+
+
+multi_class_priorities = {
+    "builtins": -2,
+    "numpy": -1,
+    "autoray.lazy": 1,
+}
+
+
+@functools.lru_cache(None)
+def _infer_class_backend_multi_cached(classes):
+    return max(
+        map(_infer_class_backend_cached, classes),
+        key=lambda n: multi_class_priorities.get(n, 0),
+    )
+
+
+def infer_backend_multi(*arrays):
+    """Infer which backend should be used for a function that takes multiple
+    arguments. This assigns a priority to each backend, and returns the backend
+    with the highest priority. By default, the priority is:
+
+    - ``builtins``: -2
+    - ``numpy``: -1
+    - other backends: 0
+    - ``autoray.lazy``: 1
+
+    I.e. when mixing with ``numpy``, other array libraries are preferred, when
+    mixing with ``autoray.lazy``, ``autoray.lazy`` is preferred. This has quite
+    low overhead due to caching.
+    """
+    return _infer_class_backend_multi_cached(
+        tuple(array.__class__ for array in arrays)
+    )
+
+
+def choose_backend(fn, *args, like=None, **kwargs):
+    """Choose a backend based on function name, arguments, and the ``like``
+    keyword argument. The default, if ``like`` is not specified, is to infer
+    the backend from the function call, the default of which is simply to use
+    the first argument, if no custom dispatcher is found. Otherwise the
+    backend is chosen based on the ``like`` argument - which can be an explicit
+    backend name or an arbitrary object.
+    """
+    if like is None:
+        return _infer_auto(fn, *args, **kwargs)
+    elif isinstance(like, str):
+        return like
+    else:
+        return infer_backend(like)
+
+
+# ------------------- importing and caching the function -------------------- #
+
+# lookup for mapping entire lib to another
+_BACKEND_ALIASES = {}
+
+# global (non function specific) aliases
+_MODULE_ALIASES = {}
+
+# lookup for when functions are elsewhere than the expected location
+_SUBMODULE_ALIASES = {}
+
+# lookup for when functions are simply called something else
+_FUNC_ALIASES = {}
+
+# custom wrappers for when functions don't just have different location or
+#     name. For example, when kwargs need to be translated or results modified
+_CUSTOM_WRAPPERS = {}
+
+# actual cache of funtions to use - this is populated lazily and can be used
+#     to directly set an implementation of a function for a specific backend
+_FUNCS = {}
+
+# these are functions where a default implementation can be constructed
+#     (composed of other functions), but this is only done lazily
+_COMPOSED_FUNCTION_GENERATORS = {}
+
+
+def import_lib_fn(backend, fn):
+    # first check explicitly composed functions -> if the function hasn't been
+    # called directly yet, it won't have been loaded into the cache, and needs
+    # generating before e.g. the ``do`` verrsion will work
+    if fn in _COMPOSED_FUNCTION_GENERATORS:
+        return _COMPOSED_FUNCTION_GENERATORS[fn](backend)
+
+    try:
+        # submodule where function is found for backend,
+        #     e.g. ['tensorflow', trace'] -> 'tensorflow.linalg'
+        try:
+            full_location = _SUBMODULE_ALIASES[backend, fn]
+
+            # if explicit submodule alias given, don't use prepended location
+            #     for example, ('torch', 'linalg.svd') -> torch.svd
+            only_fn = fn.split(".")[-1]
+
+        except KeyError:
+            full_location = backend
+
+            # move any prepended location into the full module path
+            #     e.g. 'fn=linalg.eigh' -> ['linalg', 'eigh']
+            split_fn = fn.split(".")
+            full_location = ".".join([full_location] + split_fn[:-1])
+            only_fn = split_fn[-1]
+
+            # try aliases for global (not function specific) modules and
+            # submodules:
+            #     e.g. 'decimal' -> 'math'
+            #     e.g. 'cupy.scipy' -> 'cupyx.scipy'
+            # we don't do this if the function location has been explicitly
+            # give in _SUBMODULE_ALIASES, as that is already a full path
+            for k, v in _MODULE_ALIASES.items():
+                if full_location[: len(k)] == k:
+                    full_location = full_location.replace(k, v, 1)
+                    break
+
+        # cached lookup of custom name function might take
+        #     e.g. ['tensorflow', 'sum'] -> 'reduce_sum'
+        fn_name = _FUNC_ALIASES.get((backend, fn), only_fn)
+
+        # import the function into the cache
+        try:
+            lib = importlib.import_module(full_location)
+        except ImportError:
+            if "." in full_location:
+                # sometimes libraries hack an attribute to look like submodule
+                mod, *submods = full_location.split(".")
+                lib = importlib.import_module(mod)
+                # also need to handle nested submodules
+                for submod in submods:
+                    lib = getattr(lib, submod)
+            else:
+                # failed to import library at all -> catch + raise ImportError
+                raise AttributeError
+
+        # check for a custom wrapper but default to identity
+        wrapper = _CUSTOM_WRAPPERS.get((backend, fn), lambda fn: fn)
+
+        # store the function!
+        lib_fn = _FUNCS[backend, fn] = wrapper(getattr(lib, fn_name))
+
+    except AttributeError:
+        # check if there is a backup function (e.g. for older library version)
+        backend_alt = backend + "[alt]"
+        if backend_alt in _MODULE_ALIASES:
+            return import_lib_fn(backend_alt, fn)
+
+        raise ImportError(
+            f"autoray couldn't find function '{fn}' for "
+            f"backend '{backend.replace('[alt]', '')}'."
+        )
+
+    return lib_fn
+
+
+def get_lib_fn(backend, fn):
+    """Cached retrieval of correct function for backend, all the logic for
+    finding the correct funtion only runs the first time.
+
+    Parameters
+    ----------
+    backend : str
+        The module defining the array class to dispatch on.
+    fn : str
+        The function to retrieve.
+
+    Returns
+    -------
+    callable
+    """
+
+    try:
+        lib_fn = _FUNCS[backend, fn]
+    except KeyError:
+        lib_fn = import_lib_fn(backend, fn)
+    return lib_fn
+
+
+# --------------------------- register your own! ---------------------------- #
+
+
+def register_function(backend, name, fn, wrap=False):
+    """Directly provide your own function.
+
+    Parameters
+    ----------
+    backend : str
+        The name of the backend to register the function for.
+    name : str
+        Name of the function, e.g. `'sum'` or `'linalg.svd'`.
+    fn : callable
+        The function to register.
+    wrap : bool, optional
+        Whether to wrap the old function like ``fn(old_fn)`` rather than
+        directly supply the entire new function.
+    """
+    if wrap:
+        old = get_lib_fn(backend, name)
+        _FUNCS[backend, name] = fn(old)
+    else:
+        _FUNCS[backend, name] = fn
+
+
+# ------------------------------- tree utils -------------------------------- #
+
+TREE_MAP_REGISTRY = {}
+TREE_APPLY_REGISTRY = {}
+TREE_ITER_REGISTRY = {}
+
+
+def tree_register_container(cls, mapper, iterator, applier):
+    """Register a new container type for use with ``tree_map`` and
+    ``tree_apply``.
+
+    Parameters
+    ----------
+    cls : type
+        The container type to register.
+    mapper : callable
+        A function that takes ``f``, ``tree`` and ``is_leaf`` and returns a new
+        tree of type ``cls`` with ``f`` applied to all leaves.
+    applier : callable
+        A function that takes ``f``, ``tree`` and ``is_leaf`` and applies ``f``
+        to all leaves in ``tree``.
+    """
+    TREE_MAP_REGISTRY[cls] = mapper
+    TREE_ITER_REGISTRY[cls] = iterator
+    TREE_APPLY_REGISTRY[cls] = applier
+
+
+IS_CONTAINER_CACHE = {}
+
+
+def is_not_container(x):
+    """The default function to determine if an object is a leaf. This simply
+    checks if the object is an instance of any of the registered container
+    types.
+    """
+    try:
+        return IS_CONTAINER_CACHE[x.__class__]
+    except KeyError:
+        isleaf = not any(isinstance(x, cls) for cls in TREE_MAP_REGISTRY)
+        IS_CONTAINER_CACHE[x.__class__] = isleaf
+        return isleaf
+
+
+def is_array(x):
+    """An alternative leaf tester for addressing only arrays within trees."""
+    return hasattr(x, "shape")
+
+
+def identity(f, tree, is_leaf):
+    return tree
+
+
+TREE_MAPPER_CACHE = {}
+
+
+def tree_map(f, tree, is_leaf=is_not_container):
+    """Map ``f`` over all leaves in ``tree``, returning a new pytree.
+
+    Parameters
+    ----------
+    f : callable
+        A function to apply to all leaves in ``tree``.
+    tree : pytree
+        A nested sequence of tuples, lists, dicts and other objects.
+    is_leaf : callable
+        A function to determine if an object is a leaf, ``f`` is only applied
+        to objects for which ``is_leaf(x)`` returns ``True``.
+
+    Returns
+    -------
+    pytree
+    """
+    if is_leaf(tree):
+        return f(tree)
+
+    try:
+        return TREE_MAPPER_CACHE[tree.__class__](f, tree, is_leaf)
+    except KeyError:
+        # reverse so later registered classes take precedence
+        for cls, mapper in reversed(TREE_MAP_REGISTRY.items()):
+            if isinstance(tree, cls):
+                break
+        else:
+            # neither leaf nor container -> simply return it
+            mapper = identity
+        TREE_MAPPER_CACHE[tree.__class__] = mapper
+        return mapper(f, tree, is_leaf)
+
+
+def empty(tree, is_leaf):
+    return iter(())
+
+
+TREE_ITER_CACHE = {}
+
+
+def tree_iter(tree, is_leaf=is_not_container):
+    """Iterate over all leaves in ``tree``.
+
+    Parameters
+    ----------
+    f : callable
+        A function to apply to all leaves in ``tree``.
+    tree : pytree
+        A nested sequence of tuples, lists, dicts and other objects.
+    is_leaf : callable
+        A function to determine if an object is a leaf, ``f`` is only applied
+        to objects for which ``is_leaf(x)`` returns ``True``.
+    """
+    if is_leaf(tree):
+        yield tree
+        return
+
+    try:
+        yield from TREE_ITER_CACHE[tree.__class__](tree, is_leaf)
+    except KeyError:
+        # reverse so later registered classes take precedence
+        for cls, iterator in reversed(TREE_ITER_REGISTRY.items()):
+            if isinstance(tree, cls):
+                break
+        else:
+            # neither leaf nor container -> simply ignore it
+            iterator = empty
+        TREE_ITER_CACHE[tree.__class__] = iterator
+        yield from iterator(tree, is_leaf)
+
+
+def nothing(f, tree, is_leaf):
+    pass
+
+
+TREE_APPLIER_CACHE = {}
+
+
+def tree_apply(f, tree, is_leaf=is_not_contai

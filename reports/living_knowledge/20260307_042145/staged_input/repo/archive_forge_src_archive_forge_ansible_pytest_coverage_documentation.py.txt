@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/ansible_pytest_coverage_documentation.py
+KIND: code
+
+from __future__ import (absolute_import, division, print_function)
+Configure this pytest plugin.

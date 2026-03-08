@@ -1,0 +1,523 @@
+SOURCE_PATH: archive_forge/src/archive_forge/WKGe.py
+KIND: code
+
+import os
+import hashlib
+import ast
+import json
+import logging
+import sqlite3
+import numpy as np
+from scipy.spatial.distance import cdist
+from scipy.spatial import KDTree
+from scipy.stats import entropy
+import networkx as nx
+import matplotlib.pyplot as plt
+from sklearn.cluster import KMeans, AgglomerativeClustering, DBSCAN
+from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
+import tkinter as tk
+from tkinter import filedialog, messagebox, Toplevel, Canvas
+from sentence_transformers import SentenceTransformer
+from pathlib import Path
+
+# Configure logging with a detailed format specification
+logging.basicConfig(
+    level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
+from typing import Optional, Type
+import sqlite3
+
+
+class SQLiteConnectionManager:
+    """
+    Manages the lifecycle of SQLite database connections, ensuring robust, reusable, and efficient database connectivity.
+    This class encapsulates connection handling and transaction management, serving as a foundational component for database interactions.
+    It adheres to the context management protocol to facilitate safe use of resources.
+    """
+
+    def __init__(self, database_path: str):
+        """
+        Initializes an SQLiteConnectionManager instance with a specified path to the SQLite database.
+
+        Parameters:
+        - database_path (str): The filesystem path to the SQLite database file.
+        """
+        self.database_path: str = database_path
+        self.connection: Optional[sqlite3.Connection] = None
+        self.cursor: Optional[sqlite3.Cursor] = None
+
+    def __enter__(self) -> "SQLiteConnectionManager":
+        """
+        Establishes a database connection upon entering the runtime context, preparing the manager for database operations.
+
+        Returns:
+        - SQLiteConnectionManager: The instance with an active database connection.
+        """
+        self.connection = sqlite3.connect(self.database_path)
+        self.cursor = self.connection.cursor()
+        return self
+
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[Type[BaseException]],
+    ) -> None:
+        """
+        Terminates the database connection upon exiting the runtime context, ensuring clean disconnection and handling exceptions gracefully.
+
+        Parameters:
+        - exc_type (Optional[Type[BaseException]]): The type of the exception, if any.
+        - exc_val (Optional[BaseException]): The exception instance, if any.
+        - exc_tb (Optional[Type[BaseException]]): The traceback object, if any.
+        """
+        if self.connection:
+            if exc_type is not None:
+                self.connection.rollback()
+            else:
+                self.connection.commit()
+            self.connection.close()
+
+    def commit(self) -> None:
+        """
+        Commits the current transaction to the database, ensuring that all changes made during the transaction are persisted.
+        This method is critical for maintaining data integrity and consistency within the database.
+        """
+        if self.connection:
+            self.connection.commit()
+
+
+class EmbeddingDatabaseManager(DatabaseManager):
+    """
+    Manages the database operations specifically for embeddings, including initialization, insertion, retrieval, and closure.
+    """
+
+    def initialize_database(self) -> None:
+        """
+        Initialize the database by creating the necessary table if it does not exist.
+        """
+        create_table_query = """
+            CREATE TABLE IF NOT EXISTS embeddings (
+                id INTEGER PRIMARY KEY,
+                file_hash TEXT UNIQUE,
+                imports TEXT,
+                function TEXT,
+                docstring TEXT,
+                embedding BLOB
+            )
+        """
+        self.cursor.execute(create_table_query)
+        self.commit_changes()
+
+    def insert_embedding(
+        self,
+        file_hash: str,
+        imports: str,
+        function: str,
+        docstring: str,
+        embedding: bytes,
+    ) -> None:
+        """
+        Insert an embedding into the database.
+
+        :param file_hash: str - The hash of the file.
+        :param imports: str - The imports used in the file.
+        :param function: str - The function code.
+        :param docstring: str - The docstring of the function.
+        :param embedding: bytes - The serialized embedding.
+        """
+        insert_query = """
+            INSERT INTO embeddings (file_hash, imports, function, docstring, embedding) 
+            VALUES (?, ?, ?, ?, ?)
+        """
+        try:
+            self.cursor.execute(
+                insert_query, (file_hash, imports, function, docstring, embedding)
+            )
+        except sqlite3.DatabaseError as e:
+            logging.error(f"Error inserting embedding: {e}")
+            raise
+
+    def is_file_processed(self, file_hash: str) -> bool:
+        """
+        Check if a file has already been processed by querying its hash.
+
+        :param file_hash: str - The hash of the file to check.
+        :return: bool - True if the file has been processed, False otherwise.
+        """
+        check_query = "SELECT id FROM embeddings WHERE file_hash = ?"
+        try:
+            self.cursor.execute(check_query, (file_hash,))
+            return self.cursor.fetchone() is not None
+        except sqlite3.DatabaseError as e:
+            logging.error(f"Error checking processed file: {e}")
+            raise
+
+    def retrieve_embeddings(
+        self, search_term: str
+    ) -> list[tuple[str, str, str, bytes]]:
+        """
+        Retrieve embeddings that match the search term either in function or docstring.
+
+        :param search_term: str - The term to search for in function names or docstrings.
+        :return: list[tuple[str, str, str, bytes]] - A list of tuples containing imports, function, docstring, and embedding.
+        """
+        retrieve_query = """
+            SELECT imports, function, docstring, embedding 
+            FROM embeddings 
+            WHERE function LIKE ? OR docstring LIKE ? COLLATE NOCASE
+        """
+        try:
+            self.cursor.execute(
+                retrieve_query, ("%" + search_term + "%", "%" + search_term + "%")
+            )
+            return self.cursor.fetchall()
+        except sqlite3.DatabaseError as e:
+            logging.error(f"Error retrieving embeddings: {e}")
+            raise
+
+    def retrieve_all_embeddings(self) -> list[tuple[str, str, str, bytes]]:
+        """
+        Retrieve all embeddings from the database using pagination to handle large datasets efficiently.
+
+        :return: list[tuple[str, str, str, bytes]] - A list of tuples containing imports, function, docstring, and embedding.
+        """
+        retrieve_all_query = (
+            "SELECT imports, function, docstring, embedding FROM embeddings"
+        )
+        try:
+            self.cursor.execute(retrieve_all_query)
+            results = []
+            while True:
+                page = self.cursor.fetchmany(1000)  # Fetch results in pages of 1000
+                if not page:
+                    break
+                results.extend(page)
+            return results
+        except sqlite3.DatabaseError as e:
+            logging.error(f"Error retrieving all embeddings: {e}")
+            raise
+
+
+class DataAnalysisDatabaseManager(DatabaseManager):
+    """
+    Manages the database operations specifically for data analysis results, including the initialization of tables,
+    storage of analysis results, and retrieval of these results.
+    """
+
+    def initialize_database(self) -> None:
+        """
+        Initialize the database by creating the 'analysis' table if it does not already exist.
+        This table is structured to store analysis type, parameters used, and the results in binary format.
+        """
+        create_table_query = """
+        CREATE TABLE IF NOT EXISTS analysis (
+            id INTEGER PRIMARY KEY,
+            analysis_type TEXT,
+            parameters TEXT,
+            results BLOB
+        )
+        """
+        self.cursor.execute(create_table_query)
+        self.commit_changes()
+
+    def store_analysis_results(
+        self, analysis_type: str, parameters: str, results: bytes
+    ) -> None:
+        """
+        Store the results of a specific analysis in the database.
+
+        :param analysis_type: str - The type of analysis performed.
+        :param parameters: str - The parameters used for the analysis.
+        :param results: bytes - The binary results of the analysis.
+        """
+        insert_query = (
+            "INSERT INTO analysis (analysis_type, parameters, results) VALUES (?, ?, ?)"
+        )
+        try:
+            self.cursor.execute(insert_query, (analysis_type, parameters, results))
+        except sqlite3.DatabaseError as e:
+            logging.error(f"Error storing analysis results: {e}")
+            raise
+
+    def retrieve_analysis_results(
+        self, analysis_type: str, parameters: str
+    ) -> bytes | None:
+        """
+        Retrieve the results of a specific analysis from the database based on the analysis type and parameters.
+
+        :param analysis_type: str - The type of analysis to retrieve.
+        :param parameters: str - The parameters used for the analysis.
+        :return: bytes | None - The results of the analysis or None if not found.
+        """
+        select_query = (
+            "SELECT results FROM analysis WHERE analysis_type = ? AND parameters = ?"
+        )
+        try:
+            self.cursor.execute(select_query, (analysis_type, parameters))
+            result = self.cursor.fetchone()
+            return result[0] if result else None
+        except sqlite3.DatabaseError as e:
+            logging.error(f"Error retrieving analysis results: {e}")
+            raise
+
+
+class DataAnalysisManager:
+    """
+    Manages data analysis operations on embeddings, providing methods for clustering,
+    dimensionality reduction, and other analytical techniques.
+    """
+
+    def __init__(self, database_path: str):
+        """
+        Initialize the DataAnalysisManager with a connection to the specified database.
+
+        :param database_path: str - The path to the database file.
+        """
+        self.database_path = database_path
+        self.database_manager = DataAnalysisDatabaseManager(self.database_path)
+        self.database_manager.initialize_database()
+
+    def perform_kmeans_clustering(
+        self, embeddings: np.ndarray, num_clusters: int
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Perform K-means clustering on the given embeddings.
+
+        :param embeddings: np.ndarray - The embeddings to cluster.
+        :param num_clusters: int - The number of clusters to form.
+        :return: tuple[np.ndarray, np.ndarray] - The labels and centroids of the clusters.
+        """
+        try:
+            kmeans = KMeans(n_clusters=num_clusters).fit(embeddings)
+            return kmeans.labels_, kmeans.cluster_centers_
+        except ValueError as error:
+            logging.error(f"K-means clustering failed: {error}")
+            raise
+
+    def perform_agglomerative_clustering(
+        self, embeddings: np.ndarray, num_clusters: int
+    ) -> np.ndarray:
+        """
+        Perform Agglomerative clustering on the given embeddings.
+
+        :param embeddings: np.ndarray - The embeddings to cluster.
+        :param num_clusters: int - The number of clusters to form.
+        :return: np.ndarray - The labels of the clusters.
+        """
+        try:
+            agglomerative = AgglomerativeClustering(n_clusters=num_clusters).fit(
+                embeddings
+            )
+            return agglomerative.labels_
+        except ValueError as error:
+            logging.error(f"Agglomerative clustering failed: {error}")
+            raise
+
+    def perform_dbscan_clustering(
+        self, embeddings: np.ndarray, epsilon: float, min_samples: int
+    ) -> np.ndarray:
+        """
+        Perform DBSCAN clustering on the given embeddings.
+
+        :param embeddings: np.ndarray - The embeddings to cluster.
+        :param epsilon: float - The maximum distance between two samples for one to be considered as in the neighborhood of the other.
+        :param min_samples: int - The number of samples in a neighborhood for a point to be considered as a core point.
+        :return: np.ndarray - The labels of the clusters.
+        """
+        try:
+            dbscan = DBSCAN(eps=epsilon, min_samples=min_samples).fit(embeddings)
+            return dbscan.labels_
+        except ValueError as error:
+            logging.error(f"DBSCAN clustering failed: {error}")
+            raise
+
+    def perform_pca(self, embeddings: np.ndarray, components: int) -> np.ndarray:
+        """
+        Perform Principal Component Analysis (PCA) on the given embeddings to reduce their dimensionality.
+
+        :param embeddings: np.ndarray - The embeddings to transform.
+        :param components: int - The number of components to keep.
+        :return: np.ndarray - The transformed embeddings.
+        """
+        try:
+            pca = PCA(n_components=components)
+            return pca.fit_transform(embeddings)
+        except ValueError as error:
+            logging.error(f"PCA failed: {error}")
+            raise
+
+    def perform_tsne(self, embeddings: np.ndarray, components: int) -> np.ndarray:
+        """
+        Perform t-Distributed Stochastic Neighbor Embedding (t-SNE) on the given embeddings to reduce their dimensionality.
+
+        :param embeddings: np.ndarray - The embeddings to transform.
+        :param components: int - The number of components to keep.
+        :return: np.ndarray - The transformed embeddings.
+        """
+        try:
+            if components >= len(embeddings):
+                raise ValueError(
+                    "t-SNE perplexity must be less than the number of samples"
+                )
+            tsne = TSNE(n_components=components)
+            return tsne.fit_transform(embeddings)
+        except ValueError as error:
+            logging.error(f"t-SNE failed: {error}")
+            raise
+
+    def calculate_pairwise_distances(self, embeddings: np.ndarray) -> np.ndarray:
+        """
+        Calculate the pairwise distances between all pairs of embeddings.
+
+        :param embeddings: np.ndarray - The embeddings to calculate distances between.
+        :return: np.ndarray - The matrix of distances.
+        """
+        try:
+            return cdist(embeddings, embeddings)
+        except ValueError as error:
+            logging.error(f"Calculating pairwise distances failed: {error}")
+            raise
+
+    def build_kdtree(self, embeddings: np.ndarray) -> KDTree:
+        """
+        Build a KDTree from the given embeddings for efficient spatial queries.
+
+        :param embeddings: np.ndarray - The embeddings to build the KDTree with.
+        :return: KDTree - The constructed KDTree.
+        """
+        try:
+            return KDTree(embeddings)
+        except ValueError as error:
+            logging.error(f"Building KDTree failed: {error}")
+            raise
+
+    def calculate_entropy(self, labels: np.ndarray) -> float:
+        """
+        Calculate the entropy of the given labels, providing a measure of the randomness in the data.
+
+        :param labels: np.ndarray - The labels for which to calculate entropy.
+        :return: float - The calculated entropy value.
+        """
+        try:
+            _, counts = np.unique(labels, return_counts=True)
+            probabilities = counts / len(labels)
+            return entropy(probabilities)
+        except ValueError as error:
+            logging.error(f"Calculating entropy failed: {error}")
+            raise
+
+    def store_analysis_results(self, **results) -> None:
+        """
+        Store the analysis results in the database.
+
+        :param results: dict - A dictionary containing all analysis results.
+        """
+        try:
+            with self.database_manager as db:
+                for key, value in results.items():
+                    db.store_analysis(key, "", pickle.dumps(value))
+        except sqlite3.DatabaseError as error:
+            logging.error(f"Storing analysis results failed: {error}")
+            raise
+
+    def fetch_analysis_results(self, analysis_type: str) -> Any:
+        """
+        Fetch the analysis results from the database.
+
+        :param analysis_type: str - The type of analysis results to fetch.
+        :return: Any - The fetched analysis results.
+        """
+        try:
+            with self.database_manager as db:
+                results = db.fetch_analysis(analysis_type, "")
+                if results is None:
+                    logging.warning(f"No analysis results found for {analysis_type}")
+                    return None
+                return pickle.loads(results)
+        except sqlite3.DatabaseError as error:
+            logging.error(f"Fetching analysis results failed: {error}")
+            raise
+
+    def fetch_all_analysis_results(self) -> dict[str, Any]:
+        """
+        Fetch all analysis results from the database.
+
+        :return: dict[str, Any] - A dictionary containing all analysis results.
+        """
+        analysis_types = [
+            "kmeans_labels",
+            "centroids",
+            "agglomerative_labels",
+            "dbscan_labels",
+            "similarity_matrix",
+            "pca_embeddings",
+            "tsne_embeddings",
+            "pairwise_distances",
+            "kdtree",
+            "entropy_value",
+        ]
+        results = {}
+        for analysis_type in analysis_types:
+            result = self.fetch_analysis_results(analysis_type)
+            if result is not None:
+                results[analysis_type] = result
+        return results
+
+
+class FileManager:
+    """
+    Manages file operations related to processed and embedded files, including loading, saving, and processing files.
+    """
+
+    def __init__(self, processed_files_path: str, embedded_files_path: str):
+        """
+        Initializes the FileManager with paths to processed and embedded files.
+
+        :param processed_files_path: str - Path to the JSON file containing processed files metadata.
+        :param embedded_files_path: str - Path to the JSON file containing embedded files metadata.
+        """
+        self.processed_files_path = processed_files_path
+        self.embedded_files_path = embedded_files_path
+        self.processed_files = self._load_json(self.processed_files_path)
+        self.embedded_files = self._load_json(self.embedded_files_path)
+
+    def _load_json(self, path: str) -> dict:
+        """
+        Loads a JSON file from the specified path.
+
+        :param path: str - Path to the JSON file.
+        :return: dict - The loaded JSON object, or an empty dictionary if the file does not exist.
+        """
+        try:
+            with open(path, "r", encoding="utf-8") as file:
+                return json.load(file)
+        except FileNotFoundError:
+            logging.warning(f"File not found: {path}")
+            return {}
+
+    def save_json(self, data: dict, path: str) -> None:
+        """
+        Saves a dictionary as a JSON file to the specified path.
+
+        :param data: dict - The data to save.
+        :param path: str - Path to save the JSON file.
+        """
+        try:
+            with open(path, "w", encoding="utf-8") as file:
+                json.dump(data, file, indent=4)
+        except IOError as e:
+            logging.error(f"Error saving JSON to {path}: {e}")
+            raise
+
+    def process_folder(self, folder_path: str, callback) -> Tuple[int, int]:
+        """
+        Processes all Python files in a specified folder using a callback function.
+
+        :param folder_path: str - Path to the folder containing Python files.
+        :param callback: Callable - A callback function to process each Python file.
+        :return: Tuple[int, int] - Total number of Python files and number of processed files.
+        """
+        total_files

@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_pylab_helpers_documentation.py
+KIND: code
+
+import atexit
+from collections import OrderedDict
+
+        Redraw all stale managed figures, or, if *force* is True, all managed
+        figures.

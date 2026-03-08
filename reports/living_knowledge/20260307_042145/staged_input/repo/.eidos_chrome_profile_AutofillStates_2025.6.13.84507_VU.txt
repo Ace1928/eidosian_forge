@@ -1,0 +1,10 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/VU
+KIND: config
+
+VU
+malampamalampa province"
+penamapenama provincepénama
+sanmasanma province
+shefashefa provinceshéfa
+tafeatafea provincetaféa
+torbatorba province

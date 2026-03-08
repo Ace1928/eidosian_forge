@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/auth_context_middleware_documentation.py
+KIND: code
+
+from tensorboard import auth
+from tensorboard import context
+Invoke this WSGI application.

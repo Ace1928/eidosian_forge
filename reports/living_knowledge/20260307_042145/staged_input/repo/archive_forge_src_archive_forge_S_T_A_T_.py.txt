@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/S_T_A_T_.py
+KIND: code
+
+from .otBase import BaseTTXConverter
+
+
+class table_S_T_A_T_(BaseTTXConverter):
+    pass

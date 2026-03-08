@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/T_T_F_A_.py
+KIND: code
+
+from . import asciiTable
+
+
+class table_T_T_F_A_(asciiTable.asciiTable):
+    pass

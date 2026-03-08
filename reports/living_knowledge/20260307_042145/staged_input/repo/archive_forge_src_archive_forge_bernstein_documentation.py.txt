@@ -1,0 +1,13 @@
+SOURCE_PATH: archive_forge/src/archive_forge/bernstein_documentation.py
+KIND: code
+
+import numpy as np
+from scipy import stats
+from statsmodels.tools.decorators import cache_readonly
+from statsmodels.distributions.tools import (
+Generate random numbers from distribution.
+
+        Parameters
+        ----------
+        nobs : int
+            Number of random observations to generate.

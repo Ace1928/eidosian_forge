@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/Pharmacophore_documentation.py
+KIND: code
+
+import numpy
+from rdkit import Geometry
+from rdkit.Chem import ChemicalFeatures
+from rdkit.RDLogger import logger
+ raises ValueError on failure

@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/acceleratesupport_documentation.py
+KIND: code
+
+import logging
+from OpenGL import _configflags
+Common code for accelerated modules

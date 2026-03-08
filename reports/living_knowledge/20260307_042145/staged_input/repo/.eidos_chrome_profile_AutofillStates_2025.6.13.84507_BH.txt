@@ -1,0 +1,8 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/BH
+KIND: config
+
+BH2
+محافظة العاصمةcapital governorateG
+!المحافظة الجنوبيةsouthern governorateجنوبية1
+محافظة المحرقmuharraq governorateK
+الشماليةnorthern governorate!المحافظة الشمالية

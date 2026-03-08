@@ -1,0 +1,465 @@
+SOURCE_PATH: archive_forge/src/archive_forge/atmodel.py
+KIND: code
+
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2016 Radim Rehurek <radimrehurek@seznam.cz>
+# Copyright (C) 2016 Olavur Mortensen <olavurmortensen@gmail.com>
+# Licensed under the GNU LGPL v2.1 - https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
+
+
+"""Author-topic model.
+
+This module trains the author-topic model on documents and corresponding author-document dictionaries.
+The training is online and is constant in memory w.r.t. the number of documents.
+The model is *not* constant in memory w.r.t. the number of authors.
+
+The model can be updated with additional documents after training has been completed. It is
+also possible to continue training on the existing data.
+
+The model is closely related to :class:`~gensim.models.ldamodel.LdaModel`.
+The :class:`~gensim.models.atmodel.AuthorTopicModel` class inherits  :class:`~gensim.models.ldamodel.LdaModel`,
+and its usage is thus similar.
+
+The model was introduced by  `Rosen-Zvi and co-authors: "The Author-Topic Model for Authors and Documents"
+<https://arxiv.org/abs/1207.4169>`_. The model correlates the authorship information with the topics to give a better
+insight on the subject knowledge of an author.
+
+.. _'Online Learning for LDA' by Hoffman et al.: online-lda_
+.. _online-lda: https://papers.neurips.cc/paper/2010/file/71f6278d140af599e06ad9bf1ba03cb0-Paper.pdf
+
+Example
+-------
+.. sourcecode:: pycon
+
+    >>> from gensim.models import AuthorTopicModel
+    >>> from gensim.corpora import mmcorpus
+    >>> from gensim.test.utils import common_dictionary, datapath, temporary_file
+
+    >>> author2doc = {
+    ...     'john': [0, 1, 2, 3, 4, 5, 6],
+    ...     'jane': [2, 3, 4, 5, 6, 7, 8],
+    ...     'jack': [0, 2, 4, 6, 8]
+    ... }
+    >>>
+    >>> corpus = mmcorpus.MmCorpus(datapath('testcorpus.mm'))
+    >>>
+    >>> with temporary_file("serialized") as s_path:
+    ...     model = AuthorTopicModel(
+    ...         corpus, author2doc=author2doc, id2word=common_dictionary, num_topics=4,
+    ...         serialized=True, serialization_path=s_path
+    ...     )
+    ...
+    ...     model.update(corpus, author2doc)  # update the author-topic model with additional documents
+    >>>
+    >>> # construct vectors for authors
+    >>> author_vecs = [model.get_author_topics(author) for author in model.id2author.values()]
+
+"""
+
+# TODO: this class inherits LdaModel and overwrites some methods. There is some code
+# duplication still, and a refactor could be made to avoid this. Comments with "TODOs"
+# are included in the code where this is the case, for example in the log_perplexity
+# and do_estep methods.
+
+import logging
+from itertools import chain
+from copy import deepcopy
+from shutil import copyfile
+from os.path import isfile
+from os import remove
+
+import numpy as np  # for arrays, array broadcasting etc.
+from scipy.special import gammaln  # gamma function utils
+
+from gensim import utils
+from gensim.models import LdaModel
+from gensim.models.ldamodel import LdaState
+from gensim.matutils import dirichlet_expectation, mean_absolute_difference
+from gensim.corpora import MmCorpus
+
+logger = logging.getLogger(__name__)
+
+
+class AuthorTopicState(LdaState):
+    """Encapsulate information for computation of :class:`~gensim.models.atmodel.AuthorTopicModel`."""
+
+    def __init__(self, eta, lambda_shape, gamma_shape):
+        """
+
+        Parameters
+        ----------
+        eta: numpy.ndarray
+            Dirichlet topic parameter for sparsity.
+        lambda_shape: (int, int)
+            Initialize topic parameters.
+        gamma_shape: int
+            Initialize topic parameters.
+
+        """
+        self.eta = eta
+        self.sstats = np.zeros(lambda_shape)
+        self.gamma = np.zeros(gamma_shape)
+        self.numdocs = 0
+        self.dtype = np.float64  # To be compatible with LdaState
+
+
+def construct_doc2author(corpus, author2doc):
+    """Create a mapping from document IDs to author IDs.
+
+    Parameters
+    ----------
+    corpus: iterable of list of (int, float)
+        Corpus in BoW format.
+    author2doc: dict of (str, list of int)
+        Mapping of authors to documents.
+
+    Returns
+    -------
+    dict of (int, list of str)
+        Document to Author mapping.
+
+    """
+    doc2author = {}
+    for d, _ in enumerate(corpus):
+        author_ids = []
+        for a, a_doc_ids in author2doc.items():
+            if d in a_doc_ids:
+                author_ids.append(a)
+        doc2author[d] = author_ids
+    return doc2author
+
+
+def construct_author2doc(doc2author):
+    """Make a mapping from author IDs to document IDs.
+
+    Parameters
+    ----------
+    doc2author: dict of (int, list of str)
+        Mapping of document id to authors.
+
+    Returns
+    -------
+    dict of (str, list of int)
+        Mapping of authors to document ids.
+
+    """
+    # First get a set of all authors.
+    authors_ids = set()
+    for d, a_doc_ids in doc2author.items():
+        for a in a_doc_ids:
+            authors_ids.add(a)
+
+    # Now construct the dictionary.
+    author2doc = {}
+    for a in authors_ids:
+        author2doc[a] = []
+        for d, a_ids in doc2author.items():
+            if a in a_ids:
+                author2doc[a].append(d)
+    return author2doc
+
+
+class AuthorTopicModel(LdaModel):
+    """The constructor estimates the author-topic model parameters based on a training corpus."""
+
+    def __init__(self, corpus=None, num_topics=100, id2word=None, author2doc=None, doc2author=None,
+                 chunksize=2000, passes=1, iterations=50, decay=0.5, offset=1.0,
+                 alpha='symmetric', eta='symmetric', update_every=1, eval_every=10,
+                 gamma_threshold=0.001, serialized=False, serialization_path=None,
+                 minimum_probability=0.01, random_state=None):
+        """
+
+        Parameters
+        ----------
+        corpus : iterable of list of (int, float), optional
+            Corpus in BoW format
+        num_topics : int, optional
+            Number of topics to be extracted from the training corpus.
+        id2word : :class:`~gensim.corpora.dictionary.Dictionary`, optional
+            A mapping from word ids (integers) to words (strings).
+        author2doc : dict of (str, list of int), optional
+            A dictionary where keys are the names of authors and values are lists of document IDs that the author
+            contributes to.
+        doc2author : dict of (int, list of str), optional
+            A dictionary where the keys are document IDs and the values are lists of author names.
+        chunksize : int, optional
+            Controls the size of the mini-batches.
+        passes : int, optional
+            Number of times the model makes a pass over the entire training data.
+        iterations : int, optional
+            Maximum number of times the model loops over each document.
+        decay : float, optional
+            A number between (0.5, 1] to weight what percentage of the previous lambda value is forgotten
+            when each new document is examined. Corresponds to :math:`\\kappa` from
+            `'Online Learning for LDA' by Hoffman et al.`_
+        offset : float, optional
+            Hyper-parameter that controls how much we will slow down the first steps the first few iterations.
+            Corresponds to :math:`\\tau_0` from `'Online Learning for LDA' by Hoffman et al.`_
+        alpha : {float, numpy.ndarray of float, list of float, str}, optional
+            A-priori belief on document-topic distribution, this can be:
+                * scalar for a symmetric prior over document-topic distribution,
+                * 1D array of length equal to num_topics to denote an asymmetric user defined prior for each topic.
+
+            Alternatively default prior selecting strategies can be employed by supplying a string:
+                * 'symmetric': (default) Uses a fixed symmetric prior of `1.0 / num_topics`,
+                * 'asymmetric': Uses a fixed normalized asymmetric prior of `1.0 / (topic_index + sqrt(num_topics))`,
+                * 'auto': Learns an asymmetric prior from the corpus (not available if `distributed==True`).
+        eta : {float, numpy.ndarray of float, list of float, str}, optional
+            A-priori belief on topic-word distribution, this can be:
+                * scalar for a symmetric prior over topic-word distribution,
+                * 1D array of length equal to num_words to denote an asymmetric user defined prior for each word,
+                * matrix of shape (num_topics, num_words) to assign a probability for each word-topic combination.
+
+            Alternatively default prior selecting strategies can be employed by supplying a string:
+                * 'symmetric': (default) Uses a fixed symmetric prior of `1.0 / num_topics`,
+                * 'auto': Learns an asymmetric prior from the corpus.
+        update_every : int, optional
+            Make updates in topic probability for latest mini-batch.
+        eval_every : int, optional
+            Calculate and estimate log perplexity for latest mini-batch.
+        gamma_threshold : float, optional
+            Threshold value of gamma(topic difference between consecutive two topics)
+            until which the iterations continue.
+        serialized : bool, optional
+            Indicates whether the input corpora to the model are simple lists
+            or saved to the hard-drive.
+        serialization_path : str, optional
+            Must be set to a filepath, if `serialized = True` is used.
+        minimum_probability : float, optional
+            Controls filtering the topics returned for a document (bow).
+        random_state : {int, numpy.random.RandomState}, optional
+            Set the state of the random number generator inside the author-topic model.
+
+        """
+        # NOTE: this doesn't call constructor of a base class, but duplicates most of this code
+        # so we have to set dtype to float64 default here
+        self.dtype = np.float64
+
+        # NOTE: as distributed version of this model is not implemented, "distributed" is set to false. Some of the
+        # infrastructure to implement a distributed author-topic model is already in place,
+        # such as the AuthorTopicState.
+        distributed = False
+        self.dispatcher = None
+        self.numworkers = 1
+
+        self.id2word = id2word
+        if corpus is None and self.id2word is None:
+            raise ValueError(
+                "at least one of corpus/id2word must be specified, to establish input space dimensionality"
+            )
+
+        if self.id2word is None:
+            logger.warning("no word id mapping provided; initializing from corpus, assuming identity")
+            self.id2word = utils.dict_from_corpus(corpus)
+            self.num_terms = len(self.id2word)
+        elif len(self.id2word) > 0:
+            self.num_terms = 1 + max(self.id2word.keys())
+        else:
+            self.num_terms = 0
+
+        if self.num_terms == 0:
+            raise ValueError("cannot compute the author-topic model over an empty collection (no terms)")
+
+        logger.info('Vocabulary consists of %d words.', self.num_terms)
+
+        self.author2doc = {}
+        self.doc2author = {}
+
+        self.distributed = distributed
+        self.num_topics = num_topics
+        self.num_authors = 0
+        self.chunksize = chunksize
+        self.decay = decay
+        self.offset = offset
+        self.minimum_probability = minimum_probability
+        self.num_updates = 0
+        self.total_docs = 0
+
+        self.passes = passes
+        self.update_every = update_every
+        self.eval_every = eval_every
+
+        self.author2id = {}
+        self.id2author = {}
+
+        self.serialized = serialized
+        if serialized and not serialization_path:
+            raise ValueError(
+                "If serialized corpora are used, a the path to a folder "
+                "where the corpus should be saved must be provided (serialized_path)."
+            )
+        if serialized and serialization_path:
+            assert not isfile(serialization_path), \
+                "A file already exists at the serialization_path path; " \
+                "choose a different serialization_path, or delete the file."
+        self.serialization_path = serialization_path
+
+        # Initialize an empty self.corpus.
+        self.init_empty_corpus()
+
+        self.alpha, self.optimize_alpha = self.init_dir_prior(alpha, 'alpha')
+        assert self.alpha.shape == (self.num_topics,), \
+            "Invalid alpha shape. Got shape %s, but expected (%d, )" % (str(self.alpha.shape), self.num_topics)
+
+        self.eta, self.optimize_eta = self.init_dir_prior(eta, 'eta')
+        assert (self.eta.shape == (self.num_terms,) or self.eta.shape == (self.num_topics, self.num_terms)), (
+            "Invalid eta shape. Got shape %s, but expected (%d, 1) or (%d, %d)" %
+            (str(self.eta.shape), self.num_terms, self.num_topics, self.num_terms)
+        )
+
+        self.random_state = utils.get_random_state(random_state)
+
+        # VB constants
+        self.iterations = iterations
+        self.gamma_threshold = gamma_threshold
+
+        # Initialize the variational distributions q(beta|lambda) and q(theta|gamma)
+        self.state = AuthorTopicState(self.eta, (self.num_topics, self.num_terms), (self.num_authors, self.num_topics))
+        self.state.sstats = self.random_state.gamma(100., 1. / 100., (self.num_topics, self.num_terms))
+        self.expElogbeta = np.exp(dirichlet_expectation(self.state.sstats))
+
+        # if a training corpus was provided, start estimating the model right away
+        if corpus is not None and (author2doc is not None or doc2author is not None):
+            use_numpy = self.dispatcher is not None
+            self.update(corpus, author2doc, doc2author, chunks_as_numpy=use_numpy)
+
+    def __str__(self):
+        """Get a string representation of object.
+
+        Returns
+        -------
+        str
+            String representation of current instance.
+
+        """
+        return "%s<num_terms=%s, num_topics=%s, num_authors=%s, decay=%s, chunksize=%s>" % \
+            (self.__class__.__name__, self.num_terms, self.num_topics, self.num_authors, self.decay, self.chunksize)
+
+    def init_empty_corpus(self):
+        """Initialize an empty corpus.
+        If the corpora are to be treated as lists, simply initialize an empty list.
+        If serialization is used, initialize an empty corpus using :class:`~gensim.corpora.mmcorpus.MmCorpus`.
+
+        """
+        if self.serialized:
+            # Initialize the corpus as a serialized empty list.
+            # This corpus will be extended in self.update.
+            MmCorpus.serialize(self.serialization_path, [])  # Serialize empty corpus.
+            self.corpus = MmCorpus(self.serialization_path)  # Store serialized corpus object in self.corpus.
+        else:
+            # All input corpora are assumed to just be lists.
+            self.corpus = []
+
+    def extend_corpus(self, corpus):
+        """Add new documents from `corpus` to `self.corpus`.
+
+        If serialization is used, then the entire corpus (`self.corpus`) is re-serialized and the new documents
+        are added in the process. If serialization is not used, the corpus, as a list of documents, is simply extended.
+
+        Parameters
+        ----------
+        corpus : iterable of list of (int, float)
+            Corpus in BoW format
+
+        Raises
+        ------
+        AssertionError
+            If serialized == False and corpus isn't list.
+
+        """
+        if self.serialized:
+            # Re-serialize the entire corpus while appending the new documents.
+            if isinstance(corpus, MmCorpus):
+                # Check that we are not attempting to overwrite the serialized corpus.
+                assert self.corpus.input != corpus.input, \
+                    'Input corpus cannot have the same file path as the model corpus (serialization_path).'
+            corpus_chain = chain(self.corpus, corpus)  # A generator with the old and new documents.
+            # Make a temporary copy of the file where the corpus is serialized.
+            copyfile(self.serialization_path, self.serialization_path + '.tmp')
+            self.corpus.input = self.serialization_path + '.tmp'  # Point the old corpus at this temporary file.
+            # Re-serialize the old corpus, and extend it with the new corpus.
+            MmCorpus.serialize(self.serialization_path, corpus_chain)
+            self.corpus = MmCorpus(self.serialization_path)  # Store the new serialized corpus object in self.corpus.
+            remove(self.serialization_path + '.tmp')  # Remove the temporary file again.
+        else:
+            # self.corpus and corpus are just lists, just extend the list.
+            # First check that corpus is actually a list.
+            assert isinstance(corpus, list), "If serialized == False, all input corpora must be lists."
+            self.corpus.extend(corpus)
+
+    def compute_phinorm(self, expElogthetad, expElogbetad):
+        r"""Efficiently computes the normalizing factor in phi.
+
+        Parameters
+        ----------
+        expElogthetad: numpy.ndarray
+            Value of variational distribution :math:`q(\theta|\gamma)`.
+        expElogbetad: numpy.ndarray
+            Value of variational distribution :math:`q(\beta|\lambda)`.
+
+        Returns
+        -------
+        float
+            Value of normalizing factor.
+
+        """
+        expElogtheta_sum = expElogthetad.sum(axis=0)
+        phinorm = expElogtheta_sum.dot(expElogbetad) + 1e-100
+
+        return phinorm
+
+    def inference(self, chunk, author2doc, doc2author, rhot, collect_sstats=False, chunk_doc_idx=None):
+        """Give a `chunk` of sparse document vectors, update gamma for each author corresponding to the `chuck`.
+
+        Warnings
+        --------
+        The whole input chunk of document is assumed to fit in RAM, chunking of a large corpus must be done earlier
+        in the pipeline.
+
+        Avoids computing the `phi` variational parameter directly using the
+        optimization presented in `Lee, Seung: "Algorithms for non-negative matrix factorization", NIPS 2001
+        <https://papers.nips.cc/paper/1861-algorithms-for-non-negative-matrix-factorization.pdf>`_.
+
+        Parameters
+        ----------
+        chunk : iterable of list of (int, float)
+            Corpus in BoW format.
+        author2doc : dict of (str, list of int), optional
+            A dictionary where keys are the names of authors and values are lists of document IDs that the author
+            contributes to.
+        doc2author : dict of (int, list of str), optional
+            A dictionary where the keys are document IDs and the values are lists of author names.
+        rhot : float
+            Value of rho for conducting inference on documents.
+        collect_sstats : boolean, optional
+            If True - collect sufficient statistics needed to update the model's topic-word distributions, and return
+            `(gamma_chunk, sstats)`. Otherwise, return `(gamma_chunk, None)`. `gamma_chunk` is of shape
+            `len(chunk_authors) x self.num_topics`,where `chunk_authors` is the number of authors in the documents in
+            the current chunk.
+        chunk_doc_idx : numpy.ndarray, optional
+            Assigns the value for document index.
+
+        Returns
+        -------
+        (numpy.ndarray, numpy.ndarray)
+            gamma_chunk and sstats (if `collect_sstats == True`, otherwise - None)
+
+        """
+        try:
+            len(chunk)
+        except TypeError:
+            # convert iterators/generators to plain list, so we have len() etc.
+            chunk = list(chunk)
+        if len(chunk) > 1:
+            logger.debug("performing inference on a chunk of %i documents", len(chunk))
+
+        # Initialize the variational distribution q(theta|gamma) for the chunk
+        if collect_sstats:
+            sstats = np.zeros_like(self.expElogbeta)
+        else:
+            sstats = None
+        converged = 0
+
+        # Stack all the computed gammas into this outpu

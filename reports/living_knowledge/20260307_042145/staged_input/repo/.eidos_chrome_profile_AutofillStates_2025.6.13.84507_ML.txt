@@ -1,0 +1,16 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/ML
+KIND: config
+
+ML,
+menakaménaka regionrégion de ménaka'
+kayeskayes regionrégion de kayes3
+	koulikorokoulikoro regionrégion de koulikoro-
+région de sikassosikassosikasso region1
+région de ségousegouségouségou region'
+moptimopti regionrégion de mopti6
+région de tombouctou
+tombouctoutombouctou region!
+gao
+gao regionrégion de gao'
+kidalkidal regionrégion de kidal5
+bamakobamako capital districtdistrict de bamako

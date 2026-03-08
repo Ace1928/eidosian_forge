@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AlreadyBranchError.py
+KIND: code
+
+class AlreadyBranchError(PathError):
+    _fmt = 'Already a branch: "%(path)s".'

@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/FontFile_documentation.py
+KIND: code
+
+from __future__ import annotations
+import os
+from typing import BinaryIO
+from . import Image, _binary
+Save font

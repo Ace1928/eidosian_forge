@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/5_documentation_documentation.py
+KIND: code
+
+import os
+import datetime
+from PIL import Image as PILImage
+import numpy as np
+from traits.api import (
+ Compute a threshold mask for the array.

@@ -1,0 +1,615 @@
+SOURCE_PATH: archive_forge/src/archive_forge/api_adapter.py
+KIND: code
+
+# -*- coding: utf-8 -*- #
+# Copyright 2015 Google LLC. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""Api client adapter containers commands."""
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+
+import os
+import time
+
+from apitools.base.py import exceptions as apitools_exceptions
+from apitools.base.py import http_wrapper
+from googlecloudsdk.api_lib.compute import constants
+from googlecloudsdk.api_lib.container import constants as gke_constants
+from googlecloudsdk.api_lib.container import util
+from googlecloudsdk.api_lib.util import apis as core_apis
+from googlecloudsdk.calliope import base
+from googlecloudsdk.calliope import exceptions
+from googlecloudsdk.command_lib.util.apis import arg_utils
+from googlecloudsdk.command_lib.util.args import labels_util
+from googlecloudsdk.core import log
+from googlecloudsdk.core import properties
+from googlecloudsdk.core import resources as cloud_resources
+from googlecloudsdk.core import yaml
+from googlecloudsdk.core.console import console_io
+from googlecloudsdk.core.console import progress_tracker
+from googlecloudsdk.core.util import times
+import six
+from six.moves import range  # pylint: disable=redefined-builtin
+import six.moves.http_client
+
+WRONG_ZONE_ERROR_MSG = """\
+{error}
+Could not find [{name}] in [{wrong_zone}].
+Did you mean [{name}] in [{zone}]?"""
+
+NO_SUCH_CLUSTER_ERROR_MSG = """\
+{error}
+No cluster named '{name}' in {project}."""
+
+NO_SUCH_NODE_POOL_ERROR_MSG = """\
+No node pool named '{name}' in {cluster}."""
+
+NO_NODE_POOL_SELECTED_ERROR_MSG = """\
+Please specify one of the following node pools:
+"""
+
+MISMATCH_AUTHORIZED_NETWORKS_ERROR_MSG = """\
+Cannot use --master-authorized-networks \
+if --enable-master-authorized-networks is not \
+specified."""
+
+NO_AUTOPROVISIONING_MSG = """\
+Node autoprovisioning is currently in beta.
+"""
+
+NO_AUTOPROVISIONING_LIMITS_ERROR_MSG = """\
+Must specify both --max-cpu and --max-memory to enable autoprovisioning.
+"""
+
+LIMITS_WITHOUT_AUTOPROVISIONING_MSG = """\
+Must enable node autoprovisioning to specify resource limits for autoscaling.
+"""
+
+DEFAULTS_WITHOUT_AUTOPROVISIONING_MSG = """\
+Must enable node autoprovisioning to specify defaults for node autoprovisioning.
+"""
+
+BOTH_AUTOPROVISIONING_UPGRADE_SETTINGS_ERROR_MSG = """\
+Must specify both 'maxSurgeUpgrade' and 'maxUnavailableUpgrade' in \
+'upgradeSettings' in --autoprovisioning-config-file, or both \
+'--autoprovisioning-max-surge-upgrade' and '--autoprovisioning-max-unavailable-upgrade' \
+from cmd argument to set a surge upgrade strategy.
+"""
+
+BOTH_AUTOPROVISIONING_MANAGEMENT_SETTINGS_ERROR_MSG = """\
+Must specify both 'autoUpgrade' and 'autoRepair' in 'management' in \
+--autoprovisioning-config-file to set management settings.
+"""
+
+BOTH_AUTOPROVISIONING_SHIELDED_INSTANCE_SETTINGS_ERROR_MSG = """\
+Must specify both 'enableSecureBoot' and 'enableIntegrityMonitoring' \
+in 'shieldedInstanceConfig' in --autoprovisioning-config-file to set \
+management settings.
+"""
+
+BOTH_SHIELDED_INSTANCE_SETTINGS_ERROR_MSG = """\
+Must specify both or none of --shielded-secure-boot and \
+--shielded-integrity-monitoring.
+"""
+
+LIMITS_WITHOUT_AUTOPROVISIONING_FLAG_MSG = """\
+Must specify --enable-autoprovisioning to specify resource limits for autoscaling.
+"""
+
+MISMATCH_ACCELERATOR_TYPE_LIMITS_ERROR_MSG = """\
+Maximum and minimum accelerator limits must be set on the same accelerator type.
+"""
+
+NO_SUCH_LABEL_ERROR_MSG = """\
+No label named '{name}' found on cluster '{cluster}'."""
+
+NO_LABELS_ON_CLUSTER_ERROR_MSG = """\
+Cluster '{cluster}' has no labels to remove."""
+
+CREATE_SUBNETWORK_INVALID_KEY_ERROR_MSG = """\
+Invalid key '{key}' for --create-subnetwork (must be one of 'name', 'range').
+"""
+
+CREATE_SUBNETWORK_WITH_SUBNETWORK_ERROR_MSG = """\
+Cannot specify both --subnetwork and --create-subnetwork at the same time.
+"""
+
+CREATE_POD_RANGE_INVALID_KEY_ERROR_MSG = """
+Invalid key '{key}' for --create-pod-ipv4-range (must be one of 'name', 'range').
+"""
+
+NODE_TAINT_INCORRECT_FORMAT_ERROR_MSG = """\
+Invalid value [{key}={value}] for argument --node-taints. Node taint is of format key=value:effect
+"""
+
+NODE_TAINT_INCORRECT_EFFECT_ERROR_MSG = """\
+Invalid taint effect [{effect}] for argument --node-taints. Valid effect values are NoSchedule, PreferNoSchedule, NoExecute'
+"""
+
+LOCAL_SSD_INCORRECT_FORMAT_ERROR_MSG = """\
+Invalid local SSD format [{err_format}] for argument --local-ssd-volumes. Valid formats are fs, block
+"""
+
+UNKNOWN_WORKLOAD_METADATA_ERROR_MSG = """\
+Invalid option '{option}' for '--workload-metadata' (must be one of 'gce_metadata', 'gke_metadata').
+"""
+
+ALLOW_ROUTE_OVERLAP_WITHOUT_EXPLICIT_NETWORK_MODE = """\
+Flag --allow-route-overlap must be used with either --enable-ip-alias or --no-enable-ip-alias.
+"""
+
+ALLOW_ROUTE_OVERLAP_WITHOUT_CLUSTER_CIDR_ERROR_MSG = """\
+Flag --cluster-ipv4-cidr must be fully specified (e.g. `10.96.0.0/14`, but not `/14`) with --allow-route-overlap.
+"""
+
+ALLOW_ROUTE_OVERLAP_WITHOUT_SERVICES_CIDR_ERROR_MSG = """\
+Flag --services-ipv4-cidr must be fully specified (e.g. `10.96.0.0/14`, but not `/14`) with --allow-route-overlap and --enable-ip-alias.
+"""
+
+PREREQUISITE_OPTION_ERROR_MSG = """\
+Cannot specify --{opt} without --{prerequisite}.
+"""
+
+CLOUD_LOGGING_OR_MONITORING_DISABLED_ERROR_MSG = """\
+Flag --enable-stackdriver-kubernetes requires Cloud Logging and Cloud Monitoring enabled with --enable-cloud-logging and --enable-cloud-monitoring.
+"""
+
+CLOUDRUN_STACKDRIVER_KUBERNETES_DISABLED_ERROR_MSG = """\
+The CloudRun-on-GKE addon (--addons=CloudRun) requires System Logging and Monitoring to be enabled via the --monitoring=SYSTEM and --logging=SYSTEM flags.
+"""
+
+CLOUDRUN_INGRESS_KUBERNETES_DISABLED_ERROR_MSG = """\
+The CloudRun-on-GKE addon (--addons=CloudRun) requires HTTP Load Balancing to be enabled via the --addons=HttpLoadBalancing flag.
+"""
+
+CONFIGCONNECTOR_STACKDRIVER_KUBERNETES_DISABLED_ERROR_MSG = """\
+The ConfigConnector-on-GKE addon (--addons=ConfigConnector) requires System Logging and Monitoring to be enabled via the --monitoring=SYSTEM and --logging=SYSTEM flags.
+"""
+
+CONFIGCONNECTOR_WORKLOAD_IDENTITY_DISABLED_ERROR_MSG = """\
+The ConfigConnector-on-GKE addon (--addons=ConfigConnector) requires workload identity to be enabled via the --workload-pool=WORKLOAD_POOL flag.
+"""
+
+CLOUDBUILD_STACKDRIVER_KUBERNETES_DISABLED_ERROR_MSG = """\
+Cloud Build for Anthos (--addons=CloudBuild) requires System Logging and Monitoring to be enabled via the --monitoring=SYSTEM and --logging=SYSTEM flags.
+"""
+
+DEFAULT_MAX_PODS_PER_NODE_WITHOUT_IP_ALIAS_ERROR_MSG = """\
+Cannot use --default-max-pods-per-node without --enable-ip-alias.
+"""
+
+MAX_PODS_PER_NODE_WITHOUT_IP_ALIAS_ERROR_MSG = """\
+Cannot use --max-pods-per-node without --enable-ip-alias.
+"""
+
+ALPHA_CLUSTER_FEATURE_GATES_WITHOUT_ENABLE_KUBERNETES_ALPHA_ERROR_MSG = """\
+Cannot use --alpha-cluster-feature-gates without --enable-kubernetes-alpha.
+"""
+
+NOTHING_TO_UPDATE_ERROR_MSG = """\
+Nothing to update.
+"""
+
+ENABLE_PRIVATE_NODES_WITH_PRIVATE_CLUSTER_ERROR_MSG = """\
+Cannot specify both --[no-]enable-private-nodes and --[no-]private-cluster at the same time.
+"""
+
+ENABLE_NETWORK_EGRESS_METERING_ERROR_MSG = """\
+Cannot use --[no-]enable-network-egress-metering without --resource-usage-bigquery-dataset.
+"""
+
+ENABLE_RESOURCE_CONSUMPTION_METERING_ERROR_MSG = """\
+Cannot use --[no-]enable-resource-consumption-metering without --resource-usage-bigquery-dataset.
+"""
+
+DISABLE_DEFAULT_SNAT_WITHOUT_IP_ALIAS_ERROR_MSG = """\
+Cannot use --disable-default-snat without --enable-ip-alias.
+"""
+
+DISABLE_DEFAULT_SNAT_WITHOUT_PRIVATE_NODES_ERROR_MSG = """\
+Cannot use --disable-default-snat without --enable-private-nodes.
+"""
+
+RESERVATION_AFFINITY_SPECIFIC_WITHOUT_RESERVATION_NAME_ERROR_MSG = """\
+Must specify --reservation for --reservation-affinity=specific.
+"""
+
+RESERVATION_AFFINITY_NON_SPECIFIC_WITH_RESERVATION_NAME_ERROR_MSG = """\
+Cannot specify --reservation for --reservation-affinity={affinity}.
+"""
+
+DATAPATH_PROVIDER_ILL_SPECIFIED_ERROR_MSG = """\
+Invalid provider '{provider}' for argument --datapath-provider. Valid providers are legacy, advanced.
+"""
+
+DPV2_OBS_ERROR_MSG = """\
+Invalid '{mode}' for argument --dataplane-v2-observability-mode. Valid modes are DISABLED, INTERNAL_VPC_LB, EXTERNAL_LB.
+"""
+
+SANDBOX_TYPE_NOT_PROVIDED = """\
+Must specify sandbox type.
+"""
+
+SANDBOX_TYPE_NOT_SUPPORTED = """\
+Provided sandbox type '{type}' not supported.
+"""
+TPU_SERVING_MODE_ERROR = """\
+Cannot specify --tpu-ipv4-cidr with --enable-tpu-service-networking."""
+
+GPU_SHARING_STRATEGY_ERROR_MSG = """\
+Invalid gpu sharing strategy [{gpu-sharing-strategy}] for argument --accelerator. Valid values are time-sharing, mps'
+"""
+
+GPU_DRIVER_VERSION_ERROR_MSG = """\
+Invalid gpu driver version [{gpu-driver-version}] for argument --accelerator. Valid values are default, latest, or disabled'
+"""
+
+MAINTENANCE_INTERVAL_TYPE_NOT_SUPPORTED = """\
+Provided maintenance interval type '{type}' not supported.
+"""
+
+MANGED_CONFIG_TYPE_NOT_SUPPORTED = """\
+Invalid managed config type '{type}' for argument --managed-config. Valid values are: autofleet, disabled'
+"""
+
+SECURITY_POSTURE_MODE_NOT_SUPPORTED = """\
+Invalid mode '{mode}' for '--security-posture' (must be one of 'disabled', 'standard', 'enterprise').
+"""
+
+WORKLOAD_VULNERABILITY_SCANNING_MODE_NOT_SUPPORTED = """\
+Invalid mode '{mode}' for '--workload-vulnerability-scanning' (must be one of 'disabled', 'standard', 'enterprise').
+"""
+
+HOST_MAINTENANCE_INTERVAL_TYPE_NOT_SUPPORTED = """\
+Provided host maintenance interval type '{type}' is not supported.
+"""
+
+NODECONFIGDEFAULTS_READONLY_PORT_NOT_SUPPORTED = """\
+nodePoolDefaults.nodeKubeletConfig is not supported on GKE Autopilot clusters.
+"""
+
+MAX_NODES_PER_POOL = 1000
+
+MAX_AUTHORIZED_NETWORKS_CIDRS_PRIVATE = 100
+MAX_AUTHORIZED_NETWORKS_CIDRS_PUBLIC = 50
+
+INGRESS = 'HttpLoadBalancing'
+HPA = 'HorizontalPodAutoscaling'
+DASHBOARD = 'KubernetesDashboard'
+CLOUDBUILD = 'CloudBuild'
+BACKUPRESTORE = 'BackupRestore'
+CONFIGCONNECTOR = 'ConfigConnector'
+GCEPDCSIDRIVER = 'GcePersistentDiskCsiDriver'
+GCPFILESTORECSIDRIVER = 'GcpFilestoreCsiDriver'
+GCSFUSECSIDRIVER = 'GcsFuseCsiDriver'
+STATEFULHA = 'StatefulHA'
+PARALLELSTORECSIDRIVER = 'ParallelstoreCsiDriver'
+ISTIO = 'Istio'
+NETWORK_POLICY = 'NetworkPolicy'
+NODELOCALDNS = 'NodeLocalDNS'
+APPLICATIONMANAGER = 'ApplicationManager'
+RESOURCE_LIMITS = 'resourceLimits'
+SERVICE_ACCOUNT = 'serviceAccount'
+MIN_CPU_PLATFORM = 'minCpuPlatform'
+UPGRADE_SETTINGS = 'upgradeSettings'
+MAX_SURGE_UPGRADE = 'maxSurgeUpgrade'
+MAX_UNAVAILABLE_UPGRADE = 'maxUnavailableUpgrade'
+NODE_MANAGEMENT = 'management'
+ENABLE_AUTO_UPGRADE = 'autoUpgrade'
+ENABLE_AUTO_REPAIR = 'autoRepair'
+SCOPES = 'scopes'
+AUTOPROVISIONING_LOCATIONS = 'autoprovisioningLocations'
+BOOT_DISK_KMS_KEY = 'bootDiskKmsKey'
+DISK_SIZE_GB = 'diskSizeGb'
+DISK_TYPE = 'diskType'
+IMAGE_TYPE = 'imageType'
+SHIELDED_INSTANCE_CONFIG = 'shieldedInstanceConfig'
+ENABLE_SECURE_BOOT = 'enableSecureBoot'
+ENABLE_INTEGRITY_MONITORING = 'enableIntegrityMonitoring'
+DEFAULT_ADDONS = [INGRESS, HPA]
+CLOUDRUN_ADDONS = ['CloudRun', 'KubeRun']
+VISIBLE_CLOUDRUN_ADDONS = ['CloudRun']
+ADDONS_OPTIONS = DEFAULT_ADDONS + [
+    DASHBOARD,
+    NETWORK_POLICY,
+    NODELOCALDNS,
+    CONFIGCONNECTOR,
+    GCEPDCSIDRIVER,
+    GCPFILESTORECSIDRIVER,
+    BACKUPRESTORE,
+    GCSFUSECSIDRIVER,
+    STATEFULHA,
+    PARALLELSTORECSIDRIVER,
+]
+BETA_ADDONS_OPTIONS = ADDONS_OPTIONS + [
+    ISTIO,
+    APPLICATIONMANAGER,
+]
+ALPHA_ADDONS_OPTIONS = BETA_ADDONS_OPTIONS + [CLOUDBUILD]
+
+NONE = 'NONE'
+SYSTEM = 'SYSTEM'
+WORKLOAD = 'WORKLOAD'
+# TODO(b/187793166): Remove APISERVER when deprecating the legacy API.
+APISERVER = 'APISERVER'
+API_SERVER = 'API_SERVER'
+SCHEDULER = 'SCHEDULER'
+CONTROLLER_MANAGER = 'CONTROLLER_MANAGER'
+ADDON_MANAGER = 'ADDON_MANAGER'
+STORAGE = 'STORAGE'
+HPA_COMPONENT = 'HPA'
+POD = 'POD'
+DAEMONSET = 'DAEMONSET'
+DEPLOYMENT = 'DEPLOYMENT'
+STATEFULSET = 'STATEFULSET'
+CADVISOR = 'CADVISOR'
+KUBELET = 'KUBELET'
+LOGGING_OPTIONS = [
+    NONE,
+    SYSTEM,
+    WORKLOAD,
+    API_SERVER,
+    SCHEDULER,
+    CONTROLLER_MANAGER,
+    ADDON_MANAGER,
+]
+MONITORING_OPTIONS = [
+    NONE,
+    SYSTEM,
+    WORKLOAD,
+    API_SERVER,
+    SCHEDULER,
+    CONTROLLER_MANAGER,
+    STORAGE,
+    HPA_COMPONENT,
+    POD,
+    DAEMONSET,
+    DEPLOYMENT,
+    STATEFULSET,
+    CADVISOR,
+    KUBELET,
+]
+PRIMARY_LOGS_OPTIONS = [
+    APISERVER,
+    SCHEDULER,
+    CONTROLLER_MANAGER,
+    ADDON_MANAGER,
+]
+PLACEMENT_OPTIONS = ['UNSPECIFIED', 'COMPACT']
+LOCATION_POLICY_OPTIONS = ['BALANCED', 'ANY']
+
+
+def CheckResponse(response):
+  """Wrap http_wrapper.CheckResponse to skip retry on 503."""
+  if response.status_code == 503:
+    raise apitools_exceptions.HttpError.FromResponse(response)
+  return http_wrapper.CheckResponse(response)
+
+
+def APIVersionFromReleaseTrack(release_track):
+  if release_track == base.ReleaseTrack.GA:
+    return 'v1'
+  elif release_track == base.ReleaseTrack.BETA:
+    return 'v1beta1'
+  elif release_track == base.ReleaseTrack.ALPHA:
+    return 'v1alpha1'
+  else:
+    raise ValueError('Unsupported Release Track: {}'.format(release_track))
+
+
+def NewAPIAdapter(api_version):
+  if api_version == 'v1alpha1':
+    return NewV1Alpha1APIAdapter()
+  elif api_version == 'v1beta1':
+    return NewV1Beta1APIAdapter()
+  else:
+    return NewV1APIAdapter()
+
+
+def NewV1APIAdapter():
+  return InitAPIAdapter('v1', V1Adapter)
+
+
+def NewV1Beta1APIAdapter():
+  return InitAPIAdapter('v1beta1', V1Beta1Adapter)
+
+
+def NewV1Alpha1APIAdapter():
+  return InitAPIAdapter('v1alpha1', V1Alpha1Adapter)
+
+
+def InitAPIAdapter(api_version, adapter):
+  """Initialize an api adapter.
+
+  Args:
+    api_version: the api version we want.
+    adapter: the api adapter constructor.
+
+  Returns:
+    APIAdapter object.
+  """
+
+  api_client = core_apis.GetClientInstance('container', api_version)
+  api_client.check_response_func = CheckResponse
+  messages = core_apis.GetMessagesModule('container', api_version)
+
+  registry = cloud_resources.REGISTRY.Clone()
+  registry.RegisterApiByName('container', api_version)
+  registry.RegisterApiByName('compute', 'v1')
+
+  return adapter(registry, api_client, messages)
+
+
+_SERVICE_ACCOUNT_SCOPES = ('https://www.googleapis.com/auth/cloud-platform',
+                           'https://www.googleapis.com/auth/userinfo.email')
+
+
+def NodeIdentityOptionsToNodeConfig(options, node_config):
+  """Convert node identity options into node config.
+
+  If scopes are specified with the `--scopes` flag, respect them.
+  If no scopes are presented, 'gke-default' will be passed here indicating that
+  we should use the default set:
+  - If no service account is specified, default set is GKE_DEFAULT_SCOPES which
+    is handled by ExpandScopeURIs:
+    - https://www.googleapis.com/auth/devstorage.read_only,
+    - https://www.googleapis.com/auth/logging.write',
+    - https://www.googleapis.com/auth/monitoring,
+    - https://www.googleapis.com/auth/servicecontrol,
+    - https://www.googleapis.com/auth/service.management.readonly,
+    - https://www.googleapis.com/auth/trace.append,
+  - If a service account is specified, default set is _SERVICE_ACCOUNT_SCOPES:
+    - https://www.googleapis.com/auth/cloud-platform
+    - https://www.googleapis.com/auth/userinfo.email
+  Args:
+    options: the CreateCluster or CreateNodePool options.
+    node_config: the messages.node_config object to be populated.
+  """
+  if options.service_account:
+    node_config.serviceAccount = options.service_account
+    replaced_scopes = []
+    for scope in options.scopes:
+      if scope == 'gke-default':
+        replaced_scopes.extend(_SERVICE_ACCOUNT_SCOPES)
+      else:
+        replaced_scopes.append(scope)
+    options.scopes = replaced_scopes
+
+  options.scopes = ExpandScopeURIs(options.scopes)
+  node_config.oauthScopes = sorted(set(options.scopes))
+
+
+def ExpandScopeURIs(scopes):
+  """Expand scope names to the fully qualified uris.
+
+  Args:
+    scopes: [str,] list of scope names. Can be short names ('compute-rw') or
+      full urls ('https://www.googleapis.com/auth/compute'). See SCOPES in
+      api_lib/container/constants.py & api_lib/compute/constants.py.
+
+  Returns:
+    list of str, full urls for recognized scopes.
+  """
+
+  scope_uris = []
+  for scope in scopes:
+    # Expand any scope aliases (like 'storage-rw') that the user provided
+    # to their official URL representation.
+    expanded = constants.SCOPES.get(scope, [scope])
+    scope_uris.extend(expanded)
+  return scope_uris
+
+
+class CreateClusterOptions(object):
+  """Options to pass to CreateCluster."""
+
+  def __init__(
+      self,
+      node_machine_type=None,
+      node_source_image=None,
+      node_disk_size_gb=None,
+      scopes=None,
+      num_nodes=None,
+      additional_zones=None,
+      node_locations=None,
+      user=None,
+      password=None,
+      cluster_version=None,
+      node_version=None,
+      network=None,
+      cluster_ipv4_cidr=None,
+      enable_cloud_logging=None,
+      enable_cloud_monitoring=None,
+      enable_stackdriver_kubernetes=None,
+      enable_logging_monitoring_system_only=None,
+      enable_workload_monitoring_eap=None,
+      subnetwork=None,
+      addons=None,
+      istio_config=None,
+      cloud_run_config=None,
+      local_ssd_count=None,
+      local_ssd_volume_configs=None,
+      local_nvme_ssd_block=None,
+      ephemeral_storage=None,
+      ephemeral_storage_local_ssd=None,
+      boot_disk_kms_key=None,
+      node_pool_name=None,
+      tags=None,
+      autoprovisioning_network_tags=None,
+      node_labels=None,
+      node_taints=None,
+      enable_autoscaling=None,
+      min_nodes=None,
+      max_nodes=None,
+      total_min_nodes=None,
+      total_max_nodes=None,
+      location_policy=None,
+      image_type=None,
+      image=None,
+      image_project=None,
+      image_family=None,
+      issue_client_certificate=None,
+      max_nodes_per_pool=None,
+      enable_kubernetes_alpha=None,
+      alpha_cluster_feature_gates=None,
+      enable_cloud_run_alpha=None,
+      preemptible=None,
+      spot=None,
+      placement_type=None,
+      placement_policy=None,
+      enable_queued_provisioning=None,
+      enable_autorepair=None,
+      enable_autoupgrade=None,
+      service_account=None,
+      enable_master_authorized_networks=None,
+      master_authorized_networks=None,
+      enable_legacy_authorization=None,
+      labels=None,
+      disk_type=None,
+      enable_network_policy=None,
+      enable_l4_ilb_subsetting=None,
+      services_ipv4_cidr=None,
+      enable_ip_alias=None,
+      create_subnetwork=None,
+      cluster_secondary_range_name=None,
+      services_secondary_range_name=None,
+      accelerators=None,
+      enable_binauthz=None,
+      binauthz_evaluation_mode=None,
+      binauthz_policy_bindings=None,
+      min_cpu_platform=None,
+      workload_metadata=None,
+      workload_metadata_from_node=None,
+      maintenance_window=None,
+      enable_pod_security_policy=None,
+      allow_route_overlap=None,
+      private_cluster=None,
+      enable_private_nodes=None,
+      enable_private_endpoint=None,
+      master_ipv4_cidr=None,
+      tpu_ipv4_cidr=None,
+      enable_tpu=None,
+      enable_tpu_service_networking=None,
+      default_max_pods_per_node=None,
+      max_pods_per_node=None,
+      resource_usage_bigquery_dataset=None,
+      security_group=None,
+      enable_private_ipv6_access=None,
+      enable_intra_node_visibility=None,
+      enable_vertical_pod_autoscaling=None,
+      enable_experimental_vertical_pod_autoscaling=None,
+      security_profile=None,
+      security_profil

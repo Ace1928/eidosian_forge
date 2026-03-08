@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/array_creation_documentation.py
+KIND: code
+
+import numpy
+from modin.error_message import ErrorMessage
+from .arr import array
+Module houses array creation methods for Modin's NumPy API.

@@ -1,0 +1,15 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_i_notifier_documentation.py
+KIND: code
+
+import abc
+ Remove this notifier or a notifier equivalent to this one
+        from the observable.
+
+        Parameters
+        ----------
+        observable : IObservable
+
+        Raises
+        ------
+        NotifierNotFound
+            If the notifier cannot be found.

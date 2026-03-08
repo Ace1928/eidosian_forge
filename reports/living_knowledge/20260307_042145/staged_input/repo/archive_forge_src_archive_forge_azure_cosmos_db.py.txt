@@ -1,0 +1,14 @@
+SOURCE_PATH: archive_forge/src/archive_forge/azure_cosmos_db.py
+KIND: code
+
+from langchain_community.vectorstores.azure_cosmos_db import (
+    AzureCosmosDBVectorSearch,
+    CosmosDBDocumentType,
+    CosmosDBSimilarityType,
+)
+
+__all__ = [
+    "CosmosDBSimilarityType",
+    "CosmosDBDocumentType",
+    "AzureCosmosDBVectorSearch",
+]

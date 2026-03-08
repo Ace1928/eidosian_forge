@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/EncodingAdapter_documentation.py
+KIND: code
+
+Adapter for running test cases against multiple encodings.

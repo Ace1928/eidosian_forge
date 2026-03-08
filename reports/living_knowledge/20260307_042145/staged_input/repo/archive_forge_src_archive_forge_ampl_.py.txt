@@ -1,0 +1,569 @@
+SOURCE_PATH: archive_forge/src/archive_forge/ampl_.py
+KIND: code
+
+#  ___________________________________________________________________________
+#
+#  Pyomo: Python Optimization Modeling Objects
+#  Copyright (c) 2008-2024
+#  National Technology and Engineering Solutions of Sandia, LLC
+#  Under the terms of Contract DE-NA0003525 with National Technology and
+#  Engineering Solutions of Sandia, LLC, the U.S. Government retains certain
+#  rights in this software.
+#  This software is distributed under the 3-clause BSD License.
+#  ___________________________________________________________________________
+
+#
+# AMPL Problem Writer Plugin
+#
+
+import itertools
+import logging
+import operator
+import os
+import time
+from math import isclose
+
+from pyomo.common.fileutils import find_library
+from pyomo.common.gc_manager import PauseGC
+from pyomo.opt import ProblemFormat, AbstractProblemWriter, WriterFactory
+import pyomo.core.expr as EXPR
+from pyomo.core.expr.numvalue import (
+    NumericConstant,
+    native_numeric_types,
+    value,
+    is_fixed,
+)
+from pyomo.core.base import (
+    SymbolMap,
+    NameLabeler,
+    _ExpressionData,
+    SortComponents,
+    var,
+    param,
+    Var,
+    ExternalFunction,
+    ComponentMap,
+    Objective,
+    Constraint,
+    SOSConstraint,
+    Suffix,
+)
+import pyomo.core.base.suffix
+from pyomo.repn.standard_repn import generate_standard_repn
+
+import pyomo.core.kernel.suffix
+from pyomo.core.kernel.block import IBlock
+from pyomo.core.kernel.expression import IIdentityExpression
+from pyomo.core.kernel.variable import IVariable
+
+logger = logging.getLogger('pyomo.core')
+
+
+def set_pyomo_amplfunc_env(external_libs):
+    # The ASL AMPLFUNC environment variable is nominally a
+    # whitespace-separated string of library names.  Beginning
+    # sometime between 2010 and 2012, the ASL added support for
+    # simple quoted strings: the first non-whitespace character
+    # can be either " or '.  When that is detected, the ASL
+    # parser will continue to the next occurrence of that
+    # character (i.e., no escaping is allowed).  We will use
+    # that same logic here to quote any strings with spaces
+    # ... bearing in mind that this will only work with solvers
+    # compiled against versions of the ASL more recent than
+    # ~2012.
+    #
+    # We are (arbitrarily) choosing to use newline as the field
+    # separator.
+    env_str = ''
+    for _lib in external_libs:
+        _lib = _lib.strip()
+        # Convert the library to an absolute path
+        _abs_lib = find_library(_lib)
+        if _abs_lib is not None:
+            _lib = _abs_lib
+        if (
+            ' ' not in _lib
+            or (_lib[0] == '"' and _lib[-1] == '"' and '"' not in _lib[1:-1])
+            or (_lib[0] == "'" and _lib[-1] == "'" and "'" not in _lib[1:-1])
+        ):
+            pass
+        elif '"' not in _lib:
+            _lib = '"' + _lib + '"'
+        elif "'" not in _lib:
+            _lib = "'" + _lib + "'"
+        else:
+            raise RuntimeError(
+                "Cannot pass the AMPL external function library\n\t%s\n"
+                "to the ASL because the string contains spaces, "
+                "single quote and\ndouble quote characters." % (_lib,)
+            )
+        if env_str:
+            env_str += "\n"
+        env_str += _lib
+    os.environ["PYOMO_AMPLFUNC"] = env_str
+
+
+_intrinsic_function_operators = {
+    'log': 'o43',
+    'log10': 'o42',
+    'sin': 'o41',
+    'cos': 'o46',
+    'tan': 'o38',
+    'sinh': 'o40',
+    'cosh': 'o45',
+    'tanh': 'o37',
+    'asin': 'o51',
+    'acos': 'o53',
+    'atan': 'o49',
+    'exp': 'o44',
+    'sqrt': 'o39',
+    'asinh': 'o50',
+    'acosh': 'o52',
+    'atanh': 'o47',
+    'pow': 'o5',
+    'abs': 'o15',
+    'ceil': 'o14',
+    'floor': 'o13',
+}
+
+
+# build string templates
+def _build_op_template():
+    _op_template = {}
+    _op_comment = {}
+
+    prod_template = "o2{C}\n"
+    prod_comment = "\t#*"
+    div_template = "o3{C}\n"
+    div_comment = "\t#/"
+    _op_template[EXPR.ProductExpression] = prod_template
+    _op_comment[EXPR.ProductExpression] = prod_comment
+    _op_template[EXPR.DivisionExpression] = div_template
+    _op_comment[EXPR.DivisionExpression] = div_comment
+
+    _op_template[EXPR.ExternalFunctionExpression] = (
+        "f%d %d{C}\n",  # function
+        "h%d:%s{C}\n",
+    )  # string arg
+    _op_comment[EXPR.ExternalFunctionExpression] = (
+        "\t#%s",  # function
+        "",
+    )  # string arg
+
+    for opname in _intrinsic_function_operators:
+        _op_template[opname] = _intrinsic_function_operators[opname] + "{C}\n"
+        _op_comment[opname] = "\t#" + opname
+
+    _op_template[EXPR.Expr_ifExpression] = "o35{C}\n"
+    _op_comment[EXPR.Expr_ifExpression] = "\t#if"
+
+    _op_template[EXPR.InequalityExpression] = (
+        "o21{C}\n",  # and
+        "o22{C}\n",  # <
+        "o23{C}\n",
+    )  # <=
+    _op_comment[EXPR.InequalityExpression] = (
+        "\t#and",  # and
+        "\t#lt",  # <
+        "\t#le",
+    )  # <=
+
+    _op_template[EXPR.EqualityExpression] = "o24{C}\n"
+    _op_comment[EXPR.EqualityExpression] = "\t#eq"
+
+    _op_template[var._VarData] = "v%d{C}\n"
+    _op_comment[var._VarData] = "\t#%s"
+
+    _op_template[param._ParamData] = "n%r{C}\n"
+    _op_comment[param._ParamData] = ""
+
+    _op_template[NumericConstant] = "n%r{C}\n"
+    _op_comment[NumericConstant] = ""
+
+    _op_template[EXPR.SumExpressionBase] = (
+        "o54{C}\n%d\n",  # nary +
+        "o0{C}\n",  # +
+        "o2\n" + _op_template[NumericConstant],
+    )  # * coef
+    _op_comment[EXPR.SumExpressionBase] = (
+        "\t#sumlist",  # nary +
+        "\t#+",  # +
+        _op_comment[NumericConstant],
+    )  # * coef
+    _op_template[EXPR.NegationExpression] = "o16{C}\n"
+    _op_comment[EXPR.NegationExpression] = "\t#-"
+
+    return _op_template, _op_comment
+
+
+def _get_bound(exp):
+    if exp is None:
+        return None
+    if is_fixed(exp):
+        return value(exp)
+    raise ValueError("non-fixed bound or weight: " + str(exp))
+
+
+class StopWatch(object):
+    def __init__(self):
+        self.start = time.time()
+
+    def report(self, msg):
+        print(msg + " (seconds): " + str(time.time() - self.start))
+
+    def reset(self):
+        self.start = time.time()
+
+
+class _Counter(object):
+    def __init__(self, start):
+        self._id = start
+
+    def __call__(self, obj):
+        tmp = self._id
+        self._id += 1
+        return tmp
+
+
+class ModelSOS(object):
+    class AmplSuffix(object):
+        def __init__(self, name):
+            self.name = name
+            self.ids = []
+            self.vals = []
+
+        def add(self, idx, val):
+            if idx in self.ids:
+                raise RuntimeError(
+                    "The NL file format does not support multiple nonzero "
+                    "values for a single component and suffix. \n"
+                    "Suffix Name:  %s\n"
+                    "Component ID: %s\n" % (self.name, idx)
+                )
+            else:
+                self.ids.append(idx)
+                self.vals.append(val)
+
+        def genfilelines(self):
+            base_line = "{0} {1}\n"
+            return [
+                base_line.format(idx, val)
+                for idx, val in zip(self.ids, self.vals)
+                if val != 0
+            ]
+
+        def is_empty(self):
+            return not bool(len(self.ids))
+
+    def __init__(self, ampl_var_id, varID_map):
+        self.ampl_var_id = ampl_var_id
+        self.sosno = self.AmplSuffix('sosno')
+        self.ref = self.AmplSuffix('ref')
+        self.block_cntr = 0
+        self.varID_map = varID_map
+
+    def count_constraint(self, soscondata):
+        ampl_var_id = self.ampl_var_id
+        varID_map = self.varID_map
+
+        if hasattr(soscondata, 'get_items'):
+            sos_items = list(soscondata.get_items())
+        else:
+            sos_items = list(soscondata.items())
+
+        if len(sos_items) == 0:
+            return
+
+        level = soscondata.level
+
+        # Identifies the the current set from others in the NL file
+        self.block_cntr += 1
+
+        # If SOS1, the identifier must be positive
+        # if SOS2, the identifier must be negative
+        sign_tag = None
+        if level == 1:
+            sign_tag = 1
+        elif level == 2:
+            sign_tag = -1
+        else:
+            raise ValueError(
+                "SOSConstraint '%s' has sos type='%s', "
+                "which is not supported by the NL file interface"
+                % (soscondata.name, level)
+            )
+
+        for vardata, weight in sos_items:
+            weight = _get_bound(weight)
+            if weight < 0:
+                raise ValueError(
+                    "Cannot use negative weight %f "
+                    "for variable %s is special ordered "
+                    "set %s " % (weight, vardata.name, soscondata.name)
+                )
+            if vardata.fixed:
+                raise ValueError(
+                    "SOSConstraint '%s' includes a fixed Variable '%s'. "
+                    "This is currently not supported. Deactivate this constraint "
+                    "in order to proceed" % (soscondata.name, vardata.name)
+                )
+
+            ID = ampl_var_id[varID_map[id(vardata)]]
+            self.sosno.add(ID, self.block_cntr * sign_tag)
+            self.ref.add(ID, weight)
+
+
+class RepnWrapper(object):
+    __slots__ = ('repn', 'linear_vars', 'nonlinear_vars')
+
+    def __init__(self, repn, linear, nonlinear):
+        self.repn = repn
+        self.linear_vars = linear
+        self.nonlinear_vars = nonlinear
+
+
+@WriterFactory.register('nl_v1', 'Generate the corresponding AMPL NL file (version 1).')
+class ProblemWriter_nl(AbstractProblemWriter):
+    def __init__(self):
+        AbstractProblemWriter.__init__(self, ProblemFormat.nl)
+        self._ampl_var_id = {}
+        self._ampl_con_id = {}
+        self._ampl_obj_id = {}
+        self._OUTPUT = None
+        self._varID_map = None
+
+    def __call__(self, model, filename, solver_capability, io_options):
+        # Rebuild the OP template (as the expression tree system may
+        # have been switched)
+        _op_template, _op_comment = _build_op_template()
+
+        # Make sure not to modify the user's dictionary, they may be
+        # reusing it outside of this call
+        io_options = dict(io_options)
+
+        # NOTE: io_options is a simple dictionary of keyword-value pairs
+        #       specific to this writer. that said, we are not good
+        #       about enforcing consistency between the io_options and
+        #       kwds - arguably, we should go with the former or the
+        #       latter, but not support both. then again, the kwds are
+        #       not used anywhere within this function.
+
+        # Print timing after writing each section of the NL file
+        show_section_timing = io_options.pop("show_section_timing", False)
+
+        # Skip writing constraints whose body section is fixed (i.e., no variables)
+        skip_trivial_constraints = io_options.pop("skip_trivial_constraints", False)
+
+        # How much effort do we want to put into ensuring the
+        # NL file is written deterministically for a Pyomo model:
+        #    0 : None
+        #    1 : sort keys of indexed components (default)
+        #    2 : sort keys AND sort names (over declaration order)
+        file_determinism = io_options.pop("file_determinism", 1)
+
+        # Write the corresponding .row and .col files for the NL files
+        # identifying variable and constraint indices in the NLP
+        # matrix.
+        symbolic_solver_labels = io_options.pop("symbolic_solver_labels", False)
+
+        # If False, we raise an error if fixed variables are
+        # encountered in the list of active variables (i.e., an
+        # expression containing some fixed variable was not
+        # preprocessed after the variable was fixed). If True, we
+        # allow this case and modify the variable bounds section to
+        # fix the variable.
+        output_fixed_variable_bounds = io_options.pop(
+            "output_fixed_variable_bounds", False
+        )
+
+        # If False, unused variables will not be included in
+        # the NL file. Otherwise, include all variables in
+        # the bounds sections.
+        include_all_variable_bounds = io_options.pop(
+            "include_all_variable_bounds", False
+        )
+
+        # List of variables that don't appear in constraints to force into the
+        # nl-file
+        export_nonlinear_variables = io_options.pop("export_nonlinear_variables", False)
+
+        # column_order is a new option supported by the nl writer v2
+        _column_order = io_options.pop("column_order", True)
+        assert _column_order in {True}
+
+        if len(io_options):
+            raise ValueError(
+                "ProblemWriter_nl passed unrecognized io_options:\n\t"
+                + "\n\t".join("%s = %s" % (k, v) for k, v in io_options.items())
+            )
+
+        if filename is None:
+            filename = model.name + ".nl"
+
+        # Generate the operator strings templates. The value of
+        # symbolic_solver_labels determines whether or not to
+        # include "nl comments" (the equivalent AMPL functionality
+        # is "option nl_comments 1").
+        self._op_string = {}
+        for optype in _op_template:
+            template_str = _op_template[optype]
+            comment_str = _op_comment[optype]
+            if type(template_str) is tuple:
+                op_strings = []
+                for i in range(len(template_str)):
+                    if symbolic_solver_labels:
+                        op_strings.append(template_str[i].format(C=comment_str[i]))
+                    else:
+                        op_strings.append(template_str[i].format(C=""))
+                self._op_string[optype] = tuple(op_strings)
+            else:
+                if symbolic_solver_labels:
+                    self._op_string[optype] = template_str.format(C=comment_str)
+                else:
+                    self._op_string[optype] = template_str.format(C="")
+
+        # making these attributes so they do not need to be
+        # passed into _print_nonlinear_terms_NL
+        self._symbolic_solver_labels = symbolic_solver_labels
+        self._output_fixed_variable_bounds = output_fixed_variable_bounds
+        # Speeds up calling name on every component when
+        # writing .row and .col files (when symbolic_solver_labels is True)
+        self._name_labeler = NameLabeler()
+
+        # Pause the GC for the duration of this method
+        with PauseGC() as pgc:
+            with open(filename, "w") as f:
+                self._OUTPUT = f
+                symbol_map = self._print_model_NL(
+                    model,
+                    solver_capability,
+                    show_section_timing=show_section_timing,
+                    skip_trivial_constraints=skip_trivial_constraints,
+                    file_determinism=file_determinism,
+                    include_all_variable_bounds=include_all_variable_bounds,
+                    export_nonlinear_variables=export_nonlinear_variables,
+                )
+
+        self._symbolic_solver_labels = False
+        self._output_fixed_variable_bounds = False
+        self._name_labeler = None
+
+        self._OUTPUT = None
+        self._varID_map = None
+        self._op_string = None
+        return filename, symbol_map
+
+    def _print_quad_term(self, v1, v2):
+        OUTPUT = self._OUTPUT
+        if v1 is not v2:
+            prod_str = self._op_string[EXPR.ProductExpression]
+            OUTPUT.write(prod_str)
+            self._print_nonlinear_terms_NL(v1)
+            self._print_nonlinear_terms_NL(v2)
+        else:
+            intr_expr_str = self._op_string['pow']
+            OUTPUT.write(intr_expr_str)
+            self._print_nonlinear_terms_NL(v1)
+            OUTPUT.write(self._op_string[NumericConstant] % (2))
+
+    def _print_standard_quadratic_NL(self, quadratic_vars, quadratic_coefs):
+        OUTPUT = self._OUTPUT
+        nary_sum_str, binary_sum_str, coef_term_str = self._op_string[
+            EXPR.SumExpressionBase
+        ]
+        assert len(quadratic_vars) == len(quadratic_coefs)
+        if len(quadratic_vars) == 1:
+            pass
+        else:
+            if len(quadratic_vars) == 2:
+                OUTPUT.write(binary_sum_str)
+            else:
+                assert len(quadratic_vars) > 2
+                OUTPUT.write(nary_sum_str % (len(quadratic_vars)))
+            # now we need to do a sort to ensure deterministic output
+            # as the compiled quadratic representation does not preserve
+            # any ordering
+            old_quadratic_vars = quadratic_vars
+            old_quadratic_coefs = quadratic_coefs
+            self_varID_map = self._varID_map
+            quadratic_vars = []
+            quadratic_coefs = []
+            for i, (v1, v2) in sorted(
+                enumerate(old_quadratic_vars),
+                key=lambda x: (
+                    self_varID_map[id(x[1][0])],
+                    self_varID_map[id(x[1][1])],
+                ),
+            ):
+                quadratic_coefs.append(old_quadratic_coefs[i])
+                if self_varID_map[id(v1)] <= self_varID_map[id(v2)]:
+                    quadratic_vars.append((v1, v2))
+                else:
+                    quadratic_vars.append((v2, v1))
+        for i in range(len(quadratic_vars)):
+            coef = quadratic_coefs[i]
+            v1, v2 = quadratic_vars[i]
+            if coef != 1:
+                OUTPUT.write(coef_term_str % (coef))
+            self._print_quad_term(v1, v2)
+
+    def _print_nonlinear_terms_NL(self, exp):
+        OUTPUT = self._OUTPUT
+        exp_type = type(exp)
+        # JDS: check list first so that after this, we know that exp
+        # must be some form of NumericValue
+        if exp_type is list:
+            # this is an implied summation of expressions (we did not
+            # create a new sum expression for efficiency) this should
+            # be a list of tuples where [0] is the coeff and [1] is
+            # the expr to write
+            nary_sum_str, binary_sum_str, coef_term_str = self._op_string[
+                EXPR.SumExpressionBase
+            ]
+            n = len(exp)
+            if n > 2:
+                OUTPUT.write(nary_sum_str % (n))
+                for i in range(0, n):
+                    assert exp[i].__class__ is tuple
+                    coef = exp[i][0]
+                    child_exp = exp[i][1]
+                    if coef != 1:
+                        OUTPUT.write(coef_term_str % (coef))
+                    self._print_nonlinear_terms_NL(child_exp)
+            else:  # n == 1 or 2
+                for i in range(0, n):
+                    assert exp[i].__class__ is tuple
+                    coef = exp[i][0]
+                    child_exp = exp[i][1]
+                    if i != n - 1:
+                        # need the + op if it is not the last entry in the list
+                        OUTPUT.write(binary_sum_str)
+                    if coef != 1:
+                        OUTPUT.write(coef_term_str % (coef))
+                    self._print_nonlinear_terms_NL(child_exp)
+        elif exp_type in native_numeric_types:
+            OUTPUT.write(self._op_string[NumericConstant] % (exp))
+
+        elif exp.is_expression_type():
+            #
+            # Identify NPV expressions
+            #
+            if not exp.is_potentially_variable():
+                OUTPUT.write(self._op_string[NumericConstant] % (value(exp)))
+            #
+            # We are assuming that _Constant_* expression objects
+            # have been preprocessed to form constant values.
+            #
+            elif (
+                exp.__class__ is EXPR.SumExpression
+                or exp.__class__ is EXPR.LinearExpression
+            ):
+                nary_sum_str, binary_sum_str, coef_term_str = self._op_string[
+                    EXPR.SumExpressionBase
+                ]
+                n = exp.nargs()
+                const = 0
+                vargs = []
+                for v in exp.args:
+                    if v.__class__ in native_numeric_types:
+                        const +=

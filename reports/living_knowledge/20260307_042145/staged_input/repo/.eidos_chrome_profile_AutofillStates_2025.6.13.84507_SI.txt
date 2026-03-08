@@ -1,0 +1,71 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/SI
+KIND: config
+
+SI
+slovenske konjice
+	grosuplje
+lenart
+litija	
+logatec
+slovenska bistrica
+šmarje pri jelšah	
+tržič
+laško
+
+cerknica
+
+novo mesto
+koper	
+trebnje
+murska sobota
+	dravograd
+
+trbovlje	
+velenje"
+kočevjeupravna enota kočevje
+tolmin
+gornja radgona
+ruše
+ptuj
+šentjuršentjur pri celju	
+mozirje
+izola
+kranj
+
+radovljica
+
+domžale	
+sevnica
+zagorje ob savi	
+ribnica	
+lendava	
+vrhnika=
+mariboradministrative unit mariborupravna enota maribor6
+hrastnikmunicipality of hrastnikobčina hrastnik
+ravne na koroškem
+piran
+krško
+radlje ob dravi
+
+ljutomer
+ormož
+žalec
+
+jesenice	
+sežana	
+pesnica	
+metlika
+
+postojna*
+upravne enote škofja lokaškofja loka
+
+brežice
+ilirska bistrica
+	črnomelj*
+ajdovščinaupravna enota ajdovščina
+nova gorica
+	ljubljana
+idrija
+kamnik
+celje
+slovenj gradec

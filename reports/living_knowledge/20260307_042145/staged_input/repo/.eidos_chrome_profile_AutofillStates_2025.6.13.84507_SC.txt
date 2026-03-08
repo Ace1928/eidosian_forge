@@ -1,0 +1,34 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/SC
+KIND: config
+
+SC
+anse aux pinsanseauxpins
+anse boileau
+anse etoileanse étoile
+au cap
+anse royale
+baie lazare#
+baie sainte annebaie sainteanne
+beau vallon	
+bel air
+	bel ombre	
+cascade
+glacis/
+grand anse mahe
+grand'ansegrand'anse mahé 
+grand anse praslin
+grand'anse
+
+la digue
+la riviere anglaise
+mont buxton
+mont fleuri
+	plaisance
+pointe la rue
+
+port glaud
+saint louis
+
+takamaka
+les mamelles
+roche caimanroche caïman

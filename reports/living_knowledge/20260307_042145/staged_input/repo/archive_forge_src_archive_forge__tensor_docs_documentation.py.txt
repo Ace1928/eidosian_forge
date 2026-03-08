@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_tensor_docs_documentation.py
+KIND: code
+
+import torch._C
+from torch._C import _add_docstr as add_docstr
+from ._torch_docs import parse_kwargs, reproducibility_notes
+Adds docstrings to Tensor functions

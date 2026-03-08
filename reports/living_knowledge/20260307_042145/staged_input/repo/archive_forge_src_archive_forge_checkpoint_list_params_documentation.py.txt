@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/checkpoint_list_params_documentation.py
+KIND: code
+
+from __future__ import annotations
+from typing_extensions import TypedDict
+Number of checkpoints to retrieve.

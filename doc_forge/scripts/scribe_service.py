@@ -9,8 +9,8 @@ from pathlib import Path
 
 # Ensure the package is in path
 script_dir = Path(__file__).resolve().parent
-forge_root = script_dir.parent.parent
-src_dir = forge_root / "src"
+doc_forge_root = script_dir.parent
+src_dir = doc_forge_root / "src"
 
 if str(src_dir) not in sys.path:
     sys.path.insert(0, str(src_dir))

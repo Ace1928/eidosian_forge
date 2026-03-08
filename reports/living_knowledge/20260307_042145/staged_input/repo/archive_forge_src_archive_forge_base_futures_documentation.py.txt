@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/base_futures_documentation.py
+KIND: code
+
+import reprlib
+from _thread import get_ident
+from . import format_helpers
+helper function for Future.__repr__

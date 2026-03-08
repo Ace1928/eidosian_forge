@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/OPT_documentation.py
+KIND: code
+
+import struct
+import dns.edns
+import dns.exception
+import dns.immutable
+import dns.rdata
+payload size

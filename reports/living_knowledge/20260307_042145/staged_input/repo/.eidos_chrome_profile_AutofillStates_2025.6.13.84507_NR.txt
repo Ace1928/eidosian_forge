@@ -1,0 +1,19 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/NR
+KIND: config
+
+NR
+aiwoaiwo district
+anabaranabar district
+anetananetan district
+anibareanibare district
+baitibaiti districtbaitsi
+boeboe district
+buadabuada district!
+
+denigomodudenigomodu district
+ewaewa district
+ijuwijuw district
+menengmeneng district
+niboknibok district
+uaboeuaboe district
+yarenyaren district

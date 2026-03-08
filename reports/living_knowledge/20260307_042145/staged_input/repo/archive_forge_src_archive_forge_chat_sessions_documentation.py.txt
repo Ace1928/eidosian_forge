@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/chat_sessions_documentation.py
+KIND: code
+
+from typing import Sequence, TypedDict
+from langchain_core.messages import BaseMessage
+The function calling specs for the messages.

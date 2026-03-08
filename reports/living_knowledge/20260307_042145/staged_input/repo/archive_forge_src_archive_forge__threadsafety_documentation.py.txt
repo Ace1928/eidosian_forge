@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_threadsafety_documentation.py
+KIND: code
+
+import threading
+import scipy._lib.decorator
+
+    Decorate a function with a threading lock and prevent reentrant calls.

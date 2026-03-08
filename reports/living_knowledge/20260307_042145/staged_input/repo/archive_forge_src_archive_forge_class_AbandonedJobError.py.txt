@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AbandonedJobError.py
+KIND: code
+
+class AbandonedJobError(Exception):
+    pass

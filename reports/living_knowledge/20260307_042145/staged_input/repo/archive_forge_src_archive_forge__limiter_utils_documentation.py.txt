@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_limiter_utils_documentation.py
+KIND: code
+
+import collections
+from typing import Deque, Optional
+import torch
+Dequeues a free event if possible.

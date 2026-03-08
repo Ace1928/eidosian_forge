@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/character_varieties_documentation.py
+KIND: code
+
+from ..pari import pari
+import string
+from itertools import combinations, combinations_with_replacement, product
+Creates a Presentation from G:generators and R:relations

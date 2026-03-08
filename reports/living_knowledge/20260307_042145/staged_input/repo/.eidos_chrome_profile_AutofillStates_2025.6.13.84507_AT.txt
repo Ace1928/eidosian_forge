@@ -1,0 +1,16 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/AT
+KIND: config
+
+AT
+
+burgenland
+kärnten	carinthia"
+niederösterreichlower austria-
+oberösterroberösterreichupper austria
+land salzburgsalzburg
+
+steiermarkstyria
+tiroltyrol
+
+vorarlberg
+wienvienna

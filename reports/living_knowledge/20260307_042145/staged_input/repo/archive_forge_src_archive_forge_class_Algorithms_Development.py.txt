@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_Algorithms_Development.py
+KIND: code
+
+class Algorithms_Development:
+
+    def __init__(self):
+        self.theories = []

@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/ExcludedVolume_documentation.py
+KIND: code
+
+featInfo should be a sequence of ([indices],min,max) tuples

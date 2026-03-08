@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_compression_documentation.py
+KIND: code
+
+import io
+import sys
+Return the current file position.

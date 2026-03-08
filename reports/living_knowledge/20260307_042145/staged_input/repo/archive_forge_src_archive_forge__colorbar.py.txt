@@ -1,0 +1,603 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_colorbar.py
+KIND: code
+
+from plotly.basedatatypes import BaseTraceHierarchyType as _BaseTraceHierarchyType
+import copy as _copy
+
+
+class ColorBar(_BaseTraceHierarchyType):
+
+    # class properties
+    # --------------------
+    _parent_path_str = "surface"
+    _path_str = "surface.colorbar"
+    _valid_props = {
+        "bgcolor",
+        "bordercolor",
+        "borderwidth",
+        "dtick",
+        "exponentformat",
+        "labelalias",
+        "len",
+        "lenmode",
+        "minexponent",
+        "nticks",
+        "orientation",
+        "outlinecolor",
+        "outlinewidth",
+        "separatethousands",
+        "showexponent",
+        "showticklabels",
+        "showtickprefix",
+        "showticksuffix",
+        "thickness",
+        "thicknessmode",
+        "tick0",
+        "tickangle",
+        "tickcolor",
+        "tickfont",
+        "tickformat",
+        "tickformatstopdefaults",
+        "tickformatstops",
+        "ticklabeloverflow",
+        "ticklabelposition",
+        "ticklabelstep",
+        "ticklen",
+        "tickmode",
+        "tickprefix",
+        "ticks",
+        "ticksuffix",
+        "ticktext",
+        "ticktextsrc",
+        "tickvals",
+        "tickvalssrc",
+        "tickwidth",
+        "title",
+        "titlefont",
+        "titleside",
+        "x",
+        "xanchor",
+        "xpad",
+        "xref",
+        "y",
+        "yanchor",
+        "ypad",
+        "yref",
+    }
+
+    # bgcolor
+    # -------
+    @property
+    def bgcolor(self):
+        """
+        Sets the color of padded area.
+
+        The 'bgcolor' property is a color and may be specified as:
+          - A hex string (e.g. '#ff0000')
+          - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+          - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+          - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+          - A named CSS color:
+                aliceblue, antiquewhite, aqua, aquamarine, azure,
+                beige, bisque, black, blanchedalmond, blue,
+                blueviolet, brown, burlywood, cadetblue,
+                chartreuse, chocolate, coral, cornflowerblue,
+                cornsilk, crimson, cyan, darkblue, darkcyan,
+                darkgoldenrod, darkgray, darkgrey, darkgreen,
+                darkkhaki, darkmagenta, darkolivegreen, darkorange,
+                darkorchid, darkred, darksalmon, darkseagreen,
+                darkslateblue, darkslategray, darkslategrey,
+                darkturquoise, darkviolet, deeppink, deepskyblue,
+                dimgray, dimgrey, dodgerblue, firebrick,
+                floralwhite, forestgreen, fuchsia, gainsboro,
+                ghostwhite, gold, goldenrod, gray, grey, green,
+                greenyellow, honeydew, hotpink, indianred, indigo,
+                ivory, khaki, lavender, lavenderblush, lawngreen,
+                lemonchiffon, lightblue, lightcoral, lightcyan,
+                lightgoldenrodyellow, lightgray, lightgrey,
+                lightgreen, lightpink, lightsalmon, lightseagreen,
+                lightskyblue, lightslategray, lightslategrey,
+                lightsteelblue, lightyellow, lime, limegreen,
+                linen, magenta, maroon, mediumaquamarine,
+                mediumblue, mediumorchid, mediumpurple,
+                mediumseagreen, mediumslateblue, mediumspringgreen,
+                mediumturquoise, mediumvioletred, midnightblue,
+                mintcream, mistyrose, moccasin, navajowhite, navy,
+                oldlace, olive, olivedrab, orange, orangered,
+                orchid, palegoldenrod, palegreen, paleturquoise,
+                palevioletred, papayawhip, peachpuff, peru, pink,
+                plum, powderblue, purple, red, rosybrown,
+                royalblue, rebeccapurple, saddlebrown, salmon,
+                sandybrown, seagreen, seashell, sienna, silver,
+                skyblue, slateblue, slategray, slategrey, snow,
+                springgreen, steelblue, tan, teal, thistle, tomato,
+                turquoise, violet, wheat, white, whitesmoke,
+                yellow, yellowgreen
+
+        Returns
+        -------
+        str
+        """
+        return self["bgcolor"]
+
+    @bgcolor.setter
+    def bgcolor(self, val):
+        self["bgcolor"] = val
+
+    # bordercolor
+    # -----------
+    @property
+    def bordercolor(self):
+        """
+        Sets the axis line color.
+
+        The 'bordercolor' property is a color and may be specified as:
+          - A hex string (e.g. '#ff0000')
+          - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+          - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+          - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+          - A named CSS color:
+                aliceblue, antiquewhite, aqua, aquamarine, azure,
+                beige, bisque, black, blanchedalmond, blue,
+                blueviolet, brown, burlywood, cadetblue,
+                chartreuse, chocolate, coral, cornflowerblue,
+                cornsilk, crimson, cyan, darkblue, darkcyan,
+                darkgoldenrod, darkgray, darkgrey, darkgreen,
+                darkkhaki, darkmagenta, darkolivegreen, darkorange,
+                darkorchid, darkred, darksalmon, darkseagreen,
+                darkslateblue, darkslategray, darkslategrey,
+                darkturquoise, darkviolet, deeppink, deepskyblue,
+                dimgray, dimgrey, dodgerblue, firebrick,
+                floralwhite, forestgreen, fuchsia, gainsboro,
+                ghostwhite, gold, goldenrod, gray, grey, green,
+                greenyellow, honeydew, hotpink, indianred, indigo,
+                ivory, khaki, lavender, lavenderblush, lawngreen,
+                lemonchiffon, lightblue, lightcoral, lightcyan,
+                lightgoldenrodyellow, lightgray, lightgrey,
+                lightgreen, lightpink, lightsalmon, lightseagreen,
+                lightskyblue, lightslategray, lightslategrey,
+                lightsteelblue, lightyellow, lime, limegreen,
+                linen, magenta, maroon, mediumaquamarine,
+                mediumblue, mediumorchid, mediumpurple,
+                mediumseagreen, mediumslateblue, mediumspringgreen,
+                mediumturquoise, mediumvioletred, midnightblue,
+                mintcream, mistyrose, moccasin, navajowhite, navy,
+                oldlace, olive, olivedrab, orange, orangered,
+                orchid, palegoldenrod, palegreen, paleturquoise,
+                palevioletred, papayawhip, peachpuff, peru, pink,
+                plum, powderblue, purple, red, rosybrown,
+                royalblue, rebeccapurple, saddlebrown, salmon,
+                sandybrown, seagreen, seashell, sienna, silver,
+                skyblue, slateblue, slategray, slategrey, snow,
+                springgreen, steelblue, tan, teal, thistle, tomato,
+                turquoise, violet, wheat, white, whitesmoke,
+                yellow, yellowgreen
+
+        Returns
+        -------
+        str
+        """
+        return self["bordercolor"]
+
+    @bordercolor.setter
+    def bordercolor(self, val):
+        self["bordercolor"] = val
+
+    # borderwidth
+    # -----------
+    @property
+    def borderwidth(self):
+        """
+        Sets the width (in px) or the border enclosing this color bar.
+
+        The 'borderwidth' property is a number and may be specified as:
+          - An int or float in the interval [0, inf]
+
+        Returns
+        -------
+        int|float
+        """
+        return self["borderwidth"]
+
+    @borderwidth.setter
+    def borderwidth(self, val):
+        self["borderwidth"] = val
+
+    # dtick
+    # -----
+    @property
+    def dtick(self):
+        """
+        Sets the step in-between ticks on this axis. Use with `tick0`.
+        Must be a positive number, or special strings available to
+        "log" and "date" axes. If the axis `type` is "log", then ticks
+        are set every 10^(n*dtick) where n is the tick number. For
+        example, to set a tick mark at 1, 10, 100, 1000, ... set dtick
+        to 1. To set tick marks at 1, 100, 10000, ... set dtick to 2.
+        To set tick marks at 1, 5, 25, 125, 625, 3125, ... set dtick to
+        log_10(5), or 0.69897000433. "log" has several special values;
+        "L<f>", where `f` is a positive number, gives ticks linearly
+        spaced in value (but not position). For example `tick0` = 0.1,
+        `dtick` = "L0.5" will put ticks at 0.1, 0.6, 1.1, 1.6 etc. To
+        show powers of 10 plus small digits between, use "D1" (all
+        digits) or "D2" (only 2 and 5). `tick0` is ignored for "D1" and
+        "D2". If the axis `type` is "date", then you must convert the
+        time to milliseconds. For example, to set the interval between
+        ticks to one day, set `dtick` to 86400000.0. "date" also has
+        special values "M<n>" gives ticks spaced by a number of months.
+        `n` must be a positive integer. To set ticks on the 15th of
+        every third month, set `tick0` to "2000-01-15" and `dtick` to
+        "M3". To set ticks every 4 years, set `dtick` to "M48"
+
+        The 'dtick' property accepts values of any type
+
+        Returns
+        -------
+        Any
+        """
+        return self["dtick"]
+
+    @dtick.setter
+    def dtick(self, val):
+        self["dtick"] = val
+
+    # exponentformat
+    # --------------
+    @property
+    def exponentformat(self):
+        """
+        Determines a formatting rule for the tick exponents. For
+        example, consider the number 1,000,000,000. If "none", it
+        appears as 1,000,000,000. If "e", 1e+9. If "E", 1E+9. If
+        "power", 1x10^9 (with 9 in a super script). If "SI", 1G. If
+        "B", 1B.
+
+        The 'exponentformat' property is an enumeration that may be specified as:
+          - One of the following enumeration values:
+                ['none', 'e', 'E', 'power', 'SI', 'B']
+
+        Returns
+        -------
+        Any
+        """
+        return self["exponentformat"]
+
+    @exponentformat.setter
+    def exponentformat(self, val):
+        self["exponentformat"] = val
+
+    # labelalias
+    # ----------
+    @property
+    def labelalias(self):
+        """
+        Replacement text for specific tick or hover labels. For example
+        using {US: 'USA', CA: 'Canada'} changes US to USA and CA to
+        Canada. The labels we would have shown must match the keys
+        exactly, after adding any tickprefix or ticksuffix. For
+        negative numbers the minus sign symbol used (U+2212) is wider
+        than the regular ascii dash. That means you need to use −1
+        instead of -1. labelalias can be used with any axis type, and
+        both keys (if needed) and values (if desired) can include html-
+        like tags or MathJax.
+
+        The 'labelalias' property accepts values of any type
+
+        Returns
+        -------
+        Any
+        """
+        return self["labelalias"]
+
+    @labelalias.setter
+    def labelalias(self, val):
+        self["labelalias"] = val
+
+    # len
+    # ---
+    @property
+    def len(self):
+        """
+        Sets the length of the color bar This measure excludes the
+        padding of both ends. That is, the color bar length is this
+        length minus the padding on both ends.
+
+        The 'len' property is a number and may be specified as:
+          - An int or float in the interval [0, inf]
+
+        Returns
+        -------
+        int|float
+        """
+        return self["len"]
+
+    @len.setter
+    def len(self, val):
+        self["len"] = val
+
+    # lenmode
+    # -------
+    @property
+    def lenmode(self):
+        """
+        Determines whether this color bar's length (i.e. the measure in
+        the color variation direction) is set in units of plot
+        "fraction" or in *pixels. Use `len` to set the value.
+
+        The 'lenmode' property is an enumeration that may be specified as:
+          - One of the following enumeration values:
+                ['fraction', 'pixels']
+
+        Returns
+        -------
+        Any
+        """
+        return self["lenmode"]
+
+    @lenmode.setter
+    def lenmode(self, val):
+        self["lenmode"] = val
+
+    # minexponent
+    # -----------
+    @property
+    def minexponent(self):
+        """
+        Hide SI prefix for 10^n if |n| is below this number. This only
+        has an effect when `tickformat` is "SI" or "B".
+
+        The 'minexponent' property is a number and may be specified as:
+          - An int or float in the interval [0, inf]
+
+        Returns
+        -------
+        int|float
+        """
+        return self["minexponent"]
+
+    @minexponent.setter
+    def minexponent(self, val):
+        self["minexponent"] = val
+
+    # nticks
+    # ------
+    @property
+    def nticks(self):
+        """
+        Specifies the maximum number of ticks for the particular axis.
+        The actual number of ticks will be chosen automatically to be
+        less than or equal to `nticks`. Has an effect only if
+        `tickmode` is set to "auto".
+
+        The 'nticks' property is a integer and may be specified as:
+          - An int (or float that will be cast to an int)
+            in the interval [0, 9223372036854775807]
+
+        Returns
+        -------
+        int
+        """
+        return self["nticks"]
+
+    @nticks.setter
+    def nticks(self, val):
+        self["nticks"] = val
+
+    # orientation
+    # -----------
+    @property
+    def orientation(self):
+        """
+        Sets the orientation of the colorbar.
+
+        The 'orientation' property is an enumeration that may be specified as:
+          - One of the following enumeration values:
+                ['h', 'v']
+
+        Returns
+        -------
+        Any
+        """
+        return self["orientation"]
+
+    @orientation.setter
+    def orientation(self, val):
+        self["orientation"] = val
+
+    # outlinecolor
+    # ------------
+    @property
+    def outlinecolor(self):
+        """
+        Sets the axis line color.
+
+        The 'outlinecolor' property is a color and may be specified as:
+          - A hex string (e.g. '#ff0000')
+          - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+          - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+          - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+          - A named CSS color:
+                aliceblue, antiquewhite, aqua, aquamarine, azure,
+                beige, bisque, black, blanchedalmond, blue,
+                blueviolet, brown, burlywood, cadetblue,
+                chartreuse, chocolate, coral, cornflowerblue,
+                cornsilk, crimson, cyan, darkblue, darkcyan,
+                darkgoldenrod, darkgray, darkgrey, darkgreen,
+                darkkhaki, darkmagenta, darkolivegreen, darkorange,
+                darkorchid, darkred, darksalmon, darkseagreen,
+                darkslateblue, darkslategray, darkslategrey,
+                darkturquoise, darkviolet, deeppink, deepskyblue,
+                dimgray, dimgrey, dodgerblue, firebrick,
+                floralwhite, forestgreen, fuchsia, gainsboro,
+                ghostwhite, gold, goldenrod, gray, grey, green,
+                greenyellow, honeydew, hotpink, indianred, indigo,
+                ivory, khaki, lavender, lavenderblush, lawngreen,
+                lemonchiffon, lightblue, lightcoral, lightcyan,
+                lightgoldenrodyellow, lightgray, lightgrey,
+                lightgreen, lightpink, lightsalmon, lightseagreen,
+                lightskyblue, lightslategray, lightslategrey,
+                lightsteelblue, lightyellow, lime, limegreen,
+                linen, magenta, maroon, mediumaquamarine,
+                mediumblue, mediumorchid, mediumpurple,
+                mediumseagreen, mediumslateblue, mediumspringgreen,
+                mediumturquoise, mediumvioletred, midnightblue,
+                mintcream, mistyrose, moccasin, navajowhite, navy,
+                oldlace, olive, olivedrab, orange, orangered,
+                orchid, palegoldenrod, palegreen, paleturquoise,
+                palevioletred, papayawhip, peachpuff, peru, pink,
+                plum, powderblue, purple, red, rosybrown,
+                royalblue, rebeccapurple, saddlebrown, salmon,
+                sandybrown, seagreen, seashell, sienna, silver,
+                skyblue, slateblue, slategray, slategrey, snow,
+                springgreen, steelblue, tan, teal, thistle, tomato,
+                turquoise, violet, wheat, white, whitesmoke,
+                yellow, yellowgreen
+
+        Returns
+        -------
+        str
+        """
+        return self["outlinecolor"]
+
+    @outlinecolor.setter
+    def outlinecolor(self, val):
+        self["outlinecolor"] = val
+
+    # outlinewidth
+    # ------------
+    @property
+    def outlinewidth(self):
+        """
+        Sets the width (in px) of the axis line.
+
+        The 'outlinewidth' property is a number and may be specified as:
+          - An int or float in the interval [0, inf]
+
+        Returns
+        -------
+        int|float
+        """
+        return self["outlinewidth"]
+
+    @outlinewidth.setter
+    def outlinewidth(self, val):
+        self["outlinewidth"] = val
+
+    # separatethousands
+    # -----------------
+    @property
+    def separatethousands(self):
+        """
+        If "true", even 4-digit integers are separated
+
+        The 'separatethousands' property must be specified as a bool
+        (either True, or False)
+
+        Returns
+        -------
+        bool
+        """
+        return self["separatethousands"]
+
+    @separatethousands.setter
+    def separatethousands(self, val):
+        self["separatethousands"] = val
+
+    # showexponent
+    # ------------
+    @property
+    def showexponent(self):
+        """
+        If "all", all exponents are shown besides their significands.
+        If "first", only the exponent of the first tick is shown. If
+        "last", only the exponent of the last tick is shown. If "none",
+        no exponents appear.
+
+        The 'showexponent' property is an enumeration that may be specified as:
+          - One of the following enumeration values:
+                ['all', 'first', 'last', 'none']
+
+        Returns
+        -------
+        Any
+        """
+        return self["showexponent"]
+
+    @showexponent.setter
+    def showexponent(self, val):
+        self["showexponent"] = val
+
+    # showticklabels
+    # --------------
+    @property
+    def showticklabels(self):
+        """
+        Determines whether or not the tick labels are drawn.
+
+        The 'showticklabels' property must be specified as a bool
+        (either True, or False)
+
+        Returns
+        -------
+        bool
+        """
+        return self["showticklabels"]
+
+    @showticklabels.setter
+    def showticklabels(self, val):
+        self["showticklabels"] = val
+
+    # showtickprefix
+    # --------------
+    @property
+    def showtickprefix(self):
+        """
+        If "all", all tick labels are displayed with a prefix. If
+        "first", only the first tick is displayed with a prefix. If
+        "last", only the last tick is displayed with a suffix. If
+        "none", tick prefixes are hidden.
+
+        The 'showtickprefix' property is an enumeration that may be specified as:
+          - One of the following enumeration values:
+                ['all', 'first', 'last', 'none']
+
+        Returns
+        -------
+        Any
+        """
+        return self["showtickprefix"]
+
+    @showtickprefix.setter
+    def showtickprefix(self, val):
+        self["showtickprefix"] = val
+
+    # showticksuffix
+    # --------------
+    @property
+    def showticksuffix(self):
+        """
+        Same as `showtickprefix` but for tick suffixes.
+
+        The 'showticksuffix' property is an enumeration that may be specified as:
+          - One of the following enumeration values:
+                ['all', 'first', 'last', 'none']
+
+        Returns
+        -------
+        Any
+        """
+        return self["showticksuffix"]
+
+    @showticksuffix.setter
+    def showticksuffix(self, val):
+        self["showticksuffix"] = val
+
+    # thickness
+    # ---------
+    @property
+    def thickness(self):
+        """
+        Sets the thickness of the color bar This measure excludes the
+        size of the padding, ticks and labels.
+
+        The 'thickness' property is a number and may be specified

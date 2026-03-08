@@ -1,0 +1,569 @@
+SOURCE_PATH: archive_forge/src/archive_forge/SeqFeature.py
+KIND: code
+
+# Copyright 2000-2003 Jeff Chang.
+# Copyright 2001-2008 Brad Chapman.
+# Copyright 2005-2024 by Peter Cock.
+# Copyright 2006-2009 Michiel de Hoon.
+# All rights reserved.
+#
+# This file is part of the Biopython distribution and governed by your
+# choice of the "Biopython License Agreement" or the "BSD 3-Clause License".
+# Please see the LICENSE file that should have been included as part of this
+# package.
+"""Represent a Sequence Feature holding info about a part of a sequence.
+
+This is heavily modeled after the Biocorba SeqFeature objects, and
+may be pretty biased towards GenBank stuff since I'm writing it
+for the GenBank parser output...
+
+What's here:
+
+Base class to hold a Feature
+----------------------------
+
+Classes:
+ - SeqFeature
+
+Hold information about a Reference
+----------------------------------
+
+This is an attempt to create a General class to hold Reference type
+information.
+
+Classes:
+ - Reference
+
+Specify locations of a feature on a Sequence
+--------------------------------------------
+
+This aims to handle, in Ewan Birney's words, 'the dreaded fuzziness issue'.
+This has the advantages of allowing us to handle fuzzy stuff in case anyone
+needs it, and also be compatible with BioPerl etc and BioSQL.
+
+Classes:
+ - Location - abstract base class of SimpleLocation and CompoundLocation.
+ - SimpleLocation - Specify the start and end location of a feature.
+ - CompoundLocation - Collection of SimpleLocation objects (for joins etc).
+ - Position - abstract base class of ExactPosition, WithinPosition,
+   BetweenPosition, AfterPosition, OneOfPosition, UncertainPosition, and
+   UnknownPosition.
+ - ExactPosition - Specify the position as being exact.
+ - WithinPosition - Specify a position occurring within some range.
+ - BetweenPosition - Specify a position occurring between a range (OBSOLETE?).
+ - BeforePosition - Specify the position as being found before some base.
+ - AfterPosition - Specify the position as being found after some base.
+ - OneOfPosition - Specify a position consisting of multiple alternative positions.
+ - UncertainPosition - Specify a specific position which is uncertain.
+ - UnknownPosition - Represents missing information like '?' in UniProt.
+
+
+Exceptions:
+ - LocationParserError - Exception indicating a failure to parse a location
+   string.
+
+"""
+import functools
+import re
+import warnings
+from abc import ABC, abstractmethod
+
+from Bio import BiopythonDeprecationWarning
+from Bio import BiopythonParserWarning
+from Bio.Seq import MutableSeq
+from Bio.Seq import reverse_complement
+from Bio.Seq import Seq
+
+
+# Regular expressions for location parsing
+
+_reference = r"(?:[a-zA-Z][a-zA-Z0-9_\.\|]*[a-zA-Z0-9]?\:)"
+_oneof_position = r"one\-of\(\d+[,\d+]+\)"
+
+_oneof_location = rf"[<>]?(?:\d+|{_oneof_position})\.\.[<>]?(?:\d+|{_oneof_position})"
+
+_any_location = rf"({_reference}?{_oneof_location}|complement\({_oneof_location}\)|[^,]+|complement\([^,]+\))"
+
+_split = re.compile(_any_location).split
+
+assert _split("123..145")[1::2] == ["123..145"]
+assert _split("123..145,200..209")[1::2] == ["123..145", "200..209"]
+assert _split("one-of(200,203)..300")[1::2] == ["one-of(200,203)..300"]
+assert _split("complement(123..145),200..209")[1::2] == [
+    "complement(123..145)",
+    "200..209",
+]
+assert _split("123..145,one-of(200,203)..209")[1::2] == [
+    "123..145",
+    "one-of(200,203)..209",
+]
+assert _split("123..145,one-of(200,203)..one-of(209,211),300")[1::2] == [
+    "123..145",
+    "one-of(200,203)..one-of(209,211)",
+    "300",
+]
+assert _split("123..145,complement(one-of(200,203)..one-of(209,211)),300")[1::2] == [
+    "123..145",
+    "complement(one-of(200,203)..one-of(209,211))",
+    "300",
+]
+assert _split("123..145,200..one-of(209,211),300")[1::2] == [
+    "123..145",
+    "200..one-of(209,211)",
+    "300",
+]
+assert _split("123..145,200..one-of(209,211)")[1::2] == [
+    "123..145",
+    "200..one-of(209,211)",
+]
+assert _split(
+    "complement(149815..150200),complement(293787..295573),NC_016402.1:6618..6676,181647..181905"
+)[1::2] == [
+    "complement(149815..150200)",
+    "complement(293787..295573)",
+    "NC_016402.1:6618..6676",
+    "181647..181905",
+]
+
+
+_pair_location = r"[<>]?-?\d+\.\.[<>]?-?\d+"
+
+_between_location = r"\d+\^\d+"
+
+_within_position = r"\(\d+\.\d+\)"
+_within_location = r"([<>]?\d+|%s)\.\.([<>]?\d+|%s)" % (
+    _within_position,
+    _within_position,
+)
+_within_position = r"\((\d+)\.(\d+)\)"
+_re_within_position = re.compile(_within_position)
+assert _re_within_position.match("(3.9)")
+
+_oneof_location = r"([<>]?\d+|%s)\.\.([<>]?\d+|%s)" % (_oneof_position, _oneof_position)
+_oneof_position = r"one\-of\((\d+[,\d+]+)\)"
+_re_oneof_position = re.compile(_oneof_position)
+assert _re_oneof_position.match("one-of(6,9)")
+assert not _re_oneof_position.match("one-of(3)")
+assert _re_oneof_position.match("one-of(3,6)")
+assert _re_oneof_position.match("one-of(3,6,9)")
+
+_solo_location = r"[<>]?\d+"
+_solo_bond = r"bond\(%s\)" % _solo_location
+
+_re_location_category = re.compile(
+    r"^(?P<pair>%s)|(?P<between>%s)|(?P<within>%s)|(?P<oneof>%s)|(?P<bond>%s)|(?P<solo>%s)$"
+    % (
+        _pair_location,
+        _between_location,
+        _within_location,
+        _oneof_location,
+        _solo_bond,
+        _solo_location,
+    )
+)
+
+
+class LocationParserError(ValueError):
+    """Could not parse a feature location string."""
+
+
+class SeqFeature:
+    """Represent a Sequence Feature on an object.
+
+    Attributes:
+     - location - the location of the feature on the sequence (SimpleLocation)
+     - type - the specified type of the feature (ie. CDS, exon, repeat...)
+     - id - A string identifier for the feature.
+     - qualifiers - A dictionary of qualifiers on the feature. These are
+       analogous to the qualifiers from a GenBank feature table. The keys of
+       the dictionary are qualifier names, the values are the qualifier
+       values.
+
+    """
+
+    def __init__(
+        self,
+        location=None,
+        type="",
+        id="<unknown id>",
+        qualifiers=None,
+        sub_features=None,
+    ):
+        """Initialize a SeqFeature on a sequence.
+
+        location can either be a SimpleLocation (with strand argument also
+        given if required), or None.
+
+        e.g. With no strand, on the forward strand, and on the reverse strand:
+
+        >>> from Bio.SeqFeature import SeqFeature, SimpleLocation
+        >>> f1 = SeqFeature(SimpleLocation(5, 10), type="domain")
+        >>> f1.location.strand == None
+        True
+        >>> f2 = SeqFeature(SimpleLocation(7, 110, strand=1), type="CDS")
+        >>> f2.location.strand == +1
+        True
+        >>> f3 = SeqFeature(SimpleLocation(9, 108, strand=-1), type="CDS")
+        >>> f3.location.strand == -1
+        True
+
+        For exact start/end positions, an integer can be used (as shown above)
+        as shorthand for the ExactPosition object. For non-exact locations, the
+        SimpleLocation must be specified via the appropriate position objects.
+        """
+        if (
+            location is not None
+            and not isinstance(location, SimpleLocation)
+            and not isinstance(location, CompoundLocation)
+        ):
+            raise TypeError(
+                "SimpleLocation, CompoundLocation (or None) required for the location"
+            )
+        self.location = location
+        self.type = type
+        self.id = id
+        self.qualifiers = {}
+        if qualifiers is not None:
+            self.qualifiers.update(qualifiers)
+        if sub_features is not None:
+            raise TypeError("Rather than sub_features, use a CompoundLocation")
+
+    def _get_strand(self):
+        """Get function for the strand property (PRIVATE)."""
+        warnings.warn(
+            "Please use .location.strand rather than .strand",
+            BiopythonDeprecationWarning,
+        )
+        return self.location.strand
+
+    def _set_strand(self, value):
+        """Set function for the strand property (PRIVATE)."""
+        warnings.warn(
+            "Please use .location.strand rather than .strand",
+            BiopythonDeprecationWarning,
+        )
+        try:
+            self.location.strand = value
+        except AttributeError:
+            if self.location is None:
+                if value is not None:
+                    raise ValueError("Can't set strand without a location.") from None
+            else:
+                raise
+
+    strand = property(
+        fget=_get_strand,
+        fset=_set_strand,
+        doc="Alias for the location's strand (DEPRECATED).",
+    )
+
+    def _get_ref(self):
+        """Get function for the reference property (PRIVATE)."""
+        warnings.warn(
+            "Please use .location.ref rather than .ref",
+            BiopythonDeprecationWarning,
+        )
+        try:
+            return self.location.ref
+        except AttributeError:
+            return None
+
+    def _set_ref(self, value):
+        """Set function for the reference property (PRIVATE)."""
+        warnings.warn(
+            "Please use .location.ref rather than .ref",
+            BiopythonDeprecationWarning,
+        )
+        try:
+            self.location.ref = value
+        except AttributeError:
+            if self.location is None:
+                if value is not None:
+                    raise ValueError("Can't set ref without a location.") from None
+            else:
+                raise
+
+    ref = property(
+        fget=_get_ref,
+        fset=_set_ref,
+        doc="Alias for the location's ref (DEPRECATED).",
+    )
+
+    def _get_ref_db(self):
+        """Get function for the database reference property (PRIVATE)."""
+        warnings.warn(
+            "Please use .location.ref_db rather than .ref_db",
+            BiopythonDeprecationWarning,
+        )
+        try:
+            return self.location.ref_db
+        except AttributeError:
+            return None
+
+    def _set_ref_db(self, value):
+        """Set function for the database reference property (PRIVATE)."""
+        warnings.warn(
+            "Please use .location.ref_db rather than .ref_db",
+            BiopythonDeprecationWarning,
+        )
+        self.location.ref_db = value
+
+    ref_db = property(
+        fget=_get_ref_db,
+        fset=_set_ref_db,
+        doc="Alias for the location's ref_db (DEPRECATED).",
+    )
+
+    def __eq__(self, other):
+        """Check if two SeqFeature objects should be considered equal."""
+        return (
+            isinstance(other, SeqFeature)
+            and self.id == other.id
+            and self.type == other.type
+            and self.location == other.location
+            and self.qualifiers == other.qualifiers
+        )
+
+    def __repr__(self):
+        """Represent the feature as a string for debugging."""
+        answer = f"{self.__class__.__name__}({self.location!r}"
+        if self.type:
+            answer += f", type={self.type!r}"
+        if self.id and self.id != "<unknown id>":
+            answer += f", id={self.id!r}"
+        if self.qualifiers:
+            answer += ", qualifiers=..."
+        answer += ")"
+        return answer
+
+    def __str__(self):
+        """Return the full feature as a python string."""
+        out = f"type: {self.type}\n"
+        out += f"location: {self.location}\n"
+        if self.id and self.id != "<unknown id>":
+            out += f"id: {self.id}\n"
+        out += "qualifiers:\n"
+        for qual_key in sorted(self.qualifiers):
+            out += f"    Key: {qual_key}, Value: {self.qualifiers[qual_key]}\n"
+        return out
+
+    def _shift(self, offset):
+        """Return a copy of the feature with its location shifted (PRIVATE).
+
+        The annotation qualifiers are copied.
+        """
+        return SeqFeature(
+            location=self.location._shift(offset),
+            type=self.type,
+            id=self.id,
+            qualifiers=self.qualifiers.copy(),
+        )
+
+    def _flip(self, length):
+        """Return a copy of the feature with its location flipped (PRIVATE).
+
+        The argument length gives the length of the parent sequence. For
+        example a location 0..20 (+1 strand) with parent length 30 becomes
+        after flipping 10..30 (-1 strand). Strandless (None) or unknown
+        strand (0) remain like that - just their end points are changed.
+
+        The annotation qualifiers are copied.
+        """
+        return SeqFeature(
+            location=self.location._flip(length),
+            type=self.type,
+            id=self.id,
+            qualifiers=self.qualifiers.copy(),
+        )
+
+    def extract(self, parent_sequence, references=None):
+        """Extract the feature's sequence from supplied parent sequence.
+
+        The parent_sequence can be a Seq like object or a string, and will
+        generally return an object of the same type. The exception to this is
+        a MutableSeq as the parent sequence will return a Seq object.
+
+        This should cope with complex locations including complements, joins
+        and fuzzy positions. Even mixed strand features should work! This
+        also covers features on protein sequences (e.g. domains), although
+        here reverse strand features are not permitted. If the
+        location refers to other records, they must be supplied in the
+        optional dictionary references.
+
+        >>> from Bio.Seq import Seq
+        >>> from Bio.SeqFeature import SeqFeature, SimpleLocation
+        >>> seq = Seq("MKQHKAMIVALIVICITAVVAAL")
+        >>> f = SeqFeature(SimpleLocation(8, 15), type="domain")
+        >>> f.extract(seq)
+        Seq('VALIVIC')
+
+        If the SimpleLocation is None, e.g. when parsing invalid locus
+        locations in the GenBank parser, extract() will raise a ValueError.
+
+        >>> from Bio.Seq import Seq
+        >>> from Bio.SeqFeature import SeqFeature
+        >>> seq = Seq("MKQHKAMIVALIVICITAVVAAL")
+        >>> f = SeqFeature(None, type="domain")
+        >>> f.extract(seq)
+        Traceback (most recent call last):
+           ...
+        ValueError: The feature's .location is None. Check the sequence file for a valid location.
+
+        Note - currently only compound features of type "join" are supported.
+        """
+        if self.location is None:
+            raise ValueError(
+                "The feature's .location is None. Check the "
+                "sequence file for a valid location."
+            )
+        return self.location.extract(parent_sequence, references=references)
+
+    def translate(
+        self,
+        parent_sequence,
+        table="Standard",
+        start_offset=None,
+        stop_symbol="*",
+        to_stop=False,
+        cds=None,
+        gap=None,
+    ):
+        """Get a translation of the feature's sequence.
+
+        This method is intended for CDS or other features that code proteins
+        and is a shortcut that will both extract the feature and
+        translate it, taking into account the codon_start and transl_table
+        qualifiers, if they are present. If they are not present the
+        value of the arguments "table" and "start_offset" are used.
+
+        The "cds" parameter is set to "True" if the feature is of type
+        "CDS" but can be overridden by giving an explicit argument.
+
+        The arguments stop_symbol, to_stop and gap have the same meaning
+        as Seq.translate, refer to that documentation for further information.
+
+        Arguments:
+         - parent_sequence - A DNA or RNA sequence.
+         - table - Which codon table to use if there is no transl_table
+           qualifier for this feature. This can be either a name
+           (string), an NCBI identifier (integer), or a CodonTable
+           object (useful for non-standard genetic codes).  This
+           defaults to the "Standard" table.
+         - start_offset - offset at which the first complete codon of a
+           coding feature can be found, relative to the first base of
+           that feature. Has a valid value of 0, 1 or 2. NOTE: this
+           uses python's 0-based numbering whereas the codon_start
+           qualifier in files from NCBI use 1-based numbering.
+           Will override a codon_start qualifier
+
+        >>> from Bio.Seq import Seq
+        >>> from Bio.SeqFeature import SeqFeature, SimpleLocation
+        >>> seq = Seq("GGTTACACTTACCGATAATGTCTCTGATGA")
+        >>> f = SeqFeature(SimpleLocation(0, 30), type="CDS")
+        >>> f.qualifiers['transl_table'] = [11]
+
+        Note that features of type CDS are subject to the usual
+        checks at translation. But you can override this behavior
+        by giving explicit arguments:
+
+        >>> f.translate(seq, cds=False)
+        Seq('GYTYR*CL**')
+
+        Now use the start_offset argument to change the frame. Note
+        this uses python 0-based numbering.
+
+        >>> f.translate(seq, start_offset=1, cds=False)
+        Seq('VTLTDNVSD')
+
+        Alternatively use the codon_start qualifier to do the same
+        thing. Note: this uses 1-based numbering, which is found
+        in files from NCBI.
+
+        >>> f.qualifiers['codon_start'] = [2]
+        >>> f.translate(seq, cds=False)
+        Seq('VTLTDNVSD')
+        """
+        # see if this feature should be translated in a different
+        # frame using the "codon_start" qualifier
+        if start_offset is None:
+            try:
+                start_offset = int(self.qualifiers["codon_start"][0]) - 1
+            except KeyError:
+                start_offset = 0
+
+        if start_offset not in [0, 1, 2]:
+            raise ValueError(
+                "The start_offset must be 0, 1, or 2. "
+                f"The supplied value is {start_offset}. "
+                "Check the value of either the codon_start qualifier "
+                "or the start_offset argument"
+            )
+
+        feat_seq = self.extract(parent_sequence)[start_offset:]
+        codon_table = self.qualifiers.get("transl_table", [table])[0]
+
+        if cds is None:
+            cds = self.type == "CDS"
+
+        return feat_seq.translate(
+            table=codon_table,
+            stop_symbol=stop_symbol,
+            to_stop=to_stop,
+            cds=cds,
+            gap=gap,
+        )
+
+    def __bool__(self):
+        """Boolean value of an instance of this class (True).
+
+        This behavior is for backwards compatibility, since until the
+        __len__ method was added, a SeqFeature always evaluated as True.
+
+        Note that in comparison, Seq objects, strings, lists, etc, will all
+        evaluate to False if they have length zero.
+
+        WARNING: The SeqFeature may in future evaluate to False when its
+        length is zero (in order to better match normal python behavior)!
+        """
+        return True
+
+    def __len__(self):
+        """Return the length of the region where the feature is located.
+
+        >>> from Bio.Seq import Seq
+        >>> from Bio.SeqFeature import SeqFeature, SimpleLocation
+        >>> seq = Seq("MKQHKAMIVALIVICITAVVAAL")
+        >>> f = SeqFeature(SimpleLocation(8, 15), type="domain")
+        >>> len(f)
+        7
+        >>> f.extract(seq)
+        Seq('VALIVIC')
+        >>> len(f.extract(seq))
+        7
+
+        This is a proxy for taking the length of the feature's location:
+
+        >>> len(f.location)
+        7
+
+        For simple features this is the same as the region spanned (end
+        position minus start position using Pythonic counting). However, for
+        a compound location (e.g. a CDS as the join of several exons) the
+        gaps are not counted (e.g. introns). This ensures that len(f) matches
+        len(f.extract(parent_seq)), and also makes sure things work properly
+        with features wrapping the origin etc.
+        """
+        return len(self.location)
+
+    def __iter__(self):
+        """Iterate over the parent positions within the feature.
+
+        The iteration order is strand aware, and can be thought of as moving
+        along the feature using the parent sequence coordinates:
+
+        >>> from Bio.SeqFeature import SeqFeature, SimpleLocation
+        >>> f = SeqFeature(SimpleLocation(5, 10, strand=-1), type="domain")
+        >>> len(f)
+        5
+        >>> for i in f: print(i)
+        9

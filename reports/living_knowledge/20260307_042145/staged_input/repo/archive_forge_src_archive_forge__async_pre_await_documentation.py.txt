@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_async_pre_await_documentation.py
+KIND: code
+
+import asyncio
+import errno
+import signal
+from pexpect import EOF
+Implementation of coroutines without using ``async def``/``await`` keywords.
+
+``@asyncio.coroutine`` and ``yield from`` are  used here instead.

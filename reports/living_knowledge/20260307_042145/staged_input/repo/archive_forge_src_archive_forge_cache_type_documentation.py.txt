@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/cache_type_documentation.py
+KIND: code
+
+from __future__ import annotations
+import enum
+Return the name of the public decorator API for the given CacheType.

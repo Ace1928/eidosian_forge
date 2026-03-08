@@ -1,6 +1,6 @@
 import os
 import threading
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from .memory import MemoryStore
 from llm_forge import ModelManager, OpenAIProvider, OllamaProvider
@@ -42,7 +42,7 @@ class NarrativeEngine:
     def record_interaction(self, user_input: str, response: str) -> None:
         self.store.data.interactions.append(
             {
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(datetime.timezone.utc).isoformat(),
                 "user": user_input,
                 "response": response,
             }
@@ -77,7 +77,7 @@ class NarrativeEngine:
             thought = "..."
 
         # print(f"\n[THOUGHT] {thought}\n> ", end="", flush=True)
-        self.store.data.events.append({"timestamp": datetime.utcnow().isoformat(), "event": thought})
+        self.store.data.events.append({"timestamp": datetime.now(datetime.timezone.utc).isoformat(), "event": thought})
         self.store.save()
         self._reset_timer()
 

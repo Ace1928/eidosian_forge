@@ -1,0 +1,4 @@
+SOURCE_PATH: .eidos_chrome_profile/Default/PreferredApps
+KIND: config
+
+{"preferred_apps":[],"version":1}

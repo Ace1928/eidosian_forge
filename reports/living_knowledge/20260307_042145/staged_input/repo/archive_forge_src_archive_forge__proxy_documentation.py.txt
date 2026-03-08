@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_proxy_documentation.py
+KIND: code
+
+from __future__ import annotations
+from abc import ABC, abstractmethod
+from typing import Generic, TypeVar, Iterable, cast
+from typing_extensions import override
+Helper method that returns the current proxy, typed as the loaded object

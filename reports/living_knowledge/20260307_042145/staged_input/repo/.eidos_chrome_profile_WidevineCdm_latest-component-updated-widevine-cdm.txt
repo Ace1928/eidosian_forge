@@ -1,0 +1,4 @@
+SOURCE_PATH: .eidos_chrome_profile/WidevineCdm/latest-component-updated-widevine-cdm
+KIND: config
+
+{"LastBundledVersion":"4.10.2934.0","Path":"/opt/google/chrome/WidevineCdm"}

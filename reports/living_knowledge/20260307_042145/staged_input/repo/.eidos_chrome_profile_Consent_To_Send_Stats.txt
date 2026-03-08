@@ -1,0 +1,4 @@
+SOURCE_PATH: .eidos_chrome_profile/Consent To Send Stats
+KIND: config
+
+4b330324-56e1-46bc-b491-68f01159e04f

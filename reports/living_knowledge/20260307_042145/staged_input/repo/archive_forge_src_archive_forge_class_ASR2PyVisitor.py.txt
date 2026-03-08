@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_ASR2PyVisitor.py
+KIND: code
+
+from sympy.external import import_module
+class ASR2PyVisitor:
+
+    def __init__(self, *args, **kwargs):
+        raise ImportError('lfortran not available')

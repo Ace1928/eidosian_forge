@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_termcolor_documentation.py
+KIND: code
+
+import os
+import sys
+Unix terminal background color codes (16-color).

@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_ni_docstrings_documentation.py
+KIND: code
+
+from scipy._lib import doccer
+Docstring components common to several ndimage functions.

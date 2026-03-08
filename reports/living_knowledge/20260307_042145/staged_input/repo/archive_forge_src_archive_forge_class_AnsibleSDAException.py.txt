@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AnsibleSDAException.py
+KIND: code
+
+from __future__ import (absolute_import, division, print_function)
+class AnsibleSDAException(Exception):
+
+    def __init__(self, response):
+        self._response = response

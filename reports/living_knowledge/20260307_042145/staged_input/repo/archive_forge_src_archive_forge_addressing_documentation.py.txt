@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/addressing_documentation.py
+KIND: code
+
+import abc
+import logging
+from oslo_messaging.target import Target
+Address used for shared subscribers (competing consumers)

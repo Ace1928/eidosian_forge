@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_i18n_documentation.py
+KIND: code
+
+import oslo_i18n
+oslo.i18n integration module.
+
+See https://docs.openstack.org/oslo.i18n/latest/user/usage.html

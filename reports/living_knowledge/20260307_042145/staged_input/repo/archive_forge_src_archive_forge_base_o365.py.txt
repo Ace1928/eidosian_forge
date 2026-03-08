@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/base_o365.py
+KIND: code
+
+from langchain_community.document_loaders.base_o365 import (
+    O365BaseLoader,
+)
+
+__all__ = [
+    "O365BaseLoader",
+]

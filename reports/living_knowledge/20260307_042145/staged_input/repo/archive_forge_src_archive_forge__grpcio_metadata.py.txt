@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_grpcio_metadata.py
+KIND: code
+
+__version__ = """1.63.0"""

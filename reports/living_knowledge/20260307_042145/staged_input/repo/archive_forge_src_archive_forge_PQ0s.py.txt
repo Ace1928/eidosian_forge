@@ -1,0 +1,13 @@
+SOURCE_PATH: archive_forge/src/archive_forge/PQ0s.py
+KIND: code
+
+import logging
+
+
+def configure_logging():
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)s - %(levelname)s - %(message)s",
+        filename="image_interconversion_gui.log",
+        filemode="a",
+    )

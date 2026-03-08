@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/cffi_ppmd_documentation.py
+KIND: code
+
+import sys
+from threading import Lock
+from typing import Union
+from ._cffi_ppmd import ffi, lib
+Call to the underlying PPMd library failed.

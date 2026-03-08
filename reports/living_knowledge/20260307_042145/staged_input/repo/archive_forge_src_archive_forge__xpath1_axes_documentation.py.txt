@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_xpath1_axes_documentation.py
+KIND: code
+
+from ..xpath_nodes import ElementNode
+from ..xpath_context import XPathSchemaContext
+from ._xpath1_functions import XPath1Parser
+
+XPath 1.0 implementation - part 4 (axes)

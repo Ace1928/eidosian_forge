@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/PlotWidget_documentation.py
+KIND: code
+
+from ..graphicsItems.PlotItem import PlotItem
+from ..Qt import QtCore, QtWidgets
+from .GraphicsView import GraphicsView
+Return the PlotItem contained within.

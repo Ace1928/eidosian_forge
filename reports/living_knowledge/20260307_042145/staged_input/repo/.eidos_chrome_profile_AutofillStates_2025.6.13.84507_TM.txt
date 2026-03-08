@@ -1,0 +1,10 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/TM
+KIND: config
+
+TM
+ahal
+balkanbalkan welaýaty%
+daşoguz welaýatydaşoguz region
+lebap
+marymary welaýaty
+aşgabatashgabat

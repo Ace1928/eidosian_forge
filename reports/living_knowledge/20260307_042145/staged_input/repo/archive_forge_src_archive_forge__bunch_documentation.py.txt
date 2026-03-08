@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_bunch_documentation.py
+KIND: code
+
+import sys as _sys
+from keyword import iskeyword as _iskeyword
+Return self as a plain tuple.  Used by copy and pickle.

@@ -1,0 +1,4 @@
+SOURCE_PATH: .eidos_chrome_profile/Default/passkey_enclave_state
+KIND: config
+
+v11��l,�=�M#?�(nm�d-RQ� _��ˊ���9�/��$2@Q�؂��̵�Un����_

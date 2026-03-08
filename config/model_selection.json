@@ -25,7 +25,7 @@
   },
   "services": {
     "doc_forge": {
-      "completion_model": "models/Qwen2.5-0.5B-Instruct-Q8_0.gguf"
+      "completion_model": "qwen3.5:2b"
     },
     "graphrag": {
       "completion_model": "models/Qwen2.5-0.5B-Instruct-Q8_0.gguf",

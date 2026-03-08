@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_Analyze2niiOutputSpec.py
+KIND: code
+
+import os
+import numpy as np
+from ...utils.filemanip import (
+from ..base import TraitedSpec, isdefined, File, traits, OutputMultiPath, InputMultiPath
+from .base import SPMCommandInputSpec, SPMCommand, scans_for_fnames, scans_for_fname
+class Analyze2niiOutputSpec(SPMCommandInputSpec):
+    nifti_file = File(exists=True)

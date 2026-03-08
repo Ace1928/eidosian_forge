@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/argparser_documentation.py
+KIND: code
+
+Construct a new Frame instance.
+
+        Passed error function is used to report any argument checking errors.

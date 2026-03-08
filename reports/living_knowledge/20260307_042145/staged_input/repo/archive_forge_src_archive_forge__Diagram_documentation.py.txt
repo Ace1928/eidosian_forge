@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_Diagram_documentation.py
+KIND: code
+
+from ._LinearDrawer import LinearDrawer
+from ._CircularDrawer import CircularDrawer
+from ._Track import Track
+from Bio.Graphics import _write
+Return a formatted string describing the diagram.

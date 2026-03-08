@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/aleph_alpha.py
+KIND: code
+
+from langchain_community.llms.aleph_alpha import AlephAlpha
+
+__all__ = ["AlephAlpha"]

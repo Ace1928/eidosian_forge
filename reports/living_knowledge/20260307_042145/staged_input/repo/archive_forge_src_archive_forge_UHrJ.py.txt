@@ -1,0 +1,357 @@
+SOURCE_PATH: archive_forge/src/archive_forge/UHrJ.py
+KIND: code
+
+import json
+import os
+from flask import (
+    Flask,
+    render_template,
+    request,
+    jsonify,
+    redirect,
+    url_for,
+    send_from_directory,
+)
+from flask_bootstrap import Bootstrap
+from typing import Dict, Any, Optional, Union, Tuple, List, Callable
+from nbconvert import HTMLExporter
+import nbformat
+import subprocess
+import jupyterlab
+import logging
+from flask import request
+import bcrypt
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import IntegrityError
+
+app = Flask(__name__)
+Bootstrap(app)
+
+
+class UniversalGUI:
+    def __init__(self):
+        """
+        Initialize the UniversalGUI class by meticulously setting the configuration file path and loading the initial configuration with the highest precision. 🚀
+        This constructor ensures that the UniversalGUI object is instantiated with the correct configuration file path and that the initial configuration is loaded from the file system with the utmost precision and attention to detail.
+        It sets the stage for all subsequent GUI operations to be performed with the highest level of accuracy and reliability, ensuring a robust foundation for the application's user interface management. 💎
+        """
+        self.config_file: str = (
+            "ui_config.json"  # Explicitly define the path to the configuration file with specificity and clarity. 📂
+        )
+        self.configuration: Dict[str, Any] = (
+            self.load_config()
+        )  # Load the configuration upon initialization, ensuring the GUI starts in a known state. 🔧
+
+    def load_config(self) -> Dict[str, Any]:
+        """
+        Load configuration from a JSON file, providing a default configuration if the file does not exist. 📥
+        This method ensures that the application can start with a known state, which is crucial for both development and deployment in various environments. 🌍
+        It meticulously attempts to open the configuration file, deserialize its contents from JSON format, and return the resulting dictionary.
+        If the file is not found, it gracefully handles the exception and provides a comprehensive default configuration to ensure the application can continue functioning correctly. 🛡️
+
+        Returns:
+            Dict[str, Any]: A dictionary containing the configuration settings, loaded from the file or provided as default. 📊
+        """
+        try:
+            with open(
+                self.config_file, "r"
+            ) as file:  # Attempt to open the configuration file in read mode. 📖
+                config: Dict[str, Any] = json.load(
+                    file
+                )  # Load the JSON data from the file and deserialize it into a dictionary. 🔄
+            return config  # Return the loaded configuration dictionary. 👌
+        except FileNotFoundError:
+            # Provide a comprehensive default configuration if the configuration file is not found. 🆕
+            default_config: Dict[str, Any] = {
+                "theme": "light",
+                "language": "en",
+                "background_color": "#f5f5f5",
+                "font_size": "16",
+                "font_family": "Arial",
+                "autoSaveInterval": "5m",
+                "autoLock": "off",
+                "autoLockTimeout": "10m",
+                "high_contrast": false,
+                "text_scaling": "100",
+                "screen_reader": false,
+                "keyboard_navigation": false,
+                "motion_reduction": false,
+                "developer_mode": false,
+                "system_maintenance_mode": false,
+                "network_settings": {
+                    "vpn_config": "default",
+                    "network_speed_test": "last_result",
+                    "network_traffic_analysis": "summary",
+                    "network_status": "active",
+                },
+                "performance_settings": {
+                    "system_health_check": "last_result",
+                    "dynamic_theme_loading": "enabled",
+                    "system_performance_optimization": "standard",
+                },
+                "jupyterLab_settings": {
+                    "console_open": false,
+                    "session_saved": "last_session",
+                    "jupyterLab_configuration": "default",
+                },
+                "advanced_settings": {
+                    "system_firmware_update": "last_update",
+                    "system_data_backup": "last_backup",
+                    "system_logs_view": "summary",
+                    "diagnostics_tests_run": "last_run",
+                    "system_cache_cleared": "last_cleared",
+                    "system_updates_deployed": "last_deployed",
+                    "system_changes_reverted": "last_reverted",
+                },
+            }
+            return default_config  # Return the comprehensive default configuration dictionary. 👌
+
+    def save_config(self, config: Dict[str, Any]) -> None:
+        """
+        Save configuration to a JSON file. 💾
+        This method serializes the provided configuration dictionary into a JSON formatted string and meticulously writes it to the configuration file.
+        It ensures that the configuration is persisted accurately and reliably, allowing the application to retain its state across sessions. 📅
+
+        Args:
+            config (Dict[str, Any]): A dictionary containing the configuration settings to be saved. 📦
+        """
+        with open(
+            self.config_file, "w"
+        ) as file:  # Open the configuration file in write mode. 📝
+            json.dump(
+                config, file, indent=4
+            )  # Serialize the configuration dictionary to a JSON formatted string and write it to the file with proper indentation for readability. 💯
+
+
+@app.before_request
+def log_request_info():
+    """
+    Log detailed information about each incoming request before processing it. 📝
+
+    This function intercepts every request to log crucial details such as headers and body content. It is meticulously designed to ensure that all relevant information is captured for debugging and auditing purposes, thereby enhancing the reliability and maintainability of the application. 🕵️‍♂️
+
+    The logging process involves the following steps:
+    1. Retrieve and log the headers of the incoming request. 📬
+    2. Retrieve and log the body of the incoming request, ensuring that even binary data is accurately logged in its raw form. 📦
+    3. These logs are crucial for understanding the context of the requests, especially when diagnosing issues or during the development phase. 🛠️
+
+    By providing a comprehensive log of incoming requests, this function plays a vital role in maintaining the robustness of the application's request handling capabilities. 🏗️
+    """
+    # Step 1: Log the headers of the incoming request.
+    headers_info = request.headers
+    app.logger.debug("Headers: %s", headers_info)
+
+    # Step 2: Log the body of the incoming request.
+    # The get_data method is used to retrieve the request body as it can handle various content types including JSON and form data.
+    body_content = request.get_data(
+        as_text=True
+    )  # as_text=True ensures that binary data is converted to a string.
+    app.logger.debug("Body: %s", body_content)
+
+    # Additional logging can be implemented here if further details are needed for debugging or auditing purposes.
+    # For instance, logging the request method and the full URL could be added here to provide a more comprehensive overview of the request.
+
+    # These logs will be invaluable for troubleshooting and understanding the flow of data through the application, ensuring that every aspect of the request is transparent and traceable. 🧾
+
+
+# Define routes for various functionalities using Flask, ensuring the highest level of detail and complexity in implementation. 🌐
+@app.route("/")
+def index() -> str:
+    """
+    Render the main page with tabs for File, Settings, Customisation, JupyterLab, Language, Accessibility, Advanced, and Network. 📋
+    This function serves as the entry point for the user interface, meticulously providing a method to render the initial HTML page.
+    It ensures that the configuration settings are loaded with precision and used to dynamically adjust the HTML content of the main page. 🎨
+    The rendered page includes a seamlessly integrated JupyterLab interface, allowing users to perform interactive development and analysis within the application. 🔬
+
+    Returns:
+        str: The HTML content of the main page, which is dynamically generated based on the current configuration settings and includes the JupyterLab interface. 📜
+    """
+    # Instantiate the UniversalGUI class to access its methods, ensuring that we are utilizing a fresh instance that reflects the current state. 🆕
+    gui_instance = UniversalGUI()
+
+    # Load the configuration using the load_config method of the UniversalGUI instance. 🔧
+    # This method is designed to fetch the configuration settings from a JSON file, providing a default configuration if the file does not exist.
+    # This ensures that the application can start with a known state, which is crucial for both development and deployment in various environments. 🌍
+    current_configuration = gui_instance.load_config()
+
+    # Render the 'index.html' template using Flask's render_template function. 🎨
+    # This function takes the name of an HTML template and a variable number of keyword arguments, each representing a variable that should be available in the context of the template.
+    # Here, the current configuration dictionary is passed to the template, allowing it to dynamically generate content based on the configuration settings. 🔄
+    rendered_html_content = render_template("index.html", config=current_configuration)
+
+    # Return the dynamically generated HTML content, which will be displayed in the user's browser. 📤
+    # This content includes interactive elements such as tabs for File, Settings, Customisation, JupyterLab, Language, Accessibility, Advanced, and Network, which are populated and styled according to the configuration settings loaded earlier. 💅
+    # The JupyterLab interface is seamlessly integrated into the page, providing users with a powerful development and analysis environment within the application. 🔬
+    return rendered_html_content
+
+
+@app.route("/your-endpoint", methods=["POST"])
+def handle_post():
+    """
+    Handle POST requests at the '/your-endpoint' route with the utmost precision and detail.
+    This function is engineered to meticulously process incoming JSON data, ensuring each step is executed with the highest level of precision and robustness.
+    It employs advanced error handling mechanisms to manage exceptions, providing detailed error messages and HTTP status codes to facilitate debugging and client-side handling.
+
+    Returns:
+        Tuple[Dict[str, Any], int]: A tuple containing a JSON response and an HTTP status code, meticulously crafted to ensure clarity and precision in communication with the client.
+    """
+    try:
+        # Extract JSON data from the incoming request using Flask's request.get_json method, which parses the JSON data sent with the request and converts it into a Python dictionary.
+        data = request.get_json(
+            force=True
+        )  # force=True ensures that the request is parsed as JSON even if the mimetype is not set to application/json.
+
+        # Log the received data for debugging and verification purposes, ensuring transparency and traceability in the application's data handling processes.
+        app.logger.debug("Received JSON data: %s", data)
+
+        # Validate the received data to ensure it meets the expected format and types, enhancing the robustness of the data processing logic.
+        if not isinstance(data, dict):
+            raise ValueError("Data is not a valid JSON object")
+
+        # Process the received data by applying necessary transformations and validations, ensuring the data is in the correct form for further processing or storage.
+        # This may include sanitizing input, converting data types, and applying business logic.
+        processed_data = {
+            key: value.upper() if isinstance(value, str) else value
+            for key, value in data.items()
+        }  # Example transformation: convert all string values to uppercase.
+
+        # Log the processed data to ensure that the modifications are traceable and verifiable, maintaining a high level of data integrity and transparency.
+        app.logger.debug("Processed data after transformations: %s", processed_data)
+
+        # Return a JSON response indicating success, along with the processed data, using a 200 OK HTTP status code to indicate that the request has been successfully handled.
+        response = jsonify({"success": True, "data": processed_data})
+        return response, 200
+
+    except ValueError as ve:
+        # Log the exception with a critical severity level if the data is not a valid JSON object, providing detailed error information for debugging purposes.
+        app.logger.critical("Data validation error: %s", str(ve))
+        return jsonify({"success": False, "error": "Invalid data format"}), 400
+
+    except Exception as e:
+        # Log any other exceptions that occur during the request handling with a critical severity level, providing detailed error information for debugging and corrective action.
+        app.logger.critical(
+            "An unexpected error occurred while processing the request: %s", str(e)
+        )
+        return jsonify({"success": False, "error": "An unexpected error occurred"}), 500
+
+
+@app.route("/open_file", methods=["POST"])
+def open_file() -> Tuple[Dict[str, Any], int]:
+    """
+    Open a file specified by the user with meticulous precision and comprehensive detail.
+    This endpoint is engineered to handle the process of opening a file based on the file path provided in the POST request with the highest level of precision and robustness.
+    It performs exhaustive checks to ensure the file exists and can be accessed, providing detailed feedback to the user regarding the success or failure of the operation.
+    The function is designed to be flexible, extensible, and robust, allowing for the incorporation of additional file handling operations as needed, ensuring adaptability and scalability.
+
+    Returns:
+        Tuple[Dict[str, Any], int]: A JSON response containing detailed information about the success or failure of the file opening operation, including the file path and any relevant error messages, along with the appropriate HTTP status code.
+    """
+    # Retrieve the file path from the form data submitted via POST request, ensuring that the data retrieval is handled with precision.
+    file_path: str = request.form.get("file_path", default="")
+
+    # Validate the presence of the file path, returning a detailed error message if it is missing, ensuring clarity and precision in user communication.
+    if not file_path:
+        return (
+            jsonify(
+                {
+                    "error": "No file path provided. Please specify a valid file path.",
+                    "success": False,
+                }
+            ),
+            400,
+        )
+
+    # Perform a comprehensive check to determine if the specified file exists in the system, ensuring robust file existence verification.
+    if os.path.exists(file_path):
+        try:
+            # Attempt to open the file using the appropriate method based on the file type.
+            # This involves using the `open()` function for text files, or potentially other libraries for different file formats, ensuring flexibility and adaptability in file handling.
+            with open(file_path, "r") as file:
+                file_contents = file.read()
+
+            # Log the successful file opening with detailed information about the file path and contents, ensuring traceability and transparency.
+            app.logger.info(
+                f"File '{file_path}' opened successfully. Contents: {file_contents}"
+            )
+
+            # Return a detailed success response, including the file path and any relevant metadata, ensuring comprehensive user feedback.
+            return (
+                jsonify(
+                    {
+                        "message": f"File '{file_path}' opened successfully.",
+                        "file_path": file_path,
+                        "file_contents": file_contents,
+                        "success": True,
+                    }
+                ),
+                200,
+            )
+        except Exception as e:
+            # Handle any exceptions that occur during the file opening process, providing a detailed error message for robust error handling.
+            error_message = (
+                f"An error occurred while opening the file '{file_path}': {str(e)}"
+            )
+            app.logger.error(error_message)
+            return (
+                jsonify(
+                    {"error": error_message, "file_path": file_path, "success": False}
+                ),
+                500,
+            )
+    else:
+        # Return an informative error message if the specified file does not exist, ensuring precise and clear user communication.
+        error_message = f"File '{file_path}' does not exist."
+        app.logger.error(error_message)
+        return (
+            jsonify({"error": error_message, "file_path": file_path, "success": False}),
+            404,
+        )
+
+
+@app.route("/save_file", methods=["POST"])
+def save_file() -> Any:
+    """
+    Save a file specified by the user with the utmost precision and detail. 💾
+    This endpoint is meticulously designed to handle the process of saving a file based on the file path and content provided in the POST request.
+    It performs comprehensive checks to ensure the file can be saved successfully, and provides detailed feedback to the user regarding the outcome of the operation. 🔍
+    The function is designed to be robust and flexible, allowing for the incorporation of additional file handling and validation operations as needed. 🔧
+
+    Returns:
+        Any: A JSON response containing detailed information about the success or failure of the file saving operation, including the file path and any relevant error messages. 📨
+    """
+    # Retrieve the file path from the form data submitted via POST request, ensuring that the data is accurately captured. 📥
+    file_path: str = request.form.get("file_path", None)
+
+    # Check if the file path is provided, and return an informative error message if it is missing, ensuring clear communication to the user. ❓
+    if file_path is None:
+        error_response = jsonify(
+            {
+                "error": "No file path provided. Please specify a valid file path.",
+                "success": False,
+            }
+        )
+        error_response.status_code = 400
+        app.logger.error("Attempted to save file without providing a file path.")
+        return error_response
+
+    # Retrieve the file content from the form data submitted via POST request, ensuring that the data is accurately captured. 📥
+    file_content: str = request.form.get("file_content", None)
+
+    # Check if the file content is provided, and return an informative error message if it is missing, ensuring clear communication to the user. ❓
+    if file_content is None:
+        error_response = jsonify(
+            {
+                "error": "No file content provided. Please provide the content to be saved.",
+                "success": False,
+            }
+        )
+        error_response.status_code = 400
+        app.logger.error("Attempted to save file without providing file content.")
+        return error_response
+
+    try:
+        # Attempt to save the file using the appropriate method based on the file type, ensuring that the file is handled correctly. 💾
+        # This could involve using

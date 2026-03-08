@@ -58,7 +58,7 @@ async def _stdio_session() -> AsyncIterator[ClientSession]:
 
 ToolValidator = Callable[[str], bool]
 TOOL_CASES: list[tuple[str, dict, ToolValidator, str]] = [
-    ("system_info", {}, lambda r: "Linux" in r, "system_info missing platform"),
+    ("system_info", {}, lambda r: "Linux" in r or "Android" in r, "system_info missing platform"),
     ("diagnostics_ping", {}, lambda r: r.strip() == "ok", "diagnostics_ping did not return ok"),
     ("diagnostics_metrics", {}, lambda r: r.strip().startswith("{"), "diagnostics_metrics did not return JSON"),
     ("memory_stats", {}, lambda r: "count" in r or "episodic_count" in r, "memory_stats missing count"),

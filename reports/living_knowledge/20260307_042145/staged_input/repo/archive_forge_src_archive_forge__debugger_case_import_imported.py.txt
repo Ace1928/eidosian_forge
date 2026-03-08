@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_debugger_case_import_imported.py
+KIND: code
+
+print('text 1')
+print('text 2')

@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_custom_ops_documentation.py
+KIND: code
+
+import inspect
+from torch._custom_op.impl import (
+from torch.library import get_ctx
+De-registers a custom op. For testing purposes only

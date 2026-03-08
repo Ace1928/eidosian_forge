@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/alarm_definitions_documentation.py
+KIND: code
+
+from monascaclient.common import monasca_manager
+Patch a specific alarm definition.

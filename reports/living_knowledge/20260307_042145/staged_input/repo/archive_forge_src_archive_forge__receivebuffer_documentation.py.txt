@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_receivebuffer_documentation.py
+KIND: code
+
+import re
+import sys
+from typing import List, Optional, Union
+
+        Extract everything up to the first blank line, and return a list of lines.

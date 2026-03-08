@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_gapic_documentation.py
+KIND: code
+
+from __future__ import absolute_import
+import functools
+Wrap a GAPIC method; preserve its name and docstring.

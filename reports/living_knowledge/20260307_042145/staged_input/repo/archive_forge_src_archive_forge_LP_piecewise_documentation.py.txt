@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/LP_piecewise_documentation.py
+KIND: code
+
+from pyomo.core import ConcreteModel, Var, Objective, Piecewise
+from pyomo.solvers.tests.models.base import _BaseTestModel, register_model
+
+    A continuous linear model

@@ -1,0 +1,575 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_multivariate.py
+KIND: code
+
+#
+# Author: Joris Vankerschaver 2013
+#
+import math
+import numpy as np
+import scipy.linalg
+from scipy._lib import doccer
+from scipy.special import (gammaln, psi, multigammaln, xlogy, entr, betaln,
+                           ive, loggamma)
+from scipy._lib._util import check_random_state, _lazywhere
+from scipy.linalg.blas import drot, get_blas_funcs
+from ._continuous_distns import norm
+from ._discrete_distns import binom
+from . import _mvn, _covariance, _rcont
+from ._qmvnt import _qmvt
+from ._morestats import directional_stats
+from scipy.optimize import root_scalar
+
+__all__ = ['multivariate_normal',
+           'matrix_normal',
+           'dirichlet',
+           'dirichlet_multinomial',
+           'wishart',
+           'invwishart',
+           'multinomial',
+           'special_ortho_group',
+           'ortho_group',
+           'random_correlation',
+           'unitary_group',
+           'multivariate_t',
+           'multivariate_hypergeom',
+           'random_table',
+           'uniform_direction',
+           'vonmises_fisher']
+
+_LOG_2PI = np.log(2 * np.pi)
+_LOG_2 = np.log(2)
+_LOG_PI = np.log(np.pi)
+
+
+_doc_random_state = """\
+seed : {None, int, np.random.RandomState, np.random.Generator}, optional
+    Used for drawing random variates.
+    If `seed` is `None`, the `~np.random.RandomState` singleton is used.
+    If `seed` is an int, a new ``RandomState`` instance is used, seeded
+    with seed.
+    If `seed` is already a ``RandomState`` or ``Generator`` instance,
+    then that object is used.
+    Default is `None`.
+"""
+
+
+def _squeeze_output(out):
+    """
+    Remove single-dimensional entries from array and convert to scalar,
+    if necessary.
+    """
+    out = out.squeeze()
+    if out.ndim == 0:
+        out = out[()]
+    return out
+
+
+def _eigvalsh_to_eps(spectrum, cond=None, rcond=None):
+    """Determine which eigenvalues are "small" given the spectrum.
+
+    This is for compatibility across various linear algebra functions
+    that should agree about whether or not a Hermitian matrix is numerically
+    singular and what is its numerical matrix rank.
+    This is designed to be compatible with scipy.linalg.pinvh.
+
+    Parameters
+    ----------
+    spectrum : 1d ndarray
+        Array of eigenvalues of a Hermitian matrix.
+    cond, rcond : float, optional
+        Cutoff for small eigenvalues.
+        Singular values smaller than rcond * largest_eigenvalue are
+        considered zero.
+        If None or -1, suitable machine precision is used.
+
+    Returns
+    -------
+    eps : float
+        Magnitude cutoff for numerical negligibility.
+
+    """
+    if rcond is not None:
+        cond = rcond
+    if cond in [None, -1]:
+        t = spectrum.dtype.char.lower()
+        factor = {'f': 1E3, 'd': 1E6}
+        cond = factor[t] * np.finfo(t).eps
+    eps = cond * np.max(abs(spectrum))
+    return eps
+
+
+def _pinv_1d(v, eps=1e-5):
+    """A helper function for computing the pseudoinverse.
+
+    Parameters
+    ----------
+    v : iterable of numbers
+        This may be thought of as a vector of eigenvalues or singular values.
+    eps : float
+        Values with magnitude no greater than eps are considered negligible.
+
+    Returns
+    -------
+    v_pinv : 1d float ndarray
+        A vector of pseudo-inverted numbers.
+
+    """
+    return np.array([0 if abs(x) <= eps else 1/x for x in v], dtype=float)
+
+
+class _PSD:
+    """
+    Compute coordinated functions of a symmetric positive semidefinite matrix.
+
+    This class addresses two issues.  Firstly it allows the pseudoinverse,
+    the logarithm of the pseudo-determinant, and the rank of the matrix
+    to be computed using one call to eigh instead of three.
+    Secondly it allows these functions to be computed in a way
+    that gives mutually compatible results.
+    All of the functions are computed with a common understanding as to
+    which of the eigenvalues are to be considered negligibly small.
+    The functions are designed to coordinate with scipy.linalg.pinvh()
+    but not necessarily with np.linalg.det() or with np.linalg.matrix_rank().
+
+    Parameters
+    ----------
+    M : array_like
+        Symmetric positive semidefinite matrix (2-D).
+    cond, rcond : float, optional
+        Cutoff for small eigenvalues.
+        Singular values smaller than rcond * largest_eigenvalue are
+        considered zero.
+        If None or -1, suitable machine precision is used.
+    lower : bool, optional
+        Whether the pertinent array data is taken from the lower
+        or upper triangle of M. (Default: lower)
+    check_finite : bool, optional
+        Whether to check that the input matrices contain only finite
+        numbers. Disabling may give a performance gain, but may result
+        in problems (crashes, non-termination) if the inputs do contain
+        infinities or NaNs.
+    allow_singular : bool, optional
+        Whether to allow a singular matrix.  (Default: True)
+
+    Notes
+    -----
+    The arguments are similar to those of scipy.linalg.pinvh().
+
+    """
+
+    def __init__(self, M, cond=None, rcond=None, lower=True,
+                 check_finite=True, allow_singular=True):
+        self._M = np.asarray(M)
+
+        # Compute the symmetric eigendecomposition.
+        # Note that eigh takes care of array conversion, chkfinite,
+        # and assertion that the matrix is square.
+        s, u = scipy.linalg.eigh(M, lower=lower, check_finite=check_finite)
+
+        eps = _eigvalsh_to_eps(s, cond, rcond)
+        if np.min(s) < -eps:
+            msg = "The input matrix must be symmetric positive semidefinite."
+            raise ValueError(msg)
+        d = s[s > eps]
+        if len(d) < len(s) and not allow_singular:
+            msg = ("When `allow_singular is False`, the input matrix must be "
+                   "symmetric positive definite.")
+            raise np.linalg.LinAlgError(msg)
+        s_pinv = _pinv_1d(s, eps)
+        U = np.multiply(u, np.sqrt(s_pinv))
+
+        # Save the eigenvector basis, and tolerance for testing support
+        self.eps = 1e3*eps
+        self.V = u[:, s <= eps]
+
+        # Initialize the eagerly precomputed attributes.
+        self.rank = len(d)
+        self.U = U
+        self.log_pdet = np.sum(np.log(d))
+
+        # Initialize attributes to be lazily computed.
+        self._pinv = None
+
+    def _support_mask(self, x):
+        """
+        Check whether x lies in the support of the distribution.
+        """
+        residual = np.linalg.norm(x @ self.V, axis=-1)
+        in_support = residual < self.eps
+        return in_support
+
+    @property
+    def pinv(self):
+        if self._pinv is None:
+            self._pinv = np.dot(self.U, self.U.T)
+        return self._pinv
+
+
+class multi_rv_generic:
+    """
+    Class which encapsulates common functionality between all multivariate
+    distributions.
+    """
+    def __init__(self, seed=None):
+        super().__init__()
+        self._random_state = check_random_state(seed)
+
+    @property
+    def random_state(self):
+        """ Get or set the Generator object for generating random variates.
+
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
+
+        """
+        return self._random_state
+
+    @random_state.setter
+    def random_state(self, seed):
+        self._random_state = check_random_state(seed)
+
+    def _get_random_state(self, random_state):
+        if random_state is not None:
+            return check_random_state(random_state)
+        else:
+            return self._random_state
+
+
+class multi_rv_frozen:
+    """
+    Class which encapsulates common functionality between all frozen
+    multivariate distributions.
+    """
+    @property
+    def random_state(self):
+        return self._dist._random_state
+
+    @random_state.setter
+    def random_state(self, seed):
+        self._dist._random_state = check_random_state(seed)
+
+
+_mvn_doc_default_callparams = """\
+mean : array_like, default: ``[0]``
+    Mean of the distribution.
+cov : array_like or `Covariance`, default: ``[1]``
+    Symmetric positive (semi)definite covariance matrix of the distribution.
+allow_singular : bool, default: ``False``
+    Whether to allow a singular covariance matrix. This is ignored if `cov` is
+    a `Covariance` object.
+"""
+
+_mvn_doc_callparams_note = """\
+Setting the parameter `mean` to `None` is equivalent to having `mean`
+be the zero-vector. The parameter `cov` can be a scalar, in which case
+the covariance matrix is the identity times that value, a vector of
+diagonal entries for the covariance matrix, a two-dimensional array_like,
+or a `Covariance` object.
+"""
+
+_mvn_doc_frozen_callparams = ""
+
+_mvn_doc_frozen_callparams_note = """\
+See class definition for a detailed description of parameters."""
+
+mvn_docdict_params = {
+    '_mvn_doc_default_callparams': _mvn_doc_default_callparams,
+    '_mvn_doc_callparams_note': _mvn_doc_callparams_note,
+    '_doc_random_state': _doc_random_state
+}
+
+mvn_docdict_noparams = {
+    '_mvn_doc_default_callparams': _mvn_doc_frozen_callparams,
+    '_mvn_doc_callparams_note': _mvn_doc_frozen_callparams_note,
+    '_doc_random_state': _doc_random_state
+}
+
+
+class multivariate_normal_gen(multi_rv_generic):
+    r"""A multivariate normal random variable.
+
+    The `mean` keyword specifies the mean. The `cov` keyword specifies the
+    covariance matrix.
+
+    Methods
+    -------
+    pdf(x, mean=None, cov=1, allow_singular=False)
+        Probability density function.
+    logpdf(x, mean=None, cov=1, allow_singular=False)
+        Log of the probability density function.
+    cdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5, lower_limit=None)
+        Cumulative distribution function.
+    logcdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5)
+        Log of the cumulative distribution function.
+    rvs(mean=None, cov=1, size=1, random_state=None)
+        Draw random samples from a multivariate normal distribution.
+    entropy(mean=None, cov=1)
+        Compute the differential entropy of the multivariate normal.
+    fit(x, fix_mean=None, fix_cov=None)
+        Fit a multivariate normal distribution to data.
+
+    Parameters
+    ----------
+    %(_mvn_doc_default_callparams)s
+    %(_doc_random_state)s
+
+    Notes
+    -----
+    %(_mvn_doc_callparams_note)s
+
+    The covariance matrix `cov` may be an instance of a subclass of
+    `Covariance`, e.g. `scipy.stats.CovViaPrecision`. If so, `allow_singular`
+    is ignored.
+
+    Otherwise, `cov` must be a symmetric positive semidefinite
+    matrix when `allow_singular` is True; it must be (strictly) positive
+    definite when `allow_singular` is False.
+    Symmetry is not checked; only the lower triangular portion is used.
+    The determinant and inverse of `cov` are computed
+    as the pseudo-determinant and pseudo-inverse, respectively, so
+    that `cov` does not need to have full rank.
+
+    The probability density function for `multivariate_normal` is
+
+    .. math::
+
+        f(x) = \frac{1}{\sqrt{(2 \pi)^k \det \Sigma}}
+               \exp\left( -\frac{1}{2} (x - \mu)^T \Sigma^{-1} (x - \mu) \right),
+
+    where :math:`\mu` is the mean, :math:`\Sigma` the covariance matrix,
+    :math:`k` the rank of :math:`\Sigma`. In case of singular :math:`\Sigma`,
+    SciPy extends this definition according to [1]_.
+
+    .. versionadded:: 0.14.0
+
+    References
+    ----------
+    .. [1] Multivariate Normal Distribution - Degenerate Case, Wikipedia,
+           https://en.wikipedia.org/wiki/Multivariate_normal_distribution#Degenerate_case
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.stats import multivariate_normal
+
+    >>> x = np.linspace(0, 5, 10, endpoint=False)
+    >>> y = multivariate_normal.pdf(x, mean=2.5, cov=0.5); y
+    array([ 0.00108914,  0.01033349,  0.05946514,  0.20755375,  0.43939129,
+            0.56418958,  0.43939129,  0.20755375,  0.05946514,  0.01033349])
+    >>> fig1 = plt.figure()
+    >>> ax = fig1.add_subplot(111)
+    >>> ax.plot(x, y)
+    >>> plt.show()
+
+    Alternatively, the object may be called (as a function) to fix the mean
+    and covariance parameters, returning a "frozen" multivariate normal
+    random variable:
+
+    >>> rv = multivariate_normal(mean=None, cov=1, allow_singular=False)
+    >>> # Frozen object with the same methods but holding the given
+    >>> # mean and covariance fixed.
+
+    The input quantiles can be any shape of array, as long as the last
+    axis labels the components.  This allows us for instance to
+    display the frozen pdf for a non-isotropic random variable in 2D as
+    follows:
+
+    >>> x, y = np.mgrid[-1:1:.01, -1:1:.01]
+    >>> pos = np.dstack((x, y))
+    >>> rv = multivariate_normal([0.5, -0.2], [[2.0, 0.3], [0.3, 0.5]])
+    >>> fig2 = plt.figure()
+    >>> ax2 = fig2.add_subplot(111)
+    >>> ax2.contourf(x, y, rv.pdf(pos))
+
+    """  # noqa: E501
+
+    def __init__(self, seed=None):
+        super().__init__(seed)
+        self.__doc__ = doccer.docformat(self.__doc__, mvn_docdict_params)
+
+    def __call__(self, mean=None, cov=1, allow_singular=False, seed=None):
+        """Create a frozen multivariate normal distribution.
+
+        See `multivariate_normal_frozen` for more information.
+        """
+        return multivariate_normal_frozen(mean, cov,
+                                          allow_singular=allow_singular,
+                                          seed=seed)
+
+    def _process_parameters(self, mean, cov, allow_singular=True):
+        """
+        Infer dimensionality from mean or covariance matrix, ensure that
+        mean and covariance are full vector resp. matrix.
+        """
+        if isinstance(cov, _covariance.Covariance):
+            return self._process_parameters_Covariance(mean, cov)
+        else:
+            # Before `Covariance` classes were introduced,
+            # `multivariate_normal` accepted plain arrays as `cov` and used the
+            # following input validation. To avoid disturbing the behavior of
+            # `multivariate_normal` when plain arrays are used, we use the
+            # original input validation here.
+            dim, mean, cov = self._process_parameters_psd(None, mean, cov)
+            # After input validation, some methods then processed the arrays
+            # with a `_PSD` object and used that to perform computation.
+            # To avoid branching statements in each method depending on whether
+            # `cov` is an array or `Covariance` object, we always process the
+            # array with `_PSD`, and then use wrapper that satisfies the
+            # `Covariance` interface, `CovViaPSD`.
+            psd = _PSD(cov, allow_singular=allow_singular)
+            cov_object = _covariance.CovViaPSD(psd)
+            return dim, mean, cov_object
+
+    def _process_parameters_Covariance(self, mean, cov):
+        dim = cov.shape[-1]
+        mean = np.array([0.]) if mean is None else mean
+        message = (f"`cov` represents a covariance matrix in {dim} dimensions,"
+                   f"and so `mean` must be broadcastable to shape {(dim,)}")
+        try:
+            mean = np.broadcast_to(mean, dim)
+        except ValueError as e:
+            raise ValueError(message) from e
+        return dim, mean, cov
+
+    def _process_parameters_psd(self, dim, mean, cov):
+        # Try to infer dimensionality
+        if dim is None:
+            if mean is None:
+                if cov is None:
+                    dim = 1
+                else:
+                    cov = np.asarray(cov, dtype=float)
+                    if cov.ndim < 2:
+                        dim = 1
+                    else:
+                        dim = cov.shape[0]
+            else:
+                mean = np.asarray(mean, dtype=float)
+                dim = mean.size
+        else:
+            if not np.isscalar(dim):
+                raise ValueError("Dimension of random variable must be "
+                                 "a scalar.")
+
+        # Check input sizes and return full arrays for mean and cov if
+        # necessary
+        if mean is None:
+            mean = np.zeros(dim)
+        mean = np.asarray(mean, dtype=float)
+
+        if cov is None:
+            cov = 1.0
+        cov = np.asarray(cov, dtype=float)
+
+        if dim == 1:
+            mean = mean.reshape(1)
+            cov = cov.reshape(1, 1)
+
+        if mean.ndim != 1 or mean.shape[0] != dim:
+            raise ValueError("Array 'mean' must be a vector of length %d." %
+                             dim)
+        if cov.ndim == 0:
+            cov = cov * np.eye(dim)
+        elif cov.ndim == 1:
+            cov = np.diag(cov)
+        elif cov.ndim == 2 and cov.shape != (dim, dim):
+            rows, cols = cov.shape
+            if rows != cols:
+                msg = ("Array 'cov' must be square if it is two dimensional,"
+                       " but cov.shape = %s." % str(cov.shape))
+            else:
+                msg = ("Dimension mismatch: array 'cov' is of shape %s,"
+                       " but 'mean' is a vector of length %d.")
+                msg = msg % (str(cov.shape), len(mean))
+            raise ValueError(msg)
+        elif cov.ndim > 2:
+            raise ValueError("Array 'cov' must be at most two-dimensional,"
+                             " but cov.ndim = %d" % cov.ndim)
+
+        return dim, mean, cov
+
+    def _process_quantiles(self, x, dim):
+        """
+        Adjust quantiles array so that last axis labels the components of
+        each data point.
+        """
+        x = np.asarray(x, dtype=float)
+
+        if x.ndim == 0:
+            x = x[np.newaxis]
+        elif x.ndim == 1:
+            if dim == 1:
+                x = x[:, np.newaxis]
+            else:
+                x = x[np.newaxis, :]
+
+        return x
+
+    def _logpdf(self, x, mean, cov_object):
+        """Log of the multivariate normal probability density function.
+
+        Parameters
+        ----------
+        x : ndarray
+            Points at which to evaluate the log of the probability
+            density function
+        mean : ndarray
+            Mean of the distribution
+        cov_object : Covariance
+            An object representing the Covariance matrix
+
+        Notes
+        -----
+        As this function does no argument checking, it should not be
+        called directly; use 'logpdf' instead.
+
+        """
+        log_det_cov, rank = cov_object.log_pdet, cov_object.rank
+        dev = x - mean
+        if dev.ndim > 1:
+            log_det_cov = log_det_cov[..., np.newaxis]
+            rank = rank[..., np.newaxis]
+        maha = np.sum(np.square(cov_object.whiten(dev)), axis=-1)
+        return -0.5 * (rank * _LOG_2PI + log_det_cov + maha)
+
+    def logpdf(self, x, mean=None, cov=1, allow_singular=False):
+        """Log of the multivariate normal probability density function.
+
+        Parameters
+        ----------
+        x : array_like
+            Quantiles, with the last axis of `x` denoting the components.
+        %(_mvn_doc_default_callparams)s
+
+        Returns
+        -------
+        pdf : ndarray or scalar
+            Log of the probability density function evaluated at `x`
+
+        Notes
+        -----
+        %(_mvn_doc_callparams_note)s
+
+        """
+        params = self._process_parameters(mean, cov, allow_singular)
+        dim, mean, cov_object = params
+        x = self._process_quantiles(x, dim)
+        out = self._logpdf(x, mean, cov_object)
+        if np.any(cov_object.rank < dim):
+            out_of_bounds = ~cov_object._support_mask(x-mean)
+            out[out_of_bounds] = -np.inf
+        return _squeeze_output(out)
+
+    def pdf(self, x, mean=None, cov=1, allow_singular=False):
+        """Multivariate normal probability density function.
+
+        Parameters
+        ----------
+        x : array_like
+            Quantiles, with the last axis of `x` denoting the components.
+        %(_mvn_doc_default_callparams)s

@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AMQPDeprecationWarning.py
+KIND: code
+
+from struct import pack, unpack
+class AMQPDeprecationWarning(UserWarning):
+    """Warning for deprecated things."""

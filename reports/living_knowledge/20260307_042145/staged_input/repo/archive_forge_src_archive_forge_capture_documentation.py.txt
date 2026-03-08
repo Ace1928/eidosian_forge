@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/capture_documentation.py
+KIND: code
+
+import sys
+from io import StringIO
+write my output to sys.stdout/err as appropriate

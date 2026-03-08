@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_credssp_structures_documentation.py
+KIND: code
+
+import typing
+from spnego._asn1 import (
+Unpacks the TSRemoteGuardPackageCred TLV value.

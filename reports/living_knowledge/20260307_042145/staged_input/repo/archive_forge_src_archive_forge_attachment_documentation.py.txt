@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/attachment_documentation.py
+KIND: code
+
+import os
+from openstack import exceptions
+from openstack import resource
+from openstack import utils
+Mark the attachment as completed.

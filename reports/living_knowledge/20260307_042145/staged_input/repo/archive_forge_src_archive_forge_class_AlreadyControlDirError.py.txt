@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AlreadyControlDirError.py
+KIND: code
+
+class AlreadyControlDirError(PathError):
+    _fmt = 'A control directory already exists: "%(path)s".'

@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/cancellation_documentation.py
+KIND: code
+
+from tensorflow.python import pywrap_tfe
+Cancels blocking operations that have been registered with this object.

@@ -1,0 +1,556 @@
+SOURCE_PATH: archive_forge/src/archive_forge/autowrap.py
+KIND: code
+
+"""Module for compiling codegen output, and wrap the binary for use in
+python.
+
+.. note:: To use the autowrap module it must first be imported
+
+   >>> from sympy.utilities.autowrap import autowrap
+
+This module provides a common interface for different external backends, such
+as f2py, fwrap, Cython, SWIG(?) etc. (Currently only f2py and Cython are
+implemented) The goal is to provide access to compiled binaries of acceptable
+performance with a one-button user interface, e.g.,
+
+    >>> from sympy.abc import x,y
+    >>> expr = (x - y)**25
+    >>> flat = expr.expand()
+    >>> binary_callable = autowrap(flat)
+    >>> binary_callable(2, 3)
+    -1.0
+
+Although a SymPy user might primarily be interested in working with
+mathematical expressions and not in the details of wrapping tools
+needed to evaluate such expressions efficiently in numerical form,
+the user cannot do so without some understanding of the
+limits in the target language. For example, the expanded expression
+contains large coefficients which result in loss of precision when
+computing the expression:
+
+    >>> binary_callable(3, 2)
+    0.0
+    >>> binary_callable(4, 5), binary_callable(5, 4)
+    (-22925376.0, 25165824.0)
+
+Wrapping the unexpanded expression gives the expected behavior:
+
+    >>> e = autowrap(expr)
+    >>> e(4, 5), e(5, 4)
+    (-1.0, 1.0)
+
+The callable returned from autowrap() is a binary Python function, not a
+SymPy object.  If it is desired to use the compiled function in symbolic
+expressions, it is better to use binary_function() which returns a SymPy
+Function object.  The binary callable is attached as the _imp_ attribute and
+invoked when a numerical evaluation is requested with evalf(), or with
+lambdify().
+
+    >>> from sympy.utilities.autowrap import binary_function
+    >>> f = binary_function('f', expr)
+    >>> 2*f(x, y) + y
+    y + 2*f(x, y)
+    >>> (2*f(x, y) + y).evalf(2, subs={x: 1, y:2})
+    0.e-110
+
+When is this useful?
+
+    1) For computations on large arrays, Python iterations may be too slow,
+       and depending on the mathematical expression, it may be difficult to
+       exploit the advanced index operations provided by NumPy.
+
+    2) For *really* long expressions that will be called repeatedly, the
+       compiled binary should be significantly faster than SymPy's .evalf()
+
+    3) If you are generating code with the codegen utility in order to use
+       it in another project, the automatic Python wrappers let you test the
+       binaries immediately from within SymPy.
+
+    4) To create customized ufuncs for use with numpy arrays.
+       See *ufuncify*.
+
+When is this module NOT the best approach?
+
+    1) If you are really concerned about speed or memory optimizations,
+       you will probably get better results by working directly with the
+       wrapper tools and the low level code.  However, the files generated
+       by this utility may provide a useful starting point and reference
+       code. Temporary files will be left intact if you supply the keyword
+       tempdir="path/to/files/".
+
+    2) If the array computation can be handled easily by numpy, and you
+       do not need the binaries for another project.
+
+"""
+
+import sys
+import os
+import shutil
+import tempfile
+from subprocess import STDOUT, CalledProcessError, check_output
+from string import Template
+from warnings import warn
+
+from sympy.core.cache import cacheit
+from sympy.core.function import Lambda
+from sympy.core.relational import Eq
+from sympy.core.symbol import Dummy, Symbol
+from sympy.tensor.indexed import Idx, IndexedBase
+from sympy.utilities.codegen import (make_routine, get_code_generator,
+                                     OutputArgument, InOutArgument,
+                                     InputArgument, CodeGenArgumentListError,
+                                     Result, ResultBase, C99CodeGen)
+from sympy.utilities.iterables import iterable
+from sympy.utilities.lambdify import implemented_function
+from sympy.utilities.decorator import doctest_depends_on
+
+_doctest_depends_on = {'exe': ('f2py', 'gfortran', 'gcc'),
+                       'modules': ('numpy',)}
+
+
+class CodeWrapError(Exception):
+    pass
+
+
+class CodeWrapper:
+    """Base Class for code wrappers"""
+    _filename = "wrapped_code"
+    _module_basename = "wrapper_module"
+    _module_counter = 0
+
+    @property
+    def filename(self):
+        return "%s_%s" % (self._filename, CodeWrapper._module_counter)
+
+    @property
+    def module_name(self):
+        return "%s_%s" % (self._module_basename, CodeWrapper._module_counter)
+
+    def __init__(self, generator, filepath=None, flags=[], verbose=False):
+        """
+        generator -- the code generator to use
+        """
+        self.generator = generator
+        self.filepath = filepath
+        self.flags = flags
+        self.quiet = not verbose
+
+    @property
+    def include_header(self):
+        return bool(self.filepath)
+
+    @property
+    def include_empty(self):
+        return bool(self.filepath)
+
+    def _generate_code(self, main_routine, routines):
+        routines.append(main_routine)
+        self.generator.write(
+            routines, self.filename, True, self.include_header,
+            self.include_empty)
+
+    def wrap_code(self, routine, helpers=None):
+        helpers = helpers or []
+        if self.filepath:
+            workdir = os.path.abspath(self.filepath)
+        else:
+            workdir = tempfile.mkdtemp("_sympy_compile")
+        if not os.access(workdir, os.F_OK):
+            os.mkdir(workdir)
+        oldwork = os.getcwd()
+        os.chdir(workdir)
+        try:
+            sys.path.append(workdir)
+            self._generate_code(routine, helpers)
+            self._prepare_files(routine)
+            self._process_files(routine)
+            mod = __import__(self.module_name)
+        finally:
+            sys.path.remove(workdir)
+            CodeWrapper._module_counter += 1
+            os.chdir(oldwork)
+            if not self.filepath:
+                try:
+                    shutil.rmtree(workdir)
+                except OSError:
+                    # Could be some issues on Windows
+                    pass
+
+        return self._get_wrapped_function(mod, routine.name)
+
+    def _process_files(self, routine):
+        command = self.command
+        command.extend(self.flags)
+        try:
+            retoutput = check_output(command, stderr=STDOUT)
+        except CalledProcessError as e:
+            raise CodeWrapError(
+                "Error while executing command: %s. Command output is:\n%s" % (
+                    " ".join(command), e.output.decode('utf-8')))
+        if not self.quiet:
+            print(retoutput)
+
+
+class DummyWrapper(CodeWrapper):
+    """Class used for testing independent of backends """
+
+    template = """# dummy module for testing of SymPy
+def %(name)s():
+    return "%(expr)s"
+%(name)s.args = "%(args)s"
+%(name)s.returns = "%(retvals)s"
+"""
+
+    def _prepare_files(self, routine):
+        return
+
+    def _generate_code(self, routine, helpers):
+        with open('%s.py' % self.module_name, 'w') as f:
+            printed = ", ".join(
+                [str(res.expr) for res in routine.result_variables])
+            # convert OutputArguments to return value like f2py
+            args = filter(lambda x: not isinstance(
+                x, OutputArgument), routine.arguments)
+            retvals = []
+            for val in routine.result_variables:
+                if isinstance(val, Result):
+                    retvals.append('nameless')
+                else:
+                    retvals.append(val.result_var)
+
+            print(DummyWrapper.template % {
+                'name': routine.name,
+                'expr': printed,
+                'args': ", ".join([str(a.name) for a in args]),
+                'retvals': ", ".join([str(val) for val in retvals])
+            }, end="", file=f)
+
+    def _process_files(self, routine):
+        return
+
+    @classmethod
+    def _get_wrapped_function(cls, mod, name):
+        return getattr(mod, name)
+
+
+class CythonCodeWrapper(CodeWrapper):
+    """Wrapper that uses Cython"""
+
+    setup_template = """\
+from setuptools import setup
+from setuptools import Extension
+from Cython.Build import cythonize
+cy_opts = {cythonize_options}
+{np_import}
+ext_mods = [Extension(
+    {ext_args},
+    include_dirs={include_dirs},
+    library_dirs={library_dirs},
+    libraries={libraries},
+    extra_compile_args={extra_compile_args},
+    extra_link_args={extra_link_args}
+)]
+setup(ext_modules=cythonize(ext_mods, **cy_opts))
+"""
+
+    _cythonize_options = {'compiler_directives':{'language_level' : "3"}}
+
+    pyx_imports = (
+        "import numpy as np\n"
+        "cimport numpy as np\n\n")
+
+    pyx_header = (
+        "cdef extern from '{header_file}.h':\n"
+        "    {prototype}\n\n")
+
+    pyx_func = (
+        "def {name}_c({arg_string}):\n"
+        "\n"
+        "{declarations}"
+        "{body}")
+
+    std_compile_flag = '-std=c99'
+
+    def __init__(self, *args, **kwargs):
+        """Instantiates a Cython code wrapper.
+
+        The following optional parameters get passed to ``setuptools.Extension``
+        for building the Python extension module. Read its documentation to
+        learn more.
+
+        Parameters
+        ==========
+        include_dirs : [list of strings]
+            A list of directories to search for C/C++ header files (in Unix
+            form for portability).
+        library_dirs : [list of strings]
+            A list of directories to search for C/C++ libraries at link time.
+        libraries : [list of strings]
+            A list of library names (not filenames or paths) to link against.
+        extra_compile_args : [list of strings]
+            Any extra platform- and compiler-specific information to use when
+            compiling the source files in 'sources'.  For platforms and
+            compilers where "command line" makes sense, this is typically a
+            list of command-line arguments, but for other platforms it could be
+            anything. Note that the attribute ``std_compile_flag`` will be
+            appended to this list.
+        extra_link_args : [list of strings]
+            Any extra platform- and compiler-specific information to use when
+            linking object files together to create the extension (or to create
+            a new static Python interpreter). Similar interpretation as for
+            'extra_compile_args'.
+        cythonize_options : [dictionary]
+            Keyword arguments passed on to cythonize.
+
+        """
+
+        self._include_dirs = kwargs.pop('include_dirs', [])
+        self._library_dirs = kwargs.pop('library_dirs', [])
+        self._libraries = kwargs.pop('libraries', [])
+        self._extra_compile_args = kwargs.pop('extra_compile_args', [])
+        self._extra_compile_args.append(self.std_compile_flag)
+        self._extra_link_args = kwargs.pop('extra_link_args', [])
+        self._cythonize_options = kwargs.pop('cythonize_options', self._cythonize_options)
+
+        self._need_numpy = False
+
+        super().__init__(*args, **kwargs)
+
+    @property
+    def command(self):
+        command = [sys.executable, "setup.py", "build_ext", "--inplace"]
+        return command
+
+    def _prepare_files(self, routine, build_dir=os.curdir):
+        # NOTE : build_dir is used for testing purposes.
+        pyxfilename = self.module_name + '.pyx'
+        codefilename = "%s.%s" % (self.filename, self.generator.code_extension)
+
+        # pyx
+        with open(os.path.join(build_dir, pyxfilename), 'w') as f:
+            self.dump_pyx([routine], f, self.filename)
+
+        # setup.py
+        ext_args = [repr(self.module_name), repr([pyxfilename, codefilename])]
+        if self._need_numpy:
+            np_import = 'import numpy as np\n'
+            self._include_dirs.append('np.get_include()')
+        else:
+            np_import = ''
+
+        with open(os.path.join(build_dir, 'setup.py'), 'w') as f:
+            includes = str(self._include_dirs).replace("'np.get_include()'",
+                                                       'np.get_include()')
+            f.write(self.setup_template.format(
+                ext_args=", ".join(ext_args),
+                np_import=np_import,
+                include_dirs=includes,
+                library_dirs=self._library_dirs,
+                libraries=self._libraries,
+                extra_compile_args=self._extra_compile_args,
+                extra_link_args=self._extra_link_args,
+                cythonize_options=self._cythonize_options
+            ))
+
+    @classmethod
+    def _get_wrapped_function(cls, mod, name):
+        return getattr(mod, name + '_c')
+
+    def dump_pyx(self, routines, f, prefix):
+        """Write a Cython file with Python wrappers
+
+        This file contains all the definitions of the routines in c code and
+        refers to the header file.
+
+        Arguments
+        ---------
+        routines
+            List of Routine instances
+        f
+            File-like object to write the file to
+        prefix
+            The filename prefix, used to refer to the proper header file.
+            Only the basename of the prefix is used.
+        """
+        headers = []
+        functions = []
+        for routine in routines:
+            prototype = self.generator.get_prototype(routine)
+
+            # C Function Header Import
+            headers.append(self.pyx_header.format(header_file=prefix,
+                                                  prototype=prototype))
+
+            # Partition the C function arguments into categories
+            py_rets, py_args, py_loc, py_inf = self._partition_args(routine.arguments)
+
+            # Function prototype
+            name = routine.name
+            arg_string = ", ".join(self._prototype_arg(arg) for arg in py_args)
+
+            # Local Declarations
+            local_decs = []
+            for arg, val in py_inf.items():
+                proto = self._prototype_arg(arg)
+                mat, ind = [self._string_var(v) for v in val]
+                local_decs.append("    cdef {} = {}.shape[{}]".format(proto, mat, ind))
+            local_decs.extend(["    cdef {}".format(self._declare_arg(a)) for a in py_loc])
+            declarations = "\n".join(local_decs)
+            if declarations:
+                declarations = declarations + "\n"
+
+            # Function Body
+            args_c = ", ".join([self._call_arg(a) for a in routine.arguments])
+            rets = ", ".join([self._string_var(r.name) for r in py_rets])
+            if routine.results:
+                body = '    return %s(%s)' % (routine.name, args_c)
+                if rets:
+                    body = body + ', ' + rets
+            else:
+                body = '    %s(%s)\n' % (routine.name, args_c)
+                body = body + '    return ' + rets
+
+            functions.append(self.pyx_func.format(name=name, arg_string=arg_string,
+                    declarations=declarations, body=body))
+
+        # Write text to file
+        if self._need_numpy:
+            # Only import numpy if required
+            f.write(self.pyx_imports)
+        f.write('\n'.join(headers))
+        f.write('\n'.join(functions))
+
+    def _partition_args(self, args):
+        """Group function arguments into categories."""
+        py_args = []
+        py_returns = []
+        py_locals = []
+        py_inferred = {}
+        for arg in args:
+            if isinstance(arg, OutputArgument):
+                py_returns.append(arg)
+                py_locals.append(arg)
+            elif isinstance(arg, InOutArgument):
+                py_returns.append(arg)
+                py_args.append(arg)
+            else:
+                py_args.append(arg)
+        # Find arguments that are array dimensions. These can be inferred
+        # locally in the Cython code.
+            if isinstance(arg, (InputArgument, InOutArgument)) and arg.dimensions:
+                dims = [d[1] + 1 for d in arg.dimensions]
+                sym_dims = [(i, d) for (i, d) in enumerate(dims) if
+                            isinstance(d, Symbol)]
+                for (i, d) in sym_dims:
+                    py_inferred[d] = (arg.name, i)
+        for arg in args:
+            if arg.name in py_inferred:
+                py_inferred[arg] = py_inferred.pop(arg.name)
+        # Filter inferred arguments from py_args
+        py_args = [a for a in py_args if a not in py_inferred]
+        return py_returns, py_args, py_locals, py_inferred
+
+    def _prototype_arg(self, arg):
+        mat_dec = "np.ndarray[{mtype}, ndim={ndim}] {name}"
+        np_types = {'double': 'np.double_t',
+                    'int': 'np.int_t'}
+        t = arg.get_datatype('c')
+        if arg.dimensions:
+            self._need_numpy = True
+            ndim = len(arg.dimensions)
+            mtype = np_types[t]
+            return mat_dec.format(mtype=mtype, ndim=ndim, name=self._string_var(arg.name))
+        else:
+            return "%s %s" % (t, self._string_var(arg.name))
+
+    def _declare_arg(self, arg):
+        proto = self._prototype_arg(arg)
+        if arg.dimensions:
+            shape = '(' + ','.join(self._string_var(i[1] + 1) for i in arg.dimensions) + ')'
+            return proto + " = np.empty({shape})".format(shape=shape)
+        else:
+            return proto + " = 0"
+
+    def _call_arg(self, arg):
+        if arg.dimensions:
+            t = arg.get_datatype('c')
+            return "<{}*> {}.data".format(t, self._string_var(arg.name))
+        elif isinstance(arg, ResultBase):
+            return "&{}".format(self._string_var(arg.name))
+        else:
+            return self._string_var(arg.name)
+
+    def _string_var(self, var):
+        printer = self.generator.printer.doprint
+        return printer(var)
+
+
+class F2PyCodeWrapper(CodeWrapper):
+    """Wrapper that uses f2py"""
+
+    def __init__(self, *args, **kwargs):
+
+        ext_keys = ['include_dirs', 'library_dirs', 'libraries',
+                    'extra_compile_args', 'extra_link_args']
+        msg = ('The compilation option kwarg {} is not supported with the f2py '
+               'backend.')
+
+        for k in ext_keys:
+            if k in kwargs.keys():
+                warn(msg.format(k))
+            kwargs.pop(k, None)
+
+        super().__init__(*args, **kwargs)
+
+    @property
+    def command(self):
+        filename = self.filename + '.' + self.generator.code_extension
+        args = ['-c', '-m', self.module_name, filename]
+        command = [sys.executable, "-c", "import numpy.f2py as f2py2e;f2py2e.main()"]+args
+        return command
+
+    def _prepare_files(self, routine):
+        pass
+
+    @classmethod
+    def _get_wrapped_function(cls, mod, name):
+        return getattr(mod, name)
+
+
+# Here we define a lookup of backends -> tuples of languages. For now, each
+# tuple is of length 1, but if a backend supports more than one language,
+# the most preferable language is listed first.
+_lang_lookup = {'CYTHON': ('C99', 'C89', 'C'),
+                'F2PY': ('F95',),
+                'NUMPY': ('C99', 'C89', 'C'),
+                'DUMMY': ('F95',)}     # Dummy here just for testing
+
+
+def _infer_language(backend):
+    """For a given backend, return the top choice of language"""
+    langs = _lang_lookup.get(backend.upper(), False)
+    if not langs:
+        raise ValueError("Unrecognized backend: " + backend)
+    return langs[0]
+
+
+def _validate_backend_language(backend, language):
+    """Throws error if backend and language are incompatible"""
+    langs = _lang_lookup.get(backend.upper(), False)
+    if not langs:
+        raise ValueError("Unrecognized backend: " + backend)
+    if language.upper() not in langs:
+        raise ValueError(("Backend {} and language {} are "
+                          "incompatible").format(backend, language))
+
+
+@cacheit
+@doctest_depends_on(exe=('f2py', 'gfortran'), modules=('numpy',))
+def autowrap(expr, language=None, backend='f2py', tempdir=None, args=None,
+             flags=None, verbose=False, helpers=None, code_gen=None, **kwargs):
+    """Generates Python callable binaries based on the math expression.
+
+    Parameters
+    ==========
+
+    expr

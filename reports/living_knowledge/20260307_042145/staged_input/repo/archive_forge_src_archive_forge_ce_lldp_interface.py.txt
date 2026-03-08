@@ -1,0 +1,604 @@
+SOURCE_PATH: archive_forge/src/archive_forge/ce_lldp_interface.py
+KIND: code
+
+#!/usr/bin/python
+#
+# This file is part of Ansible
+#
+# Ansible is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Ansible is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Ansible.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+from __future__ import (absolute_import, division, print_function)
+__metaclass__ = type
+
+
+DOCUMENTATION = r'''
+---
+module: ce_lldp_interface
+version_added: '0.2.0'
+short_description: Manages INTERFACE LLDP configuration on HUAWEI CloudEngine switches.
+description:
+    - Manages INTERFACE LLDP configuration on HUAWEI CloudEngine switches.
+author: xuxiaowei0512 (@CloudEngine-Ansible)
+notes:
+    - This module requires the netconf system service be enabled on the remote device being managed.
+    - Recommended connection is C(netconf).
+    - This module also works with C(local) connections for legacy playbooks.
+options:
+  lldpenable:
+    description:
+      - Set global LLDP enable state.
+    type: str
+    choices: ['enabled', 'disabled']
+  function_lldp_interface_flag:
+    description:
+      - Used to distinguish between command line functions.
+    type: str
+    choices: ['disableINTERFACE','tlvdisableINTERFACE','tlvenableINTERFACE','intervalINTERFACE']
+  type_tlv_disable:
+    description:
+      - Used to distinguish between command line functions.
+    type: str
+    choices: ['basic_tlv', 'dot3_tlv']
+  type_tlv_enable:
+    description:
+      - Used to distinguish between command line functions.
+    type: str
+    choices: ['dot1_tlv','dcbx']
+  lldpadminstatus:
+    description:
+      - Set interface lldp enable state.
+    type: str
+    choices: ['txOnly', 'rxOnly', 'txAndRx', 'disabled']
+  ifname:
+    description:
+      - Interface name.
+    type: str
+  txinterval:
+    description:
+      - LLDP send message interval.
+    type: int
+  txprotocolvlanid:
+    description:
+      - Set tx protocol vlan id.
+    type: int
+  txvlannameid:
+    description:
+      - Set tx vlan name id.
+    type: int
+  vlannametxenable:
+    description:
+      - Set vlan name tx enable or not.
+    type: bool
+  manaddrtxenable:
+    description:
+      - Make it able to send management address TLV.
+    type: bool
+  portdesctxenable:
+    description:
+      - Enabling the ability to send a description of TLV.
+    type: bool
+  syscaptxenable:
+    description:
+      - Enable the ability to send system capabilities TLV.
+    type: bool
+  sysdesctxenable:
+    description:
+      - Enable the ability to send system description TLV.
+    type: bool
+  sysnametxenable:
+    description:
+      - Enable the ability to send system name TLV.
+    type: bool
+  portvlantxenable:
+    description:
+      - Enable port vlan tx.
+    type: bool
+  protovlantxenable:
+    description:
+      - Enable protocol vlan tx.
+    type: bool
+  protoidtxenable:
+     description:
+       - Enable the ability to send protocol identity TLV.
+     type: bool
+  macphytxenable:
+    description:
+      - Enable MAC/PHY configuration and state TLV to be sent.
+    type: bool
+  linkaggretxenable:
+    description:
+      - Enable the ability to send link aggregation TLV.
+    type: bool
+  maxframetxenable:
+    description:
+      - Enable the ability to send maximum frame length TLV.
+    type: bool
+  eee:
+    description:
+      - Enable the ability to send EEE TLV.
+    type: bool
+  dcbx:
+    description:
+      - Enable the ability to send DCBX TLV.
+    type: bool
+  state:
+    description:
+      - Manage the state of the resource.
+    type: str
+    default: present
+    choices: ['present', 'absent']
+'''
+
+EXAMPLES = '''
+  - name: "Configure global LLDP enable state"
+    ce_lldp_interface_interface:
+      lldpenable: enabled
+
+  - name: "Configure interface lldp enable state"
+    community.network.ce_lldp_interface:
+      function_lldp_interface_flag: disableINTERFACE
+      ifname: 10GE1/0/1
+      lldpadminstatus: rxOnly
+  - name: "Configure LLDP transmit interval and ensure global LLDP state is already enabled"
+    community.network.ce_lldp_interface:
+      function_lldp_interface_flag: intervalINTERFACE
+      ifname: 10GE1/0/1
+      txinterval: 4
+
+  - name: "Configure basic-tlv: management-address TLV"
+    community.network.ce_lldp_interface:
+      function_lldp_interface_flag: tlvdisableINTERFACE
+      type_tlv_disable: basic_tlv
+      ifname: 10GE1/0/1
+      manaddrtxenable: true
+
+  - name: "Configure basic-tlv: prot description TLV"
+    community.network.ce_lldp_interface:
+      function_lldp_interface_flag: tlvdisableINTERFACE
+      type_tlv_disable: basic_tlv
+      ifname: 10GE1/0/1
+      portdesctxenable: true
+
+  - name: "Configure basic-tlv: system capabilities TLV"
+    community.network.ce_lldp_interface:
+      function_lldp_interface_flag: tlvdisableINTERFACE
+      type_tlv_disable: basic_tlv
+      ifname: 10GE1/0/1
+      syscaptxenable: true
+
+  - name: "Configure basic-tlv: system description TLV"
+    community.network.ce_lldp_interface:
+      function_lldp_interface_flag: tlvdisableINTERFACE
+      type_tlv_disable: basic_tlv
+      ifname: 10GE1/0/1
+      sysdesctxenable: true
+
+  - name: "Configure basic-tlv: system name TLV"
+    community.network.ce_lldp_interface:
+      function_lldp_interface_flag: tlvdisableINTERFACE
+      type_tlv_disable: basic_tlv
+      ifname: 10GE1/0/1
+      sysnametxenable: true
+
+  - name: "TLV types that are forbidden to be published on the configuration interface, link aggregation TLV"
+    community.network.ce_lldp_interface:
+      function_lldp_interface_flag: tlvdisableINTERFACE
+      type_tlv_disable: dot3_tlv
+      ifname: 10GE1/0/1
+      linkAggreTxEnable: true
+
+  - name: "TLV types that are forbidden to be published on the configuration interface, MAC/PHY configuration/status TLV"
+    community.network.ce_lldp_interface:
+      function_lldp_interface_flag: tlvdisableINTERFACE
+      type_tlv_disable: dot3_tlv
+      ifname: 10GE1/0/1
+      macPhyTxEnable: true
+
+  - name: "TLV types that are forbidden to be published on the configuration interface, maximum frame size TLV"
+    community.network.ce_lldp_interface:
+      function_lldp_interface_flag: tlvdisableINTERFACE
+      type_tlv_disable: dot3_tlv
+      ifname: 10GE1/0/1
+      maxFrameTxEnable: true
+
+  - name: "TLV types that are forbidden to be published on the configuration interface, EEE TLV"
+    community.network.ce_lldp_interface:
+      function_lldp_interface_flag: tlvdisableINTERFACE
+      type_tlv_disable: dot3_tlv
+      ifname: 10GE1/0/1
+      eee: true
+
+  - name: "Configure the interface to publish an optional DCBX TLV type "
+    community.network.ce_lldp_interface:
+      function_lldp_interface_flag: tlvenableINTERFACE
+      ifname: 10GE1/0/1
+      type_tlv_enable: dcbx
+'''
+
+RETURN = '''
+proposed:
+  description: k/v pairs of parameters passed into module
+  returned: always
+  type: dict
+  sample: {
+          "lldpenable": "enabled",
+          "lldpadminstatus": "rxOnly",
+          "function_lldp_interface_flag": "tlvenableINTERFACE",
+          "type_tlv_enable": "dot1_tlv",
+          "ifname": "10GE1/0/1",
+          "state": "present"
+          }
+existing:
+  description: k/v pairs of existing global LLDP configration
+  returned: always
+  type: dict
+  sample: {
+           "lldpenable": "disabled",
+           "ifname": "10GE1/0/1",
+           "lldpadminstatus": "txAndRx"
+          }
+end_state:
+  description: k/v pairs of global DLDP configration after module execution
+  returned: always
+  type: dict
+  sample: {
+           "lldpenable": "enabled",
+           "lldpadminstatus": "rxOnly",
+           "function_lldp_interface_flag": "tlvenableINTERFACE",
+           "type_tlv_enable": "dot1_tlv",
+           "ifname": "10GE1/0/1"
+          }
+updates:
+  description: command sent to the device
+  returned: always
+  type: list
+  sample: [
+           "lldp enable",
+           "interface 10ge 1/0/1",
+           "undo lldp disable",
+           "lldp tlv-enable dot1-tlv vlan-name 4",
+           ]
+changed:
+  description: check to see if a change was made on the device
+  returned: always
+  type: bool
+  sample: true
+'''
+
+import copy
+import re
+from xml.etree import ElementTree
+from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.community.network.plugins.module_utils.network.cloudengine.ce import set_nc_config, get_nc_config
+
+CE_NC_GET_GLOBAL_LLDPENABLE_CONFIG = """
+<filter type="subtree">
+  <lldp xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+    <lldpSys>
+      <lldpEnable></lldpEnable>
+    </lldpSys>
+  </lldp>
+</filter>
+"""
+
+CE_NC_MERGE_GLOBA_LLDPENABLE_CONFIG = """
+<config>
+  <lldp xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+    <lldpSys operation="merge">
+      <lldpEnable>%s</lldpEnable>
+    </lldpSys>
+  </lldp>
+</config>
+"""
+
+CE_NC_GET_INTERFACE_LLDP_CONFIG = """
+<filter type="subtree">
+  <lldp xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+    <lldpInterfaces>
+      <lldpInterface>
+        <ifName></ifName>
+        <lldpAdminStatus></lldpAdminStatus>
+      </lldpInterface>
+    </lldpInterfaces>
+  </lldp>
+</filter>
+"""
+
+CE_NC_MERGE_INTERFACE_LLDP_CONFIG = """
+<config>
+  <lldp xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+    <lldpInterfaces>
+      <lldpInterface operation="merge">
+        <ifName>%s</ifName>
+        <lldpAdminStatus>%s</lldpAdminStatus>
+      </lldpInterface>
+    </lldpInterfaces>
+  </lldp>
+</config>
+"""
+
+CE_NC_GET_INTERFACE_INTERVAl_CONFIG = """
+<filter type="subtree">
+  <lldp xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+    <lldpInterfaces>
+      <lldpInterface>
+        <ifName></ifName>
+        <msgInterval>
+          <txInterval></txInterval>
+        </msgInterval>
+      </lldpInterface>
+    </lldpInterfaces>
+  </lldp>
+</filter>
+"""
+
+CE_NC_MERGE_INTERFACE_INTERVAl_CONFIG = """
+<config>
+  <lldp xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+    <lldpInterfaces>
+      <lldpInterface>
+        <ifName>%s</ifName>
+        <msgInterval operation="merge">
+          <txInterval>%s</txInterval>
+        </msgInterval>
+      </lldpInterface>
+    </lldpInterfaces>
+  </lldp>
+</config>
+"""
+
+CE_NC_GET_INTERFACE_TLV_ENABLE_CONFIG = """
+<filter type="subtree">
+    <lldp xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <lldpInterfaces>
+            <lldpInterface>
+                <ifName></ifName>
+                <tlvTxEnable>
+                    <dcbx></dcbx>
+                    <protoIdTxEnable></protoIdTxEnable>
+                </tlvTxEnable>
+            </lldpInterface>
+        </lldpInterfaces>
+    </lldp>
+</filter>
+"""
+
+CE_NC_GET_INTERFACE_TLV_DISABLE_CONFIG = """
+<filter type="subtree">
+    <lldp xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <lldpInterfaces>
+            <lldpInterface>
+                <ifName></ifName>
+                <tlvTxEnable>
+                    <manAddrTxEnable></manAddrTxEnable>
+                    <portDescTxEnable></portDescTxEnable>
+                    <sysCapTxEnable></sysCapTxEnable>
+                    <sysDescTxEnable></sysDescTxEnable>
+                    <sysNameTxEnable></sysNameTxEnable>
+                    <linkAggreTxEnable></linkAggreTxEnable>
+                    <macPhyTxEnable></macPhyTxEnable>
+                    <maxFrameTxEnable></maxFrameTxEnable>
+                    <eee></eee>
+                </tlvTxEnable>
+            </lldpInterface>
+        </lldpInterfaces>
+    </lldp>
+</filter>
+"""
+
+CE_NC_MERGE_INTERFACE_TLV_CONFIG_HEADER = """
+<config>
+    <lldp xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <lldpInterfaces>
+            <lldpInterface>
+                <ifName>%s</ifName>
+                <tlvTxEnable operation="merge">
+"""
+
+CE_NC_MERGE_INTERFACE_TLV_CONFIG_ENABLE_PROTOIDTXENABLE = """
+                    <protoIdTxEnable>%s</protoIdTxEnable>
+"""
+
+CE_NC_MERGE_INTERFACE_TLV_CONFIG_ENABLE_DCBX = """
+                    <dcbx>%s</dcbx>
+"""
+
+CE_NC_MERGE_INTERFACE_TLV_CONFIG_DISABLE_MANADDRTXENABLE = """
+                    <manAddrTxEnable>%s</manAddrTxEnable>
+"""
+
+CE_NC_MERGE_INTERFACE_TLV_CONFIG_DISABLE_PORTDESCTXENABLE = """
+                    <portDescTxEnable>%s</portDescTxEnable>
+"""
+
+CE_NC_MERGE_INTERFACE_TLV_CONFIG_DISABLE_SYSCAPTXENABLE = """
+                    <sysCapTxEnable>%s</sysCapTxEnable>
+"""
+
+CE_NC_MERGE_INTERFACE_TLV_CONFIG_DISABLE_SYSDESCTXENABLE = """
+                    <sysDescTxEnable>%s</sysDescTxEnable>
+"""
+
+CE_NC_MERGE_INTERFACE_TLV_CONFIG_DISABLE_SYSNAMETXENABLE = """
+                    <sysNameTxEnable>%s</sysNameTxEnable>
+"""
+
+CE_NC_MERGE_INTERFACE_TLV_CONFIG_DISABLE_LINKAGGRETXENABLE = """
+                    <linkAggreTxEnable>%s</linkAggreTxEnable>
+"""
+
+CE_NC_MERGE_INTERFACE_TLV_CONFIG_DISABLE_MACPHYTXENABLE = """
+                    <macPhyTxEnable>%s</macPhyTxEnable>
+"""
+
+CE_NC_MERGE_INTERFACE_TLV_CONFIG_DISABLE_MAXFRAMETXENABLE = """
+                    <maxFrameTxEnable>%s</maxFrameTxEnable>
+"""
+
+CE_NC_MERGE_INTERFACE_TLV_CONFIG_DISABLE_EEE = """
+                    <eee>%s</eee>
+"""
+
+CE_NC_MERGE_INTERFACE_TLV_CONFIG_TAIL = """
+                </tlvTxEnable>
+            </lldpInterface>
+        </lldpInterfaces>
+    </lldp>
+</config>
+"""
+
+CE_NC_MERGE_GLOBA_LLDPENABLE_CONFIG = """
+<config>
+    <lldp xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <lldpSys operation="merge">
+            <lldpEnable>%s</lldpEnable>
+        </lldpSys>
+    </lldp>
+</config>
+"""
+
+
+def get_interface_type(interface):
+    """Gets the type of interface, such as 10GE"""
+
+    if interface is None:
+        return None
+
+    iftype = None
+
+    if interface.upper().startswith('GE'):
+        iftype = 'ge'
+    elif interface.upper().startswith('10GE'):
+        iftype = '10ge'
+    elif interface.upper().startswith('25GE'):
+        iftype = '25ge'
+    elif interface.upper().startswith('40GE'):
+        iftype = '40ge'
+    elif interface.upper().startswith('100GE'):
+        iftype = '100ge'
+    elif interface.upper().startswith('PORT-GROUP'):
+        iftype = 'stack-Port'
+    elif interface.upper().startswith('NULL'):
+        iftype = 'null'
+    else:
+        return None
+    return iftype.lower()
+
+
+class Lldp_interface(object):
+    """Manage global lldp enable configuration"""
+
+    def __init__(self, argument_spec):
+        self.spec = argument_spec
+        self.module = AnsibleModule(argument_spec=self.spec, supports_check_mode=True)
+
+        self.lldpenable = self.module.params['lldpenable'] or None
+        self.function_lldp_interface_flag = self.module.params['function_lldp_interface_flag']
+        self.type_tlv_disable = self.module.params['type_tlv_disable']
+        self.type_tlv_enable = self.module.params['type_tlv_enable']
+        self.ifname = self.module.params['ifname']
+        if self.function_lldp_interface_flag == 'disableINTERFACE':
+            self.ifname = self.module.params['ifname']
+            self.lldpadminstatus = self.module.params['lldpadminstatus']
+        elif self.function_lldp_interface_flag == 'tlvdisableINTERFACE':
+            if self.type_tlv_disable == 'basic_tlv':
+                self.ifname = self.module.params['ifname']
+                self.manaddrtxenable = self.module.params['manaddrtxenable']
+                self.portdesctxenable = self.module.params['portdesctxenable']
+                self.syscaptxenable = self.module.params['syscaptxenable']
+                self.sysdesctxenable = self.module.params['sysdesctxenable']
+                self.sysnametxenable = self.module.params['sysnametxenable']
+            if self.type_tlv_disable == 'dot3_tlv':
+                self.ifname = self.module.params['ifname']
+                self.macphytxenable = self.module.params['macphytxenable']
+                self.linkaggretxenable = self.module.params['linkaggretxenable']
+                self.maxframetxenable = self.module.params['maxframetxenable']
+                self.eee = self.module.params['eee']
+        elif self.function_lldp_interface_flag == 'tlvenableINTERFACE':
+            if self.type_tlv_enable == 'dot1_tlv':
+                self.ifname = self.module.params['ifname']
+                self.protoidtxenable = self.module.params['protoidtxenable']
+            if self.type_tlv_enable == 'dcbx':
+                self.ifname = self.module.params['ifname']
+                self.dcbx = self.module.params['dcbx']
+        elif self.function_lldp_interface_flag == 'intervalINTERFACE':
+            self.ifname = self.module.params['ifname']
+            self.txinterval = self.module.params['txinterval']
+        self.state = self.module.params['state']
+
+        self.lldp_conf = dict()
+        self.conf_disable_exsit = False
+        self.conf_interface_lldp_disable_exsit = False
+        self.conf_interval_exsit = False
+        self.conf_tlv_disable_exsit = False
+        self.conf_tlv_enable_exsit = False
+        self.enable_flag = 0
+        self.check_params()
+        self.existing_state_value = dict()
+        self.existing_end_state_value = dict()
+        self.interface_lldp_info = list()
+
+        # state
+        self.changed = False
+        self.proposed_changed = dict()
+        self.updates_cmd = list()
+        self.results = dict()
+        self.proposed = dict()
+        self.existing = dict()
+        self.end_state = dict()
+
+    def check_params(self):
+        """Check all input params"""
+
+        if self.ifname:
+            intf_type = get_interface_type(self.ifname)
+            if not intf_type:
+                self.module.fail_json(msg='Error: ifname name of %s is error.' % self.ifname)
+            if (len(self.ifname) < 1) or (len(self.ifname) > 63):
+                self.module.fail_json(msg='Error: Ifname length is beetween 1 and 63.')
+
+        if self.function_lldp_interface_flag == 'intervalINTERFACE':
+            if self.txinterval:
+                if int(self.txinterval) < 1 or int(self.txinterval) > 32768:
+                    self.module.fail_json(
+                        msg='Error: The value of txinterval is out of [1 - 32768].')
+                if self.ifname:
+                    intf_type = get_interface_type(self.ifname)
+                    if not intf_type:
+                        self.module.fail_json(
+                            msg='Error: ifname name of %s '
+                                'is error.' % self.ifname)
+                    if (len(self.ifname) < 1) or (len(self.ifname) > 63):
+                        self.module.fail_json(
+                            msg='Error: Ifname length is beetween 1 and 63.')
+
+        if self.function_lldp_interface_flag == 'tlvdisableINTERFACE':
+            if self.type_tlv_disable == 'dot1_tlv':
+                if self.ifname:
+                    intf_type = get_interface_type(self.ifname)
+                    if not intf_type:
+                        self.module.fail_json(
+                            msg='Error: ifname name of %s '
+                                'is error.' % self.ifname)
+                    if (len(self.ifname) < 1) or (len(self.ifname) > 63):
+                        self.module.fail_json(
+                            msg='Error: Ifname length is beetween 1 and 63.')
+
+        if self.function_lldp_interface_flag == 'tlvenableINTERFACE':
+            if self.type_tlv_enable == 'dot1_tlv':
+                if self.ifname:
+                    intf_type = get_interface_type(self.ifname)
+                    if not intf_type:
+                        self.module.fail_json(

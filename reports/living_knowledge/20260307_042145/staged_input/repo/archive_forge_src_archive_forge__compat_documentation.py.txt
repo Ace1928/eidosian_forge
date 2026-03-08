@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_compat_documentation.py
+KIND: code
+
+import sys
+import requests
+Read headers from a Python 2 httplib message object.

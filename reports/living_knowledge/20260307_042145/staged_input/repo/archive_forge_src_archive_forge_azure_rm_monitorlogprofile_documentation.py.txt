@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/azure_rm_monitorlogprofile_documentation.py
+KIND: code
+
+from __future__ import absolute_import, division, print_function
+
+        Gets the properties of the specified log profile.
+
+        :return: log profile state dictionary

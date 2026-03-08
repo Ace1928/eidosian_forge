@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_nbit_documentation.py
+KIND: code
+
+from typing import Any
+A module with the precisions of platform-specific `~numpy.number`s.

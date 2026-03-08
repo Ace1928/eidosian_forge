@@ -1,0 +1,14 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/AU
+KIND: config
+
+AU
+jervis bay territoryjbt#
+australian capital territoryact
+new south walesnsw
+northern territorynt
+
+queenslandqld
+south australiasa
+tasmaniatas
+victoriavic
+western australiawa

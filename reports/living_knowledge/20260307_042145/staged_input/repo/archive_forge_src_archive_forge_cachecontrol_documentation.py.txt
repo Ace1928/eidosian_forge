@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/cachecontrol_documentation.py
+KIND: code
+
+import re
+
+        Returns a copy of this object.

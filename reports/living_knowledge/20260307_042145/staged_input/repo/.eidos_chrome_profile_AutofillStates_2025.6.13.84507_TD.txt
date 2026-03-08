@@ -1,0 +1,32 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/TD
+KIND: config
+
+TD
+
+ennedi est	ennediest
+ennedi ouestennediouestG
+البطحة‎bathaبتها
+بطحاءمنطقة البطحة@
+بحر الغزالbahr el gazelbarh el gazelbarhelgazelK
+بركوborkou بوركو إندي تيبستيمنطقة بوركوk
+شاري باقرميcharibaguirmirégion du charibaguirmiشاريباجرميمنطقة كانم)
+guéra
+جويرامنطقة قيراR
+حجر لميسhadjerlamisrégion du hadjerlamisمنطقة حجر لميس
+كانمkanem
+البحيرةlacلاك,
+لوقون الغربيlogone occidental*
+لوقون الشرقيlogone oriental!
+ماندولmandoulمندل8
+شاري الأوسط
+moyenchariموين تشاري/
+مايو كيبي الشرقيmayokebbi est1
+مايو كيبي الغربيmayokebbi ouest&
+archidiocèse de ndjamena	n'djamena7
+أوادايouaddaïمنطقة ودايوداي0
+سلاماتsalamatمنطقة سلامات
+سيلاsila1
+تانجليtandjile	tandjiléتانجيل,
+
+تبستيtibestiمنطقة تبستي
+وادي فيرا	wadi fira

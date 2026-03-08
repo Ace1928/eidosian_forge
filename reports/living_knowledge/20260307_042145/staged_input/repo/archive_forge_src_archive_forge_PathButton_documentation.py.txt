@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/PathButton_documentation.py
+KIND: code
+
+from .. import functions as fn
+from ..Qt import QtCore, QtGui, QtWidgets
+Simple PushButton extension that paints a QPainterPath centered on its face.

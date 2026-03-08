@@ -1,0 +1,170 @@
+SOURCE_PATH: .github/workflows/consciousness-parity.yml
+KIND: config
+
+name: Consciousness Linux Parity
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - "agent_forge/src/agent_forge/consciousness/**"
+      - "agent_forge/src/agent_forge/cli/eidctl.py"
+      - "eidos_mcp/src/eidos_mcp/routers/consciousness.py"
+      - "crawl_forge/src/crawl_forge/tika_extractor.py"
+      - "scripts/linux_parity_smoke.sh"
+      - "scripts/linux_audit_matrix.py"
+      - "scripts/tests/test_linux_audit_matrix.py"
+      - "scripts/consciousness_benchmark_trend.py"
+      - "scripts/tests/test_consciousness_benchmark_trend.py"
+      - "docs/consciousness_fcl/**"
+      - ".github/workflows/consciousness-parity.yml"
+  schedule:
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: consciousness-parity-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux-parity:
+    name: Linux Parity Smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # Do not install the root requirements lock here (contains host-specific/system packages
+          # like Brlapi that are unavailable on GitHub runners). Install the parity test toolchain
+          # and runtime dependencies explicitly.
+          pip install \
+            -e ./lib \
+            pytest \
+            pytest-asyncio \
+            pytest-cov \
+            pytest-xdist \
+            hypothesis \
+            numpy \
+            pydantic \
+            httpx \
+            requests \
+            networkx \
+            openai \
+            mcp \
+            fastapi \
+            uvicorn \
+            psutil \
+            python-dotenv \
+            pyyaml \
+            rich \
+            typer \
+            websockets \
+            tika \
+            beautifulsoup4
+
+      - name: Run Linux Parity Smoke · pytest
+        env:
+          PYTHONUNBUFFERED: "1"
+          EIDOS_AUDIT_OPTIONAL_FORGES: "mkey,llm,erais,glyph,word"
+        run: |
+          bash scripts/linux_parity_smoke.sh pytest
+
+      - name: Run Linux Parity Smoke · stdio
+        env:
+          PYTHONUNBUFFERED: "1"
+          EIDOS_AUDIT_OPTIONAL_FORGES: "mkey,llm,erais,glyph,word"
+        run: |
+          bash scripts/linux_parity_smoke.sh stdio
+
+      - name: Run Linux Parity Smoke · audit
+        env:
+          PYTHONUNBUFFERED: "1"
+          EIDOS_AUDIT_OPTIONAL_FORGES: "mkey,llm,erais,glyph,word"
+        run: |
+          bash scripts/linux_parity_smoke.sh audit
+
+      - name: Run Consciousness Benchmarks (CI Baseline)
+        env:
+          PYTHONUNBUFFERED: "1"
+          PYTHONPATH: ${{ github.workspace }}/lib:${{ github.workspace }}/agent_forge/src:${{ github.workspace }}/eidos_mcp/src:${{ github.workspace }}/crawl_forge/src
+        run: |
+          python agent_forge/bin/eidctl consciousness benchmark \
+            --dir state \
+            --ticks 8 \
+            --json > /tmp/consciousness_benchmark_ci.json
+
+          python agent_forge/bin/eidctl consciousness stress-benchmark \
+            --dir state \
+            --ticks 4 \
+            --event-fanout 6 \
+            --broadcast-fanout 3 \
+            --payload-chars 4096 \
+            --max-payload-bytes 1024 \
+            --json > /tmp/consciousness_stress_benchmark_ci.json
+
+          python agent_forge/bin/eidctl consciousness full-benchmark \
+            --dir state \
+            --rounds 1 \
+            --bench-ticks 3 \
+            --trial-ticks 2 \
+            --skip-llm \
+            --json > /tmp/consciousness_full_benchmark_ci.json
+
+      - name: Generate Consciousness Trend Reports
+        env:
+          PYTHONUNBUFFERED: "1"
+        run: |
+          python scripts/consciousness_benchmark_trend.py \
+            --reports-root reports \
+            --window-days 30 \
+            --output-json reports/consciousness_trends/latest_trend.json \
+            --output-md reports/consciousness_trends/latest_trend.md
+
+      - name: Enforce Linux Audit Matrix Gate
+        env:
+          PYTHONUNBUFFERED: "1"
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          trend_path = Path("reports/consciousness_trends/latest_trend.json")
+          if not trend_path.exists():
+              raise SystemExit("missing trend report")
+          payload = json.loads(trend_path.read_text(encoding="utf-8"))
+          linux = payload.get("linux_audit") or {}
+          latest_fail = linux.get("latest_fail_count")
+          if latest_fail is None:
+              raise SystemExit("linux_audit.latest_fail_count missing")
+          if int(latest_fail) > 0:
+              raise SystemExit(f"linux audit gate failed: latest_fail_count={latest_fail}")
+          print(f"linux audit gate pass: latest_fail_count={latest_fail}")
+          PY
+
+      - name: Upload Consciousness Trend Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: consciousness-parity-trend-${{ github.run_number }}
+          if-no-files-found: warn
+          path: |
+            reports/consciousness_benchmarks/*.json
+            reports/consciousness_stress_benchmarks/*.json
+            reports/consciousness_integrated_benchmarks/*.json
+            reports/consciousness_trials/*.json
+            reports/linux_audit_*.json
+            reports/consciousness_trends/*.json
+            reports/consciousness_trends/*.md
+            reports/mcp_audit_*.json

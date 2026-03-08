@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AccessToSnapshotDenied.py
+KIND: code
+
+from boto.exception import JSONResponseError
+class AccessToSnapshotDenied(JSONResponseError):
+    pass

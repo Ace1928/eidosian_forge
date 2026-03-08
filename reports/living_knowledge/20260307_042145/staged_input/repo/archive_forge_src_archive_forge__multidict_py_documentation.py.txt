@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_multidict_py_documentation.py
+KIND: code
+
+import sys
+import types
+from array import array
+from collections import abc
+from ._abc import MultiMapping, MutableMultiMapping
+Update the dictionary from *other*, overwriting existing keys.

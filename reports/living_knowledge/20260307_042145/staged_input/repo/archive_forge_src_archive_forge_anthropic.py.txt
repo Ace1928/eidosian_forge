@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/anthropic.py
+KIND: code
+
+from langchain_community.llms.anthropic import Anthropic
+
+__all__ = ["Anthropic"]

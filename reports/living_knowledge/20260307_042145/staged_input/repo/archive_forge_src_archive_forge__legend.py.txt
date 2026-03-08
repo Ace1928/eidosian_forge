@@ -1,0 +1,611 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_legend.py
+KIND: code
+
+from plotly.basedatatypes import BaseLayoutHierarchyType as _BaseLayoutHierarchyType
+import copy as _copy
+
+
+class Legend(_BaseLayoutHierarchyType):
+
+    # class properties
+    # --------------------
+    _parent_path_str = "layout"
+    _path_str = "layout.legend"
+    _valid_props = {
+        "bgcolor",
+        "bordercolor",
+        "borderwidth",
+        "entrywidth",
+        "entrywidthmode",
+        "font",
+        "groupclick",
+        "grouptitlefont",
+        "indentation",
+        "itemclick",
+        "itemdoubleclick",
+        "itemsizing",
+        "itemwidth",
+        "orientation",
+        "title",
+        "tracegroupgap",
+        "traceorder",
+        "uirevision",
+        "valign",
+        "visible",
+        "x",
+        "xanchor",
+        "xref",
+        "y",
+        "yanchor",
+        "yref",
+    }
+
+    # bgcolor
+    # -------
+    @property
+    def bgcolor(self):
+        """
+        Sets the legend background color. Defaults to
+        `layout.paper_bgcolor`.
+
+        The 'bgcolor' property is a color and may be specified as:
+          - A hex string (e.g. '#ff0000')
+          - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+          - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+          - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+          - A named CSS color:
+                aliceblue, antiquewhite, aqua, aquamarine, azure,
+                beige, bisque, black, blanchedalmond, blue,
+                blueviolet, brown, burlywood, cadetblue,
+                chartreuse, chocolate, coral, cornflowerblue,
+                cornsilk, crimson, cyan, darkblue, darkcyan,
+                darkgoldenrod, darkgray, darkgrey, darkgreen,
+                darkkhaki, darkmagenta, darkolivegreen, darkorange,
+                darkorchid, darkred, darksalmon, darkseagreen,
+                darkslateblue, darkslategray, darkslategrey,
+                darkturquoise, darkviolet, deeppink, deepskyblue,
+                dimgray, dimgrey, dodgerblue, firebrick,
+                floralwhite, forestgreen, fuchsia, gainsboro,
+                ghostwhite, gold, goldenrod, gray, grey, green,
+                greenyellow, honeydew, hotpink, indianred, indigo,
+                ivory, khaki, lavender, lavenderblush, lawngreen,
+                lemonchiffon, lightblue, lightcoral, lightcyan,
+                lightgoldenrodyellow, lightgray, lightgrey,
+                lightgreen, lightpink, lightsalmon, lightseagreen,
+                lightskyblue, lightslategray, lightslategrey,
+                lightsteelblue, lightyellow, lime, limegreen,
+                linen, magenta, maroon, mediumaquamarine,
+                mediumblue, mediumorchid, mediumpurple,
+                mediumseagreen, mediumslateblue, mediumspringgreen,
+                mediumturquoise, mediumvioletred, midnightblue,
+                mintcream, mistyrose, moccasin, navajowhite, navy,
+                oldlace, olive, olivedrab, orange, orangered,
+                orchid, palegoldenrod, palegreen, paleturquoise,
+                palevioletred, papayawhip, peachpuff, peru, pink,
+                plum, powderblue, purple, red, rosybrown,
+                royalblue, rebeccapurple, saddlebrown, salmon,
+                sandybrown, seagreen, seashell, sienna, silver,
+                skyblue, slateblue, slategray, slategrey, snow,
+                springgreen, steelblue, tan, teal, thistle, tomato,
+                turquoise, violet, wheat, white, whitesmoke,
+                yellow, yellowgreen
+
+        Returns
+        -------
+        str
+        """
+        return self["bgcolor"]
+
+    @bgcolor.setter
+    def bgcolor(self, val):
+        self["bgcolor"] = val
+
+    # bordercolor
+    # -----------
+    @property
+    def bordercolor(self):
+        """
+        Sets the color of the border enclosing the legend.
+
+        The 'bordercolor' property is a color and may be specified as:
+          - A hex string (e.g. '#ff0000')
+          - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+          - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+          - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+          - A named CSS color:
+                aliceblue, antiquewhite, aqua, aquamarine, azure,
+                beige, bisque, black, blanchedalmond, blue,
+                blueviolet, brown, burlywood, cadetblue,
+                chartreuse, chocolate, coral, cornflowerblue,
+                cornsilk, crimson, cyan, darkblue, darkcyan,
+                darkgoldenrod, darkgray, darkgrey, darkgreen,
+                darkkhaki, darkmagenta, darkolivegreen, darkorange,
+                darkorchid, darkred, darksalmon, darkseagreen,
+                darkslateblue, darkslategray, darkslategrey,
+                darkturquoise, darkviolet, deeppink, deepskyblue,
+                dimgray, dimgrey, dodgerblue, firebrick,
+                floralwhite, forestgreen, fuchsia, gainsboro,
+                ghostwhite, gold, goldenrod, gray, grey, green,
+                greenyellow, honeydew, hotpink, indianred, indigo,
+                ivory, khaki, lavender, lavenderblush, lawngreen,
+                lemonchiffon, lightblue, lightcoral, lightcyan,
+                lightgoldenrodyellow, lightgray, lightgrey,
+                lightgreen, lightpink, lightsalmon, lightseagreen,
+                lightskyblue, lightslategray, lightslategrey,
+                lightsteelblue, lightyellow, lime, limegreen,
+                linen, magenta, maroon, mediumaquamarine,
+                mediumblue, mediumorchid, mediumpurple,
+                mediumseagreen, mediumslateblue, mediumspringgreen,
+                mediumturquoise, mediumvioletred, midnightblue,
+                mintcream, mistyrose, moccasin, navajowhite, navy,
+                oldlace, olive, olivedrab, orange, orangered,
+                orchid, palegoldenrod, palegreen, paleturquoise,
+                palevioletred, papayawhip, peachpuff, peru, pink,
+                plum, powderblue, purple, red, rosybrown,
+                royalblue, rebeccapurple, saddlebrown, salmon,
+                sandybrown, seagreen, seashell, sienna, silver,
+                skyblue, slateblue, slategray, slategrey, snow,
+                springgreen, steelblue, tan, teal, thistle, tomato,
+                turquoise, violet, wheat, white, whitesmoke,
+                yellow, yellowgreen
+
+        Returns
+        -------
+        str
+        """
+        return self["bordercolor"]
+
+    @bordercolor.setter
+    def bordercolor(self, val):
+        self["bordercolor"] = val
+
+    # borderwidth
+    # -----------
+    @property
+    def borderwidth(self):
+        """
+        Sets the width (in px) of the border enclosing the legend.
+
+        The 'borderwidth' property is a number and may be specified as:
+          - An int or float in the interval [0, inf]
+
+        Returns
+        -------
+        int|float
+        """
+        return self["borderwidth"]
+
+    @borderwidth.setter
+    def borderwidth(self, val):
+        self["borderwidth"] = val
+
+    # entrywidth
+    # ----------
+    @property
+    def entrywidth(self):
+        """
+        Sets the width (in px or fraction) of the legend. Use 0 to size
+        the entry based on the text width, when `entrywidthmode` is set
+        to "pixels".
+
+        The 'entrywidth' property is a number and may be specified as:
+          - An int or float in the interval [0, inf]
+
+        Returns
+        -------
+        int|float
+        """
+        return self["entrywidth"]
+
+    @entrywidth.setter
+    def entrywidth(self, val):
+        self["entrywidth"] = val
+
+    # entrywidthmode
+    # --------------
+    @property
+    def entrywidthmode(self):
+        """
+        Determines what entrywidth means.
+
+        The 'entrywidthmode' property is an enumeration that may be specified as:
+          - One of the following enumeration values:
+                ['fraction', 'pixels']
+
+        Returns
+        -------
+        Any
+        """
+        return self["entrywidthmode"]
+
+    @entrywidthmode.setter
+    def entrywidthmode(self, val):
+        self["entrywidthmode"] = val
+
+    # font
+    # ----
+    @property
+    def font(self):
+        """
+        Sets the font used to text the legend items.
+
+        The 'font' property is an instance of Font
+        that may be specified as:
+          - An instance of :class:`plotly.graph_objs.layout.legend.Font`
+          - A dict of string/value properties that will be passed
+            to the Font constructor
+
+            Supported dict properties:
+
+                color
+
+                family
+                    HTML font family - the typeface that will be
+                    applied by the web browser. The web browser
+                    will only be able to apply a font if it is
+                    available on the system which it operates.
+                    Provide multiple font families, separated by
+                    commas, to indicate the preference in which to
+                    apply fonts if they aren't available on the
+                    system. The Chart Studio Cloud (at
+                    https://chart-studio.plotly.com or on-premise)
+                    generates images on a server, where only a
+                    select number of fonts are installed and
+                    supported. These include "Arial", "Balto",
+                    "Courier New", "Droid Sans",, "Droid Serif",
+                    "Droid Sans Mono", "Gravitas One", "Old
+                    Standard TT", "Open Sans", "Overpass", "PT Sans
+                    Narrow", "Raleway", "Times New Roman".
+                size
+
+                style
+                    Sets whether a font should be styled with a
+                    normal or italic face from its family.
+                variant
+                    Sets the variant of the font.
+                weight
+                    Sets the weight (or boldness) of the font.
+
+        Returns
+        -------
+        plotly.graph_objs.layout.legend.Font
+        """
+        return self["font"]
+
+    @font.setter
+    def font(self, val):
+        self["font"] = val
+
+    # groupclick
+    # ----------
+    @property
+    def groupclick(self):
+        """
+        Determines the behavior on legend group item click.
+        "toggleitem" toggles the visibility of the individual item
+        clicked on the graph. "togglegroup" toggles the visibility of
+        all items in the same legendgroup as the item clicked on the
+        graph.
+
+        The 'groupclick' property is an enumeration that may be specified as:
+          - One of the following enumeration values:
+                ['toggleitem', 'togglegroup']
+
+        Returns
+        -------
+        Any
+        """
+        return self["groupclick"]
+
+    @groupclick.setter
+    def groupclick(self, val):
+        self["groupclick"] = val
+
+    # grouptitlefont
+    # --------------
+    @property
+    def grouptitlefont(self):
+        """
+        Sets the font for group titles in legend. Defaults to
+        `legend.font` with its size increased about 10%.
+
+        The 'grouptitlefont' property is an instance of Grouptitlefont
+        that may be specified as:
+          - An instance of :class:`plotly.graph_objs.layout.legend.Grouptitlefont`
+          - A dict of string/value properties that will be passed
+            to the Grouptitlefont constructor
+
+            Supported dict properties:
+
+                color
+
+                family
+                    HTML font family - the typeface that will be
+                    applied by the web browser. The web browser
+                    will only be able to apply a font if it is
+                    available on the system which it operates.
+                    Provide multiple font families, separated by
+                    commas, to indicate the preference in which to
+                    apply fonts if they aren't available on the
+                    system. The Chart Studio Cloud (at
+                    https://chart-studio.plotly.com or on-premise)
+                    generates images on a server, where only a
+                    select number of fonts are installed and
+                    supported. These include "Arial", "Balto",
+                    "Courier New", "Droid Sans",, "Droid Serif",
+                    "Droid Sans Mono", "Gravitas One", "Old
+                    Standard TT", "Open Sans", "Overpass", "PT Sans
+                    Narrow", "Raleway", "Times New Roman".
+                size
+
+                style
+                    Sets whether a font should be styled with a
+                    normal or italic face from its family.
+                variant
+                    Sets the variant of the font.
+                weight
+                    Sets the weight (or boldness) of the font.
+
+        Returns
+        -------
+        plotly.graph_objs.layout.legend.Grouptitlefont
+        """
+        return self["grouptitlefont"]
+
+    @grouptitlefont.setter
+    def grouptitlefont(self, val):
+        self["grouptitlefont"] = val
+
+    # indentation
+    # -----------
+    @property
+    def indentation(self):
+        """
+        Sets the indentation (in px) of the legend entries.
+
+        The 'indentation' property is a number and may be specified as:
+          - An int or float in the interval [-15, inf]
+
+        Returns
+        -------
+        int|float
+        """
+        return self["indentation"]
+
+    @indentation.setter
+    def indentation(self, val):
+        self["indentation"] = val
+
+    # itemclick
+    # ---------
+    @property
+    def itemclick(self):
+        """
+        Determines the behavior on legend item click. "toggle" toggles
+        the visibility of the item clicked on the graph. "toggleothers"
+        makes the clicked item the sole visible item on the graph.
+        False disables legend item click interactions.
+
+        The 'itemclick' property is an enumeration that may be specified as:
+          - One of the following enumeration values:
+                ['toggle', 'toggleothers', False]
+
+        Returns
+        -------
+        Any
+        """
+        return self["itemclick"]
+
+    @itemclick.setter
+    def itemclick(self, val):
+        self["itemclick"] = val
+
+    # itemdoubleclick
+    # ---------------
+    @property
+    def itemdoubleclick(self):
+        """
+        Determines the behavior on legend item double-click. "toggle"
+        toggles the visibility of the item clicked on the graph.
+        "toggleothers" makes the clicked item the sole visible item on
+        the graph. False disables legend item double-click
+        interactions.
+
+        The 'itemdoubleclick' property is an enumeration that may be specified as:
+          - One of the following enumeration values:
+                ['toggle', 'toggleothers', False]
+
+        Returns
+        -------
+        Any
+        """
+        return self["itemdoubleclick"]
+
+    @itemdoubleclick.setter
+    def itemdoubleclick(self, val):
+        self["itemdoubleclick"] = val
+
+    # itemsizing
+    # ----------
+    @property
+    def itemsizing(self):
+        """
+        Determines if the legend items symbols scale with their
+        corresponding "trace" attributes or remain "constant"
+        independent of the symbol size on the graph.
+
+        The 'itemsizing' property is an enumeration that may be specified as:
+          - One of the following enumeration values:
+                ['trace', 'constant']
+
+        Returns
+        -------
+        Any
+        """
+        return self["itemsizing"]
+
+    @itemsizing.setter
+    def itemsizing(self, val):
+        self["itemsizing"] = val
+
+    # itemwidth
+    # ---------
+    @property
+    def itemwidth(self):
+        """
+        Sets the width (in px) of the legend item symbols (the part
+        other than the title.text).
+
+        The 'itemwidth' property is a number and may be specified as:
+          - An int or float in the interval [30, inf]
+
+        Returns
+        -------
+        int|float
+        """
+        return self["itemwidth"]
+
+    @itemwidth.setter
+    def itemwidth(self, val):
+        self["itemwidth"] = val
+
+    # orientation
+    # -----------
+    @property
+    def orientation(self):
+        """
+        Sets the orientation of the legend.
+
+        The 'orientation' property is an enumeration that may be specified as:
+          - One of the following enumeration values:
+                ['v', 'h']
+
+        Returns
+        -------
+        Any
+        """
+        return self["orientation"]
+
+    @orientation.setter
+    def orientation(self, val):
+        self["orientation"] = val
+
+    # title
+    # -----
+    @property
+    def title(self):
+        """
+        The 'title' property is an instance of Title
+        that may be specified as:
+          - An instance of :class:`plotly.graph_objs.layout.legend.Title`
+          - A dict of string/value properties that will be passed
+            to the Title constructor
+
+            Supported dict properties:
+
+                font
+                    Sets this legend's title font. Defaults to
+                    `legend.font` with its size increased about
+                    20%.
+                side
+                    Determines the location of legend's title with
+                    respect to the legend items. Defaulted to "top"
+                    with `orientation` is "h". Defaulted to "left"
+                    with `orientation` is "v". The *top left*
+                    options could be used to expand top center and
+                    top right are for horizontal alignment legend
+                    area in both x and y sides.
+                text
+                    Sets the title of the legend.
+
+        Returns
+        -------
+        plotly.graph_objs.layout.legend.Title
+        """
+        return self["title"]
+
+    @title.setter
+    def title(self, val):
+        self["title"] = val
+
+    # tracegroupgap
+    # -------------
+    @property
+    def tracegroupgap(self):
+        """
+        Sets the amount of vertical space (in px) between legend
+        groups.
+
+        The 'tracegroupgap' property is a number and may be specified as:
+          - An int or float in the interval [0, inf]
+
+        Returns
+        -------
+        int|float
+        """
+        return self["tracegroupgap"]
+
+    @tracegroupgap.setter
+    def tracegroupgap(self, val):
+        self["tracegroupgap"] = val
+
+    # traceorder
+    # ----------
+    @property
+    def traceorder(self):
+        """
+        Determines the order at which the legend items are displayed.
+        If "normal", the items are displayed top-to-bottom in the same
+        order as the input data. If "reversed", the items are displayed
+        in the opposite order as "normal". If "grouped", the items are
+        displayed in groups (when a trace `legendgroup` is provided).
+        if "grouped+reversed", the items are displayed in the opposite
+        order as "grouped".
+
+        The 'traceorder' property is a flaglist and may be specified
+        as a string containing:
+          - Any combination of ['reversed', 'grouped'] joined with '+' characters
+            (e.g. 'reversed+grouped')
+            OR exactly one of ['normal'] (e.g. 'normal')
+
+        Returns
+        -------
+        Any
+        """
+        return self["traceorder"]
+
+    @traceorder.setter
+    def traceorder(self, val):
+        self["traceorder"] = val
+
+    # uirevision
+    # ----------
+    @property
+    def uirevision(self):
+        """
+        Controls persistence of legend-driven changes in trace and pie
+        label visibility. Defaults to `layout.uirevision`.
+
+        The 'uirevision' property accepts values of any type
+
+        Returns
+        -------
+        Any
+        """
+        return self["uirevision"]
+
+    @uirevision.setter
+    def uirevision(self, val):
+        self["uirevision"] = val
+
+    # valign
+    # ------
+    @property
+    def valign(self):
+        """
+        Sets the vertical alignment of the symbols with respect to
+        their associated text.
+
+        The 'valign' property is an enumeration that may be specified as:
+          - One of the following enumeration values:
+                ['to

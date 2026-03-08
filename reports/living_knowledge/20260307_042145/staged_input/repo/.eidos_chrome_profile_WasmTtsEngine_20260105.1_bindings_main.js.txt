@@ -1,0 +1,566 @@
+SOURCE_PATH: .eidos_chrome_profile/WasmTtsEngine/20260105.1/bindings_main.js
+KIND: code
+
+var loadWasmTtsBindings = (() => {
+  var _scriptName = globalThis.document?.currentScript?.src;
+  return async function (moduleArg = {}) {
+    var moduleRtn;
+    (function () {
+      function humanReadableVersionToPacked(str) {
+        str = str.split("-")[0];
+        var vers = str.split(".").slice(0, 3);
+        while (vers.length < 3) vers.push("00");
+        vers = vers.map((n, i, arr) => n.padStart(2, "0"));
+        return vers.join("");
+      }
+      var packedVersionToHumanReadable = (n) =>
+        [(n / 1e4) | 0, ((n / 100) | 0) % 100, n % 100].join(".");
+      var TARGET_NOT_SUPPORTED = 2147483647;
+      var isNode =
+        typeof process !== "undefined" &&
+        process &&
+        process.versions &&
+        process.versions.node;
+      var currentNodeVersion = isNode
+        ? humanReadableVersionToPacked(process.versions.node)
+        : TARGET_NOT_SUPPORTED;
+      if (currentNodeVersion < 160400) {
+        throw new Error(
+          `This emscripten-generated code requires node v${packedVersionToHumanReadable(160400)} (detected v${packedVersionToHumanReadable(currentNodeVersion)})`,
+        );
+      }
+      var currentSafariVersion =
+        typeof navigator !== "undefined" &&
+        !navigator?.userAgent?.includes("Chrome/") &&
+        navigator?.userAgent?.includes("Safari/") &&
+        navigator.userAgent.match(/Version\/(\d+\.?\d*\.?\d*)/)
+          ? humanReadableVersionToPacked(
+              navigator.userAgent.match(/Version\/(\d+\.?\d*\.?\d*)/)[1],
+            )
+          : TARGET_NOT_SUPPORTED;
+      if (currentSafariVersion < 15e4) {
+        throw new Error(
+          `This emscripten-generated code requires Safari v${packedVersionToHumanReadable(15e4)} (detected v${currentSafariVersion})`,
+        );
+      }
+      var currentFirefoxVersion =
+        typeof navigator !== "undefined" &&
+        navigator?.userAgent?.match(/Firefox\/(\d+(?:\.\d+)?)/)
+          ? parseFloat(navigator.userAgent.match(/Firefox\/(\d+(?:\.\d+)?)/)[1])
+          : TARGET_NOT_SUPPORTED;
+      if (currentFirefoxVersion < 79) {
+        throw new Error(
+          `This emscripten-generated code requires Firefox v79 (detected v${currentFirefoxVersion})`,
+        );
+      }
+      var currentChromeVersion =
+        typeof navigator !== "undefined" &&
+        navigator?.userAgent?.match(/Chrome\/(\d+(?:\.\d+)?)/)
+          ? parseFloat(navigator.userAgent.match(/Chrome\/(\d+(?:\.\d+)?)/)[1])
+          : TARGET_NOT_SUPPORTED;
+      if (currentChromeVersion < 85) {
+        throw new Error(
+          `This emscripten-generated code requires Chrome v85 (detected v${currentChromeVersion})`,
+        );
+      }
+    })();
+    var Module = moduleArg;
+    var ENVIRONMENT_IS_WEB = !!globalThis.window;
+    var ENVIRONMENT_IS_WORKER = !!globalThis.WorkerGlobalScope;
+    var ENVIRONMENT_IS_NODE =
+      globalThis.process?.versions?.node &&
+      globalThis.process?.type != "renderer";
+    var ENVIRONMENT_IS_SHELL =
+      !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_NODE && !ENVIRONMENT_IS_WORKER;
+    var ENVIRONMENT_IS_PTHREAD =
+      ENVIRONMENT_IS_WORKER && self.name?.startsWith("em-pthread");
+    if (ENVIRONMENT_IS_PTHREAD) {
+      assert(
+        !globalThis.moduleLoaded,
+        "module should only be loaded once on each pthread worker",
+      );
+      globalThis.moduleLoaded = true;
+    }
+    if (ENVIRONMENT_IS_NODE) {
+      var worker_threads = require("worker_threads");
+      global.Worker = worker_threads.Worker;
+      ENVIRONMENT_IS_WORKER = !worker_threads.isMainThread;
+      ENVIRONMENT_IS_PTHREAD =
+        ENVIRONMENT_IS_WORKER && worker_threads["workerData"] == "em-pthread";
+    }
+    var arguments_ = [];
+    var thisProgram = "./this.program";
+    var quit_ = (status, toThrow) => {
+      throw toThrow;
+    };
+    if (typeof __filename != "undefined") {
+      _scriptName = __filename;
+    } else if (ENVIRONMENT_IS_WORKER) {
+      _scriptName = self.location.href;
+    }
+    var scriptDirectory = "";
+    function locateFile(path) {
+      if (Module["locateFile"]) {
+        return Module["locateFile"](path, scriptDirectory);
+      }
+      return scriptDirectory + path;
+    }
+    var readAsync, readBinary;
+    if (ENVIRONMENT_IS_NODE) {
+      const isNode =
+        globalThis.process?.versions?.node &&
+        globalThis.process?.type != "renderer";
+      if (!isNode)
+        throw new Error(
+          "not compiled for this environment (did you build to HTML and try to run it not on the web, or set ENVIRONMENT to something - like node - and run it someplace else - like on the web?)",
+        );
+      var fs = require("fs");
+      scriptDirectory = __dirname + "/";
+      readBinary = (filename) => {
+        filename = isFileURI(filename) ? new URL(filename) : filename;
+        var ret = fs.readFileSync(filename);
+        assert(Buffer.isBuffer(ret));
+        return ret;
+      };
+      readAsync = async (filename, binary = true) => {
+        filename = isFileURI(filename) ? new URL(filename) : filename;
+        var ret = fs.readFileSync(filename, binary ? undefined : "utf8");
+        assert(binary ? Buffer.isBuffer(ret) : typeof ret == "string");
+        return ret;
+      };
+      if (process.argv.length > 1) {
+        thisProgram = process.argv[1].replace(/\\/g, "/");
+      }
+      arguments_ = process.argv.slice(2);
+      quit_ = (status, toThrow) => {
+        process.exitCode = status;
+        throw toThrow;
+      };
+    } else if (ENVIRONMENT_IS_SHELL) {
+    } else if (ENVIRONMENT_IS_WEB || ENVIRONMENT_IS_WORKER) {
+      try {
+        scriptDirectory = new URL(".", _scriptName).href;
+      } catch {}
+      if (!(globalThis.window || globalThis.WorkerGlobalScope))
+        throw new Error(
+          "not compiled for this environment (did you build to HTML and try to run it not on the web, or set ENVIRONMENT to something - like node - and run it someplace else - like on the web?)",
+        );
+      if (!ENVIRONMENT_IS_NODE) {
+        if (ENVIRONMENT_IS_WORKER) {
+          readBinary = (url) => {
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", url, false);
+            xhr.responseType = "arraybuffer";
+            xhr.send(null);
+            return new Uint8Array(xhr.response);
+          };
+        }
+        readAsync = async (url) => {
+          if (isFileURI(url)) {
+            return new Promise((resolve, reject) => {
+              var xhr = new XMLHttpRequest();
+              xhr.open("GET", url, true);
+              xhr.responseType = "arraybuffer";
+              xhr.onload = () => {
+                if (xhr.status == 200 || (xhr.status == 0 && xhr.response)) {
+                  resolve(xhr.response);
+                  return;
+                }
+                reject(xhr.status);
+              };
+              xhr.onerror = reject;
+              xhr.send(null);
+            });
+          }
+          var response = await fetch(url, { credentials: "same-origin" });
+          if (response.ok) {
+            return response.arrayBuffer();
+          }
+          throw new Error(response.status + " : " + response.url);
+        };
+      }
+    } else {
+      throw new Error("environment detection error");
+    }
+    var defaultPrint = console.log.bind(console);
+    var defaultPrintErr = console.error.bind(console);
+    if (ENVIRONMENT_IS_NODE) {
+      var utils = require("util");
+      var stringify = (a) => (typeof a == "object" ? utils.inspect(a) : a);
+      defaultPrint = (...args) =>
+        fs.writeSync(1, args.map(stringify).join(" ") + "\n");
+      defaultPrintErr = (...args) =>
+        fs.writeSync(2, args.map(stringify).join(" ") + "\n");
+    }
+    var out = defaultPrint;
+    var err = defaultPrintErr;
+    assert(
+      ENVIRONMENT_IS_WEB || ENVIRONMENT_IS_WORKER || ENVIRONMENT_IS_NODE,
+      "Pthreads do not work in this environment yet (need Web Workers, or an alternative to them)",
+    );
+    assert(
+      !ENVIRONMENT_IS_SHELL,
+      "shell environment detected but not enabled at build time.  Add `shell` to `-sENVIRONMENT` to enable.",
+    );
+    var wasmBinary;
+    if (!globalThis.WebAssembly) {
+      err("no native wasm support detected");
+    }
+    var wasmModule;
+    var ABORT = false;
+    var EXITSTATUS;
+    function assert(condition, text) {
+      if (!condition) {
+        abort("Assertion failed" + (text ? ": " + text : ""));
+      }
+    }
+    var isFileURI = (filename) => filename.startsWith("file://");
+    function writeStackCookie() {
+      var max = _emscripten_stack_get_end();
+      assert((max & 3) == 0);
+      if (max == 0) {
+        max += 4;
+      }
+      HEAPU32[max >> 2] = 34821223;
+      HEAPU32[(max + 4) >> 2] = 2310721022;
+      HEAPU32[0 >> 2] = 1668509029;
+    }
+    function checkStackCookie() {
+      if (ABORT) return;
+      var max = _emscripten_stack_get_end();
+      if (max == 0) {
+        max += 4;
+      }
+      var cookie1 = HEAPU32[max >> 2];
+      var cookie2 = HEAPU32[(max + 4) >> 2];
+      if (cookie1 != 34821223 || cookie2 != 2310721022) {
+        abort(
+          `Stack overflow! Stack cookie has been overwritten at ${ptrToString(max)}, expected hex dwords 0x89BACDFE and 0x2135467, but received ${ptrToString(cookie2)} ${ptrToString(cookie1)}`,
+        );
+      }
+      if (HEAPU32[0 >> 2] != 1668509029) {
+        abort(
+          "Runtime error: The application has corrupted its heap memory area (address zero)!",
+        );
+      }
+    }
+    var runtimeDebug = true;
+    function dbg(...args) {
+      if (!runtimeDebug && typeof runtimeDebug != "undefined") return;
+      if (ENVIRONMENT_IS_NODE) {
+        var fs = require("fs");
+        var utils = require("util");
+        function stringify(a) {
+          switch (typeof a) {
+            case "object":
+              return utils.inspect(a);
+            case "undefined":
+              return "undefined";
+          }
+          return a;
+        }
+        fs.writeSync(2, args.map(stringify).join(" ") + "\n");
+      } else console.warn(...args);
+    }
+    (() => {
+      var h16 = new Int16Array(1);
+      var h8 = new Int8Array(h16.buffer);
+      h16[0] = 25459;
+      if (h8[0] !== 115 || h8[1] !== 99)
+        abort(
+          "Runtime error: expected the system to be little-endian! (Run with -sSUPPORT_BIG_ENDIAN to bypass)",
+        );
+    })();
+    function consumedModuleProp(prop) {
+      if (!Object.getOwnPropertyDescriptor(Module, prop)) {
+        Object.defineProperty(Module, prop, {
+          configurable: true,
+          set() {
+            abort(
+              `Attempt to set \`Module.${prop}\` after it has already been processed.  This can happen, for example, when code is injected via '--post-js' rather than '--pre-js'`,
+            );
+          },
+        });
+      }
+    }
+    function makeInvalidEarlyAccess(name) {
+      return () =>
+        assert(
+          false,
+          `call to '${name}' via reference taken before Wasm module initialization`,
+        );
+    }
+    function ignoredModuleProp(prop) {
+      if (Object.getOwnPropertyDescriptor(Module, prop)) {
+        abort(
+          `\`Module.${prop}\` was supplied but \`${prop}\` not included in INCOMING_MODULE_JS_API`,
+        );
+      }
+    }
+    function isExportedByForceFilesystem(name) {
+      return (
+        name === "FS_createPath" ||
+        name === "FS_createDataFile" ||
+        name === "FS_createPreloadedFile" ||
+        name === "FS_preloadFile" ||
+        name === "FS_unlink" ||
+        name === "addRunDependency" ||
+        name === "FS_createLazyFile" ||
+        name === "FS_createDevice" ||
+        name === "removeRunDependency"
+      );
+    }
+    function missingLibrarySymbol(sym) {
+      unexportedRuntimeSymbol(sym);
+    }
+    function unexportedRuntimeSymbol(sym) {
+      if (ENVIRONMENT_IS_PTHREAD) {
+        return;
+      }
+      if (!Object.getOwnPropertyDescriptor(Module, sym)) {
+        Object.defineProperty(Module, sym, {
+          configurable: true,
+          get() {
+            var msg = `'${sym}' was not exported. add it to EXPORTED_RUNTIME_METHODS (see the Emscripten FAQ)`;
+            if (isExportedByForceFilesystem(sym)) {
+              msg +=
+                ". Alternatively, forcing filesystem support (-sFORCE_FILESYSTEM) can export this for you";
+            }
+            abort(msg);
+          },
+        });
+      }
+    }
+    function initWorkerLogging() {
+      function getLogPrefix() {
+        var t = 0;
+        if (runtimeInitialized && typeof _pthread_self != "undefined") {
+          t = _pthread_self();
+        }
+        return `w:${workerID},t:${ptrToString(t)}:`;
+      }
+      var origDbg = dbg;
+      dbg = (...args) => origDbg(getLogPrefix(), ...args);
+    }
+    initWorkerLogging();
+    var readyPromiseResolve, readyPromiseReject;
+    if (ENVIRONMENT_IS_NODE && ENVIRONMENT_IS_PTHREAD) {
+      var parentPort = worker_threads["parentPort"];
+      parentPort.on("message", (msg) => global.onmessage?.({ data: msg }));
+      Object.assign(globalThis, {
+        self: global,
+        postMessage: (msg) => parentPort["postMessage"](msg),
+      });
+      process.on("uncaughtException", (err) => {
+        postMessage({ cmd: "uncaughtException", error: err });
+        process.exit(1);
+      });
+    }
+    var workerID = 0;
+    var startWorker;
+    if (ENVIRONMENT_IS_PTHREAD) {
+      var initializedJS = false;
+      self.onunhandledrejection = (e) => {
+        throw e.reason || e;
+      };
+      function handleMessage(e) {
+        try {
+          var msgData = e["data"];
+          var cmd = msgData.cmd;
+          if (cmd === "load") {
+            workerID = msgData.workerID;
+            let messageQueue = [];
+            self.onmessage = (e) => messageQueue.push(e);
+            startWorker = () => {
+              postMessage({ cmd: "loaded" });
+              for (let msg of messageQueue) {
+                handleMessage(msg);
+              }
+              self.onmessage = handleMessage;
+            };
+            for (const handler of msgData.handlers) {
+              if (!Module[handler] || Module[handler].proxy) {
+                Module[handler] = (...args) => {
+                  postMessage({ cmd: "callHandler", handler, args });
+                };
+                if (handler == "print") out = Module[handler];
+                if (handler == "printErr") err = Module[handler];
+              }
+            }
+            wasmMemory = msgData.wasmMemory;
+            updateMemoryViews();
+            wasmModule = msgData.wasmModule;
+            createWasm();
+            run();
+          } else if (cmd === "run") {
+            assert(msgData.pthread_ptr);
+            establishStackSpace(msgData.pthread_ptr);
+            __emscripten_thread_init(msgData.pthread_ptr, 0, 0, 1, 0, 0);
+            PThread.threadInitTLS();
+            __emscripten_thread_mailbox_await(msgData.pthread_ptr);
+            if (!initializedJS) {
+              __embind_initialize_bindings();
+              initializedJS = true;
+            }
+            try {
+              invokeEntryPoint(msgData.start_routine, msgData.arg);
+            } catch (ex) {
+              if (ex != "unwind") {
+                throw ex;
+              }
+            }
+          } else if (msgData.target === "setimmediate") {
+          } else if (cmd === "checkMailbox") {
+            if (initializedJS) {
+              checkMailbox();
+            }
+          } else if (cmd) {
+            err(`worker: received unknown command ${cmd}`);
+            err(msgData);
+          }
+        } catch (ex) {
+          err(`worker: onmessage() captured an uncaught exception: ${ex}`);
+          if (ex?.stack) err(ex.stack);
+          __emscripten_thread_crashed();
+          throw ex;
+        }
+      }
+      self.onmessage = handleMessage;
+    }
+    var HEAP8, HEAPU8, HEAP16, HEAPU16, HEAP32, HEAPU32, HEAPF32, HEAPF64;
+    var runtimeInitialized = false;
+    function updateMemoryViews() {
+      var b = wasmMemory.buffer;
+      HEAP8 = new Int8Array(b);
+      HEAP16 = new Int16Array(b);
+      Module["HEAPU8"] = HEAPU8 = new Uint8Array(b);
+      HEAPU16 = new Uint16Array(b);
+      HEAP32 = new Int32Array(b);
+      HEAPU32 = new Uint32Array(b);
+      HEAPF32 = new Float32Array(b);
+      HEAPF64 = new Float64Array(b);
+    }
+    function initMemory() {
+      if (ENVIRONMENT_IS_PTHREAD) {
+        return;
+      }
+      if (Module["wasmMemory"]) {
+        wasmMemory = Module["wasmMemory"];
+      } else {
+        var INITIAL_MEMORY = Module["INITIAL_MEMORY"] || 536870912;
+        assert(
+          INITIAL_MEMORY >= 65536,
+          "INITIAL_MEMORY should be larger than STACK_SIZE, was " +
+            INITIAL_MEMORY +
+            "! (STACK_SIZE=" +
+            65536 +
+            ")",
+        );
+        wasmMemory = new WebAssembly.Memory({
+          initial: INITIAL_MEMORY / 65536,
+          maximum: INITIAL_MEMORY / 65536,
+          shared: true,
+        });
+      }
+      updateMemoryViews();
+    }
+    assert(
+      globalThis.Int32Array &&
+        globalThis.Float64Array &&
+        Int32Array.prototype.subarray &&
+        Int32Array.prototype.set,
+      "JS engine does not provide full typed array support",
+    );
+    function preRun() {
+      assert(!ENVIRONMENT_IS_PTHREAD);
+      if (Module["preRun"]) {
+        if (typeof Module["preRun"] == "function")
+          Module["preRun"] = [Module["preRun"]];
+        while (Module["preRun"].length) {
+          addOnPreRun(Module["preRun"].shift());
+        }
+      }
+      consumedModuleProp("preRun");
+      callRuntimeCallbacks(onPreRuns);
+    }
+    function initRuntime() {
+      assert(!runtimeInitialized);
+      runtimeInitialized = true;
+      if (ENVIRONMENT_IS_PTHREAD) return startWorker();
+      checkStackCookie();
+      if (!Module["noFSInit"] && !FS.initialized) FS.init();
+      TTY.init();
+      wasmExports["__wasm_call_ctors"]();
+      FS.ignorePermissions = false;
+    }
+    function postRun() {
+      checkStackCookie();
+      if (ENVIRONMENT_IS_PTHREAD) {
+        return;
+      }
+      if (Module["postRun"]) {
+        if (typeof Module["postRun"] == "function")
+          Module["postRun"] = [Module["postRun"]];
+        while (Module["postRun"].length) {
+          addOnPostRun(Module["postRun"].shift());
+        }
+      }
+      consumedModuleProp("postRun");
+      callRuntimeCallbacks(onPostRuns);
+    }
+    function abort(what) {
+      Module["onAbort"]?.(what);
+      what = "Aborted(" + what + ")";
+      err(what);
+      ABORT = true;
+      var e = new WebAssembly.RuntimeError(what);
+      readyPromiseReject?.(e);
+      throw e;
+    }
+    function createExportWrapper(name, nargs) {
+      return (...args) => {
+        assert(
+          runtimeInitialized,
+          `native function \`${name}\` called before runtime initialization`,
+        );
+        var f = wasmExports[name];
+        assert(f, `exported native function \`${name}\` not found`);
+        assert(
+          args.length <= nargs,
+          `native function \`${name}\` called with ${args.length} args but expects ${nargs}`,
+        );
+        return f(...args);
+      };
+    }
+    var wasmBinaryFile;
+    function findWasmBinary() {
+      return locateFile("bindings_main.wasm");
+    }
+    function getBinarySync(file) {
+      if (file == wasmBinaryFile && wasmBinary) {
+        return new Uint8Array(wasmBinary);
+      }
+      if (readBinary) {
+        return readBinary(file);
+      }
+      throw "both async and sync fetching of the wasm failed";
+    }
+    async function getWasmBinary(binaryFile) {
+      if (!wasmBinary) {
+        try {
+          var response = await readAsync(binaryFile);
+          return new Uint8Array(response);
+        } catch {}
+      }
+      return getBinarySync(binaryFile);
+    }
+    async function instantiateArrayBuffer(binaryFile, imports) {
+      try {
+        var binary = await getWasmBinary(binaryFile);
+        var instance = await WebAssembly.instantiate(binary, imports);
+        return instance;
+      } catch (reason) {
+        err(`failed to asynchronously prepare wasm: ${reason}`);
+        if (isFileURI(binaryFile)) {
+          err(
+            `warning: Loading from a file UR

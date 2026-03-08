@@ -1,0 +1,592 @@
+SOURCE_PATH: archive_forge/src/archive_forge/ce_vrrp.py
+KIND: code
+
+#!/usr/bin/python
+#
+# This file is part of Ansible
+#
+# Ansible is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Ansible is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Ansible.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+from __future__ import (absolute_import, division, print_function)
+__metaclass__ = type
+
+DOCUMENTATION = '''
+---
+module: ce_vrrp
+short_description: Manages VRRP interfaces on HUAWEI CloudEngine devices.
+description:
+    - Manages VRRP interface attributes on HUAWEI CloudEngine devices.
+author:
+    - Li Yanfeng (@numone213)
+notes:
+    - This module requires the netconf system service be enabled on the remote device being managed.
+    - Recommended connection is C(netconf).
+    - This module also works with C(local) connections for legacy playbooks.
+options:
+    interface:
+        description:
+            - Name of an interface. The value is a string of 1 to 63 characters.
+    vrid:
+        description:
+            - VRRP backup group ID.
+              The value is an integer ranging from 1 to 255.
+        default: present
+    virtual_ip :
+        description:
+            - Virtual IP address. The value is a string of 0 to 255 characters.
+    vrrp_type:
+        description:
+            - Type of a VRRP backup group.
+        type: str
+        choices: ['normal', 'member', 'admin']
+    admin_ignore_if_down:
+        description:
+            - mVRRP ignores an interface Down event.
+        type: bool
+        default: 'false'
+    admin_vrid:
+        description:
+            - Tracked mVRRP ID. The value is an integer ranging from 1 to 255.
+    admin_interface:
+        description:
+            - Tracked mVRRP interface name. The value is a string of 1 to 63 characters.
+    admin_flowdown:
+        description:
+            - Disable the flowdown function for service VRRP.
+        type: bool
+        default: 'false'
+    priority:
+        description:
+            - Configured VRRP priority.
+              The value ranges from 1 to 254. The default value is 100. A larger value indicates a higher priority.
+    version:
+        description:
+            - VRRP version. The default version is v2.
+        type: str
+        choices: ['v2','v3']
+    advertise_interval:
+        description:
+            - Configured interval between sending advertisements, in milliseconds.
+              Only the master router sends VRRP advertisements. The default value is 1000 milliseconds.
+    preempt_timer_delay:
+        description:
+            - Preemption delay.
+              The value is an integer ranging from 0 to 3600. The default value is 0.
+    gratuitous_arp_interval:
+        description:
+            - Interval at which gratuitous ARP packets are sent, in seconds.
+              The value ranges from 30 to 1200.The default value is 300.
+    recover_delay:
+        description:
+            - Delay in recovering after an interface goes Up.
+              The delay is used for interface flapping suppression.
+              The value is an integer ranging from 0 to 3600.
+              The default value is 0 seconds.
+    holding_multiplier:
+        description:
+            - The configured holdMultiplier.The value is an integer ranging from 3 to 10. The default value is 3.
+    auth_mode:
+        description:
+            - Authentication type used for VRRP packet exchanges between virtual routers.
+              The values are noAuthentication, simpleTextPassword, md5Authentication.
+              The default value is noAuthentication.
+        type: str
+        choices: ['simple','md5','none']
+    is_plain:
+        description:
+            - Select the display mode of an authentication key.
+              By default, an authentication key is displayed in ciphertext.
+        type: bool
+        default: 'false'
+    auth_key:
+        description:
+            - This object is set based on the authentication type.
+              When noAuthentication is specified, the value is empty.
+              When simpleTextPassword or md5Authentication is specified, the value is a string of 1 to 8 characters
+              in plaintext and displayed as a blank text for security.
+    fast_resume:
+        description:
+            - mVRRP's fast resume mode.
+        type: str
+        choices: ['enable','disable']
+    state:
+        description:
+            - Specify desired state of the resource.
+        type: str
+        default: present
+        choices: ['present','absent']
+'''
+
+EXAMPLES = '''
+- name: Vrrp module test
+  hosts: cloudengine
+  connection: local
+  gather_facts: false
+  vars:
+    cli:
+      host: "{{ inventory_hostname }}"
+      port: "{{ ansible_ssh_port }}"
+      username: "{{ username }}"
+      password: "{{ password }}"
+      transport: cli
+  tasks:
+  - name: Set vrrp version
+    community.network.ce_vrrp:
+      version: v3
+      provider: "{{ cli }}"
+  - name: Set vrrp gratuitous-arp interval
+    community.network.ce_vrrp:
+      gratuitous_arp_interval: 40
+      mlag_id: 4
+      provider: "{{ cli }}"
+  - name: Set vrrp recover-delay
+    community.network.ce_vrrp:
+      recover_delay: 10
+      provider: "{{ cli }}"
+  - name: Set vrrp vrid virtual-ip
+    community.network.ce_vrrp:
+      interface: 40GE2/0/8
+      vrid: 1
+      virtual_ip: 10.14.2.7
+      provider: "{{ cli }}"
+  - name: Set vrrp vrid admin
+    community.network.ce_vrrp:
+      interface: 40GE2/0/8
+      vrid: 1
+      vrrp_type: admin
+      provider: "{{ cli }}"
+  - name: Set vrrp vrid fast_resume
+    community.network.ce_vrrp:
+      interface: 40GE2/0/8
+      vrid: 1
+      fast_resume: enable
+      provider: "{{ cli }}"
+  - name: Set vrrp vrid holding-multiplier
+    community.network.ce_vrrp:
+      interface: 40GE2/0/8
+      vrid: 1
+      holding_multiplier: 4
+      provider: "{{ cli }}"
+  - name: Set vrrp vrid preempt timer delay
+    community.network.ce_vrrp:
+      interface: 40GE2/0/8
+      vrid: 1
+      preempt_timer_delay: 10
+      provider: "{{ cli }}"
+  - name: Set vrrp vrid admin-vrrp
+    community.network.ce_vrrp:
+      interface: 40GE2/0/8
+      vrid: 1
+      admin_interface: 40GE2/0/9
+      admin_vrid: 2
+      vrrp_type: member
+      provider: "{{ cli }}"
+  - name: Set vrrp vrid authentication-mode
+    community.network.ce_vrrp:
+      interface: 40GE2/0/8
+      vrid: 1
+      is_plain: true
+      auth_mode: simple
+      auth_key: aaa
+      provider: "{{ cli }}"
+'''
+
+RETURN = '''
+changed:
+    description: check to see if a change was made on the device
+    returned: always
+    type: bool
+    sample: true
+proposed:
+    description: k/v pairs of parameters passed into module
+    returned: always
+    type: dict
+    sample: {
+                "auth_key": "aaa",
+                "auth_mode": "simple",
+                "interface": "40GE2/0/8",
+                "is_plain": true,
+                "state": "present",
+                "vrid": "1"
+            }
+existing:
+    description: k/v pairs of existing aaa server
+    returned: always
+    type: dict
+    sample: {
+                "auth_mode": "none",
+                "interface": "40GE2/0/8",
+                "is_plain": "false",
+                "vrid": "1",
+                "vrrp_type": "normal"
+            }
+end_state:
+    description: k/v pairs of aaa params after module execution
+    returned: always
+    type: dict
+    sample: {
+                "auth_mode": "simple",
+                "interface": "40GE2/0/8",
+                "is_plain": "true",
+                "vrid": "1",
+                "vrrp_type": "normal"
+    }
+updates:
+    description: command sent to the device
+    returned: always
+    type: list
+    sample: { "interface 40GE2/0/8",
+              "vrrp vrid 1 authentication-mode simple plain aaa"}
+'''
+
+from xml.etree import ElementTree
+from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.community.network.plugins.module_utils.network.cloudengine.ce import get_nc_config, set_nc_config, ce_argument_spec
+
+
+CE_NC_GET_VRRP_GROUP_INFO = """
+<filter type="subtree">
+  <vrrp xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+    <vrrpGroups>
+      <vrrpGroup>
+        <ifName>%s</ifName>
+        <vrrpId>%s</vrrpId>
+      </vrrpGroup>
+    </vrrpGroups>
+  </vrrp>
+</filter>
+"""
+
+CE_NC_SET_VRRP_GROUP_INFO_HEAD = """
+<config>
+  <vrrp xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+    <vrrpGroups>
+      <vrrpGroup operation="merge">
+        <ifName>%s</ifName>
+        <vrrpId>%s</vrrpId>
+"""
+CE_NC_SET_VRRP_GROUP_INFO_TAIL = """
+      </vrrpGroup>
+    </vrrpGroups>
+  </vrrp>
+</config>
+"""
+CE_NC_GET_VRRP_GLOBAL_INFO = """
+<filter type="subtree">
+  <vrrp xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+    <vrrpGlobalCfg>
+      <gratuitousArpFlag></gratuitousArpFlag>
+      <gratuitousArpTimeOut></gratuitousArpTimeOut>
+      <recoverDelay></recoverDelay>
+      <version></version>
+    </vrrpGlobalCfg>
+  </vrrp>
+</filter>
+"""
+
+CE_NC_SET_VRRP_GLOBAL_HEAD = """
+<config>
+  <vrrp xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+    <vrrpGlobalCfg operation="merge">
+"""
+CE_NC_SET_VRRP_GLOBAL_TAIL = """
+    </vrrpGlobalCfg>
+  </vrrp>
+</config>
+"""
+
+CE_NC_GET_VRRP_VIRTUAL_IP_INFO = """
+<filter type="subtree">
+  <vrrp xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+    <vrrpGroups>
+      <vrrpGroup>
+        <vrrpId>%s</vrrpId>
+        <ifName>%s</ifName>
+        <virtualIps>
+          <virtualIp>
+            <virtualIpAddress></virtualIpAddress>
+          </virtualIp>
+        </virtualIps>
+      </vrrpGroup>
+    </vrrpGroups>
+  </vrrp>
+</filter>
+"""
+CE_NC_CREATE_VRRP_VIRTUAL_IP_INFO = """
+<config>
+  <vrrp xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+    <vrrpGroups>
+      <vrrpGroup>
+        <vrrpId>%s</vrrpId>
+        <ifName>%s</ifName>
+        <virtualIps>
+          <virtualIp operation="create">
+            <virtualIpAddress>%s</virtualIpAddress>
+          </virtualIp>
+        </virtualIps>
+      </vrrpGroup>
+    </vrrpGroups>
+  </vrrp>
+</config>
+"""
+CE_NC_DELETE_VRRP_VIRTUAL_IP_INFO = """
+<config>
+  <vrrp xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+    <vrrpGroups>
+      <vrrpGroup>
+        <vrrpId>%s</vrrpId>
+        <ifName>%s</ifName>
+        <virtualIps>
+          <virtualIp operation="delete">
+            <virtualIpAddress>%s</virtualIpAddress>
+          </virtualIp>
+        </virtualIps>
+      </vrrpGroup>
+    </vrrpGroups>
+  </vrrp>
+</config>
+"""
+
+
+def is_valid_address(address):
+    """check ip-address is valid"""
+
+    if address.find('.') != -1:
+        addr_list = address.split('.')
+        if len(addr_list) != 4:
+            return False
+        for each_num in addr_list:
+            if not each_num.isdigit():
+                return False
+            if int(each_num) > 255:
+                return False
+        return True
+
+    return False
+
+
+def get_interface_type(interface):
+    """Gets the type of interface, such as 10GE, ETH-TRUNK, VLANIF..."""
+
+    if interface is None:
+        return None
+
+    iftype = None
+
+    if interface.upper().startswith('GE'):
+        iftype = 'ge'
+    elif interface.upper().startswith('10GE'):
+        iftype = '10ge'
+    elif interface.upper().startswith('25GE'):
+        iftype = '25ge'
+    elif interface.upper().startswith('40GE'):
+        iftype = '40ge'
+    elif interface.upper().startswith('100GE'):
+        iftype = '100ge'
+    elif interface.upper().startswith('ETH-TRUNK'):
+        iftype = 'eth-trunk'
+    elif interface.upper().startswith('NULL'):
+        iftype = 'null'
+    elif interface.upper().startswith('VLANIF'):
+        iftype = 'vlanif'
+    else:
+        return None
+
+    return iftype.lower()
+
+
+class Vrrp(object):
+    """
+    Manages Manages vrrp information.
+    """
+
+    def __init__(self, argument_spec):
+        self.spec = argument_spec
+        self.module = None
+        self.init_module()
+
+        # module input info
+        self.interface = self.module.params['interface']
+        self.vrid = self.module.params['vrid']
+        self.virtual_ip = self.module.params['virtual_ip']
+        self.vrrp_type = self.module.params['vrrp_type']
+        self.admin_ignore_if_down = 'false' if self.module.params['admin_ignore_if_down'] is False else 'true'
+        self.admin_vrid = self.module.params['admin_vrid']
+        self.admin_interface = self.module.params['admin_interface']
+        self.admin_flowdown = 'false' if self.module.params['admin_flowdown'] is False else 'true'
+        self.priority = self.module.params['priority']
+        self.version = self.module.params['version']
+        self.advertise_interval = self.module.params['advertise_interval']
+        self.preempt_timer_delay = self.module.params['preempt_timer_delay']
+        self.gratuitous_arp_interval = self.module.params[
+            'gratuitous_arp_interval']
+        self.recover_delay = self.module.params['recover_delay']
+        self.holding_multiplier = self.module.params['holding_multiplier']
+        self.auth_mode = self.module.params['auth_mode']
+        self.is_plain = 'false' if self.module.params['is_plain'] is False else 'true'
+        self.auth_key = self.module.params['auth_key']
+        self.fast_resume = self.module.params['fast_resume']
+        self.state = self.module.params['state']
+
+        # vrrp info
+        self.vrrp_global_info = None
+        self.virtual_ip_info = None
+        self.vrrp_group_info = None
+
+        # state
+        self.changed = False
+        self.updates_cmd = list()
+        self.results = dict()
+        self.existing = dict()
+        self.proposed = dict()
+        self.end_state = dict()
+
+    def init_module(self):
+        """ init module """
+
+        self.module = AnsibleModule(
+            argument_spec=self.spec, supports_check_mode=True)
+
+    def get_virtual_ip_info(self):
+        """ get vrrp virtual ip info."""
+        virtual_ip_info = dict()
+        conf_str = CE_NC_GET_VRRP_VIRTUAL_IP_INFO % (self.vrid, self.interface)
+        xml_str = get_nc_config(self.module, conf_str)
+        if "<data/>" in xml_str:
+            return virtual_ip_info
+        else:
+            xml_str = xml_str.replace('\r', '').replace('\n', '').\
+                replace('xmlns="urn:ietf:params:xml:ns:netconf:base:1.0"', "").\
+                replace('xmlns="http://www.huawei.com/netconf/vrp"', "")
+            virtual_ip_info["vrrpVirtualIpInfos"] = list()
+            root = ElementTree.fromstring(xml_str)
+            vrrp_virtual_ip_infos = root.findall(
+                "vrrp/vrrpGroups/vrrpGroup/virtualIps/virtualIp")
+            if vrrp_virtual_ip_infos:
+                for vrrp_virtual_ip_info in vrrp_virtual_ip_infos:
+                    virtual_ip_dict = dict()
+                    for ele in vrrp_virtual_ip_info:
+                        if ele.tag in ["virtualIpAddress"]:
+                            virtual_ip_dict[ele.tag] = ele.text
+                    virtual_ip_info["vrrpVirtualIpInfos"].append(
+                        virtual_ip_dict)
+            return virtual_ip_info
+
+    def get_vrrp_global_info(self):
+        """ get vrrp global info."""
+
+        vrrp_global_info = dict()
+        conf_str = CE_NC_GET_VRRP_GLOBAL_INFO
+        xml_str = get_nc_config(self.module, conf_str)
+        if "<data/>" in xml_str:
+            return vrrp_global_info
+        else:
+            xml_str = xml_str.replace('\r', '').replace('\n', '').\
+                replace('xmlns="urn:ietf:params:xml:ns:netconf:base:1.0"', "").\
+                replace('xmlns="http://www.huawei.com/netconf/vrp"', "")
+
+            root = ElementTree.fromstring(xml_str)
+            global_info = root.findall(
+                "vrrp/vrrpGlobalCfg")
+
+            if global_info:
+                for tmp in global_info:
+                    for site in tmp:
+                        if site.tag in ["gratuitousArpTimeOut", "gratuitousArpFlag", "recoverDelay", "version"]:
+                            vrrp_global_info[site.tag] = site.text
+            return vrrp_global_info
+
+    def get_vrrp_group_info(self):
+        """ get vrrp group info."""
+
+        vrrp_group_info = dict()
+        conf_str = CE_NC_GET_VRRP_GROUP_INFO % (self.interface, self.vrid)
+        xml_str = get_nc_config(self.module, conf_str)
+        if "<data/>" in xml_str:
+            return vrrp_group_info
+        else:
+            xml_str = xml_str.replace('\r', '').replace('\n', '').\
+                replace('xmlns="urn:ietf:params:xml:ns:netconf:base:1.0"', "").\
+                replace('xmlns="http://www.huawei.com/netconf/vrp"', "")
+
+            root = ElementTree.fromstring(xml_str)
+            global_info = root.findall(
+                "vrrp/vrrpGroups/vrrpGroup")
+
+            if global_info:
+                for tmp in global_info:
+                    for site in tmp:
+                        if site.tag in ["ifName", "vrrpId", "priority", "advertiseInterval", "preemptMode", "delayTime",
+                                        "authenticationMode", "authenticationKey", "vrrpType", "adminVrrpId",
+                                        "adminIfName", "adminIgnoreIfDown", "isPlain", "unflowdown", "fastResume",
+                                        "holdMultiplier"]:
+                            vrrp_group_info[site.tag] = site.text
+            return vrrp_group_info
+
+    def check_params(self):
+        """Check all input params"""
+
+        # interface check
+        if self.interface:
+            intf_type = get_interface_type(self.interface)
+            if not intf_type:
+                self.module.fail_json(
+                    msg='Error: Interface name of %s '
+                        'is error.' % self.interface)
+
+        # vrid check
+        if self.vrid:
+            if not self.vrid.isdigit():
+                self.module.fail_json(
+                    msg='Error: The value of vrid is an integer.')
+            if int(self.vrid) < 1 or int(self.vrid) > 255:
+                self.module.fail_json(
+                    msg='Error: The value of vrid ranges from 1 to 255.')
+
+        # virtual_ip check
+        if self.virtual_ip:
+            if not is_valid_address(self.virtual_ip):
+                self.module.fail_json(
+                    msg='Error: The %s is not a valid ip address.' % self.virtual_ip)
+
+        # admin_vrid check
+        if self.admin_vrid:
+            if not self.admin_vrid.isdigit():
+                self.module.fail_json(
+                    msg='Error: The value of admin_vrid is an integer.')
+            if int(self.admin_vrid) < 1 or int(self.admin_vrid) > 255:
+                self.module.fail_json(
+                    msg='Error: The value of admin_vrid ranges from 1 to 255.')
+
+        # admin_interface check
+        if self.admin_interface:
+            intf_type = get_interface_type(self.admin_interface)
+            if not intf_type:
+                self.module.fail_json(
+                    msg='Error: Admin interface name of %s '
+                        'is error.' % self.admin_interface)
+
+        # priority check
+        if self.priority:
+            if not self.priority.isdigit():
+                self.module.fail_json(
+                    msg='Error: The value of priority is an integer.')
+            if int(self.priority) < 1 or int(self.priority) > 254:
+                self.module.fail_json(
+                    msg='Error: The value of priority ranges from 1 to 254. The default value is 100.')
+
+        # advertise_interval check
+        if self.advertise_interval:
+            if not self.advertise_interval.isdigit():

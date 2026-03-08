@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/batch_create_params_documentation.py
+KIND: code
+
+from __future__ import annotations
+from typing import Dict, Optional
+from typing_extensions import Literal, Required, TypedDict
+Optional custom metadata for the batch.

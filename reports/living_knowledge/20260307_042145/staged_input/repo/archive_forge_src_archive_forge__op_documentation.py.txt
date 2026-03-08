@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_op_documentation.py
+KIND: code
+
+from typing import Any, Dict
+import numpy as np
+from onnx.onnx_pb import NodeProto
+from onnx.reference.op_run import OpRun, RuntimeTypeError
+Special case reduction where the output value is a constant.

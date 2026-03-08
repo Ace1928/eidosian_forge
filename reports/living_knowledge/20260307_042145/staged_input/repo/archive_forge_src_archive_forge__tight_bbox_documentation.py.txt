@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_tight_bbox_documentation.py
+KIND: code
+
+from matplotlib.transforms import Bbox, TransformedBbox, Affine2D
+
+    A function that needs to be called when figure dpi changes during the
+    drawing (e.g., rasterizing).  It recovers the bbox and re-adjust it with
+    the new dpi.

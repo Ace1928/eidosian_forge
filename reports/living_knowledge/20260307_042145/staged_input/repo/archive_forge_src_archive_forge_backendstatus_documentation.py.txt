@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/backendstatus_documentation.py
+KIND: code
+
+import html
+from qiskit.exceptions import QiskitError
+Return html representation of the object
+
+        Returns:
+            Representation used in Jupyter notebook and other IDE's that call the method

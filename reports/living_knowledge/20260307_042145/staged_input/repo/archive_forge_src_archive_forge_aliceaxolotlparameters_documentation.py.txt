@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/aliceaxolotlparameters_documentation.py
+KIND: code
+
+:type ourBaseKey: ECKeyPair
+        :type theirSignedPreKey: ECKeyPair
+        :type ourIdentityKey: IdentityKeyPair
+        :type theirOneTimePreKey: ECPublicKey
+        :type theirRatchetKey: ECKeyPair
+        :type theirIdentityKey: IdentityKey

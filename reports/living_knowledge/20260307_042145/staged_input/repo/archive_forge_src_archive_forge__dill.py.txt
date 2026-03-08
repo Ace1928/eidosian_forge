@@ -1,0 +1,532 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_dill.py
+KIND: code
+
+# -*- coding: utf-8 -*-
+#
+# Author: Mike McKerns (mmckerns @caltech and @uqfoundation)
+# Copyright (c) 2008-2015 California Institute of Technology.
+# Copyright (c) 2016-2024 The Uncertainty Quantification Foundation.
+# License: 3-clause BSD.  The full license text is available at:
+#  - https://github.com/uqfoundation/dill/blob/master/LICENSE
+"""
+dill: a utility for serialization of python objects
+
+The primary functions in `dill` are :func:`dump` and
+:func:`dumps` for serialization ("pickling") to a
+file or to a string, respectively, and :func:`load`
+and :func:`loads` for deserialization ("unpickling"),
+similarly, from a file or from a string. Other notable
+functions are :func:`~dill.dump_module` and
+:func:`~dill.load_module`, which are used to save and
+restore module objects, including an intepreter session.
+
+Based on code written by Oren Tirosh and Armin Ronacher.
+Extended to a (near) full set of the builtin types (in types module),
+and coded to the pickle interface, by <mmckerns@caltech.edu>.
+Initial port to python3 by Jonathan Dobson, continued by mmckerns.
+Tested against "all" python types (Std. Lib. CH 1-15 @ 2.7) by mmckerns.
+Tested against CH16+ Std. Lib. ... TBD.
+"""
+
+from __future__ import annotations
+
+__all__ = [
+    'dump','dumps','load','loads','copy',
+    'Pickler','Unpickler','register','pickle','pickles','check',
+    'DEFAULT_PROTOCOL','HIGHEST_PROTOCOL','HANDLE_FMODE','CONTENTS_FMODE','FILE_FMODE',
+    'PickleError','PickleWarning','PicklingError','PicklingWarning','UnpicklingError',
+    'UnpicklingWarning',
+]
+
+__module__ = 'dill'
+
+import warnings
+from .logger import adapter as logger
+from .logger import trace as _trace
+log = logger # backward compatibility (see issue #582)
+
+import os
+import sys
+diff = None
+_use_diff = False
+OLD38 = (sys.hexversion < 0x3080000)
+OLD39 = (sys.hexversion < 0x3090000)
+OLD310 = (sys.hexversion < 0x30a0000)
+OLD312a7 = (sys.hexversion < 0x30c00a7)
+#XXX: get types from .objtypes ?
+import builtins as __builtin__
+from pickle import _Pickler as StockPickler, Unpickler as StockUnpickler
+from pickle import GLOBAL, POP
+from _thread import LockType
+from _thread import RLock as RLockType
+#from io import IOBase
+from types import CodeType, FunctionType, MethodType, GeneratorType, \
+    TracebackType, FrameType, ModuleType, BuiltinMethodType
+BufferType = memoryview #XXX: unregistered
+ClassType = type # no 'old-style' classes
+EllipsisType = type(Ellipsis)
+#FileType = IOBase
+NotImplementedType = type(NotImplemented)
+SliceType = slice
+TypeType = type # 'new-style' classes #XXX: unregistered
+XRangeType = range
+from types import MappingProxyType as DictProxyType, new_class
+from pickle import DEFAULT_PROTOCOL, HIGHEST_PROTOCOL, PickleError, PicklingError, UnpicklingError
+import __main__ as _main_module
+import marshal
+import gc
+# import zlib
+import abc
+import dataclasses
+from weakref import ReferenceType, ProxyType, CallableProxyType
+from collections import OrderedDict
+from enum import Enum, EnumMeta
+from functools import partial
+from operator import itemgetter, attrgetter
+GENERATOR_FAIL = False
+import importlib.machinery
+EXTENSION_SUFFIXES = tuple(importlib.machinery.EXTENSION_SUFFIXES)
+try:
+    import ctypes
+    HAS_CTYPES = True
+    # if using `pypy`, pythonapi is not found
+    IS_PYPY = not hasattr(ctypes, 'pythonapi')
+except ImportError:
+    HAS_CTYPES = False
+    IS_PYPY = False
+NumpyUfuncType = None
+NumpyDType = None
+NumpyArrayType = None
+try:
+    if not importlib.machinery.PathFinder().find_spec('numpy'):
+        raise ImportError("No module named 'numpy'")
+    NumpyUfuncType = True
+    NumpyDType = True
+    NumpyArrayType = True
+except ImportError:
+    pass
+def __hook__():
+    global NumpyArrayType, NumpyDType, NumpyUfuncType
+    from numpy import ufunc as NumpyUfuncType
+    from numpy import ndarray as NumpyArrayType
+    from numpy import dtype as NumpyDType
+    return True
+if NumpyArrayType: # then has numpy
+    def ndarraysubclassinstance(obj_type):
+        if all((c.__module__, c.__name__) != ('numpy', 'ndarray') for c in obj_type.__mro__):
+            return False
+        # anything below here is a numpy array (or subclass) instance
+        __hook__() # import numpy (so the following works!!!)
+        # verify that __reduce__ has not been overridden
+        if obj_type.__reduce_ex__ is not NumpyArrayType.__reduce_ex__ \
+                or obj_type.__reduce__ is not NumpyArrayType.__reduce__:
+            return False
+        return True
+    def numpyufunc(obj_type):
+        return any((c.__module__, c.__name__) == ('numpy', 'ufunc') for c in obj_type.__mro__)
+    def numpydtype(obj_type):
+        if all((c.__module__, c.__name__) != ('numpy', 'dtype') for c in obj_type.__mro__):
+            return False
+        # anything below here is a numpy dtype
+        __hook__() # import numpy (so the following works!!!)
+        return obj_type is type(NumpyDType) # handles subclasses
+else:
+    def ndarraysubclassinstance(obj): return False
+    def numpyufunc(obj): return False
+    def numpydtype(obj): return False
+
+from types import GetSetDescriptorType, ClassMethodDescriptorType, \
+     WrapperDescriptorType,  MethodDescriptorType, MemberDescriptorType, \
+     MethodWrapperType #XXX: unused
+
+# make sure to add these 'hand-built' types to _typemap
+CellType = type((lambda x: lambda y: x)(0).__closure__[0])
+PartialType = type(partial(int, base=2))
+SuperType = type(super(Exception, TypeError()))
+ItemGetterType = type(itemgetter(0))
+AttrGetterType = type(attrgetter('__repr__'))
+
+try:
+    from functools import _lru_cache_wrapper as LRUCacheType
+except ImportError:
+    LRUCacheType = None
+
+if not isinstance(LRUCacheType, type):
+    LRUCacheType = None
+
+def get_file_type(*args, **kwargs):
+    open = kwargs.pop("open", __builtin__.open)
+    f = open(os.devnull, *args, **kwargs)
+    t = type(f)
+    f.close()
+    return t
+
+IS_PYODIDE = sys.platform == 'emscripten'
+
+FileType = get_file_type('rb', buffering=0)
+TextWrapperType = get_file_type('r', buffering=-1)
+BufferedRandomType = None if IS_PYODIDE else get_file_type('r+b', buffering=-1)
+BufferedReaderType = get_file_type('rb', buffering=-1)
+BufferedWriterType = get_file_type('wb', buffering=-1)
+try:
+    from _pyio import open as _open
+    PyTextWrapperType = get_file_type('r', buffering=-1, open=_open)
+    PyBufferedRandomType = None if IS_PYODIDE else get_file_type('r+b', buffering=-1, open=_open)
+    PyBufferedReaderType = get_file_type('rb', buffering=-1, open=_open)
+    PyBufferedWriterType = get_file_type('wb', buffering=-1, open=_open)
+except ImportError:
+    PyTextWrapperType = PyBufferedRandomType = PyBufferedReaderType = PyBufferedWriterType = None
+from io import BytesIO as StringIO
+InputType = OutputType = None
+from socket import socket as SocketType
+#FIXME: additionally calls ForkingPickler.register several times
+from multiprocessing.reduction import _reduce_socket as reduce_socket
+try: #pragma: no cover
+    IS_IPYTHON = __IPYTHON__  # is True
+    ExitType = None # IPython.core.autocall.ExitAutocall
+    IPYTHON_SINGLETONS = ('exit', 'quit', 'get_ipython')
+except NameError:
+    IS_IPYTHON = False
+    try: ExitType = type(exit) # apparently 'exit' can be removed
+    except NameError: ExitType = None
+    IPYTHON_SINGLETONS = ()
+
+import inspect
+import typing
+
+
+### Shims for different versions of Python and dill
+class Sentinel(object):
+    """
+    Create a unique sentinel object that is pickled as a constant.
+    """
+    def __init__(self, name, module_name=None):
+        self.name = name
+        if module_name is None:
+            # Use the calling frame's module
+            self.__module__ = inspect.currentframe().f_back.f_globals['__name__']
+        else:
+            self.__module__ = module_name # pragma: no cover
+    def __repr__(self):
+        return self.__module__ + '.' + self.name # pragma: no cover
+    def __copy__(self):
+        return self # pragma: no cover
+    def __deepcopy__(self, memo):
+        return self # pragma: no cover
+    def __reduce__(self):
+        return self.name
+    def __reduce_ex__(self, protocol):
+        return self.name
+
+from . import _shims
+from ._shims import Reduce, Getattr
+
+### File modes
+#: Pickles the file handle, preserving mode. The position of the unpickled
+#: object is as for a new file handle.
+HANDLE_FMODE = 0
+#: Pickles the file contents, creating a new file if on load the file does
+#: not exist. The position = min(pickled position, EOF) and mode is chosen
+#: as such that "best" preserves behavior of the original file.
+CONTENTS_FMODE = 1
+#: Pickles the entire file (handle and contents), preserving mode and position.
+FILE_FMODE = 2
+
+### Shorthands (modified from python2.5/lib/pickle.py)
+def copy(obj, *args, **kwds):
+    """
+    Use pickling to 'copy' an object (i.e. `loads(dumps(obj))`).
+
+    See :func:`dumps` and :func:`loads` for keyword arguments.
+    """
+    ignore = kwds.pop('ignore', Unpickler.settings['ignore'])
+    return loads(dumps(obj, *args, **kwds), ignore=ignore)
+
+def dump(obj, file, protocol=None, byref=None, fmode=None, recurse=None, **kwds):#, strictio=None):
+    """
+    Pickle an object to a file.
+
+    See :func:`dumps` for keyword arguments.
+    """
+    from .settings import settings
+    protocol = settings['protocol'] if protocol is None else int(protocol)
+    _kwds = kwds.copy()
+    _kwds.update(dict(byref=byref, fmode=fmode, recurse=recurse))
+    Pickler(file, protocol, **_kwds).dump(obj)
+    return
+
+def dumps(obj, protocol=None, byref=None, fmode=None, recurse=None, **kwds):#, strictio=None):
+    """
+    Pickle an object to a string.
+
+    *protocol* is the pickler protocol, as defined for Python *pickle*.
+
+    If *byref=True*, then dill behaves a lot more like pickle as certain
+    objects (like modules) are pickled by reference as opposed to attempting
+    to pickle the object itself.
+
+    If *recurse=True*, then objects referred to in the global dictionary
+    are recursively traced and pickled, instead of the default behavior
+    of attempting to store the entire global dictionary. This is needed for
+    functions defined via *exec()*.
+
+    *fmode* (:const:`HANDLE_FMODE`, :const:`CONTENTS_FMODE`,
+    or :const:`FILE_FMODE`) indicates how file handles will be pickled.
+    For example, when pickling a data file handle for transfer to a remote
+    compute service, *FILE_FMODE* will include the file contents in the
+    pickle and cursor position so that a remote method can operate
+    transparently on an object with an open file handle.
+
+    Default values for keyword arguments can be set in :mod:`dill.settings`.
+    """
+    file = StringIO()
+    dump(obj, file, protocol, byref, fmode, recurse, **kwds)#, strictio)
+    return file.getvalue()
+
+def load(file, ignore=None, **kwds):
+    """
+    Unpickle an object from a file.
+
+    See :func:`loads` for keyword arguments.
+    """
+    return Unpickler(file, ignore=ignore, **kwds).load()
+
+def loads(str, ignore=None, **kwds):
+    """
+    Unpickle an object from a string.
+
+    If *ignore=False* then objects whose class is defined in the module
+    *__main__* are updated to reference the existing class in *__main__*,
+    otherwise they are left to refer to the reconstructed type, which may
+    be different.
+
+    Default values for keyword arguments can be set in :mod:`dill.settings`.
+    """
+    file = StringIO(str)
+    return load(file, ignore, **kwds)
+
+# def dumpzs(obj, protocol=None):
+#     """pickle an object to a compressed string"""
+#     return zlib.compress(dumps(obj, protocol))
+
+# def loadzs(str):
+#     """unpickle an object from a compressed string"""
+#     return loads(zlib.decompress(str))
+
+### End: Shorthands ###
+
+class MetaCatchingDict(dict):
+    def get(self, key, default=None):
+        try:
+            return self[key]
+        except KeyError:
+            return default
+
+    def __missing__(self, key):
+        if issubclass(key, type):
+            return save_type
+        else:
+            raise KeyError()
+
+class PickleWarning(Warning, PickleError):
+    pass
+
+class PicklingWarning(PickleWarning, PicklingError):
+    pass
+
+class UnpicklingWarning(PickleWarning, UnpicklingError):
+    pass
+
+### Extend the Picklers
+class Pickler(StockPickler):
+    """python's Pickler extended to interpreter sessions"""
+    dispatch: typing.Dict[type, typing.Callable[[Pickler, typing.Any], None]] \
+            = MetaCatchingDict(StockPickler.dispatch.copy())
+    """The dispatch table, a dictionary of serializing functions used
+    by Pickler to save objects of specific types.  Use :func:`pickle`
+    or :func:`register` to associate types to custom functions.
+
+    :meta hide-value:
+    """
+    _session = False
+    from .settings import settings
+
+    def __init__(self, file, *args, **kwds):
+        settings = Pickler.settings
+        _byref = kwds.pop('byref', None)
+       #_strictio = kwds.pop('strictio', None)
+        _fmode = kwds.pop('fmode', None)
+        _recurse = kwds.pop('recurse', None)
+        StockPickler.__init__(self, file, *args, **kwds)
+        self._main = _main_module
+        self._diff_cache = {}
+        self._byref = settings['byref'] if _byref is None else _byref
+        self._strictio = False #_strictio
+        self._fmode = settings['fmode'] if _fmode is None else _fmode
+        self._recurse = settings['recurse'] if _recurse is None else _recurse
+        self._postproc = OrderedDict()
+        self._file = file
+
+    def save(self, obj, save_persistent_id=True):
+        # numpy hack
+        obj_type = type(obj)
+        if NumpyArrayType and not (obj_type is type or obj_type in Pickler.dispatch):
+            # register if the object is a numpy ufunc
+            # thanks to Paul Kienzle for pointing out ufuncs didn't pickle
+            if numpyufunc(obj_type):
+                @register(obj_type)
+                def save_numpy_ufunc(pickler, obj):
+                    logger.trace(pickler, "Nu: %s", obj)
+                    name = getattr(obj, '__qualname__', getattr(obj, '__name__', None))
+                    StockPickler.save_global(pickler, obj, name=name)
+                    logger.trace(pickler, "# Nu")
+                    return
+                # NOTE: the above 'save' performs like:
+                #   import copy_reg
+                #   def udump(f): return f.__name__
+                #   def uload(name): return getattr(numpy, name)
+                #   copy_reg.pickle(NumpyUfuncType, udump, uload)
+            # register if the object is a numpy dtype
+            if numpydtype(obj_type):
+                @register(obj_type)
+                def save_numpy_dtype(pickler, obj):
+                    logger.trace(pickler, "Dt: %s", obj)
+                    pickler.save_reduce(_create_dtypemeta, (obj.type,), obj=obj)
+                    logger.trace(pickler, "# Dt")
+                    return
+                # NOTE: the above 'save' performs like:
+                #   import copy_reg
+                #   def uload(name): return type(NumpyDType(name))
+                #   def udump(f): return uload, (f.type,)
+                #   copy_reg.pickle(NumpyDTypeType, udump, uload)
+            # register if the object is a subclassed numpy array instance
+            if ndarraysubclassinstance(obj_type):
+                @register(obj_type)
+                def save_numpy_array(pickler, obj):
+                    logger.trace(pickler, "Nu: (%s, %s)", obj.shape, obj.dtype)
+                    npdict = getattr(obj, '__dict__', None)
+                    f, args, state = obj.__reduce__()
+                    pickler.save_reduce(_create_array, (f,args,state,npdict), obj=obj)
+                    logger.trace(pickler, "# Nu")
+                    return
+        # end numpy hack
+
+        if GENERATOR_FAIL and obj_type is GeneratorType:
+            msg = "Can't pickle %s: attribute lookup builtins.generator failed" % GeneratorType
+            raise PicklingError(msg)
+        StockPickler.save(self, obj, save_persistent_id)
+
+    save.__doc__ = StockPickler.save.__doc__
+
+    def dump(self, obj): #NOTE: if settings change, need to update attributes
+        logger.trace_setup(self)
+        StockPickler.dump(self, obj)
+    dump.__doc__ = StockPickler.dump.__doc__
+
+class Unpickler(StockUnpickler):
+    """python's Unpickler extended to interpreter sessions and more types"""
+    from .settings import settings
+    _session = False
+
+    def find_class(self, module, name):
+        if (module, name) == ('__builtin__', '__main__'):
+            return self._main.__dict__ #XXX: above set w/save_module_dict
+        elif (module, name) == ('__builtin__', 'NoneType'):
+            return type(None) #XXX: special case: NoneType missing
+        if module == 'dill.dill': module = 'dill._dill'
+        return StockUnpickler.find_class(self, module, name)
+
+    def __init__(self, *args, **kwds):
+        settings = Pickler.settings
+        _ignore = kwds.pop('ignore', None)
+        StockUnpickler.__init__(self, *args, **kwds)
+        self._main = _main_module
+        self._ignore = settings['ignore'] if _ignore is None else _ignore
+
+    def load(self): #NOTE: if settings change, need to update attributes
+        obj = StockUnpickler.load(self)
+        if type(obj).__module__ == getattr(_main_module, '__name__', '__main__'):
+            if not self._ignore:
+                # point obj class to main
+                try: obj.__class__ = getattr(self._main, type(obj).__name__)
+                except (AttributeError,TypeError): pass # defined in a file
+       #_main_module.__dict__.update(obj.__dict__) #XXX: should update globals ?
+        return obj
+    load.__doc__ = StockUnpickler.load.__doc__
+    pass
+
+'''
+def dispatch_table():
+    """get the dispatch table of registered types"""
+    return Pickler.dispatch
+'''
+
+pickle_dispatch_copy = StockPickler.dispatch.copy()
+
+def pickle(t, func):
+    """expose :attr:`~Pickler.dispatch` table for user-created extensions"""
+    Pickler.dispatch[t] = func
+    return
+
+def register(t):
+    """decorator to register types to Pickler's :attr:`~Pickler.dispatch` table"""
+    def proxy(func):
+        Pickler.dispatch[t] = func
+        return func
+    return proxy
+
+def _revert_extension():
+    """drop dill-registered types from pickle's dispatch table"""
+    for type, func in list(StockPickler.dispatch.items()):
+        if func.__module__ == __name__:
+            del StockPickler.dispatch[type]
+            if type in pickle_dispatch_copy:
+                StockPickler.dispatch[type] = pickle_dispatch_copy[type]
+
+def use_diff(on=True):
+    """
+    Reduces size of pickles by only including object which have changed.
+
+    Decreases pickle size but increases CPU time needed.
+    Also helps avoid some unpickleable objects.
+    MUST be called at start of script, otherwise changes will not be recorded.
+    """
+    global _use_diff, diff
+    _use_diff = on
+    if _use_diff and diff is None:
+        try:
+            from . import diff as d
+        except ImportError:
+            import diff as d
+        diff = d
+
+def _create_typemap():
+    import types
+    d = dict(list(__builtin__.__dict__.items()) + \
+             list(types.__dict__.items())).items()
+    for key, value in d:
+        if getattr(value, '__module__', None) == 'builtins' \
+                and type(value) is type:
+            yield key, value
+    return
+_reverse_typemap = dict(_create_typemap())
+_reverse_typemap.update({
+    'PartialType': PartialType,
+    'SuperType': SuperType,
+    'ItemGetterType': ItemGetterType,
+    'AttrGetterType': AttrGetterType,
+})
+if sys.hexversion < 0x30800a2:
+    _reverse_typemap.update({
+        'CellType': CellType,
+    })
+
+# "Incidental" implementation specific types. Unpickling these types in another
+# implementation of Python (PyPy -> CPython) is not guaranteed to work
+
+# This dictionary should contain all types that appear in Python implementations
+# but are not defined in https://docs.python.org/3/library/types.html#standard-interpreter-types
+x=OrderedDict()
+_incedental_reverse_typemap = {
+    'FileType': FileType,
+    'BufferedRandomType': BufferedRandomType,

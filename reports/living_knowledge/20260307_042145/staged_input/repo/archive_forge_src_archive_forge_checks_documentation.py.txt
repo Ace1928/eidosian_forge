@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/checks_documentation.py
+KIND: code
+
+import functools
+import re
+import tokenize
+from hacking import core
+Check raises usage
+
+    N354

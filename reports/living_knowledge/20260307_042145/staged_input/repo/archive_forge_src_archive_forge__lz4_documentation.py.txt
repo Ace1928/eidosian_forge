@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_lz4_documentation.py
+KIND: code
+
+from __future__ import annotations
+from .base import BaseCompression, logger
+from typing import Optional
+
+        Decompresses the data

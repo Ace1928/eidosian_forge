@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_enums_documentation.py
+KIND: code
+
+from enum import Enum, auto
+from matplotlib import _docstring
+Demonstrate how each CapStyle looks for a thick line segment.

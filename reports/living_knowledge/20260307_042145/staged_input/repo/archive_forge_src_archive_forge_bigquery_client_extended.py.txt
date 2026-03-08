@@ -1,0 +1,545 @@
+SOURCE_PATH: archive_forge/src/archive_forge/bigquery_client_extended.py
+KIND: code
+
+#!/usr/bin/env python
+"""BigqueryClientExtended class. Legacy code."""
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+import itertools
+import logging
+import os
+import sys
+import time
+from typing import Any, Callable, Dict, List, Optional
+import uuid
+
+
+# To configure apiclient logging.
+from absl import flags
+from google.api_core.iam import Policy
+from googleapiclient import http as http_request
+import inflection
+
+from clients import bigquery_client
+from clients import client_dataset
+from clients import client_reservation
+from clients import table_reader as bq_table_reader
+from clients import utils as bq_client_utils
+from utils import bq_api_utils
+from utils import bq_error
+from utils import bq_id_utils
+from utils import bq_processor_utils
+
+Service = bq_api_utils.Service
+
+# Data Transfer Service Authorization Info
+AUTHORIZATION_CODE = 'authorization_code'
+VERSION_INFO = 'version_info'
+
+# IAM role name that represents being a grantee on a row access policy.
+_FILTERED_DATA_VIEWER_ROLE = 'roles/bigquery.filteredDataViewer'
+
+
+class TransferScheduleArgs:
+  """Arguments to customize data transfer schedule."""
+
+  def __init__(self,
+               schedule=None,
+               start_time=None,
+               end_time=None,
+               disable_auto_scheduling=False):
+    self.schedule = schedule
+    self.start_time = start_time
+    self.end_time = end_time
+    self.disable_auto_scheduling = disable_auto_scheduling
+
+  def ToScheduleOptionsPayload(self, options_to_copy=None):
+    """Returns a dictionary of schedule options.
+
+    Args:
+      options_to_copy: Existing options to be copied.
+
+    Returns:
+      A dictionary of schedule options expected by the
+      bigquery.transfers.create and bigquery.transfers.update API methods.
+    """
+
+    # Copy the current options or start with an empty dictionary.
+    options = dict(options_to_copy or {})
+
+    if self.start_time is not None:
+      options['startTime'] = self._TimeOrInfitity(self.start_time)
+    if self.end_time is not None:
+      options['endTime'] = self._TimeOrInfitity(self.end_time)
+
+    options['disableAutoScheduling'] = self.disable_auto_scheduling
+
+    return options
+
+  def _TimeOrInfitity(self, time_str):
+    """Returns None to indicate Inifinity, if time_str is an empty string."""
+    return time_str or None
+
+
+class BigqueryClientExtended(bigquery_client.BigqueryClient):
+  """Class extending BigqueryClient to add resource specific functionality."""
+
+  #################################
+  ## Utility methods
+  #################################
+  # TODO(b/324243535): Delete these once the migration is complete.
+  @staticmethod
+  def FormatTime(secs):
+    return bq_client_utils.FormatTime(secs)
+
+  # TODO(b/324243535): Delete these once the migration is complete.
+  @staticmethod
+  def FormatTimeFromProtoTimestampJsonString(json_string):
+    """Converts google.protobuf.Timestamp formatted string to BQ format."""
+    return bq_client_utils.FormatTimeFromProtoTimestampJsonString(json_string)
+
+  # TODO(b/324243535): Delete these once the migration is complete.
+  @staticmethod
+  def FormatAcl(acl):
+    """Format a server-returned ACL for printing."""
+    return bq_client_utils.FormatAcl(acl)
+
+  # TODO(b/324243535): Delete these once the migration is complete.
+  @staticmethod
+  def FormatSchema(schema):
+    """Format a schema for printing."""
+    return bq_client_utils.FormatSchema(schema)
+
+  # TODO(b/324243535): Delete these once the migration is complete.
+  @staticmethod
+  def NormalizeWait(wait):
+    return bq_client_utils.NormalizeWait(wait)
+
+  # TODO(b/324243535): Delete these once the migration is complete.
+  @staticmethod
+  def ValidatePrintFormat(print_format):
+    return bq_client_utils.ValidatePrintFormat(print_format)
+
+  # TODO(b/324243535): Delete these once the migration is complete.
+  # pylint: disable=protected-access
+  @staticmethod
+  def _ParseDatasetIdentifier(identifier):
+    return bq_client_utils._ParseDatasetIdentifier(identifier)
+
+  # TODO(b/324243535): Delete these once the migration is complete.
+  @staticmethod
+  def _ShiftInformationSchema(dataset_id, table_id):
+    """Moves "INFORMATION_SCHEMA" to table_id for dataset qualified tables."""
+    return bq_client_utils._ShiftInformationSchema(dataset_id, table_id)
+
+  # TODO(b/324243535): Delete these once the migration is complete.
+  @staticmethod
+  def _ParseIdentifier(identifier):
+    """Parses identifier into a tuple of (possibly empty) identifiers.
+
+    This will parse the identifier into a tuple of the form
+    (project_id, dataset_id, table_id) without doing any validation on
+    the resulting names; missing names are returned as ''. The
+    interpretation of these identifiers depends on the context of the
+    caller. For example, if you know the identifier must be a job_id,
+    then you can assume dataset_id is the job_id.
+
+    Args:
+      identifier: string, identifier to parse
+
+    Returns:
+      project_id, dataset_id, table_id: (string, string, string)
+    """
+    return bq_client_utils._ParseIdentifier(identifier)
+  # pylint: enable=protected-access
+
+  # TODO(b/324243535): Migrate `bq.py` off of this.
+  def GetProjectReference(self, identifier=''):
+    """Determine a project reference from an identifier and self."""
+    return bq_client_utils.GetProjectReference(
+        id_fallbacks=self,
+        identifier=identifier
+    )
+
+  # TODO(b/324243535): Migrate `bq.py` off of this.
+  def GetDatasetReference(self, identifier=''):
+    """Determine a DatasetReference from an identifier and self."""
+    return bq_client_utils.GetDatasetReference(
+        id_fallbacks=self,
+        identifier=identifier
+    )
+
+  # TODO(b/324243535): Migrate `bq.py` off of this.
+  def GetTableReference(self, identifier='', default_dataset_id=''):
+    """Determine a TableReference from an identifier and self."""
+    return bq_client_utils.GetTableReference(
+        id_fallbacks=self,
+        identifier=identifier,
+        default_dataset_id=default_dataset_id
+    )
+
+  # TODO(b/324243535): Migrate `bq.py` off of this.
+  def GetModelReference(self, identifier=''):
+    """Returns a ModelReference from an identifier."""
+    return bq_client_utils.GetModelReference(
+        id_fallbacks=self,
+        identifier=identifier
+    )
+
+  # TODO(b/324243535): Migrate `bq.py` off of this.
+  def GetRoutineReference(self, identifier=''):
+    """Returns a RoutineReference from an identifier."""
+    return bq_client_utils.GetRoutineReference(
+        id_fallbacks=self,
+        identifier=identifier
+    )
+
+  # TODO(b/324243535): Delete these once the migration is complete.
+  def GetQueryDefaultDataset(self, identifier):
+    return bq_client_utils.GetQueryDefaultDataset(identifier)
+
+  # TODO(b/324243535): Migrate `bq.py` off of this.
+  def GetReference(self, identifier=''):
+    """Try to deduce a project/dataset/table reference from a string.
+
+    If the identifier is not compound, treat it as the most specific
+    identifier we don't have as a flag, or as the table_id. If it is
+    compound, fill in any unspecified part.
+
+    Args:
+      identifier: string, Identifier to create a reference for.
+
+    Returns:
+      A valid ProjectReference, DatasetReference, or TableReference.
+
+    Raises:
+      bq_error.BigqueryError: if no valid reference can be determined.
+    """
+    return bq_client_utils.GetReference(
+        id_fallbacks=self,
+        identifier=identifier
+    )
+
+  # TODO(b/324243535): Migrate `bq.py` off of this.
+  def GetJobReference(self, identifier='', default_location=None):
+    """Determine a JobReference from an identifier, location, and self."""
+    return bq_client_utils.GetJobReference(
+        id_fallbacks=self,
+        identifier=identifier,
+        default_location=default_location
+    )
+
+  # TODO(b/324243535): Migrate `bq.py` off of this.
+  def GetReservationReference(self,
+                              identifier=None,
+                              default_location=None,
+                              default_reservation_id=None,
+                              check_reservation_project=True):
+    """Determine a ReservationReference from an identifier and location."""
+    return bq_client_utils.GetReservationReference(
+        id_fallbacks=self,
+        identifier=identifier,
+        default_location=default_location,
+        default_reservation_id=default_reservation_id,
+        check_reservation_project=check_reservation_project
+    )
+
+  # TODO(b/324243535): Migrate `bq.py` off of this.
+  def GetBiReservationReference(self, default_location=None):
+    """Determine a ReservationReference from an identifier and location."""
+    return bq_client_utils.GetBiReservationReference(
+        id_fallbacks=self,
+        default_location=default_location
+    )
+
+  # TODO(b/324243535): Migrate `bq.py` off of this.
+  def GetCapacityCommitmentReference(self,
+                                     identifier=None,
+                                     path=None,
+                                     default_location=None,
+                                     default_capacity_commitment_id=None,
+                                     allow_commas=None):
+    """Determine a CapacityCommitmentReference from an identifier and location."""
+    return bq_client_utils.GetCapacityCommitmentReference(
+        id_fallbacks=self,
+        identifier=identifier,
+        path=path,
+        default_location=default_location,
+        default_capacity_commitment_id=default_capacity_commitment_id,
+        allow_commas=allow_commas
+    )
+
+  # TODO(b/324243535): Migrate `bq.py` off of this.
+  def GetReservationAssignmentReference(self,
+                                        identifier=None,
+                                        path=None,
+                                        default_location=None,
+                                        default_reservation_id=None,
+                                        default_reservation_assignment_id=None):
+    """Determine a ReservationAssignmentReference from an identifier and location."""
+    return bq_client_utils.GetReservationAssignmentReference(
+        id_fallbacks=self,
+        identifier=identifier,
+        path=path,
+        default_location=default_location,
+        default_reservation_id=default_reservation_id,
+        default_reservation_assignment_id=default_reservation_assignment_id
+    )
+
+  # TODO(b/324243535): Migrate `bq.py` off of this.
+  def GetConnectionReference(self,
+                             identifier=None,
+                             path=None,
+                             default_location=None,
+                             default_connection_id=None):
+    """Determine a ConnectionReference from an identifier and location."""
+    return bq_client_utils.GetConnectionReference(
+        id_fallbacks=self,
+        identifier=identifier,
+        path=path,
+        default_location=default_location,
+        default_connection_id=default_connection_id
+    )
+
+  def GetObjectInfo(self, reference):
+    """Get all data returned by the server about a specific object."""
+    # Projects are handled separately, because we only have
+    # bigquery.projects.list.
+    if isinstance(reference, bq_id_utils.ApiClientHelper.ProjectReference):
+      max_project_results = 1000
+      projects = self.ListProjects(max_results=max_project_results)
+      for project in projects:
+        if bq_processor_utils.ConstructObjectReference(project) == reference:
+          project['kind'] = 'bigquery#project'
+          return project
+      if len(projects) >= max_project_results:
+        raise bq_error.BigqueryError(
+            'Number of projects found exceeded limit, please instead run'
+            ' gcloud projects describe %s' % (reference,),
+        )
+      raise bq_error.BigqueryNotFoundError('Unknown %r' % (reference,),
+                                           {'reason': 'notFound'}, [])
+
+    if isinstance(reference, bq_id_utils.ApiClientHelper.JobReference):
+      return self.apiclient.jobs().get(**dict(reference)).execute()
+    elif isinstance(reference, bq_id_utils.ApiClientHelper.DatasetReference):
+      return self.apiclient.datasets().get(**dict(reference)).execute()
+    elif isinstance(reference, bq_id_utils.ApiClientHelper.TableReference):
+      return self.apiclient.tables().get(**dict(reference)).execute()
+    elif isinstance(reference, bq_id_utils.ApiClientHelper.ModelReference):
+      return self.GetModelsApiClient().models().get(
+          projectId=reference.projectId,
+          datasetId=reference.datasetId,
+          modelId=reference.modelId).execute()
+    elif isinstance(reference, bq_id_utils.ApiClientHelper.RoutineReference):
+      return self.GetRoutinesApiClient().routines().get(
+          projectId=reference.projectId,
+          datasetId=reference.datasetId,
+          routineId=reference.routineId).execute()
+    else:
+      raise TypeError('Type of reference must be one of: ProjectReference, '
+                      'JobReference, DatasetReference, or TableReference')
+
+  def GetTableSchema(self, table_dict):
+    table_info = self.apiclient.tables().get(**table_dict).execute()
+    return table_info.get('schema', {})
+
+  def InsertTableRows(self,
+                      table_dict: bq_id_utils.ApiClientHelper.TableReference,
+                      inserts: List[Optional[bq_processor_utils.InsertEntry]],
+                      skip_invalid_rows: Optional[bool] = None,
+                      ignore_unknown_values: Optional[bool] = None,
+                      template_suffix: Optional[int] = None):
+    """Insert rows into a table.
+
+    Arguments:
+      table_dict: table reference into which rows are to be inserted.
+      inserts: array of InsertEntry tuples where insert_id can be None.
+      skip_invalid_rows: Optional. Attempt to insert any valid rows, even if
+        invalid rows are present.
+      ignore_unknown_values: Optional. Ignore any values in a row that are not
+        present in the schema.
+      template_suffix: Optional. The suffix used to generate the template
+        table's name.
+
+    Returns:
+      result of the operation.
+    """
+
+    def _EncodeInsert(insert):
+      encoded = dict(json=insert.record)
+      if insert.insert_id:
+        encoded['insertId'] = insert.insert_id
+      return encoded
+
+    op = self.GetInsertApiClient().tabledata().insertAll(
+        body=dict(
+            skipInvalidRows=skip_invalid_rows,
+            ignoreUnknownValues=ignore_unknown_values,
+            templateSuffix=template_suffix,
+            rows=list(map(_EncodeInsert, inserts))),
+        **table_dict)
+    return op.execute()
+
+  def GetTransferConfig(self, transfer_id):
+    client = self.GetTransferV1ApiClient()
+    return client.projects().locations().transferConfigs().get(
+        name=transfer_id).execute()
+
+  def GetTransferRun(self, identifier):
+    transfer_client = self.GetTransferV1ApiClient()
+    return transfer_client.projects().locations().transferConfigs().runs().get(
+        name=identifier).execute()
+
+  # TODO(b/324243535): Delete these once the migration is complete.
+  def GetBodyForCreateReservation(
+      self,
+      slots: int,
+      ignore_idle_slots: bool,
+      edition,
+      target_job_concurrency: Optional[int],
+      multi_region_auxiliary: Optional[bool],
+      autoscale_max_slots: Optional[int] = None,
+  ) -> Dict[str, Any]:
+    """Return the request body for CreateReservation.
+
+    Arguments:
+      slots: Number of slots allocated to this reservation subtree.
+      ignore_idle_slots: Specifies whether queries should ignore idle slots from
+        other reservations.
+      edition: The edition for this reservation.
+      target_job_concurrency: Job concurrency target.
+      multi_region_auxiliary: Whether this reservation is for the auxiliary
+        region.
+      autoscale_max_slots: Number of slots to be scaled when needed.
+
+    Returns:
+      Reservation object that was created.
+
+    Raises:
+      bq_error.BigqueryError: if autoscale_max_slots is used with other
+        version.
+    """
+    return client_reservation.GetBodyForCreateReservation(
+        api_version=self.api_version,
+        slots=slots,
+        ignore_idle_slots=ignore_idle_slots,
+        edition=edition,
+        target_job_concurrency=target_job_concurrency,
+        multi_region_auxiliary=multi_region_auxiliary,
+        autoscale_max_slots=autoscale_max_slots,
+    )
+
+  # TODO(b/324243535): Delete these once the migration is complete.
+  def CreateReservation(
+      self,
+      reference,
+      slots: int,
+      ignore_idle_slots: bool,
+      edition,
+      target_job_concurrency: Optional[int],
+      multi_region_auxiliary: Optional[bool],
+      autoscale_max_slots: Optional[int] = None,
+  ) -> Dict[str, Any]:
+    """Create a reservation with the given reservation reference.
+
+    Arguments:
+      reference: Reservation to create.
+      slots: Number of slots allocated to this reservation subtree.
+      ignore_idle_slots: Specifies whether queries should ignore idle slots from
+        other reservations.
+      edition: The edition for this reservation.
+      target_job_concurrency: Job concurrency target.
+      multi_region_auxiliary: Whether this reservation is for the auxiliary
+        region.
+      autoscale_max_slots: Number of slots to be scaled when needed.
+
+    Returns:
+      Reservation object that was created.
+
+    Raises:
+      bq_error.BigqueryError: if autoscale_max_slots is used with other
+        version.
+    """
+    return client_reservation.CreateReservation(
+        client=self.GetReservationApiClient(),
+        api_version=self.api_version,
+        reference=reference,
+        slots=slots,
+        ignore_idle_slots=ignore_idle_slots,
+        edition=edition,
+        target_job_concurrency=target_job_concurrency,
+        multi_region_auxiliary=multi_region_auxiliary,
+        autoscale_max_slots=autoscale_max_slots,
+    )
+
+  # TODO(b/324243535): Delete these once the migration is complete.
+  def ListReservations(self, reference, page_size, page_token):
+    """List reservations in the project and location for the given reference.
+
+    Arguments:
+      reference: Reservation reference containing project and location.
+      page_size: Number of results to show.
+      page_token: Token to retrieve the next page of results.
+
+    Returns:
+      Reservation object that was created.
+    """
+    return client_reservation.ListReservations(
+        client=self.GetReservationApiClient(),
+        reference=reference,
+        page_size=page_size,
+        page_token=page_token
+    )
+
+  # TODO(b/324243535): Delete these once the migration is complete.
+  def ListBiReservations(self, reference):
+    """List BI reservations in the project and location for the given reference.
+
+    Arguments:
+      reference: Reservation reference containing project and location.
+
+    Returns:
+      List of BI reservations in the given project/location.
+    """
+    return client_reservation.ListBiReservations(
+        client=self.GetReservationApiClient(),
+        reference=reference
+    )
+
+  # TODO(b/324243535): Delete these once the migration is complete.
+  def GetReservation(self, reference):
+    """Gets a reservation with the given reservation reference.
+
+    Arguments:
+      reference: Reservation to get.
+
+    Returns:
+      Reservation object corresponding to the given id.
+    """
+    return client_reservation.GetReservation(
+        client=self.GetReservationApiClient(),
+        reference=reference
+    )
+
+  # TODO(b/324243535): Delete these once the migration is complete.
+  def DeleteReservation(
+      self,
+      reference: ...
+  ):
+    """Deletes a reservation with the given reservation reference.
+
+    Arguments:
+      reference: Reservation to delete.
+    """
+    return client_reservation.DeleteReservation(
+        client=self.GetReservationApiClient(),
+        reference=reference
+    )
+
+  # TODO(b/324243535): Delete these once the migration is complete.
+  def UpdateBiReservation(self, reference, reservation_size):
+    """Updates a BI reservation wit

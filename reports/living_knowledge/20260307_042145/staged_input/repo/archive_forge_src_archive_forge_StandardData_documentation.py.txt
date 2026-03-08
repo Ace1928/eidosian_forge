@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/StandardData_documentation.py
+KIND: code
+
+Return the full coding as a python string, use str(my_coding).

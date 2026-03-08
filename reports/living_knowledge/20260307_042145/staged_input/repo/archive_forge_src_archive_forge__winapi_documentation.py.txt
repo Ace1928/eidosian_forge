@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_winapi_documentation.py
+KIND: code
+
+import builtins
+import ctypes.wintypes
+from paramiko.util import u
+
+        Read n bytes from mapped view.

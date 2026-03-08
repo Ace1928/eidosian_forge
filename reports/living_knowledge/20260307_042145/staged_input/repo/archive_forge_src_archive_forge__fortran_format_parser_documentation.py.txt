@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_fortran_format_parser_documentation.py
+KIND: code
+
+import re
+import numpy as np
+        Parameters
+        ----------
+        width : int
+            number of characters taken by the string (includes space).

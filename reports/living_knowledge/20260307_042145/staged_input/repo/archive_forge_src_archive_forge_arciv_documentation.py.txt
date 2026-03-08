@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/arciv_documentation.py
+KIND: code
+
+from reportlab.lib.utils import isUnicode
+ArcIV encode string S

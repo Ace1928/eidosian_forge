@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/StringEncoding_documentation.py
+KIND: code
+
+from __future__ import absolute_import
+import re
+import sys
+Fake-decode the byte string to unicode to support %
+        formatting of unicode strings.

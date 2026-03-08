@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/ack_incoming_documentation.py
+KIND: code
+
+from yowsup.structs import ProtocolEntity, ProtocolTreeNode
+from .ack import AckProtocolEntity
+
+    <ack t="{{TIMESTAMP}}" from="{{FROM_JID}}" id="{{MESSAGE_ID}}" class="{{message | receipt | ?}}">
+    </ack>

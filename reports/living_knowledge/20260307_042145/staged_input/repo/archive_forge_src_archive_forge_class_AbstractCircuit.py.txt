@@ -1,0 +1,506 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AbstractCircuit.py
+KIND: code
+
+import abc
+import enum
+import html
+import itertools
+import math
+from collections import defaultdict
+from typing import (
+from typing_extensions import Self
+import networkx
+import numpy as np
+import cirq._version
+from cirq import _compat, devices, ops, protocols, qis
+from cirq._doc import document
+from cirq.circuits._bucket_priority_queue import BucketPriorityQueue
+from cirq.circuits.circuit_operation import CircuitOperation
+from cirq.circuits.insert_strategy import InsertStrategy
+from cirq.circuits.qasm_output import QasmOutput
+from cirq.circuits.text_diagram_drawer import TextDiagramDrawer
+from cirq.circuits.moment import Moment
+from cirq.protocols import circuit_diagram_info_protocol
+from cirq.type_workarounds import NotImplementedType
+class AbstractCircuit(abc.ABC):
+    """The base class for Circuit-like objects.
+
+    A circuit-like object must have a list of moments (which can be empty).
+
+    These methods return information about the circuit, and can be called on
+    either Circuit or FrozenCircuit objects:
+
+    *   next_moment_operating_on
+    *   prev_moment_operating_on
+    *   next_moments_operating_on
+    *   operation_at
+    *   all_qubits
+    *   all_operations
+    *   findall_operations
+    *   findall_operations_between
+    *   findall_operations_until_blocked
+    *   findall_operations_with_gate_type
+    *   reachable_frontier_from
+    *   has_measurements
+    *   are_all_matches_terminal
+    *   are_all_measurements_terminal
+    *   unitary
+    *   final_state_vector
+    *   to_text_diagram
+    *   to_text_diagram_drawer
+    *   qid_shape
+    *   all_measurement_key_names
+    *   to_quil
+    *   to_qasm
+    *   save_qasm
+    *   get_independent_qubit_sets
+    """
+
+    @classmethod
+    def from_moments(cls: Type[CIRCUIT_TYPE], *moments: 'cirq.OP_TREE') -> CIRCUIT_TYPE:
+        """Create a circuit from moment op trees.
+
+        Args:
+            *moments: Op tree for each moment. If an op tree is a moment, it
+                will be included directly in the new circuit. If an op tree is
+                a circuit, it will be frozen, wrapped in a CircuitOperation, and
+                included in its own moment in the new circuit. Otherwise, the
+                op tree will be passed to `cirq.Moment` to create a new moment
+                which is then included in the new circuit. Note that in the
+                latter case we have the normal restriction that operations in a
+                moment must be applied to disjoint sets of qubits.
+        """
+        return cls._from_moments(cls._make_moments(moments))
+
+    @staticmethod
+    def _make_moments(moments: Iterable['cirq.OP_TREE']) -> Iterator['cirq.Moment']:
+        for m in moments:
+            if isinstance(m, Moment):
+                yield m
+            elif isinstance(m, AbstractCircuit):
+                yield Moment(m.freeze().to_op())
+            else:
+                yield Moment(m)
+
+    @classmethod
+    @abc.abstractmethod
+    def _from_moments(cls: Type[CIRCUIT_TYPE], moments: Iterable['cirq.Moment']) -> CIRCUIT_TYPE:
+        """Create a circuit from moments.
+
+        This must be implemented by subclasses. It provides a more efficient way
+        to construct a circuit instance since we already have the moments and so
+        can skip the analysis required to implement various insert strategies.
+
+        Args:
+            moments: Moments of the circuit.
+        """
+
+    @property
+    @abc.abstractmethod
+    def moments(self) -> Sequence['cirq.Moment']:
+        pass
+
+    @abc.abstractmethod
+    def freeze(self) -> 'cirq.FrozenCircuit':
+        """Creates a FrozenCircuit from this circuit.
+
+        If 'self' is a FrozenCircuit, the original object is returned.
+        """
+
+    @abc.abstractmethod
+    def unfreeze(self, copy: bool=True) -> 'cirq.Circuit':
+        """Creates a Circuit from this circuit.
+
+        Args:
+            copy: If True and 'self' is a Circuit, returns a copy that circuit.
+        """
+
+    def __bool__(self):
+        return bool(self.moments)
+
+    def __eq__(self, other):
+        if not isinstance(other, AbstractCircuit):
+            return NotImplemented
+        return tuple(self.moments) == tuple(other.moments)
+
+    def _approx_eq_(self, other: Any, atol: Union[int, float]) -> bool:
+        """See `cirq.protocols.SupportsApproximateEquality`."""
+        if not isinstance(other, AbstractCircuit):
+            return NotImplemented
+        return cirq.protocols.approx_eq(tuple(self.moments), tuple(other.moments), atol=atol)
+
+    def __ne__(self, other) -> bool:
+        return not self == other
+
+    def __len__(self) -> int:
+        return len(self.moments)
+
+    def __iter__(self) -> Iterator['cirq.Moment']:
+        return iter(self.moments)
+
+    def _decompose_(self) -> 'cirq.OP_TREE':
+        """See `cirq.SupportsDecompose`."""
+        return self.all_operations()
+
+    @overload
+    def __getitem__(self, key: int) -> 'cirq.Moment':
+        pass
+
+    @overload
+    def __getitem__(self, key: Tuple[int, 'cirq.Qid']) -> 'cirq.Operation':
+        pass
+
+    @overload
+    def __getitem__(self, key: Tuple[int, Iterable['cirq.Qid']]) -> 'cirq.Moment':
+        pass
+
+    @overload
+    def __getitem__(self, key: slice) -> Self:
+        pass
+
+    @overload
+    def __getitem__(self, key: Tuple[slice, 'cirq.Qid']) -> Self:
+        pass
+
+    @overload
+    def __getitem__(self, key: Tuple[slice, Iterable['cirq.Qid']]) -> Self:
+        pass
+
+    def __getitem__(self, key):
+        if isinstance(key, slice):
+            return self._from_moments(self.moments[key])
+        if hasattr(key, '__index__'):
+            return self.moments[key]
+        if isinstance(key, tuple):
+            if len(key) != 2:
+                raise ValueError('If key is tuple, it must be a pair.')
+            moment_idx, qubit_idx = key
+            selected_moments = self.moments[moment_idx]
+            if isinstance(selected_moments, Moment):
+                return selected_moments[qubit_idx]
+            if isinstance(qubit_idx, ops.Qid):
+                qubit_idx = [qubit_idx]
+            return self._from_moments((moment[qubit_idx] for moment in selected_moments))
+        raise TypeError('__getitem__ called with key not of type slice, int, or tuple.')
+
+    def __str__(self) -> str:
+        return self.to_text_diagram()
+
+    def _repr_args(self) -> str:
+        args = []
+        if self.moments:
+            args.append(_list_repr_with_indented_item_lines(self.moments))
+        return f'{', '.join(args)}'
+
+    def __repr__(self) -> str:
+        cls_name = self.__class__.__name__
+        return f'cirq.{cls_name}({self._repr_args()})'
+
+    def _repr_pretty_(self, p: Any, cycle: bool) -> None:
+        """Print ASCII diagram in Jupyter."""
+        cls_name = self.__class__.__name__
+        if cycle:
+            p.text(f'{cls_name}(...)')
+        else:
+            p.text(self.to_text_diagram())
+
+    def _repr_html_(self) -> str:
+        """Print ASCII diagram in Jupyter notebook without wrapping lines."""
+        return '<pre style="overflow: auto; white-space: pre;">' + html.escape(self.to_text_diagram()) + '</pre>'
+
+    def _first_moment_operating_on(self, qubits: Iterable['cirq.Qid'], indices: Iterable[int]) -> Optional[int]:
+        qubits = frozenset(qubits)
+        for m in indices:
+            if self._has_op_at(m, qubits):
+                return m
+        return None
+
+    def next_moment_operating_on(self, qubits: Iterable['cirq.Qid'], start_moment_index: int=0, max_distance: Optional[int]=None) -> Optional[int]:
+        """Finds the index of the next moment that touches the given qubits.
+
+        Args:
+            qubits: We're looking for operations affecting any of these qubits.
+            start_moment_index: The starting point of the search.
+            max_distance: The number of moments (starting from the start index
+                and moving forward) to check. Defaults to no limit.
+
+        Returns:
+            None if there is no matching moment, otherwise the index of the
+            earliest matching moment.
+
+        Raises:
+          ValueError: negative max_distance.
+        """
+        max_circuit_distance = len(self.moments) - start_moment_index
+        if max_distance is None:
+            max_distance = max_circuit_distance
+        elif max_distance < 0:
+            raise ValueError(f'Negative max_distance: {max_distance}')
+        else:
+            max_distance = min(max_distance, max_circuit_distance)
+        return self._first_moment_operating_on(qubits, range(start_moment_index, start_moment_index + max_distance))
+
+    def next_moments_operating_on(self, qubits: Iterable['cirq.Qid'], start_moment_index: int=0) -> Dict['cirq.Qid', int]:
+        """Finds the index of the next moment that touches each qubit.
+
+        Args:
+            qubits: The qubits to find the next moments acting on.
+            start_moment_index: The starting point of the search.
+
+        Returns:
+            The index of the next moment that touches each qubit. If there
+            is no such moment, the next moment is specified as the number of
+            moments in the circuit. Equivalently, can be characterized as one
+            plus the index of the last moment after start_moment_index
+            (inclusive) that does *not* act on a given qubit.
+        """
+        next_moments = {}
+        for q in qubits:
+            next_moment = self.next_moment_operating_on([q], start_moment_index)
+            next_moments[q] = len(self.moments) if next_moment is None else next_moment
+        return next_moments
+
+    def prev_moment_operating_on(self, qubits: Sequence['cirq.Qid'], end_moment_index: Optional[int]=None, max_distance: Optional[int]=None) -> Optional[int]:
+        """Finds the index of the previous moment that touches the given qubits.
+
+        Args:
+            qubits: We're looking for operations affecting any of these qubits.
+            end_moment_index: The moment index just after the starting point of
+                the reverse search. Defaults to the length of the list of
+                moments.
+            max_distance: The number of moments (starting just before from the
+                end index and moving backward) to check. Defaults to no limit.
+
+        Returns:
+            None if there is no matching moment, otherwise the index of the
+            latest matching moment.
+
+        Raises:
+            ValueError: negative max_distance.
+        """
+        if end_moment_index is None:
+            end_moment_index = len(self.moments)
+        if max_distance is None:
+            max_distance = len(self.moments)
+        elif max_distance < 0:
+            raise ValueError(f'Negative max_distance: {max_distance}')
+        else:
+            max_distance = min(end_moment_index, max_distance)
+        if end_moment_index > len(self.moments):
+            d = end_moment_index - len(self.moments)
+            end_moment_index -= d
+            max_distance -= d
+        if max_distance <= 0:
+            return None
+        return self._first_moment_operating_on(qubits, (end_moment_index - k - 1 for k in range(max_distance)))
+
+    def reachable_frontier_from(self, start_frontier: Dict['cirq.Qid', int], *, is_blocker: Callable[['cirq.Operation'], bool]=lambda op: False) -> Dict['cirq.Qid', int]:
+        """Determines how far can be reached into a circuit under certain rules.
+
+        The location L = (qubit, moment_index) is *reachable* if and only if the
+        following all hold true:
+
+        - There is not a blocking operation covering L.
+        -  At least one of the following holds:
+            - qubit is in start frontier and moment_index =
+                max(start_frontier[qubit], 0).
+            - There is no operation at L and prev(L) = (qubit,
+                moment_index-1) is reachable.
+            - There is an (non-blocking) operation P covering L such that
+                (q', moment_index - 1) is reachable for every q' on which P
+                acts.
+
+        An operation in moment moment_index is blocking if at least one of the
+        following hold:
+
+        - `is_blocker` returns a truthy value.
+        - The operation acts on a qubit not in start_frontier.
+        - The operation acts on a qubit q such that start_frontier[q] >
+            moment_index.
+
+        In other words, the reachable region extends forward through time along
+        each qubit in start_frontier until it hits a blocking operation. Any
+        location involving a qubit not in start_frontier is unreachable.
+
+        For each qubit q in `start_frontier`, the reachable locations will
+        correspond to a contiguous range starting at start_frontier[q] and
+        ending just before some index end_q. The result of this method is a
+        dictionary, and that dictionary maps each qubit q to its end_q.
+
+        Examples:
+
+        If `start_frontier` is
+
+        ```
+        {
+            cirq.LineQubit(0): 6,
+            cirq.LineQubit(1): 2,
+            cirq.LineQubit(2): 2
+        }
+        ```
+
+        then the reachable wire locations in the following circuit are
+        highlighted with '█' characters:
+
+        ```
+
+                0   1   2   3   4   5   6   7   8   9   10  11  12  13
+            0: ───H───@─────────────────█████████████████████─@───H───
+                      │                                       │
+            1: ───────@─██H███@██████████████████████─@───H───@───────
+                              │                       │
+            2: ─────────██████@███H██─@───────@───H───@───────────────
+                                      │       │
+            3: ───────────────────────@───H───@───────────────────────
+        ```
+
+        And the computed `end_frontier` is
+
+        ```
+        {
+            cirq.LineQubit(0): 11,
+            cirq.LineQubit(1): 9,
+            cirq.LineQubit(2): 6,
+        }
+        ```
+
+        Note that the frontier indices (shown above the circuit) are
+        best thought of (and shown) as happening *between* moment indices.
+
+        If we specify a blocker as follows:
+
+        ```
+        is_blocker=lambda: op == cirq.CZ(cirq.LineQubit(1),
+                                         cirq.LineQubit(2))
+        ```
+
+        and use this `start_frontier`:
+
+        ```
+        {
+            cirq.LineQubit(0): 0,
+            cirq.LineQubit(1): 0,
+            cirq.LineQubit(2): 0,
+            cirq.LineQubit(3): 0,
+        }
+        ```
+
+        Then this is the reachable area:
+
+        ```
+
+                0   1   2   3   4   5   6   7   8   9   10  11  12  13
+            0: ─██H███@██████████████████████████████████████─@───H───
+                      │                                       │
+            1: ─██████@███H██─@───────────────────────@───H───@───────
+                              │                       │
+            2: ─█████████████─@───H───@───────@───H───@───────────────
+                                      │       │
+            3: ─█████████████████████─@───H───@───────────────────────
+
+        ```
+
+        and the computed `end_frontier` is:
+
+        ```
+        {
+            cirq.LineQubit(0): 11,
+            cirq.LineQubit(1): 3,
+            cirq.LineQubit(2): 3,
+            cirq.LineQubit(3): 5,
+        }
+        ```
+
+        Args:
+            start_frontier: A starting set of reachable locations.
+            is_blocker: A predicate that determines if operations block
+                reachability. Any location covered by an operation that causes
+                `is_blocker` to return True is considered to be an unreachable
+                location.
+
+        Returns:
+            An end_frontier dictionary, containing an end index for each qubit q
+            mapped to a start index by the given `start_frontier` dictionary.
+
+            To determine if a location (q, i) was reachable, you can use
+            this expression:
+
+                q in start_frontier and start_frontier[q] <= i < end_frontier[q]
+
+            where i is the moment index, q is the qubit, and end_frontier is the
+            result of this method.
+        """
+        active: Set['cirq.Qid'] = set()
+        end_frontier = {}
+        queue = BucketPriorityQueue[ops.Operation](drop_duplicate_entries=True)
+
+        def enqueue_next(qubit: 'cirq.Qid', moment: int) -> None:
+            next_moment = self.next_moment_operating_on([qubit], moment)
+            if next_moment is None:
+                end_frontier[qubit] = max(len(self), start_frontier[qubit])
+                if qubit in active:
+                    active.remove(qubit)
+            else:
+                next_op = self.operation_at(qubit, next_moment)
+                assert next_op is not None
+                queue.enqueue(next_moment, next_op)
+        for start_qubit, start_moment in start_frontier.items():
+            enqueue_next(start_qubit, start_moment)
+        while queue:
+            cur_moment, cur_op = queue.dequeue()
+            for q in cur_op.qubits:
+                if q in start_frontier and cur_moment >= start_frontier[q] and (q not in end_frontier):
+                    active.add(q)
+            continue_past = cur_op is not None and active.issuperset(cur_op.qubits) and (not is_blocker(cur_op))
+            if continue_past:
+                for q in cur_op.qubits:
+                    enqueue_next(q, cur_moment + 1)
+            else:
+                for q in cur_op.qubits:
+                    if q in active:
+                        end_frontier[q] = cur_moment
+                        active.remove(q)
+        return end_frontier
+
+    def findall_operations_between(self, start_frontier: Dict['cirq.Qid', int], end_frontier: Dict['cirq.Qid', int], omit_crossing_operations: bool=False) -> List[Tuple[int, 'cirq.Operation']]:
+        """Finds operations between the two given frontiers.
+
+        If a qubit is in `start_frontier` but not `end_frontier`, its end index
+        defaults to the end of the circuit. If a qubit is in `end_frontier` but
+        not `start_frontier`, its start index defaults to the start of the
+        circuit. Operations on qubits not mentioned in either frontier are not
+        included in the results.
+
+        Args:
+            start_frontier: Just before where to start searching for operations,
+                for each qubit of interest. Start frontier indices are
+                inclusive.
+            end_frontier: Just before where to stop searching for operations,
+                for each qubit of interest. End frontier indices are exclusive.
+            omit_crossing_operations: Determines whether or not operations that
+                cross from a location between the two frontiers to a location
+                outside the two frontiers are included or excluded. (Operations
+                completely inside are always included, and operations completely
+                outside are always excluded.)
+
+        Returns:
+            A list of tuples. Each tuple describes an operation found between
+            the two frontiers. The first item of each tuple is the index of the
+            moment containing the operation, and the second item is the
+            operation itself. The list is sorted so that the moment index
+            increases monotonically.
+        """
+        result = BucketPriorityQueue[ops.Operation](drop_duplicate_entries=True)
+        involved_qubits = set(start_frontier.keys()) | set(end_frontier.keys())
+        for q in sorted(involved_qubits):
+            for i in range(start_frontier.get(q, 0), end_frontier.get(q, len(self))):
+                op = self.operation_at(q, i)
+                if op is None:
+                    continue
+                if omit_crossing_operations and (not involved_qubits.issuperset(op.qubits)):
+                    continue
+                result.enqueue(i, op)
+        return list(result)
+
+    def findall_operations_until_blocked(self, start_frontier: Dict['cirq.Qid', int], is_blocker: Callable[['cirq.Operation'], bool]=lambda op: False) -> List[Tuple[int, 'cirq.Operation']]:
+        """Finds a

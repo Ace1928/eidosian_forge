@@ -1,0 +1,12 @@
+SOURCE_PATH: archive_forge/src/archive_forge/autonotebook_documentation.py
+KIND: code
+
+import sys
+from warnings import warn
+
+Automatically choose between `tqdm.notebook` and `tqdm.std`.
+
+Usage:
+>>> from tqdm.autonotebook import trange, tqdm
+>>> for i in trange(10):
+...     ...

@@ -1,0 +1,496 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_LinearDrawer.py
+KIND: code
+
+# Copyright 2003-2008 by Leighton Pritchard.  All rights reserved.
+# Revisions copyright 2008-2009 by Peter Cock.
+#
+# This file is part of the Biopython distribution and governed by your
+# choice of the "Biopython License Agreement" or the "BSD 3-Clause License".
+# Please see the LICENSE file that should have been included as part of this
+# package.
+#
+# Contact:       Leighton Pritchard, The James Hutton Institute,
+#                Invergowrie, Dundee, Scotland, DD2 5DA, UK
+#                Leighton.Pritchard@hutton.ac.uk
+################################################################################
+
+"""Linear Drawer module.
+
+Provides:
+ - LinearDrawer -  Drawing object for linear diagrams
+
+For drawing capabilities, this module uses reportlab to draw and write
+the diagram: http://www.reportlab.com
+"""
+
+# ReportLab imports
+
+from reportlab.graphics.shapes import Drawing, Line, String, Group, Polygon
+from reportlab.lib import colors
+
+# GenomeDiagram imports
+from ._AbstractDrawer import AbstractDrawer, draw_box, draw_arrow
+from ._AbstractDrawer import draw_cut_corner_box, _stroke_and_fill_colors
+from ._AbstractDrawer import intermediate_points, angle2trig, deduplicate
+from ._FeatureSet import FeatureSet
+from ._GraphSet import GraphSet
+
+from math import ceil
+
+
+class LinearDrawer(AbstractDrawer):
+    """Linear Drawer.
+
+    Inherits from:
+     - AbstractDrawer
+
+    Attributes:
+     - tracklines    Boolean for whether to draw lines delineating tracks
+     - pagesize      Tuple describing the size of the page in pixels
+     - x0            Float X co-ord for leftmost point of drawable area
+     - xlim          Float X co-ord for rightmost point of drawable area
+     - y0            Float Y co-ord for lowest point of drawable area
+     - ylim          Float Y co-ord for topmost point of drawable area
+     - pagewidth     Float pixel width of drawable area
+     - pageheight    Float pixel height of drawable area
+     - xcenter       Float X co-ord of center of drawable area
+     - ycenter       Float Y co-ord of center of drawable area
+     - start         Int, base to start drawing from
+     - end           Int, base to stop drawing at
+     - length        Int, size of sequence to be drawn
+     - fragments     Int, number of fragments into which to divide the
+       drawn sequence
+     - fragment_size Float (0->1) the proportion of the fragment height to
+       draw in
+     - track_size    Float (0->1) the proportion of the track height to
+       draw in
+     - drawing       Drawing canvas
+     - drawn_tracks  List of ints denoting which tracks are to be drawn
+     - current_track_level   Int denoting which track is currently being
+       drawn
+     - fragment_height   Float total fragment height in pixels
+     - fragment_bases    Int total fragment length in bases
+     - fragment_lines    Dictionary of top and bottom y-coords of fragment,
+       keyed by fragment number
+     - fragment_limits   Dictionary of start and end bases of each fragment,
+       keyed by fragment number
+     - track_offsets     Dictionary of number of pixels that each track top,
+       center and bottom is offset from the base of a fragment, keyed by track
+     - cross_track_links List of tuples each with four entries (track A,
+       feature A, track B, feature B) to be linked.
+
+    """
+
+    def __init__(
+        self,
+        parent=None,
+        pagesize="A3",
+        orientation="landscape",
+        x=0.05,
+        y=0.05,
+        xl=None,
+        xr=None,
+        yt=None,
+        yb=None,
+        start=None,
+        end=None,
+        tracklines=0,
+        fragments=10,
+        fragment_size=None,
+        track_size=0.75,
+        cross_track_links=None,
+    ):
+        """Initialize.
+
+        Arguments:
+         - parent    Diagram object containing the data that the drawer draws
+         - pagesize  String describing the ISO size of the image, or a tuple
+           of pixels
+         - orientation   String describing the required orientation of the
+           final drawing ('landscape' or 'portrait')
+         - x         Float (0->1) describing the relative size of the X
+           margins to the page
+         - y         Float (0->1) describing the relative size of the Y
+           margins to the page
+         - xl        Float (0->1) describing the relative size of the left X
+           margin to the page (overrides x)
+         - xl        Float (0->1) describing the relative size of the left X
+           margin to the page (overrides x)
+         - xr        Float (0->1) describing the relative size of the right X
+           margin to the page (overrides x)
+         - yt        Float (0->1) describing the relative size of the top Y
+           margin to the page (overrides y)
+         - yb        Float (0->1) describing the relative size of the lower Y
+           margin to the page (overrides y)
+         - start     Int, the position to begin drawing the diagram at
+         - end       Int, the position to stop drawing the diagram at
+         - tracklines    Boolean flag to show (or not) lines delineating tracks
+           on the diagram
+         - fragments Int, the number of equal fragments into which the
+           sequence should be divided for drawing
+         - fragment_size Float(0->1) The proportion of the available height
+           for the fragment that should be taken up in drawing
+         - track_size    The proportion of the available track height that
+           should be taken up in drawing
+         - cross_track_links List of tuples each with four entries (track A,
+           feature A, track B, feature B) to be linked.
+        """
+        # Use the superclass' instantiation method
+        AbstractDrawer.__init__(
+            self,
+            parent,
+            pagesize,
+            orientation,
+            x,
+            y,
+            xl,
+            xr,
+            yt,
+            yb,
+            start,
+            end,
+            tracklines,
+            cross_track_links,
+        )
+
+        # Useful measurements on the page
+        self.fragments = fragments
+        if fragment_size is not None:
+            self.fragment_size = fragment_size
+        else:
+            if self.fragments == 1:
+                # For single fragments, default to full height
+                self.fragment_size = 1
+            else:
+                # Otherwise keep a 10% gap between fragments
+                self.fragment_size = 0.9
+        self.track_size = track_size
+
+    def draw(self):
+        """Draw a linear diagram of the data in the parent Diagram object."""
+        # Instantiate the drawing canvas
+        self.drawing = Drawing(self.pagesize[0], self.pagesize[1])
+
+        feature_elements = []  # holds feature elements
+        feature_labels = []  # holds feature labels
+        greytrack_bgs = []  # holds track background
+        greytrack_labels = []  # holds track foreground labels
+        scale_axes = []  # holds scale axes
+        scale_labels = []  # holds scale axis labels
+
+        # Get the tracks to be drawn
+        self.drawn_tracks = self._parent.get_drawn_levels()
+
+        # Set fragment and track sizes
+        self.init_fragments()
+        self.set_track_heights()
+
+        # Go through each track in the parent (if it is to be drawn) one by
+        # one and collate the data as drawing elements
+        for track_level in self.drawn_tracks:  # only use tracks to be drawn
+            self.current_track_level = track_level  # establish track level
+            track = self._parent[track_level]  # get the track at that level
+            gbgs, glabels = self.draw_greytrack(track)  # get greytrack elements
+            greytrack_bgs.append(gbgs)
+            greytrack_labels.append(glabels)
+            features, flabels = self.draw_track(track)  # get feature and graph elements
+            feature_elements.append(features)
+            feature_labels.append(flabels)
+            if track.scale:
+                axes, slabels = self.draw_scale(track)  # get scale elements
+                scale_axes.append(axes)
+                scale_labels.append(slabels)
+
+        feature_cross_links = []
+        for cross_link_obj in self.cross_track_links:
+            cross_link_elements = self.draw_cross_link(cross_link_obj)
+            if cross_link_elements:
+                feature_cross_links.append(cross_link_elements)
+
+        # Groups listed in order of addition to page (from back to front)
+        # Draw track backgrounds
+        # Draw feature cross track links
+        # Draw features and graphs
+        # Draw scale axes
+        # Draw scale labels
+        # Draw feature labels
+        # Draw track labels
+        element_groups = [
+            greytrack_bgs,
+            feature_cross_links,
+            feature_elements,
+            scale_axes,
+            scale_labels,
+            feature_labels,
+            greytrack_labels,
+        ]
+        for element_group in element_groups:
+            for element_list in element_group:
+                [self.drawing.add(element) for element in element_list]
+
+        if self.tracklines:  # Draw test tracks over top of diagram
+            self.draw_test_tracks()
+
+    def init_fragments(self):
+        """Initialize useful values for positioning diagram elements."""
+        # Set basic heights, lengths etc
+        self.fragment_height = self.pageheight / self.fragments
+        # total fragment height in pixels
+        self.fragment_bases = ceil(self.length / self.fragments)
+        # fragment length in bases
+
+        # Key fragment base and top lines by fragment number
+        # Holds bottom and top line locations of fragments, keyed by fragment number
+        self.fragment_lines = {}
+        # Number of pixels to crop the fragment:
+        fragment_crop = (1 - self.fragment_size) / 2
+        fragy = self.ylim  # Holder for current absolute fragment base
+        for fragment in range(self.fragments):
+            fragtop = fragy - fragment_crop * self.fragment_height  # top - crop
+            fragbtm = (
+                fragy - (1 - fragment_crop) * self.fragment_height
+            )  # bottom + crop
+            self.fragment_lines[fragment] = (fragbtm, fragtop)
+            fragy -= self.fragment_height  # next fragment base
+
+        # Key base starts and ends for each fragment by fragment number
+        self.fragment_limits = {}  # Holds first and last base positions in a fragment
+        fragment_step = self.fragment_bases  # bases per fragment
+        fragment_count = 0
+        # Add start and end positions for each fragment to dictionary
+        for marker in range(int(self.start), int(self.end), int(fragment_step)):
+            self.fragment_limits[fragment_count] = (marker, marker + fragment_step)
+            fragment_count += 1
+
+    def set_track_heights(self):
+        """Set track heights.
+
+        Since tracks may not be of identical heights, the bottom and top
+        offsets of each track relative to the fragment top and bottom is
+        stored in a dictionary - self.track_offsets, keyed by track number.
+        """
+        bot_track = min(min(self.drawn_tracks), 1)
+        top_track = max(self.drawn_tracks)  # The 'highest' track number to draw
+
+        trackunit_sum = 0  # Total number of 'units' for the tracks
+        trackunits = {}  # The start and end units for each track, keyed by track number
+        heightholder = 0  # placeholder variable
+        for track in range(bot_track, top_track + 1):  # for all track numbers to 'draw'
+            try:
+                trackheight = self._parent[track].height  # Get track height
+            except Exception:  # TODO: IndexError?
+                trackheight = 1  # ...or default to 1
+            trackunit_sum += trackheight  # increment total track unit height
+            trackunits[track] = (heightholder, heightholder + trackheight)
+            heightholder += trackheight  # move to next height
+        trackunit_height = self.fragment_height * self.fragment_size / trackunit_sum
+
+        # Calculate top and bottom offsets for each track, relative to fragment
+        # base
+        track_offsets = {}  # The offsets from fragment base for each track
+        track_crop = (
+            trackunit_height * (1 - self.track_size) / 2.0
+        )  # 'step back' in pixels
+        assert track_crop >= 0
+        for track in trackunits:
+            top = trackunits[track][1] * trackunit_height - track_crop  # top offset
+            btm = trackunits[track][0] * trackunit_height + track_crop  # bottom offset
+            ctr = btm + (top - btm) / 2.0  # center offset
+            track_offsets[track] = (btm, ctr, top)
+        self.track_offsets = track_offsets
+
+    def draw_test_tracks(self):
+        """Draw test tracks.
+
+        Draw red lines indicating the top and bottom of each fragment,
+        and blue ones indicating tracks to be drawn.
+        """
+        # Add lines for each fragment
+        for fbtm, ftop in self.fragment_lines.values():
+            self.drawing.add(
+                Line(self.x0, ftop, self.xlim, ftop, strokeColor=colors.red)
+            )  # top line
+            self.drawing.add(
+                Line(self.x0, fbtm, self.xlim, fbtm, strokeColor=colors.red)
+            )  # bottom line
+
+            # Add track lines for this fragment - but only for drawn tracks
+            for track in self.drawn_tracks:
+                trackbtm = fbtm + self.track_offsets[track][0]
+                trackctr = fbtm + self.track_offsets[track][1]
+                tracktop = fbtm + self.track_offsets[track][2]
+                self.drawing.add(
+                    Line(
+                        self.x0, tracktop, self.xlim, tracktop, strokeColor=colors.blue
+                    )
+                )  # top line
+                self.drawing.add(
+                    Line(
+                        self.x0, trackctr, self.xlim, trackctr, strokeColor=colors.green
+                    )
+                )  # center line
+                self.drawing.add(
+                    Line(
+                        self.x0, trackbtm, self.xlim, trackbtm, strokeColor=colors.blue
+                    )
+                )  # bottom line
+
+    def draw_track(self, track):
+        """Draw track.
+
+        Arguments:
+         - track     Track object
+
+        Returns a tuple (list of elements in the track, list of labels in
+        the track).
+        """
+        track_elements = []  # Holds elements from features and graphs
+        track_labels = []  # Holds labels from features and graphs
+
+        # Distribution dictionary for dealing with different set types
+        set_methods = {FeatureSet: self.draw_feature_set, GraphSet: self.draw_graph_set}
+
+        for set in track.get_sets():  # Draw the feature or graph sets
+            elements, labels = set_methods[set.__class__](set)
+            track_elements += elements
+            track_labels += labels
+        return track_elements, track_labels
+
+    def draw_tick(self, tickpos, ctr, ticklen, track, draw_label):
+        """Draw tick.
+
+        Arguments:
+         - tickpos   Int, position of the tick on the sequence
+         - ctr       Float, Y co-ord of the center of the track
+         - ticklen   How long to draw the tick
+         - track     Track, the track the tick is drawn on
+         - draw_label    Boolean, write the tick label?
+
+        Returns a drawing element that is the tick on the scale
+        """
+        if self.start >= tickpos and tickpos >= self.end:
+            raise RuntimeError(
+                "Tick at %i, but showing %i to %i" % (tickpos, self.start, self.end)
+            )
+        if not (
+            (track.start is None or track.start <= tickpos)
+            and (track.end is None or tickpos <= track.end)
+        ):
+            raise RuntimeError(
+                "Tick at %i, but showing %r to %r for track"
+                % (tickpos, track.start, track.end)
+            )
+        fragment, tickx = self.canvas_location(tickpos)  # Tick coordinates
+        assert fragment >= 0, "Fragment %i, tickpos %i" % (fragment, tickpos)
+        tctr = ctr + self.fragment_lines[fragment][0]  # Center line of the track
+        tickx += self.x0  # Tick X co-ord
+        ticktop = tctr + ticklen  # Y co-ord of tick top
+        tick = Line(tickx, tctr, tickx, ticktop, strokeColor=track.scale_color)
+        if draw_label:  # Put tick position on as label
+            if track.scale_format == "SInt":
+                if tickpos >= 1000000:
+                    tickstring = str(tickpos // 1000000) + " Mbp"
+                elif tickpos >= 1000:
+                    tickstring = str(tickpos // 1000) + " Kbp"
+                else:
+                    tickstring = str(tickpos)
+            else:
+                tickstring = str(tickpos)
+            label = String(
+                0,
+                0,
+                tickstring,  # Make label string
+                fontName=track.scale_font,
+                fontSize=track.scale_fontsize,
+                fillColor=track.scale_color,
+            )
+            labelgroup = Group(label)
+            rotation = angle2trig(track.scale_fontangle)
+            labelgroup.transform = (
+                rotation[0],
+                rotation[1],
+                rotation[2],
+                rotation[3],
+                tickx,
+                ticktop,
+            )
+        else:
+            labelgroup = None
+        return tick, labelgroup
+
+    def draw_scale(self, track):
+        """Draw scale.
+
+        Argument:
+         - track     Track object
+
+        Returns a tuple of (list of elements in the scale, list of labels
+        in the scale).
+        """
+        scale_elements = []  # Holds axes and ticks
+        scale_labels = []  # Holds labels
+
+        if not track.scale:  # No scale required, exit early
+            return [], []
+
+        # Get track location
+        btm, ctr, top = self.track_offsets[self.current_track_level]
+        trackheight = top - ctr
+
+        # For each fragment, draw the scale for this track
+        start, end = self._current_track_start_end()
+        start_f, start_x = self.canvas_location(start)
+        end_f, end_x = self.canvas_location(end)
+
+        for fragment in range(start_f, end_f + 1):
+            tbtm = btm + self.fragment_lines[fragment][0]
+            tctr = ctr + self.fragment_lines[fragment][0]
+            ttop = top + self.fragment_lines[fragment][0]
+            # X-axis
+            if fragment == start_f:
+                x_left = start_x
+            else:
+                x_left = 0
+            if fragment == end_f:
+                x_right = end_x
+                # Y-axis end marker
+                scale_elements.append(
+                    Line(
+                        self.x0 + x_right,
+                        tbtm,
+                        self.x0 + x_right,
+                        ttop,
+                        strokeColor=track.scale_color,
+                    )
+                )
+            else:
+                x_right = self.xlim - self.x0
+            scale_elements.append(
+                Line(
+                    self.x0 + x_left,
+                    tctr,
+                    self.x0 + x_right,
+                    tctr,
+                    strokeColor=track.scale_color,
+                )
+            )
+            # Y-axis start marker
+            scale_elements.append(
+                Line(
+                    self.x0 + x_left,
+                    tbtm,
+                    self.x0 + x_left,
+                    ttop,
+                    strokeColor=track.scale_color,
+                )
+            )
+
+        start, end = self._current_track_start_end()
+        if track.scale_ticks:  # Ticks are required on the scale
+            # Draw large ticks
+            # I want the ticks to be consistently positioned relative to
+            # the start of the sequence (position 0), not relative to the
+            # current viewpoint (self.start and self.end)
+
+            ticklen = track.scale_largeticks * trackheight
+            tickiterval = int(track.scale_largetick_interv

@@ -1,0 +1,652 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_torch_docs.py
+KIND: code
+
+"""Adds docstrings to functions defined in the torch._C module."""
+
+import re
+
+import torch._C
+from torch._C import _add_docstr as add_docstr
+
+
+def parse_kwargs(desc):
+    r"""Map a description of args to a dictionary of {argname: description}.
+
+    Input:
+        ('    weight (Tensor): a weight tensor\n' +
+         '        Some optional description')
+    Output: {
+        'weight': \
+        'weight (Tensor): a weight tensor\n        Some optional description'
+    }
+    """
+    # Split on exactly 4 spaces after a newline
+    regx = re.compile(r"\n\s{4}(?!\s)")
+    kwargs = [section.strip() for section in regx.split(desc)]
+    kwargs = [section for section in kwargs if len(section) > 0]
+    return {desc.split(" ")[0]: desc for desc in kwargs}
+
+
+def merge_dicts(*dicts):
+    """Merge dictionaries into a single dictionary."""
+    return {x: d[x] for d in dicts for x in d}
+
+
+common_args = parse_kwargs(
+    """
+    input (Tensor): the input tensor.
+    generator (:class:`torch.Generator`, optional): a pseudorandom number generator for sampling
+    out (Tensor, optional): the output tensor.
+    memory_format (:class:`torch.memory_format`, optional): the desired memory format of
+        returned tensor. Default: ``torch.preserve_format``.
+"""
+)
+
+reduceops_common_args = merge_dicts(
+    common_args,
+    parse_kwargs(
+        """
+    dtype (:class:`torch.dtype`, optional): the desired data type of returned tensor.
+        If specified, the input tensor is casted to :attr:`dtype` before the operation
+        is performed. This is useful for preventing data type overflows. Default: None.
+    keepdim (bool): whether the output tensor has :attr:`dim` retained or not.
+"""
+    ),
+)
+
+multi_dim_common = merge_dicts(
+    reduceops_common_args,
+    parse_kwargs(
+        """
+    dim (int or tuple of ints): the dimension or dimensions to reduce.
+"""
+    ),
+    {
+        "keepdim_details": """
+If :attr:`keepdim` is ``True``, the output tensor is of the same size
+as :attr:`input` except in the dimension(s) :attr:`dim` where it is of size 1.
+Otherwise, :attr:`dim` is squeezed (see :func:`torch.squeeze`), resulting in the
+output tensor having 1 (or ``len(dim)``) fewer dimension(s).
+"""
+    },
+    {
+        "opt_dim": """
+    dim (int or tuple of ints, optional): the dimension or dimensions to reduce.
+        If ``None``, all dimensions are reduced.
+"""
+    },
+)
+
+single_dim_common = merge_dicts(
+    reduceops_common_args,
+    parse_kwargs(
+        """
+    dim (int): the dimension to reduce.
+"""
+    ),
+    {
+        "keepdim_details": """If :attr:`keepdim` is ``True``, the output tensor is of the same size
+as :attr:`input` except in the dimension :attr:`dim` where it is of size 1.
+Otherwise, :attr:`dim` is squeezed (see :func:`torch.squeeze`), resulting in
+the output tensor having 1 fewer dimension than :attr:`input`."""
+    },
+)
+
+factory_common_args = merge_dicts(
+    common_args,
+    parse_kwargs(
+        """
+    dtype (:class:`torch.dtype`, optional): the desired data type of returned tensor.
+        Default: if ``None``, uses a global default (see :func:`torch.set_default_dtype`).
+    layout (:class:`torch.layout`, optional): the desired layout of returned Tensor.
+        Default: ``torch.strided``.
+    device (:class:`torch.device`, optional): the desired device of returned tensor.
+        Default: if ``None``, uses the current device for the default tensor type
+        (see :func:`torch.set_default_device`). :attr:`device` will be the CPU
+        for CPU tensor types and the current CUDA device for CUDA tensor types.
+    requires_grad (bool, optional): If autograd should record operations on the
+        returned tensor. Default: ``False``.
+    pin_memory (bool, optional): If set, returned tensor would be allocated in
+        the pinned memory. Works only for CPU tensors. Default: ``False``.
+    memory_format (:class:`torch.memory_format`, optional): the desired memory format of
+        returned Tensor. Default: ``torch.contiguous_format``.
+    check_invariants (bool, optional): If sparse tensor invariants are checked.
+        Default: as returned by :func:`torch.sparse.check_sparse_tensor_invariants.is_enabled`,
+        initially False.
+"""
+    ),
+    {
+        "sparse_factory_device_note": """\
+.. note::
+
+   If the ``device`` argument is not specified the device of the given
+   :attr:`values` and indices tensor(s) must match. If, however, the
+   argument is specified the input Tensors will be converted to the
+   given device and in turn determine the device of the constructed
+   sparse tensor."""
+    },
+)
+
+factory_like_common_args = parse_kwargs(
+    """
+    input (Tensor): the size of :attr:`input` will determine size of the output tensor.
+    layout (:class:`torch.layout`, optional): the desired layout of returned tensor.
+        Default: if ``None``, defaults to the layout of :attr:`input`.
+    dtype (:class:`torch.dtype`, optional): the desired data type of returned Tensor.
+        Default: if ``None``, defaults to the dtype of :attr:`input`.
+    device (:class:`torch.device`, optional): the desired device of returned tensor.
+        Default: if ``None``, defaults to the device of :attr:`input`.
+    requires_grad (bool, optional): If autograd should record operations on the
+        returned tensor. Default: ``False``.
+    pin_memory (bool, optional): If set, returned tensor would be allocated in
+        the pinned memory. Works only for CPU tensors. Default: ``False``.
+    memory_format (:class:`torch.memory_format`, optional): the desired memory format of
+        returned Tensor. Default: ``torch.preserve_format``.
+"""
+)
+
+factory_data_common_args = parse_kwargs(
+    """
+    data (array_like): Initial data for the tensor. Can be a list, tuple,
+        NumPy ``ndarray``, scalar, and other types.
+    dtype (:class:`torch.dtype`, optional): the desired data type of returned tensor.
+        Default: if ``None``, infers data type from :attr:`data`.
+    device (:class:`torch.device`, optional): the desired device of returned tensor.
+        Default: if ``None``, uses the current device for the default tensor type
+        (see :func:`torch.set_default_device`). :attr:`device` will be the CPU
+        for CPU tensor types and the current CUDA device for CUDA tensor types.
+    requires_grad (bool, optional): If autograd should record operations on the
+        returned tensor. Default: ``False``.
+    pin_memory (bool, optional): If set, returned tensor would be allocated in
+        the pinned memory. Works only for CPU tensors. Default: ``False``.
+"""
+)
+
+tf32_notes = {
+    "tf32_note": """This operator supports :ref:`TensorFloat32<tf32_on_ampere>`."""
+}
+
+rocm_fp16_notes = {
+    "rocm_fp16_note": """On certain ROCm devices, when using float16 inputs this module will use \
+:ref:`different precision<fp16_on_mi200>` for backward."""
+}
+
+reproducibility_notes = {
+    "forward_reproducibility_note": """This operation may behave nondeterministically when given tensors on \
+a CUDA device. See :doc:`/notes/randomness` for more information.""",
+    "backward_reproducibility_note": """This operation may produce nondeterministic gradients when given tensors on \
+a CUDA device. See :doc:`/notes/randomness` for more information.""",
+    "cudnn_reproducibility_note": """In some circumstances when given tensors on a CUDA device \
+and using CuDNN, this operator may select a nondeterministic algorithm to increase performance. If this is \
+undesirable, you can try to make the operation deterministic (potentially at \
+a performance cost) by setting ``torch.backends.cudnn.deterministic = True``. \
+See :doc:`/notes/randomness` for more information.""",
+}
+
+sparse_support_notes = {
+    "sparse_beta_warning": """
+.. warning::
+    Sparse support is a beta feature and some layout(s)/dtype/device combinations may not be supported,
+    or may not have autograd support. If you notice missing functionality please
+    open a feature request.""",
+}
+
+add_docstr(
+    torch.abs,
+    r"""
+abs(input, *, out=None) -> Tensor
+
+Computes the absolute value of each element in :attr:`input`.
+
+.. math::
+    \text{out}_{i} = |\text{input}_{i}|
+"""
+    + r"""
+Args:
+    {input}
+
+Keyword args:
+    {out}
+
+Example::
+
+    >>> torch.abs(torch.tensor([-1, -2, 3]))
+    tensor([ 1,  2,  3])
+""".format(
+        **common_args
+    ),
+)
+
+add_docstr(
+    torch.absolute,
+    r"""
+absolute(input, *, out=None) -> Tensor
+
+Alias for :func:`torch.abs`
+""",
+)
+
+add_docstr(
+    torch.acos,
+    r"""
+acos(input, *, out=None) -> Tensor
+
+Computes the inverse cosine of each element in :attr:`input`.
+
+.. math::
+    \text{out}_{i} = \cos^{-1}(\text{input}_{i})
+"""
+    + r"""
+Args:
+    {input}
+
+Keyword args:
+    {out}
+
+Example::
+
+    >>> a = torch.randn(4)
+    >>> a
+    tensor([ 0.3348, -0.5889,  0.2005, -0.1584])
+    >>> torch.acos(a)
+    tensor([ 1.2294,  2.2004,  1.3690,  1.7298])
+""".format(
+        **common_args
+    ),
+)
+
+add_docstr(
+    torch.arccos,
+    r"""
+arccos(input, *, out=None) -> Tensor
+
+Alias for :func:`torch.acos`.
+""",
+)
+
+add_docstr(
+    torch.acosh,
+    r"""
+acosh(input, *, out=None) -> Tensor
+
+Returns a new tensor with the inverse hyperbolic cosine of the elements of :attr:`input`.
+
+.. math::
+    \text{out}_{i} = \cosh^{-1}(\text{input}_{i})
+
+Note:
+    The domain of the inverse hyperbolic cosine is `[1, inf)` and values outside this range
+    will be mapped to ``NaN``, except for `+ INF` for which the output is mapped to `+ INF`.
+"""
+    + r"""
+Args:
+    {input}
+
+Keyword arguments:
+    {out}
+
+Example::
+
+    >>> a = torch.randn(4).uniform_(1, 2)
+    >>> a
+    tensor([ 1.3192, 1.9915, 1.9674, 1.7151 ])
+    >>> torch.acosh(a)
+    tensor([ 0.7791, 1.3120, 1.2979, 1.1341 ])
+""".format(
+        **common_args
+    ),
+)
+
+add_docstr(
+    torch.arccosh,
+    r"""
+arccosh(input, *, out=None) -> Tensor
+
+Alias for :func:`torch.acosh`.
+""",
+)
+
+add_docstr(
+    torch.index_add,
+    r"""
+index_add(input, dim, index, source, *, alpha=1, out=None) -> Tensor
+
+See :meth:`~Tensor.index_add_` for function description.
+""",
+)
+
+add_docstr(
+    torch.index_copy,
+    r"""
+index_copy(input, dim, index, source, *, out=None) -> Tensor
+
+See :meth:`~Tensor.index_add_` for function description.
+""",
+)
+
+add_docstr(
+    torch.index_reduce,
+    r"""
+index_reduce(input, dim, index, source, reduce, *, include_self=True, out=None) -> Tensor
+
+See :meth:`~Tensor.index_reduce_` for function description.
+""",
+)
+
+add_docstr(
+    torch.add,
+    r"""
+add(input, other, *, alpha=1, out=None) -> Tensor
+
+Adds :attr:`other`, scaled by :attr:`alpha`, to :attr:`input`.
+
+.. math::
+    \text{{out}}_i = \text{{input}}_i + \text{{alpha}} \times \text{{other}}_i
+"""
+    + r"""
+
+Supports :ref:`broadcasting to a common shape <broadcasting-semantics>`,
+:ref:`type promotion <type-promotion-doc>`, and integer, float, and complex inputs.
+
+Args:
+    {input}
+    other (Tensor or Number): the tensor or number to add to :attr:`input`.
+
+Keyword arguments:
+    alpha (Number): the multiplier for :attr:`other`.
+    {out}
+
+Examples::
+
+    >>> a = torch.randn(4)
+    >>> a
+    tensor([ 0.0202,  1.0985,  1.3506, -0.6056])
+    >>> torch.add(a, 20)
+    tensor([ 20.0202,  21.0985,  21.3506,  19.3944])
+
+    >>> b = torch.randn(4)
+    >>> b
+    tensor([-0.9732, -0.3497,  0.6245,  0.4022])
+    >>> c = torch.randn(4, 1)
+    >>> c
+    tensor([[ 0.3743],
+            [-1.7724],
+            [-0.5811],
+            [-0.8017]])
+    >>> torch.add(b, c, alpha=10)
+    tensor([[  2.7695,   3.3930,   4.3672,   4.1450],
+            [-18.6971, -18.0736, -17.0994, -17.3216],
+            [ -6.7845,  -6.1610,  -5.1868,  -5.4090],
+            [ -8.9902,  -8.3667,  -7.3925,  -7.6147]])
+""".format(
+        **common_args
+    ),
+)
+
+add_docstr(
+    torch.addbmm,
+    r"""
+addbmm(input, batch1, batch2, *, beta=1, alpha=1, out=None) -> Tensor
+
+Performs a batch matrix-matrix product of matrices stored
+in :attr:`batch1` and :attr:`batch2`,
+with a reduced add step (all matrix multiplications get accumulated
+along the first dimension).
+:attr:`input` is added to the final result.
+
+:attr:`batch1` and :attr:`batch2` must be 3-D tensors each containing the
+same number of matrices.
+
+If :attr:`batch1` is a :math:`(b \times n \times m)` tensor, :attr:`batch2` is a
+:math:`(b \times m \times p)` tensor, :attr:`input` must be
+:ref:`broadcastable <broadcasting-semantics>` with a :math:`(n \times p)` tensor
+and :attr:`out` will be a :math:`(n \times p)` tensor.
+
+.. math::
+    out = \beta\ \text{input} + \alpha\ (\sum_{i=0}^{b-1} \text{batch1}_i \mathbin{@} \text{batch2}_i)
+
+If :attr:`beta` is 0, then :attr:`input` will be ignored, and `nan` and `inf` in
+it will not be propagated.
+"""
+    + r"""
+For inputs of type `FloatTensor` or `DoubleTensor`, arguments :attr:`beta` and :attr:`alpha`
+must be real numbers, otherwise they should be integers.
+
+{tf32_note}
+
+{rocm_fp16_note}
+
+Args:
+    batch1 (Tensor): the first batch of matrices to be multiplied
+    batch2 (Tensor): the second batch of matrices to be multiplied
+
+Keyword args:
+    beta (Number, optional): multiplier for :attr:`input` (:math:`\beta`)
+    input (Tensor): matrix to be added
+    alpha (Number, optional): multiplier for `batch1 @ batch2` (:math:`\alpha`)
+    {out}
+
+Example::
+
+    >>> M = torch.randn(3, 5)
+    >>> batch1 = torch.randn(10, 3, 4)
+    >>> batch2 = torch.randn(10, 4, 5)
+    >>> torch.addbmm(M, batch1, batch2)
+    tensor([[  6.6311,   0.0503,   6.9768, -12.0362,  -2.1653],
+            [ -4.8185,  -1.4255,  -6.6760,   8.9453,   2.5743],
+            [ -3.8202,   4.3691,   1.0943,  -1.1109,   5.4730]])
+""".format(
+        **common_args, **tf32_notes, **rocm_fp16_notes
+    ),
+)
+
+add_docstr(
+    torch.addcdiv,
+    r"""
+addcdiv(input, tensor1, tensor2, *, value=1, out=None) -> Tensor
+
+Performs the element-wise division of :attr:`tensor1` by :attr:`tensor2`,
+multiplies the result by the scalar :attr:`value` and adds it to :attr:`input`.
+
+.. warning::
+    Integer division with addcdiv is no longer supported, and in a future
+    release addcdiv will perform a true division of tensor1 and tensor2.
+    The historic addcdiv behavior can be implemented as
+    (input + value * torch.trunc(tensor1 / tensor2)).to(input.dtype)
+    for integer inputs and as (input + value * tensor1 / tensor2) for float inputs.
+    The future addcdiv behavior is just the latter implementation:
+    (input + value * tensor1 / tensor2), for all dtypes.
+
+.. math::
+    \text{out}_i = \text{input}_i + \text{value} \times \frac{\text{tensor1}_i}{\text{tensor2}_i}
+"""
+    + r"""
+
+The shapes of :attr:`input`, :attr:`tensor1`, and :attr:`tensor2` must be
+:ref:`broadcastable <broadcasting-semantics>`.
+
+For inputs of type `FloatTensor` or `DoubleTensor`, :attr:`value` must be
+a real number, otherwise an integer.
+
+Args:
+    input (Tensor): the tensor to be added
+    tensor1 (Tensor): the numerator tensor
+    tensor2 (Tensor): the denominator tensor
+
+Keyword args:
+    value (Number, optional): multiplier for :math:`\text{{tensor1}} / \text{{tensor2}}`
+    {out}
+
+Example::
+
+    >>> t = torch.randn(1, 3)
+    >>> t1 = torch.randn(3, 1)
+    >>> t2 = torch.randn(1, 3)
+    >>> torch.addcdiv(t, t1, t2, value=0.1)
+    tensor([[-0.2312, -3.6496,  0.1312],
+            [-1.0428,  3.4292, -0.1030],
+            [-0.5369, -0.9829,  0.0430]])
+""".format(
+        **common_args
+    ),
+)
+
+add_docstr(
+    torch.addcmul,
+    r"""
+addcmul(input, tensor1, tensor2, *, value=1, out=None) -> Tensor
+
+Performs the element-wise multiplication of :attr:`tensor1`
+by :attr:`tensor2`, multiplies the result by the scalar :attr:`value`
+and adds it to :attr:`input`.
+
+.. math::
+    \text{out}_i = \text{input}_i + \text{value} \times \text{tensor1}_i \times \text{tensor2}_i
+"""
+    + r"""
+The shapes of :attr:`tensor`, :attr:`tensor1`, and :attr:`tensor2` must be
+:ref:`broadcastable <broadcasting-semantics>`.
+
+For inputs of type `FloatTensor` or `DoubleTensor`, :attr:`value` must be
+a real number, otherwise an integer.
+
+Args:
+    input (Tensor): the tensor to be added
+    tensor1 (Tensor): the tensor to be multiplied
+    tensor2 (Tensor): the tensor to be multiplied
+
+Keyword args:
+    value (Number, optional): multiplier for :math:`tensor1 .* tensor2`
+    {out}
+
+Example::
+
+    >>> t = torch.randn(1, 3)
+    >>> t1 = torch.randn(3, 1)
+    >>> t2 = torch.randn(1, 3)
+    >>> torch.addcmul(t, t1, t2, value=0.1)
+    tensor([[-0.8635, -0.6391,  1.6174],
+            [-0.7617, -0.5879,  1.7388],
+            [-0.8353, -0.6249,  1.6511]])
+""".format(
+        **common_args
+    ),
+)
+
+add_docstr(
+    torch.addmm,
+    r"""
+addmm(input, mat1, mat2, *, beta=1, alpha=1, out=None) -> Tensor
+
+Performs a matrix multiplication of the matrices :attr:`mat1` and :attr:`mat2`.
+The matrix :attr:`input` is added to the final result.
+
+If :attr:`mat1` is a :math:`(n \times m)` tensor, :attr:`mat2` is a
+:math:`(m \times p)` tensor, then :attr:`input` must be
+:ref:`broadcastable <broadcasting-semantics>` with a :math:`(n \times p)` tensor
+and :attr:`out` will be a :math:`(n \times p)` tensor.
+
+:attr:`alpha` and :attr:`beta` are scaling factors on matrix-vector product between
+:attr:`mat1` and :attr:`mat2` and the added matrix :attr:`input` respectively.
+
+.. math::
+    \text{out} = \beta\ \text{input} + \alpha\ (\text{mat1}_i \mathbin{@} \text{mat2}_i)
+
+If :attr:`beta` is 0, then :attr:`input` will be ignored, and `nan` and `inf` in
+it will not be propagated.
+"""
+    + r"""
+For inputs of type `FloatTensor` or `DoubleTensor`, arguments :attr:`beta` and
+:attr:`alpha` must be real numbers, otherwise they should be integers.
+
+This operation has support for arguments with :ref:`sparse layouts<sparse-docs>`. If
+:attr:`input` is sparse the result will have the same layout and if :attr:`out`
+is provided it must have the same layout as :attr:`input`.
+
+{sparse_beta_warning}
+
+{tf32_note}
+
+{rocm_fp16_note}
+
+Args:
+    input (Tensor): matrix to be added
+    mat1 (Tensor): the first matrix to be matrix multiplied
+    mat2 (Tensor): the second matrix to be matrix multiplied
+
+Keyword args:
+    beta (Number, optional): multiplier for :attr:`input` (:math:`\beta`)
+    alpha (Number, optional): multiplier for :math:`mat1 @ mat2` (:math:`\alpha`)
+    {out}
+
+Example::
+
+    >>> M = torch.randn(2, 3)
+    >>> mat1 = torch.randn(2, 3)
+    >>> mat2 = torch.randn(3, 3)
+    >>> torch.addmm(M, mat1, mat2)
+    tensor([[-4.8716,  1.4671, -1.3746],
+            [ 0.7573, -3.9555, -2.8681]])
+""".format(
+        **common_args, **tf32_notes, **rocm_fp16_notes, **sparse_support_notes
+    ),
+)
+
+add_docstr(
+    torch.adjoint,
+    r"""
+adjoint(Tensor) -> Tensor
+Returns a view of the tensor conjugated and with the last two dimensions transposed.
+
+``x.adjoint()`` is equivalent to ``x.transpose(-2, -1).conj()`` for complex tensors and
+to ``x.transpose(-2, -1)`` for real tensors.
+
+Example::
+    >>> x = torch.arange(4, dtype=torch.float)
+    >>> A = torch.complex(x, x).reshape(2, 2)
+    >>> A
+    tensor([[0.+0.j, 1.+1.j],
+            [2.+2.j, 3.+3.j]])
+    >>> A.adjoint()
+    tensor([[0.-0.j, 2.-2.j],
+            [1.-1.j, 3.-3.j]])
+    >>> (A.adjoint() == A.mH).all()
+    tensor(True)
+""",
+)
+
+add_docstr(
+    torch.sspaddmm,
+    r"""
+sspaddmm(input, mat1, mat2, *, beta=1, alpha=1, out=None) -> Tensor
+
+Matrix multiplies a sparse tensor :attr:`mat1` with a dense tensor
+:attr:`mat2`, then adds the sparse tensor :attr:`input` to the result.
+
+Note: This function is equivalent to :func:`torch.addmm`, except
+:attr:`input` and :attr:`mat1` are sparse.
+
+Args:
+    input (Tensor): a sparse matrix to be added
+    mat1 (Tensor): a sparse matrix to be matrix multiplied
+    mat2 (Tensor): a dense matrix to be matrix multiplied
+
+Keyword args:
+    beta (Number, optional): multiplier for :attr:`mat` (:math:`\beta`)
+    alpha (Number, optional): multiplier for :math:`mat1 @ mat2` (:math:`\alpha`)
+    {out}
+""".format(
+        **common_args
+    ),
+)
+
+add_docstr(
+    torch.smm,
+    r"""
+smm(input, mat) -> Tensor
+
+Performs a matrix multiplication of the sparse matrix :attr:`input`
+with the dense matrix :attr:`mat`.
+
+Args:
+    input (Tensor

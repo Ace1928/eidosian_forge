@@ -1,69 +1,78 @@
-# Knowledge Forge
+# 🧠 Knowledge Forge ⚡
 
-`knowledge_forge` provides the persistent knowledge graph layer used by MCP, Code Forge integrations, and memory/knowledge bridge workflows.
+> _"The Memory of Eidos. Persistent semantic structures and graph-based reasoning."_
 
-## Core Modules
+## 🧠 Overview
 
-- `knowledge_forge/src/knowledge_forge/core/graph.py`
-  - `KnowledgeForge`
-  - `KnowledgeNode`
-  - graph CRUD (`add_knowledge`, `search`, `get_by_tag`, `get_by_concept`, `link_nodes`, `stats`)
-- `knowledge_forge/src/knowledge_forge/core/bridge.py`
-  - `KnowledgeMemoryBridge`
-  - unified memory+knowledge search and memory→knowledge promotion
-- `knowledge_forge/src/knowledge_forge/integrations/graphrag.py`
-  - GraphRAG index/query integration
-  - compatibility runner for both:
-    - `python -m graphrag <subcommand> ...` (current)
-    - `python -m graphrag.<subcommand> ...` (legacy fallback)
-- `knowledge_forge/src/knowledge_forge/integrations/memory_ingest.py`
-  - ingest memory artifacts into graph nodes
+`knowledge_forge` is the persistent knowledge graph layer for the Eidosian ecosystem. It manages semantic relationships between concepts, providing a deductive substrate that bridges episodic memory with permanent factual storage. It integrates deeply with **GraphRAG** for global/local querying and includes advanced reasoning capabilities via OWL/RDF support.
 
-## Integration Points
-
-- MCP router: `eidos_mcp/src/eidos_mcp/routers/knowledge.py`
-  - `kb_*`, `memory_*_semantic`, `grag_*`, `unified_context_search`, `promote_memory_to_knowledge`
-- Code Forge:
-  - `code_forge` sync pipeline writes knowledge links and provenance registry records.
-- Living knowledge pipeline:
-  - `scripts/living_knowledge_pipeline.py` stages KB + memory + code/doc corpus for GraphRAG.
-
-## GraphRAG Root Resolution
-
-MCP knowledge router uses this precedence:
-
-1. `EIDOS_GRAPHRAG_ROOT` (if set)
-2. `<forge>/graphrag_workspace` (default)
-3. `<forge>/graphrag` (legacy fallback)
-
-GraphRAG subprocess timeout is controlled by:
-
-- `EIDOS_GRAPHRAG_TIMEOUT_SEC` (default: `900`, minimum: `30`)
-
-## CLI
-
-```bash
-./eidosian_venv/bin/knowledge-forge status
-./eidosian_venv/bin/knowledge-forge search "workspace competition"
-./eidosian_venv/bin/knowledge-forge unified "memory bridge"
-
-# RDF import/export (requires `knowledge_forge[rdf]`)
-./eidosian_venv/bin/knowledge-forge export-rdf ./data/kb.ttl --format turtle
-./eidosian_venv/bin/knowledge-forge import-rdf ./data/kb.ttl --format turtle
-
-# Interactive graph visualization (requires `knowledge_forge[viz]`)
-./eidosian_venv/bin/knowledge-forge visualize ./reports/kb_graph.html --max-nodes 300
-
-# OWL/RDFS reasoning experiment (requires `knowledge_forge[reasoning]`)
-./eidosian_venv/bin/knowledge-forge reason-owl --profile owlrl --output ./reports/kb_reasoned.ttl
-./eidosian_venv/bin/knowledge-forge reason-owl --profile rdfs --apply --merge
+```ascii
+      ╭───────────────────────────────────────────╮
+      │             KNOWLEDGE FORGE               │
+      │    < Graph | Search | GraphRAG | OWL >    │
+      ╰──────────┬─────────────────────┬──────────╯
+                 │                     │
+      ╭──────────┴──────────╮   ╭──────┴──────────╮
+      │   SEMANTIC GRAPH    │   │  MEMORY BRIDGE  │
+      │ (Nodes & Edges)     │   │ (Working Memory)│
+      ╰─────────────────────╯   ╰─────────────────╯
 ```
 
-## Test
+## ⚡ Current State & Metrics
+
+- **Status**: 🟢 Elevated & Active
+- **Type**: Semantic Knowledge Management
+- **Test Coverage**: Core graph logic and GraphRAG fallbacks verified.
+- **MCP Integration**: 
+  - 7 KB Tools (`kb_add`, `kb_search`, `kb_link`, etc.)
+  - 6 GraphRAG Tools (`grag_query`, `grag_index`, etc.)
+- **Architecture**:
+  - `core/graph.py`: Main `KnowledgeForge` engine for node/link management.
+  - `core/bridge.py`: `KnowledgeMemoryBridge` for unified semantic search.
+  - `integrations/graphrag.py`: Compatibility layer for external GraphRAG tools.
+
+## 🚀 Usage & Workflows
+
+### Semantic Search
 
 ```bash
-./eidosian_venv/bin/python -m pytest -q knowledge_forge/tests
+# General status and statistics
+knowledge-forge status
+
+# Search across the knowledge graph
+knowledge-forge search "quantum entanglement"
+
+# Unified search (Knowledge + Episodic Memory)
+knowledge-forge unified "recent tasks"
 ```
 
-Current suite status in this environment:
-- passing tests with one intentional skip (`test_graphrag_integration`, requires fully provisioned GraphRAG runtime).
+### GraphRAG Interaction (MCP)
+
+```bash
+# Trigger an incremental index run
+# (Combines native vector indexing with external GraphRAG if available)
+grag_index --scan_roots ["./src", "./docs"]
+
+# Execute a global thematic query
+grag_query --query "What are the core Eidosian principles?"
+```
+
+## 🔗 System Integration
+
+- **Agent Forge**: Provides the "Long-Term Memory" substrate for autonomous reasoning.
+- **Code Forge**: Maps code unit provenance into the knowledge graph for structural traceability.
+- **Word Forge**: Feeds the underlying semantic lexicon required for concept disambiguation.
+
+## 🎯 Master Plan & Evolution
+
+### Immediate Goals
+- [x] Consolidate legacy docs into unified Eidosian standard.
+- [x] Stabilize HNSWlib dimension alignment (canonical 768).
+- [ ] Implement automated knowledge "Cleanup" agents to prune weak or redundant edges.
+
+### Future Vector (Phase 3+)
+- Transition to a fully distributed knowledge graph supporting cross-instance synchronization.
+- Implement native Neuro-Symbolic reasoning loops directly on the graph substrate.
+
+---
+*Generated and maintained by Eidos.*

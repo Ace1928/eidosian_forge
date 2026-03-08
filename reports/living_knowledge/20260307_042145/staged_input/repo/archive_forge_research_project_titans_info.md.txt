@@ -1,0 +1,234 @@
+SOURCE_PATH: archive_forge/research_project/titans_info.md
+KIND: docs
+
+Titans: Learning to Memorize at Test Time
+Ali Behrouz†
+, Peilin Zhong†
+, and Vahab Mirrokni†
+†
+Google Research
+{alibehrouz, peilinz, mirrokni}@google.com
+Abstract
+Over more than a decade there has been an extensive research effort of how effectively utilize recurrent models and
+attentions. While recurrent models aim to compress the data into a fixed-size memory (called hidden state), attention allows
+attending to the entire context window, capturing the direct dependencies of all tokens. This more accurate modeling
+of dependencies, however, comes with a quadratic cost, limiting the model to a fixed-length context. We present a new
+neural long-term memory module that learns to memorize historical context and helps an attention to attend to the
+current context while utilizing long past information. We show that this neural memory has the advantage of a fast
+parallelizable training while maintaining a fast inference. From a memory perspective, we argue that attention due to its
+limited context but accurate dependency modeling performs as a short-term memory, while neural memory due to its
+ability to memorize the data, acts as a long-term, more persistent, memory. Based on these two modules, we introduce
+a new family of architectures, called Titans, and present three variants to address how one can effectively incorporate
+memory into this architecture. Our experimental results on language modeling, common-sense reasoning, genomics,
+and time series tasks show that Titans are more effective than Transformers and recent modern linear recurrent models.
+They further can effectively scale to larger than 2M context window size with higher accuracy in needle-in-haystack tasks
+compared to baselines.
+1 Introduction “The true art of memory is the art of attention!"
+— Samuel Johnson, 1787
+Transformers, pure attention-based architectures (Vaswani et al. 2017), have been firmly established as state-of-
+the-art models in sequence modeling, mainly due to their in-context learning and ability to learn at scale (Kaplan
+et al. 2020). The primary building blocks of Transformers–attention modules—function as associative memory
+blocks (Bietti et al. 2024), where they learn to store key-value associations and retrieve them by computing pairwise
+similarity between queries (i.e., search signals) and keys (i.e., contexts). Accordingly, by design, the output of a Transformer
+is exclusively conditioned on the direct dependencies of tokens in the current context window. This accurate modeling of
+dependencies, however, comes with quadratic time and memory complexity in terms of the context length. In complex
+real-world tasks (e.g., language modeling (N. F. Liu et al. 2024), video understanding (C. -Y. Wu et al. 2019), long-term time
+series forecasting (H. Zhou et al. 2021)), the context window can become extremely large, making the applicability of
+Transformers challenging in these downstream tasks.
+To overcome the scalability issue of Transformers, recent studies aim to design different variants of linear Transform-
+ers (Kacham, Mirrokni, and P. Zhong 2024; Katharopoulos et al. 2020; S. Yang, B. Wang, Shen, et al. 2024), where softmax is
+replaced by a kernel function in the attention (see §2.1 for details), resulting in a significant drop in memory consumption.
+Despite efficiency and the ability to scale to longer context, linear Transformers do not show competitive performance
+compared to Transformers as the kernel trick makes the model a linear recurrent network, in which the data is compressed
+into a matrix-valued states (Katharopoulos et al. 2020). This, however, brings a contradictory fact about linear recurrent (or
+linear Transformers) models: On one hand, we use these linear models to enhance scalability and efficiency (linear vs.
+quadratic complexity), whose advantages is appeared for very long context; On the other hand, a very long context cannot
+be properly compressed in a small vector-valued or matrix-valued states (S. Wang 2024).
+1
+arXiv:2501.00663v1 [cs.LG] 31 Dec 2024
+Furthermore, beyond efficiency, most existing architectures–ranging from Hopfield Networks (Hopfield 1982) to LSTMs (Jür-
+gen Schmidhuber and Hochreiter 1997) and Transformers (Vaswani et al. 2017)–face challenges when dealing with general-
+ization, length extrapolation, and/or reasoning (Anil et al. 2022; Qin, Y. Zhong, and Deng 2024), all of which are inseparable
+parts of many hard real-world tasks. Although these architectures draw inspiration from the human brain, each of which
+are missing: (1) a crucial component for learning process—such as short-term memory, long-term memory, meta-memory,
+attending to current context, etc. (Cowan 2008); (2) how these components are interconnected systems that can operate
+independently; and/or (3) the ability to actively learn from data and memorize the abstraction of past history. We argue
+that in an effective learning paradigm, similar to human brain, there are distinct yet interconnected modules, each of which
+is responsible for a component crucial to the learning process.
+Memory Perspective
+Memory is a fundamental mental process and is an inseparable component of human learning (Terry 2017). Without
+a properly functioning memory system, humans and animals would be restricted to basic reflexes and stereotyped
+behaviors. Accordingly, memory has been the inspiration for many seminal research in machine learning literature; e.g.,
+Hopfield Networks (Hopfield 1982), LSTMs (Jürgen Schmidhuber and Hochreiter 1997), and Transformers (Vaswani et al.
+2017).
+Taking inspiration from the common definitions of memory and learning in neuropsychology literature (Okano, Hirano,
+and Balaban 2000), most existing architectures consider memory as a neural update caused by an input, and define learning
+as a process for acquiring effective and useful memory, given an objective. In this perspective, Recurrent Neural Networks
+(RNNs) (Williams and Zipser 1989) can be defined as models with a vector-valued memory module M (also called hidden
+state) with two main steps: Given a new input 𝑥𝑡 at time 𝑡, the model (1) updates the memory using a function 𝑓 (M𝑡 −1, 𝑥𝑡 )
+(with compression); and (2) retrieves the corresponding memory of input using a function 𝑔(M𝑡 , 𝑥𝑡 ) (see §2.1 for details).
+Similarly, Transformers can be seen as architectures with a growing memory and two similar steps. That is, the pair of key
+and value matrices acts as the model’s memory, and the model: (1) updates the memory by appending the key and value to
+the memory (without compression), and (2) retrieves query vectors’ corresponding memory by finding the similarity of
+query and key vectors, which is then used to weight the value vectors for the output.
+This perspective, can help us better understand existing paradigms, their critical differences, and design more effective
+architectures. For example, the main difference between Transformers (Vaswani et al. 2017) and linear Transform-
+ers (Katharopoulos et al. 2020) is the memory structure as well as the memory updating step, in which linear Transformers
+compress the historical data into a fixed-size matrix-valued memory while Transformers keep all historical data (within
+the context length) without any compression. While both linear Transformers and linear RNNs (including state space
+models) compress the information in memory update step, the critical difference lies in the structure of the memory,
+where linear RNNs (vs. linear Transformers) use a vector-valued memory (vs. matrix-valued memory). Therefore, this
+perspective motivates us to ask: (Q1) What constitute a good structure for the memory? (Q2) What is a proper memory
+update mechanism? and (Q3) What is a good memory retrieval process?
+Revisiting our understanding of human memory, it is neither a unitary process nor it serves a single function (Cowan
+2008). In fact, memory is a confederation of systems–e.g., short-term, working, and long-term memory–each serving a
+different function with different neural structures, and each capable of operating independently (Willingham 1997). This
+fact motivates us to ask: (Q4) How to design an efficient architecture that incorporates different interconnected memory
+modules. Finally, storing a memory is a neural process that requires to encode and store the abstraction of the past. It can
+be over-simplification to assume a single vector or a matrix, whose parameters are encoding the data in a linear manner,
+are enough for storing long-term history. (Q5) Is a deep memory module needed to effectively store/remember long
+past?
+Contributions and Roadmap
+In this paper, we aim to answer the above five questions by designing a long-term neural memory module, that can
+efficiently and effectively learn to memorize at test time. Building upon its design, we discuss how it can be incorporated
+into an architecture.
+Neural Memory (§3). We present a (deep) neural long-term memory that (as a meta in-context model) learns how to
+memorize/store the data into its parameters at test time. Inspired by human long-term memory system (Mandler 2014),
+2
+we design this memory module so an event that violates the expectations (being surprising) is more memorable. To this
+end, we measure the surprise of an input with the gradient of the neural network with respect to the input in associative
+memory loss (see §3.1 for details). To better handle the limited memory, we present a decaying mechanism that consider the
+proportion of memory size and the amount of data surprise, resulting in better memory management. We show that this
+decay mechanism is in fact the generalization of forgetting mechanism in modern recurrent models (Dao and Gu 2024; Gu
+and Dao 2024; S. Yang, Kautz, and Hatamizadeh 2024). Interestingly, we find that this mechanism is equivalent to optimizing
+a meta neural network with mini-batch gradient descent, momentum, and weight decay. Building upon tensorizing
+mini-batch gradient descent to use more matmul operations (Yu Sun et al. 2024), we present a fast and parallelizable
+algorithm to train our deep neural long-term memory.
+Titans Architectures (§4). After designing the long-term neural memory, an important remaining question is how to
+effectively and efficiently incorporate memory into a deep learning architecture. We present Titans, a family of deep models
+that consists of three hyper-heads: (1) Core: this module consists of the short-term memory, and is responsible for the main
+flow of processing the data (we use attention with limited window size); (2) Long-term Memory: this branch is our neural
+long-term memory module that is responsible to store/remember long past; (3) Persistent Memory: this is a set of learnable
+but date-independent parameters that encodes the knowledge about a task. Finally, as a proof of concept, we present three
+variants of Titans, in which we incorporate memory as: (i) a context, (ii) a layer, and (iii) a gated branch.
+Experimental Results (§5). We perform experimental evaluations on language modeling, commonsense reasoning, recall-
+intensive, needle in haystack, time series forecasting, and DNA modeling tasks. We observe that our Titan architecture
+outperforms all modern recurrent models as well as their hybrid variants (combining with sliding-window attention) across
+a comprehensive set of benchmarks. Furthermore, Titans outperforms Transformers with the same context window, and
+show competitive performance with Transformers that use the entire context. This results are achieved while, contrary to
+Transformers, Titans scale to larger than 2M context window size.
+2 Preliminaries
+In this section, we discuss the notation and some background concepts that we use though the paper. We let
+𝑥 ∈ R𝑁 ×𝑑in be the input, M be a neural network (neural memory module), Q, K, V be the query, key and value
+of the attention mechanism, and M be the attention mask. When segmenting the sequence, we use S(𝑖 ) to refer to
+the 𝑖-th segment. Through the paper, we abuse the notation and use subscripts to refer to a specific element of a matrix,
+vector, or segments. For example, we let S(𝑖 )
+𝑗 be the 𝑗-th token in the 𝑖-th segment. The only exception is subscripts with 𝑡,
+which we reserved to index recurrence over time, or the state of a neural network at time 𝑡. Given a neural network N and
+a data sample 𝑥, we use N (𝑥) (resp. N∗ (𝑥)) to refer to the forward pass with (resp. without) weight adjustment. Also, we
+abuse the notation and use N (𝑘 ) to refer to the 𝑘-th layer of the neural network. In the following, we first, discuss the
+backgrounds for attention and its efficient variants followed by a review of modern linear RNNs. Finally, we discuss a
+memory perspective of these architectures that motivates us to design Titans.
+2.1 Backgrounds
+Attention. Transformers (Vaswani et al. 2017) as the de facto backbone for many deep learning models are based on
+attention mechanism. Given input 𝑥 ∈ R𝑁 ×𝑑in , causal attention computes output y ∈ R𝑁 ×𝑑in based on softmax over input
+dependent key, value, and query matrices:
+Q = 𝑥WQ, K = 𝑥WK, V = 𝑥WV, (1)
+y𝑖 =
+𝑖∑︁
+𝑗=1
+exp
+
+Q⊤
+𝑖 K𝑗 /√𝑑in
+
+V𝑗
+Í𝑖
+ℓ=1 exp
+
+Q⊤
+𝑖 Kℓ /√𝑑in
+ , (2)
+where WQ, WK, and WV ∈ R𝑑in ×𝑑in are learnable parameters. Despite the power and effectiveness in recall, transformers
+need at least 𝑁 × 𝑑 operators to calculate the output, resulting in larger memory consumption and lower-throughput for
+longer sequences.
+Efficient Attentions. To improve the memory consumption and throughput of softmax attention for longer sequences,
+various studies focused on I/O aware implementations of attention (Dao 2024; Dao, D. Fu, et al. 2022), designing more
+3
+efficient attention mechanisms by sparsifying the attention matrix (B. Chen et al. 2021; Choromanski et al. 2021; Dai et al.
+2019), approximating the softmax (Arora et al. 2024), or developing kernel-based (linear) attentions (Aksenov et al. 2024;
+Kacham, Mirrokni, and P. Zhong 2024; Schlag, Irie, and Jürgen Schmidhuber 2021; S. Yang, B. Wang, Shen, et al. 2024). In
+this part, we focus on the later, i.e., linear attentions, where the softmax in standard attention is replaced with an alternative
+kernel function 𝜙 (., .), such that 𝜙 (𝑥, 𝑦) = 𝜙 (𝑥)𝜙 (𝑦). Accordingly, the attention can be written as:
+y𝑖 =
+𝑖∑︁
+𝑗=1
+𝜙 (𝑄⊤
+𝑖 𝐾𝑗 )
+Í𝑖
+ℓ=1 𝜙 (𝑄⊤
+𝑖 𝐾ℓ ) 𝑉𝑗 =
+𝑖∑︁
+𝑗=1
+𝜙 (𝑄𝑖 )⊤𝜙 (𝐾𝑗 )
+Í𝑖
+ℓ=1 𝜙 (𝑄𝑖 )⊤𝜙 (𝐾ℓ ) 𝑉𝑗 = 𝜙 (𝑄𝑖 )⊤ Í𝑖𝑗=1 𝜙 (𝐾𝑗 )𝑉𝑗
+𝜙 (𝑄𝑖 )⊤ Í𝑖
+ℓ=1 𝜙 (𝐾ℓ ) , (3)
+resulting in a higher-throughput as terms Í𝑖𝑗=1 𝜙 (𝐾𝑗 ) and Í𝑖
+ℓ=1 𝜙 (𝐾ℓ ) are re-using in each step. When choosing the kernel
+as identity matrix (Yutao Sun et al. 2023), the above formulation can also be written in a recurrent format:
+M𝑡 = M𝑡 −1 + 𝐾⊤
+𝑡 𝑉𝑡 , (4)
+y𝑡 = 𝑄𝑡 M𝑡 , (5)
+which allows efficient inference for linear attentions.
+Modern Linear Models and Their Memory Perspective. As discussed earlier, one can define learning as a process for
+acquiring effective and useful memory. Building upon this, one can see the hidden state of Recurrent Neural Networks
+(RNNs) as a memory unit, which the model aims to compress the information into. Accordingly, in a general form of
+recurrent neural network, the hidden state can be treated as a memory unit and the recurrence process can be split into the
+read and write operations in the memory unit. That is, we let 𝑥 ∈ R𝑁 ×𝑑in be the input, M ∈ R𝑑 is the memory unit, and
+y ∈ R𝑑in is the output, then the general form of the recurrent neural network is defined as:
+M𝑡 = 𝑓 (M𝑡 −1, 𝑥𝑡 ), Write Operation (6)
+y𝑡 = 𝑔(M𝑡 , 𝑥𝑡 ), Read Operation (7)
+where 𝑓 (., .) is the read and 𝑔(., .) is the write corresponding functions. Note that here the subscript of M𝑡 shows the state
+of the memory at time 𝑡.
+In this perspective, the recurrence formula of linear Transformers (see Equation 4) is equivalent to additively compress
+and write keys and values, (𝐾𝑡 , 𝑉𝑡 ), into a matrix-valued memory unit M𝑡 . Therefore, when dealing with long context
+data, this additive nature of the process results in memory overflow, significantly damaging the performance of the model.
+To address this, studies have focused on two promising directions: (1) Adding forget mechanism: several studies have
+presented adaptive (data-dependent) forgetting gate mechanisms for linear models, where it can erase the memory when it
+is needed. As examples of such models, we refer to GLA (S. Yang, B. Wang, Shen, et al. 2024), LRU (Orvieto et al. 2023),
+Griffin (De et al. 2024), xLSTM (Beck et al. 2024), and Mamba2 (Dao and Gu 2024), which the later is also connected to the
+discretized version of traditional state space models (Gu and Dao 2024).(2) Improving the write operation: To overcome the
+additive nature of memory write operation in traditional recurrent models, Widrow and Hoff (1988) presented Delta Rule,
+in which before adding a memory (i.e., a pair of key and value), the model first removes its past value. To enhance the
+parallelizable training and scaling, S. Yang, B. Wang, Yu Zhang, et al. (2024) present a fast paralellizable algorithm. Finally,
+very recently, S. Yang, Kautz, and Hatamizadeh (2024) improved the DeltaNets by adding a forget gate.
+Memory Modules. Memory has always been one of the core parts of the neural network designs (Graves, Wayne,
+and Danihelka 2014; JH Schmidhuber 1992; Jürgen Schmidhuber and Hochreiter 1997; J. Zhang et al. 2024). The idea of
+seeing linear layers as the key-value (associative) memory system backs to fast weight programs, in which dynamic fast
+programs are incorporated into recurrent neural networks to serve as writable memory (JH Schmidhuber 1992). The two
+learning rules of Hebbian (Hebb 2005) and delta (Prados and Kak 1989) are the most popular learning rules for fast weight
+programs, which have been extensively explored in various studies (Irie, Schlag, et al. 2021; Munkhdalai, Sordoni, et al.
+2019; Munkhdalai and H. Yu 2017; Schlag, Irie, and Jürgen Schmidhuber 2021; JH Schmidhuber 1992; S. Yang, Kautz, and
+Hatamizadeh 2024; S. Yang, B. Wang, Yu Zhang, et al. 2024). All these models, however, are based on momentary surprise,
+missing the token flow in the sequences (see Section 3.1), and most of them lacks a forgetting gate, resulting in a poor
+memory management.
+We further discuss the connection of our architectures with recent models in Appendix C. Additional related work are
+discussed in Appendix A.
+4
+3 Learning to Memorize at Test Time
+To overcome the lack of long-term memory and to enable the model to learn, forget, and retrieve information, in
+this section, we present a neural long-term memory module, which is a meta models that learns to memorize at
+test time. In Section 3.1, we first discuss the motivation and the design of the neural memory. In Section 3.2, we
+discuss how our architecture design can benefit from a fast and parallelizable training. Finally, in Section 3.3, we augment
+our architecture using persistent memory module, in which we use learnable but data-independent parameters to learn
+meta information about the task.
+3.1 Long-term Memory
+To design a neural long-term memory module, we need a model that can encode the abstraction of the past history into its
+parameters. An example of this can be LLMs that are shown to be memorizing their training data (Leybzon and Kervadec
+2024; Schwarzschild et al. 2024; Staab et al. 2024). Therefore, a simple idea is to train a neural network and expect it to
+memorize its training data. Memorization, however, has almost always been known as an undesirable phenomena in
+neural networks as it limits the model generalization (Bayat et al. 2024), causes privacy concerns (Staab et al. 2024), and
+so results in poor performance at test time. Moreover, the memorization of the training data might not be helpful at test
+time, in which the data might be out-of-distribution. We argue that, we need an online meta-

@@ -1,0 +1,564 @@
+SOURCE_PATH: archive_forge/src/archive_forge/boxer.py
+KIND: code
+
+# Natural Language Toolkit: Interface to Boxer
+# <http://svn.ask.it.usyd.edu.au/trac/candc/wiki/boxer>
+#
+# Author: Dan Garrette <dhgarrette@gmail.com>
+#
+# Copyright (C) 2001-2023 NLTK Project
+# URL: <https://www.nltk.org/>
+# For license information, see LICENSE.TXT
+
+"""
+An interface to Boxer.
+
+This interface relies on the latest version of the development (subversion) version of
+C&C and Boxer.
+
+Usage
+=====
+
+Set the environment variable CANDC to the bin directory of your CandC installation.
+The models directory should be in the CandC root directory.
+For example::
+
+    /path/to/candc/
+    bin/
+        candc
+        boxer
+    models/
+        boxer/
+"""
+
+import operator
+import os
+import re
+import subprocess
+import tempfile
+from functools import reduce
+from optparse import OptionParser
+
+from nltk.internals import find_binary
+from nltk.sem.drt import (
+    DRS,
+    DrtApplicationExpression,
+    DrtEqualityExpression,
+    DrtNegatedExpression,
+    DrtOrExpression,
+    DrtParser,
+    DrtProposition,
+    DrtTokens,
+    DrtVariableExpression,
+)
+from nltk.sem.logic import (
+    ExpectedMoreTokensException,
+    LogicalExpressionException,
+    UnexpectedTokenException,
+    Variable,
+)
+
+
+class Boxer:
+    """
+    This class is an interface to Johan Bos's program Boxer, a wide-coverage
+    semantic parser that produces Discourse Representation Structures (DRSs).
+    """
+
+    def __init__(
+        self,
+        boxer_drs_interpreter=None,
+        elimeq=False,
+        bin_dir=None,
+        verbose=False,
+        resolve=True,
+    ):
+        """
+        :param boxer_drs_interpreter: A class that converts from the
+            ``AbstractBoxerDrs`` object hierarchy to a different object.  The
+            default is ``NltkDrtBoxerDrsInterpreter``, which converts to the NLTK
+            DRT hierarchy.
+        :param elimeq: When set to true, Boxer removes all equalities from the
+            DRSs and discourse referents standing in the equality relation are
+            unified, but only if this can be done in a meaning-preserving manner.
+        :param resolve: When set to true, Boxer will resolve all anaphoric DRSs and perform merge-reduction.
+            Resolution follows Van der Sandt's theory of binding and accommodation.
+        """
+        if boxer_drs_interpreter is None:
+            boxer_drs_interpreter = NltkDrtBoxerDrsInterpreter()
+        self._boxer_drs_interpreter = boxer_drs_interpreter
+
+        self._resolve = resolve
+        self._elimeq = elimeq
+
+        self.set_bin_dir(bin_dir, verbose)
+
+    def set_bin_dir(self, bin_dir, verbose=False):
+        self._candc_bin = self._find_binary("candc", bin_dir, verbose)
+        self._candc_models_path = os.path.normpath(
+            os.path.join(self._candc_bin[:-5], "../models")
+        )
+        self._boxer_bin = self._find_binary("boxer", bin_dir, verbose)
+
+    def interpret(self, input, discourse_id=None, question=False, verbose=False):
+        """
+        Use Boxer to give a first order representation.
+
+        :param input: str Input sentence to parse
+        :param occur_index: bool Should predicates be occurrence indexed?
+        :param discourse_id: str An identifier to be inserted to each occurrence-indexed predicate.
+        :return: ``drt.DrtExpression``
+        """
+        discourse_ids = [discourse_id] if discourse_id is not None else None
+        (d,) = self.interpret_multi_sents([[input]], discourse_ids, question, verbose)
+        if not d:
+            raise Exception(f'Unable to interpret: "{input}"')
+        return d
+
+    def interpret_multi(self, input, discourse_id=None, question=False, verbose=False):
+        """
+        Use Boxer to give a first order representation.
+
+        :param input: list of str Input sentences to parse as a single discourse
+        :param occur_index: bool Should predicates be occurrence indexed?
+        :param discourse_id: str An identifier to be inserted to each occurrence-indexed predicate.
+        :return: ``drt.DrtExpression``
+        """
+        discourse_ids = [discourse_id] if discourse_id is not None else None
+        (d,) = self.interpret_multi_sents([input], discourse_ids, question, verbose)
+        if not d:
+            raise Exception(f'Unable to interpret: "{input}"')
+        return d
+
+    def interpret_sents(
+        self, inputs, discourse_ids=None, question=False, verbose=False
+    ):
+        """
+        Use Boxer to give a first order representation.
+
+        :param inputs: list of str Input sentences to parse as individual discourses
+        :param occur_index: bool Should predicates be occurrence indexed?
+        :param discourse_ids: list of str Identifiers to be inserted to each occurrence-indexed predicate.
+        :return: list of ``drt.DrtExpression``
+        """
+        return self.interpret_multi_sents(
+            [[input] for input in inputs], discourse_ids, question, verbose
+        )
+
+    def interpret_multi_sents(
+        self, inputs, discourse_ids=None, question=False, verbose=False
+    ):
+        """
+        Use Boxer to give a first order representation.
+
+        :param inputs: list of list of str Input discourses to parse
+        :param occur_index: bool Should predicates be occurrence indexed?
+        :param discourse_ids: list of str Identifiers to be inserted to each occurrence-indexed predicate.
+        :return: ``drt.DrtExpression``
+        """
+        if discourse_ids is not None:
+            assert len(inputs) == len(discourse_ids)
+            assert reduce(operator.and_, (id is not None for id in discourse_ids))
+            use_disc_id = True
+        else:
+            discourse_ids = list(map(str, range(len(inputs))))
+            use_disc_id = False
+
+        candc_out = self._call_candc(inputs, discourse_ids, question, verbose=verbose)
+        boxer_out = self._call_boxer(candc_out, verbose=verbose)
+
+        #        if 'ERROR: input file contains no ccg/2 terms.' in boxer_out:
+        #            raise UnparseableInputException('Could not parse with candc: "%s"' % input_str)
+
+        drs_dict = self._parse_to_drs_dict(boxer_out, use_disc_id)
+        return [drs_dict.get(id, None) for id in discourse_ids]
+
+    def _call_candc(self, inputs, discourse_ids, question, verbose=False):
+        """
+        Call the ``candc`` binary with the given input.
+
+        :param inputs: list of list of str Input discourses to parse
+        :param discourse_ids: list of str Identifiers to be inserted to each occurrence-indexed predicate.
+        :param filename: str A filename for the output file
+        :return: stdout
+        """
+        args = [
+            "--models",
+            os.path.join(self._candc_models_path, ["boxer", "questions"][question]),
+            "--candc-printer",
+            "boxer",
+        ]
+        return self._call(
+            "\n".join(
+                sum(
+                    ([f"<META>'{id}'"] + d for d, id in zip(inputs, discourse_ids)),
+                    [],
+                )
+            ),
+            self._candc_bin,
+            args,
+            verbose,
+        )
+
+    def _call_boxer(self, candc_out, verbose=False):
+        """
+        Call the ``boxer`` binary with the given input.
+
+        :param candc_out: str output from C&C parser
+        :return: stdout
+        """
+        f = None
+        try:
+            fd, temp_filename = tempfile.mkstemp(
+                prefix="boxer-", suffix=".in", text=True
+            )
+            f = os.fdopen(fd, "w")
+            f.write(candc_out.decode("utf-8"))
+        finally:
+            if f:
+                f.close()
+
+        args = [
+            "--box",
+            "false",
+            "--semantics",
+            "drs",
+            #'--flat', 'false', # removed from boxer
+            "--resolve",
+            ["false", "true"][self._resolve],
+            "--elimeq",
+            ["false", "true"][self._elimeq],
+            "--format",
+            "prolog",
+            "--instantiate",
+            "true",
+            "--input",
+            temp_filename,
+        ]
+        stdout = self._call(None, self._boxer_bin, args, verbose)
+        os.remove(temp_filename)
+        return stdout
+
+    def _find_binary(self, name, bin_dir, verbose=False):
+        return find_binary(
+            name,
+            path_to_bin=bin_dir,
+            env_vars=["CANDC"],
+            url="http://svn.ask.it.usyd.edu.au/trac/candc/",
+            binary_names=[name, name + ".exe"],
+            verbose=verbose,
+        )
+
+    def _call(self, input_str, binary, args=[], verbose=False):
+        """
+        Call the binary with the given input.
+
+        :param input_str: A string whose contents are used as stdin.
+        :param binary: The location of the binary to call
+        :param args: A list of command-line arguments.
+        :return: stdout
+        """
+        if verbose:
+            print("Calling:", binary)
+            print("Args:", args)
+            print("Input:", input_str)
+            print("Command:", binary + " " + " ".join(args))
+
+        # Call via a subprocess
+        if input_str is None:
+            cmd = [binary] + args
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        else:
+            cmd = 'echo "{}" | {} {}'.format(input_str, binary, " ".join(args))
+            p = subprocess.Popen(
+                cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True
+            )
+        stdout, stderr = p.communicate()
+
+        if verbose:
+            print("Return code:", p.returncode)
+            if stdout:
+                print("stdout:\n", stdout, "\n")
+            if stderr:
+                print("stderr:\n", stderr, "\n")
+        if p.returncode != 0:
+            raise Exception(
+                "ERROR CALLING: {} {}\nReturncode: {}\n{}".format(
+                    binary, " ".join(args), p.returncode, stderr
+                )
+            )
+
+        return stdout
+
+    def _parse_to_drs_dict(self, boxer_out, use_disc_id):
+        lines = boxer_out.decode("utf-8").split("\n")
+        drs_dict = {}
+        i = 0
+        while i < len(lines):
+            line = lines[i]
+            if line.startswith("id("):
+                comma_idx = line.index(",")
+                discourse_id = line[3:comma_idx]
+                if discourse_id[0] == "'" and discourse_id[-1] == "'":
+                    discourse_id = discourse_id[1:-1]
+                drs_id = line[comma_idx + 1 : line.index(")")]
+                i += 1
+                line = lines[i]
+                assert line.startswith(f"sem({drs_id},")
+                if line[-4:] == "').'":
+                    line = line[:-4] + ")."
+                assert line.endswith(")."), f"can't parse line: {line}"
+
+                search_start = len(f"sem({drs_id},[")
+                brace_count = 1
+                drs_start = -1
+                for j, c in enumerate(line[search_start:]):
+                    if c == "[":
+                        brace_count += 1
+                    if c == "]":
+                        brace_count -= 1
+                        if brace_count == 0:
+                            drs_start = search_start + j + 1
+                            if line[drs_start : drs_start + 3] == "','":
+                                drs_start = drs_start + 3
+                            else:
+                                drs_start = drs_start + 1
+                            break
+                assert drs_start > -1
+
+                drs_input = line[drs_start:-2].strip()
+                parsed = self._parse_drs(drs_input, discourse_id, use_disc_id)
+                drs_dict[discourse_id] = self._boxer_drs_interpreter.interpret(parsed)
+            i += 1
+        return drs_dict
+
+    def _parse_drs(self, drs_string, discourse_id, use_disc_id):
+        return BoxerOutputDrsParser([None, discourse_id][use_disc_id]).parse(drs_string)
+
+
+class BoxerOutputDrsParser(DrtParser):
+    def __init__(self, discourse_id=None):
+        """
+        This class is used to parse the Prolog DRS output from Boxer into a
+        hierarchy of python objects.
+        """
+        DrtParser.__init__(self)
+        self.discourse_id = discourse_id
+        self.sentence_id_offset = None
+        self.quote_chars = [("'", "'", "\\", False)]
+
+    def parse(self, data, signature=None):
+        return DrtParser.parse(self, data, signature)
+
+    def get_all_symbols(self):
+        return ["(", ")", ",", "[", "]", ":"]
+
+    def handle(self, tok, context):
+        return self.handle_drs(tok)
+
+    def attempt_adjuncts(self, expression, context):
+        return expression
+
+    def parse_condition(self, indices):
+        """
+        Parse a DRS condition
+
+        :return: list of ``DrtExpression``
+        """
+        tok = self.token()
+        accum = self.handle_condition(tok, indices)
+        if accum is None:
+            raise UnexpectedTokenException(tok)
+        return accum
+
+    def handle_drs(self, tok):
+        if tok == "drs":
+            return self.parse_drs()
+        elif tok in ["merge", "smerge"]:
+            return self._handle_binary_expression(self._make_merge_expression)(None, [])
+        elif tok in ["alfa"]:
+            return self._handle_alfa(self._make_merge_expression)(None, [])
+
+    def handle_condition(self, tok, indices):
+        """
+        Handle a DRS condition
+
+        :param indices: list of int
+        :return: list of ``DrtExpression``
+        """
+        if tok == "not":
+            return [self._handle_not()]
+
+        if tok == "or":
+            conds = [self._handle_binary_expression(self._make_or_expression)]
+        elif tok == "imp":
+            conds = [self._handle_binary_expression(self._make_imp_expression)]
+        elif tok == "eq":
+            conds = [self._handle_eq()]
+        elif tok == "prop":
+            conds = [self._handle_prop()]
+
+        elif tok == "pred":
+            conds = [self._handle_pred()]
+        elif tok == "named":
+            conds = [self._handle_named()]
+        elif tok == "rel":
+            conds = [self._handle_rel()]
+        elif tok == "timex":
+            conds = self._handle_timex()
+        elif tok == "card":
+            conds = [self._handle_card()]
+
+        elif tok == "whq":
+            conds = [self._handle_whq()]
+        elif tok == "duplex":
+            conds = [self._handle_duplex()]
+
+        else:
+            conds = []
+
+        return sum(
+            (
+                [cond(sent_index, word_indices) for cond in conds]
+                for sent_index, word_indices in self._sent_and_word_indices(indices)
+            ),
+            [],
+        )
+
+    def _handle_not(self):
+        self.assertToken(self.token(), "(")
+        drs = self.process_next_expression(None)
+        self.assertToken(self.token(), ")")
+        return BoxerNot(drs)
+
+    def _handle_pred(self):
+        # pred(_G3943, dog, n, 0)
+        self.assertToken(self.token(), "(")
+        variable = self.parse_variable()
+        self.assertToken(self.token(), ",")
+        name = self.token()
+        self.assertToken(self.token(), ",")
+        pos = self.token()
+        self.assertToken(self.token(), ",")
+        sense = int(self.token())
+        self.assertToken(self.token(), ")")
+
+        def _handle_pred_f(sent_index, word_indices):
+            return BoxerPred(
+                self.discourse_id, sent_index, word_indices, variable, name, pos, sense
+            )
+
+        return _handle_pred_f
+
+    def _handle_duplex(self):
+        # duplex(whq, drs(...), var, drs(...))
+        self.assertToken(self.token(), "(")
+        # self.assertToken(self.token(), '[')
+        ans_types = []
+        # while self.token(0) != ']':
+        #     cat = self.token()
+        #     self.assertToken(self.token(), ':')
+        #     if cat == 'des':
+        #         ans_types.append(self.token())
+        #     elif cat == 'num':
+        #         ans_types.append('number')
+        #         typ = self.token()
+        #         if typ == 'cou':
+        #             ans_types.append('count')
+        #         else:
+        #             ans_types.append(typ)
+        #     else:
+        #         ans_types.append(self.token())
+        # self.token() #swallow the ']'
+
+        self.assertToken(self.token(), "whq")
+        self.assertToken(self.token(), ",")
+        d1 = self.process_next_expression(None)
+        self.assertToken(self.token(), ",")
+        ref = self.parse_variable()
+        self.assertToken(self.token(), ",")
+        d2 = self.process_next_expression(None)
+        self.assertToken(self.token(), ")")
+        return lambda sent_index, word_indices: BoxerWhq(
+            self.discourse_id, sent_index, word_indices, ans_types, d1, ref, d2
+        )
+
+    def _handle_named(self):
+        # named(x0, john, per, 0)
+        self.assertToken(self.token(), "(")
+        variable = self.parse_variable()
+        self.assertToken(self.token(), ",")
+        name = self.token()
+        self.assertToken(self.token(), ",")
+        type = self.token()
+        self.assertToken(self.token(), ",")
+        sense = self.token()  # as per boxer rev 2554
+        self.assertToken(self.token(), ")")
+        return lambda sent_index, word_indices: BoxerNamed(
+            self.discourse_id, sent_index, word_indices, variable, name, type, sense
+        )
+
+    def _handle_rel(self):
+        # rel(_G3993, _G3943, agent, 0)
+        self.assertToken(self.token(), "(")
+        var1 = self.parse_variable()
+        self.assertToken(self.token(), ",")
+        var2 = self.parse_variable()
+        self.assertToken(self.token(), ",")
+        rel = self.token()
+        self.assertToken(self.token(), ",")
+        sense = int(self.token())
+        self.assertToken(self.token(), ")")
+        return lambda sent_index, word_indices: BoxerRel(
+            self.discourse_id, sent_index, word_indices, var1, var2, rel, sense
+        )
+
+    def _handle_timex(self):
+        # timex(_G18322, date([]: (+), []:'XXXX', [1004]:'04', []:'XX'))
+        self.assertToken(self.token(), "(")
+        arg = self.parse_variable()
+        self.assertToken(self.token(), ",")
+        new_conds = self._handle_time_expression(arg)
+        self.assertToken(self.token(), ")")
+        return new_conds
+
+    def _handle_time_expression(self, arg):
+        # date([]: (+), []:'XXXX', [1004]:'04', []:'XX')
+        tok = self.token()
+        self.assertToken(self.token(), "(")
+        if tok == "date":
+            conds = self._handle_date(arg)
+        elif tok == "time":
+            conds = self._handle_time(arg)
+        else:
+            return None
+        self.assertToken(self.token(), ")")
+        return [
+            lambda sent_index, word_indices: BoxerPred(
+                self.discourse_id, sent_index, word_indices, arg, tok, "n", 0
+            )
+        ] + [lambda sent_index, word_indices: cond for cond in conds]
+
+    def _handle_date(self, arg):
+        # []: (+), []:'XXXX', [1004]:'04', []:'XX'
+        conds = []
+        ((sent_index, word_indices),) = self._sent_and_word_indices(
+            self._parse_index_list()
+        )
+        self.assertToken(self.token(), "(")
+        pol = self.token()
+        self.assertToken(self.token(), ")")
+        conds.append(
+            BoxerPred(
+                self.discourse_id,
+                sent_index,
+                word_indices,
+                arg,
+                f"date_pol_{pol}",
+                "a",
+                0,
+            )
+        )
+        self.assertToken(self.token(), ",")
+
+        ((sent_index, word_indic

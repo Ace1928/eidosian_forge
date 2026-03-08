@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_debugger_case_lamda.py
+KIND: code
+
+call = lambda b:b  # Break here will hit once at creation time and then at each call.
+call(1)
+call(2)
+
+print('TEST SUCEEDED')

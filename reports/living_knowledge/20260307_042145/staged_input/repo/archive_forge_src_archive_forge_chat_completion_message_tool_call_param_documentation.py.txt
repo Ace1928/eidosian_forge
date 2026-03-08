@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/chat_completion_message_tool_call_param_documentation.py
+KIND: code
+
+from __future__ import annotations
+from typing_extensions import Literal, Required, TypedDict
+The type of the tool. Currently, only `function` is supported.

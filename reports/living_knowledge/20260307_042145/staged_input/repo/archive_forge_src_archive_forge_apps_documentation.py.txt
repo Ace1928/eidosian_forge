@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/apps_documentation.py
+KIND: code
+
+import sys
+ App Config for Django Helper

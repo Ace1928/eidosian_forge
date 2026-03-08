@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/Clusters_documentation.py
+KIND: code
+
+allows _cluster1 == cluster2_ to work

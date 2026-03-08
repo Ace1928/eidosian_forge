@@ -1,0 +1,18 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/PA
+KIND: config
+
+PA4
+provincia de panamá oestepanamá oeste provinceF
+bocas del torobocas del toro provinceprovincia de bocas del toro.
+coclécoclé provinceprovincia de coclé.
+colóncolón provinceprovincia de colónJ
+	chiriquíchiriquí provincedistrito de barúprovincia de chiriquíF
+dariéndarién provinceprovincia de dariénregión del darién1
+herreraherrera provinceprovincia de herreraR
+distrito de los santos
+los santoslos santos provinceprovincia de los santos(
+provincia de panamápanamá province4
+provincia de veraguasveraguasveraguas provinceI
+comarca emberáwounaanemberáemberáwounaanemberáwounaan comarcaF
+comarca guna yala	guna yalaguna yala comarca	kuna yalasan blasR
+comarca ngäbebugléguaymíngäbebugléngäbebuglé comarcangöbe buglé

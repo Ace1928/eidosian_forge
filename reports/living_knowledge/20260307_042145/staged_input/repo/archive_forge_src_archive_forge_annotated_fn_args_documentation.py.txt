@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/annotated_fn_args_documentation.py
+KIND: code
+
+import torch
+
+This file is needed for generating procedural tests required for
+testing __torch_function__. See tests/test_overrides.py.

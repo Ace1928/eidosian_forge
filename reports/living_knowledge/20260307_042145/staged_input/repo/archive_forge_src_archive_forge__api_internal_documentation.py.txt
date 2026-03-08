@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_api_internal_documentation.py
+KIND: code
+
+from ..._ffi.function import _init_api
+Namespace for numpy internal api.

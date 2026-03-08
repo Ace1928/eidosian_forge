@@ -1,0 +1,541 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_Aaxis.py
+KIND: code
+
+from plotly.basedatatypes import BaseLayoutHierarchyType as _BaseLayoutHierarchyType
+import copy as _copy
+class Aaxis(_BaseLayoutHierarchyType):
+    _parent_path_str = 'layout.ternary'
+    _path_str = 'layout.ternary.aaxis'
+    _valid_props = {'color', 'dtick', 'exponentformat', 'gridcolor', 'griddash', 'gridwidth', 'hoverformat', 'labelalias', 'layer', 'linecolor', 'linewidth', 'min', 'minexponent', 'nticks', 'separatethousands', 'showexponent', 'showgrid', 'showline', 'showticklabels', 'showtickprefix', 'showticksuffix', 'tick0', 'tickangle', 'tickcolor', 'tickfont', 'tickformat', 'tickformatstopdefaults', 'tickformatstops', 'ticklabelstep', 'ticklen', 'tickmode', 'tickprefix', 'ticks', 'ticksuffix', 'ticktext', 'ticktextsrc', 'tickvals', 'tickvalssrc', 'tickwidth', 'title', 'titlefont', 'uirevision'}
+
+    @property
+    def color(self):
+        """
+        Sets default for all colors associated with this axis all at
+        once: line, font, tick, and grid colors. Grid color is
+        lightened by blending this with the plot background Individual
+        pieces can override this.
+
+        The 'color' property is a color and may be specified as:
+          - A hex string (e.g. '#ff0000')
+          - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+          - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+          - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+          - A named CSS color:
+                aliceblue, antiquewhite, aqua, aquamarine, azure,
+                beige, bisque, black, blanchedalmond, blue,
+                blueviolet, brown, burlywood, cadetblue,
+                chartreuse, chocolate, coral, cornflowerblue,
+                cornsilk, crimson, cyan, darkblue, darkcyan,
+                darkgoldenrod, darkgray, darkgrey, darkgreen,
+                darkkhaki, darkmagenta, darkolivegreen, darkorange,
+                darkorchid, darkred, darksalmon, darkseagreen,
+                darkslateblue, darkslategray, darkslategrey,
+                darkturquoise, darkviolet, deeppink, deepskyblue,
+                dimgray, dimgrey, dodgerblue, firebrick,
+                floralwhite, forestgreen, fuchsia, gainsboro,
+                ghostwhite, gold, goldenrod, gray, grey, green,
+                greenyellow, honeydew, hotpink, indianred, indigo,
+                ivory, khaki, lavender, lavenderblush, lawngreen,
+                lemonchiffon, lightblue, lightcoral, lightcyan,
+                lightgoldenrodyellow, lightgray, lightgrey,
+                lightgreen, lightpink, lightsalmon, lightseagreen,
+                lightskyblue, lightslategray, lightslategrey,
+                lightsteelblue, lightyellow, lime, limegreen,
+                linen, magenta, maroon, mediumaquamarine,
+                mediumblue, mediumorchid, mediumpurple,
+                mediumseagreen, mediumslateblue, mediumspringgreen,
+                mediumturquoise, mediumvioletred, midnightblue,
+                mintcream, mistyrose, moccasin, navajowhite, navy,
+                oldlace, olive, olivedrab, orange, orangered,
+                orchid, palegoldenrod, palegreen, paleturquoise,
+                palevioletred, papayawhip, peachpuff, peru, pink,
+                plum, powderblue, purple, red, rosybrown,
+                royalblue, rebeccapurple, saddlebrown, salmon,
+                sandybrown, seagreen, seashell, sienna, silver,
+                skyblue, slateblue, slategray, slategrey, snow,
+                springgreen, steelblue, tan, teal, thistle, tomato,
+                turquoise, violet, wheat, white, whitesmoke,
+                yellow, yellowgreen
+
+        Returns
+        -------
+        str
+        """
+        return self['color']
+
+    @color.setter
+    def color(self, val):
+        self['color'] = val
+
+    @property
+    def dtick(self):
+        """
+        Sets the step in-between ticks on this axis. Use with `tick0`.
+        Must be a positive number, or special strings available to
+        "log" and "date" axes. If the axis `type` is "log", then ticks
+        are set every 10^(n*dtick) where n is the tick number. For
+        example, to set a tick mark at 1, 10, 100, 1000, ... set dtick
+        to 1. To set tick marks at 1, 100, 10000, ... set dtick to 2.
+        To set tick marks at 1, 5, 25, 125, 625, 3125, ... set dtick to
+        log_10(5), or 0.69897000433. "log" has several special values;
+        "L<f>", where `f` is a positive number, gives ticks linearly
+        spaced in value (but not position). For example `tick0` = 0.1,
+        `dtick` = "L0.5" will put ticks at 0.1, 0.6, 1.1, 1.6 etc. To
+        show powers of 10 plus small digits between, use "D1" (all
+        digits) or "D2" (only 2 and 5). `tick0` is ignored for "D1" and
+        "D2". If the axis `type` is "date", then you must convert the
+        time to milliseconds. For example, to set the interval between
+        ticks to one day, set `dtick` to 86400000.0. "date" also has
+        special values "M<n>" gives ticks spaced by a number of months.
+        `n` must be a positive integer. To set ticks on the 15th of
+        every third month, set `tick0` to "2000-01-15" and `dtick` to
+        "M3". To set ticks every 4 years, set `dtick` to "M48"
+
+        The 'dtick' property accepts values of any type
+
+        Returns
+        -------
+        Any
+        """
+        return self['dtick']
+
+    @dtick.setter
+    def dtick(self, val):
+        self['dtick'] = val
+
+    @property
+    def exponentformat(self):
+        """
+        Determines a formatting rule for the tick exponents. For
+        example, consider the number 1,000,000,000. If "none", it
+        appears as 1,000,000,000. If "e", 1e+9. If "E", 1E+9. If
+        "power", 1x10^9 (with 9 in a super script). If "SI", 1G. If
+        "B", 1B.
+
+        The 'exponentformat' property is an enumeration that may be specified as:
+          - One of the following enumeration values:
+                ['none', 'e', 'E', 'power', 'SI', 'B']
+
+        Returns
+        -------
+        Any
+        """
+        return self['exponentformat']
+
+    @exponentformat.setter
+    def exponentformat(self, val):
+        self['exponentformat'] = val
+
+    @property
+    def gridcolor(self):
+        """
+        Sets the color of the grid lines.
+
+        The 'gridcolor' property is a color and may be specified as:
+          - A hex string (e.g. '#ff0000')
+          - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+          - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+          - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+          - A named CSS color:
+                aliceblue, antiquewhite, aqua, aquamarine, azure,
+                beige, bisque, black, blanchedalmond, blue,
+                blueviolet, brown, burlywood, cadetblue,
+                chartreuse, chocolate, coral, cornflowerblue,
+                cornsilk, crimson, cyan, darkblue, darkcyan,
+                darkgoldenrod, darkgray, darkgrey, darkgreen,
+                darkkhaki, darkmagenta, darkolivegreen, darkorange,
+                darkorchid, darkred, darksalmon, darkseagreen,
+                darkslateblue, darkslategray, darkslategrey,
+                darkturquoise, darkviolet, deeppink, deepskyblue,
+                dimgray, dimgrey, dodgerblue, firebrick,
+                floralwhite, forestgreen, fuchsia, gainsboro,
+                ghostwhite, gold, goldenrod, gray, grey, green,
+                greenyellow, honeydew, hotpink, indianred, indigo,
+                ivory, khaki, lavender, lavenderblush, lawngreen,
+                lemonchiffon, lightblue, lightcoral, lightcyan,
+                lightgoldenrodyellow, lightgray, lightgrey,
+                lightgreen, lightpink, lightsalmon, lightseagreen,
+                lightskyblue, lightslategray, lightslategrey,
+                lightsteelblue, lightyellow, lime, limegreen,
+                linen, magenta, maroon, mediumaquamarine,
+                mediumblue, mediumorchid, mediumpurple,
+                mediumseagreen, mediumslateblue, mediumspringgreen,
+                mediumturquoise, mediumvioletred, midnightblue,
+                mintcream, mistyrose, moccasin, navajowhite, navy,
+                oldlace, olive, olivedrab, orange, orangered,
+                orchid, palegoldenrod, palegreen, paleturquoise,
+                palevioletred, papayawhip, peachpuff, peru, pink,
+                plum, powderblue, purple, red, rosybrown,
+                royalblue, rebeccapurple, saddlebrown, salmon,
+                sandybrown, seagreen, seashell, sienna, silver,
+                skyblue, slateblue, slategray, slategrey, snow,
+                springgreen, steelblue, tan, teal, thistle, tomato,
+                turquoise, violet, wheat, white, whitesmoke,
+                yellow, yellowgreen
+
+        Returns
+        -------
+        str
+        """
+        return self['gridcolor']
+
+    @gridcolor.setter
+    def gridcolor(self, val):
+        self['gridcolor'] = val
+
+    @property
+    def griddash(self):
+        """
+        Sets the dash style of lines. Set to a dash type string
+        ("solid", "dot", "dash", "longdash", "dashdot", or
+        "longdashdot") or a dash length list in px (eg
+        "5px,10px,2px,2px").
+
+        The 'griddash' property is an enumeration that may be specified as:
+          - One of the following dash styles:
+                ['solid', 'dot', 'dash', 'longdash', 'dashdot', 'longdashdot']
+          - A string containing a dash length list in pixels or percentages
+                (e.g. '5px 10px 2px 2px', '5, 10, 2, 2', '10% 20% 40%', etc.)
+
+        Returns
+        -------
+        str
+        """
+        return self['griddash']
+
+    @griddash.setter
+    def griddash(self, val):
+        self['griddash'] = val
+
+    @property
+    def gridwidth(self):
+        """
+        Sets the width (in px) of the grid lines.
+
+        The 'gridwidth' property is a number and may be specified as:
+          - An int or float in the interval [0, inf]
+
+        Returns
+        -------
+        int|float
+        """
+        return self['gridwidth']
+
+    @gridwidth.setter
+    def gridwidth(self, val):
+        self['gridwidth'] = val
+
+    @property
+    def hoverformat(self):
+        """
+        Sets the hover text formatting rule using d3 formatting mini-
+        languages which are very similar to those in Python. For
+        numbers, see:
+        https://github.com/d3/d3-format/tree/v1.4.5#d3-format. And for
+        dates see: https://github.com/d3/d3-time-
+        format/tree/v2.2.3#locale_format. We add two items to d3's date
+        formatter: "%h" for half of the year as a decimal number as
+        well as "%{n}f" for fractional seconds with n digits. For
+        example, *2016-10-13 09:15:23.456* with tickformat
+        "%H~%M~%S.%2f" would display "09~15~23.46"
+
+        The 'hoverformat' property is a string and must be specified as:
+          - A string
+          - A number that will be converted to a string
+
+        Returns
+        -------
+        str
+        """
+        return self['hoverformat']
+
+    @hoverformat.setter
+    def hoverformat(self, val):
+        self['hoverformat'] = val
+
+    @property
+    def labelalias(self):
+        """
+        Replacement text for specific tick or hover labels. For example
+        using {US: 'USA', CA: 'Canada'} changes US to USA and CA to
+        Canada. The labels we would have shown must match the keys
+        exactly, after adding any tickprefix or ticksuffix. For
+        negative numbers the minus sign symbol used (U+2212) is wider
+        than the regular ascii dash. That means you need to use −1
+        instead of -1. labelalias can be used with any axis type, and
+        both keys (if needed) and values (if desired) can include html-
+        like tags or MathJax.
+
+        The 'labelalias' property accepts values of any type
+
+        Returns
+        -------
+        Any
+        """
+        return self['labelalias']
+
+    @labelalias.setter
+    def labelalias(self, val):
+        self['labelalias'] = val
+
+    @property
+    def layer(self):
+        """
+        Sets the layer on which this axis is displayed. If *above
+        traces*, this axis is displayed above all the subplot's traces
+        If *below traces*, this axis is displayed below all the
+        subplot's traces, but above the grid lines. Useful when used
+        together with scatter-like traces with `cliponaxis` set to
+        False to show markers and/or text nodes above this axis.
+
+        The 'layer' property is an enumeration that may be specified as:
+          - One of the following enumeration values:
+                ['above traces', 'below traces']
+
+        Returns
+        -------
+        Any
+        """
+        return self['layer']
+
+    @layer.setter
+    def layer(self, val):
+        self['layer'] = val
+
+    @property
+    def linecolor(self):
+        """
+        Sets the axis line color.
+
+        The 'linecolor' property is a color and may be specified as:
+          - A hex string (e.g. '#ff0000')
+          - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+          - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+          - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+          - A named CSS color:
+                aliceblue, antiquewhite, aqua, aquamarine, azure,
+                beige, bisque, black, blanchedalmond, blue,
+                blueviolet, brown, burlywood, cadetblue,
+                chartreuse, chocolate, coral, cornflowerblue,
+                cornsilk, crimson, cyan, darkblue, darkcyan,
+                darkgoldenrod, darkgray, darkgrey, darkgreen,
+                darkkhaki, darkmagenta, darkolivegreen, darkorange,
+                darkorchid, darkred, darksalmon, darkseagreen,
+                darkslateblue, darkslategray, darkslategrey,
+                darkturquoise, darkviolet, deeppink, deepskyblue,
+                dimgray, dimgrey, dodgerblue, firebrick,
+                floralwhite, forestgreen, fuchsia, gainsboro,
+                ghostwhite, gold, goldenrod, gray, grey, green,
+                greenyellow, honeydew, hotpink, indianred, indigo,
+                ivory, khaki, lavender, lavenderblush, lawngreen,
+                lemonchiffon, lightblue, lightcoral, lightcyan,
+                lightgoldenrodyellow, lightgray, lightgrey,
+                lightgreen, lightpink, lightsalmon, lightseagreen,
+                lightskyblue, lightslategray, lightslategrey,
+                lightsteelblue, lightyellow, lime, limegreen,
+                linen, magenta, maroon, mediumaquamarine,
+                mediumblue, mediumorchid, mediumpurple,
+                mediumseagreen, mediumslateblue, mediumspringgreen,
+                mediumturquoise, mediumvioletred, midnightblue,
+                mintcream, mistyrose, moccasin, navajowhite, navy,
+                oldlace, olive, olivedrab, orange, orangered,
+                orchid, palegoldenrod, palegreen, paleturquoise,
+                palevioletred, papayawhip, peachpuff, peru, pink,
+                plum, powderblue, purple, red, rosybrown,
+                royalblue, rebeccapurple, saddlebrown, salmon,
+                sandybrown, seagreen, seashell, sienna, silver,
+                skyblue, slateblue, slategray, slategrey, snow,
+                springgreen, steelblue, tan, teal, thistle, tomato,
+                turquoise, violet, wheat, white, whitesmoke,
+                yellow, yellowgreen
+
+        Returns
+        -------
+        str
+        """
+        return self['linecolor']
+
+    @linecolor.setter
+    def linecolor(self, val):
+        self['linecolor'] = val
+
+    @property
+    def linewidth(self):
+        """
+        Sets the width (in px) of the axis line.
+
+        The 'linewidth' property is a number and may be specified as:
+          - An int or float in the interval [0, inf]
+
+        Returns
+        -------
+        int|float
+        """
+        return self['linewidth']
+
+    @linewidth.setter
+    def linewidth(self, val):
+        self['linewidth'] = val
+
+    @property
+    def min(self):
+        """
+        The minimum value visible on this axis. The maximum is
+        determined by the sum minus the minimum values of the other two
+        axes. The full view corresponds to all the minima set to zero.
+
+        The 'min' property is a number and may be specified as:
+          - An int or float in the interval [0, inf]
+
+        Returns
+        -------
+        int|float
+        """
+        return self['min']
+
+    @min.setter
+    def min(self, val):
+        self['min'] = val
+
+    @property
+    def minexponent(self):
+        """
+        Hide SI prefix for 10^n if |n| is below this number. This only
+        has an effect when `tickformat` is "SI" or "B".
+
+        The 'minexponent' property is a number and may be specified as:
+          - An int or float in the interval [0, inf]
+
+        Returns
+        -------
+        int|float
+        """
+        return self['minexponent']
+
+    @minexponent.setter
+    def minexponent(self, val):
+        self['minexponent'] = val
+
+    @property
+    def nticks(self):
+        """
+        Specifies the maximum number of ticks for the particular axis.
+        The actual number of ticks will be chosen automatically to be
+        less than or equal to `nticks`. Has an effect only if
+        `tickmode` is set to "auto".
+
+        The 'nticks' property is a integer and may be specified as:
+          - An int (or float that will be cast to an int)
+            in the interval [1, 9223372036854775807]
+
+        Returns
+        -------
+        int
+        """
+        return self['nticks']
+
+    @nticks.setter
+    def nticks(self, val):
+        self['nticks'] = val
+
+    @property
+    def separatethousands(self):
+        """
+        If "true", even 4-digit integers are separated
+
+        The 'separatethousands' property must be specified as a bool
+        (either True, or False)
+
+        Returns
+        -------
+        bool
+        """
+        return self['separatethousands']
+
+    @separatethousands.setter
+    def separatethousands(self, val):
+        self['separatethousands'] = val
+
+    @property
+    def showexponent(self):
+        """
+        If "all", all exponents are shown besides their significands.
+        If "first", only the exponent of the first tick is shown. If
+        "last", only the exponent of the last tick is shown. If "none",
+        no exponents appear.
+
+        The 'showexponent' property is an enumeration that may be specified as:
+          - One of the following enumeration values:
+                ['all', 'first', 'last', 'none']
+
+        Returns
+        -------
+        Any
+        """
+        return self['showexponent']
+
+    @showexponent.setter
+    def showexponent(self, val):
+        self['showexponent'] = val
+
+    @property
+    def showgrid(self):
+        """
+        Determines whether or not grid lines are drawn. If True, the
+        grid lines are drawn at every tick mark.
+
+        The 'showgrid' property must be specified as a bool
+        (either True, or False)
+
+        Returns
+        -------
+        bool
+        """
+        return self['showgrid']
+
+    @showgrid.setter
+    def showgrid(self, val):
+        self['showgrid'] = val
+
+    @property
+    def showline(self):
+        """
+        Determines whether or not a line bounding this axis is drawn.
+
+        The 'showline' property must be specified as a bool
+        (either True, or False)
+
+        Returns
+        -------
+        bool
+        """
+        return self['showline']
+
+    @showline.setter
+    def showline(self, val):
+        self['showline'] = val
+
+    @property
+    def showticklabels(self):
+        """
+        Determines whether or not the tick labels are drawn.
+
+        The 'showticklabels' property must be specified as a bool
+        (either True, or False)
+
+        Returns
+        -------
+        bool
+        """
+        return self['showticklabels']
+
+    @showticklabels.setter
+    def showticklabels(self, val):
+        self['showticklabels'] = val
+
+    @property
+    def showtickprefix(self):
+        """
+        If "all", all tick labels are displayed with a prefix. If
+        "first", only the first tick

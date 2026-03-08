@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_xxmotif_documentation.py
+KIND: code
+
+import os
+from Bio.Application import AbstractCommandline, _Option, _Switch, _Argument
+Initialize the class.

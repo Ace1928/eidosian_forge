@@ -1,0 +1,444 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_api_data.py
+KIND: code
+
+# -*- coding: utf-8 -*-
+# Copyright (c) 2022, Felix Fontein (@felixfontein) <felix@fontein.de>
+# GNU General Public License v3.0+ (see LICENSES/GPL-3.0-or-later.txt or https://www.gnu.org/licenses/gpl-3.0.txt)
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+# The data inside here is private to this collection. If you use this from outside the collection,
+# you are on your own. There can be random changes to its format even in bugfix releases!
+
+from __future__ import absolute_import, division, print_function
+__metaclass__ = type
+
+from ansible_collections.community.routeros.plugins.module_utils.version import LooseVersion
+
+
+def _compare(a, b, comparator):
+    if comparator == '==':
+        return a == b
+    if comparator == '!=':
+        return a != b
+    if comparator == '<':
+        return a < b
+    if comparator == '<=':
+        return a <= b
+    if comparator == '>':
+        return a > b
+    if comparator == '>=':
+        return a >= b
+    raise ValueError('Unknown comparator "{comparator}"'.format(comparator=comparator))
+
+
+class APIData(object):
+    def __init__(self,
+                 unversioned=None,
+                 versioned=None):
+        if (unversioned is None) == (versioned is None):
+            raise ValueError('either unversioned or versioned must be provided')
+        self.unversioned = unversioned
+        self.versioned = versioned
+        if self.unversioned is not None:
+            self.needs_version = self.unversioned.needs_version
+            self.fully_understood = self.unversioned.fully_understood
+        else:
+            self.needs_version = self.versioned is not None
+            # Mark as 'fully understood' if it is for at least one version
+            self.fully_understood = False
+            for dummy, dummy, unversioned in self.versioned:
+                if unversioned and not isinstance(unversioned, str) and unversioned.fully_understood:
+                    self.fully_understood = True
+                    break
+        self._current = None if self.needs_version else self.unversioned
+
+    def _select(self, data, api_version):
+        if data is None:
+            self._current = None
+            return False, None
+        if isinstance(data, str):
+            self._current = None
+            return False, data
+        self._current = data.specialize_for_version(api_version)
+        return self._current.fully_understood, None
+
+    def provide_version(self, version):
+        if not self.needs_version:
+            return self.unversioned.fully_understood, None
+        api_version = LooseVersion(version)
+        if self.unversioned is not None:
+            self._current = self.unversioned.specialize_for_version(api_version)
+            return self._current.fully_understood, None
+        for other_version, comparator, data in self.versioned:
+            if other_version == '*' and comparator == '*':
+                return self._select(data, api_version)
+            other_api_version = LooseVersion(other_version)
+            if _compare(api_version, other_api_version, comparator):
+                return self._select(data, api_version)
+        self._current = None
+        return False, None
+
+    def get_data(self):
+        if self._current is None:
+            raise ValueError('either provide_version() was not called or it returned False')
+        return self._current
+
+
+class VersionedAPIData(object):
+    def __init__(self,
+                 primary_keys=None,
+                 stratify_keys=None,
+                 required_one_of=None,
+                 mutually_exclusive=None,
+                 has_identifier=False,
+                 single_value=False,
+                 unknown_mechanism=False,
+                 fully_understood=False,
+                 fixed_entries=False,
+                 fields=None,
+                 versioned_fields=None):
+        if sum([primary_keys is not None, stratify_keys is not None, has_identifier, single_value, unknown_mechanism]) > 1:
+            raise ValueError('primary_keys, stratify_keys, has_identifier, single_value, and unknown_mechanism are mutually exclusive')
+        if unknown_mechanism and fully_understood:
+            raise ValueError('unknown_mechanism and fully_understood cannot be combined')
+        self.primary_keys = primary_keys
+        self.stratify_keys = stratify_keys
+        self.required_one_of = required_one_of or []
+        self.mutually_exclusive = mutually_exclusive or []
+        self.has_identifier = has_identifier
+        self.single_value = single_value
+        self.unknown_mechanism = unknown_mechanism
+        self.fully_understood = fully_understood
+        self.fixed_entries = fixed_entries
+        if fixed_entries and primary_keys is None:
+            raise ValueError('fixed_entries can only be used with primary_keys')
+        if fields is None:
+            raise ValueError('fields must be provided')
+        self.fields = fields
+        if versioned_fields is not None:
+            if not isinstance(versioned_fields, list):
+                raise ValueError('unversioned_fields must be a list')
+            for conditions, name, field in versioned_fields:
+                if not isinstance(conditions, (tuple, list)):
+                    raise ValueError('conditions must be a list or tuple')
+                if not isinstance(field, KeyInfo):
+                    raise ValueError('field must be a KeyInfo object')
+                if name in fields:
+                    raise ValueError('"{name}" appears both in fields and versioned_fields'.format(name=name))
+        self.versioned_fields = versioned_fields or []
+        if primary_keys:
+            for pk in primary_keys:
+                if pk not in fields:
+                    raise ValueError('Primary key {pk} must be in fields!'.format(pk=pk))
+        if stratify_keys:
+            for sk in stratify_keys:
+                if sk not in fields:
+                    raise ValueError('Stratify key {sk} must be in fields!'.format(sk=sk))
+        if required_one_of:
+            for index, require_list in enumerate(required_one_of):
+                if not isinstance(require_list, list):
+                    raise ValueError('Require one of element at index #{index} must be a list!'.format(index=index + 1))
+                for rk in require_list:
+                    if rk not in fields:
+                        raise ValueError('Require one of key {rk} must be in fields!'.format(rk=rk))
+        if mutually_exclusive:
+            for index, exclusive_list in enumerate(mutually_exclusive):
+                if not isinstance(exclusive_list, list):
+                    raise ValueError('Mutually exclusive element at index #{index} must be a list!'.format(index=index + 1))
+                for ek in exclusive_list:
+                    if ek not in fields:
+                        raise ValueError('Mutually exclusive key {ek} must be in fields!'.format(ek=ek))
+        self.needs_version = len(self.versioned_fields) > 0
+
+    def specialize_for_version(self, api_version):
+        fields = self.fields.copy()
+        for conditions, name, field in self.versioned_fields:
+            matching = True
+            for other_version, comparator in conditions:
+                other_api_version = LooseVersion(other_version)
+                if not _compare(api_version, other_api_version, comparator):
+                    matching = False
+                    break
+            if matching:
+                if name in fields:
+                    raise ValueError(
+                        'Internal error: field "{field}" already exists for {version}'.format(field=name, version=api_version)
+                    )
+                fields[name] = field
+        return VersionedAPIData(
+            primary_keys=self.primary_keys,
+            stratify_keys=self.stratify_keys,
+            required_one_of=self.required_one_of,
+            mutually_exclusive=self.mutually_exclusive,
+            has_identifier=self.has_identifier,
+            single_value=self.single_value,
+            unknown_mechanism=self.unknown_mechanism,
+            fully_understood=self.fully_understood,
+            fixed_entries=self.fixed_entries,
+            fields=fields,
+        )
+
+
+class KeyInfo(object):
+    def __init__(self,
+                 _dummy=None,
+                 can_disable=False,
+                 remove_value=None,
+                 absent_value=None,
+                 default=None,
+                 required=False,
+                 automatically_computed_from=None,
+                 read_only=False,
+                 write_only=False):
+        if _dummy is not None:
+            raise ValueError('KeyInfo() does not have positional arguments')
+        if sum([required, default is not None or can_disable, automatically_computed_from is not None]) > 1:
+            raise ValueError(
+                'required, default, automatically_computed_from, and can_disable are mutually exclusive '
+                'besides default and can_disable which can be set together')
+        if not can_disable and remove_value is not None:
+            raise ValueError('remove_value can only be specified if can_disable=True')
+        if absent_value is not None and any([default is not None, automatically_computed_from is not None, can_disable]):
+            raise ValueError('absent_value can not be combined with default, automatically_computed_from, can_disable=True, or absent_value')
+        if read_only and write_only:
+            raise ValueError('read_only and write_only cannot be used at the same time')
+        if read_only and any([can_disable, remove_value is not None, absent_value is not None, default is not None, required]):
+            raise ValueError('read_only can not be combined with can_disable, remove_value, absent_value, default, or required')
+        self.can_disable = can_disable
+        self.remove_value = remove_value
+        self.automatically_computed_from = automatically_computed_from
+        self.default = default
+        self.required = required
+        self.absent_value = absent_value
+        self.read_only = read_only
+        self.write_only = write_only
+
+
+def split_path(path):
+    return path.split()
+
+
+def join_path(path):
+    return ' '.join(path)
+
+
+# How to obtain this information:
+# 1. Run `/export verbose` in the CLI;
+# 2. All attributes listed there go into the `fields` list;
+#    attributes which can have a `!` ahead should have `canDisable=True`
+# 3. All bold attributes go into the `primary_keys` list -- this is not always true!
+
+PATHS = {
+    ('interface', 'bonding'): APIData(
+        unversioned=VersionedAPIData(
+            fully_understood=True,
+            primary_keys=('name', ),
+            fields={
+                'arp': KeyInfo(default='enabled'),
+                'arp-interval': KeyInfo(default='100ms'),
+                'arp-ip-targets': KeyInfo(default=''),
+                'arp-timeout': KeyInfo(default='auto'),
+                'comment': KeyInfo(can_disable=True, remove_value=''),
+                'disabled': KeyInfo(default=False),
+                'down-delay': KeyInfo(default='0ms'),
+                'forced-mac-address': KeyInfo(can_disable=True),
+                'lacp-rate': KeyInfo(default='30secs'),
+                'lacp-user-key': KeyInfo(can_disable=True, remove_value=0),
+                'link-monitoring': KeyInfo(default='mii'),
+                'mii-interval': KeyInfo(default='100ms'),
+                'min-links': KeyInfo(default=0),
+                'mlag-id': KeyInfo(can_disable=True, remove_value=0),
+                'mode': KeyInfo(default='balance-rr'),
+                'mtu': KeyInfo(default=1500),
+                'name': KeyInfo(),
+                'primary': KeyInfo(default='none'),
+                'slaves': KeyInfo(required=True),
+                'transmit-hash-policy': KeyInfo(default='layer-2'),
+                'up-delay': KeyInfo(default='0ms'),
+            }
+        ),
+    ),
+    ('interface', 'bridge'): APIData(
+        unversioned=VersionedAPIData(
+            fully_understood=True,
+            primary_keys=('name', ),
+            fields={
+                'admin-mac': KeyInfo(default=''),
+                'ageing-time': KeyInfo(default='5m'),
+                'arp': KeyInfo(default='enabled'),
+                'arp-timeout': KeyInfo(default='auto'),
+                'auto-mac': KeyInfo(default=True),
+                'comment': KeyInfo(can_disable=True, remove_value=''),
+                'dhcp-snooping': KeyInfo(default=False),
+                'disabled': KeyInfo(default=False),
+                'ether-type': KeyInfo(default='0x8100'),
+                'fast-forward': KeyInfo(default=True),
+                'frame-types': KeyInfo(default='admit-all'),
+                'forward-delay': KeyInfo(default='15s'),
+                'igmp-snooping': KeyInfo(default=False),
+                'ingress-filtering': KeyInfo(default=True),
+                'max-message-age': KeyInfo(default='20s'),
+                'mtu': KeyInfo(default='auto'),
+                'name': KeyInfo(),
+                'priority': KeyInfo(default='0x8000'),
+                'protocol-mode': KeyInfo(default='rstp'),
+                'pvid': KeyInfo(default=1),
+                'transmit-hold-count': KeyInfo(default=6),
+                'vlan-filtering': KeyInfo(default=False),
+            },
+        ),
+    ),
+    ('interface', 'eoip'): APIData(
+        unversioned=VersionedAPIData(
+            fully_understood=True,
+            primary_keys=('name',),
+            fields={
+                'allow-fast-path': KeyInfo(default=True),
+                'arp': KeyInfo(default='enabled'),
+                'arp-timeout': KeyInfo(default='auto'),
+                'clamp-tcp-mss': KeyInfo(default=True),
+                'comment': KeyInfo(can_disable=True, remove_value=''),
+                'disabled': KeyInfo(default=False),
+                'dont-fragment': KeyInfo(default=False),
+                'dscp': KeyInfo(default='inherit'),
+                'ipsec-secret': KeyInfo(can_disable=True),
+                'keepalive': KeyInfo(default='10s,10', can_disable=True),
+                'local-address': KeyInfo(default='0.0.0.0'),
+                'loop-protect': KeyInfo(default='default'),
+                'loop-protect-disable-time': KeyInfo(default='5m'),
+                'loop-protect-send-interval': KeyInfo(default='5s'),
+                'mac-address': KeyInfo(),
+                'mtu': KeyInfo(default='auto'),
+                'name': KeyInfo(),
+                'remote-address': KeyInfo(required=True),
+                'tunnel-id': KeyInfo(required=True),
+            },
+        ),
+    ),
+    ('interface', 'ethernet'): APIData(
+        unversioned=VersionedAPIData(
+            fixed_entries=True,
+            fully_understood=True,
+            primary_keys=('default-name', ),
+            fields={
+                'default-name': KeyInfo(),
+                'advertise': KeyInfo(),
+                'arp': KeyInfo(default='enabled'),
+                'arp-timeout': KeyInfo(default='auto'),
+                'auto-negotiation': KeyInfo(default=True),
+                'bandwidth': KeyInfo(default='unlimited/unlimited'),
+                'combo-mode': KeyInfo(can_disable=True),
+                'comment': KeyInfo(can_disable=True, remove_value=''),
+                'disabled': KeyInfo(default=False),
+                'fec-mode': KeyInfo(can_disable=True),
+                'full-duplex': KeyInfo(default=True),
+                'l2mtu': KeyInfo(default=1598),
+                'loop-protect': KeyInfo(default='default'),
+                'loop-protect-disable-time': KeyInfo(default='5m'),
+                'loop-protect-send-interval': KeyInfo(default='5s'),
+                'mac-address': KeyInfo(),
+                'mdix-enable': KeyInfo(),
+                'mtu': KeyInfo(default=1500),
+                'name': KeyInfo(),
+                'orig-mac-address': KeyInfo(),
+                'poe-out': KeyInfo(can_disable=True),
+                'poe-priority': KeyInfo(can_disable=True),
+                'poe-voltage': KeyInfo(can_disable=True),
+                'power-cycle-interval': KeyInfo(),
+                'power-cycle-ping-address': KeyInfo(can_disable=True),
+                'power-cycle-ping-enabled': KeyInfo(),
+                'power-cycle-ping-timeout': KeyInfo(can_disable=True),
+                'rx-flow-control': KeyInfo(default='off'),
+                'sfp-rate-select': KeyInfo(default='high'),
+                'sfp-shutdown-temperature': KeyInfo(default='95C'),
+                'speed': KeyInfo(),
+                'tx-flow-control': KeyInfo(default='off'),
+            },
+        ),
+    ),
+    ('interface', 'ethernet', 'poe'): APIData(
+        unversioned=VersionedAPIData(
+            fixed_entries=True,
+            fully_understood=True,
+            primary_keys=('name', ),
+            fields={
+                'name': KeyInfo(),
+                'poe-out': KeyInfo(default='auto-on'),
+                'poe-priority': KeyInfo(default=10),
+                'poe-voltage': KeyInfo(default='auto'),
+                'power-cycle-interval': KeyInfo(default='none'),
+                'power-cycle-ping-address': KeyInfo(can_disable=True),
+                'power-cycle-ping-enabled': KeyInfo(default=False),
+                'power-cycle-ping-timeout': KeyInfo(can_disable=True),
+            }
+        ),
+    ),
+    ('interface', 'gre'): APIData(
+        unversioned=VersionedAPIData(
+            fully_understood=True,
+            primary_keys=('name', ),
+            fields={
+                'allow-fast-path': KeyInfo(default=True),
+                'clamp-tcp-mss': KeyInfo(default=True),
+                'comment': KeyInfo(can_disable=True, remove_value=''),
+                'disabled': KeyInfo(default=False),
+                'dont-fragment': KeyInfo(default=False),
+                'dscp': KeyInfo(default='inherit'),
+                'ipsec-secret': KeyInfo(can_disable=True),
+                'keepalive': KeyInfo(default='10s,10', can_disable=True),
+                'local-address': KeyInfo(default='0.0.0.0'),
+                'mtu': KeyInfo(default='auto'),
+                'name': KeyInfo(),
+                'remote-address': KeyInfo(required=True),
+            },
+        ),
+    ),
+    ('interface', 'gre6'): APIData(
+        unversioned=VersionedAPIData(
+            fully_understood=True,
+            primary_keys=('name',),
+            fields={
+                'clamp-tcp-mss': KeyInfo(default=True),
+                'comment': KeyInfo(can_disable=True, remove_value=''),
+                'disabled': KeyInfo(default=False),
+                'dscp': KeyInfo(default='inherit'),
+                'ipsec-secret': KeyInfo(can_disable=True),
+                'keepalive': KeyInfo(default='10s,10', can_disable=True),
+                'local-address': KeyInfo(default='::'),
+                'mtu': KeyInfo(default='auto'),
+                'name': KeyInfo(),
+                'remote-address': KeyInfo(required=True),
+            },
+        ),
+    ),
+    ('interface', 'list'): APIData(
+        unversioned=VersionedAPIData(
+            primary_keys=('name', ),
+            fully_understood=True,
+            fields={
+                'comment': KeyInfo(can_disable=True, remove_value=''),
+                'exclude': KeyInfo(),
+                'include': KeyInfo(),
+                'name': KeyInfo(),
+            },
+        ),
+    ),
+    ('interface', 'list', 'member'): APIData(
+        unversioned=VersionedAPIData(
+            primary_keys=('list', 'interface', ),
+            fully_understood=True,
+            fields={
+                'comment': KeyInfo(can_disable=True, remove_value=''),
+                'interface': KeyInfo(),
+                'list': KeyInfo(),
+                'disabled': KeyInfo(default=False),
+            },
+        ),
+    ),
+    ('interface', 'lte', 'apn'): APIData(
+        unversioned=VersionedAPIData(
+            unknown_mechanism=True,
+            # primary_keys=('default', ),
+            fields={
+                'default': KeyInfo(),
+                'add-default-route': Ke

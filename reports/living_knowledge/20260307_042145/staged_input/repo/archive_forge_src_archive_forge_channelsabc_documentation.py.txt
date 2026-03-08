@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/channelsabc_documentation.py
+KIND: code
+
+import abc
+Test whether the channel is beating.

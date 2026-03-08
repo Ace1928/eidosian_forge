@@ -1,0 +1,619 @@
+SOURCE_PATH: archive_forge/src/archive_forge/asizeof.py
+KIND: code
+
+# mypy: ignore-errors
+
+"""
+This is a stripped-down of asizeof.py from the pympler module. It's vendored
+because pympler is unmaintained, while having a critical vulnerability.
+
+Differences from the original asizeof module:
+- Removed code for running as __main__
+- Removed `adict`
+- `__all__` only includes `asizeof`
+
+The *original* original copyright, license and disclaimer are at the end of this
+file, exactly as they appeared in the pympler code. pympler itself is under the
+Apache license, which appears in the project root.
+
+The original module docstring that appears in pympler follows; note that some of
+it no longer pertains here, but it's preserved to document implementation
+details.
+"""
+
+"""
+**Public Functions** [#unsafe]_
+
+   Function **asizesof** returns a tuple containing the (approximate)
+   size in bytes for each given Python object separately.
+
+   Function **asized** returns for each object an instance of class
+   **Asized** containing all the size information of the object and
+   a tuple with the referents [#refs]_.
+
+   Functions **basicsize** and **itemsize** return the *basic-*
+   respectively *itemsize* of the given object, both in bytes.  For
+   objects as ``array.array``, ``numpy.array``, ``numpy.ndarray``,
+   etc. where the item size varies depending on the instance-specific
+   data type, function **itemsize** returns that item size.
+
+   Function **flatsize** returns the *flat size* of a Python object
+   in bytes defined as the *basic size* plus the *item size* times
+   the *length* of the given object.
+
+   Function **leng** returns the *length* of an object, like standard
+   function ``len`` but extended for several types.  E.g. the **leng**
+   of a multi-precision int (formerly long) is the number of ``digits``
+   [#digit]_.  The length of most *mutable* sequence objects includes
+   an estimate of the over-allocation and therefore, the **leng** value
+   may differ from the standard ``len`` result.  For objects like
+   ``array.array``, ``numpy.array``, ``numpy.ndarray``, etc. function
+   **leng** returns the proper number of items.
+
+   Function **refs** returns (a generator for) the referents [#refs]_
+   of the given object.
+
+**Public Classes** [#unsafe]_
+
+   Class **Asizer** may be used to accumulate the results of several
+   **asizeof** or **asizesof** calls.  After creating an **Asizer**
+   instance, use methods **asizeof** and **asizesof** as needed to
+   size any number of additional objects.
+
+   Call methods **exclude_refs** and/or **exclude_types** to exclude
+   references to respectively instances or types of certain objects.
+
+   Use one of the **print\\_...** methods to report the statistics.
+
+   An instance of class **Asized** is returned for each object sized
+   by the **asized** function or method.
+
+**Duplicate Objects**
+
+   Any duplicate, given objects are sized only once and the size
+   is included in the accumulated total only once.  But functions
+   **asizesof** and **asized** will return a size value respectively
+   an **Asized** instance for each given object, including duplicates.
+
+**Definitions** [#arb]_
+
+   The *length* of an objects like ``dict``, ``list``, ``set``,
+   ``str``, ``tuple``, etc. is defined as the number of items held
+   in or allocated by the object.  Held items are *references* to
+   other objects, called the *referents*.
+
+   The *size* of an object is defined as the sum of the *flat size*
+   of the object plus the sizes of any referents [#refs]_.  Referents
+   are visited recursively up to the specified detail level.  However,
+   the size of objects referenced multiple times is included only once
+   in the total *size*.
+
+   The *flat size* of an object is defined as the *basic size* of the
+   object plus the *item size* times the number of allocated *items*,
+   *references* to referents.  The *flat size* does include the size
+   for the *references* to the referents, but not the size of the
+   referents themselves.
+
+   The *flat size* returned by function *flatsize* equals the result
+   of function *asizeof* with options *code=True*, *ignored=False*,
+   *limit=0* and option *align* set to the same value.
+
+   The accurate *flat size* for an object is obtained from function
+   ``sys.getsizeof()`` where available.  Otherwise, the *length* and
+   *size* of sequence objects as ``dicts``, ``lists``, ``sets``, etc.
+   is based on an estimate for the number of allocated items.  As a
+   result, the reported *length* and *size* may differ substantially
+   from the actual *length* and *size*.
+
+   The *basic* and *item size* are obtained from the ``__basicsize__``
+   respectively ``__itemsize__`` attributes of the (type of the)
+   object.  Where necessary (e.g. sequence objects), a zero
+   ``__itemsize__`` is replaced by the size of a corresponding C type.
+
+   The overhead for Python's garbage collector (GC) is included in
+   the *basic size* of (GC managed) objects as well as the space
+   needed for ``refcounts`` (used only in certain Python builds).
+
+   Optionally, size values can be aligned to any power-of-2 multiple.
+
+**Size of (byte)code**
+
+   The *(byte)code size* of objects like classes, functions, methods,
+   modules, etc. can be included by setting option *code=True*.
+
+   Iterators are handled like sequences: iterated object(s) are sized
+   like *referents* [#refs]_, but only up to the specified level or
+   recursion *limit* (and only if function ``gc.get_referents()``
+   returns the referent object of iterators).
+
+   Generators are sized as *(byte)code* only, but the objects are
+   never generated and never sized.
+
+**New-style Classes**
+
+   All ``class``, instance and ``type`` objects are handled uniformly
+   such that instance objects are distinguished from class objects.
+
+   Class and type objects are represented as ``<class .... def>``
+   respectively ``<type ... def>`` where the ``... def`` suffix marks
+   the *definition object*.  Instances of  classes are shown as
+   ``<class module.name>`` without the ``... def`` suffix.
+
+**Ignored Objects**
+
+   To avoid excessive sizes, several object types are ignored [#arb]_
+   by default, e.g. built-in functions, built-in types and classes
+   [#bi]_, function globals and module referents.  However, any
+   instances thereof and module objects will be sized when passed as
+   given objects.  Ignored object types are included unless option
+   *ignored* is set accordingly.
+
+   In addition, many ``__...__`` attributes of callable objects are
+   ignored [#arb]_, except crucial ones, e.g. class attributes ``__dict__``,
+   ``__doc__``, ``__name__`` and ``__slots__``.  For more details, see
+   the type-specific ``_..._refs()`` and ``_len_...()`` functions below.
+
+.. rubric:: Footnotes
+.. [#unsafe] The functions and classes in this module are not thread-safe.
+
+.. [#refs] The *referents* of an object are the objects referenced *by*
+     that object.  For example, the *referents* of a ``list`` are the
+     objects held in the ``list``, the *referents* of a ``dict`` are
+     the key and value objects in the ``dict``, etc.
+
+.. [#arb] These definitions and other assumptions are rather arbitrary
+     and may need corrections or adjustments.
+
+.. [#digit] The C ``sizeof(digit)`` in bytes can be obtained from the
+     ``int.__itemsize__``  attribute or since Python 3.1+  also from
+     attribute ``sys.int_info.sizeof_digit``.  Function **leng**
+     determines the number of ``digits`` of a multi-precision int.
+
+.. [#bi] All ``type``s and ``class``es in modules named in private set
+     ``_ignored_modules`` are ignored like other, standard built-ins.
+"""
+
+import sys
+import types as Types
+import warnings
+import weakref as Weakref
+from inspect import isbuiltin, isclass, iscode, isframe, isfunction, ismethod, ismodule
+from math import log
+from os import curdir, linesep
+from struct import calcsize
+
+__all__ = ["asizeof"]
+__version__ = "22.06.30"
+
+_NN = ""
+_Not_vari = _NN  # non-variable item size
+
+# Any classes and types in modules named in set _ignored_modules
+# are ignored by default, like other built-ins classes and types
+_ignored_modules = {
+    int.__module__,
+    "types",
+    Exception.__module__,  # 'weakref'
+    __name__,
+}  # inluding this very module
+
+# Sizes of some primitive C types
+# XXX len(pack(T, 0)) == Struct(T).size == calcsize(T)
+_sizeof_Cbyte = calcsize("c")  # sizeof(unsigned char)
+_sizeof_Clong = calcsize("l")  # sizeof(long)
+_sizeof_Cvoidp = calcsize("P")  # sizeof(void*)
+
+# sizeof(long) != sizeof(ssize_t) on LLP64
+_z_P_L = "P" if _sizeof_Clong < _sizeof_Cvoidp else "L"
+
+
+def _calcsize(fmt):
+    """Like struct.calcsize() but with 'z' for Py_ssize_t."""
+    return calcsize(fmt.replace("z", _z_P_L))
+
+
+# Defaults for some basic sizes with 'z' for C Py_ssize_t
+_sizeof_CPyCodeObject = _calcsize("Pz10P5i0P")  # sizeof(PyCodeObject)
+_sizeof_CPyFrameObject = _calcsize("Pzz13P63i0P")  # sizeof(PyFrameObject)
+_sizeof_CPyModuleObject = _calcsize("PzP0P")  # sizeof(PyModuleObject)
+
+# Defaults for some item sizes with 'z' for C Py_ssize_t
+_sizeof_CPyDictEntry = _calcsize("z2P")  # sizeof(PyDictEntry)
+_sizeof_Csetentry = _calcsize("lP")  # sizeof(setentry)
+
+# Get character size for internal unicode representation in Python < 3.3
+u = "\0".encode("utf-8")
+_sizeof_Cunicode = len(u)
+del u
+
+try:  # Size of GC header, sizeof(PyGC_Head)
+    import _testcapi as t
+
+    _sizeof_CPyGC_Head = t.SIZEOF_PYGC_HEAD  # new in Python 2.6
+except (ImportError, AttributeError):  # sizeof(PyGC_Head)
+    # alignment should be to sizeof(long double) but there
+    # is no way to obtain that value, assume twice double
+    t = calcsize("2d") - 1
+    _sizeof_CPyGC_Head = (_calcsize("2Pz") + t) & ~t
+
+# Size of refcounts (Python debug build only)
+t = hasattr(sys, "gettotalrefcount")
+_sizeof_Crefcounts = _calcsize("2z") if t else 0
+del t
+
+# Some flags from .../Include/object.h
+_Py_TPFLAGS_HEAPTYPE = 1 << 9  # Py_TPFLAGS_HEAPTYPE
+_Py_TPFLAGS_HAVE_GC = 1 << 14  # Py_TPFLAGS_HAVE_GC
+
+_Type_type = type(type)  # == type and (new-style) class type
+
+from gc import get_objects as _getobjects
+from gc import get_referents as _getreferents  # containers only?
+
+if sys.platform == "ios":  # Apple iOS
+    _gc_getobjects = _getobjects
+
+    def _getobjects():  # PYCHOK expected
+        # avoid Pythonista3/Python 3+ crash
+        return tuple(o for o in _gc_getobjects() if not _isNULL(o))
+
+
+_getsizeof = sys.getsizeof  # sys.getsizeof() new in Python 2.6
+
+
+# Compatibility functions for more uniform
+# behavior across Python version 2.2 thu 3+
+
+
+def _items(obj):  # dict only
+    """Return iter-/generator, preferably."""
+    o = getattr(obj, "iteritems", obj.items)
+    return o() if callable(o) else (o or ())
+
+
+def _keys(obj):  # dict only
+    """Return iter-/generator, preferably."""
+    o = getattr(obj, "iterkeys", obj.keys)
+    return o() if callable(o) else (o or ())
+
+
+def _values(obj):  # dict only
+    """Return iter-/generator, preferably."""
+    o = getattr(obj, "itervalues", obj.values)
+    return o() if callable(o) else (o or ())
+
+
+# 'cell' is holding data used in closures
+c = (lambda unused: (lambda: unused))(None)
+_cell_type = type(c.__closure__[0])  # type: ignore
+del c
+
+
+# Private functions
+
+
+def _basicsize(t, base=0, heap=False, obj=None):
+    """Get non-zero basicsize of type,
+    including the header sizes.
+    """
+    s = max(getattr(t, "__basicsize__", 0), base)
+    # include gc header size
+    if t != _Type_type:
+        h = getattr(t, "__flags__", 0) & _Py_TPFLAGS_HAVE_GC
+    elif heap:  # type, allocated on heap
+        h = True
+    else:  # None has no __flags__ attr
+        h = getattr(obj, "__flags__", 0) & _Py_TPFLAGS_HEAPTYPE
+    if h:
+        s += _sizeof_CPyGC_Head
+    # include reference counters
+    return s + _sizeof_Crefcounts
+
+
+def _classof(obj, dflt=None):
+    """Return the object's class object."""
+    return getattr(obj, "__class__", dflt)
+
+
+def _derive_typedef(typ):
+    """Return single, existing super type typedef or None."""
+    v = [v for v in _values(_typedefs) if _issubclass(typ, v.type)]
+    return v[0] if len(v) == 1 else None
+
+
+def _dir2(obj, pref=_NN, excl=(), slots=None, itor=_NN):
+    """Return an attribute name, object 2-tuple for certain
+    attributes or for the ``__slots__`` attributes of the
+    given object, but not both.  Any iterator referent
+    objects are returned with the given name if the
+    latter is non-empty.
+    """
+    if slots:  # __slots__ attrs
+        if hasattr(obj, slots):
+            # collect all inherited __slots__ attrs
+            # from list, tuple, or dict __slots__,
+            # while removing any duplicate attrs
+            s = {}
+            for c in type(obj).mro():
+                n = _nameof(c)
+                for a in getattr(c, slots, ()):
+                    if a.startswith("__"):
+                        a = "_" + n + a
+                    if hasattr(obj, a):
+                        s.setdefault(a, getattr(obj, a))
+            # assume __slots__ tuple-like is holding the values
+            # yield slots, _Slots(s)  # _keys(s) ... REMOVED,
+            # see _Slots.__doc__ further below
+            for t in _items(s):
+                yield t  # attr name, value
+    elif itor:  # iterator referents
+        for o in obj:  # iter(obj)
+            yield itor, o
+    else:  # regular attrs
+        for a in dir(obj):
+            if a.startswith(pref) and hasattr(obj, a) and a not in excl:
+                yield a, getattr(obj, a)
+
+
+def _infer_dict(obj):
+    """Return True for likely dict object via duck typing."""
+    for attrs in (("items", "keys", "values"), ("iteritems", "iterkeys", "itervalues")):
+        attrs += "__len__", "get", "has_key"  # 'update'
+        if all(callable(getattr(obj, a, None)) for a in attrs):
+            return True
+    return False
+
+
+def _isbuiltin2(typ):
+    """Return True for built-in types as in Python 2."""
+    # range is no longer a built-in in Python 3+
+    return isbuiltin(typ) or (typ is range)
+
+
+def _iscell(obj):
+    """Return True if obj is a cell as used in a closure."""
+    return isinstance(obj, _cell_type)
+
+
+def _isdictype(obj):
+    """Return True for known dict objects."""
+    c = _classof(obj)
+    n = _nameof(c)
+    return n and n in _dict_types.get(_moduleof(c), ())
+
+
+def _isframe(obj):
+    """Return True for a stack frame object."""
+    try:
+        return isframe(obj)
+    except ReferenceError:
+        return False
+
+
+def _isignored(typ):
+    """Is this a type or class to be ignored?"""
+    return _moduleof(typ) in _ignored_modules
+
+
+def _isnamedtuple(obj):
+    """Named tuples are identified via duck typing:
+    <http://www.Gossamer-Threads.com/lists/python/dev/1142178>
+    """
+    return isinstance(obj, tuple) and hasattr(obj, "_fields")
+
+
+def _isNULL(obj):
+    """Prevent asizeof(all=True, ...) crash.
+
+    Sizing gc.get_objects() crashes in Pythonista3 with
+    Python 3.5.1 on iOS due to 1-tuple (<Null>,) object,
+    see <http://forum.omz-software.com/user/mrjean1>.
+    """
+    return isinstance(obj, tuple) and len(obj) == 1 and repr(obj) == "(<NULL>,)"
+
+
+def _issubclass(obj, Super):
+    """Safe inspect.issubclass() returning None if Super is
+    *object* or if obj and Super are not a class or type.
+    """
+    if Super is not object:
+        try:
+            return issubclass(obj, Super)
+        except TypeError:
+            pass
+    return None
+
+
+def _itemsize(t, item=0):
+    """Get non-zero itemsize of type."""
+    # replace zero value with default
+    return getattr(t, "__itemsize__", 0) or item
+
+
+def _kwdstr(**kwds):
+    """Keyword arguments as a string."""
+    return ", ".join(sorted("%s=%r" % kv for kv in _items(kwds)))
+
+
+def _lengstr(obj):
+    """Object length as a string."""
+    n = leng(obj)
+    if n is None:  # no len
+        r = _NN
+    else:
+        x = "!" if n > _len(obj) else _NN  # extended
+        r = " leng %d%s" % (n, x)
+    return r
+
+
+def _moduleof(obj, dflt=_NN):
+    """Return the object's module name."""
+    return getattr(obj, "__module__", dflt)
+
+
+def _nameof(obj, dflt=_NN):
+    """Return the name of an object."""
+    return getattr(obj, "__name__", dflt)
+
+
+def _objs_opts_x(where, objs, all=None, **opts):
+    """Return the given or 'all' objects plus
+    the remaining options and exclude flag
+    """
+    if objs:  # given objects
+        t, x = objs, False
+    elif all in (False, None):
+        t, x = (), True
+    elif all is True:  # 'all' objects
+        t, x = _getobjects(), True
+    else:
+        raise _OptionError(where, all=all)
+    return t, opts, x
+
+
+def _OptionError(where, Error=ValueError, **options):
+    """Format an *Error* instance for invalid *option* or *options*."""
+    t = _plural(len(options)), _nameof(where), _kwdstr(**options)
+    return Error("invalid option%s: %s(%s)" % t)
+
+
+def _p100(part, total, prec=1):
+    """Return percentage as string."""
+    t = float(total)
+    if t > 0:
+        p = part * 100.0 / t
+        r = "%.*f%%" % (prec, p)
+    else:
+        r = "n/a"
+    return r
+
+
+def _plural(num):
+    """Return 's' if *num* is not one."""
+    return "s" if num != 1 else _NN
+
+
+def _power_of_2(n):
+    """Find the next power of 2."""
+    p2 = 2 ** int(log(n, 2))
+    while n > p2:
+        p2 += p2
+    return p2
+
+
+def _prepr(obj, clip=0):
+    """Prettify and clip long repr() string."""
+    return _repr(obj, clip=clip).strip("<>").replace("'", _NN)  # remove <''>
+
+
+def _printf(fmt, *args, **print3options):
+    """Formatted print to sys.stdout or given stream.
+
+    *print3options* -- some keyword arguments, like Python 3+ print.
+    """
+    if print3options:  # like Python 3+
+        f = print3options.get("file", None) or sys.stdout
+        if args:
+            f.write(fmt % args)
+        else:
+            f.write(fmt)
+        f.write(print3options.get("end", linesep))
+        if print3options.get("flush", False):
+            f.flush()
+    elif args:
+        print(fmt % args)
+    else:
+        print(fmt)
+
+
+def _refs(obj, named, *attrs, **kwds):
+    """Return specific attribute objects of an object."""
+    if named:
+        _N = _NamedRef
+    else:
+
+        def _N(unused, o):
+            return o
+
+    for a in attrs:  # cf. inspect.getmembers()
+        if hasattr(obj, a):
+            yield _N(a, getattr(obj, a))
+    if kwds:  # kwds are _dir2() args
+        for a, o in _dir2(obj, **kwds):
+            yield _N(a, o)
+
+
+def _repr(obj, clip=80):
+    """Clip long repr() string."""
+    try:  # safe repr()
+        r = repr(obj).replace(linesep, "\\n")
+    except Exception:
+        r = "N/A"
+    if len(r) > clip > 0:
+        h = (clip // 2) - 2
+        if h > 0:
+            r = r[:h] + "...." + r[-h:]
+    return r
+
+
+def _SI(size, K=1024, i="i"):
+    """Return size as SI string."""
+    if 1 < K <= size:
+        f = float(size)
+        for si in iter("KMGPTE"):
+            f /= K
+            if f < K:
+                return " or %.1f %s%sB" % (f, si, i)
+    return _NN
+
+
+def _SI2(size, **kwds):
+    """Return size as regular plus SI string."""
+    return str(size) + _SI(size, **kwds)
+
+
+# Type-specific referents functions
+
+
+def _cell_refs(obj, named):
+    try:  # handle 'empty' cells
+        o = obj.cell_contents
+        if named:
+            o = _NamedRef("cell_contents", o)
+        yield o
+    except (AttributeError, ValueError):
+        pass
+
+
+def _class_refs(obj, named):
+    """Return specific referents of a class object."""
+    return _refs(
+        obj,
+        named,
+        "__class__",
+        "__doc__",
+        "__mro__",
+        "__name__",
+        "__slots__",
+        "__weakref__",
+        "__dict__",
+    )  # __dict__ last
+
+
+def _co_refs(obj, named):
+    """Return specific referents of a code object."""
+    return _refs(obj, named, pref="co_")
+
+
+def _dict_refs(obj, named):
+    """Return key and value objects of a dict/proxy."""
+    try:
+        if named:
+            for k, v in _items(obj):
+                s = str(k)
+                yield _NamedRef("[K] " + s, k)
+                s += ": " + _repr(v)
+                yield _NamedRef("[V] " + s, v)
+        else:
+            for k, v in _items(obj):
+                yield

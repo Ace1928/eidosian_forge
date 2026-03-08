@@ -1,0 +1,28 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/SD
+KIND: config
+
+SDZ
+wasat darfur zalinjaycentral darfurولاية وسطولاية وسط دارفور@
+ولاية شرقeast darfurولاية شرق دارفورR
+gharb kurdufanwest kordofanولاية غربولاية غرب كردفانN
+gharb darfurwest darfurولاية غربولاية غرب دارفورT
+shamal darfurnorth darfurولاية شمال ولاية شمال دارفورS
+janub darfursouth darfurولاية جنوب ولاية جنوب دارفورU
+
+al qadarifgedarefالقضارفولاية القضولاية القضارف7
+
+al jazirahالجزيرةولاية الجزيرةL
+ash sharqiyahkassalakessala
+كسالاكسلاولاية كسلاF
+
+al khartumkhartoumولاية الخرولاية الخرطومp
+shiamal kurdufannorth kurdufanشمال كردفانولاية شمال ولاية شمال كردفانn
+janub kurdufansouth kordofanجنوب كردفانولاية جنوب ولاية جنوب كردفان]
+النيل الأزرق	blue nileولاية الني"ولاية النيل الأزرقb
+ash shamaliyahnorthernالشماليةالولاية الشماليةولاية الشم7
+nahr an nil
+river nileولاية نهر النيلY
+an nīl al abyaḍ
+white nileولاية الني"ولاية النيل الأبيضm
+al bahr al ahmarred seaالبحر الأحمرولاية البح"ولاية البحر الأحمر%
+sinnarsennarولاية سنار

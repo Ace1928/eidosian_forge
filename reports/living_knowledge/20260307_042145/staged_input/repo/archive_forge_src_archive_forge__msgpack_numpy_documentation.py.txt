@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_msgpack_numpy_documentation.py
+KIND: code
+
+Decoder for deserializing numpy data types.

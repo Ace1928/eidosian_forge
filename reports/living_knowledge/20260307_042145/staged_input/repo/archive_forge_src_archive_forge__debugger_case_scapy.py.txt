@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_debugger_case_scapy.py
+KIND: code
+
+from scapy import all as scapy
+print('TEST SUCEEDED!')

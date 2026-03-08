@@ -1,0 +1,594 @@
+SOURCE_PATH: archive_forge/src/archive_forge/array_analysis.py
+KIND: code
+
+#
+# Copyright (c) 2017 Intel Corporation
+# SPDX-License-Identifier: BSD-2-Clause
+#
+
+import numpy
+import operator
+from numba.core import types, ir, config, cgutils, errors
+from numba.core.ir_utils import (
+    mk_unique_var,
+    find_topo_order,
+    dprint_func_ir,
+    get_global_func_typ,
+    guard,
+    require,
+    get_definition,
+    find_callname,
+    find_build_sequence,
+    find_const,
+    is_namedtuple_class,
+    build_definitions,
+    find_potential_aliases,
+    get_canonical_alias,
+    GuardException,
+)
+from numba.core.analysis import compute_cfg_from_blocks
+from numba.core.typing import npydecl, signature
+import copy
+from numba.core.extending import intrinsic
+import llvmlite
+
+UNKNOWN_CLASS = -1
+CONST_CLASS = 0
+MAP_TYPES = [numpy.ufunc]
+
+array_analysis_extensions = {}
+
+# declaring call classes
+array_creation = ["empty", "zeros", "ones", "full"]
+
+random_int_args = ["rand", "randn"]
+
+random_1arg_size = [
+    "ranf",
+    "random_sample",
+    "sample",
+    "random",
+    "standard_normal",
+]
+
+random_2arg_sizelast = [
+    "chisquare",
+    "weibull",
+    "power",
+    "geometric",
+    "exponential",
+    "poisson",
+    "rayleigh",
+]
+
+random_3arg_sizelast = [
+    "normal",
+    "uniform",
+    "beta",
+    "binomial",
+    "f",
+    "gamma",
+    "lognormal",
+    "laplace",
+]
+
+random_calls = (
+    random_int_args
+    + random_1arg_size
+    + random_2arg_sizelast
+    + random_3arg_sizelast
+    + ["randint", "triangular"]
+)
+
+
+@intrinsic
+def wrap_index(typingctx, idx, size):
+    """
+    Calculate index value "idx" relative to a size "size" value as
+    (idx % size), where "size" is known to be positive.
+    Note that we use the mod(%) operation here instead of
+    (idx < 0 ? idx + size : idx) because we may have situations
+    where idx > size due to the way indices are calculated
+    during slice/range analysis.
+
+    Both idx and size have to be Integer types.
+    size should be from the array size vars that array_analysis
+    adds and the bitwidth should match the platform maximum.
+    """
+    require(isinstance(idx, types.scalars.Integer))
+    require(isinstance(size, types.scalars.Integer))
+
+    # We need both idx and size to be platform size so that we can compare.
+    unified_ty = types.intp if size.signed else types.uintp
+    idx_unified = types.intp if idx.signed else types.uintp
+
+    def codegen(context, builder, sig, args):
+        ll_idx_unified_ty = context.get_data_type(idx_unified)
+        ll_unified_ty = context.get_data_type(unified_ty)
+        if idx_unified.signed:
+            idx = builder.sext(args[0], ll_idx_unified_ty)
+        else:
+            idx = builder.zext(args[0], ll_idx_unified_ty)
+        if unified_ty.signed:
+            size = builder.sext(args[1], ll_unified_ty)
+        else:
+            size = builder.zext(args[1], ll_unified_ty)
+        neg_size = builder.neg(size)
+        zero = llvmlite.ir.Constant(ll_unified_ty, 0)
+        # If idx is unsigned then these signed comparisons will fail in those
+        # cases where the idx has the highest bit set, namely more than 2**63
+        # on 64-bit platforms.
+        idx_negative = builder.icmp_signed("<", idx, zero)
+        pos_oversize = builder.icmp_signed(">=", idx, size)
+        neg_oversize = builder.icmp_signed("<=", idx, neg_size)
+        pos_res = builder.select(pos_oversize, size, idx)
+        neg_res = builder.select(neg_oversize, zero, builder.add(idx, size))
+        mod = builder.select(idx_negative, neg_res, pos_res)
+        return mod
+
+    return signature(unified_ty, idx, size), codegen
+
+
+def wrap_index_literal(idx, size):
+    if idx < 0:
+        if idx <= -size:
+            return 0
+        else:
+            return idx + size
+    else:
+        if idx >= size:
+            return size
+        else:
+            return idx
+
+
+@intrinsic
+def assert_equiv(typingctx, *val):
+    """
+    A function that asserts the inputs are of equivalent size,
+    and throws runtime error when they are not. The input is
+    a vararg that contains an error message, followed by a set
+    of objects of either array, tuple or integer.
+    """
+    if len(val) > 1:
+        # Make sure argument is a single tuple type. Note that this only
+        # happens when IR containing assert_equiv call is being compiled
+        # (and going through type inference) again.
+        val = (types.StarArgTuple(val),)
+
+    assert len(val[0]) > 1
+    # Arguments must be either array, tuple, or integer
+    assert all(
+        isinstance(a, (
+            types.ArrayCompatible,
+            types.BaseTuple,
+            types.SliceType,
+            types.Integer
+        ))
+        for a in val[0][1:]
+    )
+    if not isinstance(val[0][0], types.StringLiteral):
+        raise errors.TypingError('first argument must be a StringLiteral')
+
+    def codegen(context, builder, sig, args):
+        assert len(args) == 1  # it is a vararg tuple
+        tup = cgutils.unpack_tuple(builder, args[0])
+        tup_type = sig.args[0]
+        msg = sig.args[0][0].literal_value
+
+        def unpack_shapes(a, aty):
+            if isinstance(aty, types.ArrayCompatible):
+                ary = context.make_array(aty)(context, builder, a)
+                return cgutils.unpack_tuple(builder, ary.shape)
+            elif isinstance(aty, types.BaseTuple):
+                return cgutils.unpack_tuple(builder, a)
+            else:  # otherwise it is a single integer
+                return [a]
+
+        def pairwise(a, aty, b, bty):
+            ashapes = unpack_shapes(a, aty)
+            bshapes = unpack_shapes(b, bty)
+            assert len(ashapes) == len(bshapes)
+            for (m, n) in zip(ashapes, bshapes):
+                m_eq_n = builder.icmp_unsigned('==', m, n)
+                with builder.if_else(m_eq_n) as (then, orelse):
+                    with then:
+                        pass
+                    with orelse:
+                        context.call_conv.return_user_exc(
+                            builder, AssertionError, (msg,)
+                        )
+
+        for i in range(1, len(tup_type) - 1):
+            pairwise(tup[i], tup_type[i], tup[i + 1], tup_type[i + 1])
+        r = context.get_constant_generic(builder, types.NoneType, None)
+        return r
+
+    return signature(types.none, *val), codegen
+
+
+class EquivSet(object):
+
+    """EquivSet keeps track of equivalence relations between
+    a set of objects.
+    """
+
+    def __init__(self, obj_to_ind=None, ind_to_obj=None, next_ind=0):
+        """Create a new EquivSet object. Optional keyword arguments are for
+        internal use only.
+        """
+        # obj_to_ind maps object to equivalence index (sometimes also called
+        # equivalence class) is a non-negative number that uniquely identifies
+        # a set of objects that are equivalent.
+        self.obj_to_ind = obj_to_ind if obj_to_ind else {}
+        # ind_to_obj maps equivalence index to a list of objects.
+        self.ind_to_obj = ind_to_obj if ind_to_obj else {}
+        # next index number that is incremented each time a new equivalence
+        # relation is created.
+        self.next_ind = next_ind
+
+    def empty(self):
+        """Return an empty EquivSet object.
+        """
+        return EquivSet()
+
+    def clone(self):
+        """Return a new copy.
+        """
+        return EquivSet(
+            obj_to_ind=copy.deepcopy(self.obj_to_ind),
+            ind_to_obj=copy.deepcopy(self.ind_to_obj),
+            next_id=self.next_ind,
+        )
+
+    def __repr__(self):
+        return "EquivSet({})".format(self.ind_to_obj)
+
+    def is_empty(self):
+        """Return true if the set is empty, or false otherwise.
+        """
+        return self.obj_to_ind == {}
+
+    def _get_ind(self, x):
+        """Return the internal index (greater or equal to 0) of the given
+        object, or -1 if not found.
+        """
+        return self.obj_to_ind.get(x, -1)
+
+    def _get_or_add_ind(self, x):
+        """Return the internal index (greater or equal to 0) of the given
+        object, or create a new one if not found.
+        """
+        if x in self.obj_to_ind:
+            i = self.obj_to_ind[x]
+        else:
+            i = self.next_ind
+            self.next_ind += 1
+        return i
+
+    def _insert(self, objs):
+        """Base method that inserts a set of equivalent objects by modifying
+        self.
+        """
+        assert len(objs) > 1
+
+        inds = tuple(self._get_or_add_ind(x) for x in objs)
+        ind = min(inds)
+
+        if config.DEBUG_ARRAY_OPT >= 2:
+            print("_insert:", objs, inds)
+
+        if not (ind in self.ind_to_obj):
+            self.ind_to_obj[ind] = []
+
+        for i, obj in zip(inds, objs):
+            if i == ind:
+                if not (obj in self.ind_to_obj[ind]):
+                    self.ind_to_obj[ind].append(obj)
+                    self.obj_to_ind[obj] = ind
+            else:
+                if i in self.ind_to_obj:
+                    # those already existing are reassigned
+                    for x in self.ind_to_obj[i]:
+                        self.obj_to_ind[x] = ind
+                        self.ind_to_obj[ind].append(x)
+                    del self.ind_to_obj[i]
+                else:
+                    # those that are new are assigned.
+                    self.obj_to_ind[obj] = ind
+                    self.ind_to_obj[ind].append(obj)
+
+    def is_equiv(self, *objs):
+        """Try to derive if given objects are equivalent, return true
+        if so, or false otherwise.
+        """
+        inds = [self._get_ind(x) for x in objs]
+        ind = max(inds)
+        if ind != -1:
+            return all(i == ind for i in inds)
+        else:
+            return all([x == objs[0] for x in objs])
+
+    def get_equiv_const(self, obj):
+        """Check if obj is equivalent to some int constant, and return
+        the constant if found, or None otherwise.
+        """
+        ind = self._get_ind(obj)
+        if ind >= 0:
+            objs = self.ind_to_obj[ind]
+            for x in objs:
+                if isinstance(x, int):
+                    return x
+        return None
+
+    def get_equiv_set(self, obj):
+        """Return the set of equivalent objects.
+        """
+        ind = self._get_ind(obj)
+        if ind >= 0:
+            return set(self.ind_to_obj[ind])
+        return set()
+
+    def insert_equiv(self, *objs):
+        """Insert a set of equivalent objects by modifying self. This
+        method can be overloaded to transform object type before insertion.
+        """
+        return self._insert(objs)
+
+    def intersect(self, equiv_set):
+        """ Return the intersection of self and the given equiv_set,
+        without modifying either of them. The result will also keep
+        old equivalence indices unchanged.
+        """
+        new_set = self.empty()
+        new_set.next_ind = self.next_ind
+
+        for objs in equiv_set.ind_to_obj.values():
+            inds = tuple(self._get_ind(x) for x in objs)
+            ind_to_obj = {}
+
+            for i, x in zip(inds, objs):
+                if i in ind_to_obj:
+                    ind_to_obj[i].append(x)
+                elif i >= 0:
+                    ind_to_obj[i] = [x]
+
+            for v in ind_to_obj.values():
+                if len(v) > 1:
+                    new_set._insert(v)
+
+        return new_set
+
+
+class ShapeEquivSet(EquivSet):
+
+    """Just like EquivSet, except that it accepts only numba IR variables
+    and constants as objects, guided by their types. Arrays are considered
+    equivalent as long as their shapes are equivalent. Scalars are
+    equivalent only when they are equal in value. Tuples are equivalent
+    when they are of the same size, and their elements are equivalent.
+    """
+
+    def __init__(
+        self,
+        typemap,
+        defs=None,
+        ind_to_var=None,
+        obj_to_ind=None,
+        ind_to_obj=None,
+        next_id=0,
+        ind_to_const=None,
+    ):
+        """Create a new ShapeEquivSet object, where typemap is a dictionary
+        that maps variable names to their types, and it will not be modified.
+        Optional keyword arguments are for internal use only.
+        """
+        self.typemap = typemap
+        # defs maps variable name to an int, where
+        # 1 means the variable is defined only once, and numbers greater
+        # than 1 means defined more than once.
+        self.defs = defs if defs else {}
+        # ind_to_var maps index number to a list of variables (of ir.Var type).
+        # It is used to retrieve defined shape variables given an equivalence
+        # index.
+        self.ind_to_var = ind_to_var if ind_to_var else {}
+        # ind_to_const maps index number to a constant, if known.
+        self.ind_to_const = ind_to_const if ind_to_const else {}
+
+        super(ShapeEquivSet, self).__init__(obj_to_ind, ind_to_obj, next_id)
+
+    def empty(self):
+        """Return an empty ShapeEquivSet.
+        """
+        return ShapeEquivSet(self.typemap, {})
+
+    def clone(self):
+        """Return a new copy.
+        """
+        return ShapeEquivSet(
+            self.typemap,
+            defs=copy.copy(self.defs),
+            ind_to_var=copy.copy(self.ind_to_var),
+            obj_to_ind=copy.deepcopy(self.obj_to_ind),
+            ind_to_obj=copy.deepcopy(self.ind_to_obj),
+            next_id=self.next_ind,
+            ind_to_const=copy.deepcopy(self.ind_toconst),
+        )
+
+    def __repr__(self):
+        return "ShapeEquivSet({}, ind_to_var={}, ind_to_const={})".format(
+            self.ind_to_obj, self.ind_to_var, self.ind_to_const
+        )
+
+    def _get_names(self, obj):
+        """Return a set of names for the given obj, where array and tuples
+        are broken down to their individual shapes or elements. This is
+        safe because both Numba array shapes and Python tuples are immutable.
+        """
+        if isinstance(obj, ir.Var) or isinstance(obj, str):
+            name = obj if isinstance(obj, str) else obj.name
+            if name not in self.typemap:
+                return (name,)
+
+            typ = self.typemap[name]
+            if isinstance(typ, (types.BaseTuple, types.ArrayCompatible)):
+                ndim = (typ.ndim
+                        if isinstance(typ, types.ArrayCompatible)
+                        else len(typ))
+                # Treat 0d array as if it were a scalar.
+                if ndim == 0:
+                    return (name,)
+                else:
+                    return tuple("{}#{}".format(name, i) for i in range(ndim))
+            else:
+                return (name,)
+        elif isinstance(obj, ir.Const):
+            if isinstance(obj.value, tuple):
+                return obj.value
+            else:
+                return (obj.value,)
+        elif isinstance(obj, tuple):
+
+            def get_names(x):
+                names = self._get_names(x)
+                if len(names) != 0:
+                    return names[0]
+                return names
+
+            return tuple(get_names(x) for x in obj)
+        elif isinstance(obj, int):
+            return (obj,)
+        if config.DEBUG_ARRAY_OPT >= 1:
+            print(
+                f"Ignoring untracked object type {type(obj)} in ShapeEquivSet")
+        return ()
+
+    def is_equiv(self, *objs):
+        """Overload EquivSet.is_equiv to handle Numba IR variables and
+        constants.
+        """
+        assert len(objs) > 1
+        obj_names = [self._get_names(x) for x in objs]
+        obj_names = [x for x in obj_names if x != ()]  # rule out 0d shape
+        if len(obj_names) <= 1:
+            return False
+        ndims = [len(names) for names in obj_names]
+        ndim = ndims[0]
+        if not all(ndim == x for x in ndims):
+            if config.DEBUG_ARRAY_OPT >= 1:
+                print("is_equiv: Dimension mismatch for {}".format(objs))
+            return False
+        for i in range(ndim):
+            names = [obj_name[i] for obj_name in obj_names]
+            if not super(ShapeEquivSet, self).is_equiv(*names):
+                return False
+        return True
+
+    def get_equiv_const(self, obj):
+        """If the given object is equivalent to a constant scalar,
+        return the scalar value, or None otherwise.
+        """
+        names = self._get_names(obj)
+        if len(names) != 1:
+            return None
+        return super(ShapeEquivSet, self).get_equiv_const(names[0])
+
+    def get_equiv_var(self, obj):
+        """If the given object is equivalent to some defined variable,
+        return the variable, or None otherwise.
+        """
+        names = self._get_names(obj)
+        if len(names) != 1:
+            return None
+        ind = self._get_ind(names[0])
+        vs = self.ind_to_var.get(ind, [])
+        return vs[0] if vs != [] else None
+
+    def get_equiv_set(self, obj):
+        """Return the set of equivalent objects.
+        """
+        names = self._get_names(obj)
+        if len(names) != 1:
+            return None
+        return super(ShapeEquivSet, self).get_equiv_set(names[0])
+
+    def _insert(self, objs):
+        """Overload EquivSet._insert to manage ind_to_var dictionary.
+        """
+        inds = []
+        for obj in objs:
+            if obj in self.obj_to_ind:
+                inds.append(self.obj_to_ind[obj])
+        varlist = []
+        constval = None
+        names = set()
+        for i in sorted(inds):
+            if i in self.ind_to_var:
+                for x in self.ind_to_var[i]:
+                    if not (x.name in names):
+                        varlist.append(x)
+                        names.add(x.name)
+            if i in self.ind_to_const:
+                assert constval is None
+                constval = self.ind_to_const[i]
+        super(ShapeEquivSet, self)._insert(objs)
+        new_ind = self.obj_to_ind[objs[0]]
+        for i in set(inds):
+            if i in self.ind_to_var:
+                del self.ind_to_var[i]
+        self.ind_to_var[new_ind] = varlist
+        if constval is not None:
+            self.ind_to_const[new_ind] = constval
+
+    def insert_equiv(self, *objs):
+        """Overload EquivSet.insert_equiv to handle Numba IR variables and
+        constants. Input objs are either variable or constant, and at least
+        one of them must be variable.
+        """
+        assert len(objs) > 1
+        obj_names = [self._get_names(x) for x in objs]
+        obj_names = [x for x in obj_names if x != ()]  # rule out 0d shape
+        if len(obj_names) <= 1:
+            return
+        names = sum([list(x) for x in obj_names], [])
+        ndims = [len(x) for x in obj_names]
+        ndim = ndims[0]
+        assert all(
+            ndim == x for x in ndims
+        ), "Dimension mismatch for {}".format(objs)
+        varlist = []
+        constlist = []
+        for obj in objs:
+            if not isinstance(obj, tuple):
+                obj = (obj,)
+            for var in obj:
+                if isinstance(var, ir.Var) and not (var.name in varlist):
+                    # favor those already defined, move to front of varlist
+                    if var.name in self.defs:
+                        varlist.insert(0, var)
+                    else:
+                        varlist.append(var)
+                if isinstance(var, ir.Const) and not (var.value in constlist):
+                    constlist.append(var.value)
+
+        # try to populate ind_to_var if variables are present
+        for obj in varlist:
+            name = obj.name
+            if name in names and not (name in self.obj_to_ind):
+                self.ind_to_obj[self.next_ind] = [name]
+                self.obj_to_ind[name] = self.next_ind
+                self.ind_to_var[self.next_ind] = [obj]
+                self.next_ind += 1
+
+        # create equivalence classes for previously unseen constants
+        for const in constlist:
+            if const in names and not (const in self.obj_to_ind):
+                self.ind_to_obj[self.next_ind] = [const]
+                self.obj_to_ind[const] = self.next_ind
+                self.ind_to_const[self.next_ind] = const
+                self.next_ind += 1
+
+        some_change = False
+
+        for i in range(ndim):
+            names = [obj_name[i] f

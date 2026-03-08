@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/Primer3_documentation.py
+KIND: code
+
+Length of the primer product (i.e. product size).

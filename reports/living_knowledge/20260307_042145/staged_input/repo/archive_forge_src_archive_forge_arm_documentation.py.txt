@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/arm_documentation.py
+KIND: code
+
+import sys                                                                     
+from numpy.distutils.fcompiler import FCompiler, dummy_fortran_file
+from sys import platform                                                       
+from os.path import join, dirname, normpath
+import functools
+List of compiler library directories.

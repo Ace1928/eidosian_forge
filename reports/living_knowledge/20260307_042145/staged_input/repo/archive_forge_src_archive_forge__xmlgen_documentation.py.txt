@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_xmlgen_documentation.py
+KIND: code
+
+import sys, re
+ xml-escape the given unicode string.

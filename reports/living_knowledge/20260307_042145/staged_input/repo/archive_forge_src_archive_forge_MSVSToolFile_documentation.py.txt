@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/MSVSToolFile_documentation.py
+KIND: code
+
+import gyp.easy_xml as easy_xml
+Writes the tool file.

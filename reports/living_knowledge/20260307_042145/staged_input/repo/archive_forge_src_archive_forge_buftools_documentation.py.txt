@@ -1,0 +1,12 @@
+SOURCE_PATH: archive_forge/src/archive_forge/buftools_documentation.py
+KIND: code
+
+import a new buffer interface.
+import pygame
+import pygame.newbuffer
+from pygame.newbuffer import (
+import unittest
+import ctypes
+import operator
+from functools import reduce
+return int or None for NULL field

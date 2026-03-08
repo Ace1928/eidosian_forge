@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_cpchecker_documentation.py
+KIND: code
+
+import os
+import warnings
+import builtins
+import cherrypy
+Warn if any socket_host is 'localhost'. See #711.

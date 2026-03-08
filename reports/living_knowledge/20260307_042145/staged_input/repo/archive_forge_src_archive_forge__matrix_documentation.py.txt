@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_matrix_documentation.py
+KIND: code
+
+Returns a copy of row i of the matrix, as a (1 x n) sparse
+        matrix (row vector).

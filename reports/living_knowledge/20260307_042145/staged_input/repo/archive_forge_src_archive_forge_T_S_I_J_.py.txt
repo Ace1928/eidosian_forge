@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/T_S_I_J_.py
+KIND: code
+
+from .T_S_I_V_ import table_T_S_I_V_
+
+
+class table_T_S_I_J_(table_T_S_I_V_):
+    pass

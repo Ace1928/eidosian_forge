@@ -1,0 +1,571 @@
+SOURCE_PATH: archive_forge/src/archive_forge/axisgrid.py
+KIND: code
+
+from __future__ import annotations
+from itertools import product
+from inspect import signature
+import warnings
+from textwrap import dedent
+
+import numpy as np
+import pandas as pd
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+
+from ._base import VectorPlotter, variable_type, categorical_order
+from ._core.data import handle_data_source
+from ._compat import share_axis, get_legend_handles
+from . import utils
+from .utils import (
+    adjust_legend_subtitles,
+    set_hls_values,
+    _check_argument,
+    _draw_figure,
+    _disable_autolayout
+)
+from .palettes import color_palette, blend_palette
+from ._docstrings import (
+    DocstringComponents,
+    _core_docs,
+)
+
+__all__ = ["FacetGrid", "PairGrid", "JointGrid", "pairplot", "jointplot"]
+
+
+_param_docs = DocstringComponents.from_nested_components(
+    core=_core_docs["params"],
+)
+
+
+class _BaseGrid:
+    """Base class for grids of subplots."""
+
+    def set(self, **kwargs):
+        """Set attributes on each subplot Axes."""
+        for ax in self.axes.flat:
+            if ax is not None:  # Handle removed axes
+                ax.set(**kwargs)
+        return self
+
+    @property
+    def fig(self):
+        """DEPRECATED: prefer the `figure` property."""
+        # Grid.figure is preferred because it matches the Axes attribute name.
+        # But as the maintanace burden on having this property is minimal,
+        # let's be slow about formally deprecating it. For now just note its deprecation
+        # in the docstring; add a warning in version 0.13, and eventually remove it.
+        return self._figure
+
+    @property
+    def figure(self):
+        """Access the :class:`matplotlib.figure.Figure` object underlying the grid."""
+        return self._figure
+
+    def apply(self, func, *args, **kwargs):
+        """
+        Pass the grid to a user-supplied function and return self.
+
+        The `func` must accept an object of this type for its first
+        positional argument. Additional arguments are passed through.
+        The return value of `func` is ignored; this method returns self.
+        See the `pipe` method if you want the return value.
+
+        Added in v0.12.0.
+
+        """
+        func(self, *args, **kwargs)
+        return self
+
+    def pipe(self, func, *args, **kwargs):
+        """
+        Pass the grid to a user-supplied function and return its value.
+
+        The `func` must accept an object of this type for its first
+        positional argument. Additional arguments are passed through.
+        The return value of `func` becomes the return value of this method.
+        See the `apply` method if you want to return self instead.
+
+        Added in v0.12.0.
+
+        """
+        return func(self, *args, **kwargs)
+
+    def savefig(self, *args, **kwargs):
+        """
+        Save an image of the plot.
+
+        This wraps :meth:`matplotlib.figure.Figure.savefig`, using bbox_inches="tight"
+        by default. Parameters are passed through to the matplotlib function.
+
+        """
+        kwargs = kwargs.copy()
+        kwargs.setdefault("bbox_inches", "tight")
+        self.figure.savefig(*args, **kwargs)
+
+
+class Grid(_BaseGrid):
+    """A grid that can have multiple subplots and an external legend."""
+    _margin_titles = False
+    _legend_out = True
+
+    def __init__(self):
+
+        self._tight_layout_rect = [0, 0, 1, 1]
+        self._tight_layout_pad = None
+
+        # This attribute is set externally and is a hack to handle newer functions that
+        # don't add proxy artists onto the Axes. We need an overall cleaner approach.
+        self._extract_legend_handles = False
+
+    def tight_layout(self, *args, **kwargs):
+        """Call fig.tight_layout within rect that exclude the legend."""
+        kwargs = kwargs.copy()
+        kwargs.setdefault("rect", self._tight_layout_rect)
+        if self._tight_layout_pad is not None:
+            kwargs.setdefault("pad", self._tight_layout_pad)
+        self._figure.tight_layout(*args, **kwargs)
+        return self
+
+    def add_legend(self, legend_data=None, title=None, label_order=None,
+                   adjust_subtitles=False, **kwargs):
+        """Draw a legend, maybe placing it outside axes and resizing the figure.
+
+        Parameters
+        ----------
+        legend_data : dict
+            Dictionary mapping label names (or two-element tuples where the
+            second element is a label name) to matplotlib artist handles. The
+            default reads from ``self._legend_data``.
+        title : string
+            Title for the legend. The default reads from ``self._hue_var``.
+        label_order : list of labels
+            The order that the legend entries should appear in. The default
+            reads from ``self.hue_names``.
+        adjust_subtitles : bool
+            If True, modify entries with invisible artists to left-align
+            the labels and set the font size to that of a title.
+        kwargs : key, value pairings
+            Other keyword arguments are passed to the underlying legend methods
+            on the Figure or Axes object.
+
+        Returns
+        -------
+        self : Grid instance
+            Returns self for easy chaining.
+
+        """
+        # Find the data for the legend
+        if legend_data is None:
+            legend_data = self._legend_data
+        if label_order is None:
+            if self.hue_names is None:
+                label_order = list(legend_data.keys())
+            else:
+                label_order = list(map(utils.to_utf8, self.hue_names))
+
+        blank_handle = mpl.patches.Patch(alpha=0, linewidth=0)
+        handles = [legend_data.get(lab, blank_handle) for lab in label_order]
+        title = self._hue_var if title is None else title
+        title_size = mpl.rcParams["legend.title_fontsize"]
+
+        # Unpack nested labels from a hierarchical legend
+        labels = []
+        for entry in label_order:
+            if isinstance(entry, tuple):
+                _, label = entry
+            else:
+                label = entry
+            labels.append(label)
+
+        # Set default legend kwargs
+        kwargs.setdefault("scatterpoints", 1)
+
+        if self._legend_out:
+
+            kwargs.setdefault("frameon", False)
+            kwargs.setdefault("loc", "center right")
+
+            # Draw a full-figure legend outside the grid
+            figlegend = self._figure.legend(handles, labels, **kwargs)
+
+            self._legend = figlegend
+            figlegend.set_title(title, prop={"size": title_size})
+
+            if adjust_subtitles:
+                adjust_legend_subtitles(figlegend)
+
+            # Draw the plot to set the bounding boxes correctly
+            _draw_figure(self._figure)
+
+            # Calculate and set the new width of the figure so the legend fits
+            legend_width = figlegend.get_window_extent().width / self._figure.dpi
+            fig_width, fig_height = self._figure.get_size_inches()
+            self._figure.set_size_inches(fig_width + legend_width, fig_height)
+
+            # Draw the plot again to get the new transformations
+            _draw_figure(self._figure)
+
+            # Now calculate how much space we need on the right side
+            legend_width = figlegend.get_window_extent().width / self._figure.dpi
+            space_needed = legend_width / (fig_width + legend_width)
+            margin = .04 if self._margin_titles else .01
+            self._space_needed = margin + space_needed
+            right = 1 - self._space_needed
+
+            # Place the subplot axes to give space for the legend
+            self._figure.subplots_adjust(right=right)
+            self._tight_layout_rect[2] = right
+
+        else:
+            # Draw a legend in the first axis
+            ax = self.axes.flat[0]
+            kwargs.setdefault("loc", "best")
+
+            leg = ax.legend(handles, labels, **kwargs)
+            leg.set_title(title, prop={"size": title_size})
+            self._legend = leg
+
+            if adjust_subtitles:
+                adjust_legend_subtitles(leg)
+
+        return self
+
+    def _update_legend_data(self, ax):
+        """Extract the legend data from an axes object and save it."""
+        data = {}
+
+        # Get data directly from the legend, which is necessary
+        # for newer functions that don't add labeled proxy artists
+        if ax.legend_ is not None and self._extract_legend_handles:
+            handles = get_legend_handles(ax.legend_)
+            labels = [t.get_text() for t in ax.legend_.texts]
+            data.update({label: handle for handle, label in zip(handles, labels)})
+
+        handles, labels = ax.get_legend_handles_labels()
+        data.update({label: handle for handle, label in zip(handles, labels)})
+
+        self._legend_data.update(data)
+
+        # Now clear the legend
+        ax.legend_ = None
+
+    def _get_palette(self, data, hue, hue_order, palette):
+        """Get a list of colors for the hue variable."""
+        if hue is None:
+            palette = color_palette(n_colors=1)
+
+        else:
+            hue_names = categorical_order(data[hue], hue_order)
+            n_colors = len(hue_names)
+
+            # By default use either the current color palette or HUSL
+            if palette is None:
+                current_palette = utils.get_color_cycle()
+                if n_colors > len(current_palette):
+                    colors = color_palette("husl", n_colors)
+                else:
+                    colors = color_palette(n_colors=n_colors)
+
+            # Allow for palette to map from hue variable names
+            elif isinstance(palette, dict):
+                color_names = [palette[h] for h in hue_names]
+                colors = color_palette(color_names, n_colors)
+
+            # Otherwise act as if we just got a list of colors
+            else:
+                colors = color_palette(palette, n_colors)
+
+            palette = color_palette(colors, n_colors)
+
+        return palette
+
+    @property
+    def legend(self):
+        """The :class:`matplotlib.legend.Legend` object, if present."""
+        try:
+            return self._legend
+        except AttributeError:
+            return None
+
+    def tick_params(self, axis='both', **kwargs):
+        """Modify the ticks, tick labels, and gridlines.
+
+        Parameters
+        ----------
+        axis : {'x', 'y', 'both'}
+            The axis on which to apply the formatting.
+        kwargs : keyword arguments
+            Additional keyword arguments to pass to
+            :meth:`matplotlib.axes.Axes.tick_params`.
+
+        Returns
+        -------
+        self : Grid instance
+            Returns self for easy chaining.
+
+        """
+        for ax in self.figure.axes:
+            ax.tick_params(axis=axis, **kwargs)
+        return self
+
+
+_facet_docs = dict(
+
+    data=dedent("""\
+    data : DataFrame
+        Tidy ("long-form") dataframe where each column is a variable and each
+        row is an observation.\
+    """),
+    rowcol=dedent("""\
+    row, col : vectors or keys in ``data``
+        Variables that define subsets to plot on different facets.\
+    """),
+    rowcol_order=dedent("""\
+    {row,col}_order : vector of strings
+        Specify the order in which levels of the ``row`` and/or ``col`` variables
+        appear in the grid of subplots.\
+    """),
+    col_wrap=dedent("""\
+    col_wrap : int
+        "Wrap" the column variable at this width, so that the column facets
+        span multiple rows. Incompatible with a ``row`` facet.\
+    """),
+    share_xy=dedent("""\
+    share{x,y} : bool, 'col', or 'row' optional
+        If true, the facets will share y axes across columns and/or x axes
+        across rows.\
+    """),
+    height=dedent("""\
+    height : scalar
+        Height (in inches) of each facet. See also: ``aspect``.\
+    """),
+    aspect=dedent("""\
+    aspect : scalar
+        Aspect ratio of each facet, so that ``aspect * height`` gives the width
+        of each facet in inches.\
+    """),
+    palette=dedent("""\
+    palette : palette name, list, or dict
+        Colors to use for the different levels of the ``hue`` variable. Should
+        be something that can be interpreted by :func:`color_palette`, or a
+        dictionary mapping hue levels to matplotlib colors.\
+    """),
+    legend_out=dedent("""\
+    legend_out : bool
+        If ``True``, the figure size will be extended, and the legend will be
+        drawn outside the plot on the center right.\
+    """),
+    margin_titles=dedent("""\
+    margin_titles : bool
+        If ``True``, the titles for the row variable are drawn to the right of
+        the last column. This option is experimental and may not work in all
+        cases.\
+    """),
+    facet_kws=dedent("""\
+    facet_kws : dict
+        Additional parameters passed to :class:`FacetGrid`.
+    """),
+)
+
+
+class FacetGrid(Grid):
+    """Multi-plot grid for plotting conditional relationships."""
+
+    def __init__(
+        self, data, *,
+        row=None, col=None, hue=None, col_wrap=None,
+        sharex=True, sharey=True, height=3, aspect=1, palette=None,
+        row_order=None, col_order=None, hue_order=None, hue_kws=None,
+        dropna=False, legend_out=True, despine=True,
+        margin_titles=False, xlim=None, ylim=None, subplot_kws=None,
+        gridspec_kws=None,
+    ):
+
+        super().__init__()
+        data = handle_data_source(data)
+
+        # Determine the hue facet layer information
+        hue_var = hue
+        if hue is None:
+            hue_names = None
+        else:
+            hue_names = categorical_order(data[hue], hue_order)
+
+        colors = self._get_palette(data, hue, hue_order, palette)
+
+        # Set up the lists of names for the row and column facet variables
+        if row is None:
+            row_names = []
+        else:
+            row_names = categorical_order(data[row], row_order)
+
+        if col is None:
+            col_names = []
+        else:
+            col_names = categorical_order(data[col], col_order)
+
+        # Additional dict of kwarg -> list of values for mapping the hue var
+        hue_kws = hue_kws if hue_kws is not None else {}
+
+        # Make a boolean mask that is True anywhere there is an NA
+        # value in one of the faceting variables, but only if dropna is True
+        none_na = np.zeros(len(data), bool)
+        if dropna:
+            row_na = none_na if row is None else data[row].isnull()
+            col_na = none_na if col is None else data[col].isnull()
+            hue_na = none_na if hue is None else data[hue].isnull()
+            not_na = ~(row_na | col_na | hue_na)
+        else:
+            not_na = ~none_na
+
+        # Compute the grid shape
+        ncol = 1 if col is None else len(col_names)
+        nrow = 1 if row is None else len(row_names)
+        self._n_facets = ncol * nrow
+
+        self._col_wrap = col_wrap
+        if col_wrap is not None:
+            if row is not None:
+                err = "Cannot use `row` and `col_wrap` together."
+                raise ValueError(err)
+            ncol = col_wrap
+            nrow = int(np.ceil(len(col_names) / col_wrap))
+        self._ncol = ncol
+        self._nrow = nrow
+
+        # Calculate the base figure size
+        # This can get stretched later by a legend
+        # TODO this doesn't account for axis labels
+        figsize = (ncol * height * aspect, nrow * height)
+
+        # Validate some inputs
+        if col_wrap is not None:
+            margin_titles = False
+
+        # Build the subplot keyword dictionary
+        subplot_kws = {} if subplot_kws is None else subplot_kws.copy()
+        gridspec_kws = {} if gridspec_kws is None else gridspec_kws.copy()
+        if xlim is not None:
+            subplot_kws["xlim"] = xlim
+        if ylim is not None:
+            subplot_kws["ylim"] = ylim
+
+        # --- Initialize the subplot grid
+
+        with _disable_autolayout():
+            fig = plt.figure(figsize=figsize)
+
+        if col_wrap is None:
+
+            kwargs = dict(squeeze=False,
+                          sharex=sharex, sharey=sharey,
+                          subplot_kw=subplot_kws,
+                          gridspec_kw=gridspec_kws)
+
+            axes = fig.subplots(nrow, ncol, **kwargs)
+
+            if col is None and row is None:
+                axes_dict = {}
+            elif col is None:
+                axes_dict = dict(zip(row_names, axes.flat))
+            elif row is None:
+                axes_dict = dict(zip(col_names, axes.flat))
+            else:
+                facet_product = product(row_names, col_names)
+                axes_dict = dict(zip(facet_product, axes.flat))
+
+        else:
+
+            # If wrapping the col variable we need to make the grid ourselves
+            if gridspec_kws:
+                warnings.warn("`gridspec_kws` ignored when using `col_wrap`")
+
+            n_axes = len(col_names)
+            axes = np.empty(n_axes, object)
+            axes[0] = fig.add_subplot(nrow, ncol, 1, **subplot_kws)
+            if sharex:
+                subplot_kws["sharex"] = axes[0]
+            if sharey:
+                subplot_kws["sharey"] = axes[0]
+            for i in range(1, n_axes):
+                axes[i] = fig.add_subplot(nrow, ncol, i + 1, **subplot_kws)
+
+            axes_dict = dict(zip(col_names, axes))
+
+        # --- Set up the class attributes
+
+        # Attributes that are part of the public API but accessed through
+        # a  property so that Sphinx adds them to the auto class doc
+        self._figure = fig
+        self._axes = axes
+        self._axes_dict = axes_dict
+        self._legend = None
+
+        # Public attributes that aren't explicitly documented
+        # (It's not obvious that having them be public was a good idea)
+        self.data = data
+        self.row_names = row_names
+        self.col_names = col_names
+        self.hue_names = hue_names
+        self.hue_kws = hue_kws
+
+        # Next the private variables
+        self._nrow = nrow
+        self._row_var = row
+        self._ncol = ncol
+        self._col_var = col
+
+        self._margin_titles = margin_titles
+        self._margin_titles_texts = []
+        self._col_wrap = col_wrap
+        self._hue_var = hue_var
+        self._colors = colors
+        self._legend_out = legend_out
+        self._legend_data = {}
+        self._x_var = None
+        self._y_var = None
+        self._sharex = sharex
+        self._sharey = sharey
+        self._dropna = dropna
+        self._not_na = not_na
+
+        # --- Make the axes look good
+
+        self.set_titles()
+        self.tight_layout()
+
+        if despine:
+            self.despine()
+
+        if sharex in [True, 'col']:
+            for ax in self._not_bottom_axes:
+                for label in ax.get_xticklabels():
+                    label.set_visible(False)
+                ax.xaxis.offsetText.set_visible(False)
+                ax.xaxis.label.set_visible(False)
+
+        if sharey in [True, 'row']:
+            for ax in self._not_left_axes:
+                for label in ax.get_yticklabels():
+                    label.set_visible(False)
+                ax.yaxis.offsetText.set_visible(False)
+                ax.yaxis.label.set_visible(False)
+
+    __init__.__doc__ = dedent("""\
+        Initialize the matplotlib figure and FacetGrid object.
+
+        This class maps a dataset onto multiple axes arrayed in a grid of rows
+        and columns that correspond to *levels* of variables in the dataset.
+        The plots it produces are often called "lattice", "trellis", or
+        "small-multiple" graphics.
+
+        It can also represent levels of a third variable with the ``hue``
+        parameter, which plots different subsets of data in different colors.
+        This uses color to resolve elements on a third dimension, but only
+        draws subsets on top of each other and will not tailor the ``hue``
+        parameter for the specific visualization the way that axes-level
+        functions that accept ``hue`` will.
+
+        The basic workflow is to initialize the :class:`FacetGrid` object with
+        the dataset and the variables that are used to structure the grid. Then
+        one or more plotting functions can be applied t

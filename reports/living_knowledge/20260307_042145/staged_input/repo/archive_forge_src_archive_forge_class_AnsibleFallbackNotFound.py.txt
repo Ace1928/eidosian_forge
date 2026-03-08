@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AnsibleFallbackNotFound.py
+KIND: code
+
+from __future__ import absolute_import, division, print_function
+class AnsibleFallbackNotFound(Exception):
+    """Fallback validator was not found"""

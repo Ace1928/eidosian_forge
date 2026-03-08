@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/TestUtilityLoad_documentation.py
+KIND: code
+
+import unittest
+from Cython.Compiler import Code, UtilityCode
+
+    Test loading CythonUtilityCodes

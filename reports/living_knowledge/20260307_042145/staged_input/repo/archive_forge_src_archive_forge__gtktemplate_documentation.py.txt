@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_gtktemplate_documentation.py
+KIND: code
+
+import os
+from collections import abc
+from functools import partial
+from gi.repository import GLib, GObject, Gio
+Raises GLib.Error in case the resource doesn't exist

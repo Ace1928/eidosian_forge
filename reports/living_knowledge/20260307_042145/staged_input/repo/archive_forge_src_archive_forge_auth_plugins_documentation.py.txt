@@ -1,0 +1,11 @@
+SOURCE_PATH: archive_forge/src/archive_forge/auth_plugins_documentation.py
+KIND: code
+
+from keystoneauth1.exceptions import base
+One or more required options were not provided.
+
+    :param list(keystoneauth1.loading.Opt) options: Missing options.
+
+    .. py:attribute:: options
+
+        List of the missing options.

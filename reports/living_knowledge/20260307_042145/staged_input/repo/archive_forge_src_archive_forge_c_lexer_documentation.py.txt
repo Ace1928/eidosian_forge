@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/c_lexer_documentation.py
+KIND: code
+
+import re
+from .ply import lex
+from .ply.lex import TOKEN
+\n+

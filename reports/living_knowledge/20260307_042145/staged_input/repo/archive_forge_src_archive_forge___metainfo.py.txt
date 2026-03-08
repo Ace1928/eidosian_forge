@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/__metainfo.py
+KIND: code
+
+import py
+pydir = py.path.local(py.__file__).dirpath()

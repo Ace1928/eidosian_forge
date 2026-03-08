@@ -1,0 +1,9 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/TJ
+KIND: config
+
+TJ
+душанбеdushanbe~
+kuhistoni badakhshon#gornobadakhshan autonomous provinceAвилояти мухтори кӯҳистони бадахшон8
+khatlonkhatlon provinceвилояти хатлонm
+nohiyahoi tobei jumhurí%districts of republican subordination*ноҳияҳои тобеи ҷумҳурӣ)
+вилояти суғдsughd province

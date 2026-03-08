@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/HTMLPiddler_documentation.py
+KIND: code
+
+import formatter
+import string
+from types import *
+import htmllib
+import piddle
+draw the text with aPiddleCanvas
+            jjk  02/01/00

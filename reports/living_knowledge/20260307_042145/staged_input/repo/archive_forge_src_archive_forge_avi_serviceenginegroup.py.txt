@@ -1,0 +1,381 @@
+SOURCE_PATH: archive_forge/src/archive_forge/avi_serviceenginegroup.py
+KIND: code
+
+#!/usr/bin/python
+#
+# @author: Gaurav Rastogi (grastogi@avinetworks.com)
+#          Eric Anderson (eanderson@avinetworks.com)
+# module_check: supported
+# Avi Version: 17.1.1
+#
+# Copyright: (c) 2017 Gaurav Rastogi, <grastogi@avinetworks.com>
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+
+from __future__ import (absolute_import, division, print_function)
+__metaclass__ = type
+
+DOCUMENTATION = '''
+---
+module: avi_serviceenginegroup
+author: Gaurav Rastogi (@grastogi23) <grastogi@avinetworks.com>
+
+short_description: Module for setup of ServiceEngineGroup Avi RESTful Object
+description:
+    - This module is used to configure ServiceEngineGroup object
+    - more examples at U(https://github.com/avinetworks/devops)
+requirements: [ avisdk ]
+options:
+    state:
+        description:
+            - The state that should be applied on the entity.
+        default: present
+        choices: ["absent", "present"]
+    avi_api_update_method:
+        description:
+            - Default method for object update is HTTP PUT.
+            - Setting to patch will override that behavior to use HTTP PATCH.
+        default: put
+        choices: ["put", "patch"]
+    avi_api_patch_op:
+        description:
+            - Patch operation to use when using avi_api_update_method as patch.
+        choices: ["add", "replace", "delete"]
+    accelerated_networking:
+        description:
+            - Enable accelerated networking option for azure se.
+            - Accelerated networking enables single root i/o virtualization (sr-iov) to a se vm.
+            - This improves networking performance.
+            - Field introduced in 17.2.14,18.1.5,18.2.1.
+        type: bool
+    active_standby:
+        description:
+            - Service engines in active/standby mode for ha failover.
+            - Default value when not specified in API or module is interpreted by Avi Controller as False.
+        type: bool
+    additional_config_memory:
+        description:
+            - Indicates the percent of config memory used for config updates.
+            - Allowed values are 0-90.
+            - Field deprecated in 18.1.2.
+            - Field introduced in 18.1.1.
+    advertise_backend_networks:
+        description:
+            - Advertise reach-ability of backend server networks via adc through bgp for default gateway feature.
+            - Default value when not specified in API or module is interpreted by Avi Controller as False.
+        type: bool
+    aggressive_failure_detection:
+        description:
+            - Enable aggressive failover configuration for ha.
+            - Default value when not specified in API or module is interpreted by Avi Controller as False.
+        type: bool
+    algo:
+        description:
+            - In compact placement, virtual services are placed on existing ses until max_vs_per_se limit is reached.
+            - Enum options - PLACEMENT_ALGO_PACKED, PLACEMENT_ALGO_DISTRIBUTED.
+            - Default value when not specified in API or module is interpreted by Avi Controller as PLACEMENT_ALGO_PACKED.
+    allow_burst:
+        description:
+            - Allow ses to be created using burst license.
+            - Field introduced in 17.2.5.
+        type: bool
+    app_cache_percent:
+        description:
+            - A percent value of total se memory reserved for application caching.
+            - This is an se bootup property and requires se restart.
+            - Allowed values are 0 - 100.
+            - Special values are 0- 'disable'.
+            - Field introduced in 18.2.3.
+            - Default value when not specified in API or module is interpreted by Avi Controller as 0.
+    app_learning_memory_percent:
+        description:
+            - A percent value of total se memory reserved for application learning.
+            - This is an se bootup property and requires se restart.
+            - Allowed values are 0 - 10.
+            - Field introduced in 18.2.3.
+            - Default value when not specified in API or module is interpreted by Avi Controller as 0.
+    archive_shm_limit:
+        description:
+            - Amount of se memory in gb until which shared memory is collected in core archive.
+            - Field introduced in 17.1.3.
+            - Default value when not specified in API or module is interpreted by Avi Controller as 8.
+    async_ssl:
+        description:
+            - Ssl handshakes will be handled by dedicated ssl threads.
+            - Default value when not specified in API or module is interpreted by Avi Controller as False.
+        type: bool
+    async_ssl_threads:
+        description:
+            - Number of async ssl threads per se_dp.
+            - Allowed values are 1-16.
+            - Default value when not specified in API or module is interpreted by Avi Controller as 1.
+    auto_rebalance:
+        description:
+            - If set, virtual services will be automatically migrated when load on an se is less than minimum or more than maximum thresholds.
+            - Only alerts are generated when the auto_rebalance is not set.
+            - Default value when not specified in API or module is interpreted by Avi Controller as False.
+        type: bool
+    auto_rebalance_capacity_per_se:
+        description:
+            - Capacities of se for auto rebalance for each criteria.
+            - Field introduced in 17.2.4.
+    auto_rebalance_criteria:
+        description:
+            - Set of criteria for se auto rebalance.
+            - Enum options - SE_AUTO_REBALANCE_CPU, SE_AUTO_REBALANCE_PPS, SE_AUTO_REBALANCE_MBPS, SE_AUTO_REBALANCE_OPEN_CONNS, SE_AUTO_REBALANCE_CPS.
+            - Field introduced in 17.2.3.
+    auto_rebalance_interval:
+        description:
+            - Frequency of rebalance, if 'auto rebalance' is enabled.
+            - Default value when not specified in API or module is interpreted by Avi Controller as 300.
+    auto_redistribute_active_standby_load:
+        description:
+            - Redistribution of virtual services from the takeover se to the replacement se can cause momentary traffic loss.
+            - If the auto-redistribute load option is left in its default off state, any desired rebalancing requires calls to rest api.
+            - Default value when not specified in API or module is interpreted by Avi Controller as False.
+        type: bool
+    bgp_state_update_interval:
+        description:
+            - Bgp peer state update interval.
+            - Allowed values are 5-100.
+            - Field introduced in 17.2.14,18.1.5,18.2.1.
+            - Default value when not specified in API or module is interpreted by Avi Controller as 10.
+    buffer_se:
+        description:
+            - Excess service engine capacity provisioned for ha failover.
+            - Default value when not specified in API or module is interpreted by Avi Controller as 1.
+    cloud_ref:
+        description:
+            - It is a reference to an object of type cloud.
+    config_debugs_on_all_cores:
+        description:
+            - Enable config debugs on all cores of se.
+            - Field introduced in 17.2.13,18.1.5,18.2.1.
+            - Default value when not specified in API or module is interpreted by Avi Controller as False.
+        type: bool
+    connection_memory_percentage:
+        description:
+            - Percentage of memory for connection state.
+            - This will come at the expense of memory used for http in-memory cache.
+            - Allowed values are 10-90.
+            - Default value when not specified in API or module is interpreted by Avi Controller as 50.
+    cpu_reserve:
+        description:
+            - Boolean flag to set cpu_reserve.
+            - Default value when not specified in API or module is interpreted by Avi Controller as False.
+        type: bool
+    cpu_socket_affinity:
+        description:
+            - Allocate all the cpu cores for the service engine virtual machines  on the same cpu socket.
+            - Applicable only for vcenter cloud.
+            - Default value when not specified in API or module is interpreted by Avi Controller as False.
+        type: bool
+    custom_securitygroups_data:
+        description:
+            - Custom security groups to be associated with data vnics for se instances in openstack and aws clouds.
+            - Field introduced in 17.1.3.
+    custom_securitygroups_mgmt:
+        description:
+            - Custom security groups to be associated with management vnic for se instances in openstack and aws clouds.
+            - Field introduced in 17.1.3.
+    custom_tag:
+        description:
+            - Custom tag will be used to create the tags for se instance in aws.
+            - Note this is not the same as the prefix for se name.
+    data_network_id:
+        description:
+            - Subnet used to spin up the data nic for service engines, used only for azure cloud.
+            - Overrides the cloud level setting for service engine subnet.
+            - Field introduced in 18.2.3.
+    datascript_timeout:
+        description:
+            - Number of instructions before datascript times out.
+            - Allowed values are 0-100000000.
+            - Field introduced in 18.2.3.
+            - Default value when not specified in API or module is interpreted by Avi Controller as 1000000.
+    dedicated_dispatcher_core:
+        description:
+            - Dedicate the core that handles packet receive/transmit from the network to just the dispatching function.
+            - Don't use it for tcp/ip and ssl functions.
+            - Default value when not specified in API or module is interpreted by Avi Controller as False.
+        type: bool
+    description:
+        description:
+            - User defined description for the object.
+    disable_avi_securitygroups:
+        description:
+            - By default, avi creates and manages security groups along with custom sg provided by user.
+            - Set this to true to disallow avi to create and manage new security groups.
+            - Avi will only make use of custom security groups provided by user.
+            - This option is only supported for aws cloud type.
+            - Field introduced in 17.2.13,18.1.4,18.2.1.
+            - Default value when not specified in API or module is interpreted by Avi Controller as False.
+        type: bool
+    disable_csum_offloads:
+        description:
+            - Stop using tcp/udp and ip checksum offload features of nics.
+            - Field introduced in 17.1.14, 17.2.5, 18.1.1.
+            - Default value when not specified in API or module is interpreted by Avi Controller as False.
+        type: bool
+    disable_gro:
+        description:
+            - Disable generic receive offload (gro) in dpdk poll-mode driver packet receive path.
+            - Gro is on by default on nics that do not support lro (large receive offload) or do not gain performance boost from lro.
+            - Field introduced in 17.2.5, 18.1.1.
+            - Default value when not specified in API or module is interpreted by Avi Controller as True.
+        type: bool
+    disable_se_memory_check:
+        description:
+            - If set, disable the config memory check done in service engine.
+            - Field introduced in 18.1.2.
+            - Default value when not specified in API or module is interpreted by Avi Controller as False.
+        type: bool
+    disable_tso:
+        description:
+            - Disable tcp segmentation offload (tso) in dpdk poll-mode driver packet transmit path.
+            - Tso is on by default on nics that support it.
+            - Field introduced in 17.2.5, 18.1.1.
+            - Default value when not specified in API or module is interpreted by Avi Controller as True.
+        type: bool
+    disk_per_se:
+        description:
+            - Amount of disk space for each of the service engine virtual machines.
+            - Default value when not specified in API or module is interpreted by Avi Controller as 10.
+    distribute_load_active_standby:
+        description:
+            - Use both the active and standby service engines for virtual service placement in the legacy active standby ha mode.
+            - Default value when not specified in API or module is interpreted by Avi Controller as False.
+        type: bool
+    distribute_queues:
+        description:
+            - Distributes queue ownership among cores so multiple cores handle dispatcher duties.
+            - Field introduced in 17.2.8.
+            - Default value when not specified in API or module is interpreted by Avi Controller as False.
+        type: bool
+    enable_hsm_priming:
+        description:
+            - (this is a beta feature).
+            - Enable hsm key priming.
+            - If enabled, key handles on the hsm will be synced to se before processing client connections.
+            - Field introduced in 17.2.7, 18.1.1.
+            - Default value when not specified in API or module is interpreted by Avi Controller as False.
+        type: bool
+    enable_multi_lb:
+        description:
+            - Applicable only for azure cloud with basic sku lb.
+            - If set, additional azure lbs will be automatically created if resources in existing lb are exhausted.
+            - Field introduced in 17.2.10, 18.1.2.
+            - Default value when not specified in API or module is interpreted by Avi Controller as False.
+        type: bool
+    enable_routing:
+        description:
+            - Enable routing for this serviceenginegroup .
+            - Default value when not specified in API or module is interpreted by Avi Controller as False.
+        type: bool
+    enable_vip_on_all_interfaces:
+        description:
+            - Enable vip on all interfaces of se.
+            - Field introduced in 17.1.1.
+            - Default value when not specified in API or module is interpreted by Avi Controller as True.
+        type: bool
+    enable_vmac:
+        description:
+            - Use virtual mac address for interfaces on which floating interface ips are placed.
+            - Default value when not specified in API or module is interpreted by Avi Controller as False.
+        type: bool
+    ephemeral_portrange_end:
+        description:
+            - End local ephemeral port number for outbound connections.
+            - Field introduced in 17.2.13, 18.1.5, 18.2.1.
+    ephemeral_portrange_start:
+        description:
+            - Start local ephemeral port number for outbound connections.
+            - Field introduced in 17.2.13, 18.1.5, 18.2.1.
+    extra_config_multiplier:
+        description:
+            - Multiplier for extra config to support large vs/pool config.
+            - Default value when not specified in API or module is interpreted by Avi Controller as 0.0.
+    extra_shared_config_memory:
+        description:
+            - Extra config memory to support large geo db configuration.
+            - Field introduced in 17.1.1.
+            - Default value when not specified in API or module is interpreted by Avi Controller as 0.
+    floating_intf_ip:
+        description:
+            - If serviceenginegroup is configured for legacy 1+1 active standby ha mode, floating ip's will be advertised only by the active se in the pair.
+            - Virtual services in this group must be disabled/enabled for any changes to the floating ip's to take effect.
+            - Only active se hosting vs tagged with active standby se 1 tag will advertise this floating ip when manual load distribution is enabled.
+    floating_intf_ip_se_2:
+        description:
+            - If serviceenginegroup is configured for legacy 1+1 active standby ha mode, floating ip's will be advertised only by the active se in the pair.
+            - Virtual services in this group must be disabled/enabled for any changes to the floating ip's to take effect.
+            - Only active se hosting vs tagged with active standby se 2 tag will advertise this floating ip when manual load distribution is enabled.
+    flow_table_new_syn_max_entries:
+        description:
+            - Maximum number of flow table entries that have not completed tcp three-way handshake yet.
+            - Field introduced in 17.2.5.
+            - Default value when not specified in API or module is interpreted by Avi Controller as 0.
+    free_list_size:
+        description:
+            - Number of entries in the free list.
+            - Field introduced in 17.2.10, 18.1.2.
+            - Default value when not specified in API or module is interpreted by Avi Controller as 1024.
+    ha_mode:
+        description:
+            - High availability mode for all the virtual services using this service engine group.
+            - Enum options - HA_MODE_SHARED_PAIR, HA_MODE_SHARED, HA_MODE_LEGACY_ACTIVE_STANDBY.
+            - Default value when not specified in API or module is interpreted by Avi Controller as HA_MODE_SHARED.
+    hardwaresecuritymodulegroup_ref:
+        description:
+            - It is a reference to an object of type hardwaresecuritymodulegroup.
+    heap_minimum_config_memory:
+        description:
+            - Minimum required heap memory to apply any configuration.
+            - Allowed values are 0-100.
+            - Field introduced in 18.1.2.
+            - Default value when not specified in API or module is interpreted by Avi Controller as 8.
+    hm_on_standby:
+        description:
+            - Enable active health monitoring from the standby se for all placed virtual services.
+            - Default value when not specified in API or module is interpreted by Avi Controller as True.
+        type: bool
+    host_attribute_key:
+        description:
+            - Key of a (key, value) pair identifying a label for a set of nodes usually in container clouds.
+            - Needs to be specified together with host_attribute_value.
+            - Ses can be configured differently including ha modes across different se groups.
+            - May also be used for isolation between different classes of virtualservices.
+            - Virtualservices' se group may be specified via annotations/labels.
+            - A openshift/kubernetes namespace maybe annotated with a matching se group label as openshift.io/node-selector  apptype=prod.
+            - When multiple se groups are used in a cloud with host attributes specified,just a single se group can exist as a match-all se group without a
+            - host_attribute_key.
+    host_attribute_value:
+        description:
+            - Value of a (key, value) pair identifying a label for a set of nodes usually in container clouds.
+            - Needs to be specified together with host_attribute_key.
+    host_gateway_monitor:
+        description:
+            - Enable the host gateway monitor when service engine is deployed as docker container.
+            - Disabled by default.
+            - Field introduced in 17.2.4.
+            - Default value when not specified in API or module is interpreted by Avi Controller as False.
+        type: bool
+    hypervisor:
+        description:
+            - Override default hypervisor.
+            - Enum options - DEFAULT, VMWARE_ESX, KVM, VMWARE_VSAN, XEN.
+    ignore_rtt_threshold:
+        description:
+            - Ignore rtt samples if it is above threshold.
+            - Field introduced in 17.1.6,17.2.2.
+            - Default value when not specified in API or module is interpreted by Avi Controller as 5000.
+    ingress_access_data:
+        description:
+            - Program se security group ingress rules to allow vip data access from remote cidr type.
+            - Enum options - SG_INGRESS_ACCESS_NONE, SG_INGRESS_ACCESS_ALL, SG_INGRESS_ACCESS_VPC.
+            - Field introduced in 17.1.5.
+            - Default value when not specified in API or module is interpreted by Avi Controller as SG_INGRESS_ACCESS_ALL.
+    ingress_access_mgmt:
+        description:
+            - Program se security group ingress rules to allow ssh/icmp management access from remote cidr type.
+            - Enum

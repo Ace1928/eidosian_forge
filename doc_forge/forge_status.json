@@ -1,3 +1,7 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:aec7e77b3f196eac245b24b8dcc4c59207bcc408097c8287be7d09ed7d27f8f0
-size 113
+{
+  "total_files": 3077,
+  "processed": 0,
+  "skipped": 330,
+  "errors": 29,
+  "start_time": 1771416213.5516334
+}

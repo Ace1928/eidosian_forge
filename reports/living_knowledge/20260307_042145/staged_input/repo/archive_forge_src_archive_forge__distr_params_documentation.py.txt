@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_distr_params_documentation.py
+KIND: code
+
+import numpy as np
+
+Sane parameters for stats.distributions.

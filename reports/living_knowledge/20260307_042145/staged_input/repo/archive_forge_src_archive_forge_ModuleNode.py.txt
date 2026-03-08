@@ -1,0 +1,483 @@
+SOURCE_PATH: archive_forge/src/archive_forge/ModuleNode.py
+KIND: code
+
+#
+#   Module parse tree node
+#
+
+from __future__ import absolute_import
+
+import cython
+cython.declare(Naming=object, Options=object, PyrexTypes=object, TypeSlots=object,
+               error=object, warning=object, py_object_type=object, UtilityCode=object,
+               EncodedString=object, re=object)
+
+from collections import defaultdict
+import json
+import operator
+import os
+import re
+
+from .PyrexTypes import CPtrType
+from . import Future
+from . import Annotate
+from . import Code
+from . import Naming
+from . import Nodes
+from . import Options
+from . import TypeSlots
+from . import PyrexTypes
+from . import Pythran
+
+from .Errors import error, warning
+from .PyrexTypes import py_object_type
+from ..Utils import open_new_file, replace_suffix, decode_filename, build_hex_version
+from .Code import UtilityCode, IncludeCode
+from .StringEncoding import EncodedString
+from .Pythran import has_np_pythran
+
+def check_c_declarations_pxd(module_node):
+    module_node.scope.check_c_classes_pxd()
+    return module_node
+
+
+def check_c_declarations(module_node):
+    module_node.scope.check_c_classes()
+    module_node.scope.check_c_functions()
+    return module_node
+
+
+def generate_c_code_config(env, options):
+    if Options.annotate or options.annotate:
+        emit_linenums = False
+    else:
+        emit_linenums = options.emit_linenums
+
+    return Code.CCodeConfig(
+        emit_linenums=emit_linenums,
+        emit_code_comments=env.directives['emit_code_comments'],
+        c_line_in_traceback=options.c_line_in_traceback)
+
+
+class ModuleNode(Nodes.Node, Nodes.BlockNode):
+    #  doc       string or None
+    #  body      StatListNode
+    #
+    #  referenced_modules   [ModuleScope]
+    #  full_module_name     string
+    #
+    #  scope                The module scope.
+    #  compilation_source   A CompilationSource (see Main)
+    #  directives           Top-level compiler directives
+
+    child_attrs = ["body"]
+    directives = None
+
+    def merge_in(self, tree, scope, merge_scope=False):
+        # Merges in the contents of another tree, and possibly scope. With the
+        # current implementation below, this must be done right prior
+        # to code generation.
+        #
+        # Note: This way of doing it seems strange -- I believe the
+        # right concept is to split ModuleNode into a ModuleNode and a
+        # CodeGenerator, and tell that CodeGenerator to generate code
+        # from multiple sources.
+        assert isinstance(self.body, Nodes.StatListNode)
+        if isinstance(tree, Nodes.StatListNode):
+            self.body.stats.extend(tree.stats)
+        else:
+            self.body.stats.append(tree)
+
+        self.scope.utility_code_list.extend(scope.utility_code_list)
+
+        for inc in scope.c_includes.values():
+            self.scope.process_include(inc)
+
+        def extend_if_not_in(L1, L2):
+            for x in L2:
+                if x not in L1:
+                    L1.append(x)
+
+        extend_if_not_in(self.scope.included_files, scope.included_files)
+
+        if merge_scope:
+            # Ensure that we don't generate import code for these entries!
+            for entry in scope.c_class_entries:
+                entry.type.module_name = self.full_module_name
+                entry.type.scope.directives["internal"] = True
+
+            self.scope.merge_in(scope)
+
+    def analyse_declarations(self, env):
+        if has_np_pythran(env):
+            Pythran.include_pythran_generic(env)
+        if self.directives:
+            env.old_style_globals = self.directives['old_style_globals']
+        if not Options.docstrings:
+            env.doc = self.doc = None
+        elif Options.embed_pos_in_docstring:
+            env.doc = EncodedString(u'File: %s (starting at line %s)' % Nodes.relative_position(self.pos))
+            if self.doc is not None:
+                env.doc = EncodedString(env.doc + u'\n' + self.doc)
+                env.doc.encoding = self.doc.encoding
+        else:
+            env.doc = self.doc
+        env.directives = self.directives
+
+        self.body.analyse_declarations(env)
+
+    def prepare_utility_code(self):
+        # prepare any utility code that must be created before code generation
+        # specifically: CythonUtilityCode
+        env = self.scope
+        if env.has_import_star:
+            self.create_import_star_conversion_utility_code(env)
+        for name, entry in sorted(env.entries.items()):
+            if (entry.create_wrapper and entry.scope is env
+                and entry.is_type and entry.type.is_enum):
+                    entry.type.create_type_wrapper(env)
+
+    def process_implementation(self, options, result):
+        env = self.scope
+        env.return_type = PyrexTypes.c_void_type
+        self.referenced_modules = []
+        self.find_referenced_modules(env, self.referenced_modules, {})
+        self.sort_cdef_classes(env)
+        self.generate_c_code(env, options, result)
+        self.generate_h_code(env, options, result)
+        self.generate_api_code(env, options, result)
+
+    def has_imported_c_functions(self):
+        for module in self.referenced_modules:
+            for entry in module.cfunc_entries:
+                if entry.defined_in_pxd:
+                    return 1
+        return 0
+
+    def generate_h_code(self, env, options, result):
+        def h_entries(entries, api=0, pxd=0):
+            return [entry for entry in entries
+                    if ((entry.visibility == 'public') or
+                        (api and entry.api) or
+                        (pxd and entry.defined_in_pxd))]
+        h_types = h_entries(env.type_entries, api=1)
+        h_vars = h_entries(env.var_entries)
+        h_funcs = h_entries(env.cfunc_entries)
+        h_extension_types = h_entries(env.c_class_entries)
+        if h_types or  h_vars or h_funcs or h_extension_types:
+            result.h_file = replace_suffix(result.c_file, ".h")
+            h_code = Code.CCodeWriter()
+            c_code_config = generate_c_code_config(env, options)
+            Code.GlobalState(h_code, self, c_code_config)
+            if options.generate_pxi:
+                result.i_file = replace_suffix(result.c_file, ".pxi")
+                i_code = Code.PyrexCodeWriter(result.i_file)
+            else:
+                i_code = None
+
+            h_code.put_generated_by()
+            h_guard = Naming.h_guard_prefix + self.api_name(env)
+            h_code.put_h_guard(h_guard)
+            h_code.putln("")
+            h_code.putln('#include "Python.h"')
+            self.generate_type_header_code(h_types, h_code)
+            if options.capi_reexport_cincludes:
+                self.generate_includes(env, [], h_code)
+            h_code.putln("")
+            api_guard = Naming.api_guard_prefix + self.api_name(env)
+            h_code.putln("#ifndef %s" % api_guard)
+            h_code.putln("")
+            self.generate_extern_c_macro_definition(h_code)
+            h_code.putln("")
+            self.generate_dl_import_macro(h_code)
+            if h_extension_types:
+                h_code.putln("")
+                for entry in h_extension_types:
+                    self.generate_cclass_header_code(entry.type, h_code)
+                    if i_code:
+                        self.generate_cclass_include_code(entry.type, i_code)
+            if h_funcs:
+                h_code.putln("")
+                for entry in h_funcs:
+                    self.generate_public_declaration(entry, h_code, i_code)
+            if h_vars:
+                h_code.putln("")
+                for entry in h_vars:
+                    self.generate_public_declaration(entry, h_code, i_code)
+            h_code.putln("")
+            h_code.putln("#endif /* !%s */" % api_guard)
+            h_code.putln("")
+            h_code.putln("/* WARNING: the interface of the module init function changed in CPython 3.5. */")
+            h_code.putln("/* It now returns a PyModuleDef instance instead of a PyModule instance. */")
+            h_code.putln("")
+            h_code.putln("#if PY_MAJOR_VERSION < 3")
+            h_code.putln("PyMODINIT_FUNC init%s(void);" % env.module_name)
+            h_code.putln("#else")
+            h_code.putln("PyMODINIT_FUNC %s(void);" % self.mod_init_func_cname('PyInit', env))
+            h_code.putln("#endif")
+            h_code.putln("")
+            h_code.putln("#endif /* !%s */" % h_guard)
+
+            f = open_new_file(result.h_file)
+            try:
+                h_code.copyto(f)
+            finally:
+                f.close()
+
+    def generate_public_declaration(self, entry, h_code, i_code):
+        h_code.putln("%s %s;" % (
+            Naming.extern_c_macro,
+            entry.type.declaration_code(entry.cname)))
+        if i_code:
+            i_code.putln("cdef extern %s" % (
+                entry.type.declaration_code(entry.cname, pyrex=1)))
+
+    def api_name(self, env):
+        return env.qualified_name.replace(".", "__")
+
+    def generate_api_code(self, env, options, result):
+        def api_entries(entries, pxd=0):
+            return [entry for entry in entries
+                    if entry.api or (pxd and entry.defined_in_pxd)]
+        api_vars = api_entries(env.var_entries)
+        api_funcs = api_entries(env.cfunc_entries)
+        api_extension_types = api_entries(env.c_class_entries)
+        if api_vars or api_funcs or api_extension_types:
+            result.api_file = replace_suffix(result.c_file, "_api.h")
+            h_code = Code.CCodeWriter()
+            c_code_config = generate_c_code_config(env, options)
+            Code.GlobalState(h_code, self, c_code_config)
+            h_code.put_generated_by()
+            api_guard = Naming.api_guard_prefix + self.api_name(env)
+            h_code.put_h_guard(api_guard)
+            # Work around https://bugs.python.org/issue4709
+            h_code.putln('#ifdef __MINGW64__')
+            h_code.putln('#define MS_WIN64')
+            h_code.putln('#endif')
+
+            h_code.putln('#include "Python.h"')
+            if result.h_file:
+                h_code.putln('#include "%s"' % os.path.basename(result.h_file))
+            if api_extension_types:
+                h_code.putln("")
+                for entry in api_extension_types:
+                    type = entry.type
+                    h_code.putln("static PyTypeObject *%s = 0;" % type.typeptr_cname)
+                    h_code.putln("#define %s (*%s)" % (
+                        type.typeobj_cname, type.typeptr_cname))
+            if api_funcs:
+                h_code.putln("")
+                for entry in api_funcs:
+                    type = CPtrType(entry.type)
+                    cname = env.mangle(Naming.func_prefix_api, entry.name)
+                    h_code.putln("static %s = 0;" % type.declaration_code(cname))
+                    h_code.putln("#define %s %s" % (entry.name, cname))
+            if api_vars:
+                h_code.putln("")
+                for entry in api_vars:
+                    type = CPtrType(entry.type)
+                    cname = env.mangle(Naming.varptr_prefix_api, entry.name)
+                    h_code.putln("static %s = 0;" %  type.declaration_code(cname))
+                    h_code.putln("#define %s (*%s)" % (entry.name, cname))
+            h_code.put(UtilityCode.load_as_string("PyIdentifierFromString", "ImportExport.c")[0])
+            if api_vars:
+                h_code.put(UtilityCode.load_as_string("VoidPtrImport", "ImportExport.c")[1])
+            if api_funcs:
+                h_code.put(UtilityCode.load_as_string("FunctionImport", "ImportExport.c")[1])
+            if api_extension_types:
+                h_code.put(UtilityCode.load_as_string("TypeImport", "ImportExport.c")[0])
+                h_code.put(UtilityCode.load_as_string("TypeImport", "ImportExport.c")[1])
+            h_code.putln("")
+            h_code.putln("static int import_%s(void) {" % self.api_name(env))
+            h_code.putln("PyObject *module = 0;")
+            h_code.putln('module = PyImport_ImportModule("%s");' % env.qualified_name)
+            h_code.putln("if (!module) goto bad;")
+            for entry in api_funcs:
+                cname = env.mangle(Naming.func_prefix_api, entry.name)
+                sig = entry.type.signature_string()
+                h_code.putln(
+                    'if (__Pyx_ImportFunction_%s(module, "%s", (void (**)(void))&%s, "%s") < 0) goto bad;'
+                    % (Naming.cyversion, entry.name, cname, sig))
+            for entry in api_vars:
+                cname = env.mangle(Naming.varptr_prefix_api, entry.name)
+                sig = entry.type.empty_declaration_code()
+                h_code.putln(
+                    'if (__Pyx_ImportVoidPtr_%s(module, "%s", (void **)&%s, "%s") < 0) goto bad;'
+                    % (Naming.cyversion, entry.name, cname, sig))
+            with ModuleImportGenerator(h_code, imported_modules={env.qualified_name: 'module'}) as import_generator:
+                for entry in api_extension_types:
+                    self.generate_type_import_call(entry.type, h_code, import_generator, error_code="goto bad;")
+            h_code.putln("Py_DECREF(module); module = 0;")
+            h_code.putln("return 0;")
+            h_code.putln("bad:")
+            h_code.putln("Py_XDECREF(module);")
+            h_code.putln("return -1;")
+            h_code.putln("}")
+            h_code.putln("")
+            h_code.putln("#endif /* !%s */" % api_guard)
+
+            f = open_new_file(result.api_file)
+            try:
+                h_code.copyto(f)
+            finally:
+                f.close()
+
+    def generate_cclass_header_code(self, type, h_code):
+        h_code.putln("%s %s %s;" % (
+            Naming.extern_c_macro,
+            PyrexTypes.public_decl("PyTypeObject", "DL_IMPORT"),
+            type.typeobj_cname))
+
+    def generate_cclass_include_code(self, type, i_code):
+        i_code.putln("cdef extern class %s.%s:" % (
+            type.module_name, type.name))
+        i_code.indent()
+        var_entries = type.scope.var_entries
+        if var_entries:
+            for entry in var_entries:
+                i_code.putln("cdef %s" % (
+                    entry.type.declaration_code(entry.cname, pyrex=1)))
+        else:
+            i_code.putln("pass")
+        i_code.dedent()
+
+    def generate_c_code(self, env, options, result):
+        modules = self.referenced_modules
+
+        if Options.annotate or options.annotate:
+            rootwriter = Annotate.AnnotationCCodeWriter()
+        else:
+            rootwriter = Code.CCodeWriter()
+
+        c_code_config = generate_c_code_config(env, options)
+
+        globalstate = Code.GlobalState(
+            rootwriter, self,
+            code_config=c_code_config,
+            common_utility_include_dir=options.common_utility_include_dir,
+        )
+        globalstate.initialize_main_c_code()
+        h_code = globalstate['h_code']
+
+        self.generate_module_preamble(env, options, modules, result.embedded_metadata, h_code)
+
+        globalstate.module_pos = self.pos
+        globalstate.directives = self.directives
+
+        globalstate.use_utility_code(refnanny_utility_code)
+
+        code = globalstate['before_global_var']
+        code.putln('#define __Pyx_MODULE_NAME "%s"' % self.full_module_name)
+        module_is_main = "%s%s" % (Naming.module_is_main, self.full_module_name.replace('.', '__'))
+        code.putln("extern int %s;" % module_is_main)
+        code.putln("int %s = 0;" % module_is_main)
+        code.putln("")
+        code.putln("/* Implementation of '%s' */" % env.qualified_name)
+
+        code = globalstate['late_includes']
+        code.putln("/* Late includes */")
+        self.generate_includes(env, modules, code, early=False)
+
+        code = globalstate['all_the_rest']
+
+        self.generate_cached_builtins_decls(env, code)
+        self.generate_lambda_definitions(env, code)
+        # generate normal variable and function definitions
+        self.generate_variable_definitions(env, code)
+
+        self.body.generate_function_definitions(env, code)
+
+        code.mark_pos(None)
+        self.generate_typeobj_definitions(env, code)
+        self.generate_method_table(env, code)
+        if env.has_import_star:
+            self.generate_import_star(env, code)
+        self.generate_pymoduledef_struct(env, code)
+
+        # initialise the macro to reduce the code size of one-time functionality
+        code.putln(UtilityCode.load_as_string("SmallCodeConfig", "ModuleSetupCode.c")[0].strip())
+
+        # init_globals is inserted before this
+        self.generate_module_init_func(modules[:-1], env, globalstate['init_module'])
+        self.generate_module_cleanup_func(env, globalstate['cleanup_module'])
+        if Options.embed:
+            self.generate_main_method(env, globalstate['main_method'])
+        self.generate_filename_table(globalstate['filename_table'])
+
+        self.generate_declarations_for_modules(env, modules, globalstate)
+        h_code.write('\n')
+
+        for utilcode in env.utility_code_list[:]:
+            globalstate.use_utility_code(utilcode)
+        globalstate.finalize_main_c_code()
+
+        f = open_new_file(result.c_file)
+        try:
+            rootwriter.copyto(f)
+        finally:
+            f.close()
+        result.c_file_generated = 1
+        if options.gdb_debug:
+            self._serialize_lineno_map(env, rootwriter)
+        if Options.annotate or options.annotate:
+            self._generate_annotations(rootwriter, result, options)
+
+    def _generate_annotations(self, rootwriter, result, options):
+        self.annotate(rootwriter)
+
+        coverage_xml_filename = Options.annotate_coverage_xml or options.annotate_coverage_xml
+        if coverage_xml_filename and os.path.exists(coverage_xml_filename):
+            try:
+                import xml.etree.cElementTree as ET
+            except ImportError:
+                import xml.etree.ElementTree as ET
+            coverage_xml = ET.parse(coverage_xml_filename).getroot()
+            if hasattr(coverage_xml, 'iter'):
+                iterator = coverage_xml.iter()  # Python 2.7 & 3.2+
+            else:
+                iterator = coverage_xml.getiterator()
+            for el in iterator:
+                el.tail = None  # save some memory
+        else:
+            coverage_xml = None
+
+        rootwriter.save_annotation(result.main_source_file, result.c_file, coverage_xml=coverage_xml)
+
+        # if we included files, additionally generate one annotation file for each
+        if not self.scope.included_files:
+            return
+
+        search_include_file = self.scope.context.search_include_directories
+        target_dir = os.path.abspath(os.path.dirname(result.c_file))
+        for included_file in self.scope.included_files:
+            target_file = os.path.abspath(os.path.join(target_dir, included_file))
+            target_file_dir = os.path.dirname(target_file)
+            if not target_file_dir.startswith(target_dir):
+                # any other directories may not be writable => avoid trying
+                continue
+            source_file = search_include_file(included_file, "", self.pos, include=True)
+            if not source_file:
+                continue
+            if target_file_dir != target_dir and not os.path.exists(target_file_dir):
+                try:
+                    os.makedirs(target_file_dir)
+                except OSError as e:
+                    import errno
+                    if e.errno != errno.EEXIST:
+                        raise
+            rootwriter.save_annotation(source_file, target_file, coverage_xml=coverage_xml)
+
+    def _serialize_lineno_map(self, env, ccodewriter):
+        tb = env.context.gdb_debug_outputwriter
+        markers = ccodewriter.buffer.allmarkers()
+
+        d = defaultdict(list)
+        for c_lineno, cython_lineno in enumerate(markers):
+            if cython_lineno > 0:
+                d[cython_lineno].append(c_lineno + 1)
+
+        tb.start('LineNumberMapping')
+        for cython_lineno, c_linenos in sorted(d.items()):
+            tb.add_entry(
+                'LineNumber',
+                c_linenos=' '.join(map(str, c_linenos)),

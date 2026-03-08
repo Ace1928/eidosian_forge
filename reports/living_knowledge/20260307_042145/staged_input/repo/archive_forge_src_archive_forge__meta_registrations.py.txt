@@ -1,0 +1,664 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_meta_registrations.py
+KIND: code
+
+import math
+from enum import Enum
+from functools import partial
+from typing import List, Optional, Sequence, Tuple, Union
+
+import torch
+import torch._prims_common as utils
+from torch import SymBool, SymFloat, Tensor
+from torch._decomp import (
+    _add_op_to_registry,
+    _convert_out_params,
+    global_decomposition_table,
+    meta_table,
+)
+from torch._ops import OpOverload
+from torch._prims import _prim_elementwise_meta, ELEMENTWISE_PRIM_TYPE_PROMOTION_KIND
+from torch._prims_common import (
+    corresponding_complex_dtype,
+    corresponding_real_dtype,
+    elementwise_dtypes,
+    ELEMENTWISE_TYPE_PROMOTION_KIND,
+    IntLike,
+    make_contiguous_strides_for,
+    TensorLike,
+)
+
+from torch._prims_common.wrappers import (
+    _maybe_convert_to_dtype,
+    _maybe_resize_out,
+    _resize_output_check,
+    _safe_copy_out,
+    out_wrapper,
+)
+from torch._refs import _broadcast_shapes, _maybe_broadcast
+from torch.utils import _pytree as pytree
+
+
+aten = torch.ops.aten
+
+_meta_lib_dont_use_me_use_register_meta = torch.library.Library("aten", "IMPL", "Meta")
+
+
+def register_meta(op):
+    def wrapper(fn):
+        fn = _convert_out_params(fn)
+
+        def register(op):
+            _add_op_to_registry(meta_table, op, fn)
+
+        pytree.tree_map_(register, op)
+        return fn
+
+    return wrapper
+
+
+def elementwise_meta(
+    *args,
+    type_promotion: ELEMENTWISE_TYPE_PROMOTION_KIND,
+):
+    # Perform type promotion, as this is expected from prim_metafunction
+    _, result_dtype = utils.elementwise_dtypes(
+        *args,
+        type_promotion_kind=type_promotion,
+    )
+    args = [_maybe_convert_to_dtype(x, result_dtype) for x in args]
+
+    # Broadcast
+    args = _maybe_broadcast(*args)
+
+    # Perform prim checks
+    return _prim_elementwise_meta(
+        *args, type_promotion=ELEMENTWISE_PRIM_TYPE_PROMOTION_KIND.DEFAULT
+    )
+
+
+def toRealValueType(dtype):
+    from_complex = {
+        torch.complex32: torch.half,
+        torch.cfloat: torch.float,
+        torch.cdouble: torch.double,
+    }
+    return from_complex.get(dtype, dtype)
+
+
+def check_inplace_broadcast(self_shape, *args_shape):
+    broadcasted_shape = tuple(_broadcast_shapes(self_shape, *args_shape))
+    torch._check(
+        broadcasted_shape == self_shape,
+        lambda: f"output with shape {self_shape} doesn't match the broadcast shape {broadcasted_shape}",
+    )
+
+
+@register_meta([aten.linspace, aten.logspace])
+@out_wrapper()
+def meta_linspace_logspace(
+    start,
+    end,
+    steps,
+    base=None,
+    dtype=None,
+    device=None,
+    layout=torch.strided,
+    pin_memory=False,
+    requires_grad=False,
+):
+    if isinstance(start, torch.Tensor):
+        torch._check(
+            start.dim() == 0,
+            lambda: "linspace only supports 0-dimensional start and end tensors",
+        )
+    if isinstance(end, torch.Tensor):
+        torch._check(
+            end.dim() == 0,
+            lambda: "linspace only supports 0-dimensional start and end tensors",
+        )
+
+    if any(isinstance(arg, complex) for arg in (start, end, steps)):
+        default_complex_dtype = utils.corresponding_complex_dtype(
+            torch.get_default_dtype()
+        )
+        if dtype is None:
+            dtype = default_complex_dtype
+        else:
+            torch._check(
+                utils.is_complex_dtype(dtype),
+                lambda: f"linspace(): inferred dtype {default_complex_dtype} can't be safely cast to passed dtype {dtype}",
+            )
+    else:
+        dtype = dtype or torch.get_default_dtype()
+    assert isinstance(dtype, torch.dtype)
+
+    # steps does not participate in the computation of the dtype
+    torch._check_type(
+        isinstance(steps, IntLike),
+        lambda: f"received an invalid combination of arguments - got \
+({type(start).__name__}, {type(end).__name__}, {type(steps).__name__})",
+    )
+    assert isinstance(steps, IntLike)  # for mypy
+    torch._check(steps >= 0, lambda: "number of steps must be non-negative")
+
+    return torch.empty(
+        (steps,),  # type: ignore[arg-type]
+        dtype=dtype,
+        layout=layout,
+        device="meta",
+        pin_memory=pin_memory,
+        requires_grad=requires_grad,
+    )
+
+
+@register_meta([aten.take.default, aten.take.out])
+@out_wrapper()
+def meta_take(self, index):
+    # Type and device checks
+    torch._check(
+        index.dtype == torch.long,
+        lambda: f"take(): Expected a long tensor for index, but got {index.dtype}",
+    )
+    # Index checks
+    torch._check_index(
+        not (self.numel() == 0 and index.numel() != 0),
+        lambda: "take(): tried to take from an empty tensor",
+    )
+    return self.new_empty(index.shape)
+
+
+@register_meta([aten.linalg_cross.default, aten.linalg_cross.out])
+@out_wrapper()
+def linalg_cross(self, other, *, dim=-1):
+    x_d = self.ndim
+    y_d = other.ndim
+    torch._check(
+        x_d == y_d,
+        lambda: "linalg.cross: inputs must have the same number of dimensions.",
+    )
+    torch._check(
+        self.size(dim) == 3 and other.size(dim) == 3,
+        lambda: (
+            f"linalg.cross: inputs dimension {dim} must have length 3. "
+            f"Got {self.size(dim)} and {other.size(dim)}"
+        ),
+    )
+    out_shape = _broadcast_shapes(self.shape, other.shape)
+    return self.new_empty(out_shape)
+
+
+@register_meta(aten.linalg_matrix_exp)
+@out_wrapper()
+def linalg_matrix_exp(self):
+    squareCheckInputs(self, "linalg.matrix_exp")
+    checkFloatingOrComplex(self, "linalg.matrix_exp")
+    return torch.empty_like(self, memory_format=torch.contiguous_format)
+
+
+@register_meta(
+    [aten.cummax.default, aten.cummax.out, aten.cummin.default, aten.cummin.out]
+)
+@out_wrapper("values", "indices")
+def cummaxmin(self, dim):
+    values = torch.empty(self.shape, device=self.device, dtype=self.dtype)
+    indices = torch.empty(self.shape, device=self.device, dtype=torch.int64)
+    if self.numel() != 0 and self.ndim != 0:
+        # Checks that dim is within bounds
+        maybe_wrap_dim(dim, self.ndim)
+    return values, indices
+
+
+@register_meta([aten.logcumsumexp.default, aten.logcumsumexp.out])
+@out_wrapper()
+def logcumsumexp(self, dim):
+    # Checks that dim is within bounds
+    maybe_wrap_dim(dim, self.ndim)
+    return torch.empty_like(self).contiguous()
+
+
+# Stride-related code from _exec_fft in aten/src/ATen/native/cuda/SpectralOps.cpp
+def _exec_fft(out, self, out_sizes, dim, forward):
+    ndim = self.ndim
+    signal_ndim = len(dim)
+    batch_dims = ndim - signal_ndim
+
+    # Permute dimensions so batch dimensions come first, and in stride order
+    dim_permute = list(range(ndim))
+
+    is_transformed_dim = [False for _ in range(ndim)]
+    for d in dim:
+        is_transformed_dim[d] = True
+
+    # std::partition
+    left, right = [], []
+    for d in dim_permute:
+        if not is_transformed_dim[d]:
+            left.append(d)
+        else:
+            right.append(d)
+    dim_permute = left + right
+    batch_end = len(left)
+
+    self_strides = self.stride()
+    tmp = dim_permute[:batch_end]
+    tmp.sort(key=lambda x: self_strides[x], reverse=True)
+    dim_permute = tmp + dim_permute[batch_end:]
+    input = self.permute(dim_permute)
+
+    # Collapse batch dimensions into a single dimension
+    batched_sizes = [-1] + list(input.shape[batch_dims:])
+    input = input.reshape(batched_sizes)
+
+    batch_size = input.size(0)
+    batched_sizes[0] = batch_size
+    batched_out_sizes = batched_sizes
+    for i in range(len(dim)):
+        batched_out_sizes[i + 1] = out_sizes[dim[i]]
+    out = out.reshape(batched_out_sizes)
+
+    # Reshaping to original batch shape and inverting the dimension permutation
+    out_strides = [0 for _ in range(ndim)]
+    batch_numel = 1
+    i = batch_dims - 1
+    while i >= 0:
+        out_strides[dim_permute[i]] = batch_numel * out.stride(0)
+        batch_numel *= out_sizes[dim_permute[i]]
+        i -= 1
+    for i in range(batch_dims, ndim):
+        out_strides[dim_permute[i]] = out.stride(1 + (i - batch_dims))
+    return out.as_strided(out_sizes, out_strides, out.storage_offset())
+
+
+# See _fft_c2c_cufft in aten/src/ATen/native/cuda/SpectralOps.cpp
+# and _fft_c2c_mkl in aten/src/ATen/native/mkl/SpectralOps.cpp
+@register_meta([aten._fft_c2c.default, aten._fft_c2c.out])
+@out_wrapper()
+def meta_fft_c2c(self, dim, normalization, forward):
+    assert self.dtype.is_complex
+
+    out_sizes = self.shape
+    output = self.new_empty(out_sizes)
+
+    if not dim:
+        return output
+
+    sorted_dims = dim[:]
+    self_strides = self.stride()
+    sorted_dims.sort(key=lambda x: self_strides[x], reverse=True)
+    output = _exec_fft(output, self, out_sizes, sorted_dims, forward)
+
+    return output
+
+
+@register_meta([aten._fft_r2c.default, aten._fft_r2c.out])
+@out_wrapper()
+def meta_fft_r2c(self, dim, normalization, onesided):
+    assert self.dtype.is_floating_point
+    output_sizes = list(self.size())
+
+    if onesided:
+        last_dim = dim[-1]
+        last_dim_halfsize = (output_sizes[last_dim] // 2) + 1
+        output_sizes[last_dim] = last_dim_halfsize
+
+    return self.new_empty(
+        output_sizes, dtype=utils.corresponding_complex_dtype(self.dtype)
+    )
+
+
+@register_meta(aten.randperm.generator_out)
+def meta_randperm(n, *, generator=None, out):
+    return _maybe_resize_out(out, torch.Size([n]))
+
+
+@register_meta(aten.randperm.default)
+def meta_randperm_default(
+    n, *, dtype=torch.long, layout=None, device=None, pin_memory=None
+):
+    return torch.empty(
+        n, dtype=dtype, layout=layout, device=device, pin_memory=pin_memory
+    )
+
+
+@register_meta(aten.randint.default)
+def meta_randint(
+    high, size, *, dtype=torch.long, layout=None, device=None, pin_memory=None
+):
+    return torch.empty(
+        size, dtype=dtype, layout=layout, device=device, pin_memory=pin_memory
+    )
+
+
+@register_meta(aten.randint.low)
+def meta_randint_low(
+    low,
+    high,
+    size,
+    *,
+    dtype=torch.long,
+    layout=None,
+    device=None,
+    pin_memory=None,
+):
+    return torch.empty(
+        size, dtype=dtype, layout=layout, device=device, pin_memory=pin_memory
+    )
+
+
+@register_meta(aten.rand.default)
+def meta_rand_default(size, *, dtype=None, layout=None, device=None, pin_memory=None):
+    return torch.empty(
+        size, dtype=dtype, layout=layout, device=device, pin_memory=pin_memory
+    )
+
+
+@register_meta([aten._fft_c2r.default, aten._fft_c2r.out])
+@out_wrapper()
+def meta_fft_c2r(self, dim, normalization, lastdim):
+    assert self.dtype.is_complex
+    output_sizes = list(self.size())
+    output_sizes[dim[-1]] = lastdim
+    return self.new_empty(output_sizes, dtype=toRealValueType(self.dtype))
+
+
+@register_meta(aten.copy_.default)
+def meta_copy_(self, src, non_blocking=False):
+    # This code simulates the original decomp from inductor,
+    # which runs most of the meta checks that we care about.
+    # In theory, we should make this more robust by carefully
+    # auditing our C++ copy_() kernel and copying the checks here.
+
+    if torch._debug_has_internal_overlap(self) == 1:  # 1 == MemOverlap::Yes
+        raise RuntimeError(
+            "more than one element of the written-to tensor refers to a single memory location"
+        )
+
+    if isinstance(src, Tensor):
+        intermediate = src.to(self, non_blocking)
+        if self.size() != intermediate.size():
+            aten.expand_copy.default(intermediate, self.size())
+    return self
+
+
+def inferUnsqueezeGeometry(tensor, dim):
+    result_sizes = list(tensor.size())
+    result_strides = list(tensor.stride())
+    new_stride = 1 if dim >= tensor.dim() else result_sizes[dim] * result_strides[dim]
+    result_sizes.insert(dim, 1)
+    result_strides.insert(dim, new_stride)
+    return result_sizes, result_strides
+
+
+@register_meta(aten.unsqueeze_.default)
+def meta_unsqueeze_(self, dim):
+    dim = maybe_wrap_dim(dim, self.dim() + 1)
+    g_sizes, g_strides = inferUnsqueezeGeometry(self, dim)
+    self.as_strided_(g_sizes, g_strides)
+    return self
+
+
+@register_meta(aten._sparse_semi_structured_linear)
+def meta_sparse_structured_linear(
+    input: Tensor,
+    weight: Tensor,
+    _meta: Tensor,
+    bias: Optional[Tensor] = None,
+    _activation_opt: Optional[str] = None,
+    out_dtype: Optional[torch.dtype] = None,
+):
+    output_sizes = list(input.shape)
+    if bias is not None:
+        assert weight.size(0) == bias.size(0), "output size mismatch"
+    assert weight.size(1) == input.size(-1) / 2
+    output_sizes[-1] = weight.size(0)
+
+    # see: https://github.com/pytorch/pytorch/pull/114477#issuecomment-1830121375
+    # We assume that we have already squashed the inputs into a 2-D tensor
+    # Then, as the output is transposed, we need to propagate the transposed
+    # stride information to the output tensor
+    assert len(input.shape) == 2, "we can only handle the squashed input case"
+    transposed_strides = (1, input.size(0))
+
+    if out_dtype is not None:
+        assert (
+            input.dtype == torch.int8 and out_dtype == torch.int32
+        ), "out_dtype is only supported for i8i8->i32 linear operator"
+    output = input.new_empty(
+        output_sizes,
+        dtype=input.dtype if out_dtype is None else out_dtype,
+    ).as_strided(output_sizes, transposed_strides)
+
+    return output
+
+
+@register_meta(aten._cslt_sparse_mm)
+def meta__cslt_sparse_mm(
+    compressed_A: torch.Tensor,
+    dense_B: torch.Tensor,
+    bias: Optional[Tensor] = None,
+    alpha: Optional[Tensor] = None,
+    out_dtype: Optional[torch.dtype] = None,
+    transpose_result: bool = False,
+):
+    assert dense_B.dtype in {
+        torch.float32,
+        torch.float16,
+        torch.bfloat16,
+        torch.int8,
+    }, "_cslt_sparse_mm only supports fp16, bf16, and int8"
+    assert compressed_A.dtype == dense_B.dtype, "inputs must have the same dtype"
+    assert len(dense_B.shape) == 2, "_cslt_sparse_mm only supports 2d inputs"
+
+    is_int8_input_type = compressed_A.dtype == torch.int8
+    compression_factor = 10 if is_int8_input_type else 9
+    k = dense_B.size(0)
+    n = dense_B.size(1)
+    m = (compressed_A.numel() * 16) // (compression_factor * k)
+    if bias is not None:
+        assert m == bias.size(0)
+
+    if out_dtype is not None:
+        assert is_int8_input_type and out_dtype in {
+            torch.float16,
+            torch.bfloat16,
+            torch.int32,
+        }, "out_dtype is only supported for i8i8->fp16, bf16, or i32 matmul"
+    output_shape = (n, m) if transpose_result else (m, n)
+    result = dense_B.new_empty(output_shape, dtype=out_dtype)
+    return result
+
+
+@register_meta(aten.index_reduce.default)
+def meta_index_reduce(
+    self: Tensor,
+    dim: int,
+    index: Tensor,
+    source: torch.Tensor,
+    reduce: str,
+    *,
+    include_self: bool = True,
+) -> Tensor:
+    return torch.empty_like(self, memory_format=torch.contiguous_format)
+
+
+@register_meta(aten.index_reduce_.default)
+def meta_index_reduce_(
+    self: Tensor,
+    dim: int,
+    index: Tensor,
+    source: torch.Tensor,
+    reduce: str,
+    *,
+    include_self: bool = True,
+) -> Tensor:
+    return self
+
+
+# Implementations below are taken from https://github.com/albanD/subclass_zoo/blob/main/python_meta_tensor.py
+@out_wrapper()
+@register_meta(aten.index_select.default)
+def meta_index_select(self, dim, index):
+    result_size = list(self.size())
+    if self.dim() > 0:
+        result_size[dim] = index.numel()
+    return self.new_empty(result_size)
+
+
+@register_meta(aten.segment_reduce.default)
+def meta_segment_reduce(
+    data: Tensor,
+    reduce: str,
+    *,
+    lengths: Optional[Tensor] = None,
+    indices: Optional[Tensor] = None,
+    offsets: Optional[Tensor] = None,
+    axis: int = 0,
+    unsafe: bool = False,
+    initial=None,
+) -> Tensor:
+    if indices is not None:
+        raise NotImplementedError(
+            "segment_reduce(): indices based reduction is not supported yet."
+        )
+
+    def segment_reduce_lengths_tensor(lengths_shape):
+        return torch.empty(
+            lengths_shape + data.shape[axis + 1 :],
+            dtype=data.dtype,
+            device="meta",
+            memory_format=torch.contiguous_format,
+        )
+
+    if lengths is not None:
+        return segment_reduce_lengths_tensor(lengths.shape)
+    # FIXME should probably check that lengths and offset aren't both set, but
+    # the ATen implementation neglects this too
+    if offsets is not None:
+        # lengths == torch.diff(offsets)
+        lengths_shape = offsets.shape[:-1] + (offsets.shape[-1] - 1,)
+        return segment_reduce_lengths_tensor(lengths_shape)
+    raise RuntimeError("segment_reduce(): Either lengths or offsets must be defined.")
+
+
+@register_meta([aten.max.default, aten.max.unary_out])
+@out_wrapper()
+def meta_max(self):
+    return self.new_empty(())
+
+
+@register_meta(aten.max.dim)
+def meta_max_dim(self, dim, keepdim=False):
+    dim = utils.reduction_dims(self.shape, (dim,))
+    output_shape = _compute_reduction_shape(self, dim, keepdim)
+    return (
+        self.new_empty(output_shape),
+        self.new_empty(output_shape, dtype=torch.long),
+    )
+
+
+@register_meta([aten.min.default, aten.min.unary_out])
+@out_wrapper()
+def meta_min(self):
+    return self.new_empty(())
+
+
+@register_meta(aten.min.dim)
+def meta_min_dim(self, dim, keepdim=False):
+    dim = utils.reduction_dims(self.shape, (dim,))
+    output_shape = _compute_reduction_shape(self, dim, keepdim)
+    return (
+        self.new_empty(output_shape),
+        self.new_empty(output_shape, dtype=torch.long),
+    )
+
+
+@register_meta(aten.angle.default)
+def meta_angle(self):
+    if self.is_complex():
+        result_dtype = corresponding_real_dtype(self.dtype)
+    else:
+        _, result_dtype = elementwise_dtypes(
+            self,
+            type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT,
+        )
+    return torch.empty_like(self, dtype=result_dtype)
+
+
+@register_meta(aten.angle.out)
+def meta_angle_out(self, out):
+    torch._resize_output_(out, self.size(), self.device)
+    return out.copy_(torch.angle(self))
+
+
+@register_meta(aten._assert_async.default)
+def assert_async(val):
+    return
+
+
+@register_meta(aten._assert_async.msg)
+def assert_async_meta(val, assert_msg):
+    return
+
+
+@register_meta(aten._print.default)
+def print_meta(s):
+    return
+
+
+@register_meta(aten._make_dep_token.default)
+def make_dep_token(
+    *,
+    dtype=None,
+    layout=None,
+    device=None,
+    pin_memory=None,
+    memory_format=None,
+):
+    return torch.empty([], device="meta")
+
+
+@register_meta(aten.sym_constrain_range.default)
+def sym_constrain_range(size, min=None, max=None):
+    # Avoid importing sympy at a module level
+    from torch.fx.experimental.symbolic_shapes import constrain_range
+
+    if isinstance(size, (SymFloat, SymBool)):
+        raise ValueError("Constraining SymFloat or Symbool is nyi")
+    constrain_range(size, min=min, max=max)
+
+
+@register_meta(aten._functional_sym_constrain_range.default)
+def functional_sym_constrain_range(size, min=None, max=None, dep_token=None):
+    aten.sym_constrain_range(size, min=min, max=max)
+    return dep_token
+
+
+@register_meta(aten.sym_constrain_range_for_size.default)
+def sym_constrain_range_for_size(size, min=None, max=None):
+    # Avoid importing sympy at a module level
+    from torch.fx.experimental.symbolic_shapes import _constrain_range_for_size
+
+    if isinstance(size, (SymFloat, SymBool)):
+        raise ValueError("Constraining SymFloat or Symbool is nyi")
+    _constrain_range_for_size(size, min=min, max=max)
+
+
+@register_meta(aten._functional_sym_constrain_range_for_size.default)
+def functional_sym_constrain_range_for_size(size, min, max, dep_token):
+    aten.sym_constrain_range_for_size(size, min=min, max=max)
+    return dep_token
+
+
+@register_meta(aten._functional_assert_async.msg)
+def functional_assert_async_meta(val, assert_msg, dep_token):
+    return dep_token
+
+
+# From aten/src/ATen/native/LinearAlgebraUtils.h
+def squareCheckInputs(self: Tensor, f_name: str):
+    assert (
+        self.dim() >= 2
+    ), f"{f_name}: The input tensor must have at least 2 dimensions."
+    assert self.size(-1) == self.size(
+        -2
+    ), f"{f_name}: A must be batches of square matrices, but they are {s

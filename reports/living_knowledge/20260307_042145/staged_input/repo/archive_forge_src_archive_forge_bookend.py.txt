@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/bookend.py
+KIND: code
+
+from langchain_community.embeddings.bookend import (
+    BookendEmbeddings,
+)
+
+__all__ = ["BookendEmbeddings"]

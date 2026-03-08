@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/chunked_documentation.py
+KIND: code
+
+from testtools.compat import _b
+Finish the stream. This does not close the output stream.

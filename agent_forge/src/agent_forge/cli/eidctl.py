@@ -182,19 +182,14 @@ def main(argv: list[str] | None = None) -> int:
         cbench_latest.add_argument("--dir", default="state", help="state directory")
         cbench_latest.add_argument("--json", action="store_true", help="JSON output")
 
-        cimport "import-benchmark"
-        cimport =
-        cimport artifact"
-        cimport benchmark
-        cimport consciousness
-        cimport csub.add_parser
-        cimport external
-        cimport help="import
-        cimport into
-        cimport JSON
-        cimport standardized
+        cimport = csub.add_parser(
+            "import-benchmark",
+            help="import external benchmark into standardized consciousness JSON artifact",
+        )
         cimport.add_argument("--dir", default="state", help="state directory")
-        cimport.add_argument("--path", required=True, help="path to external benchmark JSON payload")
+        cimport.add_argument(
+            "--path", required=True, help="path to external benchmark JSON payload"
+        )
         cimport.add_argument(
             "--suite",
             default="generic",
@@ -302,7 +297,7 @@ def main(argv: list[str] | None = None) -> int:
         cfull.add_argument("--rounds", type=int, default=3, help="number of core benchmark rounds")
         cfull.add_argument("--bench-ticks", type=int, default=10, help="ticks per core benchmark round")
         cfull.add_argument("--trial-ticks", type=int, default=3, help="ticks per perturbation trial")
-        cfull.add_argument("--model", default="qwen2.5:1.5b", help="local Ollama model to benchmark")
+        cfull.add_argument("--model", default="qwen3.5:2b", help="local Ollama model to benchmark")
         cfull.add_argument("--ollama-endpoint", default=DEFAULT_OLLAMA_ENDPOINT, help="Ollama endpoint URL")
         cfull.add_argument("--skip-llm", action="store_true", help="skip local LLM task benchmark")
         cfull.add_argument("--skip-mcp", action="store_true", help="skip MCP runtime benchmark")

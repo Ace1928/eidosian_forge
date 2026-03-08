@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_configflags_documentation.py
+KIND: code
+
+from OpenGL import (
+Holds the import-time constants for various configuration flags

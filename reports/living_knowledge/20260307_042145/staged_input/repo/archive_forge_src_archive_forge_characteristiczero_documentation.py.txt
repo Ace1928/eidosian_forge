@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/characteristiczero_documentation.py
+KIND: code
+
+from sympy.polys.domains.domain import Domain
+from sympy.utilities import public
+Return the characteristic of this domain.

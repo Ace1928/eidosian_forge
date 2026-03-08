@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AddressScopeConstraint.py
+KIND: code
+
+from neutronclient.common import exceptions as qe
+from heat.common import exception
+from heat.common.i18n import _
+from heat.engine import constraints
+class AddressScopeConstraint(NeutronConstraint):
+    resource_name = 'address_scope'
+    extension = 'address-scope'

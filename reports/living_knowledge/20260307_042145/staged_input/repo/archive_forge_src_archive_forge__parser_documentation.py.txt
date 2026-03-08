@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_parser_documentation.py
+KIND: code
+
+from ._constants import *
+Internal support module for sre

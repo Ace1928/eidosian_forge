@@ -1,0 +1,25 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/UY
+KIND: config
+
+UY6
+artigasartigas departmentdepartamento de artigas<
+	canelonescanelones departmentdepartamento de canelonesB
+cerro largocerro largo departmentdepartamento de cerro largo6
+coloniacolonia departmentdepartamento de colonia6
+departamento de duraznoduraznodurazno department6
+departamento de floridafloridaflorida department3
+departamento de floresfloresflores department<
+departamento de lavalleja	lavallejalavalleja department<
+departamento de maldonado	maldonadomaldonado department?
+departamento de montevideo
+montevideomontevideo department<
+departamento de paysandú	paysandúpaysandú department?
+departamento de río negro
+río negrorío negro department0
+departamento de rocharocharocha department3
+departamento de riverariverarivera department0
+departamento de saltosaltosalto department<
+departamento de san josé	san josésan josé department6
+departamento de sorianosorianosoriano department^
+departamento de tacuarembodepartamento de tacuarembótacuarembótacuarembó departmentK
+departamento de treinta y trestreinta y trestreinta y tres department

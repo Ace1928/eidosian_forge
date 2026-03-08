@@ -1,0 +1,21 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/SA
+KIND: config
+
+SA*
+منطقة الرياضriyadh provincee
+مكةmakkah provinceمكة المكرمةمنطقة مكة منطقة مكة المكرمة�
+المدينةal madinah provinceالمدينة المنورةمنطقة المدينة(منطقة المدينة المنورةA
+الشرقيةeastern provinceالمنطقة الشرقية;
+القصيمal qassim provinceمنطقة القصيم.
+حائلhail provinceمنطقة حائل/
+تبوكtabuk provinceمنطقة تبوكd
+الحدود الشماليةnorthern borders province(منطقة الحدود الشمالية?
+
+جازانjazan province
+جيزانمنطقة جازان4
+منطقة نجرانnajran province
+نجران:
+الباحةal bahah provinceمنطقة الباحة5
+
+الجوفal jowf provinceمنطقة الجوف/
+عسيرaseer provinceمنطقة عسير

@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/assistant_response_format_param_documentation.py
+KIND: code
+
+from __future__ import annotations
+from typing_extensions import Literal, TypedDict
+Must be one of `text` or `json_object`.

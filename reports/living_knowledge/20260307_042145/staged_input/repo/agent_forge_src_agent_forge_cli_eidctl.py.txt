@@ -1,0 +1,368 @@
+SOURCE_PATH: agent_forge/src/agent_forge/cli/eidctl.py
+KIND: code
+
+#!/usr/bin/env python3
+"""
+eidctl — tiny control CLI for Eidos E3
+
+Usage examples:
+  bin/eidctl state --migrate
+  bin/eidctl state --json
+  bin/eidctl journal --add "first run" --dir state
+"""
+
+from __future__ import annotations
+
+import argparse
+import dataclasses as dc
+import json
+import os
+
+# add repo root to sys.path so local 'core' can be imported without PYTHONPATH
+import sys
+from pathlib import Path as _P
+
+from eidosian_core import eidosian
+from eidosian_core.ports import get_service_url
+
+from agent_forge.core.artifacts import run_dir
+
+# local import; stdlib only
+from agent_forge.core.state import (  # type: ignore
+    add_goal,
+    append_journal,
+    diff_snapshots,
+    iter_journal,
+    list_goals,
+    list_runs,
+    list_steps_for_goal,
+    load_snapshot,
+    migrate,
+    rotate_journal,
+    save_snapshot,
+    snapshot,
+)
+
+DEFAULT_OLLAMA_ENDPOINT = get_service_url("ollama_http", default_port=11434, default_path="")
+
+
+@eidosian()
+def main(argv: list[str] | None = None) -> int:
+    try:
+        ap = argparse.ArgumentParser(
+            prog="eidctl",
+            description="Eidos control CLI",
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        )
+        sub = ap.add_subparsers(dest="cmd", required=True)
+
+        p_state = sub.add_parser("state", help="print state snapshot")
+        p_state.add_argument("--dir", default="state", help="state directory")
+        p_state.add_argument("--json", action="store_true", help="print JSON instead of pretty text")
+        p_state.add_argument("--migrate", action="store_true", help="ensure directories/version exist")
+        p_state.add_argument("--last", type=int, default=5, help="number of recent events to display")
+        p_state.add_argument("--save", action="store_true", help="save snapshot to state/snaps")
+        p_state.add_argument("--name", help="optional label for --save filename")
+        p_state.add_argument(
+            "--diff",
+            nargs=2,
+            metavar=("A", "B"),
+            help="diff two snapshot files (paths). Use with --json for machine output.",
+        )
+        p_journal = sub.add_parser("journal", help="append or inspect journal")
+        p_journal.add_argument("--dir", default="state", help="state directory")
+        mode = p_journal.add_mutually_exclusive_group()
+        mode.add_argument("--add", metavar="TEXT", help="append a journal note (or pipe via STDIN)")
+        mode.add_argument("--list", action="store_true", help="list entries")
+        mode.add_argument("--rotate", action="store_true", help="rotate journal file")
+        p_journal.add_argument("--type", dest="etype", help="event type or filter by exact type")
+        p_journal.add_argument("--tags", help="comma-separated tags", default="")
+        p_journal.add_argument("--tag", help="filter by tag")
+        p_journal.add_argument("--since", help="ISO8601 Z lower bound (inclusive)")
+        p_journal.add_argument("--until", help="ISO8601 Z upper bound (inclusive)")
+        p_journal.add_argument("--limit", type=int, default=10, help="max entries to return")
+        p_journal.add_argument("--json", action="store_true", help="JSON output")
+        p_journal.add_argument(
+            "--max-bytes",
+            type=int,
+            default=5 * 1024 * 1024,
+            help="rotate threshold in bytes (with --rotate)",
+        )
+        p_journal.add_argument("--force", action="store_true", help="rotate even if under threshold")
+
+        p_goals = sub.add_parser("goals", help="manage goals")
+        gsub = p_goals.add_subparsers(dest="goals_cmd", required=True)
+        gadd = gsub.add_parser("add", help="add goal")
+        gadd.add_argument("--title", required=True)
+        gadd.add_argument("--drive", required=True)
+        gadd.add_argument("--dir", default="state", help="state directory")
+        gls = gsub.add_parser("ls", help="list goals")
+        gls.add_argument("--dir", default="state", help="state directory")
+
+        p_steps = sub.add_parser("steps", help="inspect steps")
+        ssub = p_steps.add_subparsers(dest="steps_cmd", required=True)
+        sls = ssub.add_parser("ls", help="list steps for a goal")
+        sls.add_argument("--goal", required=True)
+        sls.add_argument("--dir", default="state", help="state directory")
+
+        p_runs = sub.add_parser("runs", help="inspect runs")
+        rsub = p_runs.add_subparsers(dest="runs_cmd", required=True)
+        rls = rsub.add_parser("ls", help="list runs")
+        rls.add_argument("--dir", default="state", help="state directory")
+        rls.add_argument("--step", help="filter by step id")
+        rshow = rsub.add_parser("show", help="show run artifacts")
+        rshow.add_argument("--dir", default="state", help="state directory")
+        rshow.add_argument("--run", required=True)
+        rshow.add_argument("--head", type=int, default=200, help="max bytes to print per stream")
+
+        p_workspace = sub.add_parser("workspace", help="summarize workspace broadcasts")
+        p_workspace.add_argument("--dir", default="state", help="state directory")
+        p_workspace.add_argument("--since", help="ISO8601 Z lower bound (inclusive)")
+        p_workspace.add_argument("--limit", type=int, default=1000, help="max events to scan")
+        p_workspace.add_argument("--window", type=float, default=1.0, help="window size in seconds")
+        p_workspace.add_argument("--min-sources", type=int, default=3, help="sources per ignition")
+        p_workspace.add_argument("--show-winners", action="store_true", help="show recent GW competition winners")
+        p_workspace.add_argument(
+            "--show-coherence", action="store_true", help="show coherence/ignition density details"
+        )
+        p_workspace.add_argument("--show-rci", action="store_true", help="show latest response complexity metric")
+        p_workspace.add_argument("--show-agency", action="store_true", help="show latest agency confidence metric")
+        p_workspace.add_argument("--json", action="store_true", help="JSON output")
+
+        p_self = sub.add_parser("self-model", help="snapshot self-model state")
+        p_self.add_argument("--dir", default="state", help="state directory")
+        p_self.add_argument(
+            "--memory-dir",
+            default=os.environ.get("EIDOS_MEMORY_DIR", str(_P.cwd() / "data" / "memory")),
+        )
+        p_self.add_argument("--last", type=int, default=5, help="number of recent events to include")
+        p_self.add_argument("--window", type=float, default=1.0, help="window size in seconds")
+        p_self.add_argument("--min-sources", type=int, default=3, help="sources per ignition")
+        p_self.add_argument("--emit", action="store_true", help="emit snapshot to workspace bus")
+        p_self.add_argument("--json", action="store_true", help="JSON output")
+
+        p_conscious = sub.add_parser("consciousness", help="consciousness kernel status and perturbation trials")
+        csub = p_conscious.add_subparsers(dest="conscious_cmd", required=True)
+        cstatus = csub.add_parser("status", help="show current consciousness runtime status")
+        cstatus.add_argument("--dir", default="state", help="state directory")
+        cstatus.add_argument("--json", action="store_true", help="JSON output")
+
+        ctrial = csub.add_parser("trial", help="run a perturbation trial and report deltas")
+        ctrial.add_argument("--dir", default="state", help="state directory")
+        ctrial.add_argument(
+            "--kind", default="noise", choices=["noise", "drop", "zero", "jitter"], help="perturbation kind"
+        )
+        ctrial.add_argument("--target", default="attention", help="perturbation target module")
+        ctrial.add_argument("--magnitude", type=float, default=0.2, help="perturbation magnitude")
+        ctrial.add_argument("--duration", type=float, default=1.0, help="perturbation duration seconds")
+        ctrial.add_argument("--ticks", type=int, default=3, help="kernel ticks to execute for trial")
+        ctrial.add_argument("--no-persist", action="store_true", help="do not write report file")
+        ctrial.add_argument("--json", action="store_true", help="JSON output")
+
+        clatest = csub.add_parser("latest-trial", help="show latest persisted consciousness trial report")
+        clatest.add_argument("--dir", default="state", help="state directory")
+        clatest.add_argument("--json", action="store_true", help="JSON output")
+
+        cbench = csub.add_parser("benchmark", help="run consciousness benchmark suite")
+        cbench.add_argument("--dir", default="state", help="state directory")
+        cbench.add_argument("--ticks", type=int, default=12, help="kernel ticks for benchmark run")
+        cbench.add_argument("--no-persist", action="store_true", help="do not write benchmark report file")
+        cbench.add_argument("--json", action="store_true", help="JSON output")
+        cbench.add_argument(
+            "--external-score",
+            action="append",
+            default=[],
+            help="external benchmark score in form name=value (repeatable)",
+        )
+        cbench.add_argument(
+            "--external-source",
+            action="append",
+            default=[],
+            help="external score source in form name=url (repeatable)",
+        )
+
+        cbench_latest = csub.add_parser("latest-benchmark", help="show latest persisted consciousness benchmark report")
+        cbench_latest.add_argument("--dir", default="state", help="state directory")
+        cbench_latest.add_argument("--json", action="store_true", help="JSON output")
+
+        cimport "import-benchmark"
+        cimport =
+        cimport artifact"
+        cimport benchmark
+        cimport consciousness
+        cimport csub.add_parser
+        cimport external
+        cimport help="import
+        cimport into
+        cimport JSON
+        cimport standardized
+        cimport.add_argument("--dir", default="state", help="state directory")
+        cimport.add_argument("--path", required=True, help="path to external benchmark JSON payload")
+        cimport.add_argument(
+            "--suite",
+            default="generic",
+            choices=["swe-bench", "webarena", "osworld", "agentbench", "generic"],
+            help="external benchmark suite label",
+        )
+        cimport.add_argument("--name", help="optional benchmark name override")
+        cimport.add_argument("--source-url", help="optional source URL for provenance")
+        cimport.add_argument("--no-persist", action="store_true", help="do not write imported report file")
+        cimport.add_argument("--json", action="store_true", help="JSON output")
+
+        cvalidate = csub.add_parser(
+            "validate",
+            help="run RAC-AP construct validation on benchmark/trial/red-team artifacts",
+        )
+        cvalidate.add_argument("--dir", default="state", help="state directory")
+        cvalidate.add_argument("--limit", type=int, default=64, help="max reports to scan per source")
+        cvalidate.add_argument(
+            "--min-pairs",
+            type=int,
+            default=6,
+            help="minimum paired samples required for nomological checks",
+        )
+        cvalidate.add_argument(
+            "--protocol",
+            help="optional RAC-AP protocol JSON path for compatibility/threshold overrides",
+        )
+        cvalidate.add_argument(
+            "--security-required",
+            action="store_true",
+            help="hard-fail RAC-AP gates when security evidence is missing or weak",
+        )
+        cvalidate.add_argument("--no-persist", action="store_true", help="do not persist validation report file")
+        cvalidate.add_argument("--json", action="store_true", help="JSON output")
+
+        cvalidate_latest = csub.add_parser("latest-validation", help="show latest persisted RAC-AP validation report")
+        cvalidate_latest.add_argument("--dir", default="state", help="state directory")
+        cvalidate_latest.add_argument("--json", action="store_true", help="JSON output")
+
+        cdrift = csub.add_parser("drift-review", help="compare protocol thresholds between latest validation runs")
+        cdrift.add_argument("--dir", default="state", help="state directory")
+        cdrift.add_argument(
+            "--threshold",
+            type=float,
+            default=0.05,
+            help="minimum absolute threshold delta to flag drift (default: 0.05)",
+        )
+        cdrift.add_argument("--json", action="store_true", help="JSON output")
+
+        ctrends = csub.add_parser("validation-trends", help="show RAC-AP validation trend lines and optional dashboard")
+        ctrends.add_argument("--dir", default="state", help="state directory")
+        ctrends.add_argument("--limit", type=int, default=30, help="max validation reports to include")
+        ctrends.add_argument("--out", help="optional HTML dashboard output path")
+        ctrends.add_argument("--json", action="store_true", help="JSON output")
+
+        cprotocol = csub.add_parser("protocol", help="show or validate RAC-AP protocol schema")
+        cprotocol.add_argument("--dir", default="state", help="state directory")
+        cprotocol.add_argument("--path", help="optional protocol JSON file to validate")
+        cprotocol.add_argument("--write-template", help="write default protocol template to this path")
+        cprotocol.add_argument("--json", action="store_true", help="JSON output")
+
+        cprereg = csub.add_parser("preregister", help="create a RAC-AP pre-registration manifest")
+        cprereg.add_argument("--dir", default="state", help="state directory")
+        cprereg.add_argument("--name", required=True, help="study name")
+        cprereg.add_argument("--hypothesis", required=True, help="main hypothesis statement")
+        cprereg.add_argument("--owner", default="eidos", help="study owner")
+        cprereg.add_argument(
+            "--out",
+            help="optional output path; default writes under reports/consciousness_preregister",
+        )
+        cprereg.add_argument("--json", action="store_true", help="JSON output")
+
+        cstress = csub.add_parser("stress-benchmark", help="run payload safety + event pressure stress benchmark")
+        cstress.add_argument("--dir", default="state", help="state directory")
+        cstress.add_argument("--ticks", type=int, default=20, help="kernel ticks for stress benchmark run")
+        cstress.add_argument("--event-fanout", type=int, default=14, help="events emitted per tick by stress module")
+        cstress.add_argument("--broadcast-fanout", type=int, default=6, help="workspace broadcasts emitted per tick")
+        cstress.add_argument("--payload-chars", type=int, default=12000, help="synthetic payload size in chars")
+        cstress.add_argument("--max-payload-bytes", type=int, default=2048, help="payload safety cap used during run")
+        cstress.add_argument("--no-persist", action="store_true", help="do not write stress benchmark report file")
+        cstress.add_argument("--json", action="store_true", help="JSON output")
+
+        cstress_latest = csub.add_parser(
+            "latest-stress-benchmark", help="show latest persisted stress benchmark report"
+        )
+        cstress_latest.add_argument("--dir", default="state", help="state directory")
+        cstress_latest.add_argument("--json", action="store_true", help="JSON output")
+
+        cred = csub.add_parser("red-team", help="run adversarial consciousness benchmark campaign")
+        cred.add_argument("--dir", default="state", help="state directory")
+        cred.add_argument("--no-persist", action="store_true", help="do not write campaign report file")
+        cred.add_argument("--seed", type=int, default=910000, help="base seed for scenario trials")
+        cred.add_argument("--max-scenarios", type=int, default=0, help="run only first N scenarios (0=all)")
+        cred.add_argument("--quick", action="store_true", help="run reduced-duration scenario specs")
+        cred.add_argument("--json", action="store_true", help="JSON output")
+
+        cred_latest = csub.add_parser("latest-red-team", help="show latest persisted red-team campaign report")
+        cred_latest.add_argument("--dir", default="state", help="state directory")
+        cred_latest.add_argument("--json", action="store_true", help="JSON output")
+
+        cfull = csub.add_parser(
+            "full-benchmark", help="run integrated stack benchmark (kernel + trials + MCP + local LLM)"
+        )
+        cfull.add_argument("--dir", default="state", help="state directory")
+        cfull.add_argument("--rounds", type=int, default=3, help="number of core benchmark rounds")
+        cfull.add_argument("--bench-ticks", type=int, default=10, help="ticks per core benchmark round")
+        cfull.add_argument("--trial-ticks", type=int, default=3, help="ticks per perturbation trial")
+        cfull.add_argument("--model", default="qwen2.5:1.5b", help="local Ollama model to benchmark")
+        cfull.add_argument("--ollama-endpoint", default=DEFAULT_OLLAMA_ENDPOINT, help="Ollama endpoint URL")
+        cfull.add_argument("--skip-llm", action="store_true", help="skip local LLM task benchmark")
+        cfull.add_argument("--skip-mcp", action="store_true", help="skip MCP runtime benchmark")
+        cfull.add_argument("--skip-red-team", action="store_true", help="skip adversarial red-team benchmark campaign")
+        cfull.add_argument("--red-team-quick", action="store_true", help="run reduced-duration red-team scenarios")
+        cfull.add_argument("--red-team-max-scenarios", type=int, default=1, help="max red-team scenarios to run")
+        cfull.add_argument("--red-team-seed", type=int, default=910000, help="base seed for red-team scenarios")
+        cfull.add_argument("--no-persist", action="store_true", help="do not persist report file")
+        cfull.add_argument("--json", action="store_true", help="JSON output")
+
+        cfull_latest = csub.add_parser("latest-full-benchmark", help="show latest integrated stack benchmark report")
+        cfull_latest.add_argument("--dir", default="state", help="state directory")
+        cfull_latest.add_argument("--json", action="store_true", help="JSON output")
+
+        args = ap.parse_args(argv)
+
+        if args.cmd == "state":
+            if args.diff:
+                a, b = args.diff
+                da = load_snapshot(a)
+                db = load_snapshot(b)
+                d = diff_snapshots(da, db)
+                out = json.dumps(d, indent=2) if args.json else d
+                print(out if isinstance(out, str) else json.dumps(out, indent=2))
+                return 0
+            if args.migrate:
+                migrate(args.dir)
+            snap = snapshot(args.dir, last=args.last)
+            if args.save:
+                path = save_snapshot(args.dir, snap, name=args.name)
+                print(f"[state] saved snapshot -> {path}")
+            if args.json:
+                print(json.dumps(snap, indent=2))
+            else:
+                _pretty_print_state(snap)
+            return 0
+
+        if args.cmd == "journal":
+            if args.rotate:
+                rot = rotate_journal(args.dir, max_bytes=args.max_bytes, force=args.force)
+                if rot:
+                    print(f"[journal] rotated -> {rot}")
+                else:
+                    print("[journal] no rotation needed")
+                return 0
+            if args.list:
+                items = iter_journal(
+                    args.dir,
+                    etype=args.etype,
+                    tag=args.tag,
+                    since=args.since,
+                    until=args.until,
+                    limit=args.limit,
+                )
+                if args.json:
+                    print(json.dumps(items, indent=2))
+                else:
+                    for e in items:
+                        tags = f" [{', '.join(e.get('tags', []))}]" if e.get("tags") else ""
+                        print(f"{e.get('ts')}  {e.get('type')}: {e.get('text')}{tags}")

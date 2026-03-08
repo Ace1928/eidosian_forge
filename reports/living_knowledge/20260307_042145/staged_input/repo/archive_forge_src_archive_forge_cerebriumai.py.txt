@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/cerebriumai.py
+KIND: code
+
+from langchain_community.llms.cerebriumai import CerebriumAI
+
+__all__ = ["CerebriumAI"]

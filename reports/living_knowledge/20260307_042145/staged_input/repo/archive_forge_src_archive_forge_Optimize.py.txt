@@ -1,0 +1,497 @@
+SOURCE_PATH: archive_forge/src/archive_forge/Optimize.py
+KIND: code
+
+from __future__ import absolute_import
+
+import re
+import sys
+import copy
+import codecs
+import itertools
+
+from . import TypeSlots
+from .ExprNodes import not_a_constant
+import cython
+cython.declare(UtilityCode=object, EncodedString=object, bytes_literal=object, encoded_string=object,
+               Nodes=object, ExprNodes=object, PyrexTypes=object, Builtin=object,
+               UtilNodes=object, _py_int_types=object)
+
+if sys.version_info[0] >= 3:
+    _py_int_types = int
+    _py_string_types = (bytes, str)
+else:
+    _py_int_types = (int, long)
+    _py_string_types = (bytes, unicode)
+
+from . import Nodes
+from . import ExprNodes
+from . import PyrexTypes
+from . import Visitor
+from . import Builtin
+from . import UtilNodes
+from . import Options
+
+from .Code import UtilityCode, TempitaUtilityCode
+from .StringEncoding import EncodedString, bytes_literal, encoded_string
+from .Errors import error, warning
+from .ParseTreeTransforms import SkipDeclarations
+
+try:
+    from __builtin__ import reduce
+except ImportError:
+    from functools import reduce
+
+try:
+    from __builtin__ import basestring
+except ImportError:
+    basestring = str # Python 3
+
+
+def load_c_utility(name):
+    return UtilityCode.load_cached(name, "Optimize.c")
+
+
+def unwrap_coerced_node(node, coercion_nodes=(ExprNodes.CoerceToPyTypeNode, ExprNodes.CoerceFromPyTypeNode)):
+    if isinstance(node, coercion_nodes):
+        return node.arg
+    return node
+
+
+def unwrap_node(node):
+    while isinstance(node, UtilNodes.ResultRefNode):
+        node = node.expression
+    return node
+
+
+def is_common_value(a, b):
+    a = unwrap_node(a)
+    b = unwrap_node(b)
+    if isinstance(a, ExprNodes.NameNode) and isinstance(b, ExprNodes.NameNode):
+        return a.name == b.name
+    if isinstance(a, ExprNodes.AttributeNode) and isinstance(b, ExprNodes.AttributeNode):
+        return not a.is_py_attr and is_common_value(a.obj, b.obj) and a.attribute == b.attribute
+    return False
+
+
+def filter_none_node(node):
+    if node is not None and node.constant_result is None:
+        return None
+    return node
+
+
+class _YieldNodeCollector(Visitor.TreeVisitor):
+    """
+    YieldExprNode finder for generator expressions.
+    """
+    def __init__(self):
+        Visitor.TreeVisitor.__init__(self)
+        self.yield_stat_nodes = {}
+        self.yield_nodes = []
+
+    visit_Node = Visitor.TreeVisitor.visitchildren
+
+    def visit_YieldExprNode(self, node):
+        self.yield_nodes.append(node)
+        self.visitchildren(node)
+
+    def visit_ExprStatNode(self, node):
+        self.visitchildren(node)
+        if node.expr in self.yield_nodes:
+            self.yield_stat_nodes[node.expr] = node
+
+    # everything below these nodes is out of scope:
+
+    def visit_GeneratorExpressionNode(self, node):
+        pass
+
+    def visit_LambdaNode(self, node):
+        pass
+
+    def visit_FuncDefNode(self, node):
+        pass
+
+
+def _find_single_yield_expression(node):
+    yield_statements = _find_yield_statements(node)
+    if len(yield_statements) != 1:
+        return None, None
+    return yield_statements[0]
+
+
+def _find_yield_statements(node):
+    collector = _YieldNodeCollector()
+    collector.visitchildren(node)
+    try:
+        yield_statements = [
+            (yield_node.arg, collector.yield_stat_nodes[yield_node])
+            for yield_node in collector.yield_nodes
+        ]
+    except KeyError:
+        # found YieldExprNode without ExprStatNode (i.e. a non-statement usage of 'yield')
+        yield_statements = []
+    return yield_statements
+
+
+class IterationTransform(Visitor.EnvTransform):
+    """Transform some common for-in loop patterns into efficient C loops:
+
+    - for-in-dict loop becomes a while loop calling PyDict_Next()
+    - for-in-enumerate is replaced by an external counter variable
+    - for-in-range loop becomes a plain C for loop
+    """
+    def visit_PrimaryCmpNode(self, node):
+        if node.is_ptr_contains():
+
+            # for t in operand2:
+            #     if operand1 == t:
+            #         res = True
+            #         break
+            # else:
+            #     res = False
+
+            pos = node.pos
+            result_ref = UtilNodes.ResultRefNode(node)
+            if node.operand2.is_subscript:
+                base_type = node.operand2.base.type.base_type
+            else:
+                base_type = node.operand2.type.base_type
+            target_handle = UtilNodes.TempHandle(base_type)
+            target = target_handle.ref(pos)
+            cmp_node = ExprNodes.PrimaryCmpNode(
+                pos, operator=u'==', operand1=node.operand1, operand2=target)
+            if_body = Nodes.StatListNode(
+                pos,
+                stats = [Nodes.SingleAssignmentNode(pos, lhs=result_ref, rhs=ExprNodes.BoolNode(pos, value=1)),
+                         Nodes.BreakStatNode(pos)])
+            if_node = Nodes.IfStatNode(
+                pos,
+                if_clauses=[Nodes.IfClauseNode(pos, condition=cmp_node, body=if_body)],
+                else_clause=None)
+            for_loop = UtilNodes.TempsBlockNode(
+                pos,
+                temps = [target_handle],
+                body = Nodes.ForInStatNode(
+                    pos,
+                    target=target,
+                    iterator=ExprNodes.IteratorNode(node.operand2.pos, sequence=node.operand2),
+                    body=if_node,
+                    else_clause=Nodes.SingleAssignmentNode(pos, lhs=result_ref, rhs=ExprNodes.BoolNode(pos, value=0))))
+            for_loop = for_loop.analyse_expressions(self.current_env())
+            for_loop = self.visit(for_loop)
+            new_node = UtilNodes.TempResultFromStatNode(result_ref, for_loop)
+
+            if node.operator == 'not_in':
+                new_node = ExprNodes.NotNode(pos, operand=new_node)
+            return new_node
+
+        else:
+            self.visitchildren(node)
+            return node
+
+    def visit_ForInStatNode(self, node):
+        self.visitchildren(node)
+        return self._optimise_for_loop(node, node.iterator.sequence)
+
+    def _optimise_for_loop(self, node, iterable, reversed=False):
+        annotation_type = None
+        if (iterable.is_name or iterable.is_attribute) and iterable.entry and iterable.entry.annotation:
+            annotation = iterable.entry.annotation
+            if annotation.is_subscript:
+                annotation = annotation.base  # container base type
+            # FIXME: generalise annotation evaluation => maybe provide a "qualified name" also for imported names?
+            if annotation.is_name:
+                if annotation.entry and annotation.entry.qualified_name == 'typing.Dict':
+                    annotation_type = Builtin.dict_type
+                elif annotation.name == 'Dict':
+                    annotation_type = Builtin.dict_type
+                if annotation.entry and annotation.entry.qualified_name in ('typing.Set', 'typing.FrozenSet'):
+                    annotation_type = Builtin.set_type
+                elif annotation.name in ('Set', 'FrozenSet'):
+                    annotation_type = Builtin.set_type
+
+        if Builtin.dict_type in (iterable.type, annotation_type):
+            # like iterating over dict.keys()
+            if reversed:
+                # CPython raises an error here: not a sequence
+                return node
+            return self._transform_dict_iteration(
+                node, dict_obj=iterable, method=None, keys=True, values=False)
+
+        if (Builtin.set_type in (iterable.type, annotation_type) or
+                Builtin.frozenset_type in (iterable.type, annotation_type)):
+            if reversed:
+                # CPython raises an error here: not a sequence
+                return node
+            return self._transform_set_iteration(node, iterable)
+
+        # C array (slice) iteration?
+        if iterable.type.is_ptr or iterable.type.is_array:
+            return self._transform_carray_iteration(node, iterable, reversed=reversed)
+        if iterable.type is Builtin.bytes_type:
+            return self._transform_bytes_iteration(node, iterable, reversed=reversed)
+        if iterable.type is Builtin.unicode_type:
+            return self._transform_unicode_iteration(node, iterable, reversed=reversed)
+
+        # the rest is based on function calls
+        if not isinstance(iterable, ExprNodes.SimpleCallNode):
+            return node
+
+        if iterable.args is None:
+            arg_count = iterable.arg_tuple and len(iterable.arg_tuple.args) or 0
+        else:
+            arg_count = len(iterable.args)
+            if arg_count and iterable.self is not None:
+                arg_count -= 1
+
+        function = iterable.function
+        # dict iteration?
+        if function.is_attribute and not reversed and not arg_count:
+            base_obj = iterable.self or function.obj
+            method = function.attribute
+            # in Py3, items() is equivalent to Py2's iteritems()
+            is_safe_iter = self.global_scope().context.language_level >= 3
+
+            if not is_safe_iter and method in ('keys', 'values', 'items'):
+                # try to reduce this to the corresponding .iter*() methods
+                if isinstance(base_obj, ExprNodes.CallNode):
+                    inner_function = base_obj.function
+                    if (inner_function.is_name and inner_function.name == 'dict'
+                            and inner_function.entry
+                            and inner_function.entry.is_builtin):
+                        # e.g. dict(something).items() => safe to use .iter*()
+                        is_safe_iter = True
+
+            keys = values = False
+            if method == 'iterkeys' or (is_safe_iter and method == 'keys'):
+                keys = True
+            elif method == 'itervalues' or (is_safe_iter and method == 'values'):
+                values = True
+            elif method == 'iteritems' or (is_safe_iter and method == 'items'):
+                keys = values = True
+
+            if keys or values:
+                return self._transform_dict_iteration(
+                    node, base_obj, method, keys, values)
+
+        # enumerate/reversed ?
+        if iterable.self is None and function.is_name and \
+               function.entry and function.entry.is_builtin:
+            if function.name == 'enumerate':
+                if reversed:
+                    # CPython raises an error here: not a sequence
+                    return node
+                return self._transform_enumerate_iteration(node, iterable)
+            elif function.name == 'reversed':
+                if reversed:
+                    # CPython raises an error here: not a sequence
+                    return node
+                return self._transform_reversed_iteration(node, iterable)
+
+        # range() iteration?
+        if Options.convert_range and 1 <= arg_count <= 3 and (
+                iterable.self is None and
+                function.is_name and function.name in ('range', 'xrange') and
+                function.entry and function.entry.is_builtin):
+            if node.target.type.is_int or node.target.type.is_enum:
+                return self._transform_range_iteration(node, iterable, reversed=reversed)
+            if node.target.type.is_pyobject:
+                # Assume that small integer ranges (C long >= 32bit) are best handled in C as well.
+                for arg in (iterable.arg_tuple.args if iterable.args is None else iterable.args):
+                    if isinstance(arg, ExprNodes.IntNode):
+                        if arg.has_constant_result() and -2**30 <= arg.constant_result < 2**30:
+                            continue
+                    break
+                else:
+                    return self._transform_range_iteration(node, iterable, reversed=reversed)
+
+        return node
+
+    def _transform_reversed_iteration(self, node, reversed_function):
+        args = reversed_function.arg_tuple.args
+        if len(args) == 0:
+            error(reversed_function.pos,
+                  "reversed() requires an iterable argument")
+            return node
+        elif len(args) > 1:
+            error(reversed_function.pos,
+                  "reversed() takes exactly 1 argument")
+            return node
+        arg = args[0]
+
+        # reversed(list/tuple) ?
+        if arg.type in (Builtin.tuple_type, Builtin.list_type):
+            node.iterator.sequence = arg.as_none_safe_node("'NoneType' object is not iterable")
+            node.iterator.reversed = True
+            return node
+
+        return self._optimise_for_loop(node, arg, reversed=True)
+
+    PyBytes_AS_STRING_func_type = PyrexTypes.CFuncType(
+        PyrexTypes.c_char_ptr_type, [
+            PyrexTypes.CFuncTypeArg("s", Builtin.bytes_type, None)
+            ])
+
+    PyBytes_GET_SIZE_func_type = PyrexTypes.CFuncType(
+        PyrexTypes.c_py_ssize_t_type, [
+            PyrexTypes.CFuncTypeArg("s", Builtin.bytes_type, None)
+            ])
+
+    def _transform_bytes_iteration(self, node, slice_node, reversed=False):
+        target_type = node.target.type
+        if not target_type.is_int and target_type is not Builtin.bytes_type:
+            # bytes iteration returns bytes objects in Py2, but
+            # integers in Py3
+            return node
+
+        unpack_temp_node = UtilNodes.LetRefNode(
+            slice_node.as_none_safe_node("'NoneType' is not iterable"))
+
+        slice_base_node = ExprNodes.PythonCapiCallNode(
+            slice_node.pos, "PyBytes_AS_STRING",
+            self.PyBytes_AS_STRING_func_type,
+            args = [unpack_temp_node],
+            is_temp = 0,
+            )
+        len_node = ExprNodes.PythonCapiCallNode(
+            slice_node.pos, "PyBytes_GET_SIZE",
+            self.PyBytes_GET_SIZE_func_type,
+            args = [unpack_temp_node],
+            is_temp = 0,
+            )
+
+        return UtilNodes.LetNode(
+            unpack_temp_node,
+            self._transform_carray_iteration(
+                node,
+                ExprNodes.SliceIndexNode(
+                    slice_node.pos,
+                    base = slice_base_node,
+                    start = None,
+                    step = None,
+                    stop = len_node,
+                    type = slice_base_node.type,
+                    is_temp = 1,
+                    ),
+                reversed = reversed))
+
+    PyUnicode_READ_func_type = PyrexTypes.CFuncType(
+        PyrexTypes.c_py_ucs4_type, [
+            PyrexTypes.CFuncTypeArg("kind", PyrexTypes.c_int_type, None),
+            PyrexTypes.CFuncTypeArg("data", PyrexTypes.c_void_ptr_type, None),
+            PyrexTypes.CFuncTypeArg("index", PyrexTypes.c_py_ssize_t_type, None)
+        ])
+
+    init_unicode_iteration_func_type = PyrexTypes.CFuncType(
+        PyrexTypes.c_int_type, [
+            PyrexTypes.CFuncTypeArg("s", PyrexTypes.py_object_type, None),
+            PyrexTypes.CFuncTypeArg("length", PyrexTypes.c_py_ssize_t_ptr_type, None),
+            PyrexTypes.CFuncTypeArg("data", PyrexTypes.c_void_ptr_ptr_type, None),
+            PyrexTypes.CFuncTypeArg("kind", PyrexTypes.c_int_ptr_type, None)
+        ],
+        exception_value = '-1')
+
+    def _transform_unicode_iteration(self, node, slice_node, reversed=False):
+        if slice_node.is_literal:
+            # try to reduce to byte iteration for plain Latin-1 strings
+            try:
+                bytes_value = bytes_literal(slice_node.value.encode('latin1'), 'iso8859-1')
+            except UnicodeEncodeError:
+                pass
+            else:
+                bytes_slice = ExprNodes.SliceIndexNode(
+                    slice_node.pos,
+                    base=ExprNodes.BytesNode(
+                        slice_node.pos, value=bytes_value,
+                        constant_result=bytes_value,
+                        type=PyrexTypes.c_const_char_ptr_type).coerce_to(
+                            PyrexTypes.c_const_uchar_ptr_type, self.current_env()),
+                    start=None,
+                    stop=ExprNodes.IntNode(
+                        slice_node.pos, value=str(len(bytes_value)),
+                        constant_result=len(bytes_value),
+                        type=PyrexTypes.c_py_ssize_t_type),
+                    type=Builtin.unicode_type,  # hint for Python conversion
+                )
+                return self._transform_carray_iteration(node, bytes_slice, reversed)
+
+        unpack_temp_node = UtilNodes.LetRefNode(
+            slice_node.as_none_safe_node("'NoneType' is not iterable"))
+
+        start_node = ExprNodes.IntNode(
+            node.pos, value='0', constant_result=0, type=PyrexTypes.c_py_ssize_t_type)
+        length_temp = UtilNodes.TempHandle(PyrexTypes.c_py_ssize_t_type)
+        end_node = length_temp.ref(node.pos)
+        if reversed:
+            relation1, relation2 = '>', '>='
+            start_node, end_node = end_node, start_node
+        else:
+            relation1, relation2 = '<=', '<'
+
+        kind_temp = UtilNodes.TempHandle(PyrexTypes.c_int_type)
+        data_temp = UtilNodes.TempHandle(PyrexTypes.c_void_ptr_type)
+        counter_temp = UtilNodes.TempHandle(PyrexTypes.c_py_ssize_t_type)
+
+        target_value = ExprNodes.PythonCapiCallNode(
+            slice_node.pos, "__Pyx_PyUnicode_READ",
+            self.PyUnicode_READ_func_type,
+            args = [kind_temp.ref(slice_node.pos),
+                    data_temp.ref(slice_node.pos),
+                    counter_temp.ref(node.target.pos)],
+            is_temp = False,
+            )
+        if target_value.type != node.target.type:
+            target_value = target_value.coerce_to(node.target.type,
+                                                  self.current_env())
+        target_assign = Nodes.SingleAssignmentNode(
+            pos = node.target.pos,
+            lhs = node.target,
+            rhs = target_value)
+        body = Nodes.StatListNode(
+            node.pos,
+            stats = [target_assign, node.body])
+
+        loop_node = Nodes.ForFromStatNode(
+            node.pos,
+            bound1=start_node, relation1=relation1,
+            target=counter_temp.ref(node.target.pos),
+            relation2=relation2, bound2=end_node,
+            step=None, body=body,
+            else_clause=node.else_clause,
+            from_range=True)
+
+        setup_node = Nodes.ExprStatNode(
+            node.pos,
+            expr = ExprNodes.PythonCapiCallNode(
+                slice_node.pos, "__Pyx_init_unicode_iteration",
+                self.init_unicode_iteration_func_type,
+                args = [unpack_temp_node,
+                        ExprNodes.AmpersandNode(slice_node.pos, operand=length_temp.ref(slice_node.pos),
+                                                type=PyrexTypes.c_py_ssize_t_ptr_type),
+                        ExprNodes.AmpersandNode(slice_node.pos, operand=data_temp.ref(slice_node.pos),
+                                                type=PyrexTypes.c_void_ptr_ptr_type),
+                        ExprNodes.AmpersandNode(slice_node.pos, operand=kind_temp.ref(slice_node.pos),
+                                                type=PyrexTypes.c_int_ptr_type),
+                        ],
+                is_temp = True,
+                result_is_used = False,
+                utility_code=UtilityCode.load_cached("unicode_iter", "Optimize.c"),
+                ))
+        return UtilNodes.LetNode(
+            unpack_temp_node,
+            UtilNodes.TempsBlockNode(
+                node.pos, temps=[counter_temp, length_temp, data_temp, kind_temp],
+                body=Nodes.StatListNode(node.pos, stats=[setup_node, loop_node])))
+
+    def _transform_carray_iteration(self, node, slice_node, reversed=False):
+        neg_step = False
+        if isinstance(slice_node, ExprNodes.SliceIndexNode):
+            slice_base = slice_node.base
+            start = filter_none_node(slice_node.start)
+            stop = filter_none_node(slice_node.stop)
+            step = None
+            if not stop:
+                if not slice_base.type.is_pyobject:
+                    error(slice_node.pos, "C array iteration requires known end index")
+                return node
+
+        elif slice_n

@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_locale_documentation.py
+KIND: code
+
+Build environment variable name for  local dir.
+
+    Convert a translation domain name to a variable for specifying
+    a separate locale dir.

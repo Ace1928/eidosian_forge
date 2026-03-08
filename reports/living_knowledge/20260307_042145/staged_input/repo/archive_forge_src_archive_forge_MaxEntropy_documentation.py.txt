@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/MaxEntropy_documentation.py
+KIND: code
+
+from functools import reduce
+import warnings
+from Bio import BiopythonDeprecationWarning
+Initialize the class.

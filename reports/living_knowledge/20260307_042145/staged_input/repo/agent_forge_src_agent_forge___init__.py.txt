@@ -1,0 +1,13 @@
+SOURCE_PATH: agent_forge/src/agent_forge/__init__.py
+KIND: code
+
+"""Agent Forge package exports with defensive import behavior."""
+
+try:
+    from .agent_core import AgentForge, Goal, Task
+except Exception:  # pragma: no cover - allows partial subsystem startup
+    AgentForge = None  # type: ignore[assignment]
+    Task = None  # type: ignore[assignment]
+    Goal = None  # type: ignore[assignment]
+
+__all__ = ["AgentForge", "Task", "Goal"]

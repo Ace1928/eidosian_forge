@@ -1,0 +1,636 @@
+SOURCE_PATH: archive_forge/src/archive_forge/bessel.py
+KIND: code
+
+from functools import wraps
+
+from sympy.core import S
+from sympy.core.add import Add
+from sympy.core.cache import cacheit
+from sympy.core.expr import Expr
+from sympy.core.function import Function, ArgumentIndexError, _mexpand
+from sympy.core.logic import fuzzy_or, fuzzy_not
+from sympy.core.numbers import Rational, pi, I
+from sympy.core.power import Pow
+from sympy.core.symbol import Dummy, Wild
+from sympy.core.sympify import sympify
+from sympy.functions.combinatorial.factorials import factorial
+from sympy.functions.elementary.trigonometric import sin, cos, csc, cot
+from sympy.functions.elementary.integers import ceiling
+from sympy.functions.elementary.exponential import exp, log
+from sympy.functions.elementary.miscellaneous import cbrt, sqrt, root
+from sympy.functions.elementary.complexes import (Abs, re, im, polar_lift, unpolarify)
+from sympy.functions.special.gamma_functions import gamma, digamma, uppergamma
+from sympy.functions.special.hyper import hyper
+from sympy.polys.orthopolys import spherical_bessel_fn
+
+from mpmath import mp, workprec
+
+# TODO
+# o Scorer functions G1 and G2
+# o Asymptotic expansions
+#   These are possible, e.g. for fixed order, but since the bessel type
+#   functions are oscillatory they are not actually tractable at
+#   infinity, so this is not particularly useful right now.
+# o Nicer series expansions.
+# o More rewriting.
+# o Add solvers to ode.py (or rather add solvers for the hypergeometric equation).
+
+
+class BesselBase(Function):
+    """
+    Abstract base class for Bessel-type functions.
+
+    This class is meant to reduce code duplication.
+    All Bessel-type functions can 1) be differentiated, with the derivatives
+    expressed in terms of similar functions, and 2) be rewritten in terms
+    of other Bessel-type functions.
+
+    Here, Bessel-type functions are assumed to have one complex parameter.
+
+    To use this base class, define class attributes ``_a`` and ``_b`` such that
+    ``2*F_n' = -_a*F_{n+1} + b*F_{n-1}``.
+
+    """
+
+    @property
+    def order(self):
+        """ The order of the Bessel-type function. """
+        return self.args[0]
+
+    @property
+    def argument(self):
+        """ The argument of the Bessel-type function. """
+        return self.args[1]
+
+    @classmethod
+    def eval(cls, nu, z):
+        return
+
+    def fdiff(self, argindex=2):
+        if argindex != 2:
+            raise ArgumentIndexError(self, argindex)
+        return (self._b/2 * self.__class__(self.order - 1, self.argument) -
+                self._a/2 * self.__class__(self.order + 1, self.argument))
+
+    def _eval_conjugate(self):
+        z = self.argument
+        if z.is_extended_negative is False:
+            return self.__class__(self.order.conjugate(), z.conjugate())
+
+    def _eval_is_meromorphic(self, x, a):
+        nu, z = self.order, self.argument
+
+        if nu.has(x):
+            return False
+        if not z._eval_is_meromorphic(x, a):
+            return None
+        z0 = z.subs(x, a)
+        if nu.is_integer:
+            if isinstance(self, (besselj, besseli, hn1, hn2, jn, yn)) or not nu.is_zero:
+                return fuzzy_not(z0.is_infinite)
+        return fuzzy_not(fuzzy_or([z0.is_zero, z0.is_infinite]))
+
+    def _eval_expand_func(self, **hints):
+        nu, z, f = self.order, self.argument, self.__class__
+        if nu.is_real:
+            if (nu - 1).is_positive:
+                return (-self._a*self._b*f(nu - 2, z)._eval_expand_func() +
+                        2*self._a*(nu - 1)*f(nu - 1, z)._eval_expand_func()/z)
+            elif (nu + 1).is_negative:
+                return (2*self._b*(nu + 1)*f(nu + 1, z)._eval_expand_func()/z -
+                        self._a*self._b*f(nu + 2, z)._eval_expand_func())
+        return self
+
+    def _eval_simplify(self, **kwargs):
+        from sympy.simplify.simplify import besselsimp
+        return besselsimp(self)
+
+
+class besselj(BesselBase):
+    r"""
+    Bessel function of the first kind.
+
+    Explanation
+    ===========
+
+    The Bessel $J$ function of order $\nu$ is defined to be the function
+    satisfying Bessel's differential equation
+
+    .. math ::
+        z^2 \frac{\mathrm{d}^2 w}{\mathrm{d}z^2}
+        + z \frac{\mathrm{d}w}{\mathrm{d}z} + (z^2 - \nu^2) w = 0,
+
+    with Laurent expansion
+
+    .. math ::
+        J_\nu(z) = z^\nu \left(\frac{1}{\Gamma(\nu + 1) 2^\nu} + O(z^2) \right),
+
+    if $\nu$ is not a negative integer. If $\nu=-n \in \mathbb{Z}_{<0}$
+    *is* a negative integer, then the definition is
+
+    .. math ::
+        J_{-n}(z) = (-1)^n J_n(z).
+
+    Examples
+    ========
+
+    Create a Bessel function object:
+
+    >>> from sympy import besselj, jn
+    >>> from sympy.abc import z, n
+    >>> b = besselj(n, z)
+
+    Differentiate it:
+
+    >>> b.diff(z)
+    besselj(n - 1, z)/2 - besselj(n + 1, z)/2
+
+    Rewrite in terms of spherical Bessel functions:
+
+    >>> b.rewrite(jn)
+    sqrt(2)*sqrt(z)*jn(n - 1/2, z)/sqrt(pi)
+
+    Access the parameter and argument:
+
+    >>> b.order
+    n
+    >>> b.argument
+    z
+
+    See Also
+    ========
+
+    bessely, besseli, besselk
+
+    References
+    ==========
+
+    .. [1] Abramowitz, Milton; Stegun, Irene A., eds. (1965), "Chapter 9",
+           Handbook of Mathematical Functions with Formulas, Graphs, and
+           Mathematical Tables
+    .. [2] Luke, Y. L. (1969), The Special Functions and Their
+           Approximations, Volume 1
+    .. [3] https://en.wikipedia.org/wiki/Bessel_function
+    .. [4] https://functions.wolfram.com/Bessel-TypeFunctions/BesselJ/
+
+    """
+
+    _a = S.One
+    _b = S.One
+
+    @classmethod
+    def eval(cls, nu, z):
+        if z.is_zero:
+            if nu.is_zero:
+                return S.One
+            elif (nu.is_integer and nu.is_zero is False) or re(nu).is_positive:
+                return S.Zero
+            elif re(nu).is_negative and not (nu.is_integer is True):
+                return S.ComplexInfinity
+            elif nu.is_imaginary:
+                return S.NaN
+        if z in (S.Infinity, S.NegativeInfinity):
+            return S.Zero
+
+        if z.could_extract_minus_sign():
+            return (z)**nu*(-z)**(-nu)*besselj(nu, -z)
+        if nu.is_integer:
+            if nu.could_extract_minus_sign():
+                return S.NegativeOne**(-nu)*besselj(-nu, z)
+            newz = z.extract_multiplicatively(I)
+            if newz:  # NOTE we don't want to change the function if z==0
+                return I**(nu)*besseli(nu, newz)
+
+        # branch handling:
+        if nu.is_integer:
+            newz = unpolarify(z)
+            if newz != z:
+                return besselj(nu, newz)
+        else:
+            newz, n = z.extract_branch_factor()
+            if n != 0:
+                return exp(2*n*pi*nu*I)*besselj(nu, newz)
+        nnu = unpolarify(nu)
+        if nu != nnu:
+            return besselj(nnu, z)
+
+    def _eval_rewrite_as_besseli(self, nu, z, **kwargs):
+        return exp(I*pi*nu/2)*besseli(nu, polar_lift(-I)*z)
+
+    def _eval_rewrite_as_bessely(self, nu, z, **kwargs):
+        if nu.is_integer is False:
+            return csc(pi*nu)*bessely(-nu, z) - cot(pi*nu)*bessely(nu, z)
+
+    def _eval_rewrite_as_jn(self, nu, z, **kwargs):
+        return sqrt(2*z/pi)*jn(nu - S.Half, self.argument)
+
+    def _eval_as_leading_term(self, x, logx=None, cdir=0):
+        nu, z = self.args
+        try:
+            arg = z.as_leading_term(x)
+        except NotImplementedError:
+            return self
+        c, e = arg.as_coeff_exponent(x)
+
+        if e.is_positive:
+            return arg**nu/(2**nu*gamma(nu + 1))
+        elif e.is_negative:
+            cdir = 1 if cdir == 0 else cdir
+            sign = c*cdir**e
+            if not sign.is_negative:
+                # Refer Abramowitz and Stegun 1965, p. 364 for more information on
+                # asymptotic approximation of besselj function.
+                return sqrt(2)*cos(z - pi*(2*nu + 1)/4)/sqrt(pi*z)
+            return self
+
+        return super(besselj, self)._eval_as_leading_term(x, logx, cdir)
+
+    def _eval_is_extended_real(self):
+        nu, z = self.args
+        if nu.is_integer and z.is_extended_real:
+            return True
+
+    def _eval_nseries(self, x, n, logx, cdir=0):
+        # Refer https://functions.wolfram.com/Bessel-TypeFunctions/BesselJ/06/01/04/01/01/0003/
+        # for more information on nseries expansion of besselj function.
+        from sympy.series.order import Order
+        nu, z = self.args
+
+        # In case of powers less than 1, number of terms need to be computed
+        # separately to avoid repeated callings of _eval_nseries with wrong n
+        try:
+            _, exp = z.leadterm(x)
+        except (ValueError, NotImplementedError):
+            return self
+
+        if exp.is_positive:
+            newn = ceiling(n/exp)
+            o = Order(x**n, x)
+            r = (z/2)._eval_nseries(x, n, logx, cdir).removeO()
+            if r is S.Zero:
+                return o
+            t = (_mexpand(r**2) + o).removeO()
+
+            term = r**nu/gamma(nu + 1)
+            s = [term]
+            for k in range(1, (newn + 1)//2):
+                term *= -t/(k*(nu + k))
+                term = (_mexpand(term) + o).removeO()
+                s.append(term)
+            return Add(*s) + o
+
+        return super(besselj, self)._eval_nseries(x, n, logx, cdir)
+
+
+class bessely(BesselBase):
+    r"""
+    Bessel function of the second kind.
+
+    Explanation
+    ===========
+
+    The Bessel $Y$ function of order $\nu$ is defined as
+
+    .. math ::
+        Y_\nu(z) = \lim_{\mu \to \nu} \frac{J_\mu(z) \cos(\pi \mu)
+                                            - J_{-\mu}(z)}{\sin(\pi \mu)},
+
+    where $J_\mu(z)$ is the Bessel function of the first kind.
+
+    It is a solution to Bessel's equation, and linearly independent from
+    $J_\nu$.
+
+    Examples
+    ========
+
+    >>> from sympy import bessely, yn
+    >>> from sympy.abc import z, n
+    >>> b = bessely(n, z)
+    >>> b.diff(z)
+    bessely(n - 1, z)/2 - bessely(n + 1, z)/2
+    >>> b.rewrite(yn)
+    sqrt(2)*sqrt(z)*yn(n - 1/2, z)/sqrt(pi)
+
+    See Also
+    ========
+
+    besselj, besseli, besselk
+
+    References
+    ==========
+
+    .. [1] https://functions.wolfram.com/Bessel-TypeFunctions/BesselY/
+
+    """
+
+    _a = S.One
+    _b = S.One
+
+    @classmethod
+    def eval(cls, nu, z):
+        if z.is_zero:
+            if nu.is_zero:
+                return S.NegativeInfinity
+            elif re(nu).is_zero is False:
+                return S.ComplexInfinity
+            elif re(nu).is_zero:
+                return S.NaN
+        if z in (S.Infinity, S.NegativeInfinity):
+            return S.Zero
+        if z == I*S.Infinity:
+            return exp(I*pi*(nu + 1)/2) * S.Infinity
+        if z == I*S.NegativeInfinity:
+            return exp(-I*pi*(nu + 1)/2) * S.Infinity
+
+        if nu.is_integer:
+            if nu.could_extract_minus_sign():
+                return S.NegativeOne**(-nu)*bessely(-nu, z)
+
+    def _eval_rewrite_as_besselj(self, nu, z, **kwargs):
+        if nu.is_integer is False:
+            return csc(pi*nu)*(cos(pi*nu)*besselj(nu, z) - besselj(-nu, z))
+
+    def _eval_rewrite_as_besseli(self, nu, z, **kwargs):
+        aj = self._eval_rewrite_as_besselj(*self.args)
+        if aj:
+            return aj.rewrite(besseli)
+
+    def _eval_rewrite_as_yn(self, nu, z, **kwargs):
+        return sqrt(2*z/pi) * yn(nu - S.Half, self.argument)
+
+    def _eval_as_leading_term(self, x, logx=None, cdir=0):
+        nu, z = self.args
+        try:
+            arg = z.as_leading_term(x)
+        except NotImplementedError:
+            return self
+        c, e = arg.as_coeff_exponent(x)
+
+        if e.is_positive:
+            term_one = ((2/pi)*log(z/2)*besselj(nu, z))
+            term_two = -(z/2)**(-nu)*factorial(nu - 1)/pi if (nu).is_positive else S.Zero
+            term_three = -(z/2)**nu/(pi*factorial(nu))*(digamma(nu + 1) - S.EulerGamma)
+            arg = Add(*[term_one, term_two, term_three]).as_leading_term(x, logx=logx)
+            return arg
+        elif e.is_negative:
+            cdir = 1 if cdir == 0 else cdir
+            sign = c*cdir**e
+            if not sign.is_negative:
+                # Refer Abramowitz and Stegun 1965, p. 364 for more information on
+                # asymptotic approximation of bessely function.
+                return sqrt(2)*(-sin(pi*nu/2 - z + pi/4) + 3*cos(pi*nu/2 - z + pi/4)/(8*z))*sqrt(1/z)/sqrt(pi)
+            return self
+
+        return super(bessely, self)._eval_as_leading_term(x, logx, cdir)
+
+    def _eval_is_extended_real(self):
+        nu, z = self.args
+        if nu.is_integer and z.is_positive:
+            return True
+
+    def _eval_nseries(self, x, n, logx, cdir=0):
+        # Refer https://functions.wolfram.com/Bessel-TypeFunctions/BesselY/06/01/04/01/02/0008/
+        # for more information on nseries expansion of bessely function.
+        from sympy.series.order import Order
+        nu, z = self.args
+
+        # In case of powers less than 1, number of terms need to be computed
+        # separately to avoid repeated callings of _eval_nseries with wrong n
+        try:
+            _, exp = z.leadterm(x)
+        except (ValueError, NotImplementedError):
+            return self
+
+        if exp.is_positive and nu.is_integer:
+            newn = ceiling(n/exp)
+            bn = besselj(nu, z)
+            a = ((2/pi)*log(z/2)*bn)._eval_nseries(x, n, logx, cdir)
+
+            b, c = [], []
+            o = Order(x**n, x)
+            r = (z/2)._eval_nseries(x, n, logx, cdir).removeO()
+            if r is S.Zero:
+                return o
+            t = (_mexpand(r**2) + o).removeO()
+
+            if nu > S.Zero:
+                term = r**(-nu)*factorial(nu - 1)/pi
+                b.append(term)
+                for k in range(1, nu):
+                    denom = (nu - k)*k
+                    if denom == S.Zero:
+                        term *= t/k
+                    else:
+                        term *= t/denom
+                    term = (_mexpand(term) + o).removeO()
+                    b.append(term)
+
+            p = r**nu/(pi*factorial(nu))
+            term = p*(digamma(nu + 1) - S.EulerGamma)
+            c.append(term)
+            for k in range(1, (newn + 1)//2):
+                p *= -t/(k*(k + nu))
+                p = (_mexpand(p) + o).removeO()
+                term = p*(digamma(k + nu + 1) + digamma(k + 1))
+                c.append(term)
+            return a - Add(*b) - Add(*c) # Order term comes from a
+
+        return super(bessely, self)._eval_nseries(x, n, logx, cdir)
+
+
+class besseli(BesselBase):
+    r"""
+    Modified Bessel function of the first kind.
+
+    Explanation
+    ===========
+
+    The Bessel $I$ function is a solution to the modified Bessel equation
+
+    .. math ::
+        z^2 \frac{\mathrm{d}^2 w}{\mathrm{d}z^2}
+        + z \frac{\mathrm{d}w}{\mathrm{d}z} + (z^2 + \nu^2)^2 w = 0.
+
+    It can be defined as
+
+    .. math ::
+        I_\nu(z) = i^{-\nu} J_\nu(iz),
+
+    where $J_\nu(z)$ is the Bessel function of the first kind.
+
+    Examples
+    ========
+
+    >>> from sympy import besseli
+    >>> from sympy.abc import z, n
+    >>> besseli(n, z).diff(z)
+    besseli(n - 1, z)/2 + besseli(n + 1, z)/2
+
+    See Also
+    ========
+
+    besselj, bessely, besselk
+
+    References
+    ==========
+
+    .. [1] https://functions.wolfram.com/Bessel-TypeFunctions/BesselI/
+
+    """
+
+    _a = -S.One
+    _b = S.One
+
+    @classmethod
+    def eval(cls, nu, z):
+        if z.is_zero:
+            if nu.is_zero:
+                return S.One
+            elif (nu.is_integer and nu.is_zero is False) or re(nu).is_positive:
+                return S.Zero
+            elif re(nu).is_negative and not (nu.is_integer is True):
+                return S.ComplexInfinity
+            elif nu.is_imaginary:
+                return S.NaN
+        if im(z) in (S.Infinity, S.NegativeInfinity):
+            return S.Zero
+        if z is S.Infinity:
+            return S.Infinity
+        if z is S.NegativeInfinity:
+            return (-1)**nu*S.Infinity
+
+        if z.could_extract_minus_sign():
+            return (z)**nu*(-z)**(-nu)*besseli(nu, -z)
+        if nu.is_integer:
+            if nu.could_extract_minus_sign():
+                return besseli(-nu, z)
+            newz = z.extract_multiplicatively(I)
+            if newz:  # NOTE we don't want to change the function if z==0
+                return I**(-nu)*besselj(nu, -newz)
+
+        # branch handling:
+        if nu.is_integer:
+            newz = unpolarify(z)
+            if newz != z:
+                return besseli(nu, newz)
+        else:
+            newz, n = z.extract_branch_factor()
+            if n != 0:
+                return exp(2*n*pi*nu*I)*besseli(nu, newz)
+        nnu = unpolarify(nu)
+        if nu != nnu:
+            return besseli(nnu, z)
+
+    def _eval_rewrite_as_besselj(self, nu, z, **kwargs):
+        return exp(-I*pi*nu/2)*besselj(nu, polar_lift(I)*z)
+
+    def _eval_rewrite_as_bessely(self, nu, z, **kwargs):
+        aj = self._eval_rewrite_as_besselj(*self.args)
+        if aj:
+            return aj.rewrite(bessely)
+
+    def _eval_rewrite_as_jn(self, nu, z, **kwargs):
+        return self._eval_rewrite_as_besselj(*self.args).rewrite(jn)
+
+    def _eval_is_extended_real(self):
+        nu, z = self.args
+        if nu.is_integer and z.is_extended_real:
+            return True
+
+    def _eval_as_leading_term(self, x, logx=None, cdir=0):
+        nu, z = self.args
+        try:
+            arg = z.as_leading_term(x)
+        except NotImplementedError:
+            return self
+        c, e = arg.as_coeff_exponent(x)
+
+        if e.is_positive:
+            return arg**nu/(2**nu*gamma(nu + 1))
+        elif e.is_negative:
+            cdir = 1 if cdir == 0 else cdir
+            sign = c*cdir**e
+            if not sign.is_negative:
+                # Refer Abramowitz and Stegun 1965, p. 377 for more information on
+                # asymptotic approximation of besseli function.
+                return exp(z)/sqrt(2*pi*z)
+            return self
+
+        return super(besseli, self)._eval_as_leading_term(x, logx, cdir)
+
+    def _eval_nseries(self, x, n, logx, cdir=0):
+        # Refer https://functions.wolfram.com/Bessel-TypeFunctions/BesselI/06/01/04/01/01/0003/
+        # for more information on nseries expansion of besseli function.
+        from sympy.series.order import Order
+        nu, z = self.args
+
+        # In case of powers less than 1, number of terms need to be computed
+        # separately to avoid repeated callings of _eval_nseries with wrong n
+        try:
+            _, exp = z.leadterm(x)
+        except (ValueError, NotImplementedError):
+            return self
+
+        if exp.is_positive:
+            newn = ceiling(n/exp)
+            o = Order(x**n, x)
+            r = (z/2)._eval_nseries(x, n, logx, cdir).removeO()
+            if r is S.Zero:
+                return o
+            t = (_mexpand(r**2) + o).removeO()
+
+            term = r**nu/gamma(nu + 1)
+            s = [term]
+            for k in range(1, (newn + 1)//2):
+                term *= t/(k*(nu + k))
+                term = (_mexpand(term) + o).removeO()
+                s.append(term)
+            return Add(*s) + o
+
+        return super(besseli, self)._eval_nseries(x, n, logx, cdir)
+
+
+class besselk(BesselBase):
+    r"""
+    Modified Bessel function of the second kind.
+
+    Explanation
+    ===========
+
+    The Bessel $K$ function of order $\nu$ is defined as
+
+    .. math ::
+        K_\nu(z) = \lim_{\mu \to \nu} \frac{\pi}{2}
+                   \frac{I_{-\mu}(z) -I_\mu(z)}{\sin(\pi \mu)},
+
+    where $I_\mu(z)$ is the modified Bessel function of the first kind.
+
+    It is a solution of the modified Bessel equation, and linearly independent
+    from $Y_\nu$.
+
+    Examples
+    ========
+
+    >>> from sympy import besselk
+    >>> from sympy.abc import z, n
+    >>> besselk(n, z).diff(z)
+    -besselk(n - 1, z)/2 - besselk(n + 1, z)/2
+
+    See Also
+    ========
+
+    besselj, besseli, bessely
+
+    References
+    ==========
+
+    .. [1] https://functions.wolfram.com/Bessel-TypeFunctions/BesselK/
+
+    """
+
+    _a = S.One
+    _b = -S.One
+
+    @classmethod
+    def eval(cls, nu, z):
+        if z.is_zero:

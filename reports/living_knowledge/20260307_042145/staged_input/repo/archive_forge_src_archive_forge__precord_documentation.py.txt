@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_precord_documentation.py
+KIND: code
+
+from pyrsistent._checked_types import CheckedType, _restore_pickle, InvariantException, store_invariants
+from pyrsistent._field_common import (
+from pyrsistent._pmap import PMap, pmap
+
+        Serialize the current PRecord using custom serializer functions for fields where
+        such have been supplied.

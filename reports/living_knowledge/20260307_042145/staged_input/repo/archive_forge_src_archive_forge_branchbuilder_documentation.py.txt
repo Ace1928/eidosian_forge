@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/branchbuilder_documentation.py
+KIND: code
+
+from . import commit, controldir, errors, revision
+Return the branch created by the builder.

@@ -1,0 +1,572 @@
+SOURCE_PATH: archive_forge/src/archive_forge/case.py
+KIND: code
+
+"""Test case implementation"""
+
+import sys
+import functools
+import difflib
+import pprint
+import re
+import warnings
+import collections
+import contextlib
+import traceback
+import types
+
+from . import result
+from .util import (strclass, safe_repr, _count_diff_all_purpose,
+                   _count_diff_hashable, _common_shorten_repr)
+
+__unittest = True
+
+_subtest_msg_sentinel = object()
+
+DIFF_OMITTED = ('\nDiff is %s characters long. '
+                 'Set self.maxDiff to None to see it.')
+
+class SkipTest(Exception):
+    """
+    Raise this exception in a test to skip it.
+
+    Usually you can use TestCase.skipTest() or one of the skipping decorators
+    instead of raising this directly.
+    """
+
+class _ShouldStop(Exception):
+    """
+    The test should stop.
+    """
+
+class _UnexpectedSuccess(Exception):
+    """
+    The test was supposed to fail, but it didn't!
+    """
+
+
+class _Outcome(object):
+    def __init__(self, result=None):
+        self.expecting_failure = False
+        self.result = result
+        self.result_supports_subtests = hasattr(result, "addSubTest")
+        self.success = True
+        self.skipped = []
+        self.expectedFailure = None
+        self.errors = []
+
+    @contextlib.contextmanager
+    def testPartExecutor(self, test_case, isTest=False):
+        old_success = self.success
+        self.success = True
+        try:
+            yield
+        except KeyboardInterrupt:
+            raise
+        except SkipTest as e:
+            self.success = False
+            self.skipped.append((test_case, str(e)))
+        except _ShouldStop:
+            pass
+        except:
+            exc_info = sys.exc_info()
+            if self.expecting_failure:
+                self.expectedFailure = exc_info
+            else:
+                self.success = False
+                self.errors.append((test_case, exc_info))
+            # explicitly break a reference cycle:
+            # exc_info -> frame -> exc_info
+            exc_info = None
+        else:
+            if self.result_supports_subtests and self.success:
+                self.errors.append((test_case, None))
+        finally:
+            self.success = self.success and old_success
+
+
+def _id(obj):
+    return obj
+
+
+_module_cleanups = []
+def addModuleCleanup(function, /, *args, **kwargs):
+    """Same as addCleanup, except the cleanup items are called even if
+    setUpModule fails (unlike tearDownModule)."""
+    _module_cleanups.append((function, args, kwargs))
+
+
+def doModuleCleanups():
+    """Execute all module cleanup functions. Normally called for you after
+    tearDownModule."""
+    exceptions = []
+    while _module_cleanups:
+        function, args, kwargs = _module_cleanups.pop()
+        try:
+            function(*args, **kwargs)
+        except Exception as exc:
+            exceptions.append(exc)
+    if exceptions:
+        # Swallows all but first exception. If a multi-exception handler
+        # gets written we should use that here instead.
+        raise exceptions[0]
+
+
+def skip(reason):
+    """
+    Unconditionally skip a test.
+    """
+    def decorator(test_item):
+        if not isinstance(test_item, type):
+            @functools.wraps(test_item)
+            def skip_wrapper(*args, **kwargs):
+                raise SkipTest(reason)
+            test_item = skip_wrapper
+
+        test_item.__unittest_skip__ = True
+        test_item.__unittest_skip_why__ = reason
+        return test_item
+    if isinstance(reason, types.FunctionType):
+        test_item = reason
+        reason = ''
+        return decorator(test_item)
+    return decorator
+
+def skipIf(condition, reason):
+    """
+    Skip a test if the condition is true.
+    """
+    if condition:
+        return skip(reason)
+    return _id
+
+def skipUnless(condition, reason):
+    """
+    Skip a test unless the condition is true.
+    """
+    if not condition:
+        return skip(reason)
+    return _id
+
+def expectedFailure(test_item):
+    test_item.__unittest_expecting_failure__ = True
+    return test_item
+
+def _is_subtype(expected, basetype):
+    if isinstance(expected, tuple):
+        return all(_is_subtype(e, basetype) for e in expected)
+    return isinstance(expected, type) and issubclass(expected, basetype)
+
+class _BaseTestCaseContext:
+
+    def __init__(self, test_case):
+        self.test_case = test_case
+
+    def _raiseFailure(self, standardMsg):
+        msg = self.test_case._formatMessage(self.msg, standardMsg)
+        raise self.test_case.failureException(msg)
+
+class _AssertRaisesBaseContext(_BaseTestCaseContext):
+
+    def __init__(self, expected, test_case, expected_regex=None):
+        _BaseTestCaseContext.__init__(self, test_case)
+        self.expected = expected
+        self.test_case = test_case
+        if expected_regex is not None:
+            expected_regex = re.compile(expected_regex)
+        self.expected_regex = expected_regex
+        self.obj_name = None
+        self.msg = None
+
+    def handle(self, name, args, kwargs):
+        """
+        If args is empty, assertRaises/Warns is being used as a
+        context manager, so check for a 'msg' kwarg and return self.
+        If args is not empty, call a callable passing positional and keyword
+        arguments.
+        """
+        try:
+            if not _is_subtype(self.expected, self._base_type):
+                raise TypeError('%s() arg 1 must be %s' %
+                                (name, self._base_type_str))
+            if not args:
+                self.msg = kwargs.pop('msg', None)
+                if kwargs:
+                    raise TypeError('%r is an invalid keyword argument for '
+                                    'this function' % (next(iter(kwargs)),))
+                return self
+
+            callable_obj, *args = args
+            try:
+                self.obj_name = callable_obj.__name__
+            except AttributeError:
+                self.obj_name = str(callable_obj)
+            with self:
+                callable_obj(*args, **kwargs)
+        finally:
+            # bpo-23890: manually break a reference cycle
+            self = None
+
+
+class _AssertRaisesContext(_AssertRaisesBaseContext):
+    """A context manager used to implement TestCase.assertRaises* methods."""
+
+    _base_type = BaseException
+    _base_type_str = 'an exception type or tuple of exception types'
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, tb):
+        if exc_type is None:
+            try:
+                exc_name = self.expected.__name__
+            except AttributeError:
+                exc_name = str(self.expected)
+            if self.obj_name:
+                self._raiseFailure("{} not raised by {}".format(exc_name,
+                                                                self.obj_name))
+            else:
+                self._raiseFailure("{} not raised".format(exc_name))
+        else:
+            traceback.clear_frames(tb)
+        if not issubclass(exc_type, self.expected):
+            # let unexpected exceptions pass through
+            return False
+        # store exception, without traceback, for later retrieval
+        self.exception = exc_value.with_traceback(None)
+        if self.expected_regex is None:
+            return True
+
+        expected_regex = self.expected_regex
+        if not expected_regex.search(str(exc_value)):
+            self._raiseFailure('"{}" does not match "{}"'.format(
+                     expected_regex.pattern, str(exc_value)))
+        return True
+
+    __class_getitem__ = classmethod(types.GenericAlias)
+
+
+class _AssertWarnsContext(_AssertRaisesBaseContext):
+    """A context manager used to implement TestCase.assertWarns* methods."""
+
+    _base_type = Warning
+    _base_type_str = 'a warning type or tuple of warning types'
+
+    def __enter__(self):
+        # The __warningregistry__'s need to be in a pristine state for tests
+        # to work properly.
+        for v in sys.modules.values():
+            if getattr(v, '__warningregistry__', None):
+                v.__warningregistry__ = {}
+        self.warnings_manager = warnings.catch_warnings(record=True)
+        self.warnings = self.warnings_manager.__enter__()
+        warnings.simplefilter("always", self.expected)
+        return self
+
+    def __exit__(self, exc_type, exc_value, tb):
+        self.warnings_manager.__exit__(exc_type, exc_value, tb)
+        if exc_type is not None:
+            # let unexpected exceptions pass through
+            return
+        try:
+            exc_name = self.expected.__name__
+        except AttributeError:
+            exc_name = str(self.expected)
+        first_matching = None
+        for m in self.warnings:
+            w = m.message
+            if not isinstance(w, self.expected):
+                continue
+            if first_matching is None:
+                first_matching = w
+            if (self.expected_regex is not None and
+                not self.expected_regex.search(str(w))):
+                continue
+            # store warning for later retrieval
+            self.warning = w
+            self.filename = m.filename
+            self.lineno = m.lineno
+            return
+        # Now we simply try to choose a helpful failure message
+        if first_matching is not None:
+            self._raiseFailure('"{}" does not match "{}"'.format(
+                     self.expected_regex.pattern, str(first_matching)))
+        if self.obj_name:
+            self._raiseFailure("{} not triggered by {}".format(exc_name,
+                                                               self.obj_name))
+        else:
+            self._raiseFailure("{} not triggered".format(exc_name))
+
+
+
+class _OrderedChainMap(collections.ChainMap):
+    def __iter__(self):
+        seen = set()
+        for mapping in self.maps:
+            for k in mapping:
+                if k not in seen:
+                    seen.add(k)
+                    yield k
+
+
+class TestCase(object):
+    """A class whose instances are single test cases.
+
+    By default, the test code itself should be placed in a method named
+    'runTest'.
+
+    If the fixture may be used for many test cases, create as
+    many test methods as are needed. When instantiating such a TestCase
+    subclass, specify in the constructor arguments the name of the test method
+    that the instance is to execute.
+
+    Test authors should subclass TestCase for their own tests. Construction
+    and deconstruction of the test's environment ('fixture') can be
+    implemented by overriding the 'setUp' and 'tearDown' methods respectively.
+
+    If it is necessary to override the __init__ method, the base class
+    __init__ method must always be called. It is important that subclasses
+    should not change the signature of their __init__ method, since instances
+    of the classes are instantiated automatically by parts of the framework
+    in order to be run.
+
+    When subclassing TestCase, you can set these attributes:
+    * failureException: determines which exception will be raised when
+        the instance's assertion methods fail; test methods raising this
+        exception will be deemed to have 'failed' rather than 'errored'.
+    * longMessage: determines whether long messages (including repr of
+        objects used in assert methods) will be printed on failure in *addition*
+        to any explicit message passed.
+    * maxDiff: sets the maximum length of a diff in failure messages
+        by assert methods using difflib. It is looked up as an instance
+        attribute so can be configured by individual tests if required.
+    """
+
+    failureException = AssertionError
+
+    longMessage = True
+
+    maxDiff = 80*8
+
+    # If a string is longer than _diffThreshold, use normal comparison instead
+    # of difflib.  See #11763.
+    _diffThreshold = 2**16
+
+    # Attribute used by TestSuite for classSetUp
+
+    _classSetupFailed = False
+
+    _class_cleanups = []
+
+    def __init__(self, methodName='runTest'):
+        """Create an instance of the class that will use the named test
+           method when executed. Raises a ValueError if the instance does
+           not have a method with the specified name.
+        """
+        self._testMethodName = methodName
+        self._outcome = None
+        self._testMethodDoc = 'No test'
+        try:
+            testMethod = getattr(self, methodName)
+        except AttributeError:
+            if methodName != 'runTest':
+                # we allow instantiation with no explicit method name
+                # but not an *incorrect* or missing method name
+                raise ValueError("no such test method in %s: %s" %
+                      (self.__class__, methodName))
+        else:
+            self._testMethodDoc = testMethod.__doc__
+        self._cleanups = []
+        self._subtest = None
+
+        # Map types to custom assertEqual functions that will compare
+        # instances of said type in more detail to generate a more useful
+        # error message.
+        self._type_equality_funcs = {}
+        self.addTypeEqualityFunc(dict, 'assertDictEqual')
+        self.addTypeEqualityFunc(list, 'assertListEqual')
+        self.addTypeEqualityFunc(tuple, 'assertTupleEqual')
+        self.addTypeEqualityFunc(set, 'assertSetEqual')
+        self.addTypeEqualityFunc(frozenset, 'assertSetEqual')
+        self.addTypeEqualityFunc(str, 'assertMultiLineEqual')
+
+    def addTypeEqualityFunc(self, typeobj, function):
+        """Add a type specific assertEqual style function to compare a type.
+
+        This method is for use by TestCase subclasses that need to register
+        their own type equality functions to provide nicer error messages.
+
+        Args:
+            typeobj: The data type to call this function on when both values
+                    are of the same type in assertEqual().
+            function: The callable taking two arguments and an optional
+                    msg= argument that raises self.failureException with a
+                    useful error message when the two arguments are not equal.
+        """
+        self._type_equality_funcs[typeobj] = function
+
+    def addCleanup(self, function, /, *args, **kwargs):
+        """Add a function, with arguments, to be called when the test is
+        completed. Functions added are called on a LIFO basis and are
+        called after tearDown on test failure or success.
+
+        Cleanup items are called even if setUp fails (unlike tearDown)."""
+        self._cleanups.append((function, args, kwargs))
+
+    @classmethod
+    def addClassCleanup(cls, function, /, *args, **kwargs):
+        """Same as addCleanup, except the cleanup items are called even if
+        setUpClass fails (unlike tearDownClass)."""
+        cls._class_cleanups.append((function, args, kwargs))
+
+    def setUp(self):
+        "Hook method for setting up the test fixture before exercising it."
+        pass
+
+    def tearDown(self):
+        "Hook method for deconstructing the test fixture after testing it."
+        pass
+
+    @classmethod
+    def setUpClass(cls):
+        "Hook method for setting up class fixture before running tests in the class."
+
+    @classmethod
+    def tearDownClass(cls):
+        "Hook method for deconstructing the class fixture after running all tests in the class."
+
+    def countTestCases(self):
+        return 1
+
+    def defaultTestResult(self):
+        return result.TestResult()
+
+    def shortDescription(self):
+        """Returns a one-line description of the test, or None if no
+        description has been provided.
+
+        The default implementation of this method returns the first line of
+        the specified test method's docstring.
+        """
+        doc = self._testMethodDoc
+        return doc.strip().split("\n")[0].strip() if doc else None
+
+
+    def id(self):
+        return "%s.%s" % (strclass(self.__class__), self._testMethodName)
+
+    def __eq__(self, other):
+        if type(self) is not type(other):
+            return NotImplemented
+
+        return self._testMethodName == other._testMethodName
+
+    def __hash__(self):
+        return hash((type(self), self._testMethodName))
+
+    def __str__(self):
+        return "%s (%s)" % (self._testMethodName, strclass(self.__class__))
+
+    def __repr__(self):
+        return "<%s testMethod=%s>" % \
+               (strclass(self.__class__), self._testMethodName)
+
+    def _addSkip(self, result, test_case, reason):
+        addSkip = getattr(result, 'addSkip', None)
+        if addSkip is not None:
+            addSkip(test_case, reason)
+        else:
+            warnings.warn("TestResult has no addSkip method, skips not reported",
+                          RuntimeWarning, 2)
+            result.addSuccess(test_case)
+
+    @contextlib.contextmanager
+    def subTest(self, msg=_subtest_msg_sentinel, **params):
+        """Return a context manager that will return the enclosed block
+        of code in a subtest identified by the optional message and
+        keyword parameters.  A failure in the subtest marks the test
+        case as failed but resumes execution at the end of the enclosed
+        block, allowing further test code to be executed.
+        """
+        if self._outcome is None or not self._outcome.result_supports_subtests:
+            yield
+            return
+        parent = self._subtest
+        if parent is None:
+            params_map = _OrderedChainMap(params)
+        else:
+            params_map = parent.params.new_child(params)
+        self._subtest = _SubTest(self, msg, params_map)
+        try:
+            with self._outcome.testPartExecutor(self._subtest, isTest=True):
+                yield
+            if not self._outcome.success:
+                result = self._outcome.result
+                if result is not None and result.failfast:
+                    raise _ShouldStop
+            elif self._outcome.expectedFailure:
+                # If the test is expecting a failure, we really want to
+                # stop now and register the expected failure.
+                raise _ShouldStop
+        finally:
+            self._subtest = parent
+
+    def _feedErrorsToResult(self, result, errors):
+        for test, exc_info in errors:
+            if isinstance(test, _SubTest):
+                result.addSubTest(test.test_case, test, exc_info)
+            elif exc_info is not None:
+                if issubclass(exc_info[0], self.failureException):
+                    result.addFailure(test, exc_info)
+                else:
+                    result.addError(test, exc_info)
+
+    def _addExpectedFailure(self, result, exc_info):
+        try:
+            addExpectedFailure = result.addExpectedFailure
+        except AttributeError:
+            warnings.warn("TestResult has no addExpectedFailure method, reporting as passes",
+                          RuntimeWarning)
+            result.addSuccess(self)
+        else:
+            addExpectedFailure(self, exc_info)
+
+    def _addUnexpectedSuccess(self, result):
+        try:
+            addUnexpectedSuccess = result.addUnexpectedSuccess
+        except AttributeError:
+            warnings.warn("TestResult has no addUnexpectedSuccess method, reporting as failure",
+                          RuntimeWarning)
+            # We need to pass an actual exception and traceback to addFailure,
+            # otherwise the legacy result can choke.
+            try:
+                raise _UnexpectedSuccess from None
+            except _UnexpectedSuccess:
+                result.addFailure(self, sys.exc_info())
+        else:
+            addUnexpectedSuccess(self)
+
+    def _callSetUp(self):
+        self.setUp()
+
+    def _callTestMethod(self, method):
+        method()
+
+    def _callTearDown(self):
+        self.tearDown()
+
+    def _callCleanup(self, function, /, *args, **kwargs):
+        function(*args, **kwargs)
+
+    def run(self, result=None):
+        orig_result = result
+        if result is None:
+            result = self.defaultTestResult()
+            startTestRun = getattr(result, 'startTestRun', None)
+            if startTestRun is not None:
+                startTestRun()
+
+        result.startTest(self)
+
+        testMethod = getattr(self, self._testMethodName)
+        if (getat

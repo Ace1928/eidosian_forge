@@ -1,0 +1,483 @@
+SOURCE_PATH: archive_forge/src/archive_forge/Organization.py
+KIND: code
+
+############################ Copyrights and license ############################
+#                                                                              #
+# Copyright 2012 Steve English <steve.english@navetas.com>                     #
+# Copyright 2012 Vincent Jacques <vincent@vincent-jacques.net>                 #
+# Copyright 2012 Zearin <zearin@gonk.net>                                      #
+# Copyright 2013 AKFish <akfish@gmail.com>                                     #
+# Copyright 2013 Vincent Jacques <vincent@vincent-jacques.net>                 #
+# Copyright 2013 martinqt <m.ki2@laposte.net>                                  #
+# Copyright 2014 Vincent Jacques <vincent@vincent-jacques.net>                 #
+# Copyright 2015 Sebastien Besson <seb.besson@gmail.com>                       #
+# Copyright 2016 Jannis Gebauer <ja.geb@me.com>                                #
+# Copyright 2016 Matthew Neal <meneal@matthews-mbp.raleigh.ibm.com>            #
+# Copyright 2016 Michael Pereira <pereira.m@gmail.com>                         #
+# Copyright 2016 Peter Buckley <dx-pbuckley@users.noreply.github.com>          #
+# Copyright 2017 Balázs Rostás <rostas.balazs@gmail.com>                       #
+# Copyright 2018 Anton Nguyen <afnguyen85@gmail.com>                           #
+# Copyright 2018 Jacopo Notarstefano <jacopo.notarstefano@gmail.com>           #
+# Copyright 2018 Jasper van Wanrooy <jasper@vanwanrooy.net>                    #
+# Copyright 2018 Raihaan <31362124+res0nance@users.noreply.github.com>         #
+# Copyright 2018 Shubham Singh <41840111+singh811@users.noreply.github.com>    #
+# Copyright 2018 Steve Kowalik <steven@wedontsleep.org>                        #
+# Copyright 2018 Tim Boring <tboring@hearst.com>                               #
+# Copyright 2018 Wan Liuyang <tsfdye@gmail.com>                                #
+# Copyright 2018 Yossarian King <yggy@blackbirdinteractive.com>                #
+# Copyright 2018 sfdye <tsfdye@gmail.com>                                      #
+# Copyright 2019 Brian Choy <byceee@gmail.com>                                 #
+# Copyright 2019 Geoffroy Jabouley <gjabouley@invensense.com>                  #
+# Copyright 2019 Pascal Bach <pasci.bach@gmail.com>                            #
+# Copyright 2019 Raihaan <31362124+res0nance@users.noreply.github.com>         #
+# Copyright 2019 Shibasis Patel <smartshibasish@gmail.com>                     #
+# Copyright 2019 Steve Kowalik <steven@wedontsleep.org>                        #
+# Copyright 2019 Wan Liuyang <tsfdye@gmail.com>                                #
+# Copyright 2019 ebrown <brownierin@users.noreply.github.com>                  #
+# Copyright 2020 Anuj Bansal <bansalanuj1996@gmail.com>                        #
+# Copyright 2020 Glenn McDonald <testworksau@users.noreply.github.com>         #
+# Copyright 2020 Steve Kowalik <steven@wedontsleep.org>                        #
+# Copyright 2020 latacora-daniel <71085674+latacora-daniel@users.noreply.github.com>#
+# Copyright 2020 ton-katsu <sakamoto.yoshihisa@gmail.com>                      #
+# Copyright 2021 James Simpson <jsimpso@users.noreply.github.com>              #
+# Copyright 2021 Marina Peresypkina <mi9onev@gmail.com>                        #
+# Copyright 2021 Mark Walker <mark.walker@realbuzz.com>                        #
+# Copyright 2021 Steve Kowalik <steven@wedontsleep.org>                        #
+# Copyright 2021 Tanner <51724788+lightningboltemoji@users.noreply.github.com> #
+# Copyright 2022 KimSia Sim <245021+simkimsia@users.noreply.github.com>        #
+# Copyright 2023 Enrico Minack <github@enrico.minack.dev>                      #
+# Copyright 2023 Felipe Peter <mr-peipei@web.de>                               #
+# Copyright 2023 Jirka Borovec <6035284+Borda@users.noreply.github.com>        #
+# Copyright 2023 Jonathan Greg <31892308+jmgreg31@users.noreply.github.com>    #
+# Copyright 2023 Jonathan Leitschuh <jonathan.leitschuh@gmail.com>             #
+# Copyright 2023 Mark Amery <markamery@btinternet.com>                         #
+# Copyright 2023 Mauricio Alejandro Martínez Pacheco <mauricio.martinez@premise.com>#
+# Copyright 2023 Mauricio Alejandro Martínez Pacheco <n_othing@hotmail.com>    #
+# Copyright 2023 Oliver Mannion <125105+tekumara@users.noreply.github.com>     #
+# Copyright 2023 Trim21 <trim21.me@gmail.com>                                  #
+# Copyright 2024 Andrii Kezikov <cheshirez@gmail.com>                          #
+# Copyright 2024 Mohamed Mostafa <112487260+mohy01@users.noreply.github.com>   #
+# Copyright 2024 Oskar Jansson <56458534+janssonoskar@users.noreply.github.com>#
+# Copyright 2024 Thomas Cooper <coopernetes@proton.me>                         #
+#                                                                              #
+# This file is part of PyGithub.                                               #
+# http://pygithub.readthedocs.io/                                              #
+#                                                                              #
+# PyGithub is free software: you can redistribute it and/or modify it under    #
+# the terms of the GNU Lesser General Public License as published by the Free  #
+# Software Foundation, either version 3 of the License, or (at your option)    #
+# any later version.                                                           #
+#                                                                              #
+# PyGithub is distributed in the hope that it will be useful, but WITHOUT ANY  #
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS    #
+# FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more #
+# details.                                                                     #
+#                                                                              #
+# You should have received a copy of the GNU Lesser General Public License     #
+# along with PyGithub. If not, see <http://www.gnu.org/licenses/>.             #
+#                                                                              #
+################################################################################
+
+from __future__ import annotations
+
+import urllib.parse
+from datetime import datetime
+from typing import TYPE_CHECKING, Any
+
+import github.Event
+import github.GithubObject
+import github.HookDelivery
+import github.NamedUser
+import github.OrganizationDependabotAlert
+import github.OrganizationSecret
+import github.OrganizationVariable
+import github.Plan
+import github.Project
+import github.Repository
+import github.Team
+from github import Consts
+from github.GithubObject import (
+    Attribute,
+    CompletableGithubObject,
+    NotSet,
+    Opt,
+    is_defined,
+    is_optional,
+    is_optional_list,
+    is_undefined,
+)
+from github.PaginatedList import PaginatedList
+
+if TYPE_CHECKING:
+    from github.Event import Event
+    from github.Hook import Hook
+    from github.Installation import Installation
+    from github.Issue import Issue
+    from github.Label import Label
+    from github.Migration import Migration
+    from github.NamedUser import NamedUser
+    from github.OrganizationDependabotAlert import OrganizationDependabotAlert
+    from github.OrganizationSecret import OrganizationSecret
+    from github.OrganizationVariable import OrganizationVariable
+    from github.Plan import Plan
+    from github.Project import Project
+    from github.PublicKey import PublicKey
+    from github.Repository import Repository
+    from github.Team import Team
+
+
+class Organization(CompletableGithubObject):
+    """
+    This class represents Organizations. The reference can be found here https://docs.github.com/en/rest/reference/orgs
+    """
+
+    def _initAttributes(self) -> None:
+        self._default_repository_permission: Attribute[str] = NotSet
+        self._has_organization_projects: Attribute[bool] = NotSet
+        self._has_repository_projects: Attribute[bool] = NotSet
+        self._hooks_url: Attribute[str] = NotSet
+        self._issues_url: Attribute[str] = NotSet
+        self._members_can_create_repositories: Attribute[bool] = NotSet
+        self._two_factor_requirement_enabled: Attribute[bool] = NotSet
+        self._avatar_url: Attribute[str] = NotSet
+        self._billing_email: Attribute[str] = NotSet
+        self._blog: Attribute[str | None] = NotSet
+        self._collaborators: Attribute[int] = NotSet
+        self._company: Attribute[str] = NotSet
+        self._created_at: Attribute[datetime] = NotSet
+        self._description: Attribute[str] = NotSet
+        self._disk_usage: Attribute[int] = NotSet
+        self._email: Attribute[str] = NotSet
+        self._events_url: Attribute[str] = NotSet
+        self._followers: Attribute[int] = NotSet
+        self._following: Attribute[int] = NotSet
+        self._gravatar_id: Attribute[str] = NotSet
+        self._html_url: Attribute[str] = NotSet
+        self._id: Attribute[int] = NotSet
+        self._location: Attribute[str] = NotSet
+        self._login: Attribute[str] = NotSet
+        self._members_url: Attribute[str] = NotSet
+        self._name: Attribute[str] = NotSet
+        self._owned_private_repos: Attribute[int] = NotSet
+        self._plan: Attribute[Plan] = NotSet
+        self._private_gists: Attribute[int] = NotSet
+        self._public_gists: Attribute[int] = NotSet
+        self._public_members_url: Attribute[str] = NotSet
+        self._public_repos: Attribute[int] = NotSet
+        self._repos_url: Attribute[str] = NotSet
+        self._total_private_repos: Attribute[int] = NotSet
+        self._type: Attribute[str] = NotSet
+        self._updated_at: Attribute[datetime] = NotSet
+        self._url: Attribute[str] = NotSet
+
+    def __repr__(self) -> str:
+        return self.get__repr__({"login": self._login.value})
+
+    @property
+    def avatar_url(self) -> str:
+        self._completeIfNotSet(self._avatar_url)
+        return self._avatar_url.value
+
+    @property
+    def billing_email(self) -> str:
+        self._completeIfNotSet(self._billing_email)
+        return self._billing_email.value
+
+    @property
+    def blog(self) -> str | None:
+        self._completeIfNotSet(self._blog)
+        return self._blog.value
+
+    @property
+    def collaborators(self) -> int:
+        self._completeIfNotSet(self._collaborators)
+        return self._collaborators.value
+
+    @property
+    def company(self) -> str | None:
+        self._completeIfNotSet(self._company)
+        return self._company.value
+
+    @property
+    def created_at(self) -> datetime:
+        self._completeIfNotSet(self._created_at)
+        return self._created_at.value
+
+    @property
+    def default_repository_permission(self) -> str:
+        self._completeIfNotSet(self._default_repository_permission)
+        return self._default_repository_permission.value
+
+    @property
+    def description(self) -> str:
+        self._completeIfNotSet(self._description)
+        return self._description.value
+
+    @property
+    def disk_usage(self) -> int:
+        self._completeIfNotSet(self._disk_usage)
+        return self._disk_usage.value
+
+    @property
+    def email(self) -> str | None:
+        self._completeIfNotSet(self._email)
+        return self._email.value
+
+    @property
+    def events_url(self) -> str:
+        self._completeIfNotSet(self._events_url)
+        return self._events_url.value
+
+    @property
+    def followers(self) -> int:
+        self._completeIfNotSet(self._followers)
+        return self._followers.value
+
+    @property
+    def following(self) -> int:
+        self._completeIfNotSet(self._following)
+        return self._following.value
+
+    @property
+    def gravatar_id(self) -> str:
+        self._completeIfNotSet(self._gravatar_id)
+        return self._gravatar_id.value
+
+    @property
+    def has_organization_projects(self) -> bool:
+        self._completeIfNotSet(self._has_organization_projects)
+        return self._has_organization_projects.value
+
+    @property
+    def has_repository_projects(self) -> bool:
+        self._completeIfNotSet(self._has_repository_projects)
+        return self._has_repository_projects.value
+
+    @property
+    def hooks_url(self) -> str:
+        self._completeIfNotSet(self._hooks_url)
+        return self._hooks_url.value
+
+    @property
+    def html_url(self) -> str:
+        self._completeIfNotSet(self._html_url)
+        return self._html_url.value
+
+    @property
+    def id(self) -> int:
+        self._completeIfNotSet(self._id)
+        return self._id.value
+
+    @property
+    def issues_url(self) -> str:
+        self._completeIfNotSet(self._issues_url)
+        return self._issues_url.value
+
+    @property
+    def location(self) -> str:
+        self._completeIfNotSet(self._location)
+        return self._location.value
+
+    @property
+    def login(self) -> str:
+        self._completeIfNotSet(self._login)
+        return self._login.value
+
+    @property
+    def members_can_create_repositories(self) -> bool:
+        self._completeIfNotSet(self._members_can_create_repositories)
+        return self._members_can_create_repositories.value
+
+    @property
+    def members_url(self) -> str:
+        self._completeIfNotSet(self._members_url)
+        return self._members_url.value
+
+    @property
+    def name(self) -> str | None:
+        self._completeIfNotSet(self._name)
+        return self._name.value
+
+    @property
+    def owned_private_repos(self) -> int:
+        self._completeIfNotSet(self._owned_private_repos)
+        return self._owned_private_repos.value
+
+    @property
+    def plan(self) -> Plan:
+        self._completeIfNotSet(self._plan)
+        return self._plan.value
+
+    @property
+    def private_gists(self) -> int:
+        self._completeIfNotSet(self._private_gists)
+        return self._private_gists.value
+
+    @property
+    def public_gists(self) -> int:
+        self._completeIfNotSet(self._public_gists)
+        return self._public_gists.value
+
+    @property
+    def public_members_url(self) -> str:
+        self._completeIfNotSet(self._public_members_url)
+        return self._public_members_url.value
+
+    @property
+    def public_repos(self) -> int:
+        self._completeIfNotSet(self._public_repos)
+        return self._public_repos.value
+
+    @property
+    def repos_url(self) -> str:
+        self._completeIfNotSet(self._repos_url)
+        return self._repos_url.value
+
+    @property
+    def total_private_repos(self) -> int:
+        self._completeIfNotSet(self._total_private_repos)
+        return self._total_private_repos.value
+
+    @property
+    def two_factor_requirement_enabled(self) -> bool:
+        self._completeIfNotSet(self._two_factor_requirement_enabled)
+        return self._two_factor_requirement_enabled.value
+
+    @property
+    def type(self) -> str:
+        self._completeIfNotSet(self._type)
+        return self._type.value
+
+    @property
+    def updated_at(self) -> datetime:
+        self._completeIfNotSet(self._updated_at)
+        return self._updated_at.value
+
+    @property
+    def url(self) -> str:
+        self._completeIfNotSet(self._url)
+        return self._url.value
+
+    def add_to_members(self, member: NamedUser, role: Opt[str] = NotSet) -> None:
+        """
+        :calls: `PUT /orgs/{org}/memberships/{user} <https://docs.github.com/en/rest/reference/orgs#update-an-organization-membership-for-the-authenticated-user>`_
+        """
+        assert is_optional(role, str), role
+        assert isinstance(member, github.NamedUser.NamedUser), member
+        put_parameters = NotSet.remove_unset_items({"role": role})
+        headers, data = self._requester.requestJsonAndCheck(
+            "PUT", f"{self.url}/memberships/{member._identity}", input=put_parameters
+        )
+
+    def add_to_public_members(self, public_member: NamedUser) -> None:
+        """
+        :calls: `PUT /orgs/{org}/public_members/{user} <https://docs.github.com/en/rest/reference/orgs#members>`_
+        """
+        assert isinstance(public_member, github.NamedUser.NamedUser), public_member
+        headers, data = self._requester.requestJsonAndCheck(
+            "PUT", f"{self.url}/public_members/{public_member._identity}"
+        )
+
+    def create_fork(
+        self,
+        repo: Repository,
+        name: Opt[str] = NotSet,
+        default_branch_only: Opt[bool] = NotSet,
+    ) -> Repository:
+        """
+        :calls: `POST /repos/{owner}/{repo}/forks <https://docs.github.com/en/rest/reference/repos#forks>`_
+        """
+        assert isinstance(repo, github.Repository.Repository), repo
+        return repo.create_fork(
+            self,
+            name=name,
+            default_branch_only=default_branch_only,
+        )
+
+    def create_repo_from_template(
+        self,
+        name: str,
+        repo: Repository,
+        description: Opt[str] = NotSet,
+        include_all_branches: Opt[bool] = NotSet,
+        private: Opt[bool] = NotSet,
+    ) -> Repository:
+        """self.name
+        :calls: `POST /repos/{template_owner}/{template_repo}/generate <https://docs.github.com/en/rest/reference/repos#create-a-repository-using-a-template>`_
+        """
+        assert isinstance(name, str), name
+        assert isinstance(repo, github.Repository.Repository), repo
+        assert is_optional(description, str), description
+        assert is_optional(include_all_branches, bool), include_all_branches
+        assert is_optional(private, bool), private
+        post_parameters: dict[str, Any] = NotSet.remove_unset_items(
+            {
+                "name": name,
+                "owner": self.login,
+                "description": description,
+                "include_all_branches": include_all_branches,
+                "private": private,
+            }
+        )
+
+        headers, data = self._requester.requestJsonAndCheck(
+            "POST",
+            f"/repos/{repo.owner.login}/{repo.name}/generate",
+            input=post_parameters,
+            headers={"Accept": "application/vnd.github.v3+json"},
+        )
+        return github.Repository.Repository(self._requester, headers, data, completed=True)
+
+    def create_hook(
+        self,
+        name: str,
+        config: dict[str, str],
+        events: Opt[list[str]] = NotSet,
+        active: Opt[bool] = NotSet,
+    ) -> Hook:
+        """
+        :calls: `POST /orgs/{owner}/hooks <https://docs.github.com/en/rest/reference/orgs#webhooks>`_
+        :param name: string
+        :param config: dict
+        :param events: list of string
+        :param active: bool
+        :rtype: :class:`github.Hook.Hook`
+        """
+        assert isinstance(name, str), name
+        assert isinstance(config, dict), config
+        assert is_optional_list(events, str), events
+        assert is_optional(active, bool), active
+        post_parameters: dict[str, Any] = NotSet.remove_unset_items(
+            {
+                "name": name,
+                "config": config,
+                "events": events,
+                "active": active,
+            }
+        )
+        headers, data = self._requester.requestJsonAndCheck("POST", f"{self.url}/hooks", input=post_parameters)
+        return github.Hook.Hook(self._requester, headers, data, completed=True)
+
+    def create_project(self, name: str, body: Opt[str] = NotSet) -> github.Project.Project:
+        """
+        :calls: `POST /orgs/{org}/projects <https://docs.github.com/en/rest/reference/projects#create-an-organization-project>`_
+        """
+        assert isinstance(name, str), name
+        assert is_optional(body, str), body
+        post_parameters: dict[str, Any] = NotSet.remove_unset_items({"name": name, "body": body})
+
+        headers, data = self._requester.requestJsonAndCheck(
+            "POST",
+            f"{self.url}/projects",
+            input=post_parameters,
+            headers={"Accept": Consts.mediaTypeProjectsPreview},
+        )
+        return github.Project.Project(self._requester, headers, data, completed=True)
+
+    def create_repo(
+        self,
+        name: str,
+        description: Opt[str] = NotSet,
+        homepage: Opt[str] = NotSet,
+        private: Opt[bool] = NotSet,
+        visibilit

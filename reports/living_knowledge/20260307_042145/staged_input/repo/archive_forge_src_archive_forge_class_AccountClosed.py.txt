@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AccountClosed.py
+KIND: code
+
+from boto.exception import BotoServerError
+class AccountClosed(RetriableResponseError):
+    """Account is not active.
+    """

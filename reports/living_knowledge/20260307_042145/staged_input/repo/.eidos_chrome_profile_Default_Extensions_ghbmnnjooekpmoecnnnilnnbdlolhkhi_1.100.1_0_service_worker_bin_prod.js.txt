@@ -1,0 +1,870 @@
+SOURCE_PATH: .eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/service_worker_bin_prod.js
+KIND: code
+
+"use strict";
+function aa() {
+  return function (a) {
+    return a;
+  };
+}
+function n() {
+  return function () {};
+}
+function ba(a) {
+  return function () {
+    return this[a];
+  };
+}
+function da(a) {
+  return function () {
+    return a;
+  };
+}
+var p,
+  ea =
+    typeof Object.create == "function"
+      ? Object.create
+      : function (a) {
+          function b() {}
+          b.prototype = a;
+          return new b();
+        },
+  fa =
+    typeof Object.defineProperties == "function"
+      ? Object.defineProperty
+      : function (a, b, c) {
+          if (a == Array.prototype || a == Object.prototype) return a;
+          a[b] = c.value;
+          return a;
+        };
+function ha(a) {
+  a = [
+    "object" == typeof globalThis && globalThis,
+    a,
+    "object" == typeof window && window,
+    "object" == typeof self && self,
+    "object" == typeof global && global,
+  ];
+  for (var b = 0; b < a.length; ++b) {
+    var c = a[b];
+    if (c && c.Math == Math) return c;
+  }
+  throw Error("Cannot find global object");
+}
+var ia = ha(this);
+function q(a, b) {
+  if (b)
+    a: {
+      var c = ia;
+      a = a.split(".");
+      for (var d = 0; d < a.length - 1; d++) {
+        var e = a[d];
+        if (!(e in c)) break a;
+        c = c[e];
+      }
+      a = a[a.length - 1];
+      d = c[a];
+      b = b(d);
+      b != d &&
+        b != null &&
+        fa(c, a, { configurable: !0, writable: !0, value: b });
+    }
+}
+var ja;
+if (typeof Object.setPrototypeOf == "function") ja = Object.setPrototypeOf;
+else {
+  var ka;
+  a: {
+    var ma = { a: !0 },
+      na = {};
+    try {
+      na.__proto__ = ma;
+      ka = na.a;
+      break a;
+    } catch (a) {}
+    ka = !1;
+  }
+  ja = ka
+    ? function (a, b) {
+        a.__proto__ = b;
+        if (a.__proto__ !== b) throw new TypeError(a + " is not extensible");
+        return a;
+      }
+    : null;
+}
+var oa = ja;
+function u(a, b) {
+  a.prototype = ea(b.prototype);
+  a.prototype.constructor = a;
+  if (oa) oa(a, b);
+  else
+    for (var c in b)
+      if (c != "prototype")
+        if (Object.defineProperties) {
+          var d = Object.getOwnPropertyDescriptor(b, c);
+          d && Object.defineProperty(a, c, d);
+        } else a[c] = b[c];
+  a.T = b.prototype;
+}
+function pa(a) {
+  var b = 0;
+  return function () {
+    return b < a.length ? { done: !1, value: a[b++] } : { done: !0 };
+  };
+}
+function v(a) {
+  var b = typeof Symbol != "undefined" && Symbol.iterator && a[Symbol.iterator];
+  if (b) return b.call(a);
+  if (typeof a.length == "number") return { next: pa(a) };
+  throw Error(String(a) + " is not an iterable or ArrayLike");
+}
+function ra(a) {
+  if (!(a instanceof Array)) {
+    a = v(a);
+    for (var b, c = []; !(b = a.next()).done; ) c.push(b.value);
+    a = c;
+  }
+  return a;
+}
+function sa() {
+  for (var a = Number(this), b = [], c = a; c < arguments.length; c++)
+    b[c - a] = arguments[c];
+  return b;
+}
+q("globalThis", function (a) {
+  return a || ia;
+});
+q("Symbol", function (a) {
+  function b(f) {
+    if (this instanceof b) throw new TypeError("Symbol is not a constructor");
+    return new c(d + (f || "") + "_" + e++, f);
+  }
+  function c(f, g) {
+    this.g = f;
+    fa(this, "description", { configurable: !0, writable: !0, value: g });
+  }
+  if (a) return a;
+  c.prototype.toString = ba("g");
+  var d = "jscomp_symbol_" + ((Math.random() * 1e9) >>> 0) + "_",
+    e = 0;
+  return b;
+});
+q("Symbol.iterator", function (a) {
+  if (a) return a;
+  a = Symbol("Symbol.iterator");
+  fa(Array.prototype, a, {
+    configurable: !0,
+    writable: !0,
+    value: function () {
+      return ta(pa(this));
+    },
+  });
+  return a;
+});
+function ta(a) {
+  a = { next: a };
+  a[Symbol.iterator] = function () {
+    return this;
+  };
+  return a;
+}
+q("Promise", function (a) {
+  function b(g) {
+    this.g = 0;
+    this.l = void 0;
+    this.j = [];
+    this.J = !1;
+    var h = this.o();
+    try {
+      g(h.resolve, h.reject);
+    } catch (k) {
+      h.reject(k);
+    }
+  }
+  function c() {
+    this.g = null;
+  }
+  function d(g) {
+    return g instanceof b
+      ? g
+      : new b(function (h) {
+          h(g);
+        });
+  }
+  if (a) return a;
+  c.prototype.j = function (g) {
+    if (this.g == null) {
+      this.g = [];
+      var h = this;
+      this.l(function () {
+        h.D();
+      });
+    }
+    this.g.push(g);
+  };
+  var e = ia.setTimeout;
+  c.prototype.l = function (g) {
+    e(g, 0);
+  };
+  c.prototype.D = function () {
+    for (; this.g && this.g.length; ) {
+      var g = this.g;
+      this.g = [];
+      for (var h = 0; h < g.length; ++h) {
+        var k = g[h];
+        g[h] = null;
+        try {
+          k();
+        } catch (l) {
+          this.o(l);
+        }
+      }
+    }
+    this.g = null;
+  };
+  c.prototype.o = function (g) {
+    this.l(function () {
+      throw g;
+    });
+  };
+  b.prototype.o = function () {
+    function g(l) {
+      return function (m) {
+        k || ((k = !0), l.call(h, m));
+      };
+    }
+    var h = this,
+      k = !1;
+    return { resolve: g(this.M), reject: g(this.D) };
+  };
+  b.prototype.M = function (g) {
+    if (g === this) this.D(new TypeError("A Promise cannot resolve to itself"));
+    else if (g instanceof b) this.N(g);
+    else {
+      a: switch (typeof g) {
+        case "object":
+          var h = g != null;
+          break a;
+        case "function":
+          h = !0;
+          break a;
+        default:
+          h = !1;
+      }
+      h ? this.K(g) : this.v(g);
+    }
+  };
+  b.prototype.K = function (g) {
+    var h = void 0;
+    try {
+      h = g.then;
+    } catch (k) {
+      this.D(k);
+      return;
+    }
+    typeof h == "function" ? this.O(h, g) : this.v(g);
+  };
+  b.prototype.D = function (g) {
+    this.B(2, g);
+  };
+  b.prototype.v = function (g) {
+    this.B(1, g);
+  };
+  b.prototype.B = function (g, h) {
+    if (this.g != 0)
+      throw Error(
+        "Cannot settle(" +
+          g +
+          ", " +
+          h +
+          "): Promise already settled in state" +
+          this.g,
+      );
+    this.g = g;
+    this.l = h;
+    this.g === 2 && this.P();
+    this.F();
+  };
+  b.prototype.P = function () {
+    var g = this;
+    e(function () {
+      if (g.H()) {
+        var h = ia.console;
+        typeof h !== "undefined" && h.error(g.l);
+      }
+    }, 1);
+  };
+  b.prototype.H = function () {
+    if (this.J) return !1;
+    var g = ia.CustomEvent,
+      h = ia.Event,
+      k = ia.dispatchEvent;
+    if (typeof k === "undefined") return !0;
+    typeof g === "function"
+      ? (g = new g("unhandledrejection", { cancelable: !0 }))
+      : typeof h === "function"
+        ? (g = new h("unhandledrejection", { cancelable: !0 }))
+        : ((g = ia.document.createEvent("CustomEvent")),
+          g.initCustomEvent("unhandledrejection", !1, !0, g));
+    g.promise = this;
+    g.reason = this.l;
+    return k(g);
+  };
+  b.prototype.F = function () {
+    if (this.j != null) {
+      for (var g = 0; g < this.j.length; ++g) f.j(this.j[g]);
+      this.j = null;
+    }
+  };
+  var f = new c();
+  b.prototype.N = function (g) {
+    var h = this.o();
+    g.ga(h.resolve, h.reject);
+  };
+  b.prototype.O = function (g, h) {
+    var k = this.o();
+    try {
+      g.call(h, k.resolve, k.reject);
+    } catch (l) {
+      k.reject(l);
+    }
+  };
+  b.prototype.then = function (g, h) {
+    function k(t, B) {
+      return typeof t == "function"
+        ? function (la) {
+            try {
+              l(t(la));
+            } catch (ca) {
+              m(ca);
+            }
+          }
+        : B;
+    }
+    var l,
+      m,
+      r = new b(function (t, B) {
+        l = t;
+        m = B;
+      });
+    this.ga(k(g, l), k(h, m));
+    return r;
+  };
+  b.prototype.catch = function (g) {
+    return this.then(void 0, g);
+  };
+  b.prototype.ga = function (g, h) {
+    function k() {
+      switch (l.g) {
+        case 1:
+          g(l.l);
+          break;
+        case 2:
+          h(l.l);
+          break;
+        default:
+          throw Error("Unexpected state: " + l.g);
+      }
+    }
+    var l = this;
+    this.j == null ? f.j(k) : this.j.push(k);
+    this.J = !0;
+  };
+  b.resolve = d;
+  b.reject = function (g) {
+    return new b(function (h, k) {
+      k(g);
+    });
+  };
+  b.race = function (g) {
+    return new b(function (h, k) {
+      for (var l = v(g), m = l.next(); !m.done; m = l.next())
+        d(m.value).ga(h, k);
+    });
+  };
+  b.all = function (g) {
+    var h = v(g),
+      k = h.next();
+    return k.done
+      ? d([])
+      : new b(function (l, m) {
+          function r(la) {
+            return function (ca) {
+              t[la] = ca;
+              B--;
+              B == 0 && l(t);
+            };
+          }
+          var t = [],
+            B = 0;
+          do
+            t.push(void 0),
+              B++,
+              d(k.value).ga(r(t.length - 1), m),
+              (k = h.next());
+          while (!k.done);
+        });
+  };
+  return b;
+});
+function w(a, b) {
+  return Object.prototype.hasOwnProperty.call(a, b);
+}
+var ua =
+  typeof Object.assign == "function"
+    ? Object.assign
+    : function (a, b) {
+        if (a == null) throw new TypeError("No nullish arg");
+        a = Object(a);
+        for (var c = 1; c < arguments.length; c++) {
+          var d = arguments[c];
+          if (d) for (var e in d) w(d, e) && (a[e] = d[e]);
+        }
+        return a;
+      };
+q("Object.assign", function (a) {
+  return a || ua;
+});
+q("Symbol.dispose", function (a) {
+  return a ? a : Symbol("Symbol.dispose");
+});
+q("Array.prototype.find", function (a) {
+  return a
+    ? a
+    : function (b, c) {
+        a: {
+          var d = this;
+          d instanceof String && (d = String(d));
+          for (var e = d.length, f = 0; f < e; f++) {
+            var g = d[f];
+            if (b.call(c, g, f, d)) {
+              b = g;
+              break a;
+            }
+          }
+          b = void 0;
+        }
+        return b;
+      };
+});
+q("WeakMap", function (a) {
+  function b(k) {
+    this.g = (h += Math.random() + 1).toString();
+    if (k) {
+      k = v(k);
+      for (var l; !(l = k.next()).done; ) (l = l.value), this.set(l[0], l[1]);
+    }
+  }
+  function c() {}
+  function d(k) {
+    var l = typeof k;
+    return (l === "object" && k !== null) || l === "function";
+  }
+  function e(k) {
+    if (!w(k, g)) {
+      var l = new c();
+      fa(k, g, { value: l });
+    }
+  }
+  function f(k) {
+    var l = Object[k];
+    l &&
+      (Object[k] = function (m) {
+        if (m instanceof c) return m;
+        Object.isExtensible(m) && e(m);
+        return l(m);
+      });
+  }
+  if (
+    (function () {
+      if (!a || !Object.seal) return !1;
+      try {
+        var k = Object.seal({}),
+          l = Object.seal({}),
+          m = new a([
+            [k, 2],
+            [l, 3],
+          ]);
+        if (m.get(k) != 2 || m.get(l) != 3) return !1;
+        m.delete(k);
+        m.set(l, 4);
+        return !m.has(k) && m.get(l) == 4;
+      } catch (r) {
+        return !1;
+      }
+    })()
+  )
+    return a;
+  var g = "$jscomp_hidden_" + Math.random();
+  f("freeze");
+  f("preventExtensions");
+  f("seal");
+  var h = 0;
+  b.prototype.set = function (k, l) {
+    if (!d(k)) throw Error("Invalid WeakMap key");
+    e(k);
+    if (!w(k, g)) throw Error("WeakMap key fail: " + k);
+    k[g][this.g] = l;
+    return this;
+  };
+  b.prototype.get = function (k) {
+    return d(k) && w(k, g) ? k[g][this.g] : void 0;
+  };
+  b.prototype.has = function (k) {
+    return d(k) && w(k, g) && w(k[g], this.g);
+  };
+  b.prototype.delete = function (k) {
+    return d(k) && w(k, g) && w(k[g], this.g) ? delete k[g][this.g] : !1;
+  };
+  return b;
+});
+q("Map", function (a) {
+  function b() {
+    var h = {};
+    return (h.previous = h.next = h.head = h);
+  }
+  function c(h, k) {
+    var l = h[1];
+    return ta(function () {
+      if (l) {
+        for (; l.head != h[1]; ) l = l.previous;
+        for (; l.next != l.head; )
+          return (l = l.next), { done: !1, value: k(l) };
+        l = null;
+      }
+      return { done: !0, value: void 0 };
+    });
+  }
+  function d(h, k) {
+    var l = k && typeof k;
+    l == "object" || l == "function"
+      ? f.has(k)
+        ? (l = f.get(k))
+        : ((l = "" + ++g), f.set(k, l))
+      : (l = "p_" + k);
+    var m = h[0][l];
+    if (m && w(h[0], l))
+      for (h = 0; h < m.length; h++) {
+        var r = m[h];
+        if ((k !== k && r.key !== r.key) || k === r.key)
+          return { id: l, list: m, index: h, entry: r };
+      }
+    return { id: l, list: m, index: -1, entry: void 0 };
+  }
+  function e(h) {
+    this[0] = {};
+    this[1] = b();
+    this.size = 0;
+    if (h) {
+      h = v(h);
+      for (var k; !(k = h.next()).done; ) (k = k.value), this.set(k[0], k[1]);
+    }
+  }
+  if (
+    (function () {
+      if (
+        !a ||
+        typeof a != "function" ||
+        !a.prototype.entries ||
+        typeof Object.seal != "function"
+      )
+        return !1;
+      try {
+        var h = Object.seal({ x: 4 }),
+          k = new a(v([[h, "s"]]));
+        if (
+          k.get(h) != "s" ||
+          k.size != 1 ||
+          k.get({ x: 4 }) ||
+          k.set({ x: 4 }, "t") != k ||
+          k.size != 2
+        )
+          return !1;
+        var l = k.entries(),
+          m = l.next();
+        if (m.done || m.value[0] != h || m.value[1] != "s") return !1;
+        m = l.next();
+        return m.done ||
+          m.value[0].x != 4 ||
+          m.value[1] != "t" ||
+          !l.next().done
+          ? !1
+          : !0;
+      } catch (r) {
+        return !1;
+      }
+    })()
+  )
+    return a;
+  var f = new WeakMap();
+  e.prototype.set = function (h, k) {
+    h = h === 0 ? 0 : h;
+    var l = d(this, h);
+    l.list || (l.list = this[0][l.id] = []);
+    l.entry
+      ? (l.entry.value = k)
+      : ((l.entry = {
+          next: this[1],
+          previous: this[1].previous,
+          head: this[1],
+          key: h,
+          value: k,
+        }),
+        l.list.push(l.entry),
+        (this[1].previous.next = l.entry),
+        (this[1].previous = l.entry),
+        this.size++);
+    return this;
+  };
+  e.prototype.delete = function (h) {
+    h = d(this, h);
+    return h.entry && h.list
+      ? (h.list.splice(h.index, 1),
+        h.list.length || delete this[0][h.id],
+        (h.entry.previous.next = h.entry.next),
+        (h.entry.next.previous = h.entry.previous),
+        (h.entry.head = null),
+        this.size--,
+        !0)
+      : !1;
+  };
+  e.prototype.clear = function () {
+    this[0] = {};
+    this[1] = this[1].previous = b();
+    this.size = 0;
+  };
+  e.prototype.has = function (h) {
+    return !!d(this, h).entry;
+  };
+  e.prototype.get = function (h) {
+    return (h = d(this, h).entry) && h.value;
+  };
+  e.prototype.entries = function () {
+    return c(this, function (h) {
+      return [h.key, h.value];
+    });
+  };
+  e.prototype.keys = function () {
+    return c(this, function (h) {
+      return h.key;
+    });
+  };
+  e.prototype.values = function () {
+    return c(this, function (h) {
+      return h.value;
+    });
+  };
+  e.prototype.forEach = function (h, k) {
+    for (var l = this.entries(), m; !(m = l.next()).done; )
+      (m = m.value), h.call(k, m[1], m[0], this);
+  };
+  e.prototype[Symbol.iterator] = e.prototype.entries;
+  var g = 0;
+  return e;
+});
+q("Set", function (a) {
+  function b(c) {
+    this.g = new Map();
+    if (c) {
+      c = v(c);
+      for (var d; !(d = c.next()).done; ) this.add(d.value);
+    }
+    this.size = this.g.size;
+  }
+  if (
+    (function () {
+      if (
+        !a ||
+        typeof a != "function" ||
+        !a.prototype.entries ||
+        typeof Object.seal != "function"
+      )
+        return !1;
+      try {
+        var c = Object.seal({ x: 4 }),
+          d = new a(v([c]));
+        if (
+          !d.has(c) ||
+          d.size != 1 ||
+          d.add(c) != d ||
+          d.size != 1 ||
+          d.add({ x: 4 }) != d ||
+          d.size != 2
+        )
+          return !1;
+        var e = d.entries(),
+          f = e.next();
+        if (f.done || f.value[0] != c || f.value[1] != c) return !1;
+        f = e.next();
+        return f.done ||
+          f.value[0] == c ||
+          f.value[0].x != 4 ||
+          f.value[1] != f.value[0]
+          ? !1
+          : e.next().done;
+      } catch (g) {
+        return !1;
+      }
+    })()
+  )
+    return a;
+  b.prototype.add = function (c) {
+    c = c === 0 ? 0 : c;
+    this.g.set(c, c);
+    this.size = this.g.size;
+    return this;
+  };
+  b.prototype.delete = function (c) {
+    c = this.g.delete(c);
+    this.size = this.g.size;
+    return c;
+  };
+  b.prototype.clear = function () {
+    this.g.clear();
+    this.size = 0;
+  };
+  b.prototype.has = function (c) {
+    return this.g.has(c);
+  };
+  b.prototype.entries = function () {
+    return this.g.entries();
+  };
+  b.prototype.values = function () {
+    return this.g.values();
+  };
+  b.prototype.keys = b.prototype.values;
+  b.prototype[Symbol.iterator] = b.prototype.values;
+  b.prototype.forEach = function (c, d) {
+    var e = this;
+    this.g.forEach(function (f) {
+      return c.call(d, f, f, e);
+    });
+  };
+  return b;
+});
+q("Object.values", function (a) {
+  return a
+    ? a
+    : function (b) {
+        var c = [],
+          d;
+        for (d in b) w(b, d) && c.push(b[d]);
+        return c;
+      };
+});
+q("Object.is", function (a) {
+  return a
+    ? a
+    : function (b, c) {
+        return b === c ? b !== 0 || 1 / b === 1 / c : b !== b && c !== c;
+      };
+});
+q("Array.prototype.includes", function (a) {
+  return a
+    ? a
+    : function (b, c) {
+        var d = this;
+        d instanceof String && (d = String(d));
+        var e = d.length;
+        c = c || 0;
+        for (c < 0 && (c = Math.max(c + e, 0)); c < e; c++) {
+          var f = d[c];
+          if (f === b || Object.is(f, b)) return !0;
+        }
+        return !1;
+      };
+});
+function va(a, b, c) {
+  if (a == null)
+    throw new TypeError(
+      "The 'this' value for String.prototype." +
+        c +
+        " must not be null or undefined",
+    );
+  if (b instanceof RegExp)
+    throw new TypeError(
+      "First argument to String.prototype." +
+        c +
+        " must not be a regular expression",
+    );
+  return a + "";
+}
+q("String.prototype.includes", function (a) {
+  return a
+    ? a
+    : function (b, c) {
+        return va(this, b, "includes").indexOf(b, c || 0) !== -1;
+      };
+});
+q("Array.from", function (a) {
+  return a
+    ? a
+    : function (b, c, d) {
+        c = c != null ? c : aa();
+        var e = [],
+          f =
+            typeof Symbol != "undefined" &&
+            Symbol.iterator &&
+            b[Symbol.iterator];
+        if (typeof f == "function") {
+          b = f.call(b);
+          for (var g = 0; !(f = b.next()).done; )
+            e.push(c.call(d, f.value, g++));
+        } else for (f = b.length, g = 0; g < f; g++) e.push(c.call(d, b[g], g));
+        return e;
+      };
+});
+q("Object.entries", function (a) {
+  return a
+    ? a
+    : function (b) {
+        var c = [],
+          d;
+        for (d in b) w(b, d) && c.push([d, b[d]]);
+        return c;
+      };
+});
+q("Number.isFinite", function (a) {
+  return a
+    ? a
+    : function (b) {
+        return typeof b !== "number"
+          ? !1
+          : !isNaN(b) && b !== Infinity && b !== -Infinity;
+      };
+});
+q("Number.MAX_SAFE_INTEGER", da(9007199254740991));
+q("Number.MIN_SAFE_INTEGER", da(-9007199254740991));
+q("Number.isInteger", function (a) {
+  return a
+    ? a
+    : function (b) {
+        return Number.isFinite(b) ? b === Math.floor(b) : !1;
+      };
+});
+q("Number.isSafeInteger", function (a) {
+  return a
+    ? a
+    : function (b) {
+        return Number.isInteger(b) && Math.abs(b) <= Number.MAX_SAFE_INTEGER;
+      };
+});
+q("String.prototype.startsWith", function (a) {
+  return a
+    ? a
+    : function (b, c) {
+        var d = va(this, b, "startsWith");
+        b += "";
+        var e = d.length,
+          f = b.length;
+        c = Math.max(0, Math.min(c | 0, d.length));
+        for (var g = 0; g < f && c < e; ) if (d[c++] != b[g++]) return !1;
+        return g >= f;
+      };
+});
+function wa(a, b) {
+  a instanceof String && (a += "");
+  var c = 0,
+    d = !1,
+    e = {
+      next: function

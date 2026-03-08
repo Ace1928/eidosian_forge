@@ -1,0 +1,568 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_search.py
+KIND: code
+
+"""
+The :mod:`sklearn.model_selection._search` includes utilities to fine-tune the
+parameters of an estimator.
+"""
+
+# Author: Alexandre Gramfort <alexandre.gramfort@inria.fr>,
+#         Gael Varoquaux <gael.varoquaux@normalesup.org>
+#         Andreas Mueller <amueller@ais.uni-bonn.de>
+#         Olivier Grisel <olivier.grisel@ensta.org>
+#         Raghav RV <rvraghav93@gmail.com>
+# License: BSD 3 clause
+
+import numbers
+import operator
+import time
+import warnings
+from abc import ABCMeta, abstractmethod
+from collections import defaultdict
+from collections.abc import Iterable, Mapping, Sequence
+from functools import partial, reduce
+from itertools import product
+
+import numpy as np
+from numpy.ma import MaskedArray
+from scipy.stats import rankdata
+
+from ..base import BaseEstimator, MetaEstimatorMixin, _fit_context, clone, is_classifier
+from ..exceptions import NotFittedError
+from ..metrics import check_scoring
+from ..metrics._scorer import (
+    _check_multimetric_scoring,
+    _MultimetricScorer,
+    get_scorer_names,
+)
+from ..utils import Bunch, check_random_state
+from ..utils._param_validation import HasMethods, Interval, StrOptions
+from ..utils._tags import _safe_tags
+from ..utils.metadata_routing import (
+    MetadataRouter,
+    MethodMapping,
+    _raise_for_params,
+    _routing_enabled,
+    process_routing,
+)
+from ..utils.metaestimators import available_if
+from ..utils.parallel import Parallel, delayed
+from ..utils.random import sample_without_replacement
+from ..utils.validation import _check_method_params, check_is_fitted, indexable
+from ._split import check_cv
+from ._validation import (
+    _aggregate_score_dicts,
+    _fit_and_score,
+    _insert_error_scores,
+    _normalize_score_results,
+    _warn_or_raise_about_fit_failures,
+)
+
+__all__ = ["GridSearchCV", "ParameterGrid", "ParameterSampler", "RandomizedSearchCV"]
+
+
+class ParameterGrid:
+    """Grid of parameters with a discrete number of values for each.
+
+    Can be used to iterate over parameter value combinations with the
+    Python built-in function iter.
+    The order of the generated parameter combinations is deterministic.
+
+    Read more in the :ref:`User Guide <grid_search>`.
+
+    Parameters
+    ----------
+    param_grid : dict of str to sequence, or sequence of such
+        The parameter grid to explore, as a dictionary mapping estimator
+        parameters to sequences of allowed values.
+
+        An empty dict signifies default parameters.
+
+        A sequence of dicts signifies a sequence of grids to search, and is
+        useful to avoid exploring parameter combinations that make no sense
+        or have no effect. See the examples below.
+
+    Examples
+    --------
+    >>> from sklearn.model_selection import ParameterGrid
+    >>> param_grid = {'a': [1, 2], 'b': [True, False]}
+    >>> list(ParameterGrid(param_grid)) == (
+    ...    [{'a': 1, 'b': True}, {'a': 1, 'b': False},
+    ...     {'a': 2, 'b': True}, {'a': 2, 'b': False}])
+    True
+
+    >>> grid = [{'kernel': ['linear']}, {'kernel': ['rbf'], 'gamma': [1, 10]}]
+    >>> list(ParameterGrid(grid)) == [{'kernel': 'linear'},
+    ...                               {'kernel': 'rbf', 'gamma': 1},
+    ...                               {'kernel': 'rbf', 'gamma': 10}]
+    True
+    >>> ParameterGrid(grid)[1] == {'kernel': 'rbf', 'gamma': 1}
+    True
+
+    See Also
+    --------
+    GridSearchCV : Uses :class:`ParameterGrid` to perform a full parallelized
+        parameter search.
+    """
+
+    def __init__(self, param_grid):
+        if not isinstance(param_grid, (Mapping, Iterable)):
+            raise TypeError(
+                f"Parameter grid should be a dict or a list, got: {param_grid!r} of"
+                f" type {type(param_grid).__name__}"
+            )
+
+        if isinstance(param_grid, Mapping):
+            # wrap dictionary in a singleton list to support either dict
+            # or list of dicts
+            param_grid = [param_grid]
+
+        # check if all entries are dictionaries of lists
+        for grid in param_grid:
+            if not isinstance(grid, dict):
+                raise TypeError(f"Parameter grid is not a dict ({grid!r})")
+            for key, value in grid.items():
+                if isinstance(value, np.ndarray) and value.ndim > 1:
+                    raise ValueError(
+                        f"Parameter array for {key!r} should be one-dimensional, got:"
+                        f" {value!r} with shape {value.shape}"
+                    )
+                if isinstance(value, str) or not isinstance(
+                    value, (np.ndarray, Sequence)
+                ):
+                    raise TypeError(
+                        f"Parameter grid for parameter {key!r} needs to be a list or a"
+                        f" numpy array, but got {value!r} (of type "
+                        f"{type(value).__name__}) instead. Single values "
+                        "need to be wrapped in a list with one element."
+                    )
+                if len(value) == 0:
+                    raise ValueError(
+                        f"Parameter grid for parameter {key!r} need "
+                        f"to be a non-empty sequence, got: {value!r}"
+                    )
+
+        self.param_grid = param_grid
+
+    def __iter__(self):
+        """Iterate over the points in the grid.
+
+        Returns
+        -------
+        params : iterator over dict of str to any
+            Yields dictionaries mapping each estimator parameter to one of its
+            allowed values.
+        """
+        for p in self.param_grid:
+            # Always sort the keys of a dictionary, for reproducibility
+            items = sorted(p.items())
+            if not items:
+                yield {}
+            else:
+                keys, values = zip(*items)
+                for v in product(*values):
+                    params = dict(zip(keys, v))
+                    yield params
+
+    def __len__(self):
+        """Number of points on the grid."""
+        # Product function that can handle iterables (np.prod can't).
+        product = partial(reduce, operator.mul)
+        return sum(
+            product(len(v) for v in p.values()) if p else 1 for p in self.param_grid
+        )
+
+    def __getitem__(self, ind):
+        """Get the parameters that would be ``ind``th in iteration
+
+        Parameters
+        ----------
+        ind : int
+            The iteration index
+
+        Returns
+        -------
+        params : dict of str to any
+            Equal to list(self)[ind]
+        """
+        # This is used to make discrete sampling without replacement memory
+        # efficient.
+        for sub_grid in self.param_grid:
+            # XXX: could memoize information used here
+            if not sub_grid:
+                if ind == 0:
+                    return {}
+                else:
+                    ind -= 1
+                    continue
+
+            # Reverse so most frequent cycling parameter comes first
+            keys, values_lists = zip(*sorted(sub_grid.items())[::-1])
+            sizes = [len(v_list) for v_list in values_lists]
+            total = np.prod(sizes)
+
+            if ind >= total:
+                # Try the next grid
+                ind -= total
+            else:
+                out = {}
+                for key, v_list, n in zip(keys, values_lists, sizes):
+                    ind, offset = divmod(ind, n)
+                    out[key] = v_list[offset]
+                return out
+
+        raise IndexError("ParameterGrid index out of range")
+
+
+class ParameterSampler:
+    """Generator on parameters sampled from given distributions.
+
+    Non-deterministic iterable over random candidate combinations for hyper-
+    parameter search. If all parameters are presented as a list,
+    sampling without replacement is performed. If at least one parameter
+    is given as a distribution, sampling with replacement is used.
+    It is highly recommended to use continuous distributions for continuous
+    parameters.
+
+    Read more in the :ref:`User Guide <grid_search>`.
+
+    Parameters
+    ----------
+    param_distributions : dict
+        Dictionary with parameters names (`str`) as keys and distributions
+        or lists of parameters to try. Distributions must provide a ``rvs``
+        method for sampling (such as those from scipy.stats.distributions).
+        If a list is given, it is sampled uniformly.
+        If a list of dicts is given, first a dict is sampled uniformly, and
+        then a parameter is sampled using that dict as above.
+
+    n_iter : int
+        Number of parameter settings that are produced.
+
+    random_state : int, RandomState instance or None, default=None
+        Pseudo random number generator state used for random uniform sampling
+        from lists of possible values instead of scipy.stats distributions.
+        Pass an int for reproducible output across multiple
+        function calls.
+        See :term:`Glossary <random_state>`.
+
+    Returns
+    -------
+    params : dict of str to any
+        **Yields** dictionaries mapping each estimator parameter to
+        as sampled value.
+
+    Examples
+    --------
+    >>> from sklearn.model_selection import ParameterSampler
+    >>> from scipy.stats.distributions import expon
+    >>> import numpy as np
+    >>> rng = np.random.RandomState(0)
+    >>> param_grid = {'a':[1, 2], 'b': expon()}
+    >>> param_list = list(ParameterSampler(param_grid, n_iter=4,
+    ...                                    random_state=rng))
+    >>> rounded_list = [dict((k, round(v, 6)) for (k, v) in d.items())
+    ...                 for d in param_list]
+    >>> rounded_list == [{'b': 0.89856, 'a': 1},
+    ...                  {'b': 0.923223, 'a': 1},
+    ...                  {'b': 1.878964, 'a': 2},
+    ...                  {'b': 1.038159, 'a': 2}]
+    True
+    """
+
+    def __init__(self, param_distributions, n_iter, *, random_state=None):
+        if not isinstance(param_distributions, (Mapping, Iterable)):
+            raise TypeError(
+                "Parameter distribution is not a dict or a list,"
+                f" got: {param_distributions!r} of type "
+                f"{type(param_distributions).__name__}"
+            )
+
+        if isinstance(param_distributions, Mapping):
+            # wrap dictionary in a singleton list to support either dict
+            # or list of dicts
+            param_distributions = [param_distributions]
+
+        for dist in param_distributions:
+            if not isinstance(dist, dict):
+                raise TypeError(
+                    "Parameter distribution is not a dict ({!r})".format(dist)
+                )
+            for key in dist:
+                if not isinstance(dist[key], Iterable) and not hasattr(
+                    dist[key], "rvs"
+                ):
+                    raise TypeError(
+                        f"Parameter grid for parameter {key!r} is not iterable "
+                        f"or a distribution (value={dist[key]})"
+                    )
+        self.n_iter = n_iter
+        self.random_state = random_state
+        self.param_distributions = param_distributions
+
+    def _is_all_lists(self):
+        return all(
+            all(not hasattr(v, "rvs") for v in dist.values())
+            for dist in self.param_distributions
+        )
+
+    def __iter__(self):
+        rng = check_random_state(self.random_state)
+
+        # if all distributions are given as lists, we want to sample without
+        # replacement
+        if self._is_all_lists():
+            # look up sampled parameter settings in parameter grid
+            param_grid = ParameterGrid(self.param_distributions)
+            grid_size = len(param_grid)
+            n_iter = self.n_iter
+
+            if grid_size < n_iter:
+                warnings.warn(
+                    "The total space of parameters %d is smaller "
+                    "than n_iter=%d. Running %d iterations. For exhaustive "
+                    "searches, use GridSearchCV." % (grid_size, self.n_iter, grid_size),
+                    UserWarning,
+                )
+                n_iter = grid_size
+            for i in sample_without_replacement(grid_size, n_iter, random_state=rng):
+                yield param_grid[i]
+
+        else:
+            for _ in range(self.n_iter):
+                dist = rng.choice(self.param_distributions)
+                # Always sort the keys of a dictionary, for reproducibility
+                items = sorted(dist.items())
+                params = dict()
+                for k, v in items:
+                    if hasattr(v, "rvs"):
+                        params[k] = v.rvs(random_state=rng)
+                    else:
+                        params[k] = v[rng.randint(len(v))]
+                yield params
+
+    def __len__(self):
+        """Number of points that will be sampled."""
+        if self._is_all_lists():
+            grid_size = len(ParameterGrid(self.param_distributions))
+            return min(self.n_iter, grid_size)
+        else:
+            return self.n_iter
+
+
+def _check_refit(search_cv, attr):
+    if not search_cv.refit:
+        raise AttributeError(
+            f"This {type(search_cv).__name__} instance was initialized with "
+            f"`refit=False`. {attr} is available only after refitting on the best "
+            "parameters. You can refit an estimator manually using the "
+            "`best_params_` attribute"
+        )
+
+
+def _estimator_has(attr):
+    """Check if we can delegate a method to the underlying estimator.
+
+    Calling a prediction method will only be available if `refit=True`. In
+    such case, we check first the fitted best estimator. If it is not
+    fitted, we check the unfitted estimator.
+
+    Checking the unfitted estimator allows to use `hasattr` on the `SearchCV`
+    instance even before calling `fit`.
+    """
+
+    def check(self):
+        _check_refit(self, attr)
+        if hasattr(self, "best_estimator_"):
+            # raise an AttributeError if `attr` does not exist
+            getattr(self.best_estimator_, attr)
+            return True
+        # raise an AttributeError if `attr` does not exist
+        getattr(self.estimator, attr)
+        return True
+
+    return check
+
+
+class BaseSearchCV(MetaEstimatorMixin, BaseEstimator, metaclass=ABCMeta):
+    """Abstract base class for hyper parameter search with cross-validation."""
+
+    _parameter_constraints: dict = {
+        "estimator": [HasMethods(["fit"])],
+        "scoring": [
+            StrOptions(set(get_scorer_names())),
+            callable,
+            list,
+            tuple,
+            dict,
+            None,
+        ],
+        "n_jobs": [numbers.Integral, None],
+        "refit": ["boolean", str, callable],
+        "cv": ["cv_object"],
+        "verbose": ["verbose"],
+        "pre_dispatch": [numbers.Integral, str],
+        "error_score": [StrOptions({"raise"}), numbers.Real],
+        "return_train_score": ["boolean"],
+    }
+
+    @abstractmethod
+    def __init__(
+        self,
+        estimator,
+        *,
+        scoring=None,
+        n_jobs=None,
+        refit=True,
+        cv=None,
+        verbose=0,
+        pre_dispatch="2*n_jobs",
+        error_score=np.nan,
+        return_train_score=True,
+    ):
+        self.scoring = scoring
+        self.estimator = estimator
+        self.n_jobs = n_jobs
+        self.refit = refit
+        self.cv = cv
+        self.verbose = verbose
+        self.pre_dispatch = pre_dispatch
+        self.error_score = error_score
+        self.return_train_score = return_train_score
+
+    @property
+    def _estimator_type(self):
+        return self.estimator._estimator_type
+
+    def _more_tags(self):
+        # allows cross-validation to see 'precomputed' metrics
+        return {
+            "pairwise": _safe_tags(self.estimator, "pairwise"),
+            "_xfail_checks": {
+                "check_supervised_y_2d": "DataConversionWarning not caught"
+            },
+        }
+
+    def score(self, X, y=None, **params):
+        """Return the score on the given data, if the estimator has been refit.
+
+        This uses the score defined by ``scoring`` where provided, and the
+        ``best_estimator_.score`` method otherwise.
+
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features)
+            Input data, where `n_samples` is the number of samples and
+            `n_features` is the number of features.
+
+        y : array-like of shape (n_samples, n_output) \
+            or (n_samples,), default=None
+            Target relative to X for classification or regression;
+            None for unsupervised learning.
+
+        **params : dict
+            Parameters to be passed to the underlying scorer(s).
+
+            ..versionadded:: 1.4
+                Only available if `enable_metadata_routing=True`. See
+                :ref:`Metadata Routing User Guide <metadata_routing>` for more
+                details.
+
+        Returns
+        -------
+        score : float
+            The score defined by ``scoring`` if provided, and the
+            ``best_estimator_.score`` method otherwise.
+        """
+        _check_refit(self, "score")
+        check_is_fitted(self)
+
+        _raise_for_params(params, self, "score")
+
+        if _routing_enabled():
+            score_params = process_routing(self, "score", **params).scorer["score"]
+        else:
+            score_params = dict()
+
+        if self.scorer_ is None:
+            raise ValueError(
+                "No score function explicitly defined, "
+                "and the estimator doesn't provide one %s"
+                % self.best_estimator_
+            )
+        if isinstance(self.scorer_, dict):
+            if self.multimetric_:
+                scorer = self.scorer_[self.refit]
+            else:
+                scorer = self.scorer_
+            return scorer(self.best_estimator_, X, y, **score_params)
+
+        # callable
+        score = self.scorer_(self.best_estimator_, X, y, **score_params)
+        if self.multimetric_:
+            score = score[self.refit]
+        return score
+
+    @available_if(_estimator_has("score_samples"))
+    def score_samples(self, X):
+        """Call score_samples on the estimator with the best found parameters.
+
+        Only available if ``refit=True`` and the underlying estimator supports
+        ``score_samples``.
+
+        .. versionadded:: 0.24
+
+        Parameters
+        ----------
+        X : iterable
+            Data to predict on. Must fulfill input requirements
+            of the underlying estimator.
+
+        Returns
+        -------
+        y_score : ndarray of shape (n_samples,)
+            The ``best_estimator_.score_samples`` method.
+        """
+        check_is_fitted(self)
+        return self.best_estimator_.score_samples(X)
+
+    @available_if(_estimator_has("predict"))
+    def predict(self, X):
+        """Call predict on the estimator with the best found parameters.
+
+        Only available if ``refit=True`` and the underlying estimator supports
+        ``predict``.
+
+        Parameters
+        ----------
+        X : indexable, length n_samples
+            Must fulfill the input assumptions of the
+            underlying estimator.
+
+        Returns
+        -------
+        y_pred : ndarray of shape (n_samples,)
+            The predicted labels or values for `X` based on the estimator with
+            the best found parameters.
+        """
+        check_is_fitted(self)
+        return self.best_estimator_.predict(X)
+
+    @available_if(_estimator_has("predict_proba"))
+    def predict_proba(self, X):
+        """Call predict_proba on the estimator with the best found parameters.
+
+        Only available if ``refit=True`` and the underlying estimator supports
+        ``predict_proba``.
+
+        Parameters
+        ----------
+        X : indexable, length n_samples
+            Must fulfill the input assumptions of the
+            underlying estimator.
+
+        Returns
+        -------
+        y_pred : ndarray of shape (n_samples,) or (n_samples, n_classes)
+            Predicted class probabilities for `X` based on the estimator with
+            the best found parameters. The order of the classes

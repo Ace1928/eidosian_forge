@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_visualize_documentation.py
+KIND: code
+
+from __future__ import print_function
+import argparse
+import sys
+import graphviz
+from ._discover import findMachines
+
+    Entry point for command line utility.

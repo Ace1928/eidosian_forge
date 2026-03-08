@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
+"""
+Eidosian Profile Data Extractor.
+Leverages the LLM Forge to extract structured JSON (name, email, skills, etc.)
+from unstructured Markdown biography files.
+"""
 import sys
 import json
 import re
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Dict, Any
 
 # Add necessary paths for llm_forge and ollama_forge
 FORGE_ROOT = Path(__file__).resolve().parents[3]
@@ -11,8 +16,19 @@ sys.path.insert(0, str(FORGE_ROOT / "llm_forge" / "src"))
 sys.path.insert(0, str(FORGE_ROOT / "ollama_forge" / "src"))
 from llm_forge.core.manager import ModelManager
 
-def extract_profile_data(file_path: Path, llm_model: Optional[str] = None, max_tokens: Optional[int] = None):
-    file_content = file_path.read_text()
+def extract_profile_data(file_path: Path, llm_model: Optional[str] = None, max_tokens: Optional[int] = None) -> Dict[str, Any]:
+    """
+    Extract structured biographical data from a markdown text using an LLM.
+    
+    Args:
+        file_path (Path): Path to the source markdown file.
+        llm_model (Optional[str]): The LLM model to use (default from ModelManager).
+        max_tokens (Optional[int]): Maximum generation tokens.
+        
+    Returns:
+        Dict[str, Any]: Extracted profile data or error details.
+    """
+    file_content = file_path.read_text(encoding="utf-8")
     prompt = (
         'Extract the following from the provided text into a JSON object: '
         '"name", "email", "github", "profession", "interests" (as a list of strings), '

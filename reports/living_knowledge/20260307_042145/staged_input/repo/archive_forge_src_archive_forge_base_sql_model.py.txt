@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/base_sql_model.py
+KIND: code
+
+from sqlalchemy.orm import declarative_base
+
+Base = declarative_base()

@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/ai_crowd_specified_seed_test_documentation.py
+KIND: code
+
+import os
+import subprocess
+import io
+import time
+import threading
+import Pyro4
+Tests multi-instance seeding.

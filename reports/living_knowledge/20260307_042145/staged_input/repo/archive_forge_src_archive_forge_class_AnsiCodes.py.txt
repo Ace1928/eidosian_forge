@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AnsiCodes.py
+KIND: code
+
+class AnsiCodes(object):
+
+    def __init__(self):
+        for name in dir(self):
+            if not name.startswith('_'):
+                value = getattr(self, name)
+                setattr(self, name, code_to_chars(value))

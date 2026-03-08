@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/audio_android_documentation.py
+KIND: code
+
+from jnius import autoclass, java_method, PythonJavaClass
+from android import api_version
+from kivy.core.audio import Sound, SoundLoader
+
+AudioAndroid: Kivy audio implementation for Android using native API

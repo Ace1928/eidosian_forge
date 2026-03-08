@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AltairDeprecationWarning.py
+KIND: code
+
+import warnings
+import functools
+class AltairDeprecationWarning(UserWarning):
+    pass

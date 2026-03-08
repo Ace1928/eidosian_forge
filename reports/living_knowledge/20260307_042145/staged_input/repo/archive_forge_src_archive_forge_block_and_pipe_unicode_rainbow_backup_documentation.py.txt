@@ -1,0 +1,11 @@
+SOURCE_PATH: archive_forge/src/archive_forge/block_and_pipe_unicode_rainbow_backup_documentation.py
+KIND: code
+
+import sys
+from typing import List, Tuple
+from typing import List
+from functools import wraps
+from time import time
+import logging
+
+        Prints each character in the list of characters in a series of colors.

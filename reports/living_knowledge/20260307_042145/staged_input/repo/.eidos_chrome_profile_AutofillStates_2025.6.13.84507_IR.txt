@@ -1,0 +1,51 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/IR
+KIND: config
+
+IR>
+markazimarkazi provinceاستان مرکزی
+مرکزیB
+gilangilan provincegilānاستان گیلان
+گیلان^
+
+mazandaranmazandaran provincemāzandarānاستان مازندرانمازندران�
+azarbayjane sharqieast azerbaijaneast azerbaijan provinceāzarbāyejāne šarqiآذربایجان شرقی&استان آذربایجان شرقی�
+azarbayjane gharbiwest azerbaijanwest azerbaijan provinceāzarbāyejāne qarbiآذربایجان غربی&استان آذربایجان غربیn
+
+kermanshahkermanshah provincekermānšāhاستان کرمانشاهباخترانکرمانشاهa
+
+khouzestan	khuzestankhuzestan province	xuzestānاستان خوزستانخوزستان;
+farsfars provincefārsاستان فارسفارسE
+kermankerman provincekermānاستان کرمان
+کرمانw
+khorasan razavirazavi khorasan provincexorāsāne razavi استان خراسان رضویخراسان رضویU
+esfahanesfahānisfahanisfahan provinceاستان اصفهاناصفهان�
+sistan va baluchestansistan and baluchestansistan and baluchestan provincesistāno balučestān+استان سیستان و بلوچستان سیستان و بلوچستانسیستان وبلوچستانl
+	kordestan
+kordestān	kurdestan	kurdistankurdistan provinceاستان کردستانکردستانQ
+hamadanhamadan provincehamedanhamedānاستان همدان
+همدان�
+chahar mahal va bakhtiarichaharmahal and bakhtiari"chaharmahal and bakhtiari provincečāhārmahālo baxtiyāri-استان چهارمحال و بختیاری#چهار محال و بختیاری!چهارمحال وبختیاریO
+lorestanlorestan province	lorestānاستان لرستانلرستان?
+ilamilam provinceilāmاستان ایلام
+ایلام�
+kohgiluyeh va boyer ahmad"kohgiluyeh and boyerahmad provincekohgiluyeo boyerahmad/استان کهگیلویه و بویراحمد%کهگیلویه و بویر احمد#کهگیلویه وبویراحمد[
+booshehrboushehrbushehrbushehr provincebušehrاستان بوشهر
+بوشهرE
+zanjanzanjan provincezanjānاستان زنجان
+زنجانN
+semnaansemnansemnan provincesemnānاستان سمنان
+سمنان0
+yazdyazd provinceاستان یزدیزدV
+	hormozganhormozgan province
+hormozgānاستان هرمزگانهرمزگانE
+tehrantehran provincetehrānاستان تهران
+تهرانK
+ardabilardabil provinceardebilاردبیلاستان اردبیل*
+qomqom provinceاستان قمقمE
+ghazvinqazvinqazvin provinceاستان قزوین
+قزوینO
+golestangolestan province	golestānاستان گلستانگلستان{
+north khorasannorth khorasan provincexorāsāne šomāli"استان خراسان شمالیخراسان شمالی�
+khorasane jonubisouth khorasansouth khorasan provincexorāsāne jonubi"استان خراسان جنوبیخراسان جنوبی<
+alborzalborz provinceاستان البرز
+البرز

@@ -1,0 +1,511 @@
+SOURCE_PATH: archive_forge/src/archive_forge/builtin_suite.py
+KIND: code
+
+# pylint: disable-all
+try:
+    import qpd_pandas  # noqa: F401
+
+    HAS_QPD = True
+except ImportError:  # pragma: no cover
+    HAS_QPD = False
+
+import datetime
+import os
+import pickle
+from typing import Any, Callable, Dict, Iterable, Iterator, List, Optional
+from unittest import TestCase
+from uuid import uuid4
+from triad.utils.io import write_text, join
+import numpy as np
+import pandas as pd
+import pyarrow as pa
+import pytest
+from fsspec.implementations.local import LocalFileSystem
+from pytest import raises
+from triad import SerializableRLock
+
+import fugue.api as fa
+from fugue import (
+    AnyDataFrame,
+    ArrayDataFrame,
+    CoTransformer,
+    DataFrame,
+    DataFrames,
+    ExecutionEngine,
+    FugueWorkflow,
+    LocalDataFrame,
+    OutputCoTransformer,
+    Outputter,
+    OutputTransformer,
+    PandasDataFrame,
+    PartitionSpec,
+    Processor,
+    QPDPandasEngine,
+    Schema,
+    Transformer,
+    cotransformer,
+    output_cotransformer,
+    output_transformer,
+    outputter,
+    processor,
+    register_creator,
+    register_default_sql_engine,
+    register_output_transformer,
+    register_outputter,
+    register_processor,
+    register_transformer,
+    transformer,
+)
+from fugue.column import col
+from fugue.column import functions as ff
+from fugue.column import lit
+from fugue.dataframe.utils import _df_eq as df_eq
+from fugue.exceptions import (
+    FugueInterfacelessError,
+    FugueWorkflowCompileError,
+    FugueWorkflowCompileValidationError,
+    FugueWorkflowError,
+    FugueWorkflowRuntimeValidationError,
+)
+
+_LOCAL_FS = LocalFileSystem(auto_mkdir=True)
+
+
+class BuiltInTests(object):
+    """Workflow level general test suite. It is a more general end to end
+    test suite than :class:`~fugue_test.execution_suite.ExecutionEngineTests`.
+    Any new :class:`~fugue.execution.execution_engine.ExecutionEngine`
+    should also pass this test suite.
+
+    Whenever you add method to FugueWorkflow and WorkflowDataFrame, you should
+    add correspondent tests here
+    """
+
+    class Tests(TestCase):
+        @classmethod
+        def setUpClass(cls):
+            register_default_sql_engine(lambda engine: engine.sql_engine)
+            cls._engine = cls.make_engine(cls)
+
+        @property
+        def engine(self) -> ExecutionEngine:
+            return self._engine  # type: ignore
+
+        @classmethod
+        def tearDownClass(cls):
+            cls._engine.stop()
+
+        def make_engine(self) -> ExecutionEngine:  # pragma: no cover
+            raise NotImplementedError
+
+        def test_workflows(self):
+            a = FugueWorkflow().df([[0]], "a:int")
+            df_eq(a.compute(self.engine), [[0]], "a:int")
+
+        def test_create_show(self):
+            with FugueWorkflow() as dag:
+                dag.df([[0]], "a:int").persist().partition(num=2).show()
+                dag.df(dag.df([[0]], "a:int")).persist().broadcast().show(title="t")
+            dag.run(self.engine)
+
+        def test_create_df_equivalence(self):
+            ndf = fa.as_fugue_engine_df(self.engine, pd.DataFrame([[0]], columns=["a"]))
+            dag1 = FugueWorkflow()
+            dag1.df(ndf).show()
+            dag2 = FugueWorkflow()
+            dag2.create(ndf).show()
+            assert dag1.spec_uuid() == dag2.spec_uuid()
+
+        def test_checkpoint(self):
+            with raises(FugueWorkflowError):
+                with FugueWorkflow() as dag:
+                    dag.df([[0]], "a:int").checkpoint()
+                dag.run(self.engine)
+
+            self.engine.conf["fugue.workflow.checkpoint.path"] = os.path.join(
+                self.tmpdir, "ck"
+            )
+            with FugueWorkflow() as dag:
+                a = dag.df([[0]], "a:int").checkpoint()
+                dag.df([[0]], "a:int").assert_eq(a)
+            dag.run(self.engine)
+
+        def test_deterministic_checkpoint(self):
+            self.engine.conf["fugue.workflow.checkpoint.path"] = os.path.join(
+                self.tmpdir, "ck"
+            )
+            temp_file = os.path.join(self.tmpdir, "t.parquet")
+
+            def mock_create(dummy: int = 1) -> pd.DataFrame:
+                return pd.DataFrame(np.random.rand(3, 2), columns=["a", "b"])
+
+            # base case without checkpoint, two runs should generate different result
+            with FugueWorkflow() as dag:
+                a = dag.create(mock_create)
+                a.save(temp_file)
+            dag.run(self.engine)
+            with FugueWorkflow() as dag:
+                a = dag.create(mock_create)
+                b = dag.load(temp_file)
+                b.assert_not_eq(a)
+            dag.run(self.engine)
+
+            # strong checkpoint is not cross execution, so result should be different
+            with FugueWorkflow() as dag:
+                a = dag.create(mock_create).strong_checkpoint()
+                a.save(temp_file)
+            dag.run(self.engine)
+            with FugueWorkflow() as dag:
+                a = dag.create(mock_create).strong_checkpoint()
+                b = dag.load(temp_file)
+                b.assert_not_eq(a)
+            dag.run(self.engine)
+
+            # with deterministic checkpoint, two runs should generate the same result
+            with FugueWorkflow() as dag:
+                dag.create(
+                    mock_create, params=dict(dummy=2)
+                )  # this should not affect a because it's not a dependency
+                a = dag.create(mock_create).deterministic_checkpoint()
+                id1 = a.spec_uuid()
+                a.save(temp_file)
+            dag.run(self.engine)
+            with FugueWorkflow() as dag:
+                a = dag.create(mock_create).deterministic_checkpoint()
+                b = dag.load(temp_file)
+                b.assert_eq(a)
+            dag.run(self.engine)
+            with FugueWorkflow() as dag:
+                # checkpoint specs itself doesn't change determinism
+                # of the previous steps
+                a = dag.create(mock_create).deterministic_checkpoint(
+                    partition=PartitionSpec(num=2)
+                )
+                id2 = a.spec_uuid()
+                b = dag.load(temp_file)
+                b.assert_eq(a)
+            dag.run(self.engine)
+            with FugueWorkflow() as dag:
+                # dependency change will affect determinism
+                a = dag.create(
+                    mock_create, params={"dummy": 2}
+                ).deterministic_checkpoint()
+                id3 = a.spec_uuid()
+                b = dag.load(temp_file)
+                b.assert_not_eq(a)
+            dag.run(self.engine)
+
+            assert (
+                id1 == id2
+            )  # different types of checkpoint doesn't change dag determinism
+            assert id1 != id3
+
+        def test_deterministic_checkpoint_complex_dag(self):
+            self.engine.conf["fugue.workflow.checkpoint.path"] = os.path.join(
+                self.tmpdir, "ck"
+            )
+            temp_file = os.path.join(self.tmpdir, "t.parquet")
+
+            def mock_create(dummy: int = 1) -> pd.DataFrame:
+                return pd.DataFrame(np.random.rand(3, 2), columns=["a", "b"])
+
+            # base case without checkpoint, two runs should generate different result
+            with FugueWorkflow() as dag:
+                a = dag.create(mock_create).drop(["a"])
+                b = dag.create(mock_create).drop(["a"])
+                c = a.union(b)
+                c.save(temp_file)
+            dag.run(self.engine)
+            with FugueWorkflow() as dag:
+                a = dag.create(mock_create).drop(["a"])
+                b = dag.create(mock_create).drop(["a"])
+                c = a.union(b)
+                d = dag.load(temp_file)
+                d.assert_not_eq(c)
+            dag.run(self.engine)
+
+            # strong checkpoint is not cross execution, so result should be different
+            with FugueWorkflow() as dag:
+                a = dag.create(mock_create).drop(["a"])
+                b = dag.create(mock_create).drop(["a"])
+                c = a.union(b).strong_checkpoint()
+                c.save(temp_file)
+            dag.run(self.engine)
+            with FugueWorkflow() as dag:
+                a = dag.create(mock_create).drop(["a"])
+                b = dag.create(mock_create).drop(["a"])
+                c = a.union(b).strong_checkpoint()
+                d = dag.load(temp_file)
+                d.assert_not_eq(c)
+            dag.run(self.engine)
+
+            # with deterministic checkpoint, two runs should generate the same result
+            with FugueWorkflow() as dag:
+                dag.create(
+                    mock_create, params=dict(dummy=2)
+                )  # this should not affect a because it's not a dependency
+                a = dag.create(mock_create).drop(["a"])
+                b = dag.create(mock_create).drop(["a"])
+                c = a.union(b)
+                c.deterministic_checkpoint()
+                c.save(temp_file)
+            dag.run(self.engine)
+            with FugueWorkflow() as dag:
+                a = dag.create(mock_create).drop(["a"])
+                b = dag.create(mock_create).drop(["a"])
+                c = a.union(b).deterministic_checkpoint()
+                d = dag.load(temp_file)
+                d.assert_eq(c)
+            dag.run(self.engine)
+            with FugueWorkflow() as dag:
+                # checkpoint specs itself doesn't change determinism
+                # of the previous steps
+                a = dag.create(mock_create).drop(["a"])
+                b = dag.create(mock_create).drop(["a"])
+                c = a.union(b).deterministic_checkpoint(partition=PartitionSpec(num=2))
+                d = dag.load(temp_file)
+                d.assert_eq(c)
+            dag.run(self.engine)
+            with FugueWorkflow() as dag:
+                # dependency change will affect determinism
+                a = dag.create(mock_create, params={"dummy": 2}).drop(["a"])
+                b = dag.create(mock_create).drop(["a"])
+                c = a.union(b).deterministic_checkpoint(partition=PartitionSpec(num=2))
+                d = dag.load(temp_file)
+                d.assert_not_eq(c)
+            dag.run(self.engine)
+
+        def test_yield_file(self):
+            self.engine.conf["fugue.workflow.checkpoint.path"] = os.path.join(
+                self.tmpdir, "ck"
+            )
+
+            with raises(FugueWorkflowCompileError):
+                FugueWorkflow().df([[0]], "a:int").checkpoint().yield_file_as("x")
+
+            with raises(ValueError):
+                FugueWorkflow().df([[0]], "a:int").persist().yield_file_as("x")
+
+            def run_test(deterministic):
+                dag1 = FugueWorkflow()
+                df = dag1.df([[0]], "a:int")
+                if deterministic:
+                    df = df.deterministic_checkpoint(storage_type="file")
+                df.yield_file_as("x")
+                id1 = dag1.spec_uuid()
+                dag2 = FugueWorkflow()
+                dag2.df([[0]], "a:int").assert_eq(dag2.df(dag1.yields["x"]))
+                id2 = dag2.spec_uuid()
+                dag1.run(self.engine)
+                dag2.run(self.engine)
+                return id1, id2
+
+            id1, id2 = run_test(False)
+            id3, id4 = run_test(False)
+            assert id1 == id3
+            assert id2 != id4  # non deterministic yield (direct yield)
+
+            id1, id2 = run_test(True)
+            id3, id4 = run_test(True)
+            assert id1 == id3
+            assert id2 == id4  # deterministic yield (yield deterministic checkpoint)
+
+        def test_yield_table(self):
+            with raises(FugueWorkflowCompileError):
+                FugueWorkflow().df([[0]], "a:int").checkpoint().yield_table_as("x")
+
+            with raises(ValueError):
+                FugueWorkflow().df([[0]], "a:int").persist().yield_table_as("x")
+
+            def run_test(deterministic):
+                dag1 = FugueWorkflow()
+                df = dag1.df([[0]], "a:int")
+                if deterministic:
+                    df = df.deterministic_checkpoint(storage_type="table")
+                df.yield_table_as("x")
+                id1 = dag1.spec_uuid()
+                dag2 = FugueWorkflow()
+                dag2.df([[0]], "a:int").assert_eq(dag2.df(dag1.yields["x"]))
+                id2 = dag2.spec_uuid()
+                dag1.run(self.engine)
+                dag2.run(self.engine)
+                return id1, id2
+
+            id1, id2 = run_test(False)
+            id3, id4 = run_test(False)
+            assert id1 == id3
+            assert id2 != id4  # non deterministic yield (direct yield)
+
+            id1, id2 = run_test(True)
+            id3, id4 = run_test(True)
+            assert id1 == id3
+            assert id2 == id4  # deterministic yield (yield deterministic checkpoint)
+
+        def test_yield_dataframe(self):
+            dag = FugueWorkflow()
+            df1 = dag.df([[1]], "a:int")
+            df2 = dag.df([[1]], "a:int")
+            df1.union(df2, distinct=False).yield_dataframe_as("x")
+            df1.union(df2, distinct=False).yield_dataframe_as("y", as_local=True)
+            result = dag.run()["x"]
+            assert [[1], [1]] == result.as_array()
+            result = dag.run()["y"]
+            assert [[1], [1]] == result.as_array()
+            assert result.is_local
+
+        def test_create_process_output(self):
+            with FugueWorkflow() as dag:
+                a = dag.create(mock_creator, params=dict(p=2))
+                a.assert_eq(ArrayDataFrame([[2]], "a:int"))
+                b = dag.process(a, a, using=mock_processor)
+                b.assert_eq(ArrayDataFrame([[2]], "a:int"))
+                b = dag.process(dict(df1=a, df2=a), using=mock_processor)
+                b.assert_eq(ArrayDataFrame([[2]], "a:int"))
+                dag.output(a, b, using=mock_outputter)
+                b2 = dag.process(a, a, a, using=mock_processor2)
+                b2.assert_eq(ArrayDataFrame([[3]], "a:int"))
+                b2 = dag.process(a, a, a, using=MockProcessor3)
+                b2.assert_eq(ArrayDataFrame([[3]], "a:int"))
+                a.process(mock_processor2).assert_eq(ArrayDataFrame([[1]], "a:int"))
+                a.output(mock_outputter2)
+                dag.output(dict(df=a), using=mock_outputter2)
+                a.partition(num=3).output(MockOutputter3)
+                dag.output(dict(aa=a, bb=b), using=MockOutputter4)
+
+                a = dag.create(mock_creator2, params=dict(p=2))
+                b = dag.create(mock_creator2, params=dict(p=2))
+                c = dag.process(a, b, using=mock_processor4)
+                c.assert_eq(ArrayDataFrame([[2]], "a:int"))
+                dag.output(a, b, using=mock_outputter4)
+            dag.run(self.engine)
+
+        def test_zip(self):
+            with FugueWorkflow() as dag:
+                a = dag.df([[1, 2], [2, 3], [2, 5]], "a:int,b:int")
+                b = dag.df([[1, 3]], "a:int,c:int")
+                c1 = a.zip(b)
+                c2 = dag.zip(a, b)
+                c1.assert_eq(c2)
+
+                a = dag.df([[1, 2], [2, 3], [2, 5]], "a:int,b:int")
+                b = dag.df([[1, 3]], "a:int,c:int")
+                c1 = a.zip(b, how="left_outer", partition=dict(presort="b DESC, c ASC"))
+                c2 = dag.zip(
+                    a, b, how="left_outer", partition=dict(presort="b DESC, c ASC")
+                )
+                c1.assert_eq(c2)
+
+                a = dag.df([[1, 2, 0], [1, 3, 1]], "a:int,b:int,c:int")
+                b = dag.df([[1, 2, 1], [1, 3, 2]], "a:int,b:int,d:int")
+                c = dag.df([[1, 4]], "a:int,e:int")
+                e = dag.df([[1]], "a:int")
+                dag.zip(a, b, c)[["a"]].distinct().assert_eq(e)
+            dag.run(self.engine)
+
+        def test_transform(self):
+            with FugueWorkflow() as dag:
+                a = dag.df([[1, 2], [3, 4]], "a:double,b:int")
+                c = a.transform(mock_tf0)
+                dag.df([[1, 2, 1], [3, 4, 1]], "a:double,b:int,p:int").assert_eq(c)
+
+                c = a.transform(mock_tf0, params=dict(col="x"))
+                dag.df([[1, 2, 1], [3, 4, 1]], "a:double,b:int,x:int").assert_eq(c)
+
+                a = dag.df([[1, 2], [None, 1], [3, 4], [None, 4]], "a:double,b:int")
+                c = a.transform(mock_tf0, params=dict(p="10"))
+                dag.df(
+                    [[1, 2, 10], [None, 1, 10], [3, 4, 10], [None, 4, 10]],
+                    "a:double,b:int,p:int",
+                ).assert_eq(c)
+            dag.run(self.engine)
+
+        def test_local_instance_as_extension(self):
+            class _Mock(object):
+                # schema: *
+                def t1(self, df: pd.DataFrame) -> pd.DataFrame:
+                    return df
+
+                def t2(self, df: pd.DataFrame) -> pd.DataFrame:
+                    return df
+
+                def test(self):
+                    with FugueWorkflow() as dag_:
+                        a = dag_.df([[0], [1]], "a:int")
+                        b = a.transform(self.t1)
+                        b.assert_eq(a)
+                    dag_.run()
+
+            m = _Mock()
+            m.test()
+            with FugueWorkflow() as dag:
+                a = dag.df([[0], [1]], "a:int")
+                b = a.transform(m.t1).transform(m.t2, schema="*")
+                b.assert_eq(a)
+            dag.run(self.engine)
+
+        def test_transform_iterable_dfs(self):
+            # this test is important for using mapInPandas in spark
+
+            # schema: *,c:int
+            def mt_pandas(
+                dfs: Iterable[pd.DataFrame], empty: bool = False
+            ) -> Iterator[pd.DataFrame]:
+                for df in dfs:
+                    if not empty:
+                        df = df.assign(c=2)
+                        df = df[reversed(list(df.columns))]
+                        yield df
+
+            with FugueWorkflow() as dag:
+                a = dag.df([[1, 2], [3, 4]], "a:int,b:int")
+                b = a.transform(mt_pandas)
+                dag.df([[1, 2, 2], [3, 4, 2]], "a:int,b:int,c:int").assert_eq(b)
+            dag.run(self.engine)
+
+            # when iterable returns nothing
+            with FugueWorkflow() as dag:
+                a = dag.df([[1, 2], [3, 4]], "a:int,b:int")
+                # without partitioning
+                b = a.transform(mt_pandas, params=dict(empty=True))
+                dag.df([], "a:int,b:int,c:int").assert_eq(b)
+                # with partitioning
+                b = a.partition_by("a").transform(mt_pandas, params=dict(empty=True))
+                dag.df([], "a:int,b:int,c:int").assert_eq(b)
+            dag.run(self.engine)
+
+            # schema: *
+            def mt_arrow(
+                dfs: Iterable[pa.Table], empty: bool = False
+            ) -> Iterator[pa.Table]:
+                for df in dfs:
+                    if not empty:
+                        df = df.select(reversed(df.schema.names))
+                        yield df
+
+            # schema: a:long
+            def mt_arrow_2(dfs: Iterable[pa.Table]) -> Iterator[pa.Table]:
+                for df in dfs:
+                    yield df.drop(["b"])
+
+            with FugueWorkflow() as dag:
+                a = dag.df([[1, 2], [3, 4]], "a:int,b:int")
+                b = a.transform(mt_arrow)
+                dag.df([[1, 2], [3, 4]], "a:int,b:int").assert_eq(b)
+                b = a.transform(mt_arrow_2)
+                dag.df([[1], [3]], "a:long").assert_eq(b)
+            dag.run(self.engine)
+
+            # when iterable returns nothing
+            with FugueWorkflow() as dag:
+                a = dag.df([[1, 2], [3, 4]], "a:int,b:int")
+                # without partitioning
+                b = a.transform(mt_arrow, params=dict(empty=True))
+                dag.df([], "a:int,b:int").assert_eq(b)
+                # with partitioning
+                b = a.partition_by("a").transform(mt_arrow, params=dict(empty=True))
+                dag.df([], "a:int,b:int").assert_eq(b)
+            dag.run(self.engine)
+
+        def test_transform_binary(self):
+            with FugueWorkflow() as dag:
+                a = da

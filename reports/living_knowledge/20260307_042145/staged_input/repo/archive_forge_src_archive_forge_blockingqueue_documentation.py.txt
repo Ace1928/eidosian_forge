@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/blockingqueue_documentation.py
+KIND: code
+
+from .segmented import SegmentedStream
+
+        :return:
+        :rtype: bytes

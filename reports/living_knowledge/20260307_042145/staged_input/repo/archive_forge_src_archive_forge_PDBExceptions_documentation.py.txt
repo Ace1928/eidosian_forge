@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/PDBExceptions_documentation.py
+KIND: code
+
+from Bio import BiopythonWarning
+Define class PDBIOException.

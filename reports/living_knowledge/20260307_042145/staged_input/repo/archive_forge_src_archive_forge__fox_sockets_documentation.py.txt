@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_fox_sockets_documentation.py
+KIND: code
+
+from neutronclient._i18n import _
+from neutronclient.common import extension
+Show a fox socket.

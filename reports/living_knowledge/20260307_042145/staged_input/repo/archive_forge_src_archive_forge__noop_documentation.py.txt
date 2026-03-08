@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_noop_documentation.py
+KIND: code
+
+Empty function to invoke CPython ceval loop.

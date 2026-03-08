@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/base_cache_documentation.py
+KIND: code
+
+import asyncio
+import collections
+from abc import ABC, abstractmethod
+ Abstract method

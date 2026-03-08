@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_debugger_case_method_single_line.py
+KIND: code
+
+def call(b): return b  # Break here will hit once at creation time and then at each call.
+call(1)
+call(2)
+
+print('TEST SUCEEDED')

@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/DNAME_documentation.py
+KIND: code
+
+import dns.rdtypes.nsbase
+DNAME record

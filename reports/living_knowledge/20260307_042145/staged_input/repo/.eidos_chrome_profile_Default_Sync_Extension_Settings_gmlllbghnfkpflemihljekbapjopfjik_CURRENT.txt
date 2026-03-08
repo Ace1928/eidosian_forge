@@ -1,0 +1,4 @@
+SOURCE_PATH: .eidos_chrome_profile/Default/Sync Extension Settings/gmlllbghnfkpflemihljekbapjopfjik/CURRENT
+KIND: config
+
+MANIFEST-000001

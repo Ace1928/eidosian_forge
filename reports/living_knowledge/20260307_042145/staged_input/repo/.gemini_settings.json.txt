@@ -1,0 +1,11 @@
+SOURCE_PATH: .gemini/settings.json
+KIND: config
+
+{
+  "mcpServers": {
+    "eidosian_nexus": {
+      "url": "http://127.0.0.1:8928/mcp",
+      "trust": true
+    }
+  }
+}

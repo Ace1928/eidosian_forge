@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_parse_baseml_documentation.py
+KIND: code
+
+import re
+Parse the basepair frequencies.

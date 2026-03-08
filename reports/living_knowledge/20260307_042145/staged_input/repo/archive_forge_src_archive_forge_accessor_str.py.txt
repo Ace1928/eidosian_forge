@@ -1,0 +1,611 @@
+SOURCE_PATH: archive_forge/src/archive_forge/accessor_str.py
+KIND: code
+
+# The StringAccessor class defined below is an adaptation of the
+# pandas string methods source code (see pd.core.strings)
+
+# For reference, here is a copy of the pandas copyright notice:
+
+# (c) 2011-2012, Lambda Foundry, Inc. and PyData Development Team
+# All rights reserved.
+
+# Copyright (c) 2008-2011 AQR Capital Management, LLC
+# All rights reserved.
+
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+
+#     * Redistributions of source code must retain the above copyright
+#        notice, this list of conditions and the following disclaimer.
+
+#     * Redistributions in binary form must reproduce the above
+#        copyright notice, this list of conditions and the following
+#        disclaimer in the documentation and/or other materials provided
+#        with the distribution.
+
+#     * Neither the name of the copyright holder nor the names of any
+#        contributors may be used to endorse or promote products derived
+#        from this software without specific prior written permission.
+
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDER AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+from __future__ import annotations
+
+import codecs
+import re
+import textwrap
+from collections.abc import Hashable, Mapping
+from functools import reduce
+from operator import or_ as set_union
+from re import Pattern
+from typing import TYPE_CHECKING, Any, Callable, Generic
+from unicodedata import normalize
+
+import numpy as np
+
+from xarray.core import duck_array_ops
+from xarray.core.computation import apply_ufunc
+from xarray.core.types import T_DataArray
+
+if TYPE_CHECKING:
+    from numpy.typing import DTypeLike
+
+    from xarray.core.dataarray import DataArray
+
+_cpython_optimized_encoders = (
+    "utf-8",
+    "utf8",
+    "latin-1",
+    "latin1",
+    "iso-8859-1",
+    "mbcs",
+    "ascii",
+)
+_cpython_optimized_decoders = _cpython_optimized_encoders + ("utf-16", "utf-32")
+
+
+def _contains_obj_type(*, pat: Any, checker: Any) -> bool:
+    """Determine if the object fits some rule or is array of objects that do so."""
+    if isinstance(checker, type):
+        targtype = checker
+        checker = lambda x: isinstance(x, targtype)
+
+    if checker(pat):
+        return True
+
+    # If it is not an object array it can't contain compiled re
+    if getattr(pat, "dtype", "no") != np.object_:
+        return False
+
+    return _apply_str_ufunc(func=checker, obj=pat).all()
+
+
+def _contains_str_like(pat: Any) -> bool:
+    """Determine if the object is a str-like or array of str-like."""
+    if isinstance(pat, (str, bytes)):
+        return True
+
+    if not hasattr(pat, "dtype"):
+        return False
+
+    return pat.dtype.kind in ["U", "S"]
+
+
+def _contains_compiled_re(pat: Any) -> bool:
+    """Determine if the object is a compiled re or array of compiled re."""
+    return _contains_obj_type(pat=pat, checker=re.Pattern)
+
+
+def _contains_callable(pat: Any) -> bool:
+    """Determine if the object is a callable or array of callables."""
+    return _contains_obj_type(pat=pat, checker=callable)
+
+
+def _apply_str_ufunc(
+    *,
+    func: Callable,
+    obj: Any,
+    dtype: DTypeLike = None,
+    output_core_dims: list | tuple = ((),),
+    output_sizes: Mapping[Any, int] | None = None,
+    func_args: tuple = (),
+    func_kwargs: Mapping = {},
+) -> Any:
+    # TODO handling of na values ?
+    if dtype is None:
+        dtype = obj.dtype
+
+    dask_gufunc_kwargs = dict()
+    if output_sizes is not None:
+        dask_gufunc_kwargs["output_sizes"] = output_sizes
+
+    return apply_ufunc(
+        func,
+        obj,
+        *func_args,
+        vectorize=True,
+        dask="parallelized",
+        output_dtypes=[dtype],
+        output_core_dims=output_core_dims,
+        dask_gufunc_kwargs=dask_gufunc_kwargs,
+        **func_kwargs,
+    )
+
+
+class StringAccessor(Generic[T_DataArray]):
+    r"""Vectorized string functions for string-like arrays.
+
+    Similar to pandas, fields can be accessed through the `.str` attribute
+    for applicable DataArrays.
+
+        >>> da = xr.DataArray(["some", "text", "in", "an", "array"])
+        >>> da.str.len()
+        <xarray.DataArray (dim_0: 5)> Size: 40B
+        array([4, 4, 2, 2, 5])
+        Dimensions without coordinates: dim_0
+
+    It also implements ``+``, ``*``, and ``%``, which operate as elementwise
+    versions of the corresponding ``str`` methods. These will automatically
+    broadcast for array-like inputs.
+
+        >>> da1 = xr.DataArray(["first", "second", "third"], dims=["X"])
+        >>> da2 = xr.DataArray([1, 2, 3], dims=["Y"])
+        >>> da1.str + da2
+        <xarray.DataArray (X: 3, Y: 3)> Size: 252B
+        array([['first1', 'first2', 'first3'],
+               ['second1', 'second2', 'second3'],
+               ['third1', 'third2', 'third3']], dtype='<U7')
+        Dimensions without coordinates: X, Y
+
+        >>> da1 = xr.DataArray(["a", "b", "c", "d"], dims=["X"])
+        >>> reps = xr.DataArray([3, 4], dims=["Y"])
+        >>> da1.str * reps
+        <xarray.DataArray (X: 4, Y: 2)> Size: 128B
+        array([['aaa', 'aaaa'],
+               ['bbb', 'bbbb'],
+               ['ccc', 'cccc'],
+               ['ddd', 'dddd']], dtype='<U4')
+        Dimensions without coordinates: X, Y
+
+        >>> da1 = xr.DataArray(["%s_%s", "%s-%s", "%s|%s"], dims=["X"])
+        >>> da2 = xr.DataArray([1, 2], dims=["Y"])
+        >>> da3 = xr.DataArray([0.1, 0.2], dims=["Z"])
+        >>> da1.str % (da2, da3)
+        <xarray.DataArray (X: 3, Y: 2, Z: 2)> Size: 240B
+        array([[['1_0.1', '1_0.2'],
+                ['2_0.1', '2_0.2']],
+        <BLANKLINE>
+               [['1-0.1', '1-0.2'],
+                ['2-0.1', '2-0.2']],
+        <BLANKLINE>
+               [['1|0.1', '1|0.2'],
+                ['2|0.1', '2|0.2']]], dtype='<U5')
+        Dimensions without coordinates: X, Y, Z
+
+    .. note::
+        When using ``%`` formatting with a dict, the values are always used as a
+        single value, they are not applied elementwise.
+
+            >>> da1 = xr.DataArray(["%(a)s"], dims=["X"])
+            >>> da2 = xr.DataArray([1, 2, 3], dims=["Y"])
+            >>> da1 % {"a": da2}
+            <xarray.DataArray (X: 1)> Size: 8B
+            array(['<xarray.DataArray (Y: 3)> Size: 24B\narray([1, 2, 3])\nDimensions without coordinates: Y'],
+                  dtype=object)
+            Dimensions without coordinates: X
+    """
+
+    __slots__ = ("_obj",)
+
+    def __init__(self, obj: T_DataArray) -> None:
+        self._obj = obj
+
+    def _stringify(self, invar: Any) -> str | bytes | Any:
+        """
+        Convert a string-like to the correct string/bytes type.
+
+        This is mostly here to tell mypy a pattern is a str/bytes not a re.Pattern.
+        """
+        if hasattr(invar, "astype"):
+            return invar.astype(self._obj.dtype.kind)
+        else:
+            return self._obj.dtype.type(invar)
+
+    def _apply(
+        self,
+        *,
+        func: Callable,
+        dtype: DTypeLike = None,
+        output_core_dims: list | tuple = ((),),
+        output_sizes: Mapping[Any, int] | None = None,
+        func_args: tuple = (),
+        func_kwargs: Mapping = {},
+    ) -> T_DataArray:
+        return _apply_str_ufunc(
+            obj=self._obj,
+            func=func,
+            dtype=dtype,
+            output_core_dims=output_core_dims,
+            output_sizes=output_sizes,
+            func_args=func_args,
+            func_kwargs=func_kwargs,
+        )
+
+    def _re_compile(
+        self,
+        *,
+        pat: str | bytes | Pattern | Any,
+        flags: int = 0,
+        case: bool | None = None,
+    ) -> Pattern | Any:
+        is_compiled_re = isinstance(pat, re.Pattern)
+
+        if is_compiled_re and flags != 0:
+            raise ValueError("Flags cannot be set when pat is a compiled regex.")
+
+        if is_compiled_re and case is not None:
+            raise ValueError("Case cannot be set when pat is a compiled regex.")
+
+        if is_compiled_re:
+            # no-op, needed to tell mypy this isn't a string
+            return re.compile(pat)
+
+        if case is None:
+            case = True
+
+        # The case is handled by the re flags internally.
+        # Add it to the flags if necessary.
+        if not case:
+            flags |= re.IGNORECASE
+
+        if getattr(pat, "dtype", None) != np.object_:
+            pat = self._stringify(pat)
+
+        def func(x):
+            return re.compile(x, flags=flags)
+
+        if isinstance(pat, np.ndarray):
+            # apply_ufunc doesn't work for numpy arrays with output object dtypes
+            func_ = np.vectorize(func)
+            return func_(pat)
+        else:
+            return _apply_str_ufunc(func=func, obj=pat, dtype=np.object_)
+
+    def len(self) -> T_DataArray:
+        """
+        Compute the length of each string in the array.
+
+        Returns
+        -------
+        lengths array : array of int
+        """
+        return self._apply(func=len, dtype=int)
+
+    def __getitem__(
+        self,
+        key: int | slice,
+    ) -> T_DataArray:
+        if isinstance(key, slice):
+            return self.slice(start=key.start, stop=key.stop, step=key.step)
+        else:
+            return self.get(key)
+
+    def __add__(self, other: Any) -> T_DataArray:
+        return self.cat(other, sep="")
+
+    def __mul__(
+        self,
+        num: int | Any,
+    ) -> T_DataArray:
+        return self.repeat(num)
+
+    def __mod__(
+        self,
+        other: Any,
+    ) -> T_DataArray:
+        if isinstance(other, dict):
+            other = {key: self._stringify(val) for key, val in other.items()}
+            return self._apply(func=lambda x: x % other)
+        elif isinstance(other, tuple):
+            other = tuple(self._stringify(x) for x in other)
+            return self._apply(func=lambda x, *y: x % y, func_args=other)
+        else:
+            return self._apply(func=lambda x, y: x % y, func_args=(other,))
+
+    def get(
+        self,
+        i: int | Any,
+        default: str | bytes = "",
+    ) -> T_DataArray:
+        """
+        Extract character number `i` from each string in the array.
+
+        If `i` is array-like, they are broadcast against the array and
+        applied elementwise.
+
+        Parameters
+        ----------
+        i : int or array-like of int
+            Position of element to extract.
+            If array-like, it is broadcast.
+        default : str or bytes, default: ""
+            Value for out-of-range index.
+
+        Returns
+        -------
+        items : array of object
+        """
+
+        def f(x, iind):
+            islice = slice(-1, None) if iind == -1 else slice(iind, iind + 1)
+            item = x[islice]
+
+            return item if item else default
+
+        return self._apply(func=f, func_args=(i,))
+
+    def slice(
+        self,
+        start: int | Any | None = None,
+        stop: int | Any | None = None,
+        step: int | Any | None = None,
+    ) -> T_DataArray:
+        """
+        Slice substrings from each string in the array.
+
+        If `start`, `stop`, or 'step` is array-like, they are broadcast
+        against the array and applied elementwise.
+
+        Parameters
+        ----------
+        start : int or array-like of int, optional
+            Start position for slice operation.
+            If array-like, it is broadcast.
+        stop : int or array-like of int, optional
+            Stop position for slice operation.
+            If array-like, it is broadcast.
+        step : int or array-like of int, optional
+            Step size for slice operation.
+            If array-like, it is broadcast.
+
+        Returns
+        -------
+        sliced strings : same type as values
+        """
+        f = lambda x, istart, istop, istep: x[slice(istart, istop, istep)]
+        return self._apply(func=f, func_args=(start, stop, step))
+
+    def slice_replace(
+        self,
+        start: int | Any | None = None,
+        stop: int | Any | None = None,
+        repl: str | bytes | Any = "",
+    ) -> T_DataArray:
+        """
+        Replace a positional slice of a string with another value.
+
+        If `start`, `stop`, or 'repl` is array-like, they are broadcast
+        against the array and applied elementwise.
+
+        Parameters
+        ----------
+        start : int or array-like of int, optional
+            Left index position to use for the slice. If not specified (None),
+            the slice is unbounded on the left, i.e. slice from the start
+            of the string. If array-like, it is broadcast.
+        stop : int or array-like of int, optional
+            Right index position to use for the slice. If not specified (None),
+            the slice is unbounded on the right, i.e. slice until the
+            end of the string. If array-like, it is broadcast.
+        repl : str or array-like of str, default: ""
+            String for replacement. If not specified, the sliced region
+            is replaced with an empty string. If array-like, it is broadcast.
+
+        Returns
+        -------
+        replaced : same type as values
+        """
+        repl = self._stringify(repl)
+
+        def func(x, istart, istop, irepl):
+            if len(x[istart:istop]) == 0:
+                local_stop = istart
+            else:
+                local_stop = istop
+            y = self._stringify("")
+            if istart is not None:
+                y += x[:istart]
+            y += irepl
+            if istop is not None:
+                y += x[local_stop:]
+            return y
+
+        return self._apply(func=func, func_args=(start, stop, repl))
+
+    def cat(self, *others, sep: str | bytes | Any = "") -> T_DataArray:
+        """
+        Concatenate strings elementwise in the DataArray with other strings.
+
+        The other strings can either be string scalars or other array-like.
+        Dimensions are automatically broadcast together.
+
+        An optional separator `sep` can also be specified. If `sep` is
+        array-like, it is broadcast against the array and applied elementwise.
+
+        Parameters
+        ----------
+        *others : str or array-like of str
+            Strings or array-like of strings to concatenate elementwise with
+            the current DataArray.
+        sep : str or array-like of str, default: "".
+            Separator to use between strings.
+            It is broadcast in the same way as the other input strings.
+            If array-like, its dimensions will be placed at the end of the output array dimensions.
+
+        Returns
+        -------
+        concatenated : same type as values
+
+        Examples
+        --------
+        Create a string array
+
+        >>> myarray = xr.DataArray(
+        ...     ["11111", "4"],
+        ...     dims=["X"],
+        ... )
+
+        Create some arrays to concatenate with it
+
+        >>> values_1 = xr.DataArray(
+        ...     ["a", "bb", "cccc"],
+        ...     dims=["Y"],
+        ... )
+        >>> values_2 = np.array(3.4)
+        >>> values_3 = ""
+        >>> values_4 = np.array("test", dtype=np.str_)
+
+        Determine the separator to use
+
+        >>> seps = xr.DataArray(
+        ...     [" ", ", "],
+        ...     dims=["ZZ"],
+        ... )
+
+        Concatenate the arrays using the separator
+
+        >>> myarray.str.cat(values_1, values_2, values_3, values_4, sep=seps)
+        <xarray.DataArray (X: 2, Y: 3, ZZ: 2)> Size: 1kB
+        array([[['11111 a 3.4  test', '11111, a, 3.4, , test'],
+                ['11111 bb 3.4  test', '11111, bb, 3.4, , test'],
+                ['11111 cccc 3.4  test', '11111, cccc, 3.4, , test']],
+        <BLANKLINE>
+               [['4 a 3.4  test', '4, a, 3.4, , test'],
+                ['4 bb 3.4  test', '4, bb, 3.4, , test'],
+                ['4 cccc 3.4  test', '4, cccc, 3.4, , test']]], dtype='<U24')
+        Dimensions without coordinates: X, Y, ZZ
+
+        See Also
+        --------
+        pandas.Series.str.cat
+        str.join
+        """
+        sep = self._stringify(sep)
+        others = tuple(self._stringify(x) for x in others)
+        others = others + (sep,)
+
+        # sep will go at the end of the input arguments.
+        func = lambda *x: x[-1].join(x[:-1])
+
+        return self._apply(
+            func=func,
+            func_args=others,
+            dtype=self._obj.dtype.kind,
+        )
+
+    def join(
+        self,
+        dim: Hashable = None,
+        sep: str | bytes | Any = "",
+    ) -> T_DataArray:
+        """
+        Concatenate strings in a DataArray along a particular dimension.
+
+        An optional separator `sep` can also be specified. If `sep` is
+        array-like, it is broadcast against the array and applied elementwise.
+
+        Parameters
+        ----------
+        dim : hashable, optional
+            Dimension along which the strings should be concatenated.
+            Only one dimension is allowed at a time.
+            Optional for 0D or 1D DataArrays, required for multidimensional DataArrays.
+        sep : str or array-like, default: "".
+            Separator to use between strings.
+            It is broadcast in the same way as the other input strings.
+            If array-like, its dimensions will be placed at the end of the output array dimensions.
+
+        Returns
+        -------
+        joined : same type as values
+
+        Examples
+        --------
+        Create an array
+
+        >>> values = xr.DataArray(
+        ...     [["a", "bab", "abc"], ["abcd", "", "abcdef"]],
+        ...     dims=["X", "Y"],
+        ... )
+
+        Determine the separator
+
+        >>> seps = xr.DataArray(
+        ...     ["-", "_"],
+        ...     dims=["ZZ"],
+        ... )
+
+        Join the strings along a given dimension
+
+        >>> values.str.join(dim="Y", sep=seps)
+        <xarray.DataArray (X: 2, ZZ: 2)> Size: 192B
+        array([['a-bab-abc', 'a_bab_abc'],
+               ['abcd--abcdef', 'abcd__abcdef']], dtype='<U12')
+        Dimensions without coordinates: X, ZZ
+
+        See Also
+        --------
+        pandas.Series.str.join
+        str.join
+        """
+        if self._obj.ndim > 1 and dim is None:
+            raise ValueError("Dimension must be specified for multidimensional arrays.")
+
+        if self._obj.ndim > 1:
+            # Move the target dimension to the start and split along it
+            dimshifted = list(self._obj.transpose(dim, ...))
+        elif self._obj.ndim == 1:
+            dimshifted = list(self._obj)
+        else:
+            dimshifted = [self._obj]
+
+        start, *others = dimshifted
+
+        # concatenate the resulting arrays
+        return start.str.cat(*others, sep=sep)
+
+    def format(
+        self,
+        *args: Any,
+        **kwargs: Any,
+    ) -> T_DataArray:
+        """
+        Perform python string formatting on each element of the DataArray.
+
+        This is equivalent to calling `str.format` on every element of the
+        DataArray. The replacement values can either be a string-like
+        scalar or array-like of string-like values. If array-like,
+        the values will be broadcast and applied elementwiseto the input
+        DataArray.
+
+        .. note::
+            Array-like values provided as `*args` will have their
+            dimensions added even if those arguments are not used in any
+            string formatting.
+
+        .. warning::
+            Array-like arguments are only applied elementwise for `*args`.
+            For `**kwargs`, values are used as-is.
+
+        Parameters

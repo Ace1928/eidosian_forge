@@ -1,0 +1,5 @@
+SOURCE_PATH: .eidos_chrome_profile/Default/BookmarkMergedSurfaceOrdering
+KIND: config
+
+{
+}

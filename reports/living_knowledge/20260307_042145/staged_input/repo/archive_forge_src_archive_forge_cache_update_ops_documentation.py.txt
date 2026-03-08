@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/cache_update_ops_documentation.py
+KIND: code
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+import abc
+from googlecloudsdk.core.cache import resource_cache
+import six
+Replaces table with rows.

@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/Prodoc_documentation.py
+KIND: code
+
+Initialize the class.

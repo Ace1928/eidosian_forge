@@ -1089,7 +1089,7 @@ class GraphRAGIntegration:
         if not local.get("success"):
             return result
         merged = dict(result)
-        merged["success"] = True
+        merged["success"] = True if result.get("success") else False
         merged["fallback_used"] = True
         merged["local_fallback"] = True
         merged["mode"] = str(local.get("mode"))

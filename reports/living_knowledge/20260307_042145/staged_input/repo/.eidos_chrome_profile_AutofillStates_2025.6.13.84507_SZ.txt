@@ -1,0 +1,9 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/SZ
+KIND: config
+
+SZ
+hhohhohhohho region
+lubombolubombo region
+manzinimanzini region
+
+shiselwenishiselweni region

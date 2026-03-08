@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/ParameterItem_documentation.py
+KIND: code
+
+from ..Qt import QtCore, QtGui, QtWidgets
+Called when this item has been selected (sel=True) OR deselected (sel=False)

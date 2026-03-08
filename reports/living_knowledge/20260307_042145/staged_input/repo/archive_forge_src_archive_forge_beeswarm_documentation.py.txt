@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/beeswarm_documentation.py
+KIND: code
+
+import numpy as np
+import pyqtgraph as pg
+
+Example beeswarm / bar chart

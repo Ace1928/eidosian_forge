@@ -1,0 +1,15 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_debugger_case_unhandled_exception_get_stack.py
+KIND: code
+
+from contextlib import contextmanager
+
+
+@contextmanager
+def something():
+    yield
+
+
+with something():
+    raise ValueError('TEST SUCEEDED')  # break line on unhandled exception
+    print('a')
+    print('b')

@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/LayoutWidget_documentation.py
+KIND: code
+
+from ..Qt import QtWidgets
+Return the widget in (*row*, *col*)

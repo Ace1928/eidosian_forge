@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AnsibleDNACException.py
+KIND: code
+
+from __future__ import (absolute_import, division, print_function)
+class AnsibleDNACException(Exception):
+    """Base class for all Ansible DNAC package exceptions."""
+    pass

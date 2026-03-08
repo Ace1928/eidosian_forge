@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AddressWMixin.py
+KIND: code
+
+from __future__ import annotations
+from .entities import ComparableEntity
+from ..schema import Column
+from ..types import String
+class AddressWMixin(Mixin, ComparableEntity):
+    pass

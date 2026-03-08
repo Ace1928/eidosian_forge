@@ -1,0 +1,14 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AWSConnectionError.py
+KIND: code
+
+import base64
+import xml.sax
+import boto
+from boto import handler
+from boto.compat import json, StandardError
+from boto.resultset import ResultSet
+class AWSConnectionError(BotoClientError):
+    """
+    General error connecting to Amazon Web Services.
+    """
+    pass

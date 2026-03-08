@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_attachment_documentation.py
+KIND: code
+
+from __future__ import annotations
+import dataclasses
+from typing import List, Optional
+from torch.onnx._internal.diagnostics.infra.sarif import (
+An artifact relevant to a result.

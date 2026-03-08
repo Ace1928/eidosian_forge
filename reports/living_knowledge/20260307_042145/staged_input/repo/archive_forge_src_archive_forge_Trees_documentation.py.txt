@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/Trees_documentation.py
+KIND: code
+
+import random
+import sys
+from . import Nodes
+Attach subtree starting with node child to parent (PRIVATE).

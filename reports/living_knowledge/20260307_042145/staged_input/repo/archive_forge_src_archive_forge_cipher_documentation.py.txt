@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/cipher_documentation.py
+KIND: code
+
+:param key:
+        :type key: bytes
+        :return:
+        :rtype: bytes

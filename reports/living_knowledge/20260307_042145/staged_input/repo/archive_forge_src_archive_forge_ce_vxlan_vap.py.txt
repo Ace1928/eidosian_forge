@@ -1,0 +1,601 @@
+SOURCE_PATH: archive_forge/src/archive_forge/ce_vxlan_vap.py
+KIND: code
+
+#!/usr/bin/python
+#
+# This file is part of Ansible
+#
+# Ansible is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Ansible is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Ansible.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+from __future__ import (absolute_import, division, print_function)
+__metaclass__ = type
+
+DOCUMENTATION = '''
+---
+module: ce_vxlan_vap
+short_description: Manages VXLAN virtual access point on HUAWEI CloudEngine Devices.
+description:
+    - Manages VXLAN Virtual access point on HUAWEI CloudEngine Devices.
+author: QijunPan (@QijunPan)
+notes:
+    - This module requires the netconf system service be enabled on the remote device being managed.
+    - Recommended connection is C(netconf).
+    - This module also works with C(local) connections for legacy playbooks.
+options:
+    bridge_domain_id:
+        description:
+            - Specifies a bridge domain ID.
+              The value is an integer ranging from 1 to 16777215.
+    bind_vlan_id:
+        description:
+            - Specifies the VLAN binding to a BD(Bridge Domain).
+              The value is an integer ranging ranging from 1 to 4094.
+    l2_sub_interface:
+        description:
+            - Specifies an Sub-Interface full name, i.e. "10GE1/0/41.1".
+              The value is a string of 1 to 63 case-insensitive characters, spaces supported.
+    encapsulation:
+        description:
+            - Specifies an encapsulation type of packets allowed to pass through a Layer 2 sub-interface.
+        choices: ['dot1q', 'default', 'untag', 'qinq', 'none']
+    ce_vid:
+        description:
+            - When I(encapsulation) is 'dot1q', specifies a VLAN ID in the outer VLAN tag.
+              When I(encapsulation) is 'qinq', specifies an outer VLAN ID for
+              double-tagged packets to be received by a Layer 2 sub-interface.
+              The value is an integer ranging from 1 to 4094.
+    pe_vid:
+        description:
+            - When I(encapsulation) is 'qinq', specifies an inner VLAN ID for
+              double-tagged packets to be received by a Layer 2 sub-interface.
+              The value is an integer ranging from 1 to 4094.
+    state:
+        description:
+            - Determines whether the config should be present or not
+              on the device.
+        default: present
+        choices: ['present', 'absent']
+'''
+
+EXAMPLES = '''
+- name: Vxlan vap module test
+  hosts: ce128
+  connection: local
+  gather_facts: false
+
+  tasks:
+
+  - name: Create a mapping between a VLAN and a BD
+    community.network.ce_vxlan_vap:
+      bridge_domain_id: 100
+      bind_vlan_id: 99
+
+  - name: Bind a Layer 2 sub-interface to a BD
+    community.network.ce_vxlan_vap:
+      bridge_domain_id: 100
+      l2_sub_interface: 10GE2/0/20.1
+
+  - name: Configure an encapsulation type on a Layer 2 sub-interface
+    community.network.ce_vxlan_vap:
+      l2_sub_interface: 10GE2/0/20.1
+      encapsulation: dot1q
+'''
+
+RETURN = '''
+proposed:
+    description: k/v pairs of parameters passed into module
+    returned: verbose mode
+    type: dict
+    sample: {"bridge_domain_id": "100", "bind_vlan_id": "99", state="present"}
+existing:
+    description: k/v pairs of existing configuration
+    returned: verbose mode
+    type: dict
+    sample: {"bridge_domain_id": "100", "bind_intf_list": ["10GE2/0/20.1", "10GE2/0/20.2"],
+             "bind_vlan_list": []}
+end_state:
+    description: k/v pairs of configuration after module execution
+    returned: verbose mode
+    type: dict
+    sample: {"bridge_domain_id": "100", "bind_intf_list": ["110GE2/0/20.1", "10GE2/0/20.2"],
+             "bind_vlan_list": ["99"]}
+updates:
+    description: commands sent to the device
+    returned: always
+    type: list
+    sample: ["bridge-domain 100",
+             "l2 binding vlan 99"]
+changed:
+    description: check to see if a change was made on the device
+    returned: always
+    type: bool
+    sample: true
+'''
+
+from xml.etree import ElementTree
+from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.community.network.plugins.module_utils.network.cloudengine.ce import get_nc_config, set_nc_config, ce_argument_spec
+
+CE_NC_GET_BD_VAP = """
+    <filter type="subtree">
+      <evc xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <bds>
+          <bd>
+            <bdId>%s</bdId>
+            <bdBindVlan>
+              <vlanList></vlanList>
+            </bdBindVlan>
+            <servicePoints>
+              <servicePoint>
+                <ifName></ifName>
+              </servicePoint>
+            </servicePoints>
+          </bd>
+        </bds>
+      </evc>
+    </filter>
+"""
+
+CE_NC_MERGE_BD_VLAN = """
+    <config>
+      <evc xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <bds>
+          <bd>
+            <bdId>%s</bdId>
+            <bdBindVlan operation="merge">
+              <vlanList>%s:%s</vlanList>
+            </bdBindVlan>
+          </bd>
+        </bds>
+      </evc>
+    </config>
+"""
+
+CE_NC_MERGE_BD_INTF = """
+    <config>
+      <evc xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <bds>
+          <bd>
+            <bdId>%s</bdId>
+            <servicePoints>
+              <servicePoint operation="merge">
+                <ifName>%s</ifName>
+              </servicePoint>
+            </servicePoints>
+          </bd>
+        </bds>
+      </evc>
+    </config>
+"""
+
+CE_NC_DELETE_BD_INTF = """
+    <config>
+      <evc xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <bds>
+          <bd>
+            <bdId>%s</bdId>
+            <servicePoints>
+              <servicePoint operation="delete">
+                <ifName>%s</ifName>
+              </servicePoint>
+            </servicePoints>
+          </bd>
+        </bds>
+      </evc>
+    </config>
+"""
+
+CE_NC_GET_ENCAP = """
+    <filter type="subtree">
+      <ethernet xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <servicePoints>
+          <servicePoint>
+            <ifName>%s</ifName>
+            <flowType></flowType>
+            <flowDot1qs>
+              <dot1qVids></dot1qVids>
+            </flowDot1qs>
+            <flowQinqs>
+              <flowQinq>
+                <peVlanId></peVlanId>
+                <ceVids></ceVids>
+              </flowQinq>
+            </flowQinqs>
+          </servicePoint>
+        </servicePoints>
+      </ethernet>
+    </filter>
+"""
+
+CE_NC_SET_ENCAP = """
+    <config>
+      <ethernet xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <servicePoints>
+          <servicePoint operation="merge">
+            <ifName>%s</ifName>
+            <flowType>%s</flowType>
+          </servicePoint>
+        </servicePoints>
+      </ethernet>
+    </config>
+"""
+
+CE_NC_UNSET_ENCAP = """
+    <config>
+      <ethernet xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <servicePoints>
+          <servicePoint operation="merge">
+            <ifName>%s</ifName>
+            <flowType>none</flowType>
+          </servicePoint>
+        </servicePoints>
+      </ethernet>
+    </config>
+"""
+
+CE_NC_SET_ENCAP_DOT1Q = """
+    <config>
+      <ethernet xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <servicePoints>
+          <servicePoint operation="merge">
+            <ifName>%s</ifName>
+            <flowType>dot1q</flowType>
+            <flowDot1qs>
+              <dot1qVids>%s:%s</dot1qVids>
+            </flowDot1qs>
+          </servicePoint>
+        </servicePoints>
+      </ethernet>
+    </config>
+"""
+
+CE_NC_SET_ENCAP_QINQ = """
+    <config>
+      <ethernet xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <servicePoints>
+          <servicePoint>
+            <ifName>%s</ifName>
+            <flowType>qinq</flowType>
+            <flowQinqs>
+              <flowQinq operation="merge">
+                <peVlanId>%s</peVlanId>
+                <ceVids>%s:%s</ceVids>
+              </flowQinq>
+            </flowQinqs>
+          </servicePoint>
+        </servicePoints>
+      </ethernet>
+    </config>
+"""
+
+
+def vlan_vid_to_bitmap(vid):
+    """convert VLAN list to VLAN bitmap"""
+
+    vlan_bit = ['0'] * 1024
+    int_vid = int(vid)
+    j = int_vid // 4
+    bit_int = 0x8 >> (int_vid % 4)
+    vlan_bit[j] = str(hex(bit_int))[2]
+
+    return ''.join(vlan_bit)
+
+
+def bitmap_to_vlan_list(bitmap):
+    """convert VLAN bitmap to VLAN list"""
+
+    tmp = list()
+    if not bitmap:
+        return tmp
+
+    bit_len = len(bitmap)
+    for i in range(bit_len):
+        if bitmap[i] == "0":
+            continue
+        bit = int(bitmap[i])
+        if bit & 0x8:
+            tmp.append(str(i * 4))
+        if bit & 0x4:
+            tmp.append(str(i * 4 + 1))
+        if bit & 0x2:
+            tmp.append(str(i * 4 + 2))
+        if bit & 0x1:
+            tmp.append(str(i * 4 + 3))
+
+    return tmp
+
+
+def is_vlan_bitmap_empty(bitmap):
+    """check VLAN bitmap empty"""
+
+    if not bitmap or len(bitmap) == 0:
+        return True
+
+    for bit in bitmap:
+        if bit != '0':
+            return False
+
+    return True
+
+
+def is_vlan_in_bitmap(vid, bitmap):
+    """check is VLAN id in bitmap"""
+
+    if is_vlan_bitmap_empty(bitmap):
+        return False
+
+    i = int(vid) // 4
+    if i > len(bitmap):
+        return False
+
+    if int(bitmap[i]) & (0x8 >> (int(vid) % 4)):
+        return True
+
+    return False
+
+
+def get_interface_type(interface):
+    """Gets the type of interface, such as 10GE, ETH-TRUNK, VLANIF..."""
+
+    if interface is None:
+        return None
+
+    iftype = None
+
+    if interface.upper().startswith('GE'):
+        iftype = 'ge'
+    elif interface.upper().startswith('10GE'):
+        iftype = '10ge'
+    elif interface.upper().startswith('25GE'):
+        iftype = '25ge'
+    elif interface.upper().startswith('4X10GE'):
+        iftype = '4x10ge'
+    elif interface.upper().startswith('40GE'):
+        iftype = '40ge'
+    elif interface.upper().startswith('100GE'):
+        iftype = '100ge'
+    elif interface.upper().startswith('VLANIF'):
+        iftype = 'vlanif'
+    elif interface.upper().startswith('LOOPBACK'):
+        iftype = 'loopback'
+    elif interface.upper().startswith('METH'):
+        iftype = 'meth'
+    elif interface.upper().startswith('ETH-TRUNK'):
+        iftype = 'eth-trunk'
+    elif interface.upper().startswith('VBDIF'):
+        iftype = 'vbdif'
+    elif interface.upper().startswith('NVE'):
+        iftype = 'nve'
+    elif interface.upper().startswith('TUNNEL'):
+        iftype = 'tunnel'
+    elif interface.upper().startswith('ETHERNET'):
+        iftype = 'ethernet'
+    elif interface.upper().startswith('FCOE-PORT'):
+        iftype = 'fcoe-port'
+    elif interface.upper().startswith('FABRIC-PORT'):
+        iftype = 'fabric-port'
+    elif interface.upper().startswith('STACK-PORT'):
+        iftype = 'stack-Port'
+    elif interface.upper().startswith('NULL'):
+        iftype = 'null'
+    else:
+        return None
+
+    return iftype.lower()
+
+
+class VxlanVap(object):
+    """
+    Manages VXLAN virtual access point.
+    """
+
+    def __init__(self, argument_spec):
+        self.spec = argument_spec
+        self.module = None
+        self.__init_module__()
+
+        # module input info
+        self.bridge_domain_id = self.module.params['bridge_domain_id']
+        self.bind_vlan_id = self.module.params['bind_vlan_id']
+        self.l2_sub_interface = self.module.params['l2_sub_interface']
+        self.ce_vid = self.module.params['ce_vid']
+        self.pe_vid = self.module.params['pe_vid']
+        self.encapsulation = self.module.params['encapsulation']
+        self.state = self.module.params['state']
+
+        # state
+        self.vap_info = dict()
+        self.l2sub_info = dict()
+        self.changed = False
+        self.updates_cmd = list()
+        self.commands = list()
+        self.results = dict()
+        self.proposed = dict()
+        self.existing = dict()
+        self.end_state = dict()
+
+    def __init_module__(self):
+        """init module"""
+
+        required_together = [()]
+        self.module = AnsibleModule(
+            argument_spec=self.spec, supports_check_mode=True)
+
+    def check_response(self, xml_str, xml_name):
+        """Check if response message is already succeed."""
+
+        if "<ok/>" not in xml_str:
+            self.module.fail_json(msg='Error: %s failed.' % xml_name)
+
+    def get_bd_vap_dict(self):
+        """get virtual access point info"""
+
+        vap_info = dict()
+        conf_str = CE_NC_GET_BD_VAP % self.bridge_domain_id
+        xml_str = get_nc_config(self.module, conf_str)
+
+        xml_str = xml_str.replace('\r', '').replace('\n', '').\
+            replace('xmlns="urn:ietf:params:xml:ns:netconf:base:1.0"', "").\
+            replace('xmlns="http://www.huawei.com/netconf/vrp"', "")
+
+        # get vap: VLAN
+        vap_info["bdId"] = self.bridge_domain_id
+        root = ElementTree.fromstring(xml_str)
+        vap_info["vlanList"] = ""
+        vap_vlan = root.find("evc/bds/bd/bdBindVlan")
+        if vap_vlan:
+            for ele in vap_vlan:
+                if ele.tag == "vlanList":
+                    vap_info["vlanList"] = ele.text
+
+        # get vap: l2 su-interface
+        vap_ifs = root.findall(
+            "evc/bds/bd/servicePoints/servicePoint/ifName")
+        if_list = list()
+        if vap_ifs:
+            for vap_if in vap_ifs:
+                if vap_if.tag == "ifName":
+                    if_list.append(vap_if.text)
+        vap_info["intfList"] = if_list
+
+        return vap_info
+
+    def get_l2_sub_intf_dict(self, ifname):
+        """get l2 sub-interface info"""
+
+        intf_info = dict()
+        if not ifname:
+            return intf_info
+
+        conf_str = CE_NC_GET_ENCAP % ifname
+        xml_str = get_nc_config(self.module, conf_str)
+
+        if "<data/>" in xml_str:
+            return intf_info
+
+        xml_str = xml_str.replace('\r', '').replace('\n', '').\
+            replace('xmlns="urn:ietf:params:xml:ns:netconf:base:1.0"', "").\
+            replace('xmlns="http://www.huawei.com/netconf/vrp"', "")
+
+        # get l2 sub interface encapsulation info
+        root = ElementTree.fromstring(xml_str)
+        bds = root.find("ethernet/servicePoints/servicePoint")
+        if not bds:
+            return intf_info
+
+        for ele in bds:
+            if ele.tag in ["ifName", "flowType"]:
+                intf_info[ele.tag] = ele.text.lower()
+
+        if intf_info.get("flowType") == "dot1q":
+            ce_vid = root.find(
+                "ethernet/servicePoints/servicePoint/flowDot1qs")
+            intf_info["dot1qVids"] = ""
+            if ce_vid:
+                for ele in ce_vid:
+                    if ele.tag == "dot1qVids":
+                        intf_info["dot1qVids"] = ele.text
+        elif intf_info.get("flowType") == "qinq":
+            vids = root.find(
+                "ethernet/servicePoints/servicePoint/flowQinqs/flowQinq")
+            if vids:
+                for ele in vids:
+                    if ele.tag in ["peVlanId", "ceVids"]:
+                        intf_info[ele.tag] = ele.text
+
+        return intf_info
+
+    def config_traffic_encap_dot1q(self):
+        """configure traffic encapsulation type dot1q"""
+
+        xml_str = ""
+        self.updates_cmd.append("interface %s" % self.l2_sub_interface)
+        if self.state == "present":
+            if self.encapsulation != self.l2sub_info.get("flowType"):
+                if self.ce_vid:
+                    vlan_bitmap = vlan_vid_to_bitmap(self.ce_vid)
+                    xml_str = CE_NC_SET_ENCAP_DOT1Q % (
+                        self.l2_sub_interface, vlan_bitmap, vlan_bitmap)
+                    self.updates_cmd.append("encapsulation %s vid %s" % (
+                        self.encapsulation, self.ce_vid))
+                else:
+                    xml_str = CE_NC_SET_ENCAP % (
+                        self.l2_sub_interface, self.encapsulation)
+                    self.updates_cmd.append(
+                        "encapsulation %s" % self.encapsulation)
+            else:
+                if self.ce_vid and not is_vlan_in_bitmap(
+                        self.ce_vid, self.l2sub_info.get("dot1qVids")):
+                    vlan_bitmap = vlan_vid_to_bitmap(self.ce_vid)
+                    xml_str = CE_NC_SET_ENCAP_DOT1Q % (
+                        self.l2_sub_interface, vlan_bitmap, vlan_bitmap)
+                    self.updates_cmd.append("encapsulation %s vid %s" % (
+                        self.encapsulation, self.ce_vid))
+        else:
+            if self.encapsulation == self.l2sub_info.get("flowType"):
+                if self.ce_vid:
+                    if is_vlan_in_bitmap(self.ce_vid, self.l2sub_info.get("dot1qVids")):
+                        xml_str = CE_NC_UNSET_ENCAP % self.l2_sub_interface
+                        self.updates_cmd.append("undo encapsulation %s vid %s" % (
+                            self.encapsulation, self.ce_vid))
+                else:
+                    xml_str = CE_NC_UNSET_ENCAP % self.l2_sub_interface
+                    self.updates_cmd.append(
+                        "undo encapsulation %s" % self.encapsulation)
+
+        if not xml_str:
+            self.updates_cmd.pop()
+            return
+        recv_xml = set_nc_config(self.module, xml_str)
+        self.check_response(recv_xml, "CONFIG_INTF_ENCAP_DOT1Q")
+        self.changed = True
+
+    def config_traffic_encap_qinq(self):
+        """configure traffic encapsulation type qinq"""
+
+        xml_str = ""
+        self.updates_cmd.append("interface %s" % self.l2_sub_interface)
+        if self.state == "present":
+            if self.encapsulation != self.l2sub_info.get("flowType"):
+                if self.ce_vid:
+                    vlan_bitmap = vlan_vid_to_bitmap(self.ce_vid)
+                    xml_str = CE_NC_SET_ENCAP_QINQ % (self.l2_sub_interface,
+                                                      self.pe_vid,
+                                                      vlan_bitmap,
+                                                      vlan_bitmap)
+                    self.updates_cmd.append(
+                        "encapsulation %s vid %s ce-vid %s" % (self.encapsulation,
+                                                               self.pe_vid,
+                                                               self.ce_vid))
+                else:
+                    xml_str = CE_NC_SET_ENCAP % (
+                        self.l2_sub_interface, self.encapsulation)
+                    self.updates_cmd.append(
+                        "encapsulation %s" % self.encapsulation)
+            else:
+                if self.ce_vid:
+                    if not is_vlan_in_bitmap(self.ce_vid, self.l2sub_info.get("ceVids")) \
+                            or self.pe_vid != self.l2sub_info.get("peVlanId"):
+                        vlan_bitmap = vlan_vid_to_bitmap(self.ce_vid)
+                        xml_str = CE_NC_SET_ENCAP_QINQ % (self.l2_sub_interface,
+                                                          self.pe_vid,
+                                                          vlan_bitmap,
+                                                          vlan_bitmap)
+                        self.updates_cmd.append(
+                            "encapsulation %s vid %s ce-vid %s" % (self.encapsulation,
+                                                                   self.pe_vid,
+                                                                   self.ce_vid))
+        else:
+            if self.encapsulation == self.l2sub_info

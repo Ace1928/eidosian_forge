@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_multidict_base_documentation.py
+KIND: code
+
+from collections.abc import ItemsView, Iterable, KeysView, Set, ValuesView
+Return True if two sets have a null intersection.

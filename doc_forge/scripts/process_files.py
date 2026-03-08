@@ -11,7 +11,7 @@ STAGING_DIR = ROOT_DIR / "doc_forge" / "staging"
 FINAL_DOCS_DIR = ROOT_DIR / "doc_forge" / "final_docs"
 STATUS_FILE = ROOT_DIR / "doc_forge" / "forge_status.json"
 LLAMA_CLI = ROOT_DIR / "doc_forge" / "llama.cpp" / "build" / "bin" / "llama-cli"
-MODEL_PATH = ROOT_DIR / "doc_forge" / "models" / "qwen2.5-1.5b-instruct-q5_k_m.gguf"
+MODEL_PATH = ROOT_DIR / "doc_forge" / "models" / "qwen3.5-2b-instruct-q5_k_m.gguf"
 
 SYSTEM_PROMPT = """You are an Eidosian Documentation Forge agent. Your task is to generate detailed, accurate, and structurally elegant documentation for the provided source file.
 Follow these requirements:

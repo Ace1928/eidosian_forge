@@ -1,0 +1,577 @@
+SOURCE_PATH: archive_forge/src/archive_forge/Restriction.py
+KIND: code
+
+#!/usr/bin/env python
+#
+#      Restriction Analysis Libraries.
+#      Copyright (C) 2004. Frederic Sohm.
+#
+# This code is part of the Biopython distribution and governed by its
+# license.  Please see the LICENSE file that should have been included
+# as part of this package.
+#
+
+"""Restriction Enzyme classes.
+
+Notes about the diverses class of the restriction enzyme implementation::
+
+            RestrictionType is the type of all restriction enzymes.
+        -----------------------------------------------------------------------
+            AbstractCut implements some methods that are common to all enzymes.
+        -----------------------------------------------------------------------
+            NoCut, OneCut,TwoCuts   represent the number of double strand cuts
+                                    produced by the enzyme.
+                                    they correspond to the 4th field of the
+                                    rebase record emboss_e.NNN.
+                    0->NoCut    : the enzyme is not characterised.
+                    2->OneCut   : the enzyme produce one double strand cut.
+                    4->TwoCuts  : two double strand cuts.
+        -----------------------------------------------------------------------
+            Meth_Dep, Meth_Undep    represent the methylation susceptibility to
+                                    the enzyme.
+                                    Not implemented yet.
+        -----------------------------------------------------------------------
+            Palindromic,            if the site is palindromic or not.
+            NotPalindromic          allow some optimisations of the code.
+                                    No need to check the reverse strand
+                                    with palindromic sites.
+        -----------------------------------------------------------------------
+            Unknown, Blunt,         represent the overhang.
+            Ov5, Ov3                Unknown is here for symmetry reasons and
+                                    correspond to enzymes that are not
+                                    characterised in rebase.
+        -----------------------------------------------------------------------
+            Defined, Ambiguous,     represent the sequence of the overhang.
+            NotDefined
+                                    NotDefined is for enzymes not characterised
+                                    in rebase.
+
+                                    Defined correspond to enzymes that display
+                                    a constant overhang whatever the sequence.
+                                    ex : EcoRI. G^AATTC -> overhang :AATT
+                                                CTTAA^G
+
+                                    Ambiguous : the overhang varies with the
+                                    sequence restricted.
+                                    Typically enzymes which cut outside their
+                                    restriction site or (but not always)
+                                    inside an ambiguous site.
+                                    ex:
+                                    AcuI CTGAAG(22/20)  -> overhang : NN
+                                    AasI GACNNN^NNNGTC  -> overhang : NN
+                                         CTGN^NNNNNCAG
+
+                note : these 3 classes refers to the overhang not the site.
+                   So the enzyme ApoI (RAATTY) is defined even if its
+                   restriction site is ambiguous.
+
+                        ApoI R^AATTY -> overhang : AATT -> Defined
+                             YTTAA^R
+                   Accordingly, blunt enzymes are always Defined even
+                   when they cut outside their restriction site.
+        -----------------------------------------------------------------------
+            Not_available,          as found in rebase file emboss_r.NNN files.
+            Commercially_available
+                                    allow the selection of the enzymes
+                                    according to their suppliers to reduce the
+                                    quantity of results.
+                                    Also will allow the implementation of
+                                    buffer compatibility tables. Not
+                                    implemented yet.
+
+                                    the list of suppliers is extracted from
+                                    emboss_s.NNN
+        -----------------------------------------------------------------------
+
+"""
+
+
+import warnings
+
+import re
+import string
+import itertools
+
+from Bio.Seq import Seq, MutableSeq
+from Bio.Restriction.Restriction_Dictionary import rest_dict as enzymedict
+from Bio.Restriction.Restriction_Dictionary import typedict
+from Bio.Restriction.Restriction_Dictionary import suppliers as suppliers_dict
+from Bio.Restriction.PrintFormat import PrintFormat
+from Bio import BiopythonWarning
+
+
+matching = {
+    "A": "ARWMHVDN",
+    "C": "CYSMHBVN",
+    "G": "GRSKBVDN",
+    "T": "TYWKHBDN",
+    "R": "ABDGHKMNSRWV",
+    "Y": "CBDHKMNSTWVY",
+    "W": "ABDHKMNRTWVY",
+    "S": "CBDGHKMNSRVY",
+    "M": "ACBDHMNSRWVY",
+    "K": "BDGHKNSRTWVY",
+    "H": "ACBDHKMNSRTWVY",
+    "B": "CBDGHKMNSRTWVY",
+    "V": "ACBDGHKMNSRWVY",
+    "D": "ABDGHKMNSRTWVY",
+    "N": "ACBDGHKMNSRTWVY",
+}
+
+DNA = Seq
+
+
+def _make_FormattedSeq_table() -> bytes:
+    table = bytearray(256)
+    upper_to_lower = ord("A") - ord("a")
+    for c in b"ABCDGHKMNRSTVWY":  # Only allow IUPAC letters
+        table[c] = c  # map uppercase to uppercase
+        table[c - upper_to_lower] = c  # map lowercase to uppercase
+    return bytes(table)
+
+
+class FormattedSeq:
+    """A linear or circular sequence object for restriction analysis.
+
+    Translates a Bio.Seq into a formatted sequence to be used with Restriction.
+
+    Roughly: remove anything which is not IUPAC alphabet and then add a space
+             in front of the sequence to get a biological index instead of a
+             python index (i.e. index of the first base is 1 not 0).
+
+    Retains information about the shape of the molecule linear (default) or
+    circular. Restriction sites are search over the edges of circular sequence.
+    """
+
+    _remove_chars = string.whitespace.encode() + string.digits.encode()
+    _table = _make_FormattedSeq_table()
+
+    def __init__(self, seq, linear=True):
+        """Initialize ``FormattedSeq`` with sequence and topology (optional).
+
+        ``seq`` is either a ``Bio.Seq``, ``Bio.MutableSeq`` or a
+        ``FormattedSeq``. If ``seq`` is a ``FormattedSeq``, ``linear``
+        will have no effect on the shape of the sequence.
+        """
+        if isinstance(seq, (Seq, MutableSeq)):
+            self.lower = seq.islower()
+            data = bytes(seq)
+            self.data = data.translate(self._table, delete=self._remove_chars)
+            if 0 in self.data:  # Check if all letters were IUPAC
+                raise TypeError(f"Invalid character found in {data.decode()}")
+            # Note this adds a leading space to the sequence (!)
+            self.data = " " + self.data.decode("ASCII")
+            self.linear = linear
+            self.klass = seq.__class__
+        elif isinstance(seq, FormattedSeq):
+            self.lower = seq.lower
+            self.data = seq.data
+            self.linear = seq.linear
+            self.klass = seq.klass
+        else:
+            raise TypeError(f"expected Seq or MutableSeq, got {type(seq)}")
+
+    def __len__(self):
+        """Return length of ``FormattedSeq``.
+
+        ``FormattedSeq`` has a leading space, thus subtract 1.
+        """
+        return len(self.data) - 1
+
+    def __repr__(self):
+        """Represent ``FormattedSeq`` class as a string."""
+        return f"FormattedSeq({self[1:]!r}, linear={self.linear!r})"
+
+    def __eq__(self, other):
+        """Implement equality operator for ``FormattedSeq`` object."""
+        if isinstance(other, FormattedSeq):
+            if repr(self) == repr(other):
+                return True
+            else:
+                return False
+        return False
+
+    def circularise(self):
+        """Circularise sequence in place."""
+        self.linear = False
+
+    def linearise(self):
+        """Linearise sequence in place."""
+        self.linear = True
+
+    def to_linear(self):
+        """Make a new instance of sequence as linear."""
+        new = self.__class__(self)
+        new.linear = True
+        return new
+
+    def to_circular(self):
+        """Make a new instance of sequence as circular."""
+        new = self.__class__(self)
+        new.linear = False
+        return new
+
+    def is_linear(self):
+        """Return if sequence is linear (True) or circular (False)."""
+        return self.linear
+
+    def finditer(self, pattern, size):
+        """Return a list of a given pattern which occurs in the sequence.
+
+        The list is made of tuple (location, pattern.group).
+        The latter is used with non palindromic sites.
+        Pattern is the regular expression pattern corresponding to the
+        enzyme restriction site.
+        Size is the size of the restriction enzyme recognition-site size.
+        """
+        if self.is_linear():
+            data = self.data
+        else:
+            data = self.data + self.data[1:size]
+        return [(i.start(), i.group) for i in re.finditer(pattern, data)]
+
+    def __getitem__(self, i):
+        """Return substring of ``FormattedSeq``.
+
+        The class of the returned object is the class of the respective
+        sequence. Note that due to the leading space, indexing is 1-based:
+
+        >>> from Bio.Seq import Seq
+        >>> from Bio.Restriction.Restriction import FormattedSeq
+        >>> f_seq = FormattedSeq(Seq('ATGCATGC'))
+        >>> f_seq[1]
+        Seq('A')
+
+        """
+        if self.lower:
+            return self.klass(self.data[i].lower())
+        return self.klass(self.data[i])
+
+
+class RestrictionType(type):
+    """RestrictionType. Type from which all enzyme classes are derived.
+
+    Implement the operator methods.
+    """
+
+    def __init__(cls, name="", bases=(), dct=None):
+        """Initialize RestrictionType instance.
+
+        Not intended to be used in normal operation. The enzymes are
+        instantiated when importing the module.
+        See below.
+        """
+        if "-" in name:
+            raise ValueError(f"Problem with hyphen in {name!r} as enzyme name")
+        # 2011/11/26 - Nobody knows what this call was supposed to accomplish,
+        # but all unit tests seem to pass without it.
+        # super().__init__(cls, name, bases, dct)
+        try:
+            cls.compsite = re.compile(cls.compsite)
+        except AttributeError:
+            # Can happen if initialised wrongly.
+            # (This was seen when Sphinx api-doc imports the classes, and
+            # tried to automatically general documentation for them)
+            pass
+        except Exception:
+            raise ValueError(
+                f"Problem with regular expression, re.compiled({cls.compsite!r})"
+            ) from None
+
+    def __add__(cls, other):
+        """Add restriction enzyme to a RestrictionBatch().
+
+        If other is an enzyme returns a batch of the two enzymes.
+        If other is already a RestrictionBatch add enzyme to it.
+        """
+        if isinstance(other, RestrictionType):
+            return RestrictionBatch([cls, other])
+        elif isinstance(other, RestrictionBatch):
+            return other.add_nocheck(cls)
+        else:
+            raise TypeError
+
+    def __truediv__(cls, other):
+        """Override '/' operator to use as search method.
+
+        >>> from Bio.Restriction import EcoRI
+        >>> EcoRI/Seq('GAATTC')
+        [2]
+
+        Returns RE.search(other).
+        """
+        return cls.search(other)
+
+    def __rtruediv__(cls, other):
+        """Override division with reversed operands to use as search method.
+
+        >>> from Bio.Restriction import EcoRI
+        >>> Seq('GAATTC')/EcoRI
+        [2]
+
+        Returns RE.search(other).
+        """
+        return cls.search(other)
+
+    def __floordiv__(cls, other):
+        """Override '//' operator to use as catalyse method.
+
+        >>> from Bio.Restriction import EcoRI
+        >>> EcoRI//Seq('GAATTC')
+        (Seq('G'), Seq('AATTC'))
+
+        Returns RE.catalyse(other).
+        """
+        return cls.catalyse(other)
+
+    def __rfloordiv__(cls, other):
+        """As __floordiv__, with reversed operands.
+
+        >>> from Bio.Restriction import EcoRI
+        >>> Seq('GAATTC')//EcoRI
+        (Seq('G'), Seq('AATTC'))
+
+        Returns RE.catalyse(other).
+        """
+        return cls.catalyse(other)
+
+    def __str__(cls):
+        """Return the name of the enzyme as string."""
+        return cls.__name__
+
+    def __repr__(cls):
+        """Implement repr method.
+
+        Used with eval or exec will instantiate the enzyme.
+        """
+        return f"{cls.__name__}"
+
+    def __len__(cls):
+        """Return length of recognition site of enzyme as int."""
+        try:
+            return cls.size
+        except AttributeError:
+            # Happens if the instance was not initialised as expected.
+            # e.g. if instance created by a documentation framework
+            # like Sphinx trying to inspect the class automatically,
+            # Also seen within IPython.
+            return 0
+
+    def __hash__(cls):
+        """Implement ``hash()`` method for ``RestrictionType``.
+
+        Python default is to use ``id(...)``
+        This is consistent with the ``__eq__`` implementation
+        """
+        return id(cls)
+
+    def __eq__(cls, other):
+        """Override '==' operator.
+
+        True if RE and other are the same enzyme.
+
+        Specifically this checks they are the same Python object.
+        """
+        # assert (id(cls)==id(other)) == (other is cls) == (cls is other)
+        return id(cls) == id(other)
+
+    def __ne__(cls, other):
+        """Override '!=' operator.
+
+        Isoschizomer strict (same recognition site, same restriction) -> False
+        All the other-> True
+
+        WARNING - This is not the inverse of the __eq__ method
+
+        >>> from Bio.Restriction import SacI, SstI
+        >>> SacI != SstI  # true isoschizomers
+        False
+        >>> SacI == SstI
+        False
+        """
+        if not isinstance(other, RestrictionType):
+            return True
+        elif cls.charac == other.charac:
+            return False
+        else:
+            return True
+
+    def __rshift__(cls, other):
+        """Override '>>' operator to test for neoschizomers.
+
+        neoschizomer : same recognition site, different restriction. -> True
+        all the others :                                             -> False
+
+        >>> from Bio.Restriction import SmaI, XmaI
+        >>> SmaI >> XmaI
+        True
+        """
+        if not isinstance(other, RestrictionType):
+            return False
+        elif cls.site == other.site and cls.charac != other.charac:
+            return True
+        else:
+            return False
+
+    def __mod__(cls, other):
+        """Override '%' operator to test for compatible overhangs.
+
+        True if a and b have compatible overhang.
+
+        >>> from Bio.Restriction import XhoI, SalI
+        >>> XhoI % SalI
+        True
+        """
+        if not isinstance(other, RestrictionType):
+            raise TypeError(f"expected RestrictionType, got {type(other)} instead")
+        return cls._mod1(other)
+
+    def __ge__(cls, other):
+        """Compare length of recognition site of two enzymes.
+
+        Override '>='. a is greater or equal than b if the a site is longer
+        than b site. If their site have the same length sort by alphabetical
+        order of their names.
+
+        >>> from Bio.Restriction import EcoRI, EcoRV
+        >>> EcoRI.size
+        6
+        >>> EcoRV.size
+        6
+        >>> EcoRI >= EcoRV
+        False
+        """
+        if not isinstance(other, RestrictionType):
+            raise NotImplementedError
+        if len(cls) > len(other):
+            return True
+        elif cls.size == len(other) and cls.__name__ >= other.__name__:
+            return True
+        else:
+            return False
+
+    def __gt__(cls, other):
+        """Compare length of recognition site of two enzymes.
+
+        Override '>'. Sorting order:
+
+        1. size of the recognition site.
+        2. if equal size, alphabetical order of the names.
+
+        """
+        if not isinstance(other, RestrictionType):
+            raise NotImplementedError
+        if len(cls) > len(other):
+            return True
+        elif cls.size == len(other) and cls.__name__ > other.__name__:
+            return True
+        else:
+            return False
+
+    def __le__(cls, other):
+        """Compare length of recognition site of two enzymes.
+
+        Override '<='. Sorting order:
+
+        1. size of the recognition site.
+        2. if equal size, alphabetical order of the names.
+
+        """
+        if not isinstance(other, RestrictionType):
+            raise NotImplementedError
+        elif len(cls) < len(other):
+            return True
+        elif len(cls) == len(other) and cls.__name__ <= other.__name__:
+            return True
+        else:
+            return False
+
+    def __lt__(cls, other):
+        """Compare length of recognition site of two enzymes.
+
+        Override '<'. Sorting order:
+
+        1. size of the recognition site.
+        2. if equal size, alphabetical order of the names.
+
+        """
+        if not isinstance(other, RestrictionType):
+            raise NotImplementedError
+        elif len(cls) < len(other):
+            return True
+        elif len(cls) == len(other) and cls.__name__ < other.__name__:
+            return True
+        else:
+            return False
+
+
+class AbstractCut(RestrictionType):
+    """Implement the methods that are common to all restriction enzymes.
+
+    All the methods are classmethod.
+
+    For internal use only. Not meant to be instantiated.
+    """
+
+    @classmethod
+    def search(cls, dna, linear=True):
+        """Return a list of cutting sites of the enzyme in the sequence.
+
+        Compensate for circular sequences and so on.
+
+        dna must be a Bio.Seq.Seq instance or a Bio.Seq.MutableSeq instance.
+
+        If linear is False, the restriction sites that span over the boundaries
+        will be included.
+
+        The positions are the first base of the 3' fragment,
+        i.e. the first base after the position the enzyme will cut.
+        """
+        #
+        #   Separating search from _search allow a (very limited) optimisation
+        #   of the search when using a batch of restriction enzymes.
+        #   in this case the DNA is tested once by the class which implements
+        #   the batch instead of being tested by each enzyme single.
+        #   see RestrictionBatch.search() for example.
+        #
+        if isinstance(dna, FormattedSeq):
+            cls.dna = dna
+            return cls._search()
+        else:
+            cls.dna = FormattedSeq(dna, linear)
+            return cls._search()
+
+    @classmethod
+    def all_suppliers(cls):
+        """Print all the suppliers of restriction enzyme."""
+        supply = sorted(x[0] for x in suppliers_dict.values())
+        print(",\n".join(supply))
+
+    @classmethod
+    def is_equischizomer(cls, other):
+        """Test for real isoschizomer.
+
+        True if other is an isoschizomer of RE, but not an neoschizomer,
+        else False.
+
+        Equischizomer: same site, same position of restriction.
+
+        >>> from Bio.Restriction import SacI, SstI, SmaI, XmaI
+        >>> SacI.is_equischizomer(SstI)
+        True
+        >>> SmaI.is_equischizomer(XmaI)
+        False
+
+        """
+        return not cls != other
+
+    @classmethod
+    def is_neoschizomer(cls, other):
+        """Test for neoschizomer.
+
+        True if other is an isoschizomer of RE, else False.
+        Neoschizomer: same site, different position of restriction.
+        """
+        return cls >> other
+
+    @classme

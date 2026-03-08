@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_FeatureSet_documentation.py
+KIND: code
+
+from ._Feature import Feature
+import re
+Return a formatted string with information about the feature set.

@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_dateparser_documentation.py
+KIND: code
+
+Wrapper for `resolve_dateparser` that can be used as a decorator

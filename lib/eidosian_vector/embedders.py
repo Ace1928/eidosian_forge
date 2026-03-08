@@ -7,7 +7,7 @@ from typing import Any, List, Optional
 class HashEmbedder:
     """Deterministic local fallback embedder with no external runtime dependency."""
 
-    def __init__(self, dimensions: int = 16) -> None:
+    def __init__(self, dimensions: int = 768) -> None:
         self.dimensions = max(1, int(dimensions))
 
     def embed_text(self, text: str) -> List[float]:
@@ -42,12 +42,12 @@ class ResilientEmbedder:
 def build_default_embedder() -> ResilientEmbedder:
     primary: Optional[Any] = None
     try:
-        from memory_forge.core.tiered_memory import OllamaEmbedder  # type: ignore
+        from eidos_mcp.config.models import model_config
 
-        primary = OllamaEmbedder()
+        primary = model_config
     except Exception:
         primary = None
-    return ResilientEmbedder(primary, HashEmbedder())
+    return ResilientEmbedder(primary, HashEmbedder(dimensions=768))
 
 
 def _normalize_vector(vector: Any) -> List[float]:

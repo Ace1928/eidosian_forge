@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_xml_documentation.py
+KIND: code
+
+from typing import Optional, Any, Set, Union, Dict
+from lxml import etree
+
+    Convert a dictionary into an XML document, like xmltodict.unparse but with lxml

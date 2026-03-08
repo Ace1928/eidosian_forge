@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_warnings_errors_documentation.py
+KIND: code
+
+Represents an error condition when fitting a distribution to data.

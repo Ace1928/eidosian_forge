@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/base_protocol_documentation.py
+KIND: code
+
+import asyncio
+from typing import Optional, cast
+from .tcp_helpers import tcp_nodelay
+Return True if the connection is open.

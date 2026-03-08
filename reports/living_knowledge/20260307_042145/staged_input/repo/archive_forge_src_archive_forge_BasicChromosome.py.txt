@@ -1,0 +1,533 @@
+SOURCE_PATH: archive_forge/src/archive_forge/BasicChromosome.py
+KIND: code
+
+# Copyright 2001, 2003 by Brad Chapman.  All rights reserved.
+# Revisions copyright 2011 by Peter Cock.  All rights reserved.
+#
+# This file is part of the Biopython distribution and governed by your
+# choice of the "Biopython License Agreement" or the "BSD 3-Clause License".
+# Please see the LICENSE file that should have been included as part of this
+# package.
+"""Draw representations of organism chromosomes with added information.
+
+These classes are meant to model the drawing of pictures of chromosomes.
+This can be useful for lots of things, including displaying markers on
+a chromosome (ie. for genetic mapping) and showing syteny between two
+chromosomes.
+
+The structure of these classes is intended to be a Composite, so that
+it will be easy to plug in and switch different parts without
+breaking the general drawing capabilities of the system. The
+relationship between classes is that everything derives from
+_ChromosomeComponent, which specifies the overall interface. The parts
+then are related so that an Organism contains Chromosomes, and these
+Chromosomes contain ChromosomeSegments. This representation differs
+from the canonical composite structure in that we don't really have
+'leaf' nodes here -- all components can potentially hold sub-components.
+
+Most of the time the ChromosomeSegment class is what you'll want to
+customize for specific drawing tasks.
+
+For providing drawing capabilities, these classes use reportlab:
+
+http://www.reportlab.com
+
+This provides nice output in PDF, SVG and postscript.  If you have
+reportlab's renderPM module installed you can also use PNG etc.
+"""
+
+# reportlab
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.units import inch
+from reportlab.lib import colors
+from reportlab.pdfbase.pdfmetrics import stringWidth
+
+from reportlab.graphics.shapes import Drawing, String, Line, Rect, Wedge, ArcPath
+from reportlab.graphics.widgetbase import Widget
+
+from Bio.Graphics import _write
+from Bio.Graphics.GenomeDiagram import _Colors
+
+
+_color_trans = _Colors.ColorTranslator()
+
+
+class _ChromosomeComponent(Widget):
+    """Base class specifying the interface for a component of the system.
+
+    This class should not be instantiated directly, but should be used
+    from derived classes.
+    """
+
+    def __init__(self):
+        """Initialize a chromosome component.
+
+        Attributes:
+        - _sub_components -- Any components which are contained under
+        this parent component. This attribute should be accessed through
+        the add() and remove() functions.
+
+        """
+        self._sub_components = []
+
+    def add(self, component):
+        """Add a sub_component to the list of components under this item."""
+        if not isinstance(component, _ChromosomeComponent):
+            raise TypeError(f"Expected a _ChromosomeComponent object, got {component}")
+
+        self._sub_components.append(component)
+
+    def remove(self, component):
+        """Remove the specified component from the subcomponents.
+
+        Raises a ValueError if the component is not registered as a
+        sub_component.
+        """
+        try:
+            self._sub_components.remove(component)
+        except ValueError:
+            raise ValueError(
+                f"Component {component} not found in sub_components."
+            ) from None
+
+    def draw(self):
+        """Draw the specified component."""
+        raise AssertionError("Subclasses must implement.")
+
+
+class Organism(_ChromosomeComponent):
+    """Top level class for drawing chromosomes.
+
+    This class holds information about an organism and all of its
+    chromosomes, and provides the top level object which could be used
+    for drawing a chromosome representation of an organism.
+
+    Chromosomes should be added and removed from the Organism via the
+    add and remove functions.
+    """
+
+    def __init__(self, output_format="pdf"):
+        """Initialize the class."""
+        _ChromosomeComponent.__init__(self)
+
+        # customizable attributes
+        self.page_size = letter
+        self.title_size = 20
+
+        # Do we need this given we don't draw a legend?
+        # If so, should be a public API...
+        self._legend_height = 0  # 2 * inch
+
+        self.output_format = output_format
+
+    def draw(self, output_file, title):
+        """Draw out the information for the Organism.
+
+        Arguments:
+         - output_file -- The name of a file specifying where the
+           document should be saved, or a handle to be written to.
+           The output format is set when creating the Organism object.
+           Alternatively, output_file=None will return the drawing using
+           the low-level ReportLab objects (for further processing, such
+           as adding additional graphics, before writing).
+         - title -- The output title of the produced document.
+
+        """
+        width, height = self.page_size
+        cur_drawing = Drawing(width, height)
+
+        self._draw_title(cur_drawing, title, width, height)
+
+        cur_x_pos = inch * 0.5
+        if len(self._sub_components) > 0:
+            x_pos_change = (width - inch) / len(self._sub_components)
+        # no sub_components
+        else:
+            pass
+
+        for sub_component in self._sub_components:
+            # set the drawing location of the chromosome
+            sub_component.start_x_position = cur_x_pos + 0.05 * x_pos_change
+            sub_component.end_x_position = cur_x_pos + 0.95 * x_pos_change
+            sub_component.start_y_position = height - 1.5 * inch
+            sub_component.end_y_position = self._legend_height + 1 * inch
+
+            # do the drawing
+            sub_component.draw(cur_drawing)
+
+            # update the locations for the next chromosome
+            cur_x_pos += x_pos_change
+
+        self._draw_legend(cur_drawing, self._legend_height + 0.5 * inch, width)
+
+        if output_file is None:
+            # Let the user take care of writing to the file...
+            return cur_drawing
+
+        return _write(cur_drawing, output_file, self.output_format)
+
+    def _draw_title(self, cur_drawing, title, width, height):
+        """Write out the title of the organism figure (PRIVATE)."""
+        title_string = String(width / 2, height - inch, title)
+        title_string.fontName = "Helvetica-Bold"
+        title_string.fontSize = self.title_size
+        title_string.textAnchor = "middle"
+
+        cur_drawing.add(title_string)
+
+    def _draw_legend(self, cur_drawing, start_y, width):
+        """Draw a legend for the figure (PRIVATE).
+
+        Subclasses should implement this (see also self._legend_height) to
+        provide specialized legends.
+        """
+
+
+class Chromosome(_ChromosomeComponent):
+    """Class for drawing a chromosome of an organism.
+
+    This organizes the drawing of a single organisms chromosome. This
+    class can be instantiated directly, but the draw method makes the
+    most sense to be called in the context of an organism.
+    """
+
+    def __init__(self, chromosome_name):
+        """Initialize a Chromosome for drawing.
+
+        Arguments:
+         - chromosome_name - The label for the chromosome.
+
+        Attributes:
+         - start_x_position, end_x_position - The x positions on the page
+           where the chromosome should be drawn. This allows multiple
+           chromosomes to be drawn on a single page.
+         - start_y_position, end_y_position - The y positions on the page
+           where the chromosome should be contained.
+
+        Configuration Attributes:
+         - title_size - The size of the chromosome title.
+         - scale_num - A number of scale the drawing by. This is useful if
+           you want to draw multiple chromosomes of different sizes at the
+           same scale. If this is not set, then the chromosome drawing will
+           be scaled by the number of segments in the chromosome (so each
+           chromosome will be the exact same final size).
+
+        """
+        _ChromosomeComponent.__init__(self)
+
+        self._name = chromosome_name
+
+        self.start_x_position = -1
+        self.end_x_position = -1
+        self.start_y_position = -1
+        self.end_y_position = -1
+
+        self.title_size = 20
+        self.scale_num = None
+
+        self.label_size = 6
+        self.chr_percent = 0.25
+        self.label_sep_percent = self.chr_percent * 0.5
+        self._color_labels = False
+
+    def subcomponent_size(self):
+        """Return the scaled size of all subcomponents of this component."""
+        total_sub = 0
+        for sub_component in self._sub_components:
+            total_sub += sub_component.scale
+
+        return total_sub
+
+    def draw(self, cur_drawing):
+        """Draw a chromosome on the specified template.
+
+        Ideally, the x_position and y_*_position attributes should be
+        set prior to drawing -- otherwise we're going to have some problems.
+        """
+        for position in (
+            self.start_x_position,
+            self.end_x_position,
+            self.start_y_position,
+            self.end_y_position,
+        ):
+            assert position != -1, "Need to set drawing coordinates."
+
+        # first draw all of the sub-sections of the chromosome -- this
+        # will actually be the picture of the chromosome
+        cur_y_pos = self.start_y_position
+        if self.scale_num:
+            y_pos_change = (
+                self.start_y_position * 0.95 - self.end_y_position
+            ) / self.scale_num
+        elif len(self._sub_components) > 0:
+            y_pos_change = (
+                self.start_y_position * 0.95 - self.end_y_position
+            ) / self.subcomponent_size()
+        # no sub_components to draw
+        else:
+            pass
+
+        left_labels = []
+        right_labels = []
+        for sub_component in self._sub_components:
+            this_y_pos_change = sub_component.scale * y_pos_change
+
+            # set the location of the component to draw
+            sub_component.start_x_position = self.start_x_position
+            sub_component.end_x_position = self.end_x_position
+            sub_component.start_y_position = cur_y_pos
+            sub_component.end_y_position = cur_y_pos - this_y_pos_change
+
+            # draw the sub component
+            sub_component._left_labels = []
+            sub_component._right_labels = []
+            sub_component.draw(cur_drawing)
+            left_labels += sub_component._left_labels
+            right_labels += sub_component._right_labels
+
+            # update the position for the next component
+            cur_y_pos -= this_y_pos_change
+
+        self._draw_labels(cur_drawing, left_labels, right_labels)
+        self._draw_label(cur_drawing, self._name)
+
+    def _draw_label(self, cur_drawing, label_name):
+        """Draw a label for the chromosome (PRIVATE)."""
+        x_position = 0.5 * (self.start_x_position + self.end_x_position)
+        y_position = self.end_y_position
+
+        label_string = String(x_position, y_position, label_name)
+        label_string.fontName = "Times-BoldItalic"
+        label_string.fontSize = self.title_size
+        label_string.textAnchor = "middle"
+
+        cur_drawing.add(label_string)
+
+    def _draw_labels(self, cur_drawing, left_labels, right_labels):
+        """Layout and draw sub-feature labels for the chromosome (PRIVATE).
+
+        Tries to place each label at the same vertical position as the
+        feature it applies to, but will adjust the positions to avoid or
+        at least reduce label overlap.
+
+        Draws the label text and a coloured line linking it to the
+        location (i.e. feature) it applies to.
+        """
+        if not self._sub_components:
+            return
+        color_label = self._color_labels
+
+        segment_width = (self.end_x_position - self.start_x_position) * self.chr_percent
+        label_sep = (
+            self.end_x_position - self.start_x_position
+        ) * self.label_sep_percent
+        segment_x = self.start_x_position + 0.5 * (
+            self.end_x_position - self.start_x_position - segment_width
+        )
+
+        y_limits = []
+        for sub_component in self._sub_components:
+            y_limits.extend(
+                (sub_component.start_y_position, sub_component.end_y_position)
+            )
+        y_min = min(y_limits)
+        y_max = max(y_limits)
+        del y_limits
+        # Now do some label placement magic...
+        # from reportlab.pdfbase import pdfmetrics
+        # font = pdfmetrics.getFont('Helvetica')
+        # h = (font.face.ascent + font.face.descent) * 0.90
+        h = self.label_size
+        for x1, x2, labels, anchor in [
+            (
+                segment_x,
+                segment_x - label_sep,
+                _place_labels(left_labels, y_min, y_max, h),
+                "end",
+            ),
+            (
+                segment_x + segment_width,
+                segment_x + segment_width + label_sep,
+                _place_labels(right_labels, y_min, y_max, h),
+                "start",
+            ),
+        ]:
+            for y1, y2, color, back_color, name in labels:
+                cur_drawing.add(
+                    Line(x1, y1, x2, y2, strokeColor=color, strokeWidth=0.25)
+                )
+                label_string = String(x2, y2, name, textAnchor=anchor)
+                label_string.fontName = "Helvetica"
+                label_string.fontSize = h
+                if color_label:
+                    label_string.fillColor = color
+                if back_color:
+                    w = stringWidth(name, label_string.fontName, label_string.fontSize)
+                    if x1 > x2:
+                        w = w * -1.0
+                    cur_drawing.add(
+                        Rect(
+                            x2,
+                            y2 - 0.1 * h,
+                            w,
+                            h,
+                            strokeColor=back_color,
+                            fillColor=back_color,
+                        )
+                    )
+                cur_drawing.add(label_string)
+
+
+class ChromosomeSegment(_ChromosomeComponent):
+    """Draw a segment of a chromosome.
+
+    This class provides the important configurable functionality of drawing
+    a Chromosome. Each segment has some customization available here, or can
+    be subclassed to define additional functionality. Most of the interesting
+    drawing stuff is likely to happen at the ChromosomeSegment level.
+    """
+
+    def __init__(self):
+        """Initialize a ChromosomeSegment.
+
+        Attributes:
+         - start_x_position, end_x_position - Defines the x range we have
+           to draw things in.
+         - start_y_position, end_y_position - Defines the y range we have
+           to draw things in.
+
+        Configuration Attributes:
+         - scale - A scaling value for the component. By default this is
+           set at 1 (ie -- has the same scale as everything else). Higher
+           values give more size to the component, smaller values give less.
+         - fill_color - A color to fill in the segment with. Colors are
+           available in reportlab.lib.colors
+         - label - A label to place on the chromosome segment. This should
+           be a text string specifying what is to be included in the label.
+         - label_size - The size of the label.
+         - chr_percent - The percentage of area that the chromosome
+           segment takes up.
+
+        """
+        _ChromosomeComponent.__init__(self)
+
+        self.start_x_position = -1
+        self.end_x_position = -1
+        self.start_y_position = -1
+        self.end_y_position = -1
+
+        # --- attributes for configuration
+        self.scale = 1
+        self.fill_color = None
+        self.label = None
+        self.label_size = 6
+        self.chr_percent = 0.25
+
+    def draw(self, cur_drawing):
+        """Draw a chromosome segment.
+
+        Before drawing, the range we are drawing in needs to be set.
+        """
+        for position in (
+            self.start_x_position,
+            self.end_x_position,
+            self.start_y_position,
+            self.end_y_position,
+        ):
+            assert position != -1, "Need to set drawing coordinates."
+
+        self._draw_subcomponents(cur_drawing)  # Anything behind
+        self._draw_segment(cur_drawing)
+        self._overdraw_subcomponents(cur_drawing)  # Anything on top
+        self._draw_label(cur_drawing)
+
+    def _draw_subcomponents(self, cur_drawing):
+        """Draw any subcomponents of the chromosome segment (PRIVATE).
+
+        This should be overridden in derived classes if there are
+        subcomponents to be drawn.
+        """
+
+    def _draw_segment(self, cur_drawing):
+        """Draw the current chromosome segment (PRIVATE)."""
+        # set the coordinates of the segment -- it'll take up the MIDDLE part
+        # of the space we have.
+        segment_y = self.end_y_position
+        segment_width = (self.end_x_position - self.start_x_position) * self.chr_percent
+        segment_height = self.start_y_position - self.end_y_position
+        segment_x = self.start_x_position + 0.5 * (
+            self.end_x_position - self.start_x_position - segment_width
+        )
+
+        # first draw the sides of the segment
+        right_line = Line(segment_x, segment_y, segment_x, segment_y + segment_height)
+        left_line = Line(
+            segment_x + segment_width,
+            segment_y,
+            segment_x + segment_width,
+            segment_y + segment_height,
+        )
+
+        cur_drawing.add(right_line)
+        cur_drawing.add(left_line)
+
+        # now draw the box, if it is filled in
+        if self.fill_color is not None:
+            fill_rectangle = Rect(segment_x, segment_y, segment_width, segment_height)
+            fill_rectangle.fillColor = self.fill_color
+            fill_rectangle.strokeColor = None
+
+            cur_drawing.add(fill_rectangle)
+
+    def _overdraw_subcomponents(self, cur_drawing):
+        """Draw any subcomponents of the chromosome segment over the main part (PRIVATE).
+
+        This should be overridden in derived classes if there are
+        subcomponents to be drawn.
+        """
+
+    def _draw_label(self, cur_drawing):
+        """Add a label to the chromosome segment (PRIVATE).
+
+        The label will be applied to the right of the segment.
+
+        This may be overlapped by any sub-feature labels on other segments!
+        """
+        if self.label is not None:
+            label_x = 0.5 * (self.start_x_position + self.end_x_position) + (
+                self.chr_percent + 0.05
+            ) * (self.end_x_position - self.start_x_position)
+            label_y = (
+                self.start_y_position - self.end_y_position
+            ) / 2 + self.end_y_position
+
+            label_string = String(label_x, label_y, self.label)
+            label_string.fontName = "Helvetica"
+            label_string.fontSize = self.label_size
+
+            cur_drawing.add(label_string)
+
+
+def _spring_layout(desired, minimum, maximum, gap=0):
+    """Try to layout label coordinates or other floats (PRIVATE).
+
+    Originally written for the y-axis vertical positioning of labels on a
+    chromosome diagram (where the minimum gap between y-axis coordinates is
+    the label height), it could also potentially be used for x-axis placement,
+    or indeed radial placement for circular chromosomes within GenomeDiagram.
+
+    In essence this is an optimisation problem, balancing the desire to have
+    each label as close as possible to its data point, but also to spread out
+    the labels to avoid overlaps. This could be described with a cost function
+    (modelling the label distance from the desired placement, and the inter-
+    label separations as springs) and solved as a multi-variable minimization
+    problem - perhaps with NumPy or SciPy.
+
+    For now however, the implementation is a somewhat crude ad hoc algorithm.
+
+    NOTE - This expects the input data to have been sorted!
+    """
+    count = len(desired)
+    if count <= 1:
+        return desired  # Easy!
+    if minimum >= maxim

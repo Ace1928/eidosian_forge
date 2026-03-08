@@ -1,0 +1,513 @@
+SOURCE_PATH: archive_forge/src/archive_forge/MetaArray.py
+KIND: code
+
+"""
+MetaArray.py -  Class encapsulating ndarray with meta data
+Copyright 2010  Luke Campagnola
+Distributed under MIT/X11 license. See license.txt for more information.
+
+MetaArray is an array class based on numpy.ndarray that allows storage of per-axis meta data
+such as axis values, names, units, column names, etc. It also enables several
+new methods for slicing and indexing the array based on this meta data. 
+More info at http://www.scipy.org/Cookbook/MetaArray
+"""
+
+import copy
+import os
+import pickle
+import warnings
+
+import numpy as np
+
+## By default, the library will use HDF5 when writing files.
+## This can be overridden by setting USE_HDF5 = False
+USE_HDF5 = True
+try:
+    import h5py
+
+    # Older h5py versions tucked Group and Dataset deeper inside the library:
+    if not hasattr(h5py, 'Group'):
+        import h5py.highlevel
+        h5py.Group = h5py.highlevel.Group
+        h5py.Dataset = h5py.highlevel.Dataset
+        
+    HAVE_HDF5 = True
+except:
+    USE_HDF5 = False
+    HAVE_HDF5 = False
+
+
+def axis(name=None, cols=None, values=None, units=None):
+    """Convenience function for generating axis descriptions when defining MetaArrays"""
+    ax = {}
+    cNameOrder = ['name', 'units', 'title']
+    if name is not None:
+        ax['name'] = name
+    if values is not None:
+        ax['values'] = values
+    if units is not None:
+        ax['units'] = units
+    if cols is not None:
+        ax['cols'] = []
+        for c in cols:
+            if type(c) != list and type(c) != tuple:
+                c = [c]
+            col = {}
+            for i in range(0,len(c)):
+                col[cNameOrder[i]] = c[i]
+            ax['cols'].append(col)
+    return ax
+
+class sliceGenerator(object):
+    """Just a compact way to generate tuples of slice objects."""
+    def __getitem__(self, arg):
+        return arg
+    def __getslice__(self, arg):
+        return arg
+SLICER = sliceGenerator()
+    
+
+class MetaArray(object):
+    """N-dimensional array with meta data such as axis titles, units, and column names.
+  
+    May be initialized with a file name, a tuple representing the dimensions of the array,
+    or any arguments that could be passed on to numpy.array()
+  
+    The info argument sets the metadata for the entire array. It is composed of a list
+    of axis descriptions where each axis may have a name, title, units, and a list of column 
+    descriptions. An additional dict at the end of the axis list may specify parameters
+    that apply to values in the entire array.
+  
+    For example:
+        A 2D array of altitude values for a topographical map might look like
+            info=[
+        {'name': 'lat', 'title': 'Lattitude'}, 
+        {'name': 'lon', 'title': 'Longitude'}, 
+        {'title': 'Altitude', 'units': 'm'}
+      ]
+        In this case, every value in the array represents the altitude in feet at the lat, lon
+        position represented by the array index. All of the following return the 
+        value at lat=10, lon=5:
+            array[10, 5]
+            array['lon':5, 'lat':10]
+            array['lat':10][5]
+        Now suppose we want to combine this data with another array of equal dimensions that
+        represents the average rainfall for each location. We could easily store these as two 
+        separate arrays or combine them into a 3D array with this description:
+            info=[
+        {'name': 'vals', 'cols': [
+          {'name': 'altitude', 'units': 'm'}, 
+          {'name': 'rainfall', 'units': 'cm/year'}
+        ]},
+        {'name': 'lat', 'title': 'Lattitude'}, 
+        {'name': 'lon', 'title': 'Longitude'}
+      ]
+        We can now access the altitude values with array[0] or array['altitude'], and the
+        rainfall values with array[1] or array['rainfall']. All of the following return
+        the rainfall value at lat=10, lon=5:
+            array[1, 10, 5]
+            array['lon':5, 'lat':10, 'val': 'rainfall']
+            array['rainfall', 'lon':5, 'lat':10]
+        Notice that in the second example, there is no need for an extra (4th) axis description
+        since the actual values are described (name and units) in the column info for the first axis.
+    """
+  
+    version = u'2'
+
+    # Default hdf5 compression to use when writing
+    #   'gzip' is widely available and somewhat slow
+    #   'lzf' is faster, but generally not available outside h5py
+    #   'szip' is also faster, but lacks write support on windows
+    # (so by default, we use no compression)
+    # May also be a tuple (filter, opts), such as ('gzip', 3)
+    defaultCompression = None
+    
+    ## Types allowed as axis or column names
+    nameTypes = [str, tuple]
+    @staticmethod
+    def isNameType(var):
+        return any(isinstance(var, t) for t in MetaArray.nameTypes)
+        
+        
+    ## methods to wrap from embedded ndarray / HDF5 
+    wrapMethods = set(['__eq__', '__ne__', '__le__', '__lt__', '__ge__', '__gt__'])
+  
+    def __init__(self, data=None, info=None, dtype=None, file=None, copy=False, **kwargs):
+        object.__init__(self)
+        warnings.warn(
+            'MetaArray is deprecated and will be removed in 0.14. '
+            'Available though https://pypi.org/project/MetaArray/ as its own package.',
+            DeprecationWarning, stacklevel=2
+        )    
+        self._isHDF = False
+        
+        if file is not None:
+            self._data = None
+            self.readFile(file, **kwargs)
+            if kwargs.get("readAllData", True) and self._data is None:
+                raise Exception("File read failed: %s" % file)
+        else:
+            self._info = info
+            if (hasattr(data, 'implements') and data.implements('MetaArray')):
+                self._info = data._info
+                self._data = data.asarray()
+            elif isinstance(data, tuple):  ## create empty array with specified shape
+                self._data = np.empty(data, dtype=dtype)
+            else:
+                self._data = np.array(data, dtype=dtype, copy=copy)
+
+        ## run sanity checks on info structure
+        self.checkInfo()
+    
+    def checkInfo(self):
+        info = self._info
+        if info is None:
+            if self._data is None:
+                return
+            else:
+                self._info = [{} for i in range(self.ndim + 1)]
+                return
+        else:
+            try:
+                info = list(info)
+            except:
+                raise Exception("Info must be a list of axis specifications")
+            if len(info) < self.ndim+1:
+                info.extend([{}]*(self.ndim+1-len(info)))
+            elif len(info) > self.ndim+1:
+                raise Exception("Info parameter must be list of length ndim+1 or less.")
+            for i in range(len(info)):
+                if not isinstance(info[i], dict):
+                    if info[i] is None:
+                        info[i] = {}
+                    else:
+                        raise Exception("Axis specification must be Dict or None")
+                if i < self.ndim and 'values' in info[i]:
+                    if type(info[i]['values']) is list:
+                        info[i]['values'] = np.array(info[i]['values'])
+                    elif type(info[i]['values']) is not np.ndarray:
+                        raise Exception("Axis values must be specified as list or ndarray")
+                    if info[i]['values'].ndim != 1 or info[i]['values'].shape[0] != self.shape[i]:
+                        raise Exception("Values array for axis %d has incorrect shape. (given %s, but should be %s)" %
+                                        (i, str(info[i]['values'].shape), str((self.shape[i],))))
+                if i < self.ndim and 'cols' in info[i]:
+                    if not isinstance(info[i]['cols'], list):
+                        info[i]['cols'] = list(info[i]['cols'])
+                    if len(info[i]['cols']) != self.shape[i]:
+                        raise Exception('Length of column list for axis %d does not match data. (given %d, but should be %d)' %
+                                        (i, len(info[i]['cols']), self.shape[i]))
+            self._info = info
+
+    def implements(self, name=None):
+        ## Rather than isinstance(obj, MetaArray) use object.implements('MetaArray')
+        if name is None:
+            return ['MetaArray']
+        else:
+            return name == 'MetaArray'
+  
+    def __getitem__(self, ind):
+        nInd = self._interpretIndexes(ind)
+
+        a = self._data[nInd]
+        if len(nInd) == self.ndim:
+            if np.all([not isinstance(ind, (slice, np.ndarray)) for ind in nInd]):  ## no slices; we have requested a single value from the array
+                return a
+        
+        ## indexing returned a sub-array; generate new info array to go with it
+        info = []
+        extraInfo = self._info[-1].copy()
+        for i in range(0, len(nInd)):   ## iterate over all axes
+            if type(nInd[i]) in [slice, list] or isinstance(nInd[i], np.ndarray):  ## If the axis is sliced, keep the info but chop if necessary
+                info.append(self._axisSlice(i, nInd[i]))
+            else: ## If the axis is indexed, then move the information from that single index to the last info dictionary
+                newInfo = self._axisSlice(i, nInd[i])
+                name = None
+                colName = None
+                for k in newInfo:
+                    if k == 'cols':
+                        if 'cols' not in extraInfo:
+                            extraInfo['cols'] = []
+                        extraInfo['cols'].append(newInfo[k])
+                        if 'units' in newInfo[k]:
+                            extraInfo['units'] = newInfo[k]['units']
+                        if 'name' in newInfo[k]:
+                            colName = newInfo[k]['name']
+                    elif k == 'name':
+                        name = newInfo[k]
+                    else:
+                        if k not in extraInfo:
+                            extraInfo[k] = newInfo[k]
+                        extraInfo[k] = newInfo[k]
+                if 'name' not in extraInfo:
+                    if name is None:
+                        if colName is not None:
+                            extraInfo['name'] = colName
+                    else:
+                        if colName is not None:
+                            extraInfo['name'] = str(name) + ': ' + str(colName)
+                        else:
+                            extraInfo['name'] = name
+                        
+        info.append(extraInfo)
+        
+        return MetaArray(a, info=info)
+  
+    @property
+    def ndim(self):
+        return len(self.shape)  ## hdf5 objects do not have ndim property.
+            
+    @property
+    def shape(self):
+        return self._data.shape
+        
+    @property
+    def dtype(self):
+        return self._data.dtype
+        
+    def __len__(self):
+        return len(self._data)
+        
+    def __getslice__(self, *args):
+        return self.__getitem__(slice(*args))
+  
+    def __setitem__(self, ind, val):
+        nInd = self._interpretIndexes(ind)
+        try:
+            self._data[nInd] = val
+        except:
+            print(self, nInd, val)
+            raise
+        
+    def __getattr__(self, attr):
+        if attr in self.wrapMethods:
+            return getattr(self._data, attr)
+        else:
+            raise AttributeError(attr)
+        
+    def __eq__(self, b):
+        return self._binop('__eq__', b)
+        
+    def __ne__(self, b):
+        return self._binop('__ne__', b)
+        
+    def __sub__(self, b):
+        return self._binop('__sub__', b)
+
+    def __add__(self, b):
+        return self._binop('__add__', b)
+
+    def __mul__(self, b):
+        return self._binop('__mul__', b)
+        
+    def __div__(self, b):
+        return self._binop('__div__', b)
+        
+    def __truediv__(self, b):
+        return self._binop('__truediv__', b)
+        
+    def _binop(self, op, b):
+        if isinstance(b, MetaArray):
+            b = b.asarray()
+        a = self.asarray()
+        c = getattr(a, op)(b)
+        if c.shape != a.shape:
+            raise Exception("Binary operators with MetaArray must return an array of the same shape (this shape is %s, result shape was %s)" % (a.shape, c.shape))
+        return MetaArray(c, info=self.infoCopy())
+        
+    def asarray(self):
+        if isinstance(self._data, np.ndarray):
+            return self._data
+        else:
+            return np.array(self._data)
+            
+    def __array__(self, dtype=None):
+        ## supports np.array(metaarray_instance) 
+        if dtype is None:
+            return self.asarray()
+        else:
+            return self.asarray().astype(dtype)
+  
+    def axisValues(self, axis):
+        """Return the list of values for an axis"""
+        ax = self._interpretAxis(axis)
+        if 'values' in self._info[ax]:
+            return self._info[ax]['values']
+        else:
+            raise Exception('Array axis %s (%d) has no associated values.' % (str(axis), ax))
+  
+    def xvals(self, axis):
+        """Synonym for axisValues()"""
+        return self.axisValues(axis)
+        
+    def axisHasValues(self, axis):
+        ax = self._interpretAxis(axis)
+        return 'values' in self._info[ax]
+        
+    def axisHasColumns(self, axis):
+        ax = self._interpretAxis(axis)
+        return 'cols' in self._info[ax]
+  
+    def axisUnits(self, axis):
+        """Return the units for axis"""
+        ax = self._info[self._interpretAxis(axis)]
+        if 'units' in ax:
+            return ax['units']
+        
+    def hasColumn(self, axis, col):
+        ax = self._info[self._interpretAxis(axis)]
+        if 'cols' in ax:
+            for c in ax['cols']:
+                if c['name'] == col:
+                    return True
+        return False
+        
+    def listColumns(self, axis=None):
+        """Return a list of column names for axis. If axis is not specified, then return a dict of {axisName: (column names), ...}."""
+        if axis is None:
+            ret = {}
+            for i in range(self.ndim):
+                if 'cols' in self._info[i]:
+                    cols = [c['name'] for c in self._info[i]['cols']]
+                else:
+                    cols = []
+                ret[self.axisName(i)] = cols
+            return ret
+        else:
+            axis = self._interpretAxis(axis)
+            return [c['name'] for c in self._info[axis]['cols']]
+        
+    def columnName(self, axis, col):
+        ax = self._info[self._interpretAxis(axis)]
+        return ax['cols'][col]['name']
+        
+    def axisName(self, n):
+        return self._info[n].get('name', n)
+        
+    def columnUnits(self, axis, column):
+        """Return the units for column in axis"""
+        ax = self._info[self._interpretAxis(axis)]
+        if 'cols' in ax:
+            for c in ax['cols']:
+                if c['name'] == column:
+                    return c['units']
+            raise Exception("Axis %s has no column named %s" % (str(axis), str(column)))
+        else:
+            raise Exception("Axis %s has no column definitions" % str(axis))
+  
+    def rowsort(self, axis, key=0):
+        """Return this object with all records sorted along axis using key as the index to the values to compare. Does not yet modify meta info."""
+        ## make sure _info is copied locally before modifying it!
+    
+        keyList = self[key]
+        order = keyList.argsort()
+        if type(axis) == int:
+            ind = [slice(None)]*axis
+            ind.append(order)
+        elif isinstance(axis, str):
+            ind = (slice(axis, order),)
+        else:
+            raise TypeError("axis must be type (int, str)")
+        return self[tuple(ind)]
+  
+    def append(self, val, axis):
+        """Return this object with val appended along axis. Does not yet combine meta info."""
+        ## make sure _info is copied locally before modifying it!
+    
+        s = list(self.shape)
+        axis = self._interpretAxis(axis)
+        s[axis] += 1
+        n = MetaArray(tuple(s), info=self._info, dtype=self.dtype)
+        ind = [slice(None)]*self.ndim
+        ind[axis] = slice(None,-1)
+        n[tuple(ind)] = self
+        ind[axis] = -1
+        n[tuple(ind)] = val
+        return n
+  
+    def extend(self, val, axis):
+        """Return the concatenation along axis of this object and val. Does not yet combine meta info."""
+        ## make sure _info is copied locally before modifying it!
+    
+        axis = self._interpretAxis(axis)
+        return MetaArray(np.concatenate(self, val, axis), info=self._info)
+  
+    def infoCopy(self, axis=None):
+        """Return a deep copy of the axis meta info for this object"""
+        if axis is None:
+            return copy.deepcopy(self._info)
+        else:
+            return copy.deepcopy(self._info[self._interpretAxis(axis)])
+  
+    def copy(self):
+        return MetaArray(self._data.copy(), info=self.infoCopy())
+  
+  
+    def _interpretIndexes(self, ind):
+        #print "interpret", ind
+        if not isinstance(ind, tuple):
+            ## a list of slices should be interpreted as a tuple of slices.
+            if isinstance(ind, list) and len(ind) > 0 and isinstance(ind[0], slice):
+                ind = tuple(ind)
+            ## everything else can just be converted to a length-1 tuple
+            else:
+                ind = (ind,)
+                
+        nInd = [slice(None)]*self.ndim
+        numOk = True  ## Named indices not started yet; numbered sill ok
+        for i in range(0,len(ind)):
+            (axis, index, isNamed) = self._interpretIndex(ind[i], i, numOk)
+            nInd[axis] = index
+            if isNamed:
+                numOk = False
+        return tuple(nInd)
+      
+    def _interpretAxis(self, axis):
+        if isinstance(axis, (str, tuple)):
+            return self._getAxis(axis)
+        else:
+            return axis
+  
+    def _interpretIndex(self, ind, pos, numOk):
+        #print "Interpreting index", ind, pos, numOk
+        
+        ## should probably check for int first to speed things up..
+        if type(ind) is int:
+            if not numOk:
+                raise Exception("string and integer indexes may not follow named indexes")
+            #print "  normal numerical index"
+            return (pos, ind, False)
+        if MetaArray.isNameType(ind):
+            if not numOk:
+                raise Exception("string and integer indexes may not follow named indexes")
+            #print "  String index, column is ", self._getIndex(pos, ind)
+            return (pos, self._getIndex(pos, ind), False)
+        elif type(ind) is slice:
+            #print "  Slice index"
+            if MetaArray.isNameType(ind.start) or MetaArray.isNameType(ind.stop):  ## Not an actual slice!
+                #print "    ..not a real slice"
+                axis = self._interpretAxis(ind.start)
+                #print "    axis is", axis
+                
+                ## x[Axis:Column]
+                if MetaArray.isNameType(ind.stop):
+                    #print "    column name, column is ", self._getIndex(axis, ind.stop)
+                    index = self._getIndex(axis, ind.stop)
+                    
+                ## x[Axis:min:max]
+                elif (isinstance(ind.stop, float) or isinstance(ind.step, float)) and ('values' in self._info[axis]):
+                    #print "    axis value range"
+                    if ind.stop is None:
+                        mask = self.xvals(axis) < ind.step
+                    elif ind.step is None:
+                        mask = self.xvals(axis) >= ind.stop
+                    else:
+                        mask = (self.xvals(axis) >= ind.stop) * (self.xvals(axis) < ind.step)
+                    ##print "mask:", mask
+                    index = mask
+                    
+                ## x[Axis:columnIndex]
+                elif isinstance(ind.stop, int) or isinstance(ind.step, int):
+                    #print "    normal slice after named axis"
+                    if ind.step is None:
+                        index = ind.stop
+                    el

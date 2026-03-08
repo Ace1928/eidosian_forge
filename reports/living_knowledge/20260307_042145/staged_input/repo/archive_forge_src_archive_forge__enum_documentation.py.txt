@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_enum_documentation.py
+KIND: code
+
+from enum import IntEnum
+Validate incoming item and raise a ValueError with valid options if not present.

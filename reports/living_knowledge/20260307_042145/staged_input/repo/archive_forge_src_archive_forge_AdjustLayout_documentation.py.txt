@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/AdjustLayout_documentation.py
+KIND: code
+
+import tkinter as tk
+
+    Creates a graphical user interface for the application.

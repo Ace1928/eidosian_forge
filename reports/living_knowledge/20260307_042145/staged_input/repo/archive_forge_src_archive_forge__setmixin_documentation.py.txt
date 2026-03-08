@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_setmixin_documentation.py
+KIND: code
+
+Mix-in for sets.  You must define __iter__, add, remove

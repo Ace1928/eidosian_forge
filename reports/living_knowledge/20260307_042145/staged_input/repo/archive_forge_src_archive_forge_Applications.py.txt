@@ -1,0 +1,480 @@
+SOURCE_PATH: archive_forge/src/archive_forge/Applications.py
+KIND: code
+
+# Copyright 2001 Brad Chapman.
+# Revisions copyright 2009-2010 by Peter Cock.
+# Revisions copyright 2010 by Phillip Garland.
+# All rights reserved.
+# This file is part of the Biopython distribution and governed by your
+# choice of the "Biopython License Agreement" or the "BSD 3-Clause License".
+# Please see the LICENSE file that should have been included as part of this
+# package.
+"""Definitions for interacting with BLAST related applications (OBSOLETE).
+
+Wrappers for the new NCBI BLAST+ tools (written in C++):
+
+ - NcbiblastpCommandline - Protein-Protein BLAST
+ - NcbiblastnCommandline - Nucleotide-Nucleotide BLAST
+ - NcbiblastxCommandline - Translated Query-Protein Subject BLAST
+ - NcbitblastnCommandline - Protein Query-Translated Subject BLAST
+ - NcbitblastxCommandline - Translated Query-Protein Subject BLAST
+ - NcbipsiblastCommandline - Position-Specific Initiated BLAST
+ - NcbirpsblastCommandline - Reverse Position Specific BLAST
+ - NcbirpstblastnCommandline - Translated Reverse Position Specific BLAST
+ - NcbideltablastCommandline - Protein-Protein domain enhanced lookup time accelerated blast
+ - NcbiblastformatterCommandline - Convert ASN.1 to other BLAST output formats
+ - NcbimakeblastdbCommandline - Application to create BLAST databases
+
+For further details, see:
+
+Camacho et al. BLAST+: architecture and applications
+BMC Bioinformatics 2009, 10:421
+https://doi.org/10.1186/1471-2105-10-421
+
+We have decided to remove this module in future, and instead recommend
+building your command and invoking it via the subprocess module directly.
+"""
+
+from Bio.Application import _Option, AbstractCommandline, _Switch
+
+
+class _NcbibaseblastCommandline(AbstractCommandline):
+    """Base Commandline object for (new) NCBI BLAST+ wrappers (PRIVATE).
+
+    This is provided for subclassing, it deals with shared options
+    common to all the BLAST tools (blastn, rpsblast, rpsblast, etc
+    AND blast_formatter).
+    """
+
+    def __init__(self, cmd=None, **kwargs):
+        assert cmd is not None
+        extra_parameters = [
+            # Core:
+            _Switch(
+                ["-h", "h"], "Print USAGE and DESCRIPTION;  ignore other arguments."
+            ),
+            _Switch(
+                ["-help", "help"],
+                "Print USAGE, DESCRIPTION and ARGUMENTS description; "
+                "ignore other arguments.",
+            ),
+            _Switch(
+                ["-version", "version"],
+                "Print version number;  ignore other arguments.",
+            ),
+            # Output configuration options
+            _Option(
+                ["-out", "out"],
+                "Output file for alignment.",
+                filename=True,
+                equate=False,
+            ),
+            # Formatting options:
+            _Option(
+                ["-outfmt", "outfmt"],
+                "Alignment view.  Typically an integer 0-14 but for some "
+                "formats can be named columns like '6 qseqid sseqid'.  "
+                "Use 5 for XML output (differs from classic BLAST which "
+                "used 7 for XML).",
+                filename=True,  # to ensure spaced inputs are quoted
+                equate=False,
+            ),
+            # TODO - Document and test the column options
+            _Switch(["-show_gis", "show_gis"], "Show NCBI GIs in deflines?"),
+            _Option(
+                ["-num_descriptions", "num_descriptions"],
+                "Number of database sequences to show one-line descriptions for.\n\n"
+                "Integer argument (at least zero). Default is 500. "
+                "See also num_alignments.",
+                equate=False,
+            ),
+            _Option(
+                ["-num_alignments", "num_alignments"],
+                "Number of database sequences to show num_alignments for.\n\n"
+                "Integer argument (at least zero). Default is 200. "
+                "See also num_alignments.",
+                equate=False,
+            ),
+            _Option(
+                ["-line_length", "line_length"],
+                "Line length for formatting alignments "
+                "(integer, at least 1, default 60).\n\n"
+                "Not applicable for outfmt > 4. Added in BLAST+ 2.2.30.",
+                equate=False,
+            ),
+            _Switch(
+                ["-html", "html"], "Produce HTML output? See also the outfmt option."
+            ),
+            # Miscellaneous options
+            _Switch(
+                ["-parse_deflines", "parse_deflines"],
+                "Should the query and subject defline(s) be parsed?",
+            ),
+        ]
+        try:
+            # Insert extra parameters - at the start just in case there
+            # are any arguments which must come last:
+            self.parameters = extra_parameters + self.parameters
+        except AttributeError:
+            # Should we raise an error?  The subclass should have set this up!
+            self.parameters = extra_parameters
+        AbstractCommandline.__init__(self, cmd, **kwargs)
+
+    def _validate_incompatibilities(self, incompatibles):
+        """Validate parameters for incompatibilities (PRIVATE).
+
+        Used by the _validate method.
+        """
+        for a in incompatibles:
+            if self._get_parameter(a):
+                for b in incompatibles[a]:
+                    if self._get_parameter(b):
+                        raise ValueError(f"Options {a} and {b} are incompatible.")
+
+
+class _NcbiblastCommandline(_NcbibaseblastCommandline):
+    """Base Commandline object for (new) NCBI BLAST+ wrappers (PRIVATE).
+
+    This is provided for subclassing, it deals with shared options
+    common to all the BLAST tools (blastn, rpsblast, rpsblast, etc).
+    """
+
+    def __init__(self, cmd=None, **kwargs):
+        assert cmd is not None
+        extra_parameters = [
+            # Input query options:
+            _Option(
+                ["-query", "query"],
+                "The sequence to search with.",
+                filename=True,
+                equate=False,
+            ),  # Should this be required?
+            _Option(
+                ["-query_loc", "query_loc"],
+                "Location on the query sequence (Format: start-stop).",
+                equate=False,
+            ),
+            # General search options:
+            _Option(["-db", "db"], "The database to BLAST against.", equate=False),
+            _Option(["-evalue", "evalue"], "Expectation value cutoff.", equate=False),
+            _Option(
+                ["-word_size", "word_size"],
+                "Word size for wordfinder algorithm.\n\nInteger. Minimum 2.",
+                equate=False,
+            ),
+            # BLAST-2-Sequences options:
+            # - see subclass
+            # Formatting options:
+            # - see baseclass
+            # Query filtering options
+            _Option(
+                ["-soft_masking", "soft_masking"],
+                "Apply filtering locations as soft masks (Boolean, Default = true).",
+                equate=False,
+            ),
+            _Switch(
+                ["-lcase_masking", "lcase_masking"],
+                "Use lower case filtering in query and subject sequence(s)?",
+            ),
+            # Restrict search or results
+            _Option(
+                ["-gilist", "gilist"],
+                "Restrict search of database to list of GI's.\n\n"
+                "Incompatible with: negative_gilist, seqidlist, negative_seqidlist, "
+                "remote, subject, subject_loc",
+                filename=True,
+                equate=False,
+            ),
+            _Option(
+                ["-negative_gilist", "negative_gilist"],
+                "Restrict search of database to everything except the listed GIs.\n\n"
+                "Incompatible with: gilist, seqidlist, remote, subject, subject_loc",
+                filename=True,
+                equate=False,
+            ),
+            _Option(
+                ["-seqidlist", "seqidlist"],
+                "Restrict search of database to list of SeqID's.\n\n"
+                "Incompatible with: gilist, negative_gilist, remote, subject, "
+                "subject_loc",
+                filename=True,
+                equate=False,
+            ),
+            _Option(
+                ["-negative_seqidlist", "negative_seqidlist"],
+                "Restrict search of database to everything except listed SeqID's.\n\n"
+                "Incompatible with: gilist, seqidlist, remote, subject, subject_loc",
+                filename=True,
+                equate=False,
+            ),
+            _Option(
+                ["-entrez_query", "entrez_query"],
+                "Restrict search with the given Entrez query (requires remote).",
+                equate=False,
+            ),
+            _Option(
+                ["-qcov_hsp_perc", "qcov_hsp_perc"],
+                "Percent query coverage per hsp (float, 0 to 100).\n\n"
+                "Added in BLAST+ 2.2.30.",
+                equate=False,
+            ),
+            _Option(
+                ["-max_target_seqs", "max_target_seqs"],
+                "Maximum number of aligned sequences to keep (integer, at least one).",
+                equate=False,
+            ),
+            # Statistical options
+            _Option(
+                ["-dbsize", "dbsize"],
+                "Effective length of the database (integer).",
+                equate=False,
+            ),
+            _Option(
+                ["-searchsp", "searchsp"],
+                "Effective length of the search space (integer).",
+                equate=False,
+            ),
+            _Option(
+                ["-max_hsps_per_subject", "max_hsps_per_subject"],
+                "Override max number of HSPs per subject saved for ungapped searches "
+                "(integer).",
+                equate=False,
+            ),
+            _Option(
+                ["-max_hsps", "max_hsps"],
+                "Set max number of HSPs saved per subject sequence\n\n"
+                "Ddefault 0 means no limit.",
+                equate=False,
+            ),
+            _Switch(["-sum_statistics", "sum_statistics"], "Use sum statistics."),
+            # Is -sum_stats a BLAST+ bug, why not use -sum_statistics switch?
+            _Option(
+                ["-sum_stats", "sum_stats"],
+                "Use sum statistics (boolean).\n\nAdded in BLAST+ 2.2.30.",
+                equate=False,
+            ),
+            # Extension options
+            _Option(
+                ["-xdrop_ungap", "xdrop_ungap"],
+                "X-dropoff value (in bits) for ungapped extensions (float).",
+                equate=False,
+            ),
+            _Option(
+                ["-xdrop_gap", "xdrop_gap"],
+                "X-dropoff value (in bits) for preliminary gapped extensions (float).",
+                equate=False,
+            ),
+            _Option(
+                ["-xdrop_gap_final", "xdrop_gap_final"],
+                "X-dropoff value (in bits) for final gapped alignment (float).",
+                equate=False,
+            ),
+            _Option(
+                ["-window_size", "window_size"],
+                "Multiple hits window size, use 0 to specify 1-hit algorithm "
+                "(integer).",
+                equate=False,
+            ),
+            # Search strategy options
+            _Option(
+                ["-import_search_strategy", "import_search_strategy"],
+                "Search strategy to use.\n\n"
+                "Incompatible with: export_search_strategy",
+                filename=True,
+                equate=False,
+            ),
+            _Option(
+                ["-export_search_strategy", "export_search_strategy"],
+                "File name to record the search strategy used.\n\n"
+                "Incompatible with: import_search_strategy",
+                filename=True,
+                equate=False,
+            ),
+            # Miscellaneous options
+            _Option(
+                ["-num_threads", "num_threads"],
+                "Number of threads to use in the BLAST search.\n\n"
+                "Integer, at least one. Default is one. Incompatible with: remote",
+                equate=False,
+            ),
+            _Switch(
+                ["-remote", "remote"],
+                "Execute search remotely?\n\n"
+                "Incompatible with: gilist, negative_gilist, subject_loc, "
+                "num_threads, ...",
+            ),
+        ]
+        try:
+            # Insert extra parameters - at the start just in case there
+            # are any arguments which must come last:
+            self.parameters = extra_parameters + self.parameters
+        except AttributeError:
+            # Should we raise an error?  The subclass should have set this up!
+            self.parameters = extra_parameters
+        _NcbibaseblastCommandline.__init__(self, cmd, **kwargs)
+
+    def _validate(self):
+        incompatibles = {
+            "remote": ["gilist", "negative_gilist", "num_threads"],
+            "import_search_strategy": ["export_search_strategy"],
+            "gilist": ["negative_gilist"],
+            "seqidlist": ["gilist", "negative_gilist", "remote"],
+        }
+        self._validate_incompatibilities(incompatibles)
+        if self.entrez_query and not self.remote:
+            raise ValueError("Option entrez_query requires remote option.")
+        AbstractCommandline._validate(self)
+
+
+class _Ncbiblast2SeqCommandline(_NcbiblastCommandline):
+    """Base Commandline object for (new) NCBI BLAST+ wrappers (PRIVATE).
+
+    This is provided for subclassing, it deals with shared options
+    common to all the BLAST tools supporting two-sequence BLAST
+    (blastn, psiblast, etc) but not rpsblast or rpstblastn.
+    """
+
+    def __init__(self, cmd=None, **kwargs):
+        assert cmd is not None
+        extra_parameters = [
+            # General search options:
+            _Option(
+                ["-gapopen", "gapopen"], "Cost to open a gap (integer).", equate=False
+            ),
+            _Option(
+                ["-gapextend", "gapextend"],
+                "Cost to extend a gap (integer).",
+                equate=False,
+            ),
+            # BLAST-2-Sequences options:
+            _Option(
+                ["-subject", "subject"],
+                "Subject sequence(s) to search.\n\n"
+                "Incompatible with: db, gilist, seqidlist, negative_gilist, "
+                "negative_seqidlist, db_soft_mask, db_hard_mask\n\n"
+                "See also subject_loc.",
+                filename=True,
+                equate=False,
+            ),
+            _Option(
+                ["-subject_loc", "subject_loc"],
+                "Location on the subject sequence (Format: start-stop).\n\n"
+                "Incompatible with: db, gilist, seqidlist, negative_gilist, "
+                "negative_seqidlist, db_soft_mask, db_hard_mask, remote.\n\n"
+                "See also subject.",
+                equate=False,
+            ),
+            # Restrict search or results:
+            _Option(
+                ["-culling_limit", "culling_limit"],
+                "Hit culling limit (integer).\n\n"
+                "If the query range of a hit is enveloped by that of at "
+                "least this many higher-scoring hits, delete the hit.\n\n"
+                "Incompatible with: best_hit_overhang, best_hit_score_edge.",
+                equate=False,
+            ),
+            _Option(
+                ["-best_hit_overhang", "best_hit_overhang"],
+                "Best Hit algorithm overhang value (float, recommended value: 0.1)\n\n"
+                "Float between 0.0 and 0.5 inclusive. "
+                "Incompatible with: culling_limit.",
+                equate=False,
+            ),
+            _Option(
+                ["-best_hit_score_edge", "best_hit_score_edge"],
+                "Best Hit algorithm score edge value (float).\n\n"
+                "Float between 0.0 and 0.5 inclusive. Recommended value: 0.1\n\n"
+                "Incompatible with: culling_limit.",
+                equate=False,
+            ),
+        ]
+        try:
+            # Insert extra parameters - at the start just in case there
+            # are any arguments which must come last:
+            self.parameters = extra_parameters + self.parameters
+        except AttributeError:
+            # Should we raise an error?  The subclass should have set this up!
+            self.parameters = extra_parameters
+        _NcbiblastCommandline.__init__(self, cmd, **kwargs)
+
+    def _validate(self):
+        incompatibles = {
+            "subject_loc": ["db", "gilist", "negative_gilist", "seqidlist", "remote"],
+            "culling_limit": ["best_hit_overhang", "best_hit_score_edge"],
+            "subject": ["db", "gilist", "negative_gilist", "seqidlist"],
+        }
+        self._validate_incompatibilities(incompatibles)
+        _NcbiblastCommandline._validate(self)
+
+
+class _NcbiblastMain2SeqCommandline(_Ncbiblast2SeqCommandline):
+    """Base Commandline object for (new) NCBI BLAST+ wrappers (PRIVATE).
+
+    This is provided for subclassing, it deals with shared options
+    common to the main BLAST tools blastp, blastn, blastx, tblastx, tblastn
+    but not psiblast, rpsblast or rpstblastn.
+    """
+
+    def __init__(self, cmd=None, **kwargs):
+        assert cmd is not None
+        extra_parameters = [
+            # Restrict search or results:
+            _Option(
+                ["-db_soft_mask", "db_soft_mask"],
+                "Filtering algorithm for soft masking (integer).\n\n"
+                "Filtering algorithm ID to apply to BLAST database as soft masking. "
+                "Incompatible with: db_hard_mask, subject, subject_loc",
+                equate=False,
+            ),
+            _Option(
+                ["-db_hard_mask", "db_hard_mask"],
+                "Filtering algorithm for hard masking (integer).\n\n"
+                "Filtering algorithm ID to apply to BLAST database as hard masking. "
+                "Incompatible with: db_soft_mask, subject, subject_loc",
+                equate=False,
+            ),
+        ]
+        try:
+            # Insert extra parameters - at the start just in case there
+            # are any arguments which must come last:
+            self.parameters = extra_parameters + self.parameters
+        except AttributeError:
+            # Should we raise an error?  The subclass should have set this up!
+            self.parameters = extra_parameters
+        _Ncbiblast2SeqCommandline.__init__(self, cmd, **kwargs)
+
+    def _validate(self):
+        incompatibles = {
+            "db_soft_mask": ["db_hard_mask", "subject", "subject_loc"],
+            "db_hard_mask": ["db_soft_mask", "subject", "subject_loc"],
+        }
+        self._validate_incompatibilities(incompatibles)
+        _Ncbiblast2SeqCommandline._validate(self)
+
+
+class NcbiblastpCommandline(_NcbiblastMain2SeqCommandline):
+    """Create a commandline for the NCBI BLAST+ program blastp (for proteins).
+
+    With the release of BLAST+ (BLAST rewritten in C++ instead of C), the NCBI
+    replaced the old blastall tool with separate tools for each of the searches.
+    This wrapper therefore replaces BlastallCommandline with option -p blastp.
+
+    >>> from Bio.Blast.Applications import NcbiblastpCommandline
+    >>> cline = NcbiblastpCommandline(query="rosemary.pro", db="nr",
+    ...                               evalue=0.001, remote=True, ungapped=True)
+    >>> cline
+    NcbiblastpCommandline(cmd='blastp', query='rosemary.pro', db='nr', evalue=0.001, remote=True, ungapped=True)
+    >>> print(cline)
+    blastp -query rosemary.pro -db nr -evalue 0.001 -remote -ungapped
+
+    You would typically run the command line with cline() or via the Python
+    subprocess module, as described in the Biopython tutorial.
+    """
+
+    def __init__(self, cmd="blastp", **kwargs):
+        """Initialize the class."""
+        self.parameters = [
+            # General search options:
+            _Option(
+                ["-task", "task"],
+                "Task to execute (string, blastp (default), blas

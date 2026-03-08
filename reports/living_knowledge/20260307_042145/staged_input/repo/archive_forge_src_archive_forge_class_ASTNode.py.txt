@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_ASTNode.py
+KIND: code
+
+import enum
+from typing import Optional, List, Union, Iterable, Tuple
+class ASTNode:
+    """Base abstract class for AST nodes"""

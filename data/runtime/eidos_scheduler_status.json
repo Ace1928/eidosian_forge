@@ -1,0 +1,16 @@
+{
+  "contract": "eidos.scheduler.status.v1",
+  "updated_at": "2026-03-08T10:28:39.905995+00:00",
+  "state": "sleeping",
+  "owner": "eidos_scheduler",
+  "current_task": "living_pipeline",
+  "cycle": 81,
+  "interval_sec": 900.0,
+  "next_run_in_seconds": 360.0,
+  "pid": 12254,
+  "last_result": {
+    "status": "waiting",
+    "reason": "instance_budget_exceeded"
+  },
+  "last_error": ""
+}

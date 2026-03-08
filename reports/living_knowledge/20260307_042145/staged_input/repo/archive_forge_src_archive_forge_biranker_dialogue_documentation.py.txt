@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/biranker_dialogue_documentation.py
+KIND: code
+
+from parlai.core.build_data import download_models
+
+Pretrained LIGHT BERT bi-Ranker dialogue model from:
+
+https://arxiv.org/pdf/1903.03094.pdf

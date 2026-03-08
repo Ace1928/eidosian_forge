@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_bwa_documentation.py
+KIND: code
+
+from Bio.Application import _Option, _Argument, _Switch, AbstractCommandline
+from Bio.Application import _StaticArgument
+Initialize the class.

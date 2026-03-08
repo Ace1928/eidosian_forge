@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/capabilities_cli_documentation.py
+KIND: code
+
+from cliff import show
+from aodhclient import utils
+List capabilities of alarming service

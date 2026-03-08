@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_multiprocessing_helpers_documentation.py
+KIND: code
+
+import os
+import warnings
+Helper module to factorize the conditional multiprocessing import logic
+
+We use a distinct module to simplify import statements and avoid introducing
+circular dependencies (for instance for the assert_spawning name).

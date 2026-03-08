@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/beautiful_soup_transformer.py
+KIND: code
+
+from langchain_community.document_transformers.beautiful_soup_transformer import (
+    BeautifulSoupTransformer,
+)
+
+__all__ = ["BeautifulSoupTransformer"]

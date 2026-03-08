@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/agent_token_buffer_memory_documentation.py
+KIND: code
+
+from typing import Any, Dict, List
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.messages import BaseMessage, get_buffer_string
+from langchain.agents.format_scratchpad.openai_functions import (
+from langchain.memory.chat_memory import BaseChatMemory
+Save context from this conversation to buffer. Pruned.

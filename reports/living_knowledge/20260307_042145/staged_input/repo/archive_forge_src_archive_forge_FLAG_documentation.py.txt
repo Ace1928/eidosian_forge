@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/FLAG_documentation.py
+KIND: code
+
+MySQL FLAG Constants
+
+These flags are used along with the FIELD_TYPE to indicate various
+properties of columns in a result set.

@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_propertyhelper_documentation.py
+KIND: code
+
+from . import _gi
+from ._constants import \
+Set the setter function to fset. For use as a decorator.

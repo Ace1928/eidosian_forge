@@ -1,0 +1,15 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/ZW
+KIND: config
+
+ZW
+bulawayobulawayo province
+harareharare province!
+
+manicalandmanicaland province3
+mashonaland centralmashonaland central province8
+mashonaland east	mahusekwamashonaland east province
+midlandsmidlands province1
+matabeleland northmatabeleland north province1
+matabeleland southmatabeleland south province'
+masvingomasvingo provincevictoria-
+mashonaland westmashonaland west province

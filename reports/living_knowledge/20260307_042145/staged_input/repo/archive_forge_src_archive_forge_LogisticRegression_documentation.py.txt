@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/LogisticRegression_documentation.py
+KIND: code
+
+import warnings
+from Bio import BiopythonDeprecationWarning
+Initialize the class.

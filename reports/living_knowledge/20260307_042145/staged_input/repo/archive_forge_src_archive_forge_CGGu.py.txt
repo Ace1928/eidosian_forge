@@ -1,0 +1,507 @@
+SOURCE_PATH: archive_forge/src/archive_forge/CGGu.py
+KIND: code
+
+"""
+Module: trader.py
+Author: Your Name
+Created on: Date
+Purpose:
+    This module is designed to facilitate automated trading by collecting and analyzing market data,
+    implementing trading strategies, and executing trades. It integrates various data sources including
+    historical price data, market sentiment from news articles and social media, and real-time order book data.
+    It leverages machine learning models for data analysis and prediction, incorporates multiple trading strategies,
+    and includes advanced risk management techniques. The module also features a user-friendly configuration,
+    real-time monitoring, and robust error handling and logging for scalability and maintainability.
+
+Functionalities:
+    - Collect and analyze market data from multiple sources.
+    - Implement and execute various trading strategies based on market conditions.
+    - Utilize machine learning models for market trend prediction.
+    - Provide advanced risk management and portfolio diversification.
+    - Offer a customizable trading experience through user configuration.
+    - Enable real-time monitoring and alerting of bot activity and market conditions.
+"""
+
+# Importing necessary packages
+import pandas as pd  # For data manipulation and analysis
+import requests  # For making HTTP requests to a specified URL
+import pandas_ta as ta  # For technical analysis indicators
+import matplotlib.pyplot as plt  # For creating static, animated, and interactive visualizations
+from termcolor import colored as cl  # For coloring terminal text
+import math  # Provides access to mathematical functions
+import logging  # For tracking events that happen when some software runs
+import nltk  # For natural language processing tasks
+from newspaper import Article  # For extracting and parsing news articles
+import ccxt  # Cryptocurrency exchange library for connecting to various exchanges
+import nltk
+from textblob import TextBlob
+from nltk.sentiment import SentimentIntensityAnalyzer
+from typing import Union, Optional, Tuple, List
+from sklearn.preprocessing import MinMaxScaler
+import tensorflow as tf
+import keras
+from keras.models import Sequential
+from keras.layers import LSTM, Dense, Dropout
+from keras.callbacks import EarlyStopping
+import numpy as np
+import pandas as pd
+import gspread
+from oauth2client.client import OAuth2Credentials
+from tkinter import Tk, Label, Entry, Button, StringVar
+import json
+import os
+import yfinance as yf
+
+# Ensuring only the intended functions and classes are available for import
+__all__ = [
+    "get_historical_data",
+    "implement_strategy",
+    "analyze_sentiment",
+    "get_order_book",
+]
+
+# Downloading necessary NLTK resources
+nltk.download("averaged_perceptron_tagger")
+nltk.download("vader_lexicon")
+nltk.download("punkt")
+
+# Configuring logging to display information about program execution
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
+# Setting global matplotlib parameters for plot size and style
+plt.rcParams["figure.figsize"] = (20, 10)
+plt.style.use("fivethirtyeight")
+
+
+def log_function_call(func):
+    """
+    Decorator to log function calls.
+    Purpose:
+        This decorator logs the entry and exit of a function, providing insights into the function's usage
+        and aiding in debugging and monitoring.
+    """
+
+    def wrapper(*args, **kwargs):
+        logging.info(f"Entering {func.__name__}")
+        result = func(*args, **kwargs)
+        logging.info(f"Exiting {func.__name__}")
+        return result
+
+    return wrapper
+
+
+@log_function_call
+def get_historical_data_benzinga_api(
+    symbol: str, start_date: str, interval: str
+) -> pd.DataFrame:
+    """
+    Fetches historical stock data for a given symbol from a specified start date at a given interval using the Benzinga API.
+
+    This function sends a GET request to the Benzinga API with the specified parameters and processes the returned JSON data into a pandas DataFrame.
+    The DataFrame structure is aligned with the expected format for further analysis and visualization within the trading bot.
+
+    Parameters:
+    - symbol (str): The stock symbol to fetch historical data for.
+    - start_date (str): The start date for the historical data in YYYY-MM-DD format.
+    - interval (str): The interval for the historical data (e.g., "1d" for daily).
+
+    Returns:
+    - pd.DataFrame: A DataFrame containing the historical stock data with columns for open, high, low, close, and volume.
+
+    Raises:
+    - Exception: If the request to the API fails or the response data structure is unexpected.
+
+    Example:
+    >>> get_historical_data("AAPL", "1993-01-01", "1W")
+    """
+
+    # Define the URL for the API endpoint
+    url = "https://api.benzinga.com/api/v2/bars"
+    # Parameters to be sent with the HTTP request
+    querystring = {
+        "token": "YOUR API KEY",
+        "symbols": symbol,
+        "from": start_date,
+        "interval": interval,
+    }
+
+    # Initialize an empty DataFrame to hold the historical data
+    df = pd.DataFrame()
+
+    try:
+        # Sending a GET request to the API
+        response = requests.get(url, params=querystring)
+        response.raise_for_status()  # Raises an HTTPError if the response was an unsuccessful status code
+
+        # Parsing the JSON response
+        hist_json = response.json()
+
+        # Check if the response contains the expected data structure
+        if hist_json and isinstance(hist_json, list) and "candles" in hist_json[0]:
+            # Converting the JSON data to a pandas DataFrame
+            df = pd.DataFrame(hist_json[0]["candles"])
+        else:
+            raise ValueError("Unexpected JSON structure received from the API.")
+
+    except requests.exceptions.HTTPError as http_err:
+        logging.error(
+            f"HTTP error occurred while fetching historical data for {symbol}: {http_err}"
+        )
+        raise
+    except ValueError as val_err:
+        logging.error(f"Value error: {val_err}")
+        raise
+    except Exception as e:
+        logging.error(f"Failed to fetch historical data for {symbol}: {e}")
+        raise
+
+    # Ensure the DataFrame contains the expected columns
+    expected_columns = ["open", "high", "low", "close", "volume"]
+    if not all(column in df.columns for column in expected_columns):
+        raise ValueError(
+            f"DataFrame missing one or more expected columns: {expected_columns}"
+        )
+
+    return df
+
+
+@log_function_call
+def get_historical_data_yahoo_finance(
+    symbol: str, start_date: str, end_date: str, interval: str
+) -> pd.DataFrame:
+    """
+    Fetches historical stock data for a given symbol from a specified start date to end date at a given interval using Yahoo Finance API.
+
+    This function uses the yfinance library to fetch historical stock data from Yahoo Finance API. The data is returned as a pandas DataFrame
+    with columns for open, high, low, close, and volume. The DataFrame structure is aligned with the expected format for further analysis and
+    visualization within the trading bot.
+
+    Parameters:
+    - symbol (str): The stock symbol to fetch historical data for.
+    - start_date (str): The start date for the historical data in YYYY-MM-DD format.
+    - end_date (str): The end date for the historical data in YYYY-MM-DD format.
+    - interval (str): The interval for the historical data (e.g., "1d" for daily, "1wk" for weekly).
+
+    Returns:
+    - pd.DataFrame: A DataFrame containing the historical stock data with columns for open, high, low, close, and volume.
+
+    Raises:
+    - Exception: If there is an error fetching data from Yahoo Finance API.
+
+    Example:
+    >>> get_historical_data_yahoo_finance("AAPL", "2020-01-01", "2021-01-01", "1d")
+    """
+
+    try:
+        # Fetch historical data from Yahoo Finance API
+        data = yf.download(symbol, start=start_date, end=end_date, interval=interval)
+
+        # Reset the index to convert date from index to column
+        data.reset_index(inplace=True)
+
+        # Rename the columns to match the expected format
+        data.columns = ["date", "open", "high", "low", "close", "volume"]
+
+        return data
+
+    except Exception as e:
+        logging.error(f"Failed to fetch historical data for {symbol}: {e}")
+        raise
+
+
+@log_function_call
+def get_historical_data_google_finance(
+    credentials_path: str,
+    ticker: str = "NASDAQ:AAPL",
+    start_date: str = "2003-01-01",
+    end_date: str = "2023-01-01",
+) -> pd.DataFrame:
+    """
+    Fetches historical stock data for a given ticker from a specified start date to end date using Google Finance data in Google Sheets.
+
+    This function uses the gspread library to access Google Sheets and fetch historical stock data that is populated using the GOOGLEFINANCE
+    function. It requires a valid credentials JSON file for authentication. The data is returned as a pandas DataFrame with columns for date
+    and close price. The DataFrame structure is aligned with the expected format for further analysis and visualization within the trading bot.
+
+    Parameters:
+    - credentials_path (str): The path to the JSON file containing the Google Sheets API credentials.
+    - ticker (str): The stock ticker symbol to fetch historical data for. Default is "NASDAQ:AAPL".
+    - start_date (str): The start date for the historical data in YYYY-MM-DD format. Default is "2003-01-01".
+    - end_date (str): The end date for the historical data in YYYY-MM-DD format. Default is "2023-01-01".
+
+    Returns:
+    - pd.DataFrame: A DataFrame containing the historical stock data with columns for date and close price.
+
+    Raises:
+    - Exception: If there is an error accessing Google Sheets or parsing the data.
+
+    Example:
+    >>> get_historical_data_google_finance("path/to/credentials.json", "NASDAQ:GOOGL", "2020-01-01", "2021-01-01")
+    """
+
+    try:
+        # Authorize the Google Sheets client using the provided credentials
+        client = gspread.authorize(
+            OAuth2Credentials.from_json_keyfile_name(credentials_path)
+        )
+
+        # Open the Google Sheet containing the stock data
+        sheet_title = f"{ticker.replace(':', '_')} Stock Data"
+        sheet = client.open(sheet_title).sheet1
+
+        # Get all values from the sheet as a list of lists
+        data = sheet.get_all_values()
+
+        # Convert the data to a pandas DataFrame
+        df = pd.DataFrame(data[1:], columns=data[0])
+
+        # Convert the 'Date' column to datetime format
+        df["Date"] = pd.to_datetime(df["Date"])
+
+        # Filter the data based on the specified start and end dates
+        mask = (df["Date"] >= start_date) & (df["Date"] <= end_date)
+        df = df.loc[mask]
+
+        # Reset the index
+        df.reset_index(drop=True, inplace=True)
+
+        return df
+
+    except Exception as e:
+        logging.error(f"Failed to fetch historical data for {ticker}: {e}")
+        raise
+
+
+# Function to create and setup the Google Sheet
+def setup_google_sheets(
+    credentials_path: str,
+    ticker: str = "NASDAQ:AAPL",
+    start_date: str = "2003-01-01",
+    end_date: str = "2023-01-01",
+) -> str:
+    """
+    Creates a new Google Sheet and populates it with historical stock data using the GOOGLEFINANCE function.
+
+    This function uses the gspread library to create a new Google Sheet and populate it with historical stock data
+    for a given ticker using the GOOGLEFINANCE function. It requires a valid credentials JSON file for authentication.
+    The function returns the URL of the newly created Google Sheet.
+
+    Parameters:
+    - credentials_path (str): The path to the JSON file containing the Google Sheets API credentials.
+    - ticker (str): The stock ticker symbol to fetch historical data for. Default is "NASDAQ:AAPL".
+    - start_date (str): The start date for the historical data in YYYY-MM-DD format. Default is "2003-01-01".
+    - end_date (str): The end date for the historical data in YYYY-MM-DD format. Default is "2023-01-01".
+
+    Returns:
+    - str: The URL of the newly created Google Sheet containing the historical stock data.
+
+    Raises:
+    - Exception: If there is an error creating or populating the Google Sheet.
+
+    Example:
+    >>> setup_google_sheets("path/to/credentials.json", "NASDAQ:GOOGL", "2020-01-01", "2021-01-01")
+    """
+
+    try:
+        # Authorize the Google Sheets client using the provided credentials
+        client = gspread.authorize(
+            OAuth2Credentials.from_json_keyfile_name(credentials_path)
+        )
+
+        # Create a new Google Sheet
+        sheet_title = f"{ticker.replace(':', '_')} Stock Data"
+        sheet = client.create(sheet_title)
+
+        # Get the first worksheet in the sheet
+        worksheet = sheet.get_worksheet(0)
+
+        # Construct the GOOGLEFINANCE function with the specified parameters
+        finance_formula = f'=GOOGLEFINANCE("{ticker}", "close", DATE({start_date}), DATE({end_date}), "DAILY")'
+
+        # Write the GOOGLEFINANCE function to cell A1 in the worksheet
+        worksheet.update("A1", finance_formula)
+
+        return sheet.url
+
+    except Exception as e:
+        logging.error(f"Failed to setup Google Sheet for {ticker}: {e}")
+        raise
+
+
+# Function to load credentials from GUI input
+def load_credentials_gui() -> str:
+    """
+    Opens a GUI window for the user to input Google Sheets API credentials and saves them to a JSON file.
+
+    This function creates a simple GUI window using the tkinter library where the user can input the necessary
+    credentials for accessing the Google Sheets API. The entered credentials are then saved to a JSON file named
+    "credentials.json" in the current directory. The function returns the path to the saved credentials file.
+
+    Returns:
+    - str: The path to the saved credentials JSON file.
+
+    Example:
+    >>> credentials_path = load_credentials_gui()
+    """
+
+    def save_credentials():
+        credentials = {
+            "installed": {
+                "client_id": client_id.get(),
+                "project_id": project_id.get(),
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token",
+                "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+                "client_secret": client_secret.get(),
+                "redirect_uris": ["http://localhost"],
+            }
+        }
+        with open("credentials.json", "w") as file:
+            json.dump(credentials, file)
+        root.destroy()
+
+    root = Tk()
+    root.title("Google Sheets API Credentials")
+
+    project_id = StringVar()
+    client_id = StringVar()
+    client_secret = StringVar()
+
+    Label(root, text="Project ID:").grid(row=0, column=0, sticky="e")
+    Entry(root, textvariable=project_id).grid(row=0, column=1)
+
+    Label(root, text="Client ID:").grid(row=1, column=0, sticky="e")
+    Entry(root, textvariable=client_id).grid(row=1, column=1)
+
+    Label(root, text="Client Secret:").grid(row=2, column=0, sticky="e")
+    Entry(root, textvariable=client_secret, show="*").grid(row=2, column=1)
+
+    Button(root, text="Save Credentials", command=save_credentials).grid(
+        row=3, column=0, columnspan=2, pady=10
+    )
+
+    root.mainloop()
+
+    return "credentials.json"
+
+
+@log_function_call
+def implement_strategy(aapl: pd.DataFrame, investment: float) -> None:
+    """
+    Implements a trading strategy based on Donchian Channels and prints the results.
+
+    Parameters:
+    - aapl (pd.DataFrame): The DataFrame containing AAPL stock data with Donchian Channels.
+    - investment (float): The initial investment amount.
+
+    Returns:
+    - None
+
+    Example:
+    >>> implement_strategy(aapl_df, 10000)
+    """
+    in_position = False  # Flag to track if currently holding a position
+    equity = investment  # Current equity
+    no_of_shares = 0  # Number of shares bought
+
+    try:
+        for i in range(3, len(aapl)):
+            # Buying condition: stock's high equals the upper Donchian Channel and not currently in position
+            if aapl["high"][i] == aapl["dcu"][i] and not in_position:
+                no_of_shares = math.floor(equity / aapl.close[i])
+                equity -= no_of_shares * aapl.close[i]
+                in_position = True
+                logging.info(
+                    f"BUY: {no_of_shares} Shares are bought at ${aapl.close[i]} on {str(aapl.index[i])[:10]}"
+                )
+            # Selling condition: stock's low equals the lower Donchian Channel and currently in position
+            elif aapl["low"][i] == aapl["dcl"][i] and in_position:
+                equity += no_of_shares * aapl.close[i]
+                in_position = False
+                logging.info(
+                    f"SELL: {no_of_shares} Shares are sold at ${aapl.close[i]} on {str(aapl.index[i])[:10]}"
+                )
+        # Closing position at the end if still in position
+        if in_position:
+            equity += no_of_shares * aapl.close[i]
+            logging.info(
+                f"\nClosing position at {aapl.close[i]} on {str(aapl.index[i])[:10]}"
+            )
+            in_position = False
+
+        # Calculating earnings and ROI
+        earning = round(equity - investment, 2)
+        roi = round(earning / investment * 100, 2)
+        logging.info(f"EARNING: ${earning} ; ROI: {roi}%")
+    except Exception as e:
+        logging.error(f"Error implementing strategy: {e}")
+        raise
+
+
+def fetch_and_analyze_article_sentiment(
+    keyword: Union[str, None] = None, url: Union[str, None] = None
+) -> Optional[float]:
+    """
+    Searches for news articles using a keyword or directly analyzes the sentiment of a news article from a given URL.
+    It utilizes both TextBlob and NLTK's SentimentIntensityAnalyzer for a comprehensive sentiment analysis.
+
+    Parameters:
+    - keyword (str, optional): Keyword to search for relevant news articles.
+    - url (str, optional): URL of the news article to analyze.
+
+    Returns:
+    - Optional[float]: The average sentiment polarity of fetched articles or the specified article, None if no articles are found or an error occurs.
+    """
+    news_articles = []
+    if keyword:
+        # Placeholder for fetching news articles based on the keyword
+        # This should be replaced with actual code to fetch news content
+        # For demonstration purposes, we simulate fetching articles with predefined content
+        news_articles = [
+            "This is a sample positive news about " + keyword,
+            "This is a sample negative news about " + keyword,
+        ]
+    elif url:
+        try:
+            article = Article(url)
+            article.download()
+            article.parse()
+            news_articles = [article.text]
+        except Exception as e:
+            logging.error(f"Error fetching the article from {url}: {e}")
+            return None
+
+    if not news_articles:
+        logging.error(f"No news articles found for {keyword}")
+        return None
+
+    total_sentiment_nltk = 0
+    total_sentiment_textblob = 0
+    articles_analyzed = 0
+
+    for article_content in news_articles:
+        try:
+            # Analyzing sentiment using TextBlob
+            analysis_textblob = TextBlob(article_content)
+            total_sentiment_textblob += analysis_textblob.sentiment.polarity
+
+            # Analyzing sentiment using NLTK's SentimentIntensityAnalyzer
+            sia = SentimentIntensityAnalyzer()
+            sentiment_score_nltk = sia.polarity_scores(article_content)
+            total_sentiment_nltk += sentiment_score_nltk["compound"]
+
+            articles_analyzed += 1
+        except Exception as e:
+            logging.error(
+                f"Error analyzing sentiment for an article with keyword {keyword} or URL {url}: {e}"
+            )
+
+    if articles_analyzed == 0:
+        return None
+
+    # Calculating average sentiment from both analyzers
+    average_sentiment_nltk = total_sentiment_nltk / articles_analyzed
+    average_sentiment_textblob = total_sentiment_textblob / articles_analyzed
+    combined_average_

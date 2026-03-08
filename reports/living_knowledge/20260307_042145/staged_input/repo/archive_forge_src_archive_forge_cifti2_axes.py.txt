@@ -1,0 +1,531 @@
+SOURCE_PATH: archive_forge/src/archive_forge/cifti2_axes.py
+KIND: code
+
+"""
+Defines :class:`Axis` objects to create, read, and manipulate CIFTI-2 files
+
+These axes provide an alternative interface to the information in the CIFTI-2 header.
+Each type of CIFTI-2 axes describing the rows/columns in a CIFTI-2 matrix is given a unique class:
+
+* :class:`BrainModelAxis`: each row/column is a voxel or vertex
+* :class:`ParcelsAxis`: each row/column is a group of voxels and/or vertices
+* :class:`ScalarAxis`: each row/column has a unique name (with optional meta-data)
+* :class:`LabelAxis`: each row/column has a unique name and label table (with optional meta-data)
+* :class:`SeriesAxis`: each row/column is a timepoint, which increases monotonically
+
+All of these classes are derived from the Axis class.
+
+After loading a CIFTI-2 file a tuple of axes describing the rows and columns can be obtained
+from the :meth:`.cifti2.Cifti2Header.get_axis` method on the header object
+(e.g. ``nibabel.load(<filename>).header.get_axis()``). Inversely, a new
+:class:`.cifti2.Cifti2Header` object can be created from existing Axis objects
+using the :meth:`.cifti2.Cifti2Header.from_axes` factory method.
+
+CIFTI-2 Axis objects of the same type can be concatenated using the '+'-operator.
+Numpy indexing also works on axes
+(except for SeriesAxis objects, which have to remain monotonically increasing or decreasing).
+
+Creating new CIFTI-2 axes
+-------------------------
+New Axis objects can be constructed by providing a description for what is contained
+in each row/column of the described tensor. For each Axis sub-class this descriptor is:
+
+* :class:`BrainModelAxis`: a CIFTI-2 structure name and a voxel or vertex index
+* :class:`ParcelsAxis`: a name and a sequence of voxel and vertex indices
+* :class:`ScalarAxis`: a name and optionally a dict of meta-data
+* :class:`LabelAxis`: a name, dict of label index to name and colour,
+  and optionally a dict of meta-data
+* :class:`SeriesAxis`: the time-point of each row/column is set by setting the start, stop, size,
+  and unit of the time-series
+
+Several helper functions exist to create new :class:`BrainModelAxis` axes:
+
+* :meth:`BrainModelAxis.from_mask` creates a new BrainModelAxis volume covering the
+  non-zero values of a mask
+* :meth:`BrainModelAxis.from_surface` creates a new BrainModelAxis surface covering the provided
+  indices of a surface
+
+A :class:`ParcelsAxis` axis can be created from a sequence of :class:`BrainModelAxis` axes using
+:meth:`ParcelsAxis.from_brain_models`.
+
+Examples
+--------
+We can create brain models covering the left cortex and left thalamus using:
+
+>>> from nibabel import cifti2
+>>> import numpy as np
+>>> bm_cortex = cifti2.BrainModelAxis.from_mask([True, False, True, True],
+...                                             name='cortex_left')
+>>> bm_thal = cifti2.BrainModelAxis.from_mask(np.ones((2, 2, 2)), affine=np.eye(4),
+...                                           name='thalamus_left')
+
+In this very simple case ``bm_cortex`` describes a left cortical surface skipping the second
+out of four vertices. ``bm_thal`` contains all voxels in a 2x2x2 volume.
+
+Brain structure names automatically get converted to valid CIFTI-2 identifiers using
+:meth:`BrainModelAxis.to_cifti_brain_structure_name`.
+A 1-dimensional mask will be automatically interpreted as a surface element and a 3-dimensional
+mask as a volume element.
+
+These can be concatenated in a single brain model covering the left cortex and thalamus by
+simply adding them together
+
+>>> bm_full = bm_cortex + bm_thal
+
+Brain models covering the full HCP grayordinate space can be constructed by adding all the
+volumetric and surface brain models together like this (or by reading one from an already
+existing HCP file).
+
+Getting a specific brain region from the full brain model is as simple as:
+
+>>> assert bm_full[bm_full.name == 'CIFTI_STRUCTURE_CORTEX_LEFT'] == bm_cortex
+>>> assert bm_full[bm_full.name == 'CIFTI_STRUCTURE_THALAMUS_LEFT'] == bm_thal
+
+You can also iterate over all brain structures in a brain model:
+
+>>> for idx, (name, slc, bm) in enumerate(bm_full.iter_structures()):
+...     print((str(name), slc))
+...     assert bm == bm_full[slc]
+...     assert bm == bm_cortex if idx == 0 else bm_thal
+('CIFTI_STRUCTURE_CORTEX_LEFT', slice(0, 3, None))
+('CIFTI_STRUCTURE_THALAMUS_LEFT', slice(3, None, None))
+
+In this case there will be two iterations, namely:
+('CIFTI_STRUCTURE_CORTEX_LEFT', slice(0, <size of cortex mask>), bm_cortex)
+and
+('CIFTI_STRUCTURE_THALAMUS_LEFT', slice(<size of cortex mask>, None), bm_thal)
+
+ParcelsAxis can be constructed from selections of these brain models:
+
+>>> parcel = cifti2.ParcelsAxis.from_brain_models([
+...        ('surface_parcel', bm_cortex[:2]),  # contains first 2 cortical vertices
+...        ('volume_parcel', bm_thal),  # contains thalamus
+...        ('combined_parcel', bm_full[[1, 8, 10]]),  # contains selected voxels/vertices
+...    ])
+
+Time series are represented by their starting time (typically 0), step size
+(i.e. sampling time or TR), and number of elements:
+
+>>> series = cifti2.SeriesAxis(start=0, step=100, size=5000)
+
+So a header for fMRI data with a TR of 100 ms covering the left cortex and thalamus with
+5000 timepoints could be created with
+
+>>> type(cifti2.Cifti2Header.from_axes((series, bm_cortex + bm_thal)))
+<class 'nibabel.cifti2.cifti2.Cifti2Header'>
+
+Similarly the curvature and cortical thickness on the left cortex could be stored using a header
+like:
+
+>>> type(cifti2.Cifti2Header.from_axes((cifti2.ScalarAxis(['curvature', 'thickness']),
+...                                     bm_cortex)))
+<class 'nibabel.cifti2.cifti2.Cifti2Header'>
+"""
+import abc
+from operator import xor
+
+import numpy as np
+
+from . import cifti2
+
+
+def from_index_mapping(mim):
+    """
+    Parses the MatrixIndicesMap to find the appropriate CIFTI-2 axis describing the rows or columns
+
+    Parameters
+    ----------
+    mim : :class:`.cifti2.Cifti2MatrixIndicesMap`
+
+    Returns
+    -------
+    axis : subclass of :class:`Axis`
+    """
+    return_type = {
+        'CIFTI_INDEX_TYPE_SCALARS': ScalarAxis,
+        'CIFTI_INDEX_TYPE_LABELS': LabelAxis,
+        'CIFTI_INDEX_TYPE_SERIES': SeriesAxis,
+        'CIFTI_INDEX_TYPE_BRAIN_MODELS': BrainModelAxis,
+        'CIFTI_INDEX_TYPE_PARCELS': ParcelsAxis,
+    }
+    return return_type[mim.indices_map_to_data_type].from_index_mapping(mim)
+
+
+def to_header(axes):
+    """
+    Converts the axes describing the rows/columns of a CIFTI-2 vector/matrix to a Cifti2Header
+
+    Parameters
+    ----------
+    axes : iterable of :py:class:`Axis` objects
+        one or more axes describing each dimension in turn
+
+    Returns
+    -------
+    header : :class:`.cifti2.Cifti2Header`
+    """
+    axes = tuple(axes)
+    mims_all = []
+    matrix = cifti2.Cifti2Matrix()
+    for dim, ax in enumerate(axes):
+        if ax in axes[:dim]:
+            dim_prev = axes.index(ax)
+            mims_all[dim_prev].applies_to_matrix_dimension.append(dim)
+            mims_all.append(mims_all[dim_prev])
+        else:
+            mim = ax.to_mapping(dim)
+            mims_all.append(mim)
+            matrix.append(mim)
+    return cifti2.Cifti2Header(matrix)
+
+
+class Axis(abc.ABC):
+    """
+    Abstract class for any object describing the rows or columns of a CIFTI-2 vector/matrix
+
+    Mainly used for type checking.
+
+    Base class for the following concrete CIFTI-2 axes:
+
+    * :class:`BrainModelAxis`: each row/column is a voxel or vertex
+    * :class:`ParcelsAxis`: each row/column is a group of voxels and/or vertices
+    * :class:`ScalarAxis`: each row/column has a unique name with optional meta-data
+    * :class:`LabelAxis`: each row/column has a unique name and label table with optional meta-data
+    * :class:`SeriesAxis`: each row/column is a timepoint, which increases monotonically
+    """
+
+    @property
+    def size(self):
+        return len(self)
+
+    @abc.abstractmethod
+    def __len__(self):
+        pass
+
+    @abc.abstractmethod
+    def __eq__(self, other):
+        """
+        Compares whether two Axes are equal
+
+        Parameters
+        ----------
+        other : Axis
+            other axis to compare to
+
+        Returns
+        -------
+        False if the axes don't have the same type or if their content differs
+        """
+        pass
+
+    @abc.abstractmethod
+    def __add__(self, other):
+        """
+        Concatenates two Axes of the same type
+
+        Parameters
+        ----------
+        other : Axis
+            axis to be appended to the current one
+
+        Returns
+        -------
+        Axis of the same subtype as self and other
+        """
+        pass
+
+    @abc.abstractmethod
+    def __getitem__(self, item):
+        """
+        Extracts definition of single row/column or new Axis describing a subset of the rows/columns
+        """
+        pass
+
+
+class BrainModelAxis(Axis):
+    """
+    Each row/column in the CIFTI-2 vector/matrix represents a single vertex or voxel
+
+    This Axis describes which vertex/voxel is represented by each row/column.
+    """
+
+    def __init__(
+        self, name, voxel=None, vertex=None, affine=None, volume_shape=None, nvertices=None
+    ):
+        """
+        New BrainModelAxis axes can be constructed by passing on the greyordinate brain-structure
+        names and voxel/vertex indices to the constructor or by one of the
+        factory methods:
+
+        - :py:meth:`~BrainModelAxis.from_mask`: creates surface or volumetric BrainModelAxis axis
+          from respectively 1D or 3D masks
+        - :py:meth:`~BrainModelAxis.from_surface`: creates a surface BrainModelAxis axis
+
+        The resulting BrainModelAxis axes can be concatenated by adding them together.
+
+        Parameters
+        ----------
+        name : array_like
+            brain structure name or (N, ) string array with the brain structure names
+        voxel : array_like, optional
+            (N, 3) array with the voxel indices (can be omitted for CIFTI-2 files only
+            covering the surface)
+        vertex :  array_like, optional
+            (N, ) array with the vertex indices (can be omitted for volumetric CIFTI-2 files)
+        affine : array_like, optional
+            (4, 4) array mapping voxel indices to mm space (not needed for CIFTI-2 files only
+            covering the surface)
+        volume_shape : tuple of three integers, optional
+            shape of the volume in which the voxels were defined (not needed for CIFTI-2 files only
+            covering the surface)
+        nvertices : dict from string to integer, optional
+            maps names of surface elements to integers (not needed for volumetric CIFTI-2 files)
+        """
+        if voxel is None:
+            if vertex is None:
+                raise ValueError('At least one of voxel or vertex indices should be defined')
+            nelements = len(vertex)
+            self.voxel = np.full((nelements, 3), fill_value=-1, dtype=int)
+        else:
+            nelements = len(voxel)
+            self.voxel = np.asanyarray(voxel, dtype=int)
+
+        if vertex is None:
+            self.vertex = np.full(nelements, fill_value=-1, dtype=int)
+        else:
+            self.vertex = np.asanyarray(vertex, dtype=int)
+
+        if isinstance(name, str):
+            name = [self.to_cifti_brain_structure_name(name)] * self.vertex.size
+        self.name = np.asanyarray(name, dtype='U')
+
+        if nvertices is None:
+            self.nvertices = {}
+        else:
+            self.nvertices = {
+                self.to_cifti_brain_structure_name(name): number
+                for name, number in nvertices.items()
+            }
+
+        for name in list(self.nvertices.keys()):
+            if name not in self.name:
+                del self.nvertices[name]
+
+        surface_mask = self.surface_mask
+        if surface_mask.all():
+            self.affine = None
+            self.volume_shape = None
+        else:
+            if affine is None or volume_shape is None:
+                raise ValueError(
+                    'Affine and volume shape should be defined '
+                    'for BrainModelAxis containing voxels'
+                )
+            self.affine = np.asanyarray(affine)
+            self.volume_shape = volume_shape
+
+        if np.any(self.vertex[surface_mask] < 0):
+            raise ValueError('Undefined vertex indices found for surface elements')
+        if np.any(self.voxel[~surface_mask] < 0):
+            raise ValueError('Undefined voxel indices found for volumetric elements')
+
+        for check_name in ('name', 'voxel', 'vertex'):
+            shape = (self.size, 3) if check_name == 'voxel' else (self.size,)
+            if getattr(self, check_name).shape != shape:
+                raise ValueError(
+                    f'Input {check_name} has incorrect shape '
+                    f'({getattr(self, check_name).shape}) for BrainModelAxis axis'
+                )
+
+    @classmethod
+    def from_mask(cls, mask, name='other', affine=None):
+        """
+        Creates a new BrainModelAxis axis describing the provided mask
+
+        Parameters
+        ----------
+        mask : array_like
+            all non-zero voxels will be included in the BrainModelAxis axis
+            should be (Nx, Ny, Nz) array for volume mask or (Nvertex, ) array for surface mask
+        name : str, optional
+            Name of the brain structure (e.g. 'CortexRight', 'thalamus_left' or 'brain_stem')
+        affine : array_like, optional
+            (4, 4) array with the voxel to mm transformation (defaults to identity matrix)
+            Argument will be ignored for surface masks
+
+        Returns
+        -------
+        BrainModelAxis which covers the provided mask
+        """
+        if affine is None:
+            affine = np.eye(4)
+        else:
+            affine = np.asanyarray(affine)
+        if affine.shape != (4, 4):
+            raise ValueError(
+                f'Affine transformation should be a 4x4 array or None, not {affine!r}'
+            )
+
+        mask = np.asanyarray(mask)
+        if mask.ndim == 1:
+            return cls.from_surface(np.where(mask != 0)[0], mask.size, name=name)
+        elif mask.ndim == 3:
+            voxels = np.array(np.where(mask != 0)).T
+            return cls(name, voxel=voxels, affine=affine, volume_shape=mask.shape)
+        else:
+            raise ValueError(
+                'Mask should be either 1-dimensional (for surfaces) or '
+                '3-dimensional (for volumes), not %i-dimensional' % mask.ndim
+            )
+
+    @classmethod
+    def from_surface(cls, vertices, nvertex, name='Other'):
+        """
+        Creates a new BrainModelAxis axis describing the vertices on a surface
+
+        Parameters
+        ----------
+        vertices : array_like
+            indices of the vertices on the surface
+        nvertex : int
+            total number of vertices on the surface
+        name : str
+            Name of the brain structure (e.g. 'CortexLeft' or 'CortexRight')
+
+        Returns
+        -------
+        BrainModelAxis which covers (part of) the surface
+        """
+        cifti_name = cls.to_cifti_brain_structure_name(name)
+        return cls(cifti_name, vertex=vertices, nvertices={cifti_name: nvertex})
+
+    @classmethod
+    def from_index_mapping(cls, mim):
+        """
+        Creates a new BrainModel axis based on a CIFTI-2 dataset
+
+        Parameters
+        ----------
+        mim : :class:`.cifti2.Cifti2MatrixIndicesMap`
+
+        Returns
+        -------
+        BrainModelAxis
+        """
+        nbm = sum(bm.index_count for bm in mim.brain_models)
+        voxel = np.full((nbm, 3), fill_value=-1, dtype=int)
+        vertex = np.full(nbm, fill_value=-1, dtype=int)
+        name = []
+
+        nvertices = {}
+        affine, shape = None, None
+        for bm in mim.brain_models:
+            index_end = bm.index_offset + bm.index_count
+            is_surface = bm.model_type == 'CIFTI_MODEL_TYPE_SURFACE'
+            name.extend([bm.brain_structure] * bm.index_count)
+            if is_surface:
+                vertex[bm.index_offset : index_end] = bm.vertex_indices
+                nvertices[bm.brain_structure] = bm.surface_number_of_vertices
+            else:
+                voxel[bm.index_offset : index_end, :] = bm.voxel_indices_ijk
+                if affine is None:
+                    shape = mim.volume.volume_dimensions
+                    affine = mim.volume.transformation_matrix_voxel_indices_ijk_to_xyz.matrix
+        return cls(name, voxel, vertex, affine, shape, nvertices)
+
+    def to_mapping(self, dim):
+        """
+        Converts the brain model axis to a MatrixIndicesMap for storage in CIFTI-2 format
+
+        Parameters
+        ----------
+        dim : int
+            which dimension of the CIFTI-2 vector/matrix is described by this dataset (zero-based)
+
+        Returns
+        -------
+        :class:`.cifti2.Cifti2MatrixIndicesMap`
+        """
+        mim = cifti2.Cifti2MatrixIndicesMap([dim], 'CIFTI_INDEX_TYPE_BRAIN_MODELS')
+        for name, to_slice, bm in self.iter_structures():
+            is_surface = name in self.nvertices.keys()
+            if is_surface:
+                voxels = None
+                vertices = cifti2.Cifti2VertexIndices(bm.vertex)
+                nvertex = self.nvertices[name]
+            else:
+                voxels = cifti2.Cifti2VoxelIndicesIJK(bm.voxel)
+                vertices = None
+                nvertex = None
+                if mim.volume is None:
+                    affine = cifti2.Cifti2TransformationMatrixVoxelIndicesIJKtoXYZ(-3, self.affine)
+                    mim.volume = cifti2.Cifti2Volume(self.volume_shape, affine)
+            cifti_bm = cifti2.Cifti2BrainModel(
+                to_slice.start,
+                len(bm),
+                'CIFTI_MODEL_TYPE_SURFACE' if is_surface else 'CIFTI_MODEL_TYPE_VOXELS',
+                name,
+                nvertex,
+                voxels,
+                vertices,
+            )
+            mim.append(cifti_bm)
+        return mim
+
+    def iter_structures(self):
+        """
+        Iterates over all brain structures in the order that they appear along the axis
+
+        Yields
+        ------
+        tuple with 3 elements:
+        - CIFTI-2 brain structure name
+        - slice to select the data associated with the brain structure from the tensor
+        - brain model covering that specific brain structure
+        """
+        idx_start = 0
+        start_name = self.name[idx_start]
+        for idx_current, name in enumerate(self.name):
+            if start_name != name:
+                yield start_name, slice(idx_start, idx_current), self[idx_start:idx_current]
+                idx_start = idx_current
+                start_name = self.name[idx_start]
+        yield start_name, slice(idx_start, None), self[idx_start:]
+
+    @staticmethod
+    def to_cifti_brain_structure_name(name):
+        """
+        Attempts to convert the name of an anatomical region in a format recognized by CIFTI-2
+
+        This function returns:
+
+        - the name if it is in the CIFTI-2 format already
+        - if the name is a tuple the first element is assumed to be the structure name while
+          the second is assumed to be the hemisphere (left, right or both). The latter will default
+          to both.
+        - names like left_cortex, cortex_left, LeftCortex, or CortexLeft will be converted to
+          CIFTI_STRUCTURE_CORTEX_LEFT
+
+        see :py:func:`nibabel.cifti2.tests.test_name` for examples of
+        which conversions are possible
+
+        Parameters
+        ----------
+        name: iterable of 2-element tuples of integer and string
+            input name of an anatomical region
+
+        Returns
+        -------
+        CIFTI-2 compatible name
+
+        Raises
+        ------
+        ValueError: raised if the input name does not match a known anatomical structure in CIFTI-2
+        """
+        if name in cifti2.CIFTI_BRAIN_STRUCTURES:
+            return cifti2.CIFTI_BRAIN_STRUCTURES.ciftiname[name]
+        if not isinstance(name, str):
+            if len(name) == 1:
+                structure = name[0]
+                orientation = 'both'
+            el

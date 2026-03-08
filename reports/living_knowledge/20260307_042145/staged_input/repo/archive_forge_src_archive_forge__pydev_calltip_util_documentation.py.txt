@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_pydev_calltip_util_documentation.py
+KIND: code
+
+import types
+from _pydevd_bundle.pydevd_constants import IS_JYTHON
+from _pydev_bundle._pydev_imports_tipper import signature_from_docstring
+
+License: Apache 2.0
+Author: Yuli Fitterman

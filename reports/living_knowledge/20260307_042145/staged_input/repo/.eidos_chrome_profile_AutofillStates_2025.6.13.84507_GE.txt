@@ -1,0 +1,16 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/GE
+KIND: config
+
+GE
+აფხაზეთიabkhaziaYაფხაზეთის ავტონომური რესპუბლიკაn
+აჭარაadjaraSაჭარის ავტონომიური რესპუბლიკა<
+გურიაguria"გურიის მხარეJ
+იმერეთიimereti(იმერეთის მხარეD
+კახეთიkakheti%კახეთის მხარეi
+"ქვემო ქართლიkvemo kartli5ქვემო ქართლის მხარე}
+*მცხეთამთიანეთიmtskhetamtianeti=მცხეთამთიანეთის მხარეr
+Nრაჭალეჩხუმი და ქვემო სვანეთი rachalechkhumi and lower svaneti~
+*სამცხეჯავახეთიsamtskhejavakheti=სამცხეჯავახეთის მხარეc
+შიდა ქართლიshida kartli2შიდა ქართლის მხარე�
+=სამეგრელოზემო სვანეთიsamegrelozemo svanetiPსამეგრელოზემო სვანეთის მხარე 
+თბილისიtbilisi

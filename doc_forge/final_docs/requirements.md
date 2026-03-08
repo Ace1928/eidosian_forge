@@ -10,7 +10,7 @@ Loading model...
                                     ▀▀    ▀▀
 
 build      : b8083-ae2d3f28a
-model      : qwen2.5-1.5b-instruct-q5_k_m.gguf
+model      : qwen3.5-2b-instruct-q5_k_m.gguf
 modalities : text
 
 available commands:

@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/bed_documentation.py
+KIND: code
+
+import sys
+import numpy as np
+from Bio.Align import Alignment
+from Bio.Align import interfaces
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
+Return a string with one alignment formatted as a BED line.

@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/Residues_documentation.py
+KIND: code
+
+import re
+Represent the SCOP residues record as a string.

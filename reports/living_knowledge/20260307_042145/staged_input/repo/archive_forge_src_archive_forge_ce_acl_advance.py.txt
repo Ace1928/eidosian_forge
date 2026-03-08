@@ -1,0 +1,588 @@
+SOURCE_PATH: archive_forge/src/archive_forge/ce_acl_advance.py
+KIND: code
+
+#!/usr/bin/python
+#
+# This file is part of Ansible
+#
+# Ansible is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Ansible is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Ansible.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+from __future__ import (absolute_import, division, print_function)
+__metaclass__ = type
+
+DOCUMENTATION = '''
+---
+module: ce_acl_advance
+short_description: Manages advanced ACL configuration on HUAWEI CloudEngine switches.
+description:
+    - Manages advanced ACL configurations on HUAWEI CloudEngine switches.
+author:
+    - wangdezhuang (@QijunPan)
+notes:
+  - This module requires the netconf system service be enabled on the remote device being managed.
+  - Recommended connection is C(netconf).
+  - This module also works with C(local) connections for legacy playbooks.
+options:
+    state:
+        description:
+            - Specify desired state of the resource.
+        required: false
+        default: present
+        choices: ['present','absent','delete_acl']
+    acl_name:
+        description:
+            - ACL number or name.
+              For a numbered rule group, the value ranging from 3000 to 3999 indicates a advance ACL.
+              For a named rule group, the value is a string of 1 to 32 case-sensitive characters starting
+              with a letter, spaces not supported.
+        required: true
+    acl_num:
+        description:
+            - ACL number.
+              The value is an integer ranging from 3000 to 3999.
+    acl_step:
+        description:
+            - ACL step.
+              The value is an integer ranging from 1 to 20. The default value is 5.
+    acl_description:
+        description:
+            - ACL description.
+              The value is a string of 1 to 127 characters.
+    rule_name:
+        description:
+            - Name of a basic ACL rule.
+              The value is a string of 1 to 32 characters.
+    rule_id:
+        description:
+            - ID of a basic ACL rule in configuration mode.
+              The value is an integer ranging from 0 to 4294967294.
+    rule_action:
+        description:
+            - Matching mode of basic ACL rules.
+        choices: ['permit','deny']
+    protocol:
+        description:
+            - Protocol type.
+        choices: ['ip', 'icmp', 'igmp', 'ipinip', 'tcp', 'udp', 'gre', 'ospf']
+    source_ip:
+        description:
+            - Source IP address.
+              The value is a string of 0 to 255 characters.The default value is 0.0.0.0.
+              The value is in dotted decimal notation.
+    src_mask:
+        description:
+            - Source IP address mask.
+              The value is an integer ranging from 1 to 32.
+    src_pool_name:
+        description:
+            - Name of a source pool.
+              The value is a string of 1 to 32 characters.
+    dest_ip:
+        description:
+            - Destination IP address.
+              The value is a string of 0 to 255 characters.The default value is 0.0.0.0.
+              The value is in dotted decimal notation.
+    dest_mask:
+        description:
+            - Destination IP address mask.
+              The value is an integer ranging from 1 to 32.
+    dest_pool_name:
+        description:
+            - Name of a destination pool.
+              The value is a string of 1 to 32 characters.
+    src_port_op:
+        description:
+            - Range type of the source port.
+        choices: ['lt','eq', 'gt', 'range']
+    src_port_begin:
+        description:
+            - Start port number of the source port.
+              The value is an integer ranging from 0 to 65535.
+    src_port_end:
+        description:
+            - End port number of the source port.
+              The value is an integer ranging from 0 to 65535.
+    src_port_pool_name:
+        description:
+            - Name of a source port pool.
+              The value is a string of 1 to 32 characters.
+    dest_port_op:
+        description:
+            - Range type of the destination port.
+        choices: ['lt','eq', 'gt', 'range']
+    dest_port_begin:
+        description:
+            - Start port number of the destination port.
+              The value is an integer ranging from 0 to 65535.
+    dest_port_end:
+        description:
+            - End port number of the destination port.
+              The value is an integer ranging from 0 to 65535.
+    dest_port_pool_name:
+        description:
+            - Name of a destination port pool.
+              The value is a string of 1 to 32 characters.
+    frag_type:
+        description:
+            - Type of packet fragmentation.
+        choices: ['fragment', 'clear_fragment']
+    precedence:
+        description:
+            - Data packets can be filtered based on the priority field.
+              The value is an integer ranging from 0 to 7.
+    tos:
+        description:
+            - ToS value on which data packet filtering is based.
+              The value is an integer ranging from 0 to 15.
+    dscp:
+        description:
+            - Differentiated Services Code Point.
+              The value is an integer ranging from 0 to 63.
+    icmp_name:
+        description:
+            - ICMP name.
+        choices: ['unconfiged', 'echo', 'echo-reply', 'fragmentneed-DFset', 'host-redirect',
+                  'host-tos-redirect', 'host-unreachable', 'information-reply', 'information-request',
+                  'net-redirect', 'net-tos-redirect', 'net-unreachable', 'parameter-problem',
+                  'port-unreachable', 'protocol-unreachable', 'reassembly-timeout', 'source-quench',
+                  'source-route-failed', 'timestamp-reply', 'timestamp-request', 'ttl-exceeded',
+                  'address-mask-reply', 'address-mask-request', 'custom']
+    icmp_type:
+        description:
+            - ICMP type. This parameter is available only when the packet protocol is ICMP.
+              The value is an integer ranging from 0 to 255.
+    icmp_code:
+        description:
+            - ICMP message code. Data packets can be filtered based on the ICMP message code.
+              The value is an integer ranging from 0 to 255.
+    ttl_expired:
+        description:
+            - Whether TTL Expired is matched, with the TTL value of 1.
+        type: bool
+        default: 'no'
+    vrf_name:
+        description:
+            - VPN instance name.
+              The value is a string of 1 to 31 characters.The default value is _public_.
+    syn_flag:
+        description:
+            - TCP flag value.
+              The value is an integer ranging from 0 to 63.
+    tcp_flag_mask:
+        description:
+            - TCP flag mask value.
+              The value is an integer ranging from 0 to 63.
+    established:
+        description:
+            - Match established connections.
+        type: bool
+        default: 'no'
+    time_range:
+        description:
+            - Name of a time range in which an ACL rule takes effect.
+    rule_description:
+        description:
+            - Description about an ACL rule.
+    igmp_type:
+        description:
+            - Internet Group Management Protocol.
+        choices: ['host-query', 'mrouter-adver', 'mrouter-solic', 'mrouter-termi', 'mtrace-resp', 'mtrace-route',
+                  'v1host-report', 'v2host-report', 'v2leave-group', 'v3host-report']
+    log_flag:
+        description:
+            - Flag of logging matched data packets.
+        type: bool
+        default: 'no'
+'''
+
+EXAMPLES = '''
+
+- name: CloudEngine advance acl test
+  hosts: cloudengine
+  connection: local
+  gather_facts: false
+  vars:
+    cli:
+      host: "{{ inventory_hostname }}"
+      port: "{{ ansible_ssh_port }}"
+      username: "{{ username }}"
+      password: "{{ password }}"
+      transport: cli
+
+  tasks:
+
+  - name: "Config ACL"
+    community.network.ce_acl_advance:
+      state: present
+      acl_name: 3200
+      provider: "{{ cli }}"
+
+  - name: "Undo ACL"
+    community.network.ce_acl_advance:
+      state: delete_acl
+      acl_name: 3200
+      provider: "{{ cli }}"
+
+  - name: "Config ACL advance rule"
+    community.network.ce_acl_advance:
+      state: present
+      acl_name: test
+      rule_name: test_rule
+      rule_id: 111
+      rule_action: permit
+      protocol: tcp
+      source_ip: 10.10.10.10
+      src_mask: 24
+      frag_type: fragment
+      provider: "{{ cli }}"
+
+  - name: "Undo ACL advance rule"
+    community.network.ce_acl_advance:
+      state: absent
+      acl_name: test
+      rule_name: test_rule
+      rule_id: 111
+      rule_action: permit
+      protocol: tcp
+      source_ip: 10.10.10.10
+      src_mask: 24
+      frag_type: fragment
+      provider: "{{ cli }}"
+'''
+
+RETURN = '''
+changed:
+    description: check to see if a change was made on the device
+    returned: always
+    type: bool
+    sample: true
+proposed:
+    description: k/v pairs of parameters passed into module
+    returned: always
+    type: dict
+    sample: {"acl_name": "test", "state": "delete_acl"}
+existing:
+    description: k/v pairs of existing aaa server
+    returned: always
+    type: dict
+    sample: {"aclNumOrName": "test", "aclType": "Advance"}
+end_state:
+    description: k/v pairs of aaa params after module execution
+    returned: always
+    type: dict
+    sample: {}
+updates:
+    description: command sent to the device
+    returned: always
+    type: list
+    sample: ["undo acl name test"]
+'''
+
+from xml.etree import ElementTree
+from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.community.network.plugins.module_utils.network.cloudengine.ce import get_nc_config, set_nc_config, ce_argument_spec, check_ip_addr
+
+
+# get acl
+CE_GET_ACL_HEADER = """
+    <filter type="subtree">
+      <acl xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <aclGroups>
+          <aclGroup>
+            <aclNumOrName></aclNumOrName>
+"""
+CE_GET_ACL_TAIL = """
+          </aclGroup>
+        </aclGroups>
+      </acl>
+    </filter>
+"""
+# merge acl
+CE_MERGE_ACL_HEADER = """
+    <config>
+      <acl xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <aclGroups>
+          <aclGroup operation="merge">
+            <aclNumOrName>%s</aclNumOrName>
+"""
+CE_MERGE_ACL_TAIL = """
+          </aclGroup>
+        </aclGroups>
+      </acl>
+    </config>
+"""
+# delete acl
+CE_DELETE_ACL_HEADER = """
+    <config>
+      <acl xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <aclGroups>
+          <aclGroup operation="delete">
+            <aclNumOrName>%s</aclNumOrName>
+"""
+CE_DELETE_ACL_TAIL = """
+          </aclGroup>
+        </aclGroups>
+      </acl>
+    </config>
+"""
+
+# get acl advance rule
+CE_GET_ACL_ADVANCE_RULE_HEADER = """
+    <filter type="subtree">
+      <acl xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <aclGroups>
+          <aclGroup>
+            <aclNumOrName>%s</aclNumOrName>
+            <aclRuleAdv4s>
+              <aclRuleAdv4>
+                <aclRuleName></aclRuleName>
+"""
+CE_GET_ACL_ADVANCE_RULE_TAIL = """
+              </aclRuleAdv4>
+            </aclRuleAdv4s>
+          </aclGroup>
+        </aclGroups>
+      </acl>
+    </filter>
+"""
+# merge acl advance rule
+CE_MERGE_ACL_ADVANCE_RULE_HEADER = """
+    <config>
+      <acl xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <aclGroups>
+          <aclGroup>
+            <aclNumOrName>%s</aclNumOrName>
+            <aclRuleAdv4s>
+              <aclRuleAdv4 operation="merge">
+                <aclRuleName>%s</aclRuleName>
+"""
+CE_MERGE_ACL_ADVANCE_RULE_TAIL = """
+              </aclRuleAdv4>
+            </aclRuleAdv4s>
+          </aclGroup>
+        </aclGroups>
+      </acl>
+    </config>
+"""
+# delete acl advance rule
+CE_DELETE_ACL_ADVANCE_RULE_HEADER = """
+    <config>
+      <acl xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <aclGroups>
+          <aclGroup>
+            <aclNumOrName>%s</aclNumOrName>
+            <aclRuleAdv4s>
+              <aclRuleAdv4 operation="delete">
+                <aclRuleName>%s</aclRuleName>
+"""
+CE_DELETE_ACL_ADVANCE_RULE_TAIL = """
+              </aclRuleAdv4>
+            </aclRuleAdv4s>
+          </aclGroup>
+        </aclGroups>
+      </acl>
+    </config>
+"""
+
+
+PROTOCOL_NUM = {"ip": "0",
+                "icmp": "1",
+                "igmp": "2",
+                "ipinip": "4",
+                "tcp": "6",
+                "udp": "17",
+                "gre": "47",
+                "ospf": "89"}
+
+IGMP_TYPE_NUM = {"host-query": "17",
+                 "mrouter-adver": "48",
+                 "mrouter-solic": "49",
+                 "mrouter-termi": "50",
+                 "mtrace-resp": "30",
+                 "mtrace-route": "31",
+                 "v1host-report": "18",
+                 "v2host-report": "22",
+                 "v2leave-group": "23",
+                 "v3host-report": "34"}
+
+
+def get_wildcard_mask(mask):
+    """ convert mask length to ip address wildcard mask, i.e. 24 to 0.0.0.255 """
+
+    mask_int = ["255"] * 4
+    value = int(mask)
+
+    if value > 32:
+        return None
+    if value < 8:
+        mask_int[0] = str(int(~(0xFF << (8 - value % 8)) & 0xFF))
+    if value >= 8:
+        mask_int[0] = '0'
+        mask_int[1] = str(int(~(0xFF << (16 - (value % 16))) & 0xFF))
+    if value >= 16:
+        mask_int[1] = '0'
+        mask_int[2] = str(int(~(0xFF << (24 - (value % 24))) & 0xFF))
+    if value >= 24:
+        mask_int[2] = '0'
+        mask_int[3] = str(int(~(0xFF << (32 - (value % 32))) & 0xFF))
+    if value == 32:
+        mask_int[3] = '0'
+
+    return '.'.join(mask_int)
+
+
+class AdvanceAcl(object):
+    """ Manages advance acl configuration """
+
+    def __init__(self, **kwargs):
+        """ Class init """
+
+        # argument spec
+        argument_spec = kwargs["argument_spec"]
+        self.spec = argument_spec
+        self.module = AnsibleModule(argument_spec=self.spec, supports_check_mode=True)
+
+        # module args
+        self.state = self.module.params['state']
+        self.acl_name = self.module.params['acl_name'] or None
+        self.acl_num = self.module.params['acl_num'] or None
+        self.acl_type = None
+        self.acl_step = self.module.params['acl_step'] or None
+        self.acl_description = self.module.params['acl_description'] or None
+        self.rule_name = self.module.params['rule_name'] or None
+        self.rule_id = self.module.params['rule_id'] or None
+        self.rule_action = self.module.params['rule_action'] or None
+        self.protocol = self.module.params['protocol'] or None
+        self.protocol_num = None
+        self.source_ip = self.module.params['source_ip'] or None
+        self.src_mask = self.module.params['src_mask'] or None
+        self.src_wild = None
+        self.src_pool_name = self.module.params['src_pool_name'] or None
+        self.dest_ip = self.module.params['dest_ip'] or None
+        self.dest_mask = self.module.params['dest_mask'] or None
+        self.dest_wild = None
+        self.dest_pool_name = self.module.params['dest_pool_name'] or None
+        self.src_port_op = self.module.params['src_port_op'] or None
+        self.src_port_begin = self.module.params['src_port_begin'] or None
+        self.src_port_end = self.module.params['src_port_end'] or None
+        self.src_port_pool_name = self.module.params[
+            'src_port_pool_name'] or None
+        self.dest_port_op = self.module.params['dest_port_op'] or None
+        self.dest_port_begin = self.module.params['dest_port_begin'] or None
+        self.dest_port_end = self.module.params['dest_port_end'] or None
+        self.dest_port_pool_name = self.module.params[
+            'dest_port_pool_name'] or None
+        self.frag_type = self.module.params['frag_type'] or None
+        self.precedence = self.module.params['precedence'] or None
+        self.tos = self.module.params['tos'] or None
+        self.dscp = self.module.params['dscp'] or None
+        self.icmp_name = self.module.params['icmp_name'] or None
+        self.icmp_type = self.module.params['icmp_type'] or None
+        self.icmp_code = self.module.params['icmp_code'] or None
+        self.ttl_expired = self.module.params['ttl_expired']
+        self.vrf_name = self.module.params['vrf_name'] or None
+        self.syn_flag = self.module.params['syn_flag'] or None
+        self.tcp_flag_mask = self.module.params['tcp_flag_mask'] or None
+        self.established = self.module.params['established']
+        self.time_range = self.module.params['time_range'] or None
+        self.rule_description = self.module.params['rule_description'] or None
+        self.igmp_type = self.module.params['igmp_type'] or None
+        self.igmp_type_num = None
+        self.log_flag = self.module.params['log_flag']
+
+        self.precedence_name = dict()
+        self.precedence_name["0"] = "routine"
+        self.precedence_name["1"] = "priority"
+        self.precedence_name["2"] = "immediate"
+        self.precedence_name["3"] = "flash"
+        self.precedence_name["4"] = "flash-override"
+        self.precedence_name["5"] = "critical"
+        self.precedence_name["6"] = "internet"
+        self.precedence_name["7"] = "network"
+
+        # cur config
+        self.cur_acl_cfg = dict()
+        self.cur_advance_rule_cfg = dict()
+
+        # state
+        self.changed = False
+        self.updates_cmd = list()
+        self.results = dict()
+        self.proposed = dict()
+        self.existing = dict()
+        self.end_state = dict()
+
+    def netconf_get_config(self, conf_str):
+        """ Get configure by netconf """
+
+        xml_str = get_nc_config(self.module, conf_str)
+
+        return xml_str
+
+    def netconf_set_config(self, conf_str):
+        """ Set configure by netconf """
+
+        xml_str = set_nc_config(self.module, conf_str)
+
+        return xml_str
+
+    def get_protocol_num(self):
+        """ Get protocol num by name """
+
+        if self.protocol:
+            self.protocol_num = PROTOCOL_NUM.get(self.protocol)
+
+    def get_igmp_type_num(self):
+        """ Get igmp type num by type """
+
+        if self.igmp_type:
+            self.igmp_type_num = IGMP_TYPE_NUM.get(self.igmp_type)
+
+    def check_acl_args(self):
+        """ Check acl invalid args """
+
+        need_cfg = False
+        find_flag = False
+        self.cur_acl_cfg["acl_info"] = []
+
+        if self.acl_name:
+
+            if self.acl_name.isdigit():
+                if int(self.acl_name) < 3000 or int(self.acl_name) > 3999:
+                    self.module.fail_json(
+                        msg='Error: The value of acl_name is out of [3000-3999] for advance ACL.')
+
+                if self.acl_num:
+                    self.module.fail_json(
+                        msg='Error: The acl_name is digit, so should not input acl_num at the same time.')
+            else:
+
+                self.acl_type = "Advance"
+
+                if len(self.acl_name) < 1 or len(self.acl_name) > 32:
+                    self.module.fail_json(
+                        msg='Error: The len of acl_name is out of [1 - 32].')
+
+                if self.state == "present":
+                    if not self.acl_num and not self.acl_type and not self.rule_name:
+                        self.module.fail_json(
+                            msg='Error: Please input acl_num or acl_type when config ACL.')
+
+            if self.acl_num:
+                if self.acl_num.isdigit():
+                    if int(self.acl_num) < 3000 or int(self.acl_num) > 3999:
+                        self.module.fail_json(
+                            msg='Error: The value of acl_name is out of [3000-3999] for advance ACL.')
+                e

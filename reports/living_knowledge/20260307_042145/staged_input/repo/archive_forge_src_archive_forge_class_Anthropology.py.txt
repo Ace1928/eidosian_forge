@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_Anthropology.py
+KIND: code
+
+class Anthropology:
+    """The branch of science that deals with the origins, development, and behavior of humans."""
+
+    def __init__(self):
+        self.theories = []

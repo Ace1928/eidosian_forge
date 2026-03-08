@@ -1,0 +1,679 @@
+SOURCE_PATH: archive_forge/src/archive_forge/bigip_device_info.py
+KIND: code
+
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# Copyright: (c) 2017, F5 Networks Inc.
+# Copyright: (c) 2013, Matt Hite <mhite@hotmail.com>
+# GNU General Public License v3.0 (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+from __future__ import absolute_import, division, print_function
+
+__metaclass__ = type
+
+DOCUMENTATION = r'''
+---
+module: bigip_device_info
+short_description: Collect information from F5 BIG-IP devices
+description:
+  - Collect information from F5 BIG-IP devices.
+  - This module was called C(bigip_device_facts) before Ansible 2.9. The usage did not change.
+version_added: "1.0.0"
+options:
+  partition:
+    description:
+      - Specifies the partition to gather the resource information from.
+      - The default value for the partition is taken as Common.
+    type: str
+    default: Common
+    version_added: "1.14.0"
+  data_increment:
+    description:
+      - Specifies the paging increment at which device data is gathered from the API.
+      - Allows for greater control of the pace at which data is queried from the device.
+      - This setting is useful for setups with large configurations which may take a long time with the default values.
+      - While there is no limit to the value that can be specified, note that putting very large values with
+        C(gather_subset) set to meta choices like C(all) might lead to module or device API crash.
+      - F5 recommends using C(data_increment) custom values in tandem with C(partition) and a specific C(gather_subset)
+        value for best experience.
+    type: int
+    default: 10
+    version_added: "1.22.0"
+  gather_subset:
+    description:
+      - When supplied, this argument will restrict the information returned to a given subset.
+      - You can specify a list of values to include a larger subset.
+      - Values can also be used with an initial C(!) to specify that a specific subset
+        should not be collected.
+    type: list
+    elements: str
+    required: True
+    choices:
+      - all
+      - monitors
+      - profiles
+      - apm-access-profiles
+      - apm-access-policies
+      - as3
+      - asm-policy-stats
+      - asm-policies
+      - asm-server-technologies
+      - asm-signature-sets
+      - client-ssl-profiles
+      - cfe
+      - devices
+      - device-groups
+      - do
+      - external-monitors
+      - fasthttp-profiles
+      - fastl4-profiles
+      - gateway-icmp-monitors
+      - gtm-pools
+      - gtm-servers
+      - gtm-wide-ips
+      - gtm-a-pools
+      - gtm-a-wide-ips
+      - gtm-aaaa-pools
+      - gtm-aaaa-wide-ips
+      - gtm-cname-pools
+      - gtm-cname-wide-ips
+      - gtm-mx-pools
+      - gtm-mx-wide-ips
+      - gtm-naptr-pools
+      - gtm-naptr-wide-ips
+      - gtm-srv-pools
+      - gtm-srv-wide-ips
+      - gtm-topology-regions
+      - http-monitors
+      - https-monitors
+      - http-profiles
+      - iapp-services
+      - iapplx-packages
+      - icmp-monitors
+      - interfaces
+      - internal-data-groups
+      - irules
+      - license
+      - ltm-pools
+      - ltm-policies
+      - management-routes
+      - nodes
+      - oneconnect-profiles
+      - packages
+      - partitions
+      - provision-info
+      - remote-syslog
+      - route-domains
+      - self-ips
+      - server-ssl-profiles
+      - software-volumes
+      - software-images
+      - software-hotfixes
+      - ssl-certs
+      - ssl-keys
+      - sync-status
+      - system-db
+      - system-info
+      - ts
+      - tcp-monitors
+      - tcp-half-open-monitors
+      - tcp-profiles
+      - traffic-groups
+      - trunks
+      - udp-profiles
+      - users
+      - ucs
+      - vcmp-guests
+      - virtual-addresses
+      - virtual-servers
+      - vlans
+      - "!all"
+      - "!as3"
+      - "!do"
+      - "!ts"
+      - "!cfe"
+      - "!monitors"
+      - "!profiles"
+      - "!apm-access-profiles"
+      - "!apm-access-policies"
+      - "!asm-policy-stats"
+      - "!asm-policies"
+      - "!asm-server-technologies"
+      - "!asm-signature-sets"
+      - "!client-ssl-profiles"
+      - "!devices"
+      - "!device-groups"
+      - "!external-monitors"
+      - "!fasthttp-profiles"
+      - "!fastl4-profiles"
+      - "!gateway-icmp-monitors"
+      - "!gtm-pools"
+      - "!gtm-servers"
+      - "!gtm-wide-ips"
+      - "!gtm-a-pools"
+      - "!gtm-a-wide-ips"
+      - "!gtm-aaaa-pools"
+      - "!gtm-aaaa-wide-ips"
+      - "!gtm-cname-pools"
+      - "!gtm-cname-wide-ips"
+      - "!gtm-mx-pools"
+      - "!gtm-mx-wide-ips"
+      - "!gtm-naptr-pools"
+      - "!gtm-naptr-wide-ips"
+      - "!gtm-srv-pools"
+      - "!gtm-srv-wide-ips"
+      - "!gtm-topology-regions"
+      - "!http-monitors"
+      - "!https-monitors"
+      - "!http-profiles"
+      - "!iapp-services"
+      - "!iapplx-packages"
+      - "!icmp-monitors"
+      - "!interfaces"
+      - "!internal-data-groups"
+      - "!irules"
+      - "!license"
+      - "!ltm-pools"
+      - "!ltm-policies"
+      - "!management-routes"
+      - "!nodes"
+      - "!oneconnect-profiles"
+      - "!packages"
+      - "!partitions"
+      - "!provision-info"
+      - "!remote-syslog"
+      - "!route-domains"
+      - "!self-ips"
+      - "!server-ssl-profiles"
+      - "!software-volumes"
+      - "!software-images"
+      - "!software-hotfixes"
+      - "!ssl-certs"
+      - "!ssl-keys"
+      - "!sync-status"
+      - "!system-db"
+      - "!system-info"
+      - "!tcp-monitors"
+      - "!tcp-half-open-monitors"
+      - "!tcp-profiles"
+      - "!traffic-groups"
+      - "!trunks"
+      - "!udp-profiles"
+      - "!users"
+      - "!ucs"
+      - "!vcmp-guests"
+      - "!virtual-addresses"
+      - "!virtual-servers"
+      - "!vlans"
+    aliases: ['include']
+extends_documentation_fragment: f5networks.f5_modules.f5
+author:
+  - Tim Rupp (@caphrim007)
+  - Wojciech Wypior (@wojtek0806)
+'''
+
+EXAMPLES = r'''
+- name: Collect BIG-IP information
+  bigip_device_info:
+    gather_subset:
+      - interfaces
+      - vlans
+    provider:
+      server: lb.mydomain.com
+      user: admin
+      password: secret
+  delegate_to: localhost
+
+- name: Collect all BIG-IP information
+  bigip_device_info:
+    gather_subset:
+      - all
+    provider:
+      server: lb.mydomain.com
+      user: admin
+      password: secret
+  delegate_to: localhost
+
+- name: Collect all BIG-IP information except trunks
+  bigip_device_info:
+    gather_subset:
+      - all
+      - "!trunks"
+    provider:
+      server: lb.mydomain.com
+      user: admin
+      password: secret
+  delegate_to: localhost
+
+- name: Collect BIG-IP information with custom data_increment and specific partition
+  bigip_device_info:
+    data_increment: 50
+    partition: Foo
+    gather_subset:
+      - gtm-a-wide-ips
+    provider:
+      server: lb.mydomain.com
+      user: admin
+      password: secret
+  delegate_to: localhost
+'''
+
+RETURN = r'''
+apm_access_profiles:
+  description: Information about APM Access Profiles.
+  returned: When C(apm-access-profiles) is specified in C(gather_subset).
+  type: complex
+  contains:
+    full_path:
+      description:
+        - Full name of the resource as known to the BIG-IP.
+      returned: queried
+      type: str
+      sample: /Common/foo_policy
+    name:
+      description:
+        - Relative name of the resource in the BIG-IP.
+      returned: queried
+      type: str
+      sample: foo_policy
+    access_policy:
+      description:
+        - APM Access Policy attached to this Access Profile.
+      returned: queried
+      type: str
+      sample: foo_policy
+apm_access_policies:
+  description: Information about APM Access Policies.
+  returned: When C(apm-access-policies) is specified in C(gather_subset).
+  type: complex
+  contains:
+    full_path:
+      description:
+        - Full name of the resource as known to the BIG-IP.
+      returned: queried
+      type: str
+      sample: /Common/foo_policy
+    name:
+      description:
+        - Relative name of the resource in the BIG-IP.
+      returned: queried
+      type: str
+      sample: foo_policy
+asm_policy_stats:
+  description: Miscellaneous ASM policy related information.
+  returned: When C(asm-policy-stats) is specified in C(gather_subset).
+  type: complex
+  contains:
+    policies:
+      description:
+        - The total number of ASM policies on the device.
+      returned: queried
+      type: int
+      sample: 3
+    parent_policies:
+      description:
+        - The total number of ASM parent policies on the device.
+      returned: queried
+      type: int
+      sample: 2
+    policies_pending_changes:
+      description:
+        - The total number of ASM policies with pending changes on the device.
+      returned: queried
+      type: int
+      sample: 2
+    policies_active:
+      description:
+        - The number of ASM policies that are marked as active. From TMOS 13.x and above this setting equals
+          to C(policies_attached).
+      returned: queried
+      type: int
+      sample: 3
+    policies_attached:
+      description:
+        - The number of ASM policies that are attached to virtual servers.
+      returned: queried
+      type: int
+      sample: 1
+    policies_inactive:
+      description:
+        - The number of ASM policies that are marked as inactive. From TMOS 13.x and above this setting equals
+          to C(policies_unattached).
+      returned: queried
+      type: int
+      sample: 0
+    policies_unattached:
+      description:
+        - The number of ASM policies that are not attached to a virtual server.
+      returned: queried
+      type: int
+      sample: 3
+  sample: hash/dictionary of values
+asm_policies:
+  description: Detailed information for ASM policies present on device.
+  returned: When C(asm-policies) is specified in C(gather_subset).
+  type: complex
+  contains:
+    full_path:
+      description:
+        - Full name of the resource as known to the BIG-IP.
+      returned: queried
+      type: str
+      sample: /Common/foo_policy
+    name:
+      description:
+        - Relative name of the resource in the BIG-IP.
+      returned: queried
+      type: str
+      sample: foo_policy
+    policy_id:
+      description:
+        - Generated ID of the ASM policy resource.
+      returned: queried
+      type: str
+      sample: l0Ckxe-7yHsXp8U5tTgbFQ
+    active:
+      description:
+        - Indicates if an ASM policy is active. In TMOS 13.x and above,
+          this setting indicates if the policy is bound to any Virtual Server.
+      returned: queried
+      type: bool
+      sample: true
+    apply:
+      description:
+        - In TMOS 13.x and above, this setting indicates if an ASM policy has pending changes that need to be applied.
+      returned: queried
+      type: bool
+      sample: true
+    protocol_independent:
+      description:
+        - Indicates if the ASM policy differentiates between HTTP/WS and HTTPS/WSS URLs.
+      returned: queried
+      type: bool
+      sample: false
+    has_parent:
+      description:
+        - Indicates if the ASM policy is a child of another ASM policy.
+      returned: queried
+      type: bool
+      sample: false
+    type:
+      description:
+        - The type of policy, can be C(Security) or C(Parent).
+      returned: queried
+      type: str
+      sample: security
+    virtual_servers:
+      description:
+        - Virtual server or servers which have this policy assigned to them.
+      returned: queried
+      type: list
+      sample: ['/Common/foo_VS/']
+    manual_virtual_servers:
+      description:
+        - The virtual servers that have Advanced LTM policy configuration which, in turn, have rule(s) built
+          with ASM control actions enabled.
+      returned: queried
+      type: list
+      sample: ['/Common/test_VS/']
+    allowed_response_codes:
+      description:
+        - Lists the response status codes between 400 and 599 that the security profile considers legal.
+      returned: queried
+      type: list
+      sample: ['400', '404']
+    description:
+      description:
+        - Description of the resource.
+      returned: queried
+      type: str
+      sample: Significant Policy Description
+    learning_mode:
+      description:
+        - Determine how the policy is built.
+      returned: queried
+      type: str
+      sample: manual
+    enforcement_mode:
+      description:
+        - Specifies whether blocking is active or inactive for the ASM policy.
+      returned: queried
+      type: str
+      sample: blocking
+    trust_xff:
+      description:
+        - Indicates the system has confidence in an XFF (X-Forwarded-For) header in the request.
+      returned: queried
+      type: bool
+      sample: true
+    custom_xff_headers:
+      description:
+        - List of custom XFF headers trusted by the system.
+      returned: queried
+      type: str
+      sample: asm-proxy1
+    case_insensitive:
+      description:
+        - Indicates if the ASM policy treats file types, URLs, and parameters as case sensitive.
+      returned: queried
+      type: bool
+      sample: true
+    signature_staging:
+      description:
+        - Specifies if the staging feature is active on the ASM policy.
+      returned: queried
+      type: bool
+      sample: true
+    place_signatures_in_staging:
+      description:
+        - Specifies if the system places new or updated signatures in staging
+          for the number of days specified in the enforcement readiness period.
+      returned: queried
+      type: bool
+      sample: false
+    enforcement_readiness_period:
+      description:
+        - Period in days both security policy entities and attack signatures
+          remain in staging mode before the system suggests to enforce them.
+      returned: queried
+      type: int
+      sample: 8
+    path_parameter_handling:
+      description:
+        - Specifies how the system handles path parameters that are attached to path segments in URIs.
+      returned: queried
+      type: str
+      sample: ignore
+    trigger_asm_irule_event:
+      description:
+        - Indicates if iRule event is enabled.
+      returned: queried
+      type: str
+      sample: disabled
+    inspect_http_uploads:
+      description:
+        - Specifies whether the system should inspect all HTTP uploads.
+      returned: queried
+      type: bool
+      sample: true
+    mask_credit_card_numbers_in_request:
+      description:
+        - Indicates if the system masks credit card numbers.
+      returned: queried
+      type: bool
+      sample: false
+    maximum_http_header_length:
+      description:
+        - Maximum length of an HTTP header name and value that the system processes.
+      returned: queried
+      type: int
+      sample: 8192
+    use_dynamic_session_id_in_url:
+      description:
+        - Specifies how the security policy processes URLs that use dynamic sessions.
+      returned: queried
+      type: bool
+      sample: false
+    maximum_cookie_header_length:
+      description:
+        - Maximum length of a cookie header name and value that the system processes.
+      returned: queried
+      type: int
+      sample: 8192
+    application_language:
+      description:
+        - The language encoding for the web application.
+      returned: queried
+      type: str
+      sample: utf-8
+    disallowed_geolocations:
+      description:
+        - Displays countries that may not access the web application.
+      returned: queried
+      type: str
+      sample: Argentina
+    csrf_protection_enabled:
+      description:
+        - Specifies if CSRF protection is active on the ASM policy.
+      returned: queried
+      type: bool
+      sample: true
+    csrf_protection_ssl_only:
+      description:
+        - Specifies that only HTTPS URLs will be checked for CSRF protection.
+      returned: queried
+      type: bool
+      sample: true
+    csrf_protection_expiration_time_in_seconds:
+      description:
+        - Specifies how long, in seconds, a configured CSRF token is valid before it expires.
+      returned: queried
+      type: int
+      sample: 600
+    csrf_urls:
+      description:
+        - Specifies a list of URLs for CSRF token verification.
+        - In version 13.0.0 and later, this has become a sub-collection and a list of dictionaries.
+        - In version 12.x, this is a list of simple strings.
+      returned: queried
+      type: complex
+      contains:
+        csrf_url_required_parameters:
+          description:
+            - Indicates whether to ignore or require one of the specified parameters is present
+              in a request when checking if the URL entry matches the request.
+          returned: queried
+          type: str
+          sample: ignore
+        csrf_url_parameters_list:
+          description:
+            - List of parameters to look for in a request when checking if the URL entry matches the request.
+          returned: queried
+          type: list
+          sample: ['fooparam']
+        csrf_url:
+          description:
+            - Specifies an URL to protect.
+          returned: queried
+          type: str
+          sample: ['/foo.html']
+        csrf_url_method:
+          description:
+            - Method for the specified URL.
+          returned: queried
+          type: str
+          sample: POST
+        csrf_url_enforcement_action:
+          description:
+            - Indicates the action specified for the system to take when the URL entry matches.
+          returned: queried
+          type: str
+          sample: none
+        csrf_url_id:
+          description:
+            - Specifies the generated ID for the configured CSRF URL resource.
+          returned: queried
+          type: str
+          sample: l0Ckxe-7yHsXp8U5tTgbFQ
+        csrf_url_wildcard_order:
+          description:
+            - Specifies the order in which the wildcard URLs are enforced.
+          returned: queried
+          type: str
+          sample: 1
+  sample: hash/dictionary of values
+asm_server_technologies:
+  description: Detailed information for ASM server technologies present on the device.
+  returned: When C(asm-server-technologies) is specified in C(gather_subset).
+  type: complex
+  contains:
+    id:
+      description:
+        - Displays the generated ID for the server technology resource.
+      returned: queried
+      type: str
+      sample: l0Ckxe-7yHsXp8U5tTgbFQ
+    server_technology_name:
+      description:
+        - Friendly name of the server technology resource.
+      returned: queried
+      type: str
+      sample: Wordpress
+    server_technology_references:
+      description:
+        - List of dictionaries containing API self links of the associated technology resources.
+      returned: queried
+      type: complex
+      contains:
+        link:
+          description:
+            - A self link to an associated server technology.
+          returned: queried
+          type: str
+          sample: https://localhost/mgmt/tm/asm/server-technologies/NQG7CT02OBC2cQWbnP7T-A?ver=13.1.0
+  sample: hash/dictionary of values
+asm_signature_sets:
+  description: Detailed information for ASM signature sets present on device.
+  returned: When C(asm-signature-sets) is specified in C(gather_subset).
+  type: complex
+  contains:
+    name:
+      description:
+        - Name of the signature set.
+      returned: queried
+      type: str
+      sample: WebSphere signatures
+    id:
+      description:
+        - Displays the generated ID for the signature set resource.
+      returned: queried
+      type: str
+      sample: l0Ckxe-7yHsXp8U5tTgbFQ
+    type:
+      description:
+        - The method used to select signatures to be a part of the signature set.
+      returned: queried
+      type: str
+      sample: filter-based
+    category:
+      description:
+        - Displays the category of the signature set.
+      returned: queried
+      type: str
+      sample: filter-based
+    is_user_defined:
+      description:
+        - Specifies this signature set was added by a user.
+      returned: queried
+      type: bool
+      sample: false
+    assign_to_policy_by_default:
+      description:
+        - Indicates whether the system assigns this signature set to a new created security policy by default.
+      returned: queried
+      type: bool
+      sample: true
+    default_alarm:
+      description:
+        - Displays whether the security policy logs the request dat

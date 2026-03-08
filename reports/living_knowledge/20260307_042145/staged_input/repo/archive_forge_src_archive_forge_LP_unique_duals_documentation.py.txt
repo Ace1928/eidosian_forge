@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/LP_unique_duals_documentation.py
+KIND: code
+
+from pyomo.core import (
+from pyomo.solvers.tests.models.base import _BaseTestModel, register_model
+
+    A LP with unique dual values

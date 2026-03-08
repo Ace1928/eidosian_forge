@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/chemdraw_documentation.py
+KIND: code
+
+import os
+import tempfile
+import time
+import re
+takes a molecule string and returns a PIL image using chemdraw

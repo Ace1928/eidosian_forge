@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/backlog_location_documentation.py
+KIND: code
+
+import enum
+from datetime import datetime
+from typing import NamedTuple
+A user-defined event timestamp of a message.

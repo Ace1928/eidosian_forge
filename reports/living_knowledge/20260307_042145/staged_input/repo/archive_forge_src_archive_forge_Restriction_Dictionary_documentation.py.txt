@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/Restriction_Dictionary_documentation.py
+KIND: code
+
+Restriction Analysis Libraries.
+
+Used REBASE emboss files version 309 (2023).

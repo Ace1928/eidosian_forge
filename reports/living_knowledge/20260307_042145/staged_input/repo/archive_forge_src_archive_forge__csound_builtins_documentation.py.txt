@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_csound_builtins_documentation.py
+KIND: code
+
+pygments.lexers._csound_builtins
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    :copyright: Copyright 2006-2017 by the Pygments team, see AUTHORS.
+    :license: BSD, see LICENSE for details.

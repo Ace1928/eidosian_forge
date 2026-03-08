@@ -1,0 +1,492 @@
+SOURCE_PATH: archive_forge/src/archive_forge/arr.py
+KIND: code
+
+# Licensed to Modin Development Team under one or more contributor license agreements.
+# See the NOTICE file distributed with this work for additional information regarding
+# copyright ownership.  The Modin Development Team licenses this file to you under the
+# Apache License, Version 2.0 (the "License"); you may not use this file except in
+# compliance with the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under
+# the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+# ANY KIND, either express or implied. See the License for the specific language
+# governing permissions and limitations under the License.
+
+"""Module houses ``array`` class, that is distributed version of ``numpy.array``."""
+
+from inspect import signature
+from math import prod
+
+import numpy
+import pandas
+from pandas.api.types import is_scalar
+from pandas.core.dtypes.common import is_bool_dtype, is_list_like, is_numeric_dtype
+
+import modin.pandas as pd
+from modin.core.dataframe.algebra import Binary, Map, Reduce
+from modin.error_message import ErrorMessage
+
+from .utils import try_convert_from_interoperable_type
+
+
+def check_kwargs(order="C", subok=True, keepdims=None, casting="same_kind", where=True):
+    if order not in ["K", "C"]:
+        ErrorMessage.single_warning(
+            "Array order besides 'C' is not currently supported in Modin. Defaulting to 'C' order."
+        )
+    if not subok:
+        ErrorMessage.single_warning(
+            "Subclassing types is not currently supported in Modin. Defaulting to the same base dtype."
+        )
+    if keepdims:
+        ErrorMessage.single_warning(
+            "Modin does not yet support broadcasting between nested 1D arrays and 2D arrays."
+        )
+    if casting != "same_kind":
+        ErrorMessage.single_warning(
+            "Modin does not yet support the `casting` argument."
+        )
+    if not (
+        is_scalar(where) or (isinstance(where, array) and is_bool_dtype(where.dtype))
+    ):
+        if not isinstance(where, array):
+            raise NotImplementedError(
+                f"Modin only supports scalar or modin.numpy.array `where` parameter, not `where` parameter of type {type(where)}"
+            )
+        raise TypeError(
+            f"Cannot cast array data from {where.dtype} to dtype('bool') according to the rule 'safe'"
+        )
+
+
+def check_can_broadcast_to_output(arr_in: "array", arr_out: "array"):
+    if not isinstance(arr_out, array):
+        raise TypeError("return arrays must be of modin.numpy.array type.")
+    # Broadcasting is ok if both arrays have matching ndim + shape, OR
+    # arr_in is 1xN or a 1D N-element array and arr_out is MxN.
+    # Note that 1xN arr_in cannot be broadcasted into a 1D N-element arr_out.
+    #
+    # This is slightly different from the rules for checking if two inputs
+    # of a binary operation can be broadcasted together.
+    broadcast_ok = (
+        (
+            # Case 1: arrays have matching ndim + shape
+            # Case 2a: arr_in is 1D N-element, arr_out is 1D N-element (covered here)
+            arr_in._ndim == arr_out._ndim
+            and arr_in.shape == arr_out.shape
+        )
+        or (
+            # Case 2b: both arrays are 2D, arr_in is 1xN and arr_out is MxN
+            arr_in._ndim == 2
+            and arr_out._ndim == 2
+            and arr_in.shape[0] == 1
+            and arr_in.shape[1] == arr_out.shape[1]
+        )
+        or (
+            # Case 2c: arr_in is 1D N-element, arr_out is MxN
+            arr_in._ndim == 1
+            and arr_out._ndim == 2
+            and arr_in.shape[0] == arr_out.shape[1]
+            and arr_out.shape[0] == 1
+        )
+    )
+    # Case 2b would require duplicating the 1xN result M times to match the shape of out,
+    # which we currently do not support. See GH#5831.
+    if (
+        arr_in._ndim == 2
+        and arr_out._ndim == 2
+        and arr_in.shape[0] == 1
+        and arr_in.shape[1] == arr_out.shape[1]
+        and arr_in.shape[0] != 1
+    ):
+        raise NotImplementedError(
+            f"Modin does not currently support broadcasting shape {arr_in.shape} to output operand with shape {arr_out.shape}"
+        )
+    if not broadcast_ok:
+        raise ValueError(
+            f"non-broadcastable output operand with shape {arr_out.shape} doesn't match the broadcast shape {arr_in.shape}"
+        )
+
+
+def fix_dtypes_and_determine_return(
+    query_compiler_in, _ndim, dtype=None, out=None, where=True
+):
+    if dtype is not None:
+        query_compiler_in = query_compiler_in.astype(
+            {col_name: dtype for col_name in query_compiler_in.columns}
+        )
+    result = array(_query_compiler=query_compiler_in, _ndim=_ndim)
+    if out is not None:
+        out = try_convert_from_interoperable_type(out, copy=False)
+        check_can_broadcast_to_output(result, out)
+        result._query_compiler = result._query_compiler.astype(
+            {col_name: out.dtype for col_name in result._query_compiler.columns}
+        )
+        if isinstance(where, array):
+            out._update_inplace(where.where(result, out)._query_compiler)
+        elif where:
+            out._update_inplace(result._query_compiler)
+        return out
+    if isinstance(where, array) and out is None:
+        from .array_creation import zeros_like
+
+        out = zeros_like(result).astype(dtype if dtype is not None else result.dtype)
+        out._query_compiler = where.where(result, out)._query_compiler
+        return out
+    elif not where:
+        from .array_creation import zeros_like
+
+        return zeros_like(result)
+    return result
+
+
+class array(object):
+    """
+    Modin distributed representation of ``numpy.array``.
+
+    Internally, the data can be divided into partitions along both columns and rows
+    in order to parallelize computations and utilize the user's hardware as much as possible.
+
+    Notes
+    -----
+    The ``array`` class is a lightweight shim that relies on the pandas Query Compiler in order to
+    provide functionality.
+    """
+
+    def __init__(
+        self,
+        object=None,
+        dtype=None,
+        *,
+        copy=True,
+        order="K",
+        subok=False,
+        ndmin=0,
+        like=numpy._NoValue,
+        _query_compiler=None,
+        _ndim=None,
+    ):
+        self._siblings = []
+        ErrorMessage.single_warning(
+            "Using Modin's new NumPy API. To convert from a Modin object to a NumPy array, either turn off the ModinNumpy flag, or use `modin.pandas.io.to_numpy`."
+        )
+        if isinstance(object, array):
+            _query_compiler = object._query_compiler.copy()
+            if not copy:
+                object._add_sibling(self)
+            _ndim = object._ndim
+        elif isinstance(object, (pd.DataFrame, pd.Series)):
+            _query_compiler = object._query_compiler.copy()
+            if not copy:
+                object._add_sibling(self)
+            _ndim = 1 if isinstance(object, pd.Series) else 2
+        if _query_compiler is not None:
+            self._query_compiler = _query_compiler
+            self._ndim = _ndim
+            new_dtype = pandas.core.dtypes.cast.find_common_type(
+                list(self._query_compiler.dtypes.values)
+            )
+        elif is_list_like(object) and not is_list_like(object[0]):
+            series = pd.Series(object)
+            self._query_compiler = series._query_compiler
+            self._ndim = 1
+            new_dtype = self._query_compiler.dtypes.values[0]
+        else:
+            target_kwargs = {
+                "dtype": None,
+                "copy": True,
+                "order": "K",
+                "subok": False,
+                "ndmin": 0,
+                "like": numpy._NoValue,
+            }
+            for key, value in target_kwargs.copy().items():
+                if value == locals()[key]:
+                    target_kwargs.pop(key)
+                else:
+                    target_kwargs[key] = locals()[key]
+            arr = numpy.asarray(object)
+            assert arr.ndim in (
+                1,
+                2,
+            ), "modin.numpy currently only supports 1D and 2D objects."
+            self._ndim = len(arr.shape)
+            if self._ndim > 2:
+                ErrorMessage.not_implemented(
+                    "NumPy arrays with dimensions higher than 2 are not yet supported."
+                )
+
+            self._query_compiler = pd.DataFrame(arr)._query_compiler
+            new_dtype = arr.dtype
+        # These two lines are necessary so that our query compiler does not keep track of indices
+        # and try to map like indices to like indices. (e.g. if we multiply two arrays that used
+        # to be dataframes, and the dataframes had the same column names but ordered differently
+        # we want to do a simple broadcast where we only consider position, as numpy would, rather
+        # than pair columns with the same name and multiply them.)
+        self._query_compiler = self._query_compiler.reset_index(drop=True)
+        self._query_compiler.columns = range(len(self._query_compiler.columns))
+        new_dtype = new_dtype if dtype is None else dtype
+        if isinstance(new_dtype, pandas.Float64Dtype):
+            new_dtype = numpy.float64
+        cols_with_wrong_dtype = self._query_compiler.dtypes != new_dtype
+        if cols_with_wrong_dtype.any():
+            self._query_compiler = self._query_compiler.astype(
+                {
+                    col_name: new_dtype
+                    for col_name in self._query_compiler.columns[cols_with_wrong_dtype]
+                }
+            )
+        self.indexer = None
+
+    def __getitem__(self, key):
+        if isinstance(key, array) and is_bool_dtype(key.dtype) and key._ndim == 2:
+            raise NotImplementedError(
+                "Advanced indexing with 2D boolean indexes is not currently supported."
+            )
+        if self.indexer is None:
+            from .indexing import ArrayIndexer
+
+            self.indexer = ArrayIndexer(self)
+        return self.indexer.__getitem__(key)
+
+    def __setitem__(self, key, item):
+        if self.indexer is None:
+            from .indexing import ArrayIndexer
+
+            self.indexer = ArrayIndexer(self)
+        return self.indexer.__setitem__(key, item)
+
+    def _add_sibling(self, sibling):
+        """
+        Add an array object to the list of siblings.
+
+        Siblings are objects that share the same query compiler. This function is called
+        when a shallow copy is made.
+
+        Parameters
+        ----------
+        sibling : BasePandasDataset
+            Dataset to add to siblings list.
+        """
+        sibling._siblings = self._siblings + [self]
+        self._siblings += [sibling]
+        for sib in self._siblings:
+            sib._siblings += [sibling]
+
+    def _update_inplace(self, new_query_compiler):
+        """
+        Update the current array inplace.
+
+        Parameters
+        ----------
+        new_query_compiler : query_compiler
+            The new QueryCompiler to use to manage the data.
+        """
+        old_query_compiler = self._query_compiler
+        self._query_compiler = new_query_compiler
+        for sib in self._siblings:
+            sib._query_compiler = new_query_compiler
+        old_query_compiler.free()
+
+    def _validate_axis(self, axis):
+        """
+        Check that the provided axis argument is valid on this array.
+
+        Parameters
+        ----------
+        axis : int, optional
+            The axis argument passed to the function.
+
+        Returns
+        -------
+        int, optional
+            Axis to apply the function over (None, 0, or 1).
+
+        Raises
+        -------
+        numpy.AxisError
+            if the axis is invalid.
+        """
+        if axis is not None and axis < 0:
+            new_axis = axis + self._ndim
+            if self._ndim == 1 and new_axis != 0:
+                raise numpy.AxisError(axis, 1)
+            elif self._ndim == 2 and new_axis not in [0, 1]:
+                raise numpy.AxisError(axis, 2)
+            return new_axis
+        return axis
+
+    def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
+        ufunc_name = ufunc.__name__
+        supported_array_layer = hasattr(self, ufunc_name) or hasattr(
+            self, f"__{ufunc_name}__"
+        )
+        if supported_array_layer:
+            args = []
+            for input in inputs:
+                input = try_convert_from_interoperable_type(input)
+                if not (isinstance(input, array) or is_scalar(input)):
+                    input = array(input)
+                args += [input]
+            function = (
+                getattr(args[0], ufunc_name)
+                if hasattr(args[0], ufunc_name)
+                else getattr(args[0], f"__{ufunc_name}__")
+            )
+            len_expected_arguments = len(
+                [
+                    param
+                    for param in signature(function).parameters.values()
+                    if param.default == param.empty
+                ]
+            )
+            if len_expected_arguments == (len(args) - 1) and method == "__call__":
+                return function(*tuple(args[1:]), **kwargs)
+            else:
+                ErrorMessage.single_warning(
+                    f"{ufunc} method {method} is not yet supported in Modin. Defaulting to NumPy."
+                )
+                args = []
+                for input in inputs:
+                    if isinstance(input, array):
+                        input = input._to_numpy()
+                    if isinstance(input, pd.DataFrame):
+                        input = input._query_compiler.to_numpy()
+                    if isinstance(input, pd.Series):
+                        input = input._query_compiler.to_numpy().flatten()
+                    args += [input]
+                output = self._to_numpy().__array_ufunc__(
+                    ufunc, method, *args, **kwargs
+                )
+                if is_scalar(output):
+                    return output
+                return array(output)
+        new_ufunc = None
+        out_ndim = -1
+        if method == "__call__":
+            if len(inputs) == 1:
+                new_ufunc = Map.register(ufunc)
+                out_ndim = len(inputs[0].shape)
+            else:
+                new_ufunc = Binary.register(ufunc)
+                out_ndim = max(
+                    [len(inp.shape) for inp in inputs if hasattr(inp, "shape")]
+                )
+        elif method == "reduce":
+            if len(inputs) == 1:
+                new_ufunc = Reduce.register(ufunc, axis=kwargs.get("axis", None))
+            if kwargs.get("axis", None) is None:
+                out_ndim = 0
+            else:
+                out_ndim = len(inputs[0].shape) - 1
+        elif method == "accumulate":
+            if len(inputs) == 1:
+                new_ufunc = Reduce.register(ufunc, axis=None)
+            out_ndim = 0
+        if new_ufunc is None:
+            ErrorMessage.single_warning(
+                f"{ufunc} is not yet supported in Modin. Defaulting to NumPy."
+            )
+            args = []
+            for input in inputs:
+                if isinstance(input, array):
+                    input = input._to_numpy()
+                if isinstance(input, pd.DataFrame):
+                    input = input._query_compiler.to_numpy()
+                if isinstance(input, pd.Series):
+                    input = input._query_compiler.to_numpy().flatten()
+                args += [input]
+            output = self._to_numpy().__array_ufunc__(ufunc, method, *args, **kwargs)
+            if is_scalar(output):
+                return output
+            return array(output)
+        args = []
+        for input in inputs:
+            input = try_convert_from_interoperable_type(input)
+            if not (isinstance(input, array) or is_scalar(input)):
+                input = array(input)
+            args += [
+                input._query_compiler if hasattr(input, "_query_compiler") else input
+            ]
+        out_kwarg = kwargs.get("out", None)
+        if out_kwarg is not None:
+            # If `out` is a modin.numpy.array, `kwargs.get("out")` returns a 1-tuple
+            # whose only element is that array, so we need to unwrap it from the tuple.
+            out_kwarg = out_kwarg[0]
+        where_kwarg = kwargs.get("where", True)
+        kwargs["out"] = None
+        kwargs["where"] = True
+        result = new_ufunc(*args, **kwargs)
+        return fix_dtypes_and_determine_return(
+            result,
+            out_ndim,
+            dtype=kwargs.get("dtype", None),
+            out=out_kwarg,
+            where=where_kwarg,
+        )
+
+    def __array_function__(self, func, types, args, kwargs):
+        from . import array_creation as creation
+        from . import array_shaping as shaping
+        from . import math
+
+        func_name = func.__name__
+        modin_func = None
+        if hasattr(math, func_name):
+            modin_func = getattr(math, func_name)
+        elif hasattr(shaping, func_name):
+            modin_func = getattr(shaping, func_name)
+        elif hasattr(creation, func_name):
+            modin_func = getattr(creation, func_name)
+        if modin_func is None:
+            return NotImplemented
+        return modin_func(*args, **kwargs)
+
+    def where(self, x=None, y=None):
+        if not is_bool_dtype(self.dtype):
+            raise NotImplementedError(
+                "Modin currently only supports where on condition arrays with boolean dtype."
+            )
+        if x is None and y is None:
+            ErrorMessage.single_warning(
+                "np.where method with only condition specified is not yet supported in Modin. Defaulting to NumPy."
+            )
+            condition = self._to_numpy()
+            return array(numpy.where(condition))
+        x, y = try_convert_from_interoperable_type(
+            x
+        ), try_convert_from_interoperable_type(y)
+        if not (
+            (isinstance(x, array) or is_scalar(x))
+            and (isinstance(y, array) or is_scalar(y))
+        ):
+            raise ValueError(
+                "np.where requires x and y to either be np.arrays or scalars."
+            )
+        if is_scalar(x) and is_scalar(y):
+            ErrorMessage.single_warning(
+                "np.where not supported when both x and y are scalars. Defaulting to NumPy."
+            )
+            return array(numpy.where(self._to_numpy(), x, y))
+        if is_scalar(x) and not is_scalar(y):
+            if self._ndim < y._ndim:
+                if not self.shape[0] == y.shape[1]:
+                    raise ValueError(
+                        f"operands could not be broadcast together with shapes {self.shape} {y.shape}"
+                    )
+                ErrorMessage.single_warning(
+                    "np.where method where condition must be broadcast is not yet available in Modin. Defaulting to NumPy."
+                )
+                return array(numpy.where(self._to_numpy(), x, y._to_numpy()))
+            elif self._ndim == y._ndim:
+                if not self.shape == y.shape:
+                    raise ValueError(
+                        f"operands could not be broadcast together with shapes {self.shape} {y.shape}"
+                    )
+                return array(
+                    _query_compiler=y._query_compiler.where((~self)._query_compiler, x),
+                    _ndim=y._ndim,
+                )
+            else:
+                ErrorMessag

@@ -1,0 +1,531 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_gb.py
+KIND: code
+
+"""Gradient Boosted Regression Trees.
+
+This module contains methods for fitting gradient boosted regression trees for
+both classification and regression.
+
+The module structure is the following:
+
+- The ``BaseGradientBoosting`` base class implements a common ``fit`` method
+  for all the estimators in the module. Regression and classification
+  only differ in the concrete ``LossFunction`` used.
+
+- ``GradientBoostingClassifier`` implements gradient boosting for
+  classification problems.
+
+- ``GradientBoostingRegressor`` implements gradient boosting for
+  regression problems.
+"""
+
+# Authors: Peter Prettenhofer, Scott White, Gilles Louppe, Emanuele Olivetti,
+#          Arnaud Joly, Jacob Schreiber
+# License: BSD 3 clause
+
+import math
+import warnings
+from abc import ABCMeta, abstractmethod
+from numbers import Integral, Real
+from time import time
+
+import numpy as np
+from scipy.sparse import csc_matrix, csr_matrix, issparse
+
+from .._loss.loss import (
+    _LOSSES,
+    AbsoluteError,
+    ExponentialLoss,
+    HalfBinomialLoss,
+    HalfMultinomialLoss,
+    HalfSquaredError,
+    HuberLoss,
+    PinballLoss,
+)
+from ..base import ClassifierMixin, RegressorMixin, _fit_context, is_classifier
+from ..dummy import DummyClassifier, DummyRegressor
+from ..exceptions import NotFittedError
+from ..model_selection import train_test_split
+from ..preprocessing import LabelEncoder
+from ..tree import DecisionTreeRegressor
+from ..tree._tree import DOUBLE, DTYPE, TREE_LEAF
+from ..utils import check_array, check_random_state, column_or_1d
+from ..utils._param_validation import HasMethods, Interval, StrOptions
+from ..utils.multiclass import check_classification_targets
+from ..utils.stats import _weighted_percentile
+from ..utils.validation import _check_sample_weight, check_is_fitted
+from ._base import BaseEnsemble
+from ._gradient_boosting import _random_sample_mask, predict_stage, predict_stages
+
+_LOSSES = _LOSSES.copy()
+_LOSSES.update(
+    {
+        "quantile": PinballLoss,
+        "huber": HuberLoss,
+    }
+)
+
+
+def _safe_divide(numerator, denominator):
+    """Prevents overflow and division by zero."""
+    # This is used for classifiers where the denominator might become zero exatly.
+    # For instance for log loss, HalfBinomialLoss, if proba=0 or proba=1 exactly, then
+    # denominator = hessian = 0, and we should set the node value in the line search to
+    # zero as there is no improvement of the loss possible.
+    # For numerical safety, we do this already for extremely tiny values.
+    if abs(denominator) < 1e-150:
+        return 0.0
+    else:
+        # Cast to Python float to trigger Python errors, e.g. ZeroDivisionError,
+        # without relying on `np.errstate` that is not supported by Pyodide.
+        result = float(numerator) / float(denominator)
+        # Cast to Python float to trigger a ZeroDivisionError without relying
+        # on `np.errstate` that is not supported by Pyodide.
+        result = float(numerator) / float(denominator)
+        if math.isinf(result):
+            warnings.warn("overflow encountered in _safe_divide", RuntimeWarning)
+        return result
+
+
+def _init_raw_predictions(X, estimator, loss, use_predict_proba):
+    """Return the initial raw predictions.
+
+    Parameters
+    ----------
+    X : ndarray of shape (n_samples, n_features)
+        The data array.
+    estimator : object
+        The estimator to use to compute the predictions.
+    loss : BaseLoss
+        An instance of a loss function class.
+    use_predict_proba : bool
+        Whether estimator.predict_proba is used instead of estimator.predict.
+
+    Returns
+    -------
+    raw_predictions : ndarray of shape (n_samples, K)
+        The initial raw predictions. K is equal to 1 for binary
+        classification and regression, and equal to the number of classes
+        for multiclass classification. ``raw_predictions`` is casted
+        into float64.
+    """
+    # TODO: Use loss.fit_intercept_only where appropriate instead of
+    # DummyRegressor which is the default given by the `init` parameter,
+    # see also _init_state.
+    if use_predict_proba:
+        # Our parameter validation, set via _fit_context and _parameter_constraints
+        # already guarantees that estimator has a predict_proba method.
+        predictions = estimator.predict_proba(X)
+        if not loss.is_multiclass:
+            predictions = predictions[:, 1]  # probability of positive class
+        eps = np.finfo(np.float32).eps  # FIXME: This is quite large!
+        predictions = np.clip(predictions, eps, 1 - eps, dtype=np.float64)
+    else:
+        predictions = estimator.predict(X).astype(np.float64)
+
+    if predictions.ndim == 1:
+        return loss.link.link(predictions).reshape(-1, 1)
+    else:
+        return loss.link.link(predictions)
+
+
+def _update_terminal_regions(
+    loss,
+    tree,
+    X,
+    y,
+    neg_gradient,
+    raw_prediction,
+    sample_weight,
+    sample_mask,
+    learning_rate=0.1,
+    k=0,
+):
+    """Update the leaf values to be predicted by the tree and raw_prediction.
+
+    The current raw predictions of the model (of this stage) are updated.
+
+    Additionally, the terminal regions (=leaves) of the given tree are updated as well.
+    This corresponds to the line search step in "Greedy Function Approximation" by
+    Friedman, Algorithm 1 step 5.
+
+    Update equals:
+        argmin_{x} loss(y_true, raw_prediction_old + x * tree.value)
+
+    For non-trivial cases like the Binomial loss, the update has no closed formula and
+    is an approximation, again, see the Friedman paper.
+
+    Also note that the update formula for the SquaredError is the identity. Therefore,
+    in this case, the leaf values don't need an update and only the raw_predictions are
+    updated (with the learning rate included).
+
+    Parameters
+    ----------
+    loss : BaseLoss
+    tree : tree.Tree
+        The tree object.
+    X : ndarray of shape (n_samples, n_features)
+        The data array.
+    y : ndarray of shape (n_samples,)
+        The target labels.
+    neg_gradient : ndarray of shape (n_samples,)
+        The negative gradient.
+    raw_prediction : ndarray of shape (n_samples, n_trees_per_iteration)
+        The raw predictions (i.e. values from the tree leaves) of the
+        tree ensemble at iteration ``i - 1``.
+    sample_weight : ndarray of shape (n_samples,)
+        The weight of each sample.
+    sample_mask : ndarray of shape (n_samples,)
+        The sample mask to be used.
+    learning_rate : float, default=0.1
+        Learning rate shrinks the contribution of each tree by
+         ``learning_rate``.
+    k : int, default=0
+        The index of the estimator being updated.
+    """
+    # compute leaf for each sample in ``X``.
+    terminal_regions = tree.apply(X)
+
+    if not isinstance(loss, HalfSquaredError):
+        # mask all which are not in sample mask.
+        masked_terminal_regions = terminal_regions.copy()
+        masked_terminal_regions[~sample_mask] = -1
+
+        if isinstance(loss, HalfBinomialLoss):
+
+            def compute_update(y_, indices, neg_gradient, raw_prediction, k):
+                # Make a single Newton-Raphson step, see "Additive Logistic Regression:
+                # A Statistical View of Boosting" FHT00 and note that we use a slightly
+                # different version (factor 2) of "F" with proba=expit(raw_prediction).
+                # Our node estimate is given by:
+                #    sum(w * (y - prob)) / sum(w * prob * (1 - prob))
+                # we take advantage that: y - prob = neg_gradient
+                neg_g = neg_gradient.take(indices, axis=0)
+                prob = y_ - neg_g
+                # numerator = negative gradient = y - prob
+                numerator = np.average(neg_g, weights=sw)
+                # denominator = hessian = prob * (1 - prob)
+                denominator = np.average(prob * (1 - prob), weights=sw)
+                return _safe_divide(numerator, denominator)
+
+        elif isinstance(loss, HalfMultinomialLoss):
+
+            def compute_update(y_, indices, neg_gradient, raw_prediction, k):
+                # we take advantage that: y - prob = neg_gradient
+                neg_g = neg_gradient.take(indices, axis=0)
+                prob = y_ - neg_g
+                K = loss.n_classes
+                # numerator = negative gradient * (k - 1) / k
+                # Note: The factor (k - 1)/k appears in the original papers "Greedy
+                # Function Approximation" by Friedman and "Additive Logistic
+                # Regression" by Friedman, Hastie, Tibshirani. This factor is, however,
+                # wrong or at least arbitrary as it directly multiplies the
+                # learning_rate. We keep it for backward compatibility.
+                numerator = np.average(neg_g, weights=sw)
+                numerator *= (K - 1) / K
+                # denominator = (diagonal) hessian = prob * (1 - prob)
+                denominator = np.average(prob * (1 - prob), weights=sw)
+                return _safe_divide(numerator, denominator)
+
+        elif isinstance(loss, ExponentialLoss):
+
+            def compute_update(y_, indices, neg_gradient, raw_prediction, k):
+                neg_g = neg_gradient.take(indices, axis=0)
+                # numerator = negative gradient = y * exp(-raw) - (1-y) * exp(raw)
+                numerator = np.average(neg_g, weights=sw)
+                # denominator = hessian = y * exp(-raw) + (1-y) * exp(raw)
+                # if y=0: hessian = exp(raw) = -neg_g
+                #    y=1: hessian = exp(-raw) = neg_g
+                hessian = neg_g.copy()
+                hessian[y_ == 0] *= -1
+                denominator = np.average(hessian, weights=sw)
+                return _safe_divide(numerator, denominator)
+
+        else:
+
+            def compute_update(y_, indices, neg_gradient, raw_prediction, k):
+                return loss.fit_intercept_only(
+                    y_true=y_ - raw_prediction[indices, k],
+                    sample_weight=sw,
+                )
+
+        # update each leaf (= perform line search)
+        for leaf in np.nonzero(tree.children_left == TREE_LEAF)[0]:
+            indices = np.nonzero(masked_terminal_regions == leaf)[
+                0
+            ]  # of terminal regions
+            y_ = y.take(indices, axis=0)
+            sw = None if sample_weight is None else sample_weight[indices]
+            update = compute_update(y_, indices, neg_gradient, raw_prediction, k)
+
+            # TODO: Multiply here by learning rate instead of everywhere else.
+            tree.value[leaf, 0, 0] = update
+
+    # update predictions (both in-bag and out-of-bag)
+    raw_prediction[:, k] += learning_rate * tree.value[:, 0, 0].take(
+        terminal_regions, axis=0
+    )
+
+
+def set_huber_delta(loss, y_true, raw_prediction, sample_weight=None):
+    """Calculate and set self.closs.delta based on self.quantile."""
+    abserr = np.abs(y_true - raw_prediction.squeeze())
+    # sample_weight is always a ndarray, never None.
+    delta = _weighted_percentile(abserr, sample_weight, 100 * loss.quantile)
+    loss.closs.delta = float(delta)
+
+
+class VerboseReporter:
+    """Reports verbose output to stdout.
+
+    Parameters
+    ----------
+    verbose : int
+        Verbosity level. If ``verbose==1`` output is printed once in a while
+        (when iteration mod verbose_mod is zero).; if larger than 1 then output
+        is printed for each update.
+    """
+
+    def __init__(self, verbose):
+        self.verbose = verbose
+
+    def init(self, est, begin_at_stage=0):
+        """Initialize reporter
+
+        Parameters
+        ----------
+        est : Estimator
+            The estimator
+
+        begin_at_stage : int, default=0
+            stage at which to begin reporting
+        """
+        # header fields and line format str
+        header_fields = ["Iter", "Train Loss"]
+        verbose_fmt = ["{iter:>10d}", "{train_score:>16.4f}"]
+        # do oob?
+        if est.subsample < 1:
+            header_fields.append("OOB Improve")
+            verbose_fmt.append("{oob_impr:>16.4f}")
+        header_fields.append("Remaining Time")
+        verbose_fmt.append("{remaining_time:>16s}")
+
+        # print the header line
+        print(("%10s " + "%16s " * (len(header_fields) - 1)) % tuple(header_fields))
+
+        self.verbose_fmt = " ".join(verbose_fmt)
+        # plot verbose info each time i % verbose_mod == 0
+        self.verbose_mod = 1
+        self.start_time = time()
+        self.begin_at_stage = begin_at_stage
+
+    def update(self, j, est):
+        """Update reporter with new iteration.
+
+        Parameters
+        ----------
+        j : int
+            The new iteration.
+        est : Estimator
+            The estimator.
+        """
+        do_oob = est.subsample < 1
+        # we need to take into account if we fit additional estimators.
+        i = j - self.begin_at_stage  # iteration relative to the start iter
+        if (i + 1) % self.verbose_mod == 0:
+            oob_impr = est.oob_improvement_[j] if do_oob else 0
+            remaining_time = (
+                (est.n_estimators - (j + 1)) * (time() - self.start_time) / float(i + 1)
+            )
+            if remaining_time > 60:
+                remaining_time = "{0:.2f}m".format(remaining_time / 60.0)
+            else:
+                remaining_time = "{0:.2f}s".format(remaining_time)
+            print(
+                self.verbose_fmt.format(
+                    iter=j + 1,
+                    train_score=est.train_score_[j],
+                    oob_impr=oob_impr,
+                    remaining_time=remaining_time,
+                )
+            )
+            if self.verbose == 1 and ((i + 1) // (self.verbose_mod * 10) > 0):
+                # adjust verbose frequency (powers of 10)
+                self.verbose_mod *= 10
+
+
+class BaseGradientBoosting(BaseEnsemble, metaclass=ABCMeta):
+    """Abstract base class for Gradient Boosting."""
+
+    _parameter_constraints: dict = {
+        **DecisionTreeRegressor._parameter_constraints,
+        "learning_rate": [Interval(Real, 0.0, None, closed="left")],
+        "n_estimators": [Interval(Integral, 1, None, closed="left")],
+        "criterion": [StrOptions({"friedman_mse", "squared_error"})],
+        "subsample": [Interval(Real, 0.0, 1.0, closed="right")],
+        "verbose": ["verbose"],
+        "warm_start": ["boolean"],
+        "validation_fraction": [Interval(Real, 0.0, 1.0, closed="neither")],
+        "n_iter_no_change": [Interval(Integral, 1, None, closed="left"), None],
+        "tol": [Interval(Real, 0.0, None, closed="left")],
+    }
+    _parameter_constraints.pop("splitter")
+    _parameter_constraints.pop("monotonic_cst")
+
+    @abstractmethod
+    def __init__(
+        self,
+        *,
+        loss,
+        learning_rate,
+        n_estimators,
+        criterion,
+        min_samples_split,
+        min_samples_leaf,
+        min_weight_fraction_leaf,
+        max_depth,
+        min_impurity_decrease,
+        init,
+        subsample,
+        max_features,
+        ccp_alpha,
+        random_state,
+        alpha=0.9,
+        verbose=0,
+        max_leaf_nodes=None,
+        warm_start=False,
+        validation_fraction=0.1,
+        n_iter_no_change=None,
+        tol=1e-4,
+    ):
+        self.n_estimators = n_estimators
+        self.learning_rate = learning_rate
+        self.loss = loss
+        self.criterion = criterion
+        self.min_samples_split = min_samples_split
+        self.min_samples_leaf = min_samples_leaf
+        self.min_weight_fraction_leaf = min_weight_fraction_leaf
+        self.subsample = subsample
+        self.max_features = max_features
+        self.max_depth = max_depth
+        self.min_impurity_decrease = min_impurity_decrease
+        self.ccp_alpha = ccp_alpha
+        self.init = init
+        self.random_state = random_state
+        self.alpha = alpha
+        self.verbose = verbose
+        self.max_leaf_nodes = max_leaf_nodes
+        self.warm_start = warm_start
+        self.validation_fraction = validation_fraction
+        self.n_iter_no_change = n_iter_no_change
+        self.tol = tol
+
+    @abstractmethod
+    def _encode_y(self, y=None, sample_weight=None):
+        """Called by fit to validate and encode y."""
+
+    @abstractmethod
+    def _get_loss(self, sample_weight):
+        """Get loss object from sklearn._loss.loss."""
+
+    def _fit_stage(
+        self,
+        i,
+        X,
+        y,
+        raw_predictions,
+        sample_weight,
+        sample_mask,
+        random_state,
+        X_csc=None,
+        X_csr=None,
+    ):
+        """Fit another stage of ``n_trees_per_iteration_`` trees."""
+        original_y = y
+
+        if isinstance(self._loss, HuberLoss):
+            set_huber_delta(
+                loss=self._loss,
+                y_true=y,
+                raw_prediction=raw_predictions,
+                sample_weight=sample_weight,
+            )
+        # TODO: Without oob, i.e. with self.subsample = 1.0, we could call
+        # self._loss.loss_gradient and use it to set train_score_.
+        # But note that train_score_[i] is the score AFTER fitting the i-th tree.
+        # Note: We need the negative gradient!
+        neg_gradient = -self._loss.gradient(
+            y_true=y,
+            raw_prediction=raw_predictions,
+            sample_weight=None,  # We pass sample_weights to the tree directly.
+        )
+        # 2-d views of shape (n_samples, n_trees_per_iteration_) or (n_samples, 1)
+        # on neg_gradient to simplify the loop over n_trees_per_iteration_.
+        if neg_gradient.ndim == 1:
+            neg_g_view = neg_gradient.reshape((-1, 1))
+        else:
+            neg_g_view = neg_gradient
+
+        for k in range(self.n_trees_per_iteration_):
+            if self._loss.is_multiclass:
+                y = np.array(original_y == k, dtype=np.float64)
+
+            # induce regression tree on the negative gradient
+            tree = DecisionTreeRegressor(
+                criterion=self.criterion,
+                splitter="best",
+                max_depth=self.max_depth,
+                min_samples_split=self.min_samples_split,
+                min_samples_leaf=self.min_samples_leaf,
+                min_weight_fraction_leaf=self.min_weight_fraction_leaf,
+                min_impurity_decrease=self.min_impurity_decrease,
+                max_features=self.max_features,
+                max_leaf_nodes=self.max_leaf_nodes,
+                random_state=random_state,
+                ccp_alpha=self.ccp_alpha,
+            )
+
+            if self.subsample < 1.0:
+                # no inplace multiplication!
+                sample_weight = sample_weight * sample_mask.astype(np.float64)
+
+            X = X_csc if X_csc is not None else X
+            tree.fit(
+                X, neg_g_view[:, k], sample_weight=sample_weight, check_input=False
+            )
+
+            # update tree leaves
+            X_for_tree_update = X_csr if X_csr is not None else X
+            _update_terminal_regions(
+                self._loss,
+                tree.tree_,
+                X_for_tree_update,
+                y,
+                neg_g_view[:, k],
+                raw_predictions,
+                sample_weight,
+                sample_mask,
+                learning_rate=self.learning_rate,
+                k=k,
+            )
+
+            # add tree to ensemble
+            self.estimators_[i, k] = tree
+
+        return raw_predictions
+
+    def _set_max_features(self):
+        """Set self.max_features_."""
+        if isinstance(self.max_features, str):
+            if self.max_features == "auto":
+                if is_classifier(self):
+                    max_features = max(1, int(np.sqrt(self.n_features_in_)))
+                else:
+                    max_features = self.n_features_in_
+            elif self.max_features == "sqrt":
+                max_features = max(1, int(np.sqrt(self.n_features_in_)))
+            else:  # self.max_features == "log2"
+                max_features = max(1, int(np.log2(self.n_features_in_)))
+        elif self.max_features is None:
+            max_features = self.n_features_in_
+        elif isinstance(self.max_features, I

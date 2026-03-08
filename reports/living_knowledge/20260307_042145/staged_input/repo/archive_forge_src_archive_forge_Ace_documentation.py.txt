@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/Ace_documentation.py
+KIND: code
+
+Sorts wr, rt and ct tags into the appropriate contig / read instance, if possible.

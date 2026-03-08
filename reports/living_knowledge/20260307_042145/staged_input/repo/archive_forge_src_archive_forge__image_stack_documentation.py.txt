@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_image_stack_documentation.py
+KIND: code
+
+import numpy as np
+Pop an image from the shared image stack.
+
+    Returns
+    -------
+    img : ndarray
+        Image popped from the stack.

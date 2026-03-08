@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_global_var_documentation.py
+KIND: code
+
+global variables for ffi

@@ -1,0 +1,18 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/LU
+KIND: config
+
+LU@
+kanton capellencanton de capellencapellenkanton kapellenS
+kanton esch an der alzettecanton d'eschsuralzetteeschsuralzetteeschuelzecht$
+	luxemburg
+luxembourglëtzebuerg
+merschmierschH
+kanton echternachcanton d'echternach
+echternachkanton iechternach3
+kanton grevenmachergrevenmachergréiwemaacher3
+kanton remichcanton de remichremichréimech;
+kanton clerfcanton de clervauxclervauxkanton klierf
+diekirchdikrech=
+kanton redingencanton de redangekanton réidenredange
+wiltzkanton wolz5
+kanton viandencanton de viandenveianenvianden

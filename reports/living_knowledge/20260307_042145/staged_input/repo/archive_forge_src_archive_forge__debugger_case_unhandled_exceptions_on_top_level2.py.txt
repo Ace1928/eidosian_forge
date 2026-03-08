@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_debugger_case_unhandled_exceptions_on_top_level2.py
+KIND: code
+
+try:
+    raise ValueError('foobar')
+except ValueError:
+    pass
+
+raise ValueError('TEST SUCEEDED')

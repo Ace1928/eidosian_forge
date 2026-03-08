@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_cdao_owl_documentation.py
+KIND: code
+
+import xml.etree.ElementTree as ET
+Convert prefixed URIs to full URIs.
+
+    Optionally, converts CDAO named identifiers to OBO numeric identifiers.

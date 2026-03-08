@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_keys_documentation.py
+KIND: code
+
+import nacl.public
+ Create a PublicKey from a base64 encoded bytes.
+        :return: a PublicKey

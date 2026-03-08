@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/bq_id_utils_documentation.py
+KIND: code
+
+import collections
+import re
+import sys
+from typing import Any, Optional, Tuple, Type, Union
+from absl import app
+from pyglib import stringutil
+Factory method for this class.

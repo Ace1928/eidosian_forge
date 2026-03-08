@@ -1,0 +1,12 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/AE
+KIND: config
+
+AE
+
+عجمانajmanE
+أبو ظبي	abu dhabiأبو ظَبيإمارة أبو ظبي$
+إمارة دبيّdubaiدبي5
+إمارة الفجيرةfujairahالفجيرةE
+إمارة رأس الخيمةras al khaimahرأس الخيمةQ
+إمارة الشارقةsharjahإمارة الشارقةّالشارقةo
+إمارة أم القيوينemirate of umm al quwainإمارة ام القيوينام القيوين

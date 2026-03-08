@@ -1,0 +1,496 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_hdemucs.py
+KIND: code
+
+# *****************************************************************************
+# MIT License
+#
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+# *****************************************************************************
+
+
+import math
+import typing as tp
+from typing import Any, Dict, List, Optional
+
+import torch
+from torch import nn
+from torch.nn import functional as F
+
+
+class _ScaledEmbedding(torch.nn.Module):
+    r"""Make continuous embeddings and boost learning rate
+
+    Args:
+        num_embeddings (int): number of embeddings
+        embedding_dim (int): embedding dimensions
+        scale (float, optional): amount to scale learning rate (Default: 10.0)
+        smooth (bool, optional): choose to apply smoothing (Default: ``False``)
+    """
+
+    def __init__(self, num_embeddings: int, embedding_dim: int, scale: float = 10.0, smooth: bool = False):
+        super().__init__()
+        self.embedding = nn.Embedding(num_embeddings, embedding_dim)
+        if smooth:
+            weight = torch.cumsum(self.embedding.weight.data, dim=0)
+            # when summing gaussian, scale raises as sqrt(n), so we normalize by that.
+            weight = weight / torch.arange(1, num_embeddings + 1).sqrt()[:, None]
+            self.embedding.weight.data[:] = weight
+        self.embedding.weight.data /= scale
+        self.scale = scale
+
+    @property
+    def weight(self) -> torch.Tensor:
+        return self.embedding.weight * self.scale
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        r"""Forward pass for embedding with scale.
+        Args:
+            x (torch.Tensor): input tensor of shape `(num_embeddings)`
+
+        Returns:
+            (Tensor):
+                Embedding output of shape `(num_embeddings, embedding_dim)`
+        """
+        out = self.embedding(x) * self.scale
+        return out
+
+
+class _HEncLayer(torch.nn.Module):
+
+    r"""Encoder layer. This used both by the time and the frequency branch.
+    Args:
+        chin (int): number of input channels.
+        chout (int): number of output channels.
+        kernel_size (int, optional): Kernel size for encoder (Default: 8)
+        stride (int, optional): Stride for encoder layer (Default: 4)
+        norm_groups (int, optional): number of groups for group norm. (Default: 4)
+        empty (bool, optional): used to make a layer with just the first conv. this is used
+            before merging the time and freq. branches. (Default: ``False``)
+        freq (bool, optional): boolean for whether conv layer is for frequency domain (Default: ``True``)
+        norm_type (string, optional): Norm type, either ``group_norm `` or ``none`` (Default: ``group_norm``)
+        context (int, optional): context size for the 1x1 conv. (Default: 0)
+        dconv_kw (Dict[str, Any] or None, optional): dictionary of kwargs for the DConv class. (Default: ``None``)
+        pad (bool, optional): true to pad the input. Padding is done so that the output size is
+            always the input size / stride. (Default: ``True``)
+    """
+
+    def __init__(
+        self,
+        chin: int,
+        chout: int,
+        kernel_size: int = 8,
+        stride: int = 4,
+        norm_groups: int = 4,
+        empty: bool = False,
+        freq: bool = True,
+        norm_type: str = "group_norm",
+        context: int = 0,
+        dconv_kw: Optional[Dict[str, Any]] = None,
+        pad: bool = True,
+    ):
+        super().__init__()
+        if dconv_kw is None:
+            dconv_kw = {}
+        norm_fn = lambda d: nn.Identity()  # noqa
+        if norm_type == "group_norm":
+            norm_fn = lambda d: nn.GroupNorm(norm_groups, d)  # noqa
+        pad_val = kernel_size // 4 if pad else 0
+        klass = nn.Conv1d
+        self.freq = freq
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.empty = empty
+        self.pad = pad_val
+        if freq:
+            kernel_size = [kernel_size, 1]
+            stride = [stride, 1]
+            pad_val = [pad_val, 0]
+            klass = nn.Conv2d
+        self.conv = klass(chin, chout, kernel_size, stride, pad_val)
+        self.norm1 = norm_fn(chout)
+
+        if self.empty:
+            self.rewrite = nn.Identity()
+            self.norm2 = nn.Identity()
+            self.dconv = nn.Identity()
+        else:
+            self.rewrite = klass(chout, 2 * chout, 1 + 2 * context, 1, context)
+            self.norm2 = norm_fn(2 * chout)
+            self.dconv = _DConv(chout, **dconv_kw)
+
+    def forward(self, x: torch.Tensor, inject: Optional[torch.Tensor] = None) -> torch.Tensor:
+        r"""Forward pass for encoding layer.
+
+        Size depends on whether frequency or time
+
+        Args:
+            x (torch.Tensor): tensor input of shape `(B, C, F, T)` for frequency and shape
+                `(B, C, T)` for time
+            inject (torch.Tensor, optional): on last layer, combine frequency and time branches through inject param,
+                same shape as x (default: ``None``)
+
+        Returns:
+            Tensor
+                output tensor after encoder layer of shape `(B, C, F / stride, T)` for frequency
+                    and shape `(B, C, ceil(T / stride))` for time
+        """
+
+        if not self.freq and x.dim() == 4:
+            B, C, Fr, T = x.shape
+            x = x.view(B, -1, T)
+
+        if not self.freq:
+            le = x.shape[-1]
+            if not le % self.stride == 0:
+                x = F.pad(x, (0, self.stride - (le % self.stride)))
+        y = self.conv(x)
+        if self.empty:
+            return y
+        if inject is not None:
+            if inject.shape[-1] != y.shape[-1]:
+                raise ValueError("Injection shapes do not align")
+            if inject.dim() == 3 and y.dim() == 4:
+                inject = inject[:, :, None]
+            y = y + inject
+        y = F.gelu(self.norm1(y))
+        if self.freq:
+            B, C, Fr, T = y.shape
+            y = y.permute(0, 2, 1, 3).reshape(-1, C, T)
+            y = self.dconv(y)
+            y = y.view(B, Fr, C, T).permute(0, 2, 1, 3)
+        else:
+            y = self.dconv(y)
+        z = self.norm2(self.rewrite(y))
+        z = F.glu(z, dim=1)
+        return z
+
+
+class _HDecLayer(torch.nn.Module):
+    r"""Decoder layer. This used both by the time and the frequency branches.
+    Args:
+        chin (int): number of input channels.
+        chout (int): number of output channels.
+        last (bool, optional): whether current layer is final layer (Default: ``False``)
+        kernel_size (int, optional): Kernel size for encoder (Default: 8)
+        stride (int): Stride for encoder layer (Default: 4)
+        norm_groups (int, optional): number of groups for group norm. (Default: 1)
+        empty (bool, optional): used to make a layer with just the first conv. this is used
+            before merging the time and freq. branches. (Default: ``False``)
+        freq (bool, optional): boolean for whether conv layer is for frequency (Default: ``True``)
+        norm_type (str, optional): Norm type, either ``group_norm `` or ``none`` (Default: ``group_norm``)
+        context (int, optional): context size for the 1x1 conv. (Default: 1)
+        dconv_kw (Dict[str, Any] or None, optional): dictionary of kwargs for the DConv class. (Default: ``None``)
+        pad (bool, optional): true to pad the input. Padding is done so that the output size is
+            always the input size / stride. (Default: ``True``)
+    """
+
+    def __init__(
+        self,
+        chin: int,
+        chout: int,
+        last: bool = False,
+        kernel_size: int = 8,
+        stride: int = 4,
+        norm_groups: int = 1,
+        empty: bool = False,
+        freq: bool = True,
+        norm_type: str = "group_norm",
+        context: int = 1,
+        dconv_kw: Optional[Dict[str, Any]] = None,
+        pad: bool = True,
+    ):
+        super().__init__()
+        if dconv_kw is None:
+            dconv_kw = {}
+        norm_fn = lambda d: nn.Identity()  # noqa
+        if norm_type == "group_norm":
+            norm_fn = lambda d: nn.GroupNorm(norm_groups, d)  # noqa
+        if pad:
+            if (kernel_size - stride) % 2 != 0:
+                raise ValueError("Kernel size and stride do not align")
+            pad = (kernel_size - stride) // 2
+        else:
+            pad = 0
+        self.pad = pad
+        self.last = last
+        self.freq = freq
+        self.chin = chin
+        self.empty = empty
+        self.stride = stride
+        self.kernel_size = kernel_size
+        klass = nn.Conv1d
+        klass_tr = nn.ConvTranspose1d
+        if freq:
+            kernel_size = [kernel_size, 1]
+            stride = [stride, 1]
+            klass = nn.Conv2d
+            klass_tr = nn.ConvTranspose2d
+        self.conv_tr = klass_tr(chin, chout, kernel_size, stride)
+        self.norm2 = norm_fn(chout)
+        if self.empty:
+            self.rewrite = nn.Identity()
+            self.norm1 = nn.Identity()
+        else:
+            self.rewrite = klass(chin, 2 * chin, 1 + 2 * context, 1, context)
+            self.norm1 = norm_fn(2 * chin)
+
+    def forward(self, x: torch.Tensor, skip: Optional[torch.Tensor], length):
+        r"""Forward pass for decoding layer.
+
+        Size depends on whether frequency or time
+
+        Args:
+            x (torch.Tensor): tensor input of shape `(B, C, F, T)` for frequency and shape
+                `(B, C, T)` for time
+            skip (torch.Tensor, optional): on first layer, separate frequency and time branches using param
+                (default: ``None``)
+            length (int): Size of tensor for output
+
+        Returns:
+            (Tensor, Tensor):
+                Tensor
+                    output tensor after decoder layer of shape `(B, C, F * stride, T)` for frequency domain except last
+                        frequency layer shape is `(B, C, kernel_size, T)`. Shape is `(B, C, stride * T)`
+                        for time domain.
+                Tensor
+                    contains the output just before final transposed convolution, which is used when the
+                        freq. and time branch separate. Otherwise, does not matter. Shape is
+                        `(B, C, F, T)` for frequency and `(B, C, T)` for time.
+        """
+        if self.freq and x.dim() == 3:
+            B, C, T = x.shape
+            x = x.view(B, self.chin, -1, T)
+
+        if not self.empty:
+            x = x + skip
+            y = F.glu(self.norm1(self.rewrite(x)), dim=1)
+        else:
+            y = x
+            if skip is not None:
+                raise ValueError("Skip must be none when empty is true.")
+
+        z = self.norm2(self.conv_tr(y))
+        if self.freq:
+            if self.pad:
+                z = z[..., self.pad : -self.pad, :]
+        else:
+            z = z[..., self.pad : self.pad + length]
+            if z.shape[-1] != length:
+                raise ValueError("Last index of z must be equal to length")
+        if not self.last:
+            z = F.gelu(z)
+
+        return z, y
+
+
+class HDemucs(torch.nn.Module):
+    r"""Hybrid Demucs model from
+    *Hybrid Spectrogram and Waveform Source Separation* :cite:`defossez2021hybrid`.
+
+    See Also:
+        * :class:`torchaudio.pipelines.SourceSeparationBundle`: Source separation pipeline with pre-trained models.
+
+    Args:
+        sources (List[str]): list of source names. List can contain the following source
+            options: [``"bass"``, ``"drums"``, ``"other"``, ``"mixture"``, ``"vocals"``].
+        audio_channels (int, optional): input/output audio channels. (Default: 2)
+        channels (int, optional): initial number of hidden channels. (Default: 48)
+        growth (int, optional): increase the number of hidden channels by this factor at each layer. (Default: 2)
+        nfft (int, optional): number of fft bins. Note that changing this requires careful computation of
+            various shape parameters and will not work out of the box for hybrid models. (Default: 4096)
+        depth (int, optional): number of layers in encoder and decoder (Default: 6)
+        freq_emb (float, optional): add frequency embedding after the first frequency layer if > 0,
+            the actual value controls the weight of the embedding. (Default: 0.2)
+        emb_scale (int, optional): equivalent to scaling the embedding learning rate (Default: 10)
+        emb_smooth (bool, optional): initialize the embedding with a smooth one (with respect to frequencies).
+            (Default: ``True``)
+        kernel_size (int, optional): kernel_size for encoder and decoder layers. (Default: 8)
+        time_stride (int, optional): stride for the final time layer, after the merge. (Default: 2)
+        stride (int, optional): stride for encoder and decoder layers. (Default: 4)
+        context (int, optional): context for 1x1 conv in the decoder. (Default: 4)
+        context_enc (int, optional): context for 1x1 conv in the encoder. (Default: 0)
+        norm_starts (int, optional): layer at which group norm starts being used.
+            decoder layers are numbered in reverse order. (Default: 4)
+        norm_groups (int, optional): number of groups for group norm. (Default: 4)
+        dconv_depth (int, optional): depth of residual DConv branch. (Default: 2)
+        dconv_comp (int, optional): compression of DConv branch. (Default: 4)
+        dconv_attn (int, optional): adds attention layers in DConv branch starting at this layer. (Default: 4)
+        dconv_lstm (int, optional): adds a LSTM layer in DConv branch starting at this layer. (Default: 4)
+        dconv_init (float, optional): initial scale for the DConv branch LayerScale. (Default: 1e-4)
+    """
+
+    def __init__(
+        self,
+        sources: List[str],
+        audio_channels: int = 2,
+        channels: int = 48,
+        growth: int = 2,
+        nfft: int = 4096,
+        depth: int = 6,
+        freq_emb: float = 0.2,
+        emb_scale: int = 10,
+        emb_smooth: bool = True,
+        kernel_size: int = 8,
+        time_stride: int = 2,
+        stride: int = 4,
+        context: int = 1,
+        context_enc: int = 0,
+        norm_starts: int = 4,
+        norm_groups: int = 4,
+        dconv_depth: int = 2,
+        dconv_comp: int = 4,
+        dconv_attn: int = 4,
+        dconv_lstm: int = 4,
+        dconv_init: float = 1e-4,
+    ):
+        super().__init__()
+        self.depth = depth
+        self.nfft = nfft
+        self.audio_channels = audio_channels
+        self.sources = sources
+        self.kernel_size = kernel_size
+        self.context = context
+        self.stride = stride
+        self.channels = channels
+
+        self.hop_length = self.nfft // 4
+        self.freq_emb = None
+
+        self.freq_encoder = nn.ModuleList()
+        self.freq_decoder = nn.ModuleList()
+
+        self.time_encoder = nn.ModuleList()
+        self.time_decoder = nn.ModuleList()
+
+        chin = audio_channels
+        chin_z = chin * 2  # number of channels for the freq branch
+        chout = channels
+        chout_z = channels
+        freqs = self.nfft // 2
+
+        for index in range(self.depth):
+            lstm = index >= dconv_lstm
+            attn = index >= dconv_attn
+            norm_type = "group_norm" if index >= norm_starts else "none"
+            freq = freqs > 1
+            stri = stride
+            ker = kernel_size
+            if not freq:
+                if freqs != 1:
+                    raise ValueError("When freq is false, freqs must be 1.")
+                ker = time_stride * 2
+                stri = time_stride
+
+            pad = True
+            last_freq = False
+            if freq and freqs <= kernel_size:
+                ker = freqs
+                pad = False
+                last_freq = True
+
+            kw = {
+                "kernel_size": ker,
+                "stride": stri,
+                "freq": freq,
+                "pad": pad,
+                "norm_type": norm_type,
+                "norm_groups": norm_groups,
+                "dconv_kw": {
+                    "lstm": lstm,
+                    "attn": attn,
+                    "depth": dconv_depth,
+                    "compress": dconv_comp,
+                    "init": dconv_init,
+                },
+            }
+            kwt = dict(kw)
+            kwt["freq"] = 0
+            kwt["kernel_size"] = kernel_size
+            kwt["stride"] = stride
+            kwt["pad"] = True
+            kw_dec = dict(kw)
+
+            if last_freq:
+                chout_z = max(chout, chout_z)
+                chout = chout_z
+
+            enc = _HEncLayer(chin_z, chout_z, context=context_enc, **kw)
+            if freq:
+                if last_freq is True and nfft == 2048:
+                    kwt["stride"] = 2
+                    kwt["kernel_size"] = 4
+                tenc = _HEncLayer(chin, chout, context=context_enc, empty=last_freq, **kwt)
+                self.time_encoder.append(tenc)
+
+            self.freq_encoder.append(enc)
+            if index == 0:
+                chin = self.audio_channels * len(self.sources)
+                chin_z = chin * 2
+            dec = _HDecLayer(chout_z, chin_z, last=index == 0, context=context, **kw_dec)
+            if freq:
+                tdec = _HDecLayer(chout, chin, empty=last_freq, last=index == 0, context=context, **kwt)
+                self.time_decoder.insert(0, tdec)
+            self.freq_decoder.insert(0, dec)
+
+            chin = chout
+            chin_z = chout_z
+            chout = int(growth * chout)
+            chout_z = int(growth * chout_z)
+            if freq:
+                if freqs <= kernel_size:
+                    freqs = 1
+                else:
+                    freqs //= stride
+            if index == 0 and freq_emb:
+                self.freq_emb = _ScaledEmbedding(freqs, chin_z, smooth=emb_smooth, scale=emb_scale)
+                self.freq_emb_scale = freq_emb
+
+        _rescale_module(self)
+
+    def _spec(self, x):
+        hl = self.hop_length
+        nfft = self.nfft
+        x0 = x  # noqa
+
+        # We re-pad the signal in order to keep the property
+        # that the size of the output is exactly the size of the input
+        # divided by the stride (here hop_length), when divisible.
+        # This is achieved by padding by 1/4th of the kernel size (here nfft).
+        # which is not supported by torch.stft.
+        # Having all convolution operations follow this convention allow to easily
+        # align the time and frequency branches later on.
+        if hl != nfft // 4:
+            raise ValueError("Hop length must be nfft // 4")
+        le = int(math.ceil(x.shape[-1] / hl))
+        pad = hl // 2 * 3
+        x = self._pad1d(x, pad, pad + le * hl - x.shape[-1], mode="reflect")
+
+        z = _spectro(x, nfft, hl)[..., :-1, :]
+        if z.shape[-1] != le + 4:
+            raise ValueError("Spectrogram's last dimension must be 4 + input size divided by stride")
+        z = z[..., 2 : 2 + le]
+        return z
+
+    def _ispec(self, z, length=None):
+        hl = self.hop_length
+        z = F.pad(z, [0, 0, 0, 1])
+        z = F.pad(z, [2, 2])
+        pad = hl // 2 * 3

@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/bageldb.py
+KIND: code
+
+from langchain_community.vectorstores.bageldb import (
+    Bagel,
+)
+
+__all__ = ["Bagel"]

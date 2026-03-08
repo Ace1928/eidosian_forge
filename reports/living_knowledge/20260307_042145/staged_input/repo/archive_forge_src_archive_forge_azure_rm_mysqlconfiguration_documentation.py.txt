@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/azure_rm_mysqlconfiguration_documentation.py
+KIND: code
+
+from __future__ import absolute_import, division, print_function
+Main execution

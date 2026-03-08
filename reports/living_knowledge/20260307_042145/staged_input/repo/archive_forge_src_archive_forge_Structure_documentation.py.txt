@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/Structure_documentation.py
+KIND: code
+
+from Bio.PDB.Entity import Entity
+Create/update atom coordinates from internal coordinates.
+
+        :param verbose bool: default False
+            describe runtime problems
+
+        :raises Exception: if any chain does not have .internal_coord attribute

@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AllGatherOptions.py
+KIND: code
+
+from enum import Enum
+from dataclasses import dataclass
+from datetime import timedelta
+@dataclass
+class AllGatherOptions:
+    timeout_ms = unset_timeout_ms

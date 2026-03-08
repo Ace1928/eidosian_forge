@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/cccbdb_ip_documentation.py
+KIND: code
+
+Experimental ionization energies from CCCBDB at
+http://srdata.nist.gov/cccbdb/default.htm
+
+Information presented on these pages is considered public information
+and may be distributed or copied http://www.nist.gov/public_affairs/disclaimer.cfm

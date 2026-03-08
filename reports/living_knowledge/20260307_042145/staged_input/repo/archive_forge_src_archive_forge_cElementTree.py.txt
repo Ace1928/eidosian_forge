@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/cElementTree.py
+KIND: code
+
+# Deprecated alias for xml.etree.ElementTree
+
+from xml.etree.ElementTree import *

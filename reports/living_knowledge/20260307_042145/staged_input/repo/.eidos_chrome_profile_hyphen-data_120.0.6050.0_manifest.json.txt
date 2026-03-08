@@ -1,0 +1,8 @@
+SOURCE_PATH: .eidos_chrome_profile/hyphen-data/120.0.6050.0/manifest.json
+KIND: config
+
+{
+  "manifest_version": 2,
+  "name": "hyphens-data",
+  "version": "120.0.6050.0"
+}

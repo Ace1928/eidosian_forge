@@ -1,0 +1,11 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_compiler_client_documentation.py
+KIND: code
+
+from contextlib import contextmanager
+from dataclasses import dataclass
+from typing import Iterator, Optional, List
+import rpcq
+from qcs_api_client.client import QCSClientConfiguration
+from rpcq.messages import TargetDevice as TargetQuantumProcessor
+
+        Generate a randomized benchmarking sequence.

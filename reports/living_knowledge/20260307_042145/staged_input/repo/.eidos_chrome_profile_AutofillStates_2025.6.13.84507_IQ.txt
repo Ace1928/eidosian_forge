@@ -1,0 +1,33 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/IQ
+KIND: config
+
+IQ�
+al anbaranal anbar governorateanbarالأنبارالانبارالانبار محافظةمحافظة الأنبارp
+arbeelarbilarbil governorateerbilerbil governoratehawlerirbil
+أربيلأربيل محافظة{
+	al basrahalbasrahbasrabasra governoratebasrahالبصرةالبصرة محافظةمحافظة البصرةe
+babilblbabil governoratebabylonbabylon governoratebābilبابلبابل محافظةx
+baghdadbaghdad governoratebaghdādmuhafazat bagdad
+بغدادبغداد محافظةمحافظة بغدادh
+dahukdihokdohuk governorateduhokduhok governorate
+داهوكدهوكدهوك محافظةW
+diyaladiyala governoratediyālā
+ديالا
+ديالىديالى محافظةc
+dhi qardhi qar governorate	dhī qārذي قارذي قار‎ذي قار‎ محافظةR
+karbalakarbala governorate	karbalā'كربلاءكربلاء محافظةJ
+maysanmaysan governoratemaysān
+ميسانميسان محافظة|
+al muthannaal muthanna governoratealmuthannāmuthannamuthanna governorateالمثنىالمثنى محافظةH
+annajafnajafnajaf governorate
+النجفالنجف محافظةz
+neynewaninawanineveh governoratenineveh provinceninwenīnawā
+نينوىنينوى محافظة
+نینوى�
+alqadisiyahalqadisiyyahalqādisiyyahalqādisiyyah governorateالقادسيةالقادسية محافظةمحافظة الديوانية�
+saladin governoratesdsaladin provincesalah aldin
+salahuddinsalâhaddînصلاح الدين صلاح الدين محافظة�
+alsulaymaniyahassulaymaniyyahsulaymaniyahsulaymaniyah governorateالسليمانية!السليمانية محافظةالسليمانية‎Z
+	at ta'mimkirkukkirkuk governorateالتميم
+كركوككركوك محافظةG
+wasitwawasit governoratewāsitواسطواسط محافظة

@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/before_sleep_documentation.py
+KIND: code
+
+import typing
+from pip._vendor.tenacity import _utils
+Before call strategy that logs to some logger the attempt.

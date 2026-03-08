@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_debugger_case_event_ext.py
+KIND: code
+
+# File empty. Output is in the extension itself

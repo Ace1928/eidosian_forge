@@ -1,0 +1,524 @@
+SOURCE_PATH: archive_forge/src/archive_forge/circuits.py
+KIND: code
+
+# This code is part of Qiskit.
+#
+# (C) Copyright IBM 2021.
+#
+# This code is licensed under the Apache License, Version 2.0. You may
+# obtain a copy of this license in the LICENSE.txt file in the root directory
+# of this source tree or at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# Any modifications or derivative works of this code must retain this
+# copyright notice, and modified files need to carry a notice indicating
+# that they have been altered from the originals.
+
+# pylint: disable=invalid-name
+
+"""Binary IO for circuit objects."""
+
+from collections import defaultdict
+import io
+import json
+import struct
+import uuid
+import warnings
+
+import numpy as np
+
+from qiskit import circuit as circuit_mod
+from qiskit.circuit import library, controlflow, CircuitInstruction, ControlFlowOp
+from qiskit.circuit.classical import expr
+from qiskit.circuit.classicalregister import ClassicalRegister, Clbit
+from qiskit.circuit.gate import Gate
+from qiskit.circuit.singleton import SingletonInstruction, SingletonGate
+from qiskit.circuit.controlledgate import ControlledGate
+from qiskit.circuit.annotated_operation import (
+    AnnotatedOperation,
+    Modifier,
+    InverseModifier,
+    ControlModifier,
+    PowerModifier,
+)
+from qiskit.circuit.instruction import Instruction
+from qiskit.circuit.quantumcircuit import QuantumCircuit
+from qiskit.circuit.quantumregister import QuantumRegister, Qubit
+from qiskit.qpy import common, formats, type_keys
+from qiskit.qpy.binary_io import value, schedules
+from qiskit.quantum_info.operators import SparsePauliOp, Clifford
+from qiskit.synthesis import evolution as evo_synth
+from qiskit.transpiler.layout import Layout, TranspileLayout
+
+
+def _read_header_v2(file_obj, version, vectors, metadata_deserializer=None):
+    data = formats.CIRCUIT_HEADER_V2._make(
+        struct.unpack(
+            formats.CIRCUIT_HEADER_V2_PACK,
+            file_obj.read(formats.CIRCUIT_HEADER_V2_SIZE),
+        )
+    )
+
+    name = file_obj.read(data.name_size).decode(common.ENCODE)
+    global_phase = value.loads_value(
+        data.global_phase_type,
+        file_obj.read(data.global_phase_size),
+        version=version,
+        vectors=vectors,
+    )
+    header = {
+        "global_phase": global_phase,
+        "num_qubits": data.num_qubits,
+        "num_clbits": data.num_clbits,
+        "num_registers": data.num_registers,
+        "num_instructions": data.num_instructions,
+    }
+
+    metadata_raw = file_obj.read(data.metadata_size)
+    metadata = json.loads(metadata_raw, cls=metadata_deserializer)
+    return header, name, metadata
+
+
+def _read_header(file_obj, metadata_deserializer=None):
+    data = formats.CIRCUIT_HEADER._make(
+        struct.unpack(formats.CIRCUIT_HEADER_PACK, file_obj.read(formats.CIRCUIT_HEADER_SIZE))
+    )
+    name = file_obj.read(data.name_size).decode(common.ENCODE)
+    header = {
+        "global_phase": data.global_phase,
+        "num_qubits": data.num_qubits,
+        "num_clbits": data.num_clbits,
+        "num_registers": data.num_registers,
+        "num_instructions": data.num_instructions,
+    }
+    metadata_raw = file_obj.read(data.metadata_size)
+    metadata = json.loads(metadata_raw, cls=metadata_deserializer)
+    return header, name, metadata
+
+
+def _read_registers_v4(file_obj, num_registers):
+    registers = {"q": {}, "c": {}}
+    for _reg in range(num_registers):
+        data = formats.REGISTER_V4._make(
+            struct.unpack(
+                formats.REGISTER_V4_PACK,
+                file_obj.read(formats.REGISTER_V4_SIZE),
+            )
+        )
+        name = file_obj.read(data.name_size).decode("utf8")
+        REGISTER_ARRAY_PACK = "!%sq" % data.size
+        bit_indices_raw = file_obj.read(struct.calcsize(REGISTER_ARRAY_PACK))
+        bit_indices = list(struct.unpack(REGISTER_ARRAY_PACK, bit_indices_raw))
+        if data.type.decode("utf8") == "q":
+            registers["q"][name] = (data.standalone, bit_indices, data.in_circuit)
+        else:
+            registers["c"][name] = (data.standalone, bit_indices, data.in_circuit)
+    return registers
+
+
+def _read_registers(file_obj, num_registers):
+    registers = {"q": {}, "c": {}}
+    for _reg in range(num_registers):
+        data = formats.REGISTER._make(
+            struct.unpack(
+                formats.REGISTER_PACK,
+                file_obj.read(formats.REGISTER_SIZE),
+            )
+        )
+        name = file_obj.read(data.name_size).decode("utf8")
+        REGISTER_ARRAY_PACK = "!%sI" % data.size
+        bit_indices_raw = file_obj.read(struct.calcsize(REGISTER_ARRAY_PACK))
+        bit_indices = list(struct.unpack(REGISTER_ARRAY_PACK, bit_indices_raw))
+        if data.type.decode("utf8") == "q":
+            registers["q"][name] = (data.standalone, bit_indices, True)
+        else:
+            registers["c"][name] = (data.standalone, bit_indices, True)
+    return registers
+
+
+def _loads_instruction_parameter(
+    type_key, data_bytes, version, vectors, registers, circuit, use_symengine
+):
+    if type_key == type_keys.Program.CIRCUIT:
+        param = common.data_from_binary(data_bytes, read_circuit, version=version)
+    elif type_key == type_keys.Value.MODIFIER:
+        param = common.data_from_binary(data_bytes, _read_modifier)
+    elif type_key == type_keys.Container.RANGE:
+        data = formats.RANGE._make(struct.unpack(formats.RANGE_PACK, data_bytes))
+        param = range(data.start, data.stop, data.step)
+    elif type_key == type_keys.Container.TUPLE:
+        param = tuple(
+            common.sequence_from_binary(
+                data_bytes,
+                _loads_instruction_parameter,
+                version=version,
+                vectors=vectors,
+                registers=registers,
+                circuit=circuit,
+                use_symengine=use_symengine,
+            )
+        )
+    elif type_key == type_keys.Value.INTEGER:
+        # TODO This uses little endian. Should be fixed in the next QPY version.
+        param = struct.unpack("<q", data_bytes)[0]
+    elif type_key == type_keys.Value.FLOAT:
+        # TODO This uses little endian. Should be fixed in the next QPY version.
+        param = struct.unpack("<d", data_bytes)[0]
+    elif type_key == type_keys.Value.REGISTER:
+        param = _loads_register_param(data_bytes.decode(common.ENCODE), circuit, registers)
+    else:
+        clbits = circuit.clbits if circuit is not None else ()
+        param = value.loads_value(
+            type_key,
+            data_bytes,
+            version,
+            vectors,
+            clbits=clbits,
+            cregs=registers["c"],
+            use_symengine=use_symengine,
+        )
+
+    return param
+
+
+def _loads_register_param(data_bytes, circuit, registers):
+    # If register name prefixed with null character it's a clbit index for single bit condition.
+    if data_bytes[0] == "\x00":
+        conditional_bit = int(data_bytes[1:])
+        return circuit.clbits[conditional_bit]
+    return registers["c"][data_bytes]
+
+
+def _read_instruction(
+    file_obj, circuit, registers, custom_operations, version, vectors, use_symengine
+):
+    if version < 5:
+        instruction = formats.CIRCUIT_INSTRUCTION._make(
+            struct.unpack(
+                formats.CIRCUIT_INSTRUCTION_PACK,
+                file_obj.read(formats.CIRCUIT_INSTRUCTION_SIZE),
+            )
+        )
+    else:
+        instruction = formats.CIRCUIT_INSTRUCTION_V2._make(
+            struct.unpack(
+                formats.CIRCUIT_INSTRUCTION_V2_PACK,
+                file_obj.read(formats.CIRCUIT_INSTRUCTION_V2_SIZE),
+            )
+        )
+    gate_name = file_obj.read(instruction.name_size).decode(common.ENCODE)
+    label = file_obj.read(instruction.label_size).decode(common.ENCODE)
+    condition_register = file_obj.read(instruction.condition_register_size).decode(common.ENCODE)
+    qargs = []
+    cargs = []
+    params = []
+    condition = None
+    if (version < 5 and instruction.has_condition) or (
+        version >= 5 and instruction.conditional_key == type_keys.Condition.TWO_TUPLE
+    ):
+        condition = (
+            _loads_register_param(condition_register, circuit, registers),
+            instruction.condition_value,
+        )
+    elif version >= 5 and instruction.conditional_key == type_keys.Condition.EXPRESSION:
+        condition = value.read_value(
+            file_obj,
+            version,
+            vectors,
+            clbits=circuit.clbits,
+            cregs=registers["c"],
+            use_symengine=use_symengine,
+        )
+    # Load Arguments
+    if circuit is not None:
+        for _qarg in range(instruction.num_qargs):
+            qarg = formats.CIRCUIT_INSTRUCTION_ARG._make(
+                struct.unpack(
+                    formats.CIRCUIT_INSTRUCTION_ARG_PACK,
+                    file_obj.read(formats.CIRCUIT_INSTRUCTION_ARG_SIZE),
+                )
+            )
+            if qarg.type.decode(common.ENCODE) == "c":
+                raise TypeError("Invalid input carg prior to all qargs")
+            qargs.append(circuit.qubits[qarg.size])
+        for _carg in range(instruction.num_cargs):
+            carg = formats.CIRCUIT_INSTRUCTION_ARG._make(
+                struct.unpack(
+                    formats.CIRCUIT_INSTRUCTION_ARG_PACK,
+                    file_obj.read(formats.CIRCUIT_INSTRUCTION_ARG_SIZE),
+                )
+            )
+            if carg.type.decode(common.ENCODE) == "q":
+                raise TypeError("Invalid input qarg after all qargs")
+            cargs.append(circuit.clbits[carg.size])
+
+    # Load Parameters
+    for _param in range(instruction.num_parameters):
+        type_key, data_bytes = common.read_generic_typed_data(file_obj)
+        param = _loads_instruction_parameter(
+            type_key, data_bytes, version, vectors, registers, circuit, use_symengine
+        )
+        params.append(param)
+
+    # Load Gate object
+    if gate_name in {"Gate", "Instruction", "ControlledGate"}:
+        inst_obj = _parse_custom_operation(
+            custom_operations, gate_name, params, version, vectors, registers, use_symengine
+        )
+        inst_obj.condition = condition
+        if instruction.label_size > 0:
+            inst_obj.label = label
+        if circuit is None:
+            return inst_obj
+        circuit._append(inst_obj, qargs, cargs)
+        return None
+    elif gate_name in custom_operations:
+        inst_obj = _parse_custom_operation(
+            custom_operations, gate_name, params, version, vectors, registers, use_symengine
+        )
+        inst_obj.condition = condition
+        if instruction.label_size > 0:
+            inst_obj.label = label
+        if circuit is None:
+            return inst_obj
+        circuit._append(inst_obj, qargs, cargs)
+        return None
+    elif hasattr(library, gate_name):
+        gate_class = getattr(library, gate_name)
+    elif hasattr(circuit_mod, gate_name):
+        gate_class = getattr(circuit_mod, gate_name)
+    elif hasattr(controlflow, gate_name):
+        gate_class = getattr(controlflow, gate_name)
+    elif gate_name == "Clifford":
+        gate_class = Clifford
+    else:
+        raise AttributeError("Invalid instruction type: %s" % gate_name)
+
+    if instruction.label_size <= 0:
+        label = None
+    if gate_name in {"IfElseOp", "WhileLoopOp"}:
+        gate = gate_class(condition, *params, label=label)
+    elif version >= 5 and issubclass(gate_class, ControlledGate):
+        if gate_name in {
+            "MCPhaseGate",
+            "MCU1Gate",
+            "MCXGrayCode",
+            "MCXGate",
+            "MCXRecursive",
+            "MCXVChain",
+        }:
+            gate = gate_class(*params, instruction.num_ctrl_qubits, label=label)
+        else:
+            gate = gate_class(*params, label=label)
+            if (
+                gate.num_ctrl_qubits != instruction.num_ctrl_qubits
+                or gate.ctrl_state != instruction.ctrl_state
+            ):
+                gate = gate.to_mutable()
+                gate.num_ctrl_qubits = instruction.num_ctrl_qubits
+                gate.ctrl_state = instruction.ctrl_state
+        if condition:
+            gate = gate.c_if(*condition)
+    else:
+        if gate_name in {"Initialize", "StatePreparation"}:
+            if isinstance(params[0], str):
+                # the params are the labels of the initial state
+                gate = gate_class("".join(label for label in params))
+            elif instruction.num_parameters == 1:
+                # the params is the integer indicating which qubits to initialize
+                gate = gate_class(int(params[0].real), instruction.num_qargs)
+            else:
+                # the params represent a list of complex amplitudes
+                gate = gate_class(params)
+        elif gate_name in {
+            "UCRXGate",
+            "UCRYGate",
+            "UCRZGate",
+            "DiagonalGate",
+        }:
+            gate = gate_class(params)
+        else:
+            if gate_name == "Barrier":
+                params = [len(qargs)]
+            elif gate_name in {"BreakLoopOp", "ContinueLoopOp"}:
+                params = [len(qargs), len(cargs)]
+            if label is not None:
+                if issubclass(gate_class, (SingletonInstruction, SingletonGate)):
+                    gate = gate_class(*params, label=label)
+                else:
+                    gate = gate_class(*params)
+                    gate.label = label
+            else:
+                gate = gate_class(*params)
+        if condition:
+            if not isinstance(gate, ControlFlowOp):
+                gate = gate.c_if(*condition)
+            else:
+                gate.condition = condition
+    if circuit is None:
+        return gate
+    if not isinstance(gate, Instruction):
+        circuit.append(gate, qargs, cargs)
+    else:
+        circuit._append(CircuitInstruction(gate, qargs, cargs))
+    return None
+
+
+def _parse_custom_operation(
+    custom_operations, gate_name, params, version, vectors, registers, use_symengine
+):
+    if version >= 5:
+        (
+            type_str,
+            num_qubits,
+            num_clbits,
+            definition,
+            num_ctrl_qubits,
+            ctrl_state,
+            base_gate_raw,
+        ) = custom_operations[gate_name]
+    else:
+        type_str, num_qubits, num_clbits, definition = custom_operations[gate_name]
+    # Strip the trailing "_{uuid}" from the gate name if the version >=11
+    if version >= 11:
+        gate_name = "_".join(gate_name.split("_")[:-1])
+    type_key = type_keys.CircuitInstruction(type_str)
+
+    if type_key == type_keys.CircuitInstruction.INSTRUCTION:
+        inst_obj = Instruction(gate_name, num_qubits, num_clbits, params)
+        if definition is not None:
+            inst_obj.definition = definition
+        return inst_obj
+
+    if type_key == type_keys.CircuitInstruction.GATE:
+        inst_obj = Gate(gate_name, num_qubits, params)
+        inst_obj.definition = definition
+        return inst_obj
+
+    if version >= 5 and type_key == type_keys.CircuitInstruction.CONTROLLED_GATE:
+        with io.BytesIO(base_gate_raw) as base_gate_obj:
+            base_gate = _read_instruction(
+                base_gate_obj, None, registers, custom_operations, version, vectors, use_symengine
+            )
+        if ctrl_state < 2**num_ctrl_qubits - 1:
+            # If open controls, we need to discard the control suffix when setting the name.
+            gate_name = gate_name.rsplit("_", 1)[0]
+        inst_obj = ControlledGate(
+            gate_name,
+            num_qubits,
+            params,
+            num_ctrl_qubits=num_ctrl_qubits,
+            ctrl_state=ctrl_state,
+            base_gate=base_gate,
+        )
+        inst_obj.definition = definition
+        return inst_obj
+
+    if version >= 11 and type_key == type_keys.CircuitInstruction.ANNOTATED_OPERATION:
+        with io.BytesIO(base_gate_raw) as base_gate_obj:
+            base_gate = _read_instruction(
+                base_gate_obj, None, registers, custom_operations, version, vectors, use_symengine
+            )
+        inst_obj = AnnotatedOperation(base_op=base_gate, modifiers=params)
+        return inst_obj
+
+    if type_key == type_keys.CircuitInstruction.PAULI_EVOL_GATE:
+        return definition
+
+    raise ValueError("Invalid custom instruction type '%s'" % type_str)
+
+
+def _read_pauli_evolution_gate(file_obj, version, vectors):
+    pauli_evolution_def = formats.PAULI_EVOLUTION_DEF._make(
+        struct.unpack(
+            formats.PAULI_EVOLUTION_DEF_PACK, file_obj.read(formats.PAULI_EVOLUTION_DEF_SIZE)
+        )
+    )
+    if pauli_evolution_def.operator_size != 1 and pauli_evolution_def.standalone_op:
+        raise ValueError(
+            "Can't have a standalone operator with {pauli_evolution_raw[0]} operators in the payload"
+        )
+
+    operator_list = []
+    for _ in range(pauli_evolution_def.operator_size):
+        op_elem = formats.SPARSE_PAULI_OP_LIST_ELEM._make(
+            struct.unpack(
+                formats.SPARSE_PAULI_OP_LIST_ELEM_PACK,
+                file_obj.read(formats.SPARSE_PAULI_OP_LIST_ELEM_SIZE),
+            )
+        )
+        op_raw_data = common.data_from_binary(file_obj.read(op_elem.size), np.load)
+        operator_list.append(SparsePauliOp.from_list(op_raw_data))
+
+    if pauli_evolution_def.standalone_op:
+        pauli_op = operator_list[0]
+    else:
+        pauli_op = operator_list
+
+    time = value.loads_value(
+        pauli_evolution_def.time_type,
+        file_obj.read(pauli_evolution_def.time_size),
+        version=version,
+        vectors=vectors,
+    )
+    synth_data = json.loads(file_obj.read(pauli_evolution_def.synth_method_size))
+    synthesis = getattr(evo_synth, synth_data["class"])(**synth_data["settings"])
+    return_gate = library.PauliEvolutionGate(pauli_op, time=time, synthesis=synthesis)
+    return return_gate
+
+
+def _read_modifier(file_obj):
+    modifier = formats.MODIFIER_DEF._make(
+        struct.unpack(
+            formats.MODIFIER_DEF_PACK,
+            file_obj.read(formats.MODIFIER_DEF_SIZE),
+        )
+    )
+    if modifier.type == b"i":
+        return InverseModifier()
+    elif modifier.type == b"c":
+        return ControlModifier(
+            num_ctrl_qubits=modifier.num_ctrl_qubits, ctrl_state=modifier.ctrl_state
+        )
+    elif modifier.type == b"p":
+        return PowerModifier(power=modifier.power)
+    else:
+        raise TypeError("Unsupported modifier.")
+
+
+def _read_custom_operations(file_obj, version, vectors):
+    custom_operations = {}
+    custom_definition_header = formats.CUSTOM_CIRCUIT_DEF_HEADER._make(
+        struct.unpack(
+            formats.CUSTOM_CIRCUIT_DEF_HEADER_PACK,
+            file_obj.read(formats.CUSTOM_CIRCUIT_DEF_HEADER_SIZE),
+        )
+    )
+    if custom_definition_header.size > 0:
+        for _ in range(custom_definition_header.size):
+            if version < 5:
+                data = formats.CUSTOM_CIRCUIT_INST_DEF._make(
+                    struct.unpack(
+                        formats.CUSTOM_CIRCUIT_INST_DEF_PACK,
+                        file_obj.read(formats.CUSTOM_CIRCUIT_INST_DEF_SIZE),
+                    )
+                )
+            else:
+                data = formats.CUSTOM_CIRCUIT_INST_DEF_V2._make(
+                    struct.unpack(
+                        formats.CUSTOM_CIRCUIT_INST_DEF_V2_PACK,
+                        file_obj.read(formats.CUSTOM_CIRCUIT_INST_DEF_V2_SIZE),
+                    )
+                )
+
+            name = file_obj.read(data.gate_name_size).decode(common.ENCODE)
+            type_str = data.type
+            definition_circuit = None
+            if data.custom_definition:
+                def_binary = file_obj.read(data.size)
+                if version < 3 or not name.startswith(r"###PauliEvolutionGate_"):
+                    definition_circuit = common.data_from_binary(
+                        def_binary, read_circuit, version=version
+                    )
+                elif name.startswith(r"###PauliEvolutionGate_"):
+                    definition_circuit = common.data_from_binary(
+                        def_binary, _read_pauli_evolution_gate, version=version, vectors=vect

@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/manifests/context_snapshots/eidos_state_2026-02-14_154452/memory/tiered_memory/working.json
+KIND: memory
+
+version https://git-lfs.github.com/spec/v1
+oid sha256:93cdffc34cc8af588c524e1c20b8752a5df693270a1d8c7350bf7664e3779bd5
+size 46399

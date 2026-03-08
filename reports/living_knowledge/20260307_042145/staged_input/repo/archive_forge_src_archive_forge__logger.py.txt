@@ -1,0 +1,431 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_logger.py
+KIND: code
+
+"""
+.. References and links rendered by Sphinx are kept here as "module documentation" so that they can
+   be used in the ``Logger`` docstrings but do not pollute ``help(logger)`` output.
+
+.. |Logger| replace:: :class:`~Logger`
+.. |add| replace:: :meth:`~Logger.add()`
+.. |remove| replace:: :meth:`~Logger.remove()`
+.. |complete| replace:: :meth:`~Logger.complete()`
+.. |catch| replace:: :meth:`~Logger.catch()`
+.. |bind| replace:: :meth:`~Logger.bind()`
+.. |contextualize| replace:: :meth:`~Logger.contextualize()`
+.. |patch| replace:: :meth:`~Logger.patch()`
+.. |opt| replace:: :meth:`~Logger.opt()`
+.. |log| replace:: :meth:`~Logger.log()`
+.. |level| replace:: :meth:`~Logger.level()`
+.. |enable| replace:: :meth:`~Logger.enable()`
+.. |disable| replace:: :meth:`~Logger.disable()`
+
+.. |Any| replace:: :obj:`~typing.Any`
+.. |str| replace:: :class:`str`
+.. |int| replace:: :class:`int`
+.. |bool| replace:: :class:`bool`
+.. |tuple| replace:: :class:`tuple`
+.. |namedtuple| replace:: :func:`namedtuple<collections.namedtuple>`
+.. |list| replace:: :class:`list`
+.. |dict| replace:: :class:`dict`
+.. |str.format| replace:: :meth:`str.format()`
+.. |Path| replace:: :class:`pathlib.Path`
+.. |match.groupdict| replace:: :meth:`re.Match.groupdict()`
+.. |Handler| replace:: :class:`logging.Handler`
+.. |sys.stderr| replace:: :data:`sys.stderr`
+.. |sys.exc_info| replace:: :func:`sys.exc_info()`
+.. |time| replace:: :class:`datetime.time`
+.. |datetime| replace:: :class:`datetime.datetime`
+.. |timedelta| replace:: :class:`datetime.timedelta`
+.. |open| replace:: :func:`open()`
+.. |logging| replace:: :mod:`logging`
+.. |signal| replace:: :mod:`signal`
+.. |contextvars| replace:: :mod:`contextvars`
+.. |multiprocessing| replace:: :mod:`multiprocessing`
+.. |Thread.run| replace:: :meth:`Thread.run()<threading.Thread.run()>`
+.. |Exception| replace:: :class:`Exception`
+.. |AbstractEventLoop| replace:: :class:`AbstractEventLoop<asyncio.AbstractEventLoop>`
+.. |asyncio.get_running_loop| replace:: :func:`asyncio.get_running_loop()`
+.. |asyncio.run| replace:: :func:`asyncio.run()`
+.. |loop.run_until_complete| replace::
+    :meth:`loop.run_until_complete()<asyncio.loop.run_until_complete()>`
+.. |loop.create_task| replace:: :meth:`loop.create_task()<asyncio.loop.create_task()>`
+
+.. |logger.trace| replace:: :meth:`logger.trace()<Logger.trace()>`
+.. |logger.debug| replace:: :meth:`logger.debug()<Logger.debug()>`
+.. |logger.info| replace:: :meth:`logger.info()<Logger.info()>`
+.. |logger.success| replace:: :meth:`logger.success()<Logger.success()>`
+.. |logger.warning| replace:: :meth:`logger.warning()<Logger.warning()>`
+.. |logger.error| replace:: :meth:`logger.error()<Logger.error()>`
+.. |logger.critical| replace:: :meth:`logger.critical()<Logger.critical()>`
+
+.. |file-like object| replace:: ``file-like object``
+.. _file-like object: https://docs.python.org/3/glossary.html#term-file-object
+.. |callable| replace:: ``callable``
+.. _callable: https://docs.python.org/3/library/functions.html#callable
+.. |coroutine function| replace:: ``coroutine function``
+.. _coroutine function: https://docs.python.org/3/glossary.html#term-coroutine-function
+.. |re.Pattern| replace:: ``re.Pattern``
+.. _re.Pattern: https://docs.python.org/3/library/re.html#re-objects
+.. |multiprocessing.Context| replace:: ``multiprocessing.Context``
+.. _multiprocessing.Context:
+   https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods
+
+.. |better_exceptions| replace:: ``better_exceptions``
+.. _better_exceptions: https://github.com/Qix-/better-exceptions
+
+.. |loguru-config| replace:: ``loguru-config``
+.. _loguru-config: https://github.com/erezinman/loguru-config
+
+.. _Pendulum: https://pendulum.eustace.io/docs/#tokens
+
+.. _@Qix-: https://github.com/Qix-
+.. _@erezinman: https://github.com/erezinman
+.. _@sdispater: https://github.com/sdispater
+
+.. _formatting directives: https://docs.python.org/3/library/string.html#format-string-syntax
+.. _reentrant: https://en.wikipedia.org/wiki/Reentrancy_(computing)
+"""
+import builtins
+import contextlib
+import functools
+import logging
+import re
+import sys
+import warnings
+from collections import namedtuple
+from inspect import isclass, iscoroutinefunction, isgeneratorfunction
+from multiprocessing import current_process, get_context
+from multiprocessing.context import BaseContext
+from os.path import basename, splitext
+from threading import current_thread
+
+from . import _asyncio_loop, _colorama, _defaults, _filters
+from ._better_exceptions import ExceptionFormatter
+from ._colorizer import Colorizer
+from ._contextvars import ContextVar
+from ._datetime import aware_now
+from ._error_interceptor import ErrorInterceptor
+from ._file_sink import FileSink
+from ._get_frame import get_frame
+from ._handler import Handler
+from ._locks_machinery import create_logger_lock
+from ._recattrs import RecordException, RecordFile, RecordLevel, RecordProcess, RecordThread
+from ._simple_sinks import AsyncSink, CallableSink, StandardSink, StreamSink
+
+if sys.version_info >= (3, 6):
+    from os import PathLike
+else:
+    from pathlib import PurePath as PathLike
+
+
+Level = namedtuple("Level", ["name", "no", "color", "icon"])
+
+start_time = aware_now()
+
+context = ContextVar("loguru_context", default={})
+
+
+class Core:
+    def __init__(self):
+        levels = [
+            Level(
+                "TRACE",
+                _defaults.LOGURU_TRACE_NO,
+                _defaults.LOGURU_TRACE_COLOR,
+                _defaults.LOGURU_TRACE_ICON,
+            ),
+            Level(
+                "DEBUG",
+                _defaults.LOGURU_DEBUG_NO,
+                _defaults.LOGURU_DEBUG_COLOR,
+                _defaults.LOGURU_DEBUG_ICON,
+            ),
+            Level(
+                "INFO",
+                _defaults.LOGURU_INFO_NO,
+                _defaults.LOGURU_INFO_COLOR,
+                _defaults.LOGURU_INFO_ICON,
+            ),
+            Level(
+                "SUCCESS",
+                _defaults.LOGURU_SUCCESS_NO,
+                _defaults.LOGURU_SUCCESS_COLOR,
+                _defaults.LOGURU_SUCCESS_ICON,
+            ),
+            Level(
+                "WARNING",
+                _defaults.LOGURU_WARNING_NO,
+                _defaults.LOGURU_WARNING_COLOR,
+                _defaults.LOGURU_WARNING_ICON,
+            ),
+            Level(
+                "ERROR",
+                _defaults.LOGURU_ERROR_NO,
+                _defaults.LOGURU_ERROR_COLOR,
+                _defaults.LOGURU_ERROR_ICON,
+            ),
+            Level(
+                "CRITICAL",
+                _defaults.LOGURU_CRITICAL_NO,
+                _defaults.LOGURU_CRITICAL_COLOR,
+                _defaults.LOGURU_CRITICAL_ICON,
+            ),
+        ]
+        self.levels = {level.name: level for level in levels}
+        self.levels_ansi_codes = {
+            **{name: Colorizer.ansify(level.color) for name, level in self.levels.items()},
+            None: "",
+        }
+
+        # Cache used internally to quickly access level attributes based on their name or severity.
+        # It can also contain integers as keys, it serves to avoid calling "isinstance()" repeatedly
+        # when "logger.log()" is used.
+        self.levels_lookup = {
+            name: (name, name, level.no, level.icon) for name, level in self.levels.items()
+        }
+
+        self.handlers_count = 0
+        self.handlers = {}
+
+        self.extra = {}
+        self.patcher = None
+
+        self.min_level = float("inf")
+        self.enabled = {}
+        self.activation_list = []
+        self.activation_none = True
+
+        self.lock = create_logger_lock()
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        state["lock"] = None
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self.lock = create_logger_lock()
+
+
+class Logger:
+    """An object to dispatch logging messages to configured handlers.
+
+    The |Logger| is the core object of ``loguru``, every logging configuration and usage pass
+    through a call to one of its methods. There is only one logger, so there is no need to retrieve
+    one before usage.
+
+    Once the ``logger`` is imported, it can be used to write messages about events happening in your
+    code. By reading the output logs of your application, you gain a better understanding of the
+    flow of your program and you more easily track and debug unexpected behaviors.
+
+    Handlers to which the logger sends log messages are added using the |add| method. Note that you
+    can use the |Logger| right after import as it comes pre-configured (logs are emitted to
+    |sys.stderr| by default). Messages can be logged with different severity levels and they can be
+    formatted using curly braces (it uses |str.format| under the hood).
+
+    When a message is logged, a "record" is associated with it. This record is a dict which contains
+    information about the logging context: time, function, file, line, thread, level... It also
+    contains the ``__name__`` of the module, this is why you don't need named loggers.
+
+    You should not instantiate a |Logger| by yourself, use ``from loguru import logger`` instead.
+    """
+
+    def __init__(self, core, exception, depth, record, lazy, colors, raw, capture, patchers, extra):
+        self._core = core
+        self._options = (exception, depth, record, lazy, colors, raw, capture, patchers, extra)
+
+    def __repr__(self):
+        return "<loguru.logger handlers=%r>" % list(self._core.handlers.values())
+
+    def add(
+        self,
+        sink,
+        *,
+        level=_defaults.LOGURU_LEVEL,
+        format=_defaults.LOGURU_FORMAT,
+        filter=_defaults.LOGURU_FILTER,
+        colorize=_defaults.LOGURU_COLORIZE,
+        serialize=_defaults.LOGURU_SERIALIZE,
+        backtrace=_defaults.LOGURU_BACKTRACE,
+        diagnose=_defaults.LOGURU_DIAGNOSE,
+        enqueue=_defaults.LOGURU_ENQUEUE,
+        context=_defaults.LOGURU_CONTEXT,
+        catch=_defaults.LOGURU_CATCH,
+        **kwargs
+    ):
+        r"""Add a handler sending log messages to a sink adequately configured.
+
+        Parameters
+        ----------
+        sink : |file-like object|_, |str|, |Path|, |callable|_, |coroutine function|_ or |Handler|
+            An object in charge of receiving formatted logging messages and propagating them to an
+            appropriate endpoint.
+        level : |int| or |str|, optional
+            The minimum severity level from which logged messages should be sent to the sink.
+        format : |str| or |callable|_, optional
+            The template used to format logged messages before being sent to the sink.
+        filter : |callable|_, |str| or |dict|, optional
+            A directive optionally used to decide for each logged message whether it should be sent
+            to the sink or not.
+        colorize : |bool|, optional
+            Whether the color markups contained in the formatted message should be converted to ansi
+            codes for terminal coloration, or stripped otherwise. If ``None``, the choice is
+            automatically made based on the sink being a tty or not.
+        serialize : |bool|, optional
+            Whether the logged message and its records should be first converted to a JSON string
+            before being sent to the sink.
+        backtrace : |bool|, optional
+            Whether the exception trace formatted should be extended upward, beyond the catching
+            point, to show the full stacktrace which generated the error.
+        diagnose : |bool|, optional
+            Whether the exception trace should display the variables values to eases the debugging.
+            This should be set to ``False`` in production to avoid leaking sensitive data.
+        enqueue : |bool|, optional
+            Whether the messages to be logged should first pass through a multiprocessing-safe queue
+            before reaching the sink. This is useful while logging to a file through multiple
+            processes. This also has the advantage of making logging calls non-blocking.
+        context : |multiprocessing.Context| or |str|, optional
+            A context object or name that will be used for all tasks involving internally the
+            |multiprocessing| module, in particular when ``enqueue=True``. If ``None``, the default
+            context is used.
+        catch : |bool|, optional
+            Whether errors occurring while sink handles logs messages should be automatically
+            caught. If ``True``, an exception message is displayed on |sys.stderr| but the exception
+            is not propagated to the caller, preventing your app to crash.
+        **kwargs
+            Additional parameters that are only valid to configure a coroutine or file sink (see
+            below).
+
+
+        If and only if the sink is a coroutine function, the following parameter applies:
+
+        Parameters
+        ----------
+        loop : |AbstractEventLoop|, optional
+            The event loop in which the asynchronous logging task will be scheduled and executed. If
+            ``None``, the loop used is the one returned by |asyncio.get_running_loop| at the time of
+            the logging call (task is discarded if there is no loop currently running).
+
+
+        If and only if the sink is a file path, the following parameters apply:
+
+        Parameters
+        ----------
+        rotation : |str|, |int|, |time|, |timedelta| or |callable|_, optional
+            A condition indicating whenever the current logged file should be closed and a new one
+            started.
+        retention : |str|, |int|, |timedelta| or |callable|_, optional
+            A directive filtering old files that should be removed during rotation or end of
+            program.
+        compression : |str| or |callable|_, optional
+            A compression or archive format to which log files should be converted at closure.
+        delay : |bool|, optional
+            Whether the file should be created as soon as the sink is configured, or delayed until
+            first logged message. It defaults to ``False``.
+        watch : |bool|, optional
+            Whether or not the file should be watched and re-opened when deleted or changed (based
+            on its device and inode properties) by an external program. It defaults to ``False``.
+        mode : |str|, optional
+            The opening mode as for built-in |open| function. It defaults to ``"a"`` (open the
+            file in appending mode).
+        buffering : |int|, optional
+            The buffering policy as for built-in |open| function. It defaults to ``1`` (line
+            buffered file).
+        encoding : |str|, optional
+            The file encoding as for built-in |open| function. It defaults to ``"utf8"``.
+        **kwargs
+            Others parameters are passed to the built-in |open| function.
+
+        Returns
+        -------
+        :class:`int`
+            An identifier associated with the added sink and which should be used to
+            |remove| it.
+
+        Raises
+        ------
+        ValueError
+            If any of the arguments passed to configure the sink is invalid.
+
+        Notes
+        -----
+        Extended summary follows.
+
+        .. _sink:
+
+        .. rubric:: The sink parameter
+
+        The ``sink`` handles incoming log messages and proceed to their writing somewhere and
+        somehow. A sink can take many forms:
+
+        - A |file-like object|_ like ``sys.stderr`` or ``open("file.log", "w")``. Anything with
+          a ``.write()`` method is considered as a file-like object. Custom handlers may also
+          implement ``flush()`` (called after each logged message), ``stop()`` (called at sink
+          termination) and ``complete()`` (awaited by the eponymous method).
+        - A file path as |str| or |Path|. It can be parametrized with some additional parameters,
+          see below.
+        - A |callable|_ (such as a simple function) like ``lambda msg: print(msg)``. This
+          allows for logging procedure entirely defined by user preferences and needs.
+        - A asynchronous |coroutine function|_ defined with the ``async def`` statement. The
+          coroutine object returned by such function will be added to the event loop using
+          |loop.create_task|. The tasks should be awaited before ending the loop by using
+          |complete|.
+        - A built-in |Handler| like ``logging.StreamHandler``. In such a case, the `Loguru` records
+          are automatically converted to the structure expected by the |logging| module.
+
+        Note that the logging functions are not `reentrant`_. This means you should avoid using
+        the ``logger`` inside any of your sinks or from within |signal| handlers. Otherwise, you
+        may face deadlock if the module's sink was not explicitly disabled.
+
+        .. _message:
+
+        .. rubric:: The logged message
+
+        The logged message passed to all added sinks is nothing more than a string of the
+        formatted log, to which a special attribute is associated: the ``.record`` which is a dict
+        containing all contextual information possibly needed (see below).
+
+        Logged messages are formatted according to the ``format`` of the added sink. This format
+        is usually a string containing braces fields to display attributes from the record dict.
+
+        If fine-grained control is needed, the ``format`` can also be a function which takes the
+        record as parameter and return the format template string. However, note that in such a
+        case, you should take care of appending the line ending and exception field to the returned
+        format, while ``"\n{exception}"`` is automatically appended for convenience if ``format`` is
+        a string.
+
+        The ``filter`` attribute can be used to control which messages are effectively passed to the
+        sink and which one are ignored. A function can be used, accepting the record as an
+        argument, and returning ``True`` if the message should be logged, ``False`` otherwise. If
+        a string is used, only the records with the same ``name`` and its children will be allowed.
+        One can also pass a ``dict`` mapping module names to minimum required level. In such case,
+        each log record will search for it's closest parent in the ``dict`` and use the associated
+        level as the filter. The ``dict`` values can be ``int`` severity, ``str`` level name or
+        ``True`` and ``False`` to respectively authorize and discard all module logs
+        unconditionally. In order to set a default level, the ``""`` module name should be used as
+        it is the parent of all modules (it does not suppress global ``level`` threshold, though).
+
+        Note that while calling a logging method, the keyword arguments (if any) are automatically
+        added to the ``extra`` dict for convenient contextualization (in addition to being used for
+        formatting).
+
+        .. _levels:
+
+        .. rubric:: The severity levels
+
+        Each logged message is associated with a severity level. These levels make it possible to
+        prioritize messages and to choose the verbosity of the logs according to usages. For
+        example, it allows to display some debugging information to a developer, while hiding it to
+        the end user running the application.
+
+        The ``level`` attribute of every added sink controls the minimum threshold from which log
+        messages are allowed to be emitted. While using the ``logger``, you are in charge of
+        configuring the appropriate granularity of your logs. It is possible to add even more custom
+        levels by using the |level| method.
+
+        Here are the standard levels with their default severity value, each one is associated with
+        a logging method of the same name:
+
+        +----------------------+------------------------+------------------------+
+        | Level name           | Severity value         | Logger method          |
+        +======================+========================+===

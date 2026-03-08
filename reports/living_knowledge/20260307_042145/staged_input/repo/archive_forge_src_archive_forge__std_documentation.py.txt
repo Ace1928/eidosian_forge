@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_std_documentation.py
+KIND: code
+
+import sys
+import warnings
+ makes top-level python modules available as an attribute,
+        importing them on first access.

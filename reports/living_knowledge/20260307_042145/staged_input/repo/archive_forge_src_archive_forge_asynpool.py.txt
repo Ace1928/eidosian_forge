@@ -1,0 +1,573 @@
+SOURCE_PATH: archive_forge/src/archive_forge/asynpool.py
+KIND: code
+
+"""Version of multiprocessing.Pool using Async I/O.
+
+.. note::
+
+    This module will be moved soon, so don't use it directly.
+
+This is a non-blocking version of :class:`multiprocessing.Pool`.
+
+This code deals with three major challenges:
+
+#. Starting up child processes and keeping them running.
+#. Sending jobs to the processes and receiving results back.
+#. Safely shutting down this system.
+"""
+import errno
+import gc
+import inspect
+import os
+import select
+import time
+from collections import Counter, deque, namedtuple
+from io import BytesIO
+from numbers import Integral
+from pickle import HIGHEST_PROTOCOL
+from struct import pack, unpack, unpack_from
+from time import sleep
+from weakref import WeakValueDictionary, ref
+
+from billiard import pool as _pool
+from billiard.compat import isblocking, setblocking
+from billiard.pool import ACK, NACK, RUN, TERMINATE, WorkersJoined
+from billiard.queues import _SimpleQueue
+from kombu.asynchronous import ERR, WRITE
+from kombu.serialization import pickle as _pickle
+from kombu.utils.eventio import SELECT_BAD_FD
+from kombu.utils.functional import fxrange
+from vine import promise
+
+from celery.signals import worker_before_create_process
+from celery.utils.functional import noop
+from celery.utils.log import get_logger
+from celery.worker import state as worker_state
+
+# pylint: disable=redefined-outer-name
+# We cache globals and attribute lookups, so disable this warning.
+
+try:
+    from _billiard import read as __read__
+    readcanbuf = True
+
+except ImportError:
+
+    def __read__(fd, buf, size, read=os.read):
+        chunk = read(fd, size)
+        n = len(chunk)
+        if n != 0:
+            buf.write(chunk)
+        return n
+    readcanbuf = False
+
+    def unpack_from(fmt, iobuf, unpack=unpack):  # noqa
+        return unpack(fmt, iobuf.getvalue())  # <-- BytesIO
+
+__all__ = ('AsynPool',)
+
+logger = get_logger(__name__)
+error, debug = logger.error, logger.debug
+
+UNAVAIL = frozenset({errno.EAGAIN, errno.EINTR})
+
+#: Constant sent by child process when started (ready to accept work)
+WORKER_UP = 15
+
+#: A process must've started before this timeout (in secs.) expires.
+PROC_ALIVE_TIMEOUT = 4.0
+
+SCHED_STRATEGY_FCFS = 1
+SCHED_STRATEGY_FAIR = 4
+
+SCHED_STRATEGIES = {
+    None: SCHED_STRATEGY_FAIR,
+    'default': SCHED_STRATEGY_FAIR,
+    'fast': SCHED_STRATEGY_FCFS,
+    'fcfs': SCHED_STRATEGY_FCFS,
+    'fair': SCHED_STRATEGY_FAIR,
+}
+SCHED_STRATEGY_TO_NAME = {v: k for k, v in SCHED_STRATEGIES.items()}
+
+Ack = namedtuple('Ack', ('id', 'fd', 'payload'))
+
+
+def gen_not_started(gen):
+    """Return true if generator is not started."""
+    return inspect.getgeneratorstate(gen) == "GEN_CREATED"
+
+
+def _get_job_writer(job):
+    try:
+        writer = job._writer
+    except AttributeError:
+        pass
+    else:
+        return writer()  # is a weakref
+
+
+if hasattr(select, 'poll'):
+    def _select_imp(readers=None, writers=None, err=None, timeout=0,
+                    poll=select.poll, POLLIN=select.POLLIN,
+                    POLLOUT=select.POLLOUT, POLLERR=select.POLLERR):
+        poller = poll()
+        register = poller.register
+
+        if readers:
+            [register(fd, POLLIN) for fd in readers]
+        if writers:
+            [register(fd, POLLOUT) for fd in writers]
+        if err:
+            [register(fd, POLLERR) for fd in err]
+
+        R, W = set(), set()
+        timeout = 0 if timeout and timeout < 0 else round(timeout * 1e3)
+        events = poller.poll(timeout)
+        for fd, event in events:
+            if not isinstance(fd, Integral):
+                fd = fd.fileno()
+            if event & POLLIN:
+                R.add(fd)
+            if event & POLLOUT:
+                W.add(fd)
+            if event & POLLERR:
+                R.add(fd)
+        return R, W, 0
+else:
+    def _select_imp(readers=None, writers=None, err=None, timeout=0):
+        r, w, e = select.select(readers, writers, err, timeout)
+        if e:
+            r = list(set(r) | set(e))
+        return r, w, 0
+
+
+def _select(readers=None, writers=None, err=None, timeout=0,
+            poll=_select_imp):
+    """Simple wrapper to :class:`~select.select`, using :`~select.poll`.
+
+    Arguments:
+        readers (Set[Fd]): Set of reader fds to test if readable.
+        writers (Set[Fd]): Set of writer fds to test if writable.
+        err (Set[Fd]): Set of fds to test for error condition.
+
+    All fd sets passed must be mutable as this function
+    will remove non-working fds from them, this also means
+    the caller must make sure there are still fds in the sets
+    before calling us again.
+
+    Returns:
+        Tuple[Set, Set, Set]: of ``(readable, writable, again)``, where
+        ``readable`` is a set of fds that have data available for read,
+        ``writable`` is a set of fds that's ready to be written to
+        and ``again`` is a flag that if set means the caller must
+        throw away the result and call us again.
+    """
+    readers = set() if readers is None else readers
+    writers = set() if writers is None else writers
+    err = set() if err is None else err
+    try:
+        return poll(readers, writers, err, timeout)
+    except OSError as exc:
+        _errno = exc.errno
+
+        if _errno == errno.EINTR:
+            return set(), set(), 1
+        elif _errno in SELECT_BAD_FD:
+            for fd in readers | writers | err:
+                try:
+                    select.select([fd], [], [], 0)
+                except OSError as exc:
+                    _errno = exc.errno
+
+                    if _errno not in SELECT_BAD_FD:
+                        raise
+                    readers.discard(fd)
+                    writers.discard(fd)
+                    err.discard(fd)
+            return set(), set(), 1
+        else:
+            raise
+
+
+def iterate_file_descriptors_safely(fds_iter, source_data,
+                                    hub_method, *args, **kwargs):
+    """Apply hub method to fds in iter, remove from list if failure.
+
+    Some file descriptors may become stale through OS reasons
+    or possibly other reasons, so safely manage our lists of FDs.
+    :param fds_iter: the file descriptors to iterate and apply hub_method
+    :param source_data: data source to remove FD if it renders OSError
+    :param hub_method: the method to call with each fd and kwargs
+    :*args to pass through to the hub_method;
+    with a special syntax string '*fd*' represents a substitution
+    for the current fd object in the iteration (for some callers).
+    :**kwargs to pass through to the hub method (no substitutions needed)
+    """
+    def _meta_fd_argument_maker():
+        # uses the current iterations value for fd
+        call_args = args
+        if "*fd*" in call_args:
+            call_args = [fd if arg == "*fd*" else arg for arg in args]
+        return call_args
+    # Track stale FDs for cleanup possibility
+    stale_fds = []
+    for fd in fds_iter:
+        # Handle using the correct arguments to the hub method
+        hub_args, hub_kwargs = _meta_fd_argument_maker(), kwargs
+        try:  # Call the hub method
+            hub_method(fd, *hub_args, **hub_kwargs)
+        except (OSError, FileNotFoundError):
+            logger.warning(
+                "Encountered OSError when accessing fd %s ",
+                fd, exc_info=True)
+            stale_fds.append(fd)  # take note of stale fd
+    # Remove now defunct fds from the managed list
+    if source_data:
+        for fd in stale_fds:
+            try:
+                if hasattr(source_data, 'remove'):
+                    source_data.remove(fd)
+                else:  # then not a list/set ... try dict
+                    source_data.pop(fd, None)
+            except ValueError:
+                logger.warning("ValueError trying to invalidate %s from %s",
+                               fd, source_data)
+
+
+class Worker(_pool.Worker):
+    """Pool worker process."""
+
+    def on_loop_start(self, pid):
+        # our version sends a WORKER_UP message when the process is ready
+        # to accept work, this will tell the parent that the inqueue fd
+        # is writable.
+        self.outq.put((WORKER_UP, (pid,)))
+
+
+class ResultHandler(_pool.ResultHandler):
+    """Handles messages from the pool processes."""
+
+    def __init__(self, *args, **kwargs):
+        self.fileno_to_outq = kwargs.pop('fileno_to_outq')
+        self.on_process_alive = kwargs.pop('on_process_alive')
+        super().__init__(*args, **kwargs)
+        # add our custom message handler
+        self.state_handlers[WORKER_UP] = self.on_process_alive
+
+    def _recv_message(self, add_reader, fd, callback,
+                      __read__=__read__, readcanbuf=readcanbuf,
+                      BytesIO=BytesIO, unpack_from=unpack_from,
+                      load=_pickle.load):
+        Hr = Br = 0
+        if readcanbuf:
+            buf = bytearray(4)
+            bufv = memoryview(buf)
+        else:
+            buf = bufv = BytesIO()
+        # header
+
+        while Hr < 4:
+            try:
+                n = __read__(
+                    fd, bufv[Hr:] if readcanbuf else bufv, 4 - Hr,
+                )
+            except OSError as exc:
+                if exc.errno not in UNAVAIL:
+                    raise
+                yield
+            else:
+                if n == 0:
+                    raise (OSError('End of file during message') if Hr
+                           else EOFError())
+                Hr += n
+
+        body_size, = unpack_from('>i', bufv)
+        if readcanbuf:
+            buf = bytearray(body_size)
+            bufv = memoryview(buf)
+        else:
+            buf = bufv = BytesIO()
+
+        while Br < body_size:
+            try:
+                n = __read__(
+                    fd, bufv[Br:] if readcanbuf else bufv, body_size - Br,
+                )
+            except OSError as exc:
+                if exc.errno not in UNAVAIL:
+                    raise
+                yield
+            else:
+                if n == 0:
+                    raise (OSError('End of file during message') if Br
+                           else EOFError())
+                Br += n
+        add_reader(fd, self.handle_event, fd)
+        if readcanbuf:
+            message = load(BytesIO(bufv))
+        else:
+            bufv.seek(0)
+            message = load(bufv)
+        if message:
+            callback(message)
+
+    def _make_process_result(self, hub):
+        """Coroutine reading messages from the pool processes."""
+        fileno_to_outq = self.fileno_to_outq
+        on_state_change = self.on_state_change
+        add_reader = hub.add_reader
+        remove_reader = hub.remove_reader
+        recv_message = self._recv_message
+
+        def on_result_readable(fileno):
+            try:
+                fileno_to_outq[fileno]
+            except KeyError:  # process gone
+                return remove_reader(fileno)
+            it = recv_message(add_reader, fileno, on_state_change)
+            try:
+                next(it)
+            except StopIteration:
+                pass
+            except (OSError, EOFError):
+                remove_reader(fileno)
+            else:
+                add_reader(fileno, it)
+        return on_result_readable
+
+    def register_with_event_loop(self, hub):
+        self.handle_event = self._make_process_result(hub)
+
+    def handle_event(self, *args):
+        # pylint: disable=method-hidden
+        #   register_with_event_loop overrides this
+        raise RuntimeError('Not registered with event loop')
+
+    def on_stop_not_started(self):
+        # This is always used, since we do not start any threads.
+        cache = self.cache
+        check_timeouts = self.check_timeouts
+        fileno_to_outq = self.fileno_to_outq
+        on_state_change = self.on_state_change
+        join_exited_workers = self.join_exited_workers
+
+        # flush the processes outqueues until they've all terminated.
+        outqueues = set(fileno_to_outq)
+        while cache and outqueues and self._state != TERMINATE:
+            if check_timeouts is not None:
+                # make sure tasks with a time limit will time out.
+                check_timeouts()
+            # cannot iterate and remove at the same time
+            pending_remove_fd = set()
+            for fd in outqueues:
+                iterate_file_descriptors_safely(
+                    [fd], self.fileno_to_outq, self._flush_outqueue,
+                    pending_remove_fd.add, fileno_to_outq, on_state_change
+                )
+                try:
+                    join_exited_workers(shutdown=True)
+                except WorkersJoined:
+                    debug('result handler: all workers terminated')
+                    return
+            outqueues.difference_update(pending_remove_fd)
+
+    def _flush_outqueue(self, fd, remove, process_index, on_state_change):
+        try:
+            proc = process_index[fd]
+        except KeyError:
+            # process already found terminated
+            # this means its outqueue has already been processed
+            # by the worker lost handler.
+            return remove(fd)
+
+        reader = proc.outq._reader
+        try:
+            setblocking(reader, 1)
+        except OSError:
+            return remove(fd)
+        try:
+            if reader.poll(0):
+                task = reader.recv()
+            else:
+                task = None
+                sleep(0.5)
+        except (OSError, EOFError):
+            return remove(fd)
+        else:
+            if task:
+                on_state_change(task)
+        finally:
+            try:
+                setblocking(reader, 0)
+            except OSError:
+                return remove(fd)
+
+
+class AsynPool(_pool.Pool):
+    """AsyncIO Pool (no threads)."""
+
+    ResultHandler = ResultHandler
+    Worker = Worker
+
+    #: Set by :meth:`register_with_event_loop` after running the first time.
+    _registered_with_event_loop = False
+
+    def WorkerProcess(self, worker):
+        worker = super().WorkerProcess(worker)
+        worker.dead = False
+        return worker
+
+    def __init__(self, processes=None, synack=False,
+                 sched_strategy=None, proc_alive_timeout=None,
+                 *args, **kwargs):
+        self.sched_strategy = SCHED_STRATEGIES.get(sched_strategy,
+                                                   sched_strategy)
+        processes = self.cpu_count() if processes is None else processes
+        self.synack = synack
+        # create queue-pairs for all our processes in advance.
+        self._queues = {
+            self.create_process_queues(): None for _ in range(processes)
+        }
+
+        # inqueue fileno -> process mapping
+        self._fileno_to_inq = {}
+        # outqueue fileno -> process mapping
+        self._fileno_to_outq = {}
+        # synqueue fileno -> process mapping
+        self._fileno_to_synq = {}
+
+        # We keep track of processes that haven't yet
+        # sent a WORKER_UP message.  If a process fails to send
+        # this message within _proc_alive_timeout we terminate it
+        # and hope the next process will recover.
+        self._proc_alive_timeout = (
+            PROC_ALIVE_TIMEOUT if proc_alive_timeout is None
+            else proc_alive_timeout
+        )
+        self._waiting_to_start = set()
+
+        # denormalized set of all inqueues.
+        self._all_inqueues = set()
+
+        # Set of fds being written to (busy)
+        self._active_writes = set()
+
+        # Set of active co-routines currently writing jobs.
+        self._active_writers = set()
+
+        # Set of fds that are busy (executing task)
+        self._busy_workers = set()
+        self._mark_worker_as_available = self._busy_workers.discard
+
+        # Holds jobs waiting to be written to child processes.
+        self.outbound_buffer = deque()
+
+        self.write_stats = Counter()
+
+        super().__init__(processes, *args, **kwargs)
+
+        for proc in self._pool:
+            # create initial mappings, these will be updated
+            # as processes are recycled, or found lost elsewhere.
+            self._fileno_to_outq[proc.outqR_fd] = proc
+            self._fileno_to_synq[proc.synqW_fd] = proc
+
+        self.on_soft_timeout = getattr(
+            self._timeout_handler, 'on_soft_timeout', noop,
+        )
+        self.on_hard_timeout = getattr(
+            self._timeout_handler, 'on_hard_timeout', noop,
+        )
+
+    def _create_worker_process(self, i):
+        worker_before_create_process.send(sender=self)
+        gc.collect()  # Issue #2927
+        return super()._create_worker_process(i)
+
+    def _event_process_exit(self, hub, proc):
+        # This method is called whenever the process sentinel is readable.
+        self._untrack_child_process(proc, hub)
+        self.maintain_pool()
+
+    def _track_child_process(self, proc, hub):
+        """Helper method determines appropriate fd for process."""
+        try:
+            fd = proc._sentinel_poll
+        except AttributeError:
+            # we need to duplicate the fd here to carefully
+            # control when the fd is removed from the process table,
+            # as once the original fd is closed we cannot unregister
+            # the fd from epoll(7) anymore, causing a 100% CPU poll loop.
+            fd = proc._sentinel_poll = os.dup(proc._popen.sentinel)
+        # Safely call hub.add_reader for the determined fd
+        iterate_file_descriptors_safely(
+            [fd], None, hub.add_reader,
+            self._event_process_exit, hub, proc)
+
+    def _untrack_child_process(self, proc, hub):
+        if proc._sentinel_poll is not None:
+            fd, proc._sentinel_poll = proc._sentinel_poll, None
+            hub.remove(fd)
+            os.close(fd)
+
+    def register_with_event_loop(self, hub):
+        """Register the async pool with the current event loop."""
+        self._result_handler.register_with_event_loop(hub)
+        self.handle_result_event = self._result_handler.handle_event
+        self._create_timelimit_handlers(hub)
+        self._create_process_handlers(hub)
+        self._create_write_handlers(hub)
+
+        # Add handler for when a process exits (calls maintain_pool)
+        [self._track_child_process(w, hub) for w in self._pool]
+        # Handle_result_event is called whenever one of the
+        # result queues are readable.
+        iterate_file_descriptors_safely(
+            self._fileno_to_outq, self._fileno_to_outq, hub.add_reader,
+            self.handle_result_event, '*fd*')
+
+        # Timers include calling maintain_pool at a regular interval
+        # to be certain processes are restarted.
+        for handler, interval in self.timers.items():
+            hub.call_repeatedly(interval, handler)
+
+        # Add on_poll_start to the event loop only once to prevent duplication
+        # when the Consumer restarts due to a connection error.
+        if not self._registered_with_event_loop:
+            hub.on_tick.add(self.on_poll_start)
+            self._registered_with_event_loop = True
+
+    def _create_timelimit_handlers(self, hub):
+        """Create handlers used to implement time limits."""
+        call_later = hub.call_later
+        trefs = self._tref_for_id = WeakValueDictionary()
+
+        def on_timeout_set(R, soft, hard):
+            if soft:
+                trefs[R._job] = call_later(
+                    soft, self._on_soft_timeout, R._job, soft, hard, hub,
+                )
+            elif hard:
+                trefs[R._job] = call_later(
+                    hard, self._on_hard_timeout, R._job,
+                )
+        self.on_timeout_set = on_timeout_set
+
+        def _discard_tref(job):
+            try:
+                tref = trefs.pop(job)
+                tref.cancel()
+                del tref
+            except (KeyError, AttributeError):
+                pass  # out of scope
+        self._discard_tref = _discard_tref
+
+        def on_timeout_cancel(R):
+            _discard_tref(R._job)
+        self.on_timeout_cancel = on_timeout_cancel
+
+    def _on_soft_timeout(self, job, soft, hard, hub):
+        # only used by async pool.
+        if hard:
+            self._tref_for_id[job] = hub.call_later(
+                hard - soft, self._on_hard

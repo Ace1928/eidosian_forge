@@ -1,0 +1,580 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_ops_test.py
+KIND: code
+
+# https://github.com/tensorflow/tensorflow/issues/27023
+import datetime
+import warnings
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=FutureWarning)
+
+import random
+import string
+import tempfile
+import os
+import contextlib
+import json
+import urllib.request
+import hashlib
+import time
+import subprocess as sp
+import multiprocessing as mp
+import platform
+import pickle
+import zipfile
+import re
+
+import av
+import pytest
+from tensorflow.io import gfile
+import imageio
+import numpy as np
+
+import blobfile as bf
+from blobfile import _ops as ops, _azure as azure, _common as common
+
+GCS_TEST_BUCKET = os.getenv("GCS_TEST_BUCKET", "csh-test-3")
+AS_TEST_ACCOUNT = os.getenv("AS_TEST_ACCOUNT", "cshteststorage2")
+AS_TEST_ACCOUNT2 = os.getenv("AS_TEST_ACCOUNT2", "cshteststorage3")
+AS_TEST_CONTAINER = os.getenv("AS_TEST_CONTAINER", "testcontainer2")
+AS_TEST_CONTAINER2 = os.getenv("AS_TEST_CONTAINER2", "testcontainer3")
+AS_INVALID_ACCOUNT = f"{AS_TEST_ACCOUNT}-does-not-exist"
+AS_EXTERNAL_ACCOUNT = "cshteststorage4"
+
+AZURE_VALID_CONTAINER = f"az://{AS_TEST_ACCOUNT}/{AS_TEST_CONTAINER}"
+AZURE_INVALID_CONTAINER = f"az://{AS_TEST_ACCOUNT}/{AS_TEST_CONTAINER}-does-not-exist"
+AZURE_INVALID_CONTAINER_NO_ACCOUNT = f"az://{AS_INVALID_ACCOUNT}/{AS_TEST_CONTAINER}"
+GCS_VALID_BUCKET = f"gs://{GCS_TEST_BUCKET}"
+GCS_INVALID_BUCKET = f"gs://{GCS_TEST_BUCKET}-does-not-exist"
+
+AZURE_PUBLIC_URL = (
+    f"https://{AS_EXTERNAL_ACCOUNT}.blob.core.windows.net/publiccontainer/test_cat.png"
+)
+AZURE_PUBLIC_URL_HEADER = b"\x89PNG"
+
+
+@pytest.fixture(scope="session", autouse=True)
+def setup_gcloud_auth():
+    # only run this for our docker tests, this tells gcloud to use the credentials supplied by the
+    # test running script
+    if platform.system() == "Linux" and "GOOGLE_APPLICATION_CREDENTIALS" in os.environ:
+        sp.run(
+            [
+                "gcloud",
+                "auth",
+                "activate-service-account",
+                f"--key-file={os.environ['GOOGLE_APPLICATION_CREDENTIALS']}",
+            ]
+        )
+    yield
+
+
+@contextlib.contextmanager
+def chdir(path):
+    original_path = os.getcwd()
+    os.chdir(path)
+    yield
+    os.chdir(original_path)
+
+
+@contextlib.contextmanager
+def _get_temp_local_path():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        assert isinstance(tmpdir, str)
+        path = os.path.join(tmpdir, "file.name")
+        yield path
+
+
+@contextlib.contextmanager
+def _get_temp_gcs_path():
+    path = f"gs://{GCS_TEST_BUCKET}/" + "".join(
+        random.choice(string.ascii_lowercase) for i in range(16)
+    )
+    gfile.mkdir(path)
+    yield path + "/file.name"
+    gfile.rmtree(path)
+
+
+@contextlib.contextmanager
+def _get_temp_as_path(account=AS_TEST_ACCOUNT, container=AS_TEST_CONTAINER):
+    random_id = "".join(random.choice(string.ascii_lowercase) for i in range(16))
+    path = f"https://{account}.blob.core.windows.net/{container}/" + random_id
+    yield path + "/file.name"
+    sp.run(
+        [
+            "az",
+            "storage",
+            "blob",
+            "delete-batch",
+            "--account-name",
+            account,
+            "--source",
+            container,
+            "--pattern",
+            f"{random_id}/*",
+        ],
+        check=True,
+        shell=platform.system() == "Windows",
+    )
+
+
+def _write_contents(path, contents):
+    if ".blob.core.windows.net" in path or path.startswith("az://"):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            assert isinstance(tmpdir, str)
+            account, container, blob = azure.split_path(path)
+            filepath = os.path.join(tmpdir, "tmp")
+            with open(filepath, "wb") as f:
+                f.write(contents)
+            sp.run(
+                [
+                    "az",
+                    "storage",
+                    "blob",
+                    "upload",
+                    "--overwrite",
+                    "--account-name",
+                    account,
+                    "--container-name",
+                    container,
+                    "--name",
+                    blob,
+                    "--file",
+                    filepath,
+                ],
+                check=True,
+                shell=platform.system() == "Windows",
+                stdout=sp.DEVNULL,
+                stderr=sp.DEVNULL,
+            )
+    else:
+        with gfile.GFile(path, "wb") as f:
+            f.write(contents)
+
+
+def _read_contents(path):
+    if ".blob.core.windows.net" in path:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            assert isinstance(tmpdir, str)
+            account, container, blob = azure.split_path(path)
+            filepath = os.path.join(tmpdir, "tmp")
+            sp.run(
+                [
+                    "az",
+                    "storage",
+                    "blob",
+                    "download",
+                    "--account-name",
+                    account,
+                    "--container-name",
+                    container,
+                    "--name",
+                    blob,
+                    "--file",
+                    filepath,
+                ],
+                check=True,
+                shell=platform.system() == "Windows",
+                stdout=sp.DEVNULL,
+                stderr=sp.DEVNULL,
+            )
+            with open(filepath, "rb") as f:
+                return f.read()
+    else:
+        with gfile.GFile(path, "rb") as f:
+            return f.read()
+
+
+def test_basename():
+    testcases = [
+        ("/", ""),
+        ("a/", ""),
+        ("a", "a"),
+        ("a/b", "b"),
+        ("", ""),
+        ("gs://a", ""),
+        ("gs://a/", ""),
+        ("gs://a/b/", ""),
+        ("gs://a/b", "b"),
+        ("gs://a/b/c/test.filename", "test.filename"),
+        ("https://a.blob.core.windows.net/b", ""),
+        ("https://a.blob.core.windows.net/b/", ""),
+        ("https://a.blob.core.windows.net/b/c/", ""),
+        ("https://a.blob.core.windows.net/b/c", "c"),
+        ("https://a.blob.core.windows.net/b/c/test.filename", "test.filename"),
+    ]
+    for input_, desired_output in testcases:
+        actual_output = bf.basename(input_)
+        assert desired_output == actual_output
+
+
+def test_dirname():
+    b = bf.create_context(output_az_paths=False)
+    testcases = [
+        ("a", ""),
+        ("a/b", "a"),
+        ("a/b/c", "a/b"),
+        ("a/b/c/", "a/b/c"),
+        ("a/b/c/////", "a/b/c"),
+        ("", ""),
+        ("gs://a", "gs://a"),
+        ("gs://a/", "gs://a"),
+        ("gs://a/////", "gs://a"),
+        ("gs://a/b", "gs://a"),
+        ("gs://a/b/c/test.filename", "gs://a/b/c"),
+        ("gs://a/b/c/", "gs://a/b"),
+        ("gs://a/b/c/////", "gs://a/b"),
+        ("https://a.blob.core.windows.net/container", "https://a.blob.core.windows.net/container"),
+        ("https://a.blob.core.windows.net/container/", "https://a.blob.core.windows.net/container"),
+        (
+            "https://a.blob.core.windows.net/container/////",
+            "https://a.blob.core.windows.net/container",
+        ),
+        (
+            "https://a.blob.core.windows.net/container/b",
+            "https://a.blob.core.windows.net/container",
+        ),
+        (
+            "https://a.blob.core.windows.net/container/b/c/test.filename",
+            "https://a.blob.core.windows.net/container/b/c",
+        ),
+        (
+            "https://a.blob.core.windows.net/container/b/c/",
+            "https://a.blob.core.windows.net/container/b",
+        ),
+        (
+            "https://a.blob.core.windows.net/container/b/c//////",
+            "https://a.blob.core.windows.net/container/b",
+        ),
+    ]
+    for input_, desired_output in testcases:
+        actual_output = b.dirname(input_)
+        assert desired_output == actual_output, f"{input_}"
+
+
+def test_join():
+    b = bf.create_context(output_az_paths=False)
+    testcases = [
+        ("a", "b", "a/b"),
+        ("a/b", "c", "a/b/c"),
+        ("a/b/", "c", "a/b/c"),
+        ("a/b/", "c/", "a/b/c/"),
+        ("a/b/", "/c/", "/c/"),
+        ("", "", ""),
+        ("gs://a/b/c", "d0123456789-._~!$&'()*+,:=@;", "gs://a/b/c/d0123456789-._~!$&'()*+,:=@;"),
+        ("gs://a", "b", "gs://a/b"),
+        ("gs://a/b", "c", "gs://a/b/c"),
+        ("gs://a/b/", "c", "gs://a/b/c"),
+        ("gs://a/b/", "c/", "gs://a/b/c/"),
+        ("gs://a/b/", "/c/", "gs://a/c/"),
+        ("gs://a/b/", "../c", "gs://a/c"),
+        ("gs://a/b/", "../c/", "gs://a/c/"),
+        ("gs://a/b/", "../../c/", "gs://a/c/"),
+        (
+            "https://a.blob.core.windows.net/container",
+            "b",
+            "https://a.blob.core.windows.net/container/b",
+        ),
+        (
+            "https://a.blob.core.windows.net/container/b",
+            "c",
+            "https://a.blob.core.windows.net/container/b/c",
+        ),
+        (
+            "https://a.blob.core.windows.net/container/b/",
+            "c",
+            "https://a.blob.core.windows.net/container/b/c",
+        ),
+        (
+            "https://a.blob.core.windows.net/container/b/",
+            "c/",
+            "https://a.blob.core.windows.net/container/b/c/",
+        ),
+        (
+            "https://a.blob.core.windows.net/container/b/",
+            "/c/",
+            "https://a.blob.core.windows.net/container/c/",
+        ),
+        (
+            "https://a.blob.core.windows.net/container/b/",
+            "../c",
+            "https://a.blob.core.windows.net/container/c",
+        ),
+        (
+            "https://a.blob.core.windows.net/container/b/",
+            "../c/",
+            "https://a.blob.core.windows.net/container/c/",
+        ),
+        (
+            "https://a.blob.core.windows.net/container/b/",
+            "../../c/",
+            "https://a.blob.core.windows.net/container/c/",
+        ),
+        ("gs://test/a/b", "c:d", "gs://test/a/b/c:d"),
+        ("gs://test/a/b", "c:d;", "gs://test/a/b/c:d;"),
+    ]
+    for input_a, input_b, desired_output in testcases:
+        actual_output = b.join(input_a, input_b)
+        assert desired_output == actual_output, f"{input_a} {input_b}"
+        # also make sure az:// urls work
+        if "blob.core.windows.net" in input_a:
+            az_input_a = _convert_https_to_az(input_a)
+            actual_output = b.join(az_input_a, input_b)
+            assert desired_output == actual_output, f"{az_input_a} {input_b}"
+
+
+def _convert_https_to_az(path):
+    return path.replace("https://", "az://").replace(".blob.core.windows.net", "")
+
+
+def _convert_az_to_https(path):
+    return re.sub(r"^az://(.*?)/", r"https://\1.blob.core.windows.net/", path)
+
+
+@pytest.mark.parametrize("ctx", [_get_temp_local_path, _get_temp_gcs_path, _get_temp_as_path])
+def test_get_url(ctx):
+    contents = b"meow!"
+    with ctx() as path:
+        _write_contents(path, contents)
+        url, _ = bf.get_url(path)
+        assert urllib.request.urlopen(url).read() == contents
+
+
+def test_azure_public_get_url():
+    contents = urllib.request.urlopen(AZURE_PUBLIC_URL).read()
+    assert contents.startswith(AZURE_PUBLIC_URL_HEADER)
+    url, _ = bf.get_url(AZURE_PUBLIC_URL)
+    assert urllib.request.urlopen(url).read() == contents
+
+
+@pytest.mark.parametrize("ctx", [_get_temp_local_path, _get_temp_gcs_path, _get_temp_as_path])
+@pytest.mark.parametrize("streaming", [True, False])
+def test_read_write(ctx, streaming):
+    contents = b"meow!\npurr\n"
+    with ctx() as path:
+        path = bf.join(path, "a folder", "a.file")
+        bf.makedirs(bf.dirname(path))
+        with bf.BlobFile(path, "wb", streaming=streaming) as w:
+            w.write(contents)
+            assert w.tell() == len(contents)
+        with bf.BlobFile(path, "rb", streaming=streaming) as r:
+            assert r.read() == contents
+            assert r.tell() == len(contents)
+        with bf.BlobFile(path, "rb", streaming=streaming) as r:
+            lines = list(r)
+            assert b"".join(lines) == contents
+
+
+@pytest.mark.parametrize("ctx", [_get_temp_gcs_path, _get_temp_as_path])
+def test_zipfile(ctx):
+    contents = b"meow!\npurr\n"
+    with ctx() as path:
+        with bf.BlobFile(path, "wb", streaming=True) as f:
+            with zipfile.ZipFile(f, "w") as zf:
+                with zf.open("eggs.txt", "w") as myfile:
+                    myfile.write(contents)
+
+        with bf.BlobFile(path, "rb", streaming=True) as f:
+            with zipfile.ZipFile(f, "r") as zf:
+                with zf.open("eggs.txt", "r") as myfile:
+                    assert myfile.read() == contents
+
+
+def test_az_path():
+    contents = b"meow!\npurr\n"
+    with _get_temp_as_path() as path:
+        path = _convert_https_to_az(path)
+        path = bf.join(path, "a folder", "a.file")
+        path = _convert_https_to_az(path)
+        bf.makedirs(_convert_https_to_az(bf.dirname(path)))
+        with bf.BlobFile(path, "wb") as w:
+            w.write(contents)
+        with bf.BlobFile(path, "rb") as r:
+            assert r.read() == contents
+        with bf.BlobFile(path, "rb") as r:
+            lines = list(r)
+            assert b"".join(lines) == contents
+
+
+@pytest.mark.parametrize("ctx", [_get_temp_local_path, _get_temp_gcs_path, _get_temp_as_path])
+def test_append(ctx):
+    contents = b"meow!\n"
+    additional_contents = b"purr\n"
+    with ctx() as path:
+        with bf.BlobFile(path, "ab", streaming=False) as w:
+            w.write(contents)
+        with bf.BlobFile(path, "ab", streaming=False) as w:
+            w.write(additional_contents)
+        with bf.BlobFile(path, "rb") as r:
+            assert r.read() == contents + additional_contents
+
+
+@pytest.mark.parametrize("ctx", [_get_temp_local_path, _get_temp_gcs_path, _get_temp_as_path])
+def test_stat(ctx):
+    contents = b"meow!"
+    with ctx() as path:
+        _write_contents(path, contents)
+        s = bf.stat(path)
+        assert s.size == len(contents)
+        assert abs(time.time() - s.mtime) <= 30
+
+
+@pytest.mark.parametrize("ctx", [_get_temp_local_path, _get_temp_gcs_path, _get_temp_as_path])
+def test_set_mtime(ctx):
+    contents = b"meow!"
+    with ctx() as path:
+        _write_contents(path, contents)
+        s = bf.stat(path)
+        assert abs(time.time() - s.mtime) <= 30
+        new_mtime = 1
+        assert bf.set_mtime(path, new_mtime)
+        assert bf.stat(path).mtime == new_mtime
+
+
+@pytest.mark.parametrize("ctx", [_get_temp_as_path])
+def test_azure_metadata(ctx):
+    # make sure metadata is preserved when opening a file for writing
+    # which clears uncommitted blocks
+    contents = b"meow!"
+
+    with ctx() as path:
+        with bf.BlobFile(path, "wb") as f:
+            f.write(contents)
+
+        bf.set_mtime(path, 1)
+        time.sleep(5)
+        with bf.BlobFile(path, "wb", streaming=True) as f:
+            st = bf.stat(path)
+        assert st.mtime == 1
+
+
+@pytest.mark.parametrize("ctx", [_get_temp_local_path, _get_temp_gcs_path, _get_temp_as_path])
+def test_remove(ctx):
+    contents = b"meow!"
+    with ctx() as path:
+        _write_contents(path, contents)
+        assert bf.exists(path)
+        bf.remove(path)
+        assert not bf.exists(path)
+
+
+@pytest.mark.parametrize(
+    # don't test local path because that has slightly different behavior
+    "ctx",
+    [_get_temp_gcs_path, _get_temp_as_path],
+)
+def test_rmdir(ctx):
+    contents = b"meow!"
+    with ctx() as path:
+        dirpath = bf.dirname(path)
+        # this is an error for a local path but not for a blob path
+        bf.rmdir(bf.join(dirpath, "fakedirname"))
+        new_dirpath = bf.join(dirpath, "dirname")
+        bf.makedirs(new_dirpath)
+        assert bf.exists(new_dirpath)
+        bf.rmdir(new_dirpath)
+        assert not bf.exists(new_dirpath)
+
+        # double delete is fine
+        bf.rmdir(new_dirpath)
+
+        # implicit dir
+        new_filepath = bf.join(dirpath, "dirname", "name")
+        _write_contents(new_filepath, contents)
+        with pytest.raises(OSError):
+            # not empty dir
+            bf.rmdir(new_dirpath)
+        bf.remove(new_filepath)
+        bf.rmdir(new_dirpath)
+
+
+@pytest.mark.parametrize("ctx", [_get_temp_local_path, _get_temp_gcs_path, _get_temp_as_path])
+def test_makedirs(ctx):
+    contents = b"meow!"
+    with ctx() as path:
+        dirpath = bf.join(path, "x", "x", "x")
+        bf.makedirs(dirpath)
+        assert bf.exists(dirpath)
+        _write_contents(bf.join(dirpath, "testfile"), contents)
+
+
+@pytest.mark.parametrize("ctx", [_get_temp_local_path, _get_temp_gcs_path, _get_temp_as_path])
+def test_isdir(ctx):
+    contents = b"meow!"
+    with ctx() as path:
+        assert not bf.isdir(path)
+        _write_contents(path, contents)
+        assert not bf.isdir(path)
+
+        dirpath = path + ".dir"
+        bf.makedirs(dirpath)
+        assert bf.isdir(dirpath)
+        assert not bf.isdir(dirpath[:-1])
+
+        filepath = bf.join(path + ".otherdir", "subdir", "file.name")
+        if "://" not in path:
+            # implicit directory
+            bf.makedirs(bf.dirname(filepath))
+        dirpath = bf.dirname(bf.dirname(filepath))
+        _write_contents(filepath, contents)
+        assert bf.isdir(dirpath)
+        assert not bf.isdir(dirpath[:-1])
+
+
+@pytest.mark.parametrize("ctx", [_get_temp_local_path, _get_temp_gcs_path, _get_temp_as_path])
+def test_listdir(ctx):
+    contents = b"meow!"
+    with ctx() as path:
+        dirpath = bf.dirname(path)
+        bf.makedirs(dirpath)
+        a_path = bf.join(dirpath, "a")
+        with bf.BlobFile(a_path, "wb") as w:
+            w.write(contents)
+        b_path = bf.join(dirpath, "b")
+        with bf.BlobFile(b_path, "wb") as w:
+            w.write(contents)
+        bf.makedirs(bf.join(dirpath, "c"))
+        expected = ["a", "b", "c"]
+        assert sorted(list(bf.listdir(dirpath))) == expected
+        dirpath = _convert_https_to_az(dirpath)
+        assert sorted(list(bf.listdir(dirpath))) == expected
+
+
+@pytest.mark.parametrize("ctx", [_get_temp_local_path, _get_temp_gcs_path, _get_temp_as_path])
+def test_scandir(ctx):
+    contents = b"meow!"
+    with ctx() as path:
+        dirpath = bf.dirname(path)
+        a_path = bf.join(dirpath, "a")
+        with bf.BlobFile(a_path, "wb") as w:
+            w.write(contents)
+        b_path = bf.join(dirpath, "b")
+        with bf.BlobFile(b_path, "wb") as w:
+            w.write(contents)
+        bf.makedirs(bf.join(dirpath, "c"))
+        entries = sorted(list(bf.scandir(dirpath)))
+        assert [e.name for e in entries] == ["a", "b", "c"]
+        assert [e.path for e in entries] == [bf.join(dirpath, name) for name in ["a", "b", "c"]]
+        assert [e.is_dir for e in entries] == [False, False, True]
+        assert [e.is_file for e in entries] == [True, True, False]
+        assert entries[0].stat.size == len(contents)
+        assert entries[1].stat.size == len(contents)
+        assert entries[2].stat is None
+
+
+@pytest.mark.parametrize("ctx", [_get_temp_local_path, _get_temp_gcs_path, _get_temp_as_path])
+def test_listdir_sharded(ctx):
+    contents = b"meow!"
+    with ctx() as path:
+        dirpath = bf.dirname(path)
+        with bf.BlobFile(bf.join(dirpath, "a"), "wb") as w:
+            w.write(contents)
+        with bf.BlobFile(bf.join(dirpath, "aa"), "wb") as w:
+            w.write(contents)
+        with bf.BlobFile(bf.join(dirpath, "b"), "wb") as w:
+            w.write(contents)
+        with bf.BlobFile(bf.join(dirpath, "ca"), "wb") as w:
+            w.write(contents)
+        bf.makedirs(bf.join(dirpath, "c"))
+        with bf.BlobFile(bf.join(dirpath, "c/a"), "wb") as w:
+            w.write(content

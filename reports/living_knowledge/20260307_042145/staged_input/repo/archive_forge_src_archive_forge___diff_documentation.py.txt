@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/__diff_documentation.py
+KIND: code
+
+import builtins
+import os
+import sys
+import types
+
+    Replaces the default __import__, to allow a module to be memorised
+    before the user can change it

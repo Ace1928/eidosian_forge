@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_typed_ops_documentation.py
+KIND: code
+
+from __future__ import annotations
+import operator
+from typing import TYPE_CHECKING, Any, Callable, overload
+from xarray.core import nputils, ops
+from xarray.core.types import (
+Mixin classes with arithmetic operators.

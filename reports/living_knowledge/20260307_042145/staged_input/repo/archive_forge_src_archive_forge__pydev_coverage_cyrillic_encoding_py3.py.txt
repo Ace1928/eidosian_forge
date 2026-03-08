@@ -1,0 +1,11 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_pydev_coverage_cyrillic_encoding_py3.py
+KIND: code
+
+# -*- coding: iso-8859-5 -*-
+
+# Ʋ����
+class DummyƲ����(object):
+    def Print(self):
+        print ('Ʋ����')
+
+DummyƲ����().Print()

@@ -1,0 +1,431 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_short_time_fft.py
+KIND: code
+
+"""Implementation of an FFT-based Short-time Fourier Transform. """
+
+# Implementation Notes for this file (as of 2023-07)
+# --------------------------------------------------
+# * MyPy version 1.1.1 does not seem to support decorated property methods
+#   properly. Hence, applying ``@property`` to methods decorated with `@cache``
+#   (as tried with the ``lower_border_end`` method) causes a mypy error when
+#   accessing it as an index (e.g., ``SFT.lower_border_end[0]``).
+# * Since the method `stft` and `istft` have identical names as the legacy
+#   functions in the signal module, referencing them as HTML link in the
+#   docstrings has to be done by an explicit `~ShortTimeFFT.stft` instead of an
+#   ambiguous `stft` (The ``~`` hides the class / module name).
+# * The HTML documentation currently renders each method/property on a separate
+#   page without reference to the parent class. Thus, a link to `ShortTimeFFT`
+#   was added to the "See Also" section of each method/property. These links
+#   can be removed, when SciPy updates ``pydata-sphinx-theme`` to >= 0.13.3
+#   (currently 0.9). Consult Issue 18512 and PR 16660 for further details.
+#
+
+# Provides typing union operator ``|`` in Python 3.9:
+from __future__ import annotations
+# Linter does not allow to import ``Generator`` from ``typing`` module:
+from collections.abc import Generator
+from functools import cache, lru_cache, partial
+from typing import Callable, get_args, Literal
+
+import numpy as np
+
+import scipy.fft as fft_lib
+from scipy.signal import detrend
+from scipy.signal.windows import get_window
+
+__all__ = ['ShortTimeFFT']
+
+
+#: Allowed values for parameter `padding` of method `ShortTimeFFT.stft()`:
+PAD_TYPE = Literal['zeros', 'edge', 'even', 'odd']
+
+#: Allowed values for property `ShortTimeFFT.fft_mode`:
+FFT_MODE_TYPE = Literal['twosided', 'centered', 'onesided', 'onesided2X']
+
+
+def _calc_dual_canonical_window(win: np.ndarray, hop: int) -> np.ndarray:
+    """Calculate canonical dual window for 1d window `win` and a time step
+    of `hop` samples.
+
+    A ``ValueError`` is raised, if the inversion fails.
+
+    This is a separate function not a method, since it is also used in the
+    class method ``ShortTimeFFT.from_dual()``.
+    """
+    if hop > len(win):
+        raise ValueError(f"{hop=} is larger than window length of {len(win)}" +
+                         " => STFT not invertible!")
+    if issubclass(win.dtype.type, np.integer):
+        raise ValueError("Parameter 'win' cannot be of integer type, but " +
+                         f"{win.dtype=} => STFT not invertible!")
+        # The calculation of `relative_resolution` does not work for ints.
+        # Furthermore, `win / DD` casts the integers away, thus an implicit
+        # cast is avoided, which can always cause confusion when using 32-Bit
+        # floats.
+
+    w2 = win.real**2 + win.imag**2  # win*win.conj() does not ensure w2 is real
+    DD = w2.copy()
+    for k_ in range(hop, len(win), hop):
+        DD[k_:] += w2[:-k_]
+        DD[:-k_] += w2[k_:]
+
+    # check DD > 0:
+    relative_resolution = np.finfo(win.dtype).resolution * max(DD)
+    if not np.all(DD >= relative_resolution):
+        raise ValueError("Short-time Fourier Transform not invertible!")
+
+    return win / DD
+
+
+# noinspection PyShadowingNames
+class ShortTimeFFT:
+    r"""Provide a parametrized discrete Short-time Fourier transform (stft)
+    and its inverse (istft).
+
+    .. currentmodule:: scipy.signal.ShortTimeFFT
+
+    The `~ShortTimeFFT.stft` calculates sequential FFTs by sliding a
+    window (`win`) over an input signal by `hop` increments. It can be used to
+    quantify the change of the spectrum over time.
+
+    The `~ShortTimeFFT.stft` is represented by a complex-valued matrix S[q,p]
+    where the p-th column represents an FFT with the window centered at the
+    time t[p] = p * `delta_t` = p * `hop` * `T` where `T` is  the sampling
+    interval of the input signal. The q-th row represents the values at the
+    frequency f[q] = q * `delta_f` with `delta_f` = 1 / (`mfft` * `T`) being
+    the bin width of the FFT.
+
+    The inverse STFT `~ShortTimeFFT.istft` is calculated by reversing the steps
+    of the STFT: Take the IFFT of the p-th slice of S[q,p] and multiply the
+    result with the so-called dual window (see `dual_win`). Shift the result by
+    p * `delta_t` and add the result to previous shifted results to reconstruct
+    the signal. If only the dual window is known and the STFT is invertible,
+    `from_dual` can be used to instantiate this class.
+
+    Due to the convention of time t = 0 being at the first sample of the input
+    signal, the STFT values typically have negative time slots. Hence,
+    negative indexes like `p_min` or `k_min` do not indicate counting
+    backwards from an array's end like in standard Python indexing but being
+    left of t = 0.
+
+    More detailed information can be found in the :ref:`tutorial_stft` section
+    of the :ref:`user_guide`.
+
+    Note that all parameters of the initializer, except `scale_to` (which uses
+    `scaling`) have identical named attributes.
+
+    Parameters
+    ----------
+    win : np.ndarray
+        The window must be a real- or complex-valued 1d array.
+    hop : int
+        The increment in samples, by which the window is shifted in each step.
+    fs : float
+        Sampling frequency of input signal and window. Its relation to the
+        sampling interval `T` is ``T = 1 / fs``.
+    fft_mode : 'twosided', 'centered', 'onesided', 'onesided2X'
+        Mode of FFT to be used (default 'onesided').
+        See property `fft_mode` for details.
+    mfft: int | None
+        Length of the FFT used, if a zero padded FFT is desired.
+        If ``None`` (default), the length of the window `win` is used.
+    dual_win : np.ndarray | None
+        The dual window of `win`. If set to ``None``, it is calculated if
+        needed.
+    scale_to : 'magnitude', 'psd' | None
+        If not ``None`` (default) the window function is scaled, so each STFT
+        column represents  either a 'magnitude' or a power spectral density
+        ('psd') spectrum. This parameter sets the property `scaling` to the
+        same value. See method `scale_to` for details.
+    phase_shift : int | None
+        If set, add a linear phase `phase_shift` / `mfft` * `f` to each
+        frequency `f`. The default value 0 ensures that there is no phase shift
+        on the zeroth slice (in which t=0 is centered). See property
+        `phase_shift` for more details.
+
+    Examples
+    --------
+    The following example shows the magnitude of the STFT of a sine with
+    varying frequency :math:`f_i(t)` (marked by a red dashed line in the plot):
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.signal import ShortTimeFFT
+    >>> from scipy.signal.windows import gaussian
+    ...
+    >>> T_x, N = 1 / 20, 1000  # 20 Hz sampling rate for 50 s signal
+    >>> t_x = np.arange(N) * T_x  # time indexes for signal
+    >>> f_i = 1 * np.arctan((t_x - t_x[N // 2]) / 2) + 5  # varying frequency
+    >>> x = np.sin(2*np.pi*np.cumsum(f_i)*T_x) # the signal
+
+    The utilized Gaussian window is 50 samples or 2.5 s long. The parameter
+    ``mfft=200`` in `ShortTimeFFT` causes the spectrum to be oversampled
+    by a factor of 4:
+
+    >>> g_std = 8  # standard deviation for Gaussian window in samples
+    >>> w = gaussian(50, std=g_std, sym=True)  # symmetric Gaussian window
+    >>> SFT = ShortTimeFFT(w, hop=10, fs=1/T_x, mfft=200, scale_to='magnitude')
+    >>> Sx = SFT.stft(x)  # perform the STFT
+
+    In the plot, the time extent of the signal `x` is marked by vertical dashed
+    lines. Note that the SFT produces values outside the time range of `x`. The
+    shaded areas on the left and the right indicate border effects caused
+    by  the window slices in that area not fully being inside time range of
+    `x`:
+
+    >>> fig1, ax1 = plt.subplots(figsize=(6., 4.))  # enlarge plot a bit
+    >>> t_lo, t_hi = SFT.extent(N)[:2]  # time range of plot
+    >>> ax1.set_title(rf"STFT ({SFT.m_num*SFT.T:g}$\,s$ Gaussian window, " +
+    ...               rf"$\sigma_t={g_std*SFT.T}\,$s)")
+    >>> ax1.set(xlabel=f"Time $t$ in seconds ({SFT.p_num(N)} slices, " +
+    ...                rf"$\Delta t = {SFT.delta_t:g}\,$s)",
+    ...         ylabel=f"Freq. $f$ in Hz ({SFT.f_pts} bins, " +
+    ...                rf"$\Delta f = {SFT.delta_f:g}\,$Hz)",
+    ...         xlim=(t_lo, t_hi))
+    ...
+    >>> im1 = ax1.imshow(abs(Sx), origin='lower', aspect='auto',
+    ...                  extent=SFT.extent(N), cmap='viridis')
+    >>> ax1.plot(t_x, f_i, 'r--', alpha=.5, label='$f_i(t)$')
+    >>> fig1.colorbar(im1, label="Magnitude $|S_x(t, f)|$")
+    ...
+    >>> # Shade areas where window slices stick out to the side:
+    >>> for t0_, t1_ in [(t_lo, SFT.lower_border_end[0] * SFT.T),
+    ...                  (SFT.upper_border_begin(N)[0] * SFT.T, t_hi)]:
+    ...     ax1.axvspan(t0_, t1_, color='w', linewidth=0, alpha=.2)
+    >>> for t_ in [0, N * SFT.T]:  # mark signal borders with vertical line:
+    ...     ax1.axvline(t_, color='y', linestyle='--', alpha=0.5)
+    >>> ax1.legend()
+    >>> fig1.tight_layout()
+    >>> plt.show()
+
+    Reconstructing the signal with the `~ShortTimeFFT.istft` is
+    straightforward, but note that the length of `x1` should be specified,
+    since the SFT length increases in `hop` steps:
+
+    >>> SFT.invertible  # check if invertible
+    True
+    >>> x1 = SFT.istft(Sx, k1=N)
+    >>> np.allclose(x, x1)
+    True
+
+    It is possible to calculate the SFT of signal parts:
+
+    >>> p_q = SFT.nearest_k_p(N // 2)
+    >>> Sx0 = SFT.stft(x[:p_q])
+    >>> Sx1 = SFT.stft(x[p_q:])
+
+    When assembling sequential STFT parts together, the overlap needs to be
+    considered:
+
+    >>> p0_ub = SFT.upper_border_begin(p_q)[1] - SFT.p_min
+    >>> p1_le = SFT.lower_border_end[1] - SFT.p_min
+    >>> Sx01 = np.hstack((Sx0[:, :p0_ub],
+    ...                   Sx0[:, p0_ub:] + Sx1[:, :p1_le],
+    ...                   Sx1[:, p1_le:]))
+    >>> np.allclose(Sx01, Sx)  # Compare with SFT of complete signal
+    True
+
+    It is also possible to calculate the `itsft` for signal parts:
+
+    >>> y_p = SFT.istft(Sx, N//3, N//2)
+    >>> np.allclose(y_p, x[N//3:N//2])
+    True
+
+    """
+    # immutable attributes (only have getters but no setters):
+    _win: np.ndarray  # window
+    _dual_win: np.ndarray | None = None  # canonical dual window
+    _hop: int  # Step of STFT in number of samples
+
+    # mutable attributes:
+    _fs: float  # sampling frequency of input signal and window
+    _fft_mode: FFT_MODE_TYPE = 'onesided'  # Mode of FFT to use
+    _mfft: int  # length of FFT used - defaults to len(win)
+    _scaling: Literal['magnitude', 'psd'] | None = None  # Scaling of _win
+    _phase_shift: int | None  # amount to shift phase of FFT in samples
+
+    # attributes for caching calculated values:
+    _fac_mag: float | None = None
+    _fac_psd: float | None = None
+    _lower_border_end: tuple[int, int] | None = None
+
+    def __init__(self, win: np.ndarray, hop: int, fs: float, *,
+                 fft_mode: FFT_MODE_TYPE = 'onesided',
+                 mfft: int | None = None,
+                 dual_win: np.ndarray | None = None,
+                 scale_to: Literal['magnitude', 'psd'] | None = None,
+                 phase_shift: int | None = 0):
+        if not (win.ndim == 1 and win.size > 0):
+            raise ValueError(f"Parameter win must be 1d, but {win.shape=}!")
+        if not all(np.isfinite(win)):
+            raise ValueError("Parameter win must have finite entries!")
+        if not (hop >= 1 and isinstance(hop, int)):
+            raise ValueError(f"Parameter {hop=} is not an integer >= 1!")
+        self._win, self._hop, self.fs = win, hop, fs
+
+        self.mfft = len(win) if mfft is None else mfft
+
+        if dual_win is not None:
+            if dual_win.shape != win.shape:
+                raise ValueError(f"{dual_win.shape=} must equal {win.shape=}!")
+            if not all(np.isfinite(dual_win)):
+                raise ValueError("Parameter dual_win must be a finite array!")
+        self._dual_win = dual_win  # needs to be set before scaling
+
+        if scale_to is not None:  # needs to be set before fft_mode
+            self.scale_to(scale_to)
+
+        self.fft_mode, self.phase_shift = fft_mode, phase_shift
+
+    @classmethod
+    def from_dual(cls, dual_win: np.ndarray, hop: int, fs: float, *,
+                  fft_mode: FFT_MODE_TYPE = 'onesided',
+                  mfft: int | None = None,
+                  scale_to: Literal['magnitude', 'psd'] | None = None,
+                  phase_shift: int | None = 0):
+        r"""Instantiate a `ShortTimeFFT` by only providing a dual window.
+
+        If an STFT is invertible, it is possible to calculate the window `win`
+        from a given dual window `dual_win`. All other parameters have the
+        same meaning as in the initializer of `ShortTimeFFT`.
+
+        As explained in the :ref:`tutorial_stft` section of the
+        :ref:`user_guide`, an invertible STFT can be interpreted as series
+        expansion of time-shifted and frequency modulated dual windows. E.g.,
+        the series coefficient S[q,p] belongs to the term, which shifted
+        `dual_win` by p * `delta_t` and multiplied it by
+        exp( 2 * j * pi * t * q * `delta_f`).
+
+
+        Examples
+        --------
+        The following example discusses decomposing a signal into time- and
+        frequency-shifted Gaussians. A Gaussian with standard deviation of
+        one made up of 51 samples will be used:
+
+        >>> import numpy as np
+        >>> import matplotlib.pyplot as plt
+        >>> from scipy.signal import ShortTimeFFT
+        >>> from scipy.signal.windows import gaussian
+        ...
+        >>> T, N = 0.1, 51
+        >>> d_win = gaussian(N, std=1/T, sym=True)  # symmetric Gaussian window
+        >>> t = T * (np.arange(N) - N//2)
+        ...
+        >>> fg1, ax1 = plt.subplots()
+        >>> ax1.set_title(r"Dual Window: Gaussian with $\sigma_t=1$")
+        >>> ax1.set(xlabel=f"Time $t$ in seconds ({N} samples, $T={T}$ s)",
+        ...        xlim=(t[0], t[-1]), ylim=(0, 1.1*max(d_win)))
+        >>> ax1.plot(t, d_win, 'C0-')
+
+        The following plot with the overlap of 41, 11 and 2 samples show how
+        the `hop` interval affects the shape of the window `win`:
+
+        >>> fig2, axx = plt.subplots(3, 1, sharex='all')
+        ...
+        >>> axx[0].set_title(r"Windows for hop$\in\{10, 40, 49\}$")
+        >>> for c_, h_ in enumerate([10, 40, 49]):
+        ...     SFT = ShortTimeFFT.from_dual(d_win, h_, 1/T)
+        ...     axx[c_].plot(t + h_ * T, SFT.win, 'k--', alpha=.3, label=None)
+        ...     axx[c_].plot(t - h_ * T, SFT.win, 'k:', alpha=.3, label=None)
+        ...     axx[c_].plot(t, SFT.win, f'C{c_+1}',
+        ...                     label=r"$\Delta t=%0.1f\,$s" % SFT.delta_t)
+        ...     axx[c_].set_ylim(0, 1.1*max(SFT.win))
+        ...     axx[c_].legend(loc='center')
+        >>> axx[-1].set(xlabel=f"Time $t$ in seconds ({N} samples, $T={T}$ s)",
+        ...             xlim=(t[0], t[-1]))
+        >>> plt.show()
+
+        Beside the window `win` centered at t = 0 the previous (t = -`delta_t`)
+        and following window (t = `delta_t`) are depicted. It can be seen that
+        for small `hop` intervals, the window is compact and smooth, having a
+        good time-frequency concentration in the STFT. For the large `hop`
+        interval of 4.9 s, the window has small values around t = 0, which are
+        not covered by the overlap of the adjacent windows, which could lead to
+        numeric inaccuracies. Furthermore, the peaky shape at the beginning and
+        the end of the window points to a higher bandwidth, resulting in a
+        poorer time-frequency resolution of the STFT.
+        Hence, the choice of the `hop` interval will be a compromise between
+        a time-frequency resolution and memory requirements demanded by small
+        `hop` sizes.
+
+        See Also
+        --------
+        from_window: Create instance by wrapping `get_window`.
+        ShortTimeFFT: Create instance using standard initializer.
+        """
+        win = _calc_dual_canonical_window(dual_win, hop)
+        return cls(win=win, hop=hop, fs=fs, fft_mode=fft_mode, mfft=mfft,
+                   dual_win=dual_win, scale_to=scale_to,
+                   phase_shift=phase_shift)
+
+    @classmethod
+    def from_window(cls, win_param: str | tuple | float,
+                    fs: float, nperseg: int, noverlap: int, *,
+                    symmetric_win: bool = False,
+                    fft_mode: FFT_MODE_TYPE = 'onesided',
+                    mfft: int | None = None,
+                    scale_to: Literal['magnitude', 'psd'] | None = None,
+                    phase_shift: int | None = 0):
+        """Instantiate `ShortTimeFFT` by using `get_window`.
+
+        The method `get_window` is used to create a window of length
+        `nperseg`. The parameter names `noverlap`, and `nperseg` are used here,
+        since they more inline with other classical STFT libraries.
+
+        Parameters
+        ----------
+        win_param: Union[str, tuple, float],
+            Parameters passed to `get_window`. For windows with no parameters,
+            it may be a string (e.g., ``'hann'``), for parametrized windows a
+            tuple, (e.g., ``('gaussian', 2.)``) or a single float specifying
+            the shape parameter of a kaiser window (i.e. ``4.``  and
+            ``('kaiser', 4.)`` are equal. See `get_window` for more details.
+        fs : float
+            Sampling frequency of input signal. Its relation to the
+            sampling interval `T` is ``T = 1 / fs``.
+        nperseg: int
+            Window length in samples, which corresponds to the `m_num`.
+        noverlap: int
+            Window overlap in samples. It relates to the `hop` increment by
+            ``hop = npsereg - noverlap``.
+        symmetric_win: bool
+            If ``True`` then a symmetric window is generated, else a periodic
+            window is generated (default). Though symmetric windows seem for
+            most applications to be more sensible, the default of a periodic
+            windows was chosen to correspond to the default of `get_window`.
+        fft_mode : 'twosided', 'centered', 'onesided', 'onesided2X'
+            Mode of FFT to be used (default 'onesided').
+            See property `fft_mode` for details.
+        mfft: int | None
+            Length of the FFT used, if a zero padded FFT is desired.
+            If ``None`` (default), the length of the window `win` is used.
+        scale_to : 'magnitude', 'psd' | None
+            If not ``None`` (default) the window function is scaled, so each
+            STFT column represents  either a 'magnitude' or a power spectral
+            density ('psd') spectrum. This parameter sets the property
+            `scaling` to the same value. See method `scale_to` for details.
+        phase_shift : int | None
+            If set, add a linear phase `phase_shift` / `mfft` * `f` to each
+            frequency `f`. The default value 0 ensures that there is no phase
+            shift on the zeroth slice (in which t=0 is centered). See property
+            `phase_shift` for more details.
+
+        Examples
+        --------
+        The following instances ``SFT0`` and ``SFT1`` are equivalent:
+
+        >>> from scipy.signal import ShortTimeFFT, get_window
+        >>> nperseg = 9  # window length
+        >>> w = get_window(('gaussian', 2.), nperseg)
+        >>> fs = 128  # sampling frequency
+        >>> hop = 3  # increment of STFT time slice
+        >>> SFT0 = ShortTimeFFT(w, hop, fs=fs)
+        >>> SFT1 = ShortTimeFFT.from_window(('gaussian', 2.), fs, nperseg,
+        ...                                 noverlap=nperseg-hop)
+
+        See Also
+        --------
+        scipy.signal.get_window: Return a window of a given length and type.
+        from_dual: Create instance using dual window.
+        ShortTimeFFT: Create instance using standard initializer

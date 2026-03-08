@@ -1,0 +1,4 @@
+SOURCE_PATH: .eidos_chrome_profile/Default/Storage/ext/nmmhkkegccagdldgiimedpiccmgmieda/def/SCT Auditing Pending Reports
+KIND: config
+
+[]

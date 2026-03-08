@@ -1,0 +1,14 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/CM
+KIND: config
+
+CM:
+adamawaadamaouaadamawa regionrégion de l'adamaouaG
+centralcentrecentre regionprovince du centrerégion du centre~
+extreme northextreme nordextrêmenord	far northfar north regionfarnorthrégion de l'extrêmenordrégion du nord=
+easteast regionestprovince de l'estrégion de l'estJ
+littoraldépartement du littorallittoral regionrégion du littoral>
+northnordnorth regionprovince du nordrégion du nord>
+	northwest	nordouestnorthwest regionrégion du nordouestC
+westouestprovince de l'ouestrégion de l'ouestwest region;
+southprovince du sudrégion du sudsouth regionsud<
+	southwestrégion du sudouestsouthwest regionsudouest

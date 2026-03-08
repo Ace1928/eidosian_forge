@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_dummy_thread32_documentation.py
+KIND: code
+
+Release the dummy lock.

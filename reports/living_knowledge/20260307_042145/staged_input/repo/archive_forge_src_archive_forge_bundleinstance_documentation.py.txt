@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/bundleinstance_documentation.py
+KIND: code
+
+from boto.ec2.ec2object import EC2Object
+
+Represents an EC2 Bundle Task

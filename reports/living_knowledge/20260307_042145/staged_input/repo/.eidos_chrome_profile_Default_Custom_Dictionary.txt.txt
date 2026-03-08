@@ -1,0 +1,6 @@
+SOURCE_PATH: .eidos_chrome_profile/Default/Custom Dictionary.txt
+KIND: docs
+
+mycelium
+sporeless
+checksum_v1 = 4c6fa49413d2117134e2b538c79aff9d

@@ -1,0 +1,11 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_asyncio_backend_documentation.py
+KIND: code
+
+import asyncio
+import socket
+import sys
+import dns._asyncbackend
+import dns._features
+import dns.exception
+import dns.inet
+asyncio library query support

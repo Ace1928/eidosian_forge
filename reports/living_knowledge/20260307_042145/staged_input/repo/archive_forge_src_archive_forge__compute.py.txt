@@ -1,0 +1,598 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_compute.py
+KIND: code
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import base64
+import functools
+import operator
+import time
+
+import iso8601
+
+from openstack.cloud import _utils
+from openstack.cloud import exc
+from openstack.cloud import meta
+from openstack.compute.v2._proxy import Proxy
+from openstack.compute.v2 import quota_set as _qs
+from openstack.compute.v2 import server as _server
+from openstack import exceptions
+from openstack import utils
+
+
+_SERVER_FIELDS = (
+    'accessIPv4',
+    'accessIPv6',
+    'addresses',
+    'adminPass',
+    'created',
+    'description',
+    'key_name',
+    'metadata',
+    'networks',
+    'personality',
+    'private_v4',
+    'public_v4',
+    'public_v6',
+    'server_groups',
+    'status',
+    'updated',
+    'user_id',
+    'tags',
+)
+
+
+def _to_bool(value):
+    if isinstance(value, str):
+        if not value:
+            return False
+        prospective = value.lower().capitalize()
+        return prospective == 'True'
+    return bool(value)
+
+
+def _pop_int(resource, key):
+    return int(resource.pop(key, 0) or 0)
+
+
+def _pop_or_get(resource, key, default, strict):
+    if strict:
+        return resource.pop(key, default)
+    else:
+        return resource.get(key, default)
+
+
+class ComputeCloudMixin:
+    compute: Proxy
+
+    @property
+    def _compute_region(self):
+        # This is only used in exception messages. Can we get rid of it?
+        return self.config.get_region_name('compute')
+
+    def get_flavor_name(self, flavor_id):
+        """Get the name of a flavor.
+
+        :param flavor_id: ID of the flavor.
+        :returns: The name of the flavor if a match if found, else None.
+        """
+        flavor = self.get_flavor(flavor_id, get_extra=False)
+        if flavor:
+            return flavor['name']
+        return None
+
+    def get_flavor_by_ram(self, ram, include=None, get_extra=True):
+        """Get a flavor based on amount of RAM available.
+
+        Finds the flavor with the least amount of RAM that is at least
+        as much as the specified amount. If `include` is given, further
+        filter based on matching flavor name.
+
+        :param int ram: Minimum amount of RAM.
+        :param string include: If given, will return a flavor whose name
+            contains this string as a substring.
+        :param get_extra:
+
+        :returns: A compute ``Flavor`` object.
+        :raises: :class:`~openstack.exceptions.SDKException` if no
+            matching flavour could be found.
+        """
+        flavors = self.list_flavors(get_extra=get_extra)
+        for flavor in sorted(flavors, key=operator.itemgetter('ram')):
+            if flavor['ram'] >= ram and (
+                not include or include in flavor['name']
+            ):
+                return flavor
+        raise exceptions.SDKException(
+            "Could not find a flavor with {ram} and '{include}'".format(
+                ram=ram, include=include
+            )
+        )
+
+    def _nova_extensions(self):
+        extensions = set([e.alias for e in self.compute.extensions()])
+        return extensions
+
+    def _has_nova_extension(self, extension_name):
+        return extension_name in self._nova_extensions()
+
+    def search_keypairs(self, name_or_id=None, filters=None):
+        """Search keypairs.
+
+        :param name_or_id:
+        :param filters:
+        :returns: A list of compute ``Keypair`` objects matching the search
+            criteria.
+        """
+        keypairs = self.list_keypairs(
+            filters=filters if isinstance(filters, dict) else None
+        )
+        return _utils._filter_list(keypairs, name_or_id, filters)
+
+    def search_flavors(self, name_or_id=None, filters=None, get_extra=True):
+        """Search flavors.
+
+        :param name_or_id:
+        :param flavors:
+        :param get_extra:
+        :returns: A list of compute ``Flavor`` objects matching the search
+            criteria.
+        """
+        flavors = self.list_flavors(get_extra=get_extra)
+        return _utils._filter_list(flavors, name_or_id, filters)
+
+    def search_servers(
+        self,
+        name_or_id=None,
+        filters=None,
+        detailed=False,
+        all_projects=False,
+        bare=False,
+    ):
+        """Search servers.
+
+        :param name_or_id:
+        :param filters:
+        :param detailed:
+        :param all_projects:
+        :param bare:
+        :returns: A list of compute ``Server`` objects matching the search
+            criteria.
+        """
+        servers = self.list_servers(
+            detailed=detailed, all_projects=all_projects, bare=bare
+        )
+        return _utils._filter_list(servers, name_or_id, filters)
+
+    def search_server_groups(self, name_or_id=None, filters=None):
+        """Search server groups.
+
+        :param name_or_id: Name or unique ID of the server group(s).
+        :param filters: A dict containing additional filters to use.
+
+        :returns: A list of compute ``ServerGroup`` objects matching the search
+            criteria.
+        :raises: :class:`~openstack.exceptions.SDKException` if something goes
+            wrong during the OpenStack API call.
+        """
+        server_groups = self.list_server_groups()
+        return _utils._filter_list(server_groups, name_or_id, filters)
+
+    def list_keypairs(self, filters=None):
+        """List all available keypairs.
+
+        :param filters:
+        :returns: A list of compute ``Keypair`` objects.
+        """
+        if not filters:
+            filters = {}
+        return list(self.compute.keypairs(**filters))
+
+    def list_availability_zone_names(self, unavailable=False):
+        """List names of availability zones.
+
+        :param bool unavailable: Whether or not to include unavailable zones
+            in the output. Defaults to False.
+        :returns: A list of availability zone names, or an empty list if the
+            list could not be fetched.
+        """
+        try:
+            zones = self.compute.availability_zones()
+            ret = []
+            for zone in zones:
+                if zone.state['available'] or unavailable:
+                    ret.append(zone.name)
+            return ret
+        except exceptions.SDKException:
+            self.log.debug(
+                "Availability zone list could not be fetched", exc_info=True
+            )
+            return []
+
+    def list_flavors(self, get_extra=False):
+        """List all available flavors.
+
+        :param get_extra: Whether or not to fetch extra specs for each flavor.
+            Defaults to True. Default behavior value can be overridden in
+            clouds.yaml by setting openstack.cloud.get_extra_specs to False.
+        :returns: A list of compute ``Flavor`` objects.
+        """
+        return list(
+            self.compute.flavors(details=True, get_extra_specs=get_extra)
+        )
+
+    def list_server_security_groups(self, server):
+        """List all security groups associated with the given server.
+
+        :returns: A list of security group dictionary objects.
+        """
+
+        # Don't even try if we're a cloud that doesn't have them
+        if not self._has_secgroups():
+            return []
+
+        server = self.compute.get_server(server)
+
+        server.fetch_security_groups(self.compute)
+
+        return server.security_groups
+
+    def _get_server_security_groups(self, server, security_groups):
+        if not self._has_secgroups():
+            raise exc.OpenStackCloudUnavailableFeature(
+                "Unavailable feature: security groups"
+            )
+
+        if not isinstance(server, dict):
+            server = self.get_server(server, bare=True)
+
+            if server is None:
+                self.log.debug('Server %s not found', server)
+                return None, None
+
+        if not isinstance(security_groups, (list, tuple)):
+            security_groups = [security_groups]
+
+        sec_group_objs = []
+
+        for sg in security_groups:
+            if not isinstance(sg, dict):
+                sg = self.get_security_group(sg)
+
+                if sg is None:
+                    self.log.debug(
+                        'Security group %s not found for adding', sg
+                    )
+
+                    return None, None
+
+            sec_group_objs.append(sg)
+
+        return server, sec_group_objs
+
+    def add_server_security_groups(self, server, security_groups):
+        """Add security groups to a server.
+
+        Add existing security groups to an existing server. If the security
+        groups are already present on the server this will continue unaffected.
+
+        :returns: False if server or security groups are undefined, True
+            otherwise.
+        :raises: :class:`~openstack.exceptions.SDKException` on operation
+            error.
+        """
+        server, security_groups = self._get_server_security_groups(
+            server, security_groups
+        )
+
+        if not (server and security_groups):
+            return False
+
+        for sg in security_groups:
+            self.compute.add_security_group_to_server(server, sg)
+
+        return True
+
+    def remove_server_security_groups(self, server, security_groups):
+        """Remove security groups from a server
+
+        Remove existing security groups from an existing server. If the
+        security groups are not present on the server this will continue
+        unaffected.
+
+        :returns: False if server or security groups are undefined, True
+            otherwise.
+        :raises: :class:`~openstack.exceptions.SDKException` on operation
+            error.
+        """
+        server, security_groups = self._get_server_security_groups(
+            server, security_groups
+        )
+
+        if not (server and security_groups):
+            return False
+
+        ret = True
+
+        for sg in security_groups:
+            try:
+                self.compute.remove_security_group_from_server(server, sg)
+
+            except exceptions.ResourceNotFound:
+                # NOTE(jamielennox): Is this ok? If we remove something that
+                # isn't present should we just conclude job done or is that an
+                # error? Nova returns ok if you try to add a group twice.
+                self.log.debug(
+                    "The security group %s was not present on server %s so "
+                    "no action was performed",
+                    sg.name,
+                    server.name,
+                )
+                ret = False
+
+        return ret
+
+    def list_servers(
+        self,
+        detailed=False,
+        all_projects=False,
+        bare=False,
+        filters=None,
+    ):
+        """List all available servers.
+
+        :param detailed: Whether or not to add detailed additional information.
+            Defaults to False.
+        :param all_projects: Whether to list servers from all projects or just
+            the current auth scoped project.
+        :param bare: Whether to skip adding any additional information to the
+            server record. Defaults to False, meaning the addresses dict will
+            be populated as needed from neutron. Setting to True implies
+            detailed = False.
+        :param filters: Additional query parameters passed to the API server.
+        :returns: A list of compute ``Server`` objects.
+        """
+        if not filters:
+            filters = {}
+
+        return [
+            self._expand_server(server, detailed, bare)
+            for server in self.compute.servers(
+                all_projects=all_projects,
+                **filters,
+            )
+        ]
+
+    def list_server_groups(self):
+        """List all available server groups.
+
+        :returns: A list of compute ``ServerGroup`` objects.
+        """
+        return list(self.compute.server_groups())
+
+    def get_compute_limits(self, name_or_id=None):
+        """Get absolute compute limits for a project
+
+        :param name_or_id: (optional) project name or ID to get limits for
+            if different from the current project
+
+        :returns: A compute
+            :class:`~openstack.compute.v2.limits.Limits.AbsoluteLimits` object.
+        :raises: :class:`~openstack.exceptions.SDKException` if it's not a
+            valid project
+        """
+        params = {}
+        project_id = None
+        if name_or_id:
+            proj = self.get_project(name_or_id)
+            if not proj:
+                raise exceptions.SDKException("project does not exist")
+            project_id = proj.id
+            params['tenant_id'] = project_id
+        return self.compute.get_limits(**params).absolute
+
+    def get_keypair(self, name_or_id, filters=None):
+        """Get a keypair by name or ID.
+
+        :param name_or_id: Name or ID of the keypair.
+        :param filters: A dictionary of meta data to use for further filtering.
+            Elements of this dictionary may, themselves, be dictionaries.
+            Example::
+
+                {
+                'last_name': 'Smith',
+                'other': {
+                'gender': 'Female'
+                }
+                }
+
+            OR
+            A string containing a jmespath expression for further filtering.
+            Example:: "[?last_name==`Smith`] | [?other.gender]==`Female`]"
+
+        :returns: A compute ``Keypair`` object if found, else None.
+        """
+        return _utils._get_entity(self, 'keypair', name_or_id, filters)
+
+    def get_flavor(self, name_or_id, filters=None, get_extra=True):
+        """Get a flavor by name or ID.
+
+        :param name_or_id: Name or ID of the flavor.
+        :param filters: A dictionary of meta data to use for further filtering.
+            Elements of this dictionary may, themselves, be dictionaries.
+            Example::
+
+                {
+                    'last_name': 'Smith',
+                    'other': {
+                        'gender': 'Female'
+                    }
+                }
+
+            OR
+            A string containing a jmespath expression for further filtering.
+            Example:: "[?last_name==`Smith`] | [?other.gender]==`Female`]"
+
+        :param get_extra: Whether or not the list_flavors call should get the
+            extra flavor specs.
+        :returns: A compute ``Flavor`` object if found, else None.
+        """
+        if not filters:
+            filters = {}
+        flavor = self.compute.find_flavor(
+            name_or_id,
+            get_extra_specs=get_extra,
+            ignore_missing=True,
+            **filters,
+        )
+        return flavor
+
+    def get_flavor_by_id(self, id, get_extra=False):
+        """Get a flavor by ID
+
+        :param id: ID of the flavor.
+        :param get_extra: Whether or not the list_flavors call should get the
+            extra flavor specs.
+        :returns: A compute ``Flavor`` object if found, else None.
+        """
+        return self.compute.get_flavor(id, get_extra_specs=get_extra)
+
+    def get_server_console(self, server, length=None):
+        """Get the console log for a server.
+
+        :param server: The server to fetch the console log for. Can be either
+            a server dict or the Name or ID of the server.
+        :param int length: The number of lines you would like to retrieve from
+            the end of the log. (optional, defaults to all)
+
+        :returns: A string containing the text of the console log or an
+            empty string if the cloud does not support console logs.
+        :raises: :class:`~openstack.exceptions.SDKException` if an invalid
+            server argument is given or if something else unforseen happens
+        """
+
+        if not isinstance(server, dict):
+            server = self.get_server(server, bare=True)
+
+        if not server:
+            raise exceptions.SDKException(
+                "Console log requested for invalid server"
+            )
+
+        try:
+            return self._get_server_console_output(server['id'], length)
+        except exceptions.BadRequestException:
+            return ""
+
+    def _get_server_console_output(self, server_id, length=None):
+        output = self.compute.get_server_console_output(
+            server=server_id, length=length
+        )
+        if 'output' in output:
+            return output['output']
+
+    def get_server(
+        self,
+        name_or_id=None,
+        filters=None,
+        detailed=False,
+        bare=False,
+        all_projects=False,
+    ):
+        """Get a server by name or ID.
+
+        :param name_or_id: Name or ID of the server.
+        :param filters:
+            A dictionary of meta data to use for further filtering. Elements
+            of this dictionary may, themselves, be dictionaries. Example::
+
+                {
+                    'last_name': 'Smith',
+                    'other': {
+                        'gender': 'Female'
+                    }
+                }
+
+            OR
+            A string containing a jmespath expression for further filtering.
+            Example:: "[?last_name==`Smith`] | [?other.gender]==`Female`]"
+        :param detailed: Whether or not to add detailed additional information.
+            Defaults to False.
+        :param bare: Whether to skip adding any additional information to the
+            server record. Defaults to False, meaning the addresses dict will
+            be populated as needed from neutron. Setting to True implies
+            detailed = False.
+        :param all_projects: Whether to get server from all projects or just
+            the current auth scoped project.
+        :returns: A compute ``Server`` object if found, else None.
+        """
+        searchfunc = functools.partial(
+            self.search_servers,
+            detailed=detailed,
+            bare=True,
+            all_projects=all_projects,
+        )
+        server = _utils._get_entity(self, searchfunc, name_or_id, filters)
+        return self._expand_server(server, detailed, bare)
+
+    def _expand_server(self, server, detailed, bare):
+        if bare or not server:
+            return server
+        elif detailed:
+            return meta.get_hostvars_from_server(self, server)
+        else:
+            return meta.add_server_interfaces(self, server)
+
+    def get_server_by_id(self, id):
+        """Get a server by ID.
+
+        :param id: ID of the server.
+
+        :returns: A compute ``Server`` object if found, else None.
+        """
+        try:
+            server = self.compute.get_server(id)
+            return meta.add_server_interfaces(self, server)
+        except exceptions.ResourceNotFound:
+            return None
+
+    def get_server_group(self, name_or_id=None, filters=None):
+        """Get a server group by name or ID.
+
+        :param name_or_id: Name or ID of the server group.
+        :param filters: A dictionary of meta data to use for further filtering.
+            Elements of this dictionary may, themselves, be dictionaries.
+            Example::
+
+                {
+                    'policy': 'affinity',
+                }
+
+            OR
+            A string containing a jmespath expression for further filtering.
+            Example:: "[?last_name==`Smith`] | [?other.gender]==`Female`]"
+
+        :returns: A compute ``ServerGroup`` object if found, else None.
+        """
+        return _utils._get_entity(self, 'server_group', name_or_id, filters)
+
+    def create_keypair(self, name, public_key=None):
+        """Create a new keypair.
+
+        :param name: Name of the keypair being created.
+        :param public_key: Public key for the new keypair.
+
+        :returns: The created compute ``Keypair`` object.
+        :raises: :class:`~openstack.exceptions.SDKException` on operation
+            error.
+        """

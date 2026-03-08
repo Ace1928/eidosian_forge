@@ -1,0 +1,519 @@
+SOURCE_PATH: archive_forge/src/archive_forge/algorithm_base_class.py
+KIND: code
+
+#  ___________________________________________________________________________
+#
+#  Pyomo: Python Optimization Modeling Objects
+#  Copyright (c) 2008-2024
+#  National Technology and Engineering Solutions of Sandia, LLC
+#  Under the terms of Contract DE-NA0003525 with National Technology and
+#  Engineering Solutions of Sandia, LLC, the U.S. Government retains certain
+#  rights in this software.
+#  This software is distributed under the 3-clause BSD License.
+#  ___________________________________________________________________________
+
+"""Iteration loop for MindtPy."""
+import math
+from io import StringIO
+import pyomo.core.expr as EXPR
+from pyomo.repn import generate_standard_repn
+import logging
+from pyomo.contrib.fbbt.fbbt import fbbt
+from pyomo.opt import TerminationCondition as tc
+from pyomo.contrib.mindtpy import __version__
+from pyomo.common.dependencies import attempt_import
+from pyomo.util.vars_from_expressions import get_vars_from_components
+from pyomo.solvers.plugins.solvers.persistent_solver import PersistentSolver
+from pyomo.common.collections import ComponentMap, Bunch, ComponentSet
+from pyomo.common.errors import InfeasibleConstraintException
+from pyomo.contrib.mindtpy.cut_generation import add_no_good_cuts
+from operator import itemgetter
+from pyomo.common.errors import DeveloperError
+from pyomo.solvers.plugins.solvers.gurobi_direct import gurobipy
+from pyomo.opt import (
+    SolverFactory,
+    SolverResults,
+    ProblemSense,
+    SolutionStatus,
+    SolverStatus,
+)
+from pyomo.core import (
+    minimize,
+    maximize,
+    Objective,
+    VarList,
+    Reals,
+    ConstraintList,
+    Constraint,
+    Block,
+    TransformationFactory,
+    NonNegativeReals,
+    Suffix,
+    Var,
+    RangeSet,
+    value,
+    Expression,
+)
+from pyomo.contrib.gdpopt.util import (
+    SuppressInfeasibleWarning,
+    _DoNothing,
+    lower_logger_level_to,
+    get_main_elapsed_time,
+    time_code,
+)
+from pyomo.contrib.gdpopt.solve_discrete_problem import (
+    distinguish_mip_infeasible_or_unbounded,
+)
+from pyomo.contrib.mindtpy.util import (
+    generate_norm1_objective_function,
+    generate_norm2sq_objective_function,
+    generate_norm_inf_objective_function,
+    generate_lag_objective_function,
+    GurobiPersistent4MindtPy,
+    setup_results_object,
+    get_integer_solution,
+    initialize_feas_subproblem,
+    epigraph_reformulation,
+    add_var_bound,
+    copy_var_list_values_from_solution_pool,
+    generate_norm_constraint,
+    fp_converged,
+    add_orthogonality_cuts,
+    set_solver_mipgap,
+    set_solver_constraint_violation_tolerance,
+    update_solver_timelimit,
+    copy_var_list_values,
+)
+
+single_tree, single_tree_available = attempt_import('pyomo.contrib.mindtpy.single_tree')
+tabu_list, tabu_list_available = attempt_import('pyomo.contrib.mindtpy.tabu_list')
+egb, egb_available = attempt_import(
+    'pyomo.contrib.pynumero.interfaces.external_grey_box'
+)
+
+
+class _MindtPyAlgorithm(object):
+    def __init__(self, **kwds):
+        """
+        This is a common init method for all the MindtPy algorithms, so that we
+        correctly set up the config arguments and initialize the generic parts
+        of the algorithm state.
+
+        """
+        self.working_model = None
+        self.mip = None
+        self.fixed_nlp = None
+
+        # We store bounds, timing info, iteration count, incumbent, and the
+        # Expression of the original (possibly nonlinear) objective function.
+        self.results = SolverResults()
+        self.timing = Bunch()
+        self.curr_int_sol = []
+        self.should_terminate = False
+        self.integer_list = []
+        # Dictionary {integer solution (tuple): [cuts begin index, cuts end index] (list)}
+        self.integer_solution_to_cuts_index = dict()
+
+        # Set up iteration counters
+        self.nlp_iter = 0
+        self.mip_iter = 0
+        self.mip_subiter = 0
+        self.nlp_infeasible_counter = 0
+        self.fp_iter = 1
+
+        self.primal_bound_progress_time = [0]
+        self.dual_bound_progress_time = [0]
+        self.abs_gap = float('inf')
+        self.rel_gap = float('inf')
+        self.log_formatter = (
+            ' {:>9}   {:>15}   {:>15g}   {:>12g}   {:>12g}   {:>7.2%}   {:>7.2f}'
+        )
+        self.termination_condition_log_formatter = (
+            ' {:>9}   {:>15}   {:>15}   {:>12g}   {:>12g}   {:>7.2%}   {:>7.2f}'
+        )
+        self.fixed_nlp_log_formatter = (
+            '{:1}{:>9}   {:>15}   {:>15g}   {:>12g}   {:>12g}   {:>7.2%}   {:>7.2f}'
+        )
+        self.infeasible_fixed_nlp_log_formatter = (
+            '{:1}{:>9}   {:>15}   {:>15}   {:>12g}   {:>12g}   {:>7.2%}   {:>7.2f}'
+        )
+        self.log_note_formatter = ' {:>9}   {:>15}   {:>15}'
+
+        # Flag indicating whether the solution improved in the past
+        # iteration or not
+        self.primal_bound_improved = False
+        self.dual_bound_improved = False
+
+        # Store the initial model state as the best solution found. If we
+        # find no better solution, then we will restore from this copy.
+        self.best_solution_found = None
+        self.best_solution_found_time = None
+
+        self.stored_bound = {}
+        self.num_no_good_cuts_added = {}
+        self.last_iter_cuts = False
+        # Store the OA cuts generated in the mip_start_process.
+        self.mip_start_lazy_oa_cuts = []
+        # Whether to load solutions in solve() function
+        self.load_solutions = True
+
+    # Support use as a context manager under current solver API
+    def __enter__(self):
+        return self
+
+    def __exit__(self, t, v, traceback):
+        pass
+
+    def available(self, exception_flag=True):
+        """Solver is always available. Though subsolvers may not be, they will
+        raise an error when the time comes.
+        """
+        return True
+
+    def license_is_valid(self):
+        return True
+
+    def version(self):
+        """Return a 3-tuple describing the solver version."""
+        return __version__
+
+    _metasolver = False
+
+    def _log_solver_intro_message(self):
+        self.config.logger.info(
+            "Starting MindtPy version %s using %s algorithm"
+            % (".".join(map(str, self.version())), self.config.strategy)
+        )
+        os = StringIO()
+        self.config.display(ostream=os)
+        self.config.logger.info(os.getvalue())
+        self.config.logger.info(
+            '-----------------------------------------------------------------------------------------------\n'
+            '               Mixed-Integer Nonlinear Decomposition Toolbox in Pyomo (MindtPy)                \n'
+            '-----------------------------------------------------------------------------------------------\n'
+            'For more information, please visit \n'
+            'https://pyomo.readthedocs.io/en/stable/contributed_packages/mindtpy.html'
+        )
+        self.config.logger.info(
+            'If you use this software, please cite the following:\n'
+            'Bernal, David E., et al. Mixed-integer nonlinear decomposition toolbox for Pyomo (MindtPy).\n'
+            'Computer Aided Chemical Engineering. Vol. 44. Elsevier, 2018. 895-900.\n'
+        )
+
+    def set_up_logger(self):
+        """Set up the formatter and handler for logger."""
+        self.config.logger.handlers.clear()
+        self.config.logger.propagate = False
+        ch = logging.StreamHandler()
+        ch.setLevel(self.config.logging_level)
+        # create formatter and add it to the handlers
+        formatter = logging.Formatter('%(message)s')
+        ch.setFormatter(formatter)
+        # add the handlers to logger
+        self.config.logger.addHandler(ch)
+
+    def _log_header(self, logger):
+        # TODO: rewrite
+        logger.info(
+            '================================================================='
+            '============================'
+        )
+        logger.info(
+            '{:^9} | {:^15} | {:^11} | {:^11} | {:^8} | {:^7}\n'.format(
+                'Iteration',
+                'Subproblem Type',
+                'Lower Bound',
+                'Upper Bound',
+                ' Gap ',
+                'Time(s)',
+            )
+        )
+
+    def create_utility_block(self, model, name):
+        created_util_block = False
+        # Create a model block on which to store MindtPy-specific utility
+        # modeling objects.
+        if hasattr(model, name):
+            raise RuntimeError(
+                "MindtPy needs to create a Block named %s "
+                "on the model object, but an attribute with that name "
+                "already exists." % name
+            )
+        else:
+            created_util_block = True
+            setattr(
+                model,
+                name,
+                Block(doc="Container for MindtPy solver utility modeling objects"),
+            )
+            self.util_block_name = name
+
+            # Save ordered lists of main modeling components, so that data can
+            # be easily transferred between future model clones.
+            self.build_ordered_component_lists(model)
+            self.add_cuts_components(model)
+
+    def model_is_valid(self):
+        """Determines whether the model is solvable by MindtPy.
+
+        Returns
+        -------
+        bool
+            True if model is solvable in MindtPy, False otherwise.
+        """
+        m = self.working_model
+        MindtPy = m.MindtPy_utils
+        config = self.config
+
+        # Handle LP/NLP being passed to the solver
+        prob = self.results.problem
+        if len(MindtPy.discrete_variable_list) == 0:
+            config.logger.info('Problem has no discrete decisions.')
+            obj = next(m.component_data_objects(ctype=Objective, active=True))
+            if (
+                any(
+                    c.body.polynomial_degree()
+                    not in self.mip_constraint_polynomial_degree
+                    for c in MindtPy.constraint_list
+                )
+                or obj.expr.polynomial_degree()
+                not in self.mip_objective_polynomial_degree
+            ):
+                config.logger.info(
+                    'Your model is a NLP (nonlinear program). '
+                    'Using NLP solver %s to solve.' % config.nlp_solver
+                )
+                update_solver_timelimit(
+                    self.nlp_opt, config.nlp_solver, self.timing, config
+                )
+                self.nlp_opt.solve(
+                    self.original_model,
+                    tee=config.nlp_solver_tee,
+                    **config.nlp_solver_args,
+                )
+                return False
+            else:
+                config.logger.info(
+                    'Your model is an LP (linear program). '
+                    'Using LP solver %s to solve.' % config.mip_solver
+                )
+                if isinstance(self.mip_opt, PersistentSolver):
+                    self.mip_opt.set_instance(self.original_model)
+                update_solver_timelimit(
+                    self.mip_opt, config.mip_solver, self.timing, config
+                )
+                results = self.mip_opt.solve(
+                    self.original_model,
+                    tee=config.mip_solver_tee,
+                    load_solutions=self.load_solutions,
+                    **config.mip_solver_args,
+                )
+                if len(results.solution) > 0:
+                    self.original_model.solutions.load_from(results)
+                return False
+
+        # Set up dual value reporting
+        if config.calculate_dual_at_solution:
+            if not hasattr(m, 'dual'):
+                m.dual = Suffix(direction=Suffix.IMPORT)
+            elif not isinstance(m.dual, Suffix):
+                raise ValueError(
+                    "dual is not defined as a Suffix in the original model."
+                )
+
+        # TODO if any continuous variables are multiplied with binary ones,
+        #  need to do some kind of transformation (Glover?) or throw an error message
+        return True
+
+    def build_ordered_component_lists(self, model):
+        """Define lists used for future data transfer.
+
+        Also attaches ordered lists of the variables, constraints to the model so that they can be used for mapping back and
+        forth.
+
+        """
+        util_block = getattr(model, self.util_block_name)
+        var_set = ComponentSet()
+        util_block.constraint_list = list(
+            model.component_data_objects(
+                ctype=Constraint, active=True, descend_into=(Block)
+            )
+        )
+        if egb_available:
+            util_block.grey_box_list = list(
+                model.component_data_objects(
+                    ctype=egb.ExternalGreyBoxBlock, active=True, descend_into=(Block)
+                )
+            )
+        else:
+            util_block.grey_box_list = []
+        util_block.linear_constraint_list = list(
+            c
+            for c in util_block.constraint_list
+            if c.body.polynomial_degree() in self.mip_constraint_polynomial_degree
+        )
+        util_block.nonlinear_constraint_list = list(
+            c
+            for c in util_block.constraint_list
+            if c.body.polynomial_degree() not in self.mip_constraint_polynomial_degree
+        )
+        util_block.objective_list = list(
+            model.component_data_objects(
+                ctype=Objective, active=True, descend_into=(Block)
+            )
+        )
+
+        # Identify the non-fixed variables in (potentially) active constraints and
+        # objective functions
+        for constr in getattr(util_block, 'constraint_list'):
+            for v in EXPR.identify_variables(constr.body, include_fixed=False):
+                var_set.add(v)
+        for obj in model.component_data_objects(ctype=Objective, active=True):
+            for v in EXPR.identify_variables(obj.expr, include_fixed=False):
+                var_set.add(v)
+
+        # We use component_data_objects rather than list(var_set) in order to
+        # preserve a deterministic ordering.
+        if egb_available:
+            util_block.variable_list = list(
+                v
+                for v in model.component_data_objects(
+                    ctype=Var, descend_into=(Block, egb.ExternalGreyBoxBlock)
+                )
+                if v in var_set
+            )
+        else:
+            util_block.variable_list = list(
+                v
+                for v in model.component_data_objects(ctype=Var, descend_into=(Block))
+                if v in var_set
+            )
+        util_block.discrete_variable_list = list(
+            v for v in util_block.variable_list if v in var_set and v.is_integer()
+        )
+        util_block.continuous_variable_list = list(
+            v for v in util_block.variable_list if v in var_set and v.is_continuous()
+        )
+
+    def add_cuts_components(self, model):
+        config = self.config
+        MindtPy = model.MindtPy_utils
+
+        # Create a model block in which to store the generated feasibility
+        # slack constraints. Do not leave the constraints on by default.
+        feas = MindtPy.feas_opt = Block()
+        feas.deactivate()
+        feas.feas_constraints = ConstraintList(doc='Feasibility Problem Constraints')
+
+        # Create a model block in which to store the generated linear
+        # constraints. Do not leave the constraints on by default.
+        lin = MindtPy.cuts = Block()
+        lin.deactivate()
+
+        # no-good cuts exclude particular discrete decisions
+        lin.no_good_cuts = ConstraintList(doc='no-good cuts')
+        # Feasible no-good cuts exclude discrete realizations that have
+        # been explored via an NLP subproblem. Depending on model
+        # characteristics, the user may wish to revisit NLP subproblems
+        # (with a different initialization, for example). Therefore, these
+        # cuts are not enabled by default.
+
+        if config.feasibility_norm == 'L1' or config.feasibility_norm == 'L2':
+            feas.nl_constraint_set = RangeSet(
+                len(MindtPy.nonlinear_constraint_list),
+                doc='Integer index set over the nonlinear constraints.',
+            )
+            # Create slack variables for feasibility problem
+            feas.slack_var = Var(
+                feas.nl_constraint_set, domain=NonNegativeReals, initialize=1
+            )
+        else:
+            feas.slack_var = Var(domain=NonNegativeReals, initialize=1)
+
+        # Create slack variables for OA cuts
+        if config.add_slack:
+            lin.slack_vars = VarList(
+                bounds=(0, config.max_slack), initialize=0, domain=NonNegativeReals
+            )
+
+    def get_dual_integral(self):
+        """Calculate the dual integral.
+        Ref: The confined primal integral. [http://www.optimization-online.org/DB_FILE/2020/07/7910.pdf]
+
+        Returns
+        -------
+        float
+            The dual integral.
+        """
+        dual_integral = 0
+        dual_bound_progress = self.dual_bound_progress.copy()
+        # Initial dual bound is set to inf or -inf. To calculate dual integral, we set
+        # initial_dual_bound to 10% greater or smaller than the first_found_dual_bound.
+        # TODO: check if the calculation of initial_dual_bound needs to be modified.
+        for dual_bound in dual_bound_progress:
+            if dual_bound != dual_bound_progress[0]:
+                break
+        for i in range(len(dual_bound_progress)):
+            if dual_bound_progress[i] == self.dual_bound_progress[0]:
+                dual_bound_progress[i] = dual_bound * (
+                    1
+                    - self.config.initial_bound_coef
+                    * self.objective_sense
+                    * math.copysign(1, dual_bound)
+                )
+            else:
+                break
+        for i in range(len(dual_bound_progress)):
+            if i == 0:
+                dual_integral += abs(dual_bound_progress[i] - self.dual_bound) * (
+                    self.dual_bound_progress_time[i]
+                )
+            else:
+                dual_integral += abs(dual_bound_progress[i] - self.dual_bound) * (
+                    self.dual_bound_progress_time[i]
+                    - self.dual_bound_progress_time[i - 1]
+                )
+        self.config.logger.info(
+            ' {:<25}:   {:>7.4f} '.format('Dual integral', dual_integral)
+        )
+        return dual_integral
+
+    def get_primal_integral(self):
+        """Calculate the primal integral.
+        Ref: The confined primal integral. [http://www.optimization-online.org/DB_FILE/2020/07/7910.pdf]
+
+        Returns
+        -------
+        float
+            The primal integral.
+        """
+        primal_integral = 0
+        primal_bound_progress = self.primal_bound_progress.copy()
+        # Initial primal bound is set to inf or -inf. To calculate primal integral, we set
+        # initial_primal_bound to 10% greater or smaller than the first_found_primal_bound.
+        # TODO: check if the calculation of initial_primal_bound needs to be modified.
+        for primal_bound in primal_bound_progress:
+            if primal_bound != primal_bound_progress[0]:
+                break
+        for i in range(len(primal_bound_progress)):
+            if primal_bound_progress[i] == self.primal_bound_progress[0]:
+                primal_bound_progress[i] = primal_bound * (
+                    1
+                    + self.config.initial_bound_coef
+                    * self.objective_sense
+                    * math.copysign(1, primal_bound)
+                )
+            else:
+                break
+        for i in range(len(primal_bound_progress)):
+            if i == 0:
+                primal_integral += abs(primal_bound_progress[i] - self.primal_bound) * (
+                    self.primal_bound_progress_time[i]
+                )
+            else:
+                primal_integral += abs(primal_bound_progress[i] - self.primal_bound) * (
+                    self.primal_bound_progress_time[i]
+                    - self.primal_bound_progress_time[i - 1]
+                )
+
+        self.config.logger.inf

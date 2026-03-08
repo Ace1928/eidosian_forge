@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_educational_documentation.py
+KIND: code
+
+import collections
+from typing import Optional
+import regex
+import tiktoken
+Train a BPE tokeniser on some data!

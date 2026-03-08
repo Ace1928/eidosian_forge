@@ -1,0 +1,667 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_nmf.py
+KIND: code
+
+""" Non-negative matrix factorization.
+"""
+# Author: Vlad Niculae
+#         Lars Buitinck
+#         Mathieu Blondel <mathieu@mblondel.org>
+#         Tom Dupre la Tour
+# License: BSD 3 clause
+
+import itertools
+import time
+import warnings
+from abc import ABC
+from math import sqrt
+from numbers import Integral, Real
+
+import numpy as np
+import scipy.sparse as sp
+from scipy import linalg
+
+from .._config import config_context
+from ..base import (
+    BaseEstimator,
+    ClassNamePrefixFeaturesOutMixin,
+    TransformerMixin,
+    _fit_context,
+)
+from ..exceptions import ConvergenceWarning
+from ..utils import check_array, check_random_state, gen_batches, metadata_routing
+from ..utils._param_validation import (
+    Hidden,
+    Interval,
+    StrOptions,
+    validate_params,
+)
+from ..utils.extmath import randomized_svd, safe_sparse_dot, squared_norm
+from ..utils.validation import (
+    check_is_fitted,
+    check_non_negative,
+)
+from ._cdnmf_fast import _update_cdnmf_fast
+
+EPSILON = np.finfo(np.float32).eps
+
+
+def norm(x):
+    """Dot product-based Euclidean norm implementation.
+
+    See: http://fa.bianp.net/blog/2011/computing-the-vector-norm/
+
+    Parameters
+    ----------
+    x : array-like
+        Vector for which to compute the norm.
+    """
+    return sqrt(squared_norm(x))
+
+
+def trace_dot(X, Y):
+    """Trace of np.dot(X, Y.T).
+
+    Parameters
+    ----------
+    X : array-like
+        First matrix.
+    Y : array-like
+        Second matrix.
+    """
+    return np.dot(X.ravel(), Y.ravel())
+
+
+def _check_init(A, shape, whom):
+    A = check_array(A)
+    if shape[0] != "auto" and A.shape[0] != shape[0]:
+        raise ValueError(
+            f"Array with wrong first dimension passed to {whom}. Expected {shape[0]}, "
+            f"but got {A.shape[0]}."
+        )
+    if shape[1] != "auto" and A.shape[1] != shape[1]:
+        raise ValueError(
+            f"Array with wrong second dimension passed to {whom}. Expected {shape[1]}, "
+            f"but got {A.shape[1]}."
+        )
+    check_non_negative(A, whom)
+    if np.max(A) == 0:
+        raise ValueError(f"Array passed to {whom} is full of zeros.")
+
+
+def _beta_divergence(X, W, H, beta, square_root=False):
+    """Compute the beta-divergence of X and dot(W, H).
+
+    Parameters
+    ----------
+    X : float or array-like of shape (n_samples, n_features)
+
+    W : float or array-like of shape (n_samples, n_components)
+
+    H : float or array-like of shape (n_components, n_features)
+
+    beta : float or {'frobenius', 'kullback-leibler', 'itakura-saito'}
+        Parameter of the beta-divergence.
+        If beta == 2, this is half the Frobenius *squared* norm.
+        If beta == 1, this is the generalized Kullback-Leibler divergence.
+        If beta == 0, this is the Itakura-Saito divergence.
+        Else, this is the general beta-divergence.
+
+    square_root : bool, default=False
+        If True, return np.sqrt(2 * res)
+        For beta == 2, it corresponds to the Frobenius norm.
+
+    Returns
+    -------
+        res : float
+            Beta divergence of X and np.dot(X, H).
+    """
+    beta = _beta_loss_to_float(beta)
+
+    # The method can be called with scalars
+    if not sp.issparse(X):
+        X = np.atleast_2d(X)
+    W = np.atleast_2d(W)
+    H = np.atleast_2d(H)
+
+    # Frobenius norm
+    if beta == 2:
+        # Avoid the creation of the dense np.dot(W, H) if X is sparse.
+        if sp.issparse(X):
+            norm_X = np.dot(X.data, X.data)
+            norm_WH = trace_dot(np.linalg.multi_dot([W.T, W, H]), H)
+            cross_prod = trace_dot((X @ H.T), W)
+            res = (norm_X + norm_WH - 2.0 * cross_prod) / 2.0
+        else:
+            res = squared_norm(X - np.dot(W, H)) / 2.0
+
+        if square_root:
+            return np.sqrt(res * 2)
+        else:
+            return res
+
+    if sp.issparse(X):
+        # compute np.dot(W, H) only where X is nonzero
+        WH_data = _special_sparse_dot(W, H, X).data
+        X_data = X.data
+    else:
+        WH = np.dot(W, H)
+        WH_data = WH.ravel()
+        X_data = X.ravel()
+
+    # do not affect the zeros: here 0 ** (-1) = 0 and not infinity
+    indices = X_data > EPSILON
+    WH_data = WH_data[indices]
+    X_data = X_data[indices]
+
+    # used to avoid division by zero
+    WH_data[WH_data < EPSILON] = EPSILON
+
+    # generalized Kullback-Leibler divergence
+    if beta == 1:
+        # fast and memory efficient computation of np.sum(np.dot(W, H))
+        sum_WH = np.dot(np.sum(W, axis=0), np.sum(H, axis=1))
+        # computes np.sum(X * log(X / WH)) only where X is nonzero
+        div = X_data / WH_data
+        res = np.dot(X_data, np.log(div))
+        # add full np.sum(np.dot(W, H)) - np.sum(X)
+        res += sum_WH - X_data.sum()
+
+    # Itakura-Saito divergence
+    elif beta == 0:
+        div = X_data / WH_data
+        res = np.sum(div) - np.prod(X.shape) - np.sum(np.log(div))
+
+    # beta-divergence, beta not in (0, 1, 2)
+    else:
+        if sp.issparse(X):
+            # slow loop, but memory efficient computation of :
+            # np.sum(np.dot(W, H) ** beta)
+            sum_WH_beta = 0
+            for i in range(X.shape[1]):
+                sum_WH_beta += np.sum(np.dot(W, H[:, i]) ** beta)
+
+        else:
+            sum_WH_beta = np.sum(WH**beta)
+
+        sum_X_WH = np.dot(X_data, WH_data ** (beta - 1))
+        res = (X_data**beta).sum() - beta * sum_X_WH
+        res += sum_WH_beta * (beta - 1)
+        res /= beta * (beta - 1)
+
+    if square_root:
+        res = max(res, 0)  # avoid negative number due to rounding errors
+        return np.sqrt(2 * res)
+    else:
+        return res
+
+
+def _special_sparse_dot(W, H, X):
+    """Computes np.dot(W, H), only where X is non zero."""
+    if sp.issparse(X):
+        ii, jj = X.nonzero()
+        n_vals = ii.shape[0]
+        dot_vals = np.empty(n_vals)
+        n_components = W.shape[1]
+
+        batch_size = max(n_components, n_vals // n_components)
+        for start in range(0, n_vals, batch_size):
+            batch = slice(start, start + batch_size)
+            dot_vals[batch] = np.multiply(W[ii[batch], :], H.T[jj[batch], :]).sum(
+                axis=1
+            )
+
+        WH = sp.coo_matrix((dot_vals, (ii, jj)), shape=X.shape)
+        return WH.tocsr()
+    else:
+        return np.dot(W, H)
+
+
+def _beta_loss_to_float(beta_loss):
+    """Convert string beta_loss to float."""
+    beta_loss_map = {"frobenius": 2, "kullback-leibler": 1, "itakura-saito": 0}
+    if isinstance(beta_loss, str):
+        beta_loss = beta_loss_map[beta_loss]
+    return beta_loss
+
+
+def _initialize_nmf(X, n_components, init=None, eps=1e-6, random_state=None):
+    """Algorithms for NMF initialization.
+
+    Computes an initial guess for the non-negative
+    rank k matrix approximation for X: X = WH.
+
+    Parameters
+    ----------
+    X : array-like of shape (n_samples, n_features)
+        The data matrix to be decomposed.
+
+    n_components : int
+        The number of components desired in the approximation.
+
+    init :  {'random', 'nndsvd', 'nndsvda', 'nndsvdar'}, default=None
+        Method used to initialize the procedure.
+        Valid options:
+
+        - None: 'nndsvda' if n_components <= min(n_samples, n_features),
+            otherwise 'random'.
+
+        - 'random': non-negative random matrices, scaled with:
+            sqrt(X.mean() / n_components)
+
+        - 'nndsvd': Nonnegative Double Singular Value Decomposition (NNDSVD)
+            initialization (better for sparseness)
+
+        - 'nndsvda': NNDSVD with zeros filled with the average of X
+            (better when sparsity is not desired)
+
+        - 'nndsvdar': NNDSVD with zeros filled with small random values
+            (generally faster, less accurate alternative to NNDSVDa
+            for when sparsity is not desired)
+
+        - 'custom': use custom matrices W and H
+
+        .. versionchanged:: 1.1
+            When `init=None` and n_components is less than n_samples and n_features
+            defaults to `nndsvda` instead of `nndsvd`.
+
+    eps : float, default=1e-6
+        Truncate all values less then this in output to zero.
+
+    random_state : int, RandomState instance or None, default=None
+        Used when ``init`` == 'nndsvdar' or 'random'. Pass an int for
+        reproducible results across multiple function calls.
+        See :term:`Glossary <random_state>`.
+
+    Returns
+    -------
+    W : array-like of shape (n_samples, n_components)
+        Initial guesses for solving X ~= WH.
+
+    H : array-like of shape (n_components, n_features)
+        Initial guesses for solving X ~= WH.
+
+    References
+    ----------
+    C. Boutsidis, E. Gallopoulos: SVD based initialization: A head start for
+    nonnegative matrix factorization - Pattern Recognition, 2008
+    http://tinyurl.com/nndsvd
+    """
+    check_non_negative(X, "NMF initialization")
+    n_samples, n_features = X.shape
+
+    if (
+        init is not None
+        and init != "random"
+        and n_components > min(n_samples, n_features)
+    ):
+        raise ValueError(
+            "init = '{}' can only be used when "
+            "n_components <= min(n_samples, n_features)".format(init)
+        )
+
+    if init is None:
+        if n_components <= min(n_samples, n_features):
+            init = "nndsvda"
+        else:
+            init = "random"
+
+    # Random initialization
+    if init == "random":
+        avg = np.sqrt(X.mean() / n_components)
+        rng = check_random_state(random_state)
+        H = avg * rng.standard_normal(size=(n_components, n_features)).astype(
+            X.dtype, copy=False
+        )
+        W = avg * rng.standard_normal(size=(n_samples, n_components)).astype(
+            X.dtype, copy=False
+        )
+        np.abs(H, out=H)
+        np.abs(W, out=W)
+        return W, H
+
+    # NNDSVD initialization
+    U, S, V = randomized_svd(X, n_components, random_state=random_state)
+    W = np.zeros_like(U)
+    H = np.zeros_like(V)
+
+    # The leading singular triplet is non-negative
+    # so it can be used as is for initialization.
+    W[:, 0] = np.sqrt(S[0]) * np.abs(U[:, 0])
+    H[0, :] = np.sqrt(S[0]) * np.abs(V[0, :])
+
+    for j in range(1, n_components):
+        x, y = U[:, j], V[j, :]
+
+        # extract positive and negative parts of column vectors
+        x_p, y_p = np.maximum(x, 0), np.maximum(y, 0)
+        x_n, y_n = np.abs(np.minimum(x, 0)), np.abs(np.minimum(y, 0))
+
+        # and their norms
+        x_p_nrm, y_p_nrm = norm(x_p), norm(y_p)
+        x_n_nrm, y_n_nrm = norm(x_n), norm(y_n)
+
+        m_p, m_n = x_p_nrm * y_p_nrm, x_n_nrm * y_n_nrm
+
+        # choose update
+        if m_p > m_n:
+            u = x_p / x_p_nrm
+            v = y_p / y_p_nrm
+            sigma = m_p
+        else:
+            u = x_n / x_n_nrm
+            v = y_n / y_n_nrm
+            sigma = m_n
+
+        lbd = np.sqrt(S[j] * sigma)
+        W[:, j] = lbd * u
+        H[j, :] = lbd * v
+
+    W[W < eps] = 0
+    H[H < eps] = 0
+
+    if init == "nndsvd":
+        pass
+    elif init == "nndsvda":
+        avg = X.mean()
+        W[W == 0] = avg
+        H[H == 0] = avg
+    elif init == "nndsvdar":
+        rng = check_random_state(random_state)
+        avg = X.mean()
+        W[W == 0] = abs(avg * rng.standard_normal(size=len(W[W == 0])) / 100)
+        H[H == 0] = abs(avg * rng.standard_normal(size=len(H[H == 0])) / 100)
+    else:
+        raise ValueError(
+            "Invalid init parameter: got %r instead of one of %r"
+            % (init, (None, "random", "nndsvd", "nndsvda", "nndsvdar"))
+        )
+
+    return W, H
+
+
+def _update_coordinate_descent(X, W, Ht, l1_reg, l2_reg, shuffle, random_state):
+    """Helper function for _fit_coordinate_descent.
+
+    Update W to minimize the objective function, iterating once over all
+    coordinates. By symmetry, to update H, one can call
+    _update_coordinate_descent(X.T, Ht, W, ...).
+
+    """
+    n_components = Ht.shape[1]
+
+    HHt = np.dot(Ht.T, Ht)
+    XHt = safe_sparse_dot(X, Ht)
+
+    # L2 regularization corresponds to increase of the diagonal of HHt
+    if l2_reg != 0.0:
+        # adds l2_reg only on the diagonal
+        HHt.flat[:: n_components + 1] += l2_reg
+    # L1 regularization corresponds to decrease of each element of XHt
+    if l1_reg != 0.0:
+        XHt -= l1_reg
+
+    if shuffle:
+        permutation = random_state.permutation(n_components)
+    else:
+        permutation = np.arange(n_components)
+    # The following seems to be required on 64-bit Windows w/ Python 3.5.
+    permutation = np.asarray(permutation, dtype=np.intp)
+    return _update_cdnmf_fast(W, HHt, XHt, permutation)
+
+
+def _fit_coordinate_descent(
+    X,
+    W,
+    H,
+    tol=1e-4,
+    max_iter=200,
+    l1_reg_W=0,
+    l1_reg_H=0,
+    l2_reg_W=0,
+    l2_reg_H=0,
+    update_H=True,
+    verbose=0,
+    shuffle=False,
+    random_state=None,
+):
+    """Compute Non-negative Matrix Factorization (NMF) with Coordinate Descent
+
+    The objective function is minimized with an alternating minimization of W
+    and H. Each minimization is done with a cyclic (up to a permutation of the
+    features) Coordinate Descent.
+
+    Parameters
+    ----------
+    X : array-like of shape (n_samples, n_features)
+        Constant matrix.
+
+    W : array-like of shape (n_samples, n_components)
+        Initial guess for the solution.
+
+    H : array-like of shape (n_components, n_features)
+        Initial guess for the solution.
+
+    tol : float, default=1e-4
+        Tolerance of the stopping condition.
+
+    max_iter : int, default=200
+        Maximum number of iterations before timing out.
+
+    l1_reg_W : float, default=0.
+        L1 regularization parameter for W.
+
+    l1_reg_H : float, default=0.
+        L1 regularization parameter for H.
+
+    l2_reg_W : float, default=0.
+        L2 regularization parameter for W.
+
+    l2_reg_H : float, default=0.
+        L2 regularization parameter for H.
+
+    update_H : bool, default=True
+        Set to True, both W and H will be estimated from initial guesses.
+        Set to False, only W will be estimated.
+
+    verbose : int, default=0
+        The verbosity level.
+
+    shuffle : bool, default=False
+        If true, randomize the order of coordinates in the CD solver.
+
+    random_state : int, RandomState instance or None, default=None
+        Used to randomize the coordinates in the CD solver, when
+        ``shuffle`` is set to ``True``. Pass an int for reproducible
+        results across multiple function calls.
+        See :term:`Glossary <random_state>`.
+
+    Returns
+    -------
+    W : ndarray of shape (n_samples, n_components)
+        Solution to the non-negative least squares problem.
+
+    H : ndarray of shape (n_components, n_features)
+        Solution to the non-negative least squares problem.
+
+    n_iter : int
+        The number of iterations done by the algorithm.
+
+    References
+    ----------
+    .. [1] :doi:`"Fast local algorithms for large scale nonnegative matrix and tensor
+       factorizations" <10.1587/transfun.E92.A.708>`
+       Cichocki, Andrzej, and P. H. A. N. Anh-Huy. IEICE transactions on fundamentals
+       of electronics, communications and computer sciences 92.3: 708-721, 2009.
+    """
+    # so W and Ht are both in C order in memory
+    Ht = check_array(H.T, order="C")
+    X = check_array(X, accept_sparse="csr")
+
+    rng = check_random_state(random_state)
+
+    for n_iter in range(1, max_iter + 1):
+        violation = 0.0
+
+        # Update W
+        violation += _update_coordinate_descent(
+            X, W, Ht, l1_reg_W, l2_reg_W, shuffle, rng
+        )
+        # Update H
+        if update_H:
+            violation += _update_coordinate_descent(
+                X.T, Ht, W, l1_reg_H, l2_reg_H, shuffle, rng
+            )
+
+        if n_iter == 1:
+            violation_init = violation
+
+        if violation_init == 0:
+            break
+
+        if verbose:
+            print("violation:", violation / violation_init)
+
+        if violation / violation_init <= tol:
+            if verbose:
+                print("Converged at iteration", n_iter + 1)
+            break
+
+    return W, Ht.T, n_iter
+
+
+def _multiplicative_update_w(
+    X,
+    W,
+    H,
+    beta_loss,
+    l1_reg_W,
+    l2_reg_W,
+    gamma,
+    H_sum=None,
+    HHt=None,
+    XHt=None,
+    update_H=True,
+):
+    """Update W in Multiplicative Update NMF."""
+    if beta_loss == 2:
+        # Numerator
+        if XHt is None:
+            XHt = safe_sparse_dot(X, H.T)
+        if update_H:
+            # avoid a copy of XHt, which will be re-computed (update_H=True)
+            numerator = XHt
+        else:
+            # preserve the XHt, which is not re-computed (update_H=False)
+            numerator = XHt.copy()
+
+        # Denominator
+        if HHt is None:
+            HHt = np.dot(H, H.T)
+        denominator = np.dot(W, HHt)
+
+    else:
+        # Numerator
+        # if X is sparse, compute WH only where X is non zero
+        WH_safe_X = _special_sparse_dot(W, H, X)
+        if sp.issparse(X):
+            WH_safe_X_data = WH_safe_X.data
+            X_data = X.data
+        else:
+            WH_safe_X_data = WH_safe_X
+            X_data = X
+            # copy used in the Denominator
+            WH = WH_safe_X.copy()
+            if beta_loss - 1.0 < 0:
+                WH[WH < EPSILON] = EPSILON
+
+        # to avoid taking a negative power of zero
+        if beta_loss - 2.0 < 0:
+            WH_safe_X_data[WH_safe_X_data < EPSILON] = EPSILON
+
+        if beta_loss == 1:
+            np.divide(X_data, WH_safe_X_data, out=WH_safe_X_data)
+        elif beta_loss == 0:
+            # speeds up computation time
+            # refer to /numpy/numpy/issues/9363
+            WH_safe_X_data **= -1
+            WH_safe_X_data **= 2
+            # element-wise multiplication
+            WH_safe_X_data *= X_data
+        else:
+            WH_safe_X_data **= beta_loss - 2
+            # element-wise multiplication
+            WH_safe_X_data *= X_data
+
+        # here numerator = dot(X * (dot(W, H) ** (beta_loss - 2)), H.T)
+        numerator = safe_sparse_dot(WH_safe_X, H.T)
+
+        # Denominator
+        if beta_loss == 1:
+            if H_sum is None:
+                H_sum = np.sum(H, axis=1)  # shape(n_components, )
+            denominator = H_sum[np.newaxis, :]
+
+        else:
+            # computation of WHHt = dot(dot(W, H) ** beta_loss - 1, H.T)
+            if sp.issparse(X):
+                # memory efficient computation
+                # (compute row by row, avoiding the dense matrix WH)
+                WHHt = np.empty(W.shape)
+                for i in range(X.shape[0]):
+                    WHi = np.dot(W[i, :], H)
+                    if beta_loss - 1 < 0:
+                        WHi[WHi < EPSILON] = EPSILON
+                    WHi **= beta_loss - 1
+                    WHHt[i, :] = np.dot(WHi, H.T)
+            else:
+                WH **= beta_loss - 1
+                WHHt = np.dot(WH, H.T)
+            denominator = WHHt
+
+    # Add L1 and L2 regularization
+    if l1_reg_W > 0:
+        denominator += l1_reg_W
+    if l2_reg_W > 0:
+        denominator = denominator + l2_reg_W * W
+    denominator[denominator == 0] = EPSILON
+
+    numerator /= denominator
+    delta_W = numerator
+
+    # gamma is in ]0, 1]
+    if gamma != 1:
+        delta_W **= gamma
+
+    W *= delta_W
+
+    return W, H_sum, HHt, XHt
+
+
+def _multiplicative_update_h(
+    X, W, H, beta_loss, l1_reg_H, l2_reg_H, gamma, A=None, B=None, rho=None
+):
+    """update H in Multiplicative Update NMF."""
+    if beta_loss == 2:
+        numerator = safe_sparse_dot(W.T, X)
+        denominator = np.linalg.multi_dot([W.T, W, H])
+
+    else:
+        # Numerator
+        WH_safe_X = _special_sparse_dot(W, H, X)
+        if sp.issparse(X):
+            WH_safe_X_data = WH_safe_X.data
+            X_data = X.data
+        else:
+            WH_safe_X_data = WH_safe_X
+            X_data = X
+            # copy used in the Denominator
+            WH = WH_safe_X.copy()
+            if beta_loss - 1.0 < 0:
+                WH[WH < EPSILON] = EPSILON
+
+        # to avoid division by zero
+        if beta_loss - 2.0 < 0:
+            WH_safe_X_data[WH_safe_X_data < EPSILON] = EPSILON
+
+        if beta_loss == 1:
+            np.divide(X_data, WH_safe_X_data,

@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/FeatMapUtils_documentation.py
+KIND: code
+
+import copy
+from rdkit.Chem.FeatMaps import FeatMaps
+ Check that dirMergeMode is valid

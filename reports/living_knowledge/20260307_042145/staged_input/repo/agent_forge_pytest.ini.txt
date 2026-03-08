@@ -1,0 +1,6 @@
+SOURCE_PATH: agent_forge/pytest.ini
+KIND: config
+
+[pytest]
+norecursedirs = examples
+asyncio_default_fixture_loop_scope = function

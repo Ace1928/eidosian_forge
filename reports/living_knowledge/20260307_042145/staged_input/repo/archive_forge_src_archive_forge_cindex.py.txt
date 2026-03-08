@@ -1,0 +1,675 @@
+SOURCE_PATH: archive_forge/src/archive_forge/cindex.py
+KIND: code
+
+# ===- cindex.py - Python Indexing Library Bindings -----------*- python -*--===#
+#
+# Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+# See https://llvm.org/LICENSE.txt for license information.
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+#
+# ===------------------------------------------------------------------------===#
+
+r"""
+Clang Indexing Library Bindings
+===============================
+
+This module provides an interface to the Clang indexing library. It is a
+low-level interface to the indexing library which attempts to match the Clang
+API directly while also being "pythonic". Notable differences from the C API
+are:
+
+ * string results are returned as Python strings, not CXString objects.
+
+ * null cursors are translated to None.
+
+ * access to child cursors is done via iteration, not visitation.
+
+The major indexing objects are:
+
+  Index
+
+    The top-level object which manages some global library state.
+
+  TranslationUnit
+
+    High-level object encapsulating the AST for a single translation unit. These
+    can be loaded from .ast files or parsed on the fly.
+
+  Cursor
+
+    Generic object for representing a node in the AST.
+
+  SourceRange, SourceLocation, and File
+
+    Objects representing information about the input source.
+
+Most object information is exposed using properties, when the underlying API
+call is efficient.
+"""
+from __future__ import absolute_import, division, print_function
+
+# TODO
+# ====
+#
+# o API support for invalid translation units. Currently we can't even get the
+#   diagnostics on failure because they refer to locations in an object that
+#   will have been invalidated.
+#
+# o fix memory management issues (currently client must hold on to index and
+#   translation unit, or risk crashes).
+#
+# o expose code completion APIs.
+#
+# o cleanup ctypes wrapping, would be nice to separate the ctypes details more
+#   clearly, and hide from the external interface (i.e., help(cindex)).
+#
+# o implement additional SourceLocation, SourceRange, and File methods.
+
+from ctypes import *
+
+import clang.enumerations
+
+import collections.abc
+import os
+
+
+# Python 3 strings are unicode, translate them to/from utf8 for C-interop.
+class c_interop_string(c_char_p):
+    def __init__(self, p=None):
+        if p is None:
+            p = ""
+        if isinstance(p, str):
+            p = p.encode("utf8")
+        super(c_char_p, self).__init__(p)
+
+    def __str__(self):
+        return self.value
+
+    @property
+    def value(self):
+        if super(c_char_p, self).value is None:
+            return None
+        return super(c_char_p, self).value.decode("utf8")
+
+    @classmethod
+    def from_param(cls, param):
+        if isinstance(param, str):
+            return cls(param)
+        if isinstance(param, bytes):
+            return cls(param)
+        if param is None:
+            # Support passing null to C functions expecting char arrays
+            return None
+        raise TypeError(
+            "Cannot convert '{}' to '{}'".format(type(param).__name__, cls.__name__)
+        )
+
+    @staticmethod
+    def to_python_string(x, *args):
+        return x.value
+
+
+def b(x):
+    if isinstance(x, bytes):
+        return x
+    return x.encode("utf8")
+
+
+# ctypes doesn't implicitly convert c_void_p to the appropriate wrapper
+# object. This is a problem, because it means that from_parameter will see an
+# integer and pass the wrong value on platforms where int != void*. Work around
+# this by marshalling object arguments as void**.
+c_object_p = POINTER(c_void_p)
+
+callbacks = {}
+
+### Exception Classes ###
+
+
+class TranslationUnitLoadError(Exception):
+    """Represents an error that occurred when loading a TranslationUnit.
+
+    This is raised in the case where a TranslationUnit could not be
+    instantiated due to failure in the libclang library.
+
+    FIXME: Make libclang expose additional error information in this scenario.
+    """
+
+    pass
+
+
+class TranslationUnitSaveError(Exception):
+    """Represents an error that occurred when saving a TranslationUnit.
+
+    Each error has associated with it an enumerated value, accessible under
+    e.save_error. Consumers can compare the value with one of the ERROR_
+    constants in this class.
+    """
+
+    # Indicates that an unknown error occurred. This typically indicates that
+    # I/O failed during save.
+    ERROR_UNKNOWN = 1
+
+    # Indicates that errors during translation prevented saving. The errors
+    # should be available via the TranslationUnit's diagnostics.
+    ERROR_TRANSLATION_ERRORS = 2
+
+    # Indicates that the translation unit was somehow invalid.
+    ERROR_INVALID_TU = 3
+
+    def __init__(self, enumeration, message):
+        assert isinstance(enumeration, int)
+
+        if enumeration < 1 or enumeration > 3:
+            raise Exception(
+                "Encountered undefined TranslationUnit save error "
+                "constant: %d. Please file a bug to have this "
+                "value supported." % enumeration
+            )
+
+        self.save_error = enumeration
+        Exception.__init__(self, "Error %d: %s" % (enumeration, message))
+
+
+### Structures and Utility Classes ###
+
+
+class CachedProperty:
+    """Decorator that lazy-loads the value of a property.
+
+    The first time the property is accessed, the original property function is
+    executed. The value it returns is set as the new value of that instance's
+    property, replacing the original method.
+    """
+
+    def __init__(self, wrapped):
+        self.wrapped = wrapped
+        try:
+            self.__doc__ = wrapped.__doc__
+        except:
+            pass
+
+    def __get__(self, instance, instance_type=None):
+        if instance is None:
+            return self
+
+        value = self.wrapped(instance)
+        setattr(instance, self.wrapped.__name__, value)
+
+        return value
+
+
+class _CXString(Structure):
+    """Helper for transforming CXString results."""
+
+    _fields_ = [("spelling", c_char_p), ("free", c_int)]
+
+    def __del__(self):
+        conf.lib.clang_disposeString(self)
+
+    @staticmethod
+    def from_result(res, fn=None, args=None):
+        assert isinstance(res, _CXString)
+        return conf.lib.clang_getCString(res)
+
+
+class SourceLocation(Structure):
+    """
+    A SourceLocation represents a particular location within a source file.
+    """
+
+    _fields_ = [("ptr_data", c_void_p * 2), ("int_data", c_uint)]
+    _data = None
+
+    def _get_instantiation(self):
+        if self._data is None:
+            f, l, c, o = c_object_p(), c_uint(), c_uint(), c_uint()
+            conf.lib.clang_getInstantiationLocation(
+                self, byref(f), byref(l), byref(c), byref(o)
+            )
+            if f:
+                f = File(f)
+            else:
+                f = None
+            self._data = (f, int(l.value), int(c.value), int(o.value))
+        return self._data
+
+    @staticmethod
+    def from_position(tu, file, line, column):
+        """
+        Retrieve the source location associated with a given file/line/column in
+        a particular translation unit.
+        """
+        return conf.lib.clang_getLocation(tu, file, line, column)
+
+    @staticmethod
+    def from_offset(tu, file, offset):
+        """Retrieve a SourceLocation from a given character offset.
+
+        tu -- TranslationUnit file belongs to
+        file -- File instance to obtain offset from
+        offset -- Integer character offset within file
+        """
+        return conf.lib.clang_getLocationForOffset(tu, file, offset)
+
+    @property
+    def file(self):
+        """Get the file represented by this source location."""
+        return self._get_instantiation()[0]
+
+    @property
+    def line(self):
+        """Get the line represented by this source location."""
+        return self._get_instantiation()[1]
+
+    @property
+    def column(self):
+        """Get the column represented by this source location."""
+        return self._get_instantiation()[2]
+
+    @property
+    def offset(self):
+        """Get the file offset represented by this source location."""
+        return self._get_instantiation()[3]
+
+    @property
+    def is_in_system_header(self):
+        """Returns true if the given source location is in a system header."""
+        return conf.lib.clang_Location_isInSystemHeader(self)
+
+    def __eq__(self, other):
+        return conf.lib.clang_equalLocations(self, other)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __repr__(self):
+        if self.file:
+            filename = self.file.name
+        else:
+            filename = None
+        return "<SourceLocation file %r, line %r, column %r>" % (
+            filename,
+            self.line,
+            self.column,
+        )
+
+
+class SourceRange(Structure):
+    """
+    A SourceRange describes a range of source locations within the source
+    code.
+    """
+
+    _fields_ = [
+        ("ptr_data", c_void_p * 2),
+        ("begin_int_data", c_uint),
+        ("end_int_data", c_uint),
+    ]
+
+    # FIXME: Eliminate this and make normal constructor? Requires hiding ctypes
+    # object.
+    @staticmethod
+    def from_locations(start, end):
+        return conf.lib.clang_getRange(start, end)
+
+    @property
+    def start(self):
+        """
+        Return a SourceLocation representing the first character within a
+        source range.
+        """
+        return conf.lib.clang_getRangeStart(self)
+
+    @property
+    def end(self):
+        """
+        Return a SourceLocation representing the last character within a
+        source range.
+        """
+        return conf.lib.clang_getRangeEnd(self)
+
+    def __eq__(self, other):
+        return conf.lib.clang_equalRanges(self, other)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __contains__(self, other):
+        """Useful to detect the Token/Lexer bug"""
+        if not isinstance(other, SourceLocation):
+            return False
+        if other.file is None and self.start.file is None:
+            pass
+        elif (
+            self.start.file.name != other.file.name
+            or other.file.name != self.end.file.name
+        ):
+            # same file name
+            return False
+        # same file, in between lines
+        if self.start.line < other.line < self.end.line:
+            return True
+        elif self.start.line == other.line:
+            # same file first line
+            if self.start.column <= other.column:
+                return True
+        elif other.line == self.end.line:
+            # same file last line
+            if other.column <= self.end.column:
+                return True
+        return False
+
+    def __repr__(self):
+        return "<SourceRange start %r, end %r>" % (self.start, self.end)
+
+
+class Diagnostic:
+    """
+    A Diagnostic is a single instance of a Clang diagnostic. It includes the
+    diagnostic severity, the message, the location the diagnostic occurred, as
+    well as additional source ranges and associated fix-it hints.
+    """
+
+    Ignored = 0
+    Note = 1
+    Warning = 2
+    Error = 3
+    Fatal = 4
+
+    DisplaySourceLocation = 0x01
+    DisplayColumn = 0x02
+    DisplaySourceRanges = 0x04
+    DisplayOption = 0x08
+    DisplayCategoryId = 0x10
+    DisplayCategoryName = 0x20
+    _FormatOptionsMask = 0x3F
+
+    def __init__(self, ptr):
+        self.ptr = ptr
+
+    def __del__(self):
+        conf.lib.clang_disposeDiagnostic(self)
+
+    @property
+    def severity(self):
+        return conf.lib.clang_getDiagnosticSeverity(self)
+
+    @property
+    def location(self):
+        return conf.lib.clang_getDiagnosticLocation(self)
+
+    @property
+    def spelling(self):
+        return conf.lib.clang_getDiagnosticSpelling(self)
+
+    @property
+    def ranges(self):
+        class RangeIterator:
+            def __init__(self, diag):
+                self.diag = diag
+
+            def __len__(self):
+                return int(conf.lib.clang_getDiagnosticNumRanges(self.diag))
+
+            def __getitem__(self, key):
+                if key >= len(self):
+                    raise IndexError
+                return conf.lib.clang_getDiagnosticRange(self.diag, key)
+
+        return RangeIterator(self)
+
+    @property
+    def fixits(self):
+        class FixItIterator:
+            def __init__(self, diag):
+                self.diag = diag
+
+            def __len__(self):
+                return int(conf.lib.clang_getDiagnosticNumFixIts(self.diag))
+
+            def __getitem__(self, key):
+                range = SourceRange()
+                value = conf.lib.clang_getDiagnosticFixIt(self.diag, key, byref(range))
+                if len(value) == 0:
+                    raise IndexError
+
+                return FixIt(range, value)
+
+        return FixItIterator(self)
+
+    @property
+    def children(self):
+        class ChildDiagnosticsIterator:
+            def __init__(self, diag):
+                self.diag_set = conf.lib.clang_getChildDiagnostics(diag)
+
+            def __len__(self):
+                return int(conf.lib.clang_getNumDiagnosticsInSet(self.diag_set))
+
+            def __getitem__(self, key):
+                diag = conf.lib.clang_getDiagnosticInSet(self.diag_set, key)
+                if not diag:
+                    raise IndexError
+                return Diagnostic(diag)
+
+        return ChildDiagnosticsIterator(self)
+
+    @property
+    def category_number(self):
+        """The category number for this diagnostic or 0 if unavailable."""
+        return conf.lib.clang_getDiagnosticCategory(self)
+
+    @property
+    def category_name(self):
+        """The string name of the category for this diagnostic."""
+        return conf.lib.clang_getDiagnosticCategoryText(self)
+
+    @property
+    def option(self):
+        """The command-line option that enables this diagnostic."""
+        return conf.lib.clang_getDiagnosticOption(self, None)
+
+    @property
+    def disable_option(self):
+        """The command-line option that disables this diagnostic."""
+        disable = _CXString()
+        conf.lib.clang_getDiagnosticOption(self, byref(disable))
+        return _CXString.from_result(disable)
+
+    def format(self, options=None):
+        """
+        Format this diagnostic for display. The options argument takes
+        Diagnostic.Display* flags, which can be combined using bitwise OR. If
+        the options argument is not provided, the default display options will
+        be used.
+        """
+        if options is None:
+            options = conf.lib.clang_defaultDiagnosticDisplayOptions()
+        if options & ~Diagnostic._FormatOptionsMask:
+            raise ValueError("Invalid format options")
+        return conf.lib.clang_formatDiagnostic(self, options)
+
+    def __repr__(self):
+        return "<Diagnostic severity %r, location %r, spelling %r>" % (
+            self.severity,
+            self.location,
+            self.spelling,
+        )
+
+    def __str__(self):
+        return self.format()
+
+    def from_param(self):
+        return self.ptr
+
+
+class FixIt:
+    """
+    A FixIt represents a transformation to be applied to the source to
+    "fix-it". The fix-it should be applied by replacing the given source range
+    with the given value.
+    """
+
+    def __init__(self, range, value):
+        self.range = range
+        self.value = value
+
+    def __repr__(self):
+        return "<FixIt range %r, value %r>" % (self.range, self.value)
+
+
+class TokenGroup:
+    """Helper class to facilitate token management.
+
+    Tokens are allocated from libclang in chunks. They must be disposed of as a
+    collective group.
+
+    One purpose of this class is for instances to represent groups of allocated
+    tokens. Each token in a group contains a reference back to an instance of
+    this class. When all tokens from a group are garbage collected, it allows
+    this class to be garbage collected. When this class is garbage collected,
+    it calls the libclang destructor which invalidates all tokens in the group.
+
+    You should not instantiate this class outside of this module.
+    """
+
+    def __init__(self, tu, memory, count):
+        self._tu = tu
+        self._memory = memory
+        self._count = count
+
+    def __del__(self):
+        conf.lib.clang_disposeTokens(self._tu, self._memory, self._count)
+
+    @staticmethod
+    def get_tokens(tu, extent):
+        """Helper method to return all tokens in an extent.
+
+        This functionality is needed multiple places in this module. We define
+        it here because it seems like a logical place.
+        """
+        tokens_memory = POINTER(Token)()
+        tokens_count = c_uint()
+
+        conf.lib.clang_tokenize(tu, extent, byref(tokens_memory), byref(tokens_count))
+
+        count = int(tokens_count.value)
+
+        # If we get no tokens, no memory was allocated. Be sure not to return
+        # anything and potentially call a destructor on nothing.
+        if count < 1:
+            return
+
+        tokens_array = cast(tokens_memory, POINTER(Token * count)).contents
+
+        token_group = TokenGroup(tu, tokens_memory, tokens_count)
+
+        for i in range(0, count):
+            token = Token()
+            token.int_data = tokens_array[i].int_data
+            token.ptr_data = tokens_array[i].ptr_data
+            token._tu = tu
+            token._group = token_group
+
+            yield token
+
+
+class TokenKind:
+    """Describes a specific type of a Token."""
+
+    _value_map = {}  # int -> TokenKind
+
+    def __init__(self, value, name):
+        """Create a new TokenKind instance from a numeric value and a name."""
+        self.value = value
+        self.name = name
+
+    def __repr__(self):
+        return "TokenKind.%s" % (self.name,)
+
+    @staticmethod
+    def from_value(value):
+        """Obtain a registered TokenKind instance from its value."""
+        result = TokenKind._value_map.get(value, None)
+
+        if result is None:
+            raise ValueError("Unknown TokenKind: %d" % value)
+
+        return result
+
+    @staticmethod
+    def register(value, name):
+        """Register a new TokenKind enumeration.
+
+        This should only be called at module load time by code within this
+        package.
+        """
+        if value in TokenKind._value_map:
+            raise ValueError("TokenKind already registered: %d" % value)
+
+        kind = TokenKind(value, name)
+        TokenKind._value_map[value] = kind
+        setattr(TokenKind, name, kind)
+
+
+### Cursor Kinds ###
+class BaseEnumeration:
+    """
+    Common base class for named enumerations held in sync with Index.h values.
+
+    Subclasses must define their own _kinds and _name_map members, as:
+    _kinds = []
+    _name_map = None
+    These values hold the per-subclass instances and value-to-name mappings,
+    respectively.
+
+    """
+
+    def __init__(self, value):
+        if value >= len(self.__class__._kinds):
+            self.__class__._kinds += [None] * (value - len(self.__class__._kinds) + 1)
+        if self.__class__._kinds[value] is not None:
+            raise ValueError(
+                "{0} value {1} already loaded".format(str(self.__class__), value)
+            )
+        self.value = value
+        self.__class__._kinds[value] = self
+        self.__class__._name_map = None
+
+    def from_param(self):
+        return self.value
+
+    @property
+    def name(self):
+        """Get the enumeration name of this cursor kind."""
+        if self._name_map is None:
+            self._name_map = {}
+            for key, value in self.__class__.__dict__.items():
+                if isinstance(value, self.__class__):
+                    self._name_map[value] = key
+        return self._name_map[self]
+
+    @classmethod
+    def from_id(cls, id):
+        if id >= len(cls._kinds) or cls._kinds[id] is None:
+            raise ValueError("Unknown template argument kind %d" % id)
+        return cls._kinds[id]
+
+    def __repr__(self):
+        return "%s.%s" % (
+            self.__class__,
+            self.name,
+        )
+
+
+class CursorKind(BaseEnumeration):
+    """
+    A CursorKind describes the kind of entity that a cursor points to.
+    """
+
+    # The required BaseEnumeration declarations.
+    _kinds = []
+    _name_map = None
+
+    @stati

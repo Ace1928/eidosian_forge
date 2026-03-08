@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_min_dependencies_documentation.py
+KIND: code
+
+import argparse
+from collections import defaultdict
+All minimum dependencies for scikit-learn.

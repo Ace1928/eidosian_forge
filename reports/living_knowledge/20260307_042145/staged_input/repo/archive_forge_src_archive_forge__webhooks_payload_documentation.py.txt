@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_webhooks_payload_documentation.py
+KIND: code
+
+from typing import List, Literal, Optional
+from pydantic import BaseModel
+Contains data structures to parse the webhooks payload.

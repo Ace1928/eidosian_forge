@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/accounts_documentation.py
+KIND: code
+
+from troveclient import base
+from troveclient import common
+Get details of one account.
+
+        :rtype: :class:`Account`.

@@ -1,0 +1,9 @@
+SOURCE_PATH: .eidos_chrome_profile/Subresource Filter/Unindexed Rules/9.64.0/manifest.json
+KIND: config
+
+{
+  "manifest_version": 2,
+  "name": "Subresource Filtering Rules",
+  "ruleset_format": 1,
+  "version": "9.64.0"
+}

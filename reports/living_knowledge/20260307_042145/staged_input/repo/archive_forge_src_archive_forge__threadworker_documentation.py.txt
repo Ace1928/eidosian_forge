@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_threadworker_documentation.py
+KIND: code
+
+from typing import Callable
+from zope.interface import implementer
+from ._convenience import Quit
+from ._ithreads import IExclusiveWorker
+
+        Quit this L{LockWorker}.

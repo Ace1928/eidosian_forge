@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_signalhelper_documentation.py
+KIND: code
+
+from . import _gi
+Same as GObject.Object.emit except there is no need to specify
+            the signal name.

@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/EState_documentation.py
+KIND: code
+
+import numpy
+from rdkit import Chem
+ Example code for calculating E-state indices

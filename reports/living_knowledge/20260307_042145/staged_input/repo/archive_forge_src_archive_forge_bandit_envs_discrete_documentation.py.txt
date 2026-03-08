@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/bandit_envs_discrete_documentation.py
+KIND: code
+
+import copy
+import gymnasium as gym
+from gymnasium.spaces import Box, Discrete
+import numpy as np
+import random
+Wheel bandit environment for 2D contexts
+    (see https://arxiv.org/abs/1802.09127).

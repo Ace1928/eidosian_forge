@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/bitwise_ops_documentation.py
+KIND: code
+
+from tensorflow.python.framework import ops
+from tensorflow.python.ops.gen_bitwise_ops import *
+Operations for manipulating the binary representations of integers.

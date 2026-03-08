@@ -1,0 +1,595 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_xaxis.py
+KIND: code
+
+from plotly.basedatatypes import BaseLayoutHierarchyType as _BaseLayoutHierarchyType
+import copy as _copy
+
+
+class XAxis(_BaseLayoutHierarchyType):
+
+    # class properties
+    # --------------------
+    _parent_path_str = "layout"
+    _path_str = "layout.xaxis"
+    _valid_props = {
+        "anchor",
+        "automargin",
+        "autorange",
+        "autorangeoptions",
+        "autotickangles",
+        "autotypenumbers",
+        "calendar",
+        "categoryarray",
+        "categoryarraysrc",
+        "categoryorder",
+        "color",
+        "constrain",
+        "constraintoward",
+        "dividercolor",
+        "dividerwidth",
+        "domain",
+        "dtick",
+        "exponentformat",
+        "fixedrange",
+        "gridcolor",
+        "griddash",
+        "gridwidth",
+        "hoverformat",
+        "insiderange",
+        "labelalias",
+        "layer",
+        "linecolor",
+        "linewidth",
+        "matches",
+        "maxallowed",
+        "minallowed",
+        "minexponent",
+        "minor",
+        "mirror",
+        "nticks",
+        "overlaying",
+        "position",
+        "range",
+        "rangebreakdefaults",
+        "rangebreaks",
+        "rangemode",
+        "rangeselector",
+        "rangeslider",
+        "scaleanchor",
+        "scaleratio",
+        "separatethousands",
+        "showdividers",
+        "showexponent",
+        "showgrid",
+        "showline",
+        "showspikes",
+        "showticklabels",
+        "showtickprefix",
+        "showticksuffix",
+        "side",
+        "spikecolor",
+        "spikedash",
+        "spikemode",
+        "spikesnap",
+        "spikethickness",
+        "tick0",
+        "tickangle",
+        "tickcolor",
+        "tickfont",
+        "tickformat",
+        "tickformatstopdefaults",
+        "tickformatstops",
+        "ticklabelmode",
+        "ticklabeloverflow",
+        "ticklabelposition",
+        "ticklabelstep",
+        "ticklen",
+        "tickmode",
+        "tickprefix",
+        "ticks",
+        "tickson",
+        "ticksuffix",
+        "ticktext",
+        "ticktextsrc",
+        "tickvals",
+        "tickvalssrc",
+        "tickwidth",
+        "title",
+        "titlefont",
+        "type",
+        "uirevision",
+        "visible",
+        "zeroline",
+        "zerolinecolor",
+        "zerolinewidth",
+    }
+
+    # anchor
+    # ------
+    @property
+    def anchor(self):
+        """
+        If set to an opposite-letter axis id (e.g. `x2`, `y`), this
+        axis is bound to the corresponding opposite-letter axis. If set
+        to "free", this axis' position is determined by `position`.
+
+        The 'anchor' property is an enumeration that may be specified as:
+          - One of the following enumeration values:
+                ['free']
+          - A string that matches one of the following regular expressions:
+                ['^x([2-9]|[1-9][0-9]+)?( domain)?$',
+                '^y([2-9]|[1-9][0-9]+)?( domain)?$']
+
+        Returns
+        -------
+        Any
+        """
+        return self["anchor"]
+
+    @anchor.setter
+    def anchor(self, val):
+        self["anchor"] = val
+
+    # automargin
+    # ----------
+    @property
+    def automargin(self):
+        """
+        Determines whether long tick labels automatically grow the
+        figure margins.
+
+        The 'automargin' property is a flaglist and may be specified
+        as a string containing:
+          - Any combination of ['height', 'width', 'left', 'right', 'top', 'bottom'] joined with '+' characters
+            (e.g. 'height+width')
+            OR exactly one of [True, False] (e.g. 'False')
+
+        Returns
+        -------
+        Any
+        """
+        return self["automargin"]
+
+    @automargin.setter
+    def automargin(self, val):
+        self["automargin"] = val
+
+    # autorange
+    # ---------
+    @property
+    def autorange(self):
+        """
+        Determines whether or not the range of this axis is computed in
+        relation to the input data. See `rangemode` for more info. If
+        `range` is provided and it has a value for both the lower and
+        upper bound, `autorange` is set to False. Using "min" applies
+        autorange only to set the minimum. Using "max" applies
+        autorange only to set the maximum. Using *min reversed* applies
+        autorange only to set the minimum on a reversed axis. Using
+        *max reversed* applies autorange only to set the maximum on a
+        reversed axis. Using "reversed" applies autorange on both ends
+        and reverses the axis direction.
+
+        The 'autorange' property is an enumeration that may be specified as:
+          - One of the following enumeration values:
+                [True, False, 'reversed', 'min reversed', 'max reversed',
+                'min', 'max']
+
+        Returns
+        -------
+        Any
+        """
+        return self["autorange"]
+
+    @autorange.setter
+    def autorange(self, val):
+        self["autorange"] = val
+
+    # autorangeoptions
+    # ----------------
+    @property
+    def autorangeoptions(self):
+        """
+        The 'autorangeoptions' property is an instance of Autorangeoptions
+        that may be specified as:
+          - An instance of :class:`plotly.graph_objs.layout.xaxis.Autorangeoptions`
+          - A dict of string/value properties that will be passed
+            to the Autorangeoptions constructor
+
+            Supported dict properties:
+
+                clipmax
+                    Clip autorange maximum if it goes beyond this
+                    value. Has no effect when
+                    `autorangeoptions.maxallowed` is provided.
+                clipmin
+                    Clip autorange minimum if it goes beyond this
+                    value. Has no effect when
+                    `autorangeoptions.minallowed` is provided.
+                include
+                    Ensure this value is included in autorange.
+                includesrc
+                    Sets the source reference on Chart Studio Cloud
+                    for `include`.
+                maxallowed
+                    Use this value exactly as autorange maximum.
+                minallowed
+                    Use this value exactly as autorange minimum.
+
+        Returns
+        -------
+        plotly.graph_objs.layout.xaxis.Autorangeoptions
+        """
+        return self["autorangeoptions"]
+
+    @autorangeoptions.setter
+    def autorangeoptions(self, val):
+        self["autorangeoptions"] = val
+
+    # autotickangles
+    # --------------
+    @property
+    def autotickangles(self):
+        """
+        When `tickangle` is set to "auto", it will be set to the first
+        angle in this array that is large enough to prevent label
+        overlap.
+
+        The 'autotickangles' property is an info array that may be specified as:
+        * a list of elements where:
+          The 'autotickangles[i]' property is a angle (in degrees) that may be
+        specified as a number between -180 and 180.
+        Numeric values outside this range are converted to the equivalent value
+        (e.g. 270 is converted to -90).
+
+        Returns
+        -------
+        list
+        """
+        return self["autotickangles"]
+
+    @autotickangles.setter
+    def autotickangles(self, val):
+        self["autotickangles"] = val
+
+    # autotypenumbers
+    # ---------------
+    @property
+    def autotypenumbers(self):
+        """
+        Using "strict" a numeric string in trace data is not converted
+        to a number. Using *convert types* a numeric string in trace
+        data may be treated as a number during automatic axis `type`
+        detection. Defaults to layout.autotypenumbers.
+
+        The 'autotypenumbers' property is an enumeration that may be specified as:
+          - One of the following enumeration values:
+                ['convert types', 'strict']
+
+        Returns
+        -------
+        Any
+        """
+        return self["autotypenumbers"]
+
+    @autotypenumbers.setter
+    def autotypenumbers(self, val):
+        self["autotypenumbers"] = val
+
+    # calendar
+    # --------
+    @property
+    def calendar(self):
+        """
+        Sets the calendar system to use for `range` and `tick0` if this
+        is a date axis. This does not set the calendar for interpreting
+        data on this axis, that's specified in the trace or via the
+        global `layout.calendar`
+
+        The 'calendar' property is an enumeration that may be specified as:
+          - One of the following enumeration values:
+                ['chinese', 'coptic', 'discworld', 'ethiopian',
+                'gregorian', 'hebrew', 'islamic', 'jalali', 'julian',
+                'mayan', 'nanakshahi', 'nepali', 'persian', 'taiwan',
+                'thai', 'ummalqura']
+
+        Returns
+        -------
+        Any
+        """
+        return self["calendar"]
+
+    @calendar.setter
+    def calendar(self, val):
+        self["calendar"] = val
+
+    # categoryarray
+    # -------------
+    @property
+    def categoryarray(self):
+        """
+        Sets the order in which categories on this axis appear. Only
+        has an effect if `categoryorder` is set to "array". Used with
+        `categoryorder`.
+
+        The 'categoryarray' property is an array that may be specified as a tuple,
+        list, numpy array, or pandas Series
+
+        Returns
+        -------
+        numpy.ndarray
+        """
+        return self["categoryarray"]
+
+    @categoryarray.setter
+    def categoryarray(self, val):
+        self["categoryarray"] = val
+
+    # categoryarraysrc
+    # ----------------
+    @property
+    def categoryarraysrc(self):
+        """
+        Sets the source reference on Chart Studio Cloud for
+        `categoryarray`.
+
+        The 'categoryarraysrc' property must be specified as a string or
+        as a plotly.grid_objs.Column object
+
+        Returns
+        -------
+        str
+        """
+        return self["categoryarraysrc"]
+
+    @categoryarraysrc.setter
+    def categoryarraysrc(self, val):
+        self["categoryarraysrc"] = val
+
+    # categoryorder
+    # -------------
+    @property
+    def categoryorder(self):
+        """
+        Specifies the ordering logic for the case of categorical
+        variables. By default, plotly uses "trace", which specifies the
+        order that is present in the data supplied. Set `categoryorder`
+        to *category ascending* or *category descending* if order
+        should be determined by the alphanumerical order of the
+        category names. Set `categoryorder` to "array" to derive the
+        ordering from the attribute `categoryarray`. If a category is
+        not found in the `categoryarray` array, the sorting behavior
+        for that attribute will be identical to the "trace" mode. The
+        unspecified categories will follow the categories in
+        `categoryarray`. Set `categoryorder` to *total ascending* or
+        *total descending* if order should be determined by the
+        numerical order of the values. Similarly, the order can be
+        determined by the min, max, sum, mean or median of all the
+        values.
+
+        The 'categoryorder' property is an enumeration that may be specified as:
+          - One of the following enumeration values:
+                ['trace', 'category ascending', 'category descending',
+                'array', 'total ascending', 'total descending', 'min
+                ascending', 'min descending', 'max ascending', 'max
+                descending', 'sum ascending', 'sum descending', 'mean
+                ascending', 'mean descending', 'median ascending', 'median
+                descending']
+
+        Returns
+        -------
+        Any
+        """
+        return self["categoryorder"]
+
+    @categoryorder.setter
+    def categoryorder(self, val):
+        self["categoryorder"] = val
+
+    # color
+    # -----
+    @property
+    def color(self):
+        """
+        Sets default for all colors associated with this axis all at
+        once: line, font, tick, and grid colors. Grid color is
+        lightened by blending this with the plot background Individual
+        pieces can override this.
+
+        The 'color' property is a color and may be specified as:
+          - A hex string (e.g. '#ff0000')
+          - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+          - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+          - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+          - A named CSS color:
+                aliceblue, antiquewhite, aqua, aquamarine, azure,
+                beige, bisque, black, blanchedalmond, blue,
+                blueviolet, brown, burlywood, cadetblue,
+                chartreuse, chocolate, coral, cornflowerblue,
+                cornsilk, crimson, cyan, darkblue, darkcyan,
+                darkgoldenrod, darkgray, darkgrey, darkgreen,
+                darkkhaki, darkmagenta, darkolivegreen, darkorange,
+                darkorchid, darkred, darksalmon, darkseagreen,
+                darkslateblue, darkslategray, darkslategrey,
+                darkturquoise, darkviolet, deeppink, deepskyblue,
+                dimgray, dimgrey, dodgerblue, firebrick,
+                floralwhite, forestgreen, fuchsia, gainsboro,
+                ghostwhite, gold, goldenrod, gray, grey, green,
+                greenyellow, honeydew, hotpink, indianred, indigo,
+                ivory, khaki, lavender, lavenderblush, lawngreen,
+                lemonchiffon, lightblue, lightcoral, lightcyan,
+                lightgoldenrodyellow, lightgray, lightgrey,
+                lightgreen, lightpink, lightsalmon, lightseagreen,
+                lightskyblue, lightslategray, lightslategrey,
+                lightsteelblue, lightyellow, lime, limegreen,
+                linen, magenta, maroon, mediumaquamarine,
+                mediumblue, mediumorchid, mediumpurple,
+                mediumseagreen, mediumslateblue, mediumspringgreen,
+                mediumturquoise, mediumvioletred, midnightblue,
+                mintcream, mistyrose, moccasin, navajowhite, navy,
+                oldlace, olive, olivedrab, orange, orangered,
+                orchid, palegoldenrod, palegreen, paleturquoise,
+                palevioletred, papayawhip, peachpuff, peru, pink,
+                plum, powderblue, purple, red, rosybrown,
+                royalblue, rebeccapurple, saddlebrown, salmon,
+                sandybrown, seagreen, seashell, sienna, silver,
+                skyblue, slateblue, slategray, slategrey, snow,
+                springgreen, steelblue, tan, teal, thistle, tomato,
+                turquoise, violet, wheat, white, whitesmoke,
+                yellow, yellowgreen
+
+        Returns
+        -------
+        str
+        """
+        return self["color"]
+
+    @color.setter
+    def color(self, val):
+        self["color"] = val
+
+    # constrain
+    # ---------
+    @property
+    def constrain(self):
+        """
+        If this axis needs to be compressed (either due to its own
+        `scaleanchor` and `scaleratio` or those of the other axis),
+        determines how that happens: by increasing the "range", or by
+        decreasing the "domain". Default is "domain" for axes
+        containing image traces, "range" otherwise.
+
+        The 'constrain' property is an enumeration that may be specified as:
+          - One of the following enumeration values:
+                ['range', 'domain']
+
+        Returns
+        -------
+        Any
+        """
+        return self["constrain"]
+
+    @constrain.setter
+    def constrain(self, val):
+        self["constrain"] = val
+
+    # constraintoward
+    # ---------------
+    @property
+    def constraintoward(self):
+        """
+        If this axis needs to be compressed (either due to its own
+        `scaleanchor` and `scaleratio` or those of the other axis),
+        determines which direction we push the originally specified
+        plot area. Options are "left", "center" (default), and "right"
+        for x axes, and "top", "middle" (default), and "bottom" for y
+        axes.
+
+        The 'constraintoward' property is an enumeration that may be specified as:
+          - One of the following enumeration values:
+                ['left', 'center', 'right', 'top', 'middle', 'bottom']
+
+        Returns
+        -------
+        Any
+        """
+        return self["constraintoward"]
+
+    @constraintoward.setter
+    def constraintoward(self, val):
+        self["constraintoward"] = val
+
+    # dividercolor
+    # ------------
+    @property
+    def dividercolor(self):
+        """
+        Sets the color of the dividers Only has an effect on
+        "multicategory" axes.
+
+        The 'dividercolor' property is a color and may be specified as:
+          - A hex string (e.g. '#ff0000')
+          - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+          - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+          - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+          - A named CSS color:
+                aliceblue, antiquewhite, aqua, aquamarine, azure,
+                beige, bisque, black, blanchedalmond, blue,
+                blueviolet, brown, burlywood, cadetblue,
+                chartreuse, chocolate, coral, cornflowerblue,
+                cornsilk, crimson, cyan, darkblue, darkcyan,
+                darkgoldenrod, darkgray, darkgrey, darkgreen,
+                darkkhaki, darkmagenta, darkolivegreen, darkorange,
+                darkorchid, darkred, darksalmon, darkseagreen,
+                darkslateblue, darkslategray, darkslategrey,
+                darkturquoise, darkviolet, deeppink, deepskyblue,
+                dimgray, dimgrey, dodgerblue, firebrick,
+                floralwhite, forestgreen, fuchsia, gainsboro,
+                ghostwhite, gold, goldenrod, gray, grey, green,
+                greenyellow, honeydew, hotpink, indianred, indigo,
+                ivory, khaki, lavender, lavenderblush, lawngreen,
+                lemonchiffon, lightblue, lightcoral, lightcyan,
+                lightgoldenrodyellow, lightgray, lightgrey,
+                lightgreen, lightpink, lightsalmon, lightseagreen,
+                lightskyblue, lightslategray, lightslategrey,
+                lightsteelblue, lightyellow, lime, limegreen,
+                linen, magenta, maroon, mediumaquamarine,
+                mediumblue, mediumorchid, mediumpurple,
+                mediumseagreen, mediumslateblue, mediumspringgreen,
+                mediumturquoise, mediumvioletred, midnightblue,
+                mintcream, mistyrose, moccasin, navajowhite, navy,
+                oldlace, olive, olivedrab, orange, orangered,
+                orchid, palegoldenrod, palegreen, paleturquoise,
+                palevioletred, papayawhip, peachpuff, peru, pink,
+                plum, powderblue, purple, red, rosybrown,
+                royalblue, rebeccapurple, saddlebrown, salmon,
+                sandybrown, seagreen, seashell, sienna, silver,
+                skyblue, slateblue, slategray, slategrey, snow,
+                springgreen, steelblue, tan, teal, thistle, tomato,
+                turquoise, violet, wheat, white, whitesmoke,
+                yellow, yellowgreen
+
+        Returns
+        -------
+        str
+        """
+        return self["dividercolor"]
+
+    @dividercolor.setter
+    def dividercolor(self, val):
+        self["dividercolor"] = val
+
+    # dividerwidth
+    # ------------
+    @property
+    def dividerwidth(self):
+        """
+        Sets the width (in px) of the dividers Only has an effect on
+        "multicategory" axes.
+
+        The 'dividerwidth' property is a number and may be specified as:
+          - An int or float
+
+        Returns
+        -------
+        int|float
+        """
+        return self["dividerwidth"]
+
+    @dividerwidth.setter
+    def dividerwidth(self, val):
+        self["dividerwidth"] = val
+
+    # domain
+    # ------
+    @property
+    def domain(self):
+        """
+            Sets the domain of this axis (in plot fraction).
+
+            The 'domain' property is an info array that may be specified as:
+
+            * a list or tuple of 2 elements where:
+        (0) The 'domain[0]' property is a number and may be specified as:
+              - An int or float in the interval [0, 1]
+        (

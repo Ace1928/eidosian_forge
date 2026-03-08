@@ -1,0 +1,468 @@
+SOURCE_PATH: archive_forge/src/archive_forge/bgpspeaker.py
+KIND: code
+
+# Copyright (C) 2014 Nippon Telegraph and Telephone Corporation.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+# implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""This module offers a class to enable your code to speak BGP protocol.
+
+"""
+
+import netaddr
+from os_ken.lib import hub
+from os_ken.lib import ip
+from os_ken.lib.packet.bgp import (
+    BGPFlowSpecTrafficActionCommunity,
+    BGPFlowSpecVlanActionCommunity,
+    BGPFlowSpecTPIDActionCommunity,
+)
+
+from os_ken.services.protocols.bgp.core_manager import CORE_MANAGER
+from os_ken.services.protocols.bgp.signals.emit import BgpSignalBus
+from os_ken.services.protocols.bgp.api.base import call
+from os_ken.services.protocols.bgp.api.base import PREFIX
+from os_ken.services.protocols.bgp.api.base import EVPN_ROUTE_TYPE
+from os_ken.services.protocols.bgp.api.base import EVPN_ESI
+from os_ken.services.protocols.bgp.api.base import EVPN_ETHERNET_TAG_ID
+from os_ken.services.protocols.bgp.api.base import REDUNDANCY_MODE
+from os_ken.services.protocols.bgp.api.base import IP_ADDR
+from os_ken.services.protocols.bgp.api.base import MAC_ADDR
+from os_ken.services.protocols.bgp.api.base import NEXT_HOP
+from os_ken.services.protocols.bgp.api.base import IP_PREFIX
+from os_ken.services.protocols.bgp.api.base import GW_IP_ADDR
+from os_ken.services.protocols.bgp.api.base import ROUTE_DISTINGUISHER
+from os_ken.services.protocols.bgp.api.base import ROUTE_FAMILY
+from os_ken.services.protocols.bgp.api.base import EVPN_VNI
+from os_ken.services.protocols.bgp.api.base import TUNNEL_TYPE
+from os_ken.services.protocols.bgp.api.base import PMSI_TUNNEL_TYPE
+from os_ken.services.protocols.bgp.api.base import MAC_MOBILITY
+from os_ken.services.protocols.bgp.api.base import TUNNEL_ENDPOINT_IP
+from os_ken.services.protocols.bgp.api.prefix import EVPN_MAX_ET
+from os_ken.services.protocols.bgp.api.prefix import ESI_TYPE_LACP
+from os_ken.services.protocols.bgp.api.prefix import ESI_TYPE_L2_BRIDGE
+from os_ken.services.protocols.bgp.api.prefix import ESI_TYPE_MAC_BASED
+from os_ken.services.protocols.bgp.api.prefix import EVPN_ETH_AUTO_DISCOVERY
+from os_ken.services.protocols.bgp.api.prefix import EVPN_MAC_IP_ADV_ROUTE
+from os_ken.services.protocols.bgp.api.prefix import EVPN_MULTICAST_ETAG_ROUTE
+from os_ken.services.protocols.bgp.api.prefix import EVPN_ETH_SEGMENT
+from os_ken.services.protocols.bgp.api.prefix import EVPN_IP_PREFIX_ROUTE
+from os_ken.services.protocols.bgp.api.prefix import REDUNDANCY_MODE_ALL_ACTIVE
+from os_ken.services.protocols.bgp.api.prefix import REDUNDANCY_MODE_SINGLE_ACTIVE
+from os_ken.services.protocols.bgp.api.prefix import TUNNEL_TYPE_VXLAN
+from os_ken.services.protocols.bgp.api.prefix import TUNNEL_TYPE_NVGRE
+from os_ken.services.protocols.bgp.api.prefix import (
+    PMSI_TYPE_NO_TUNNEL_INFO,
+    PMSI_TYPE_INGRESS_REP)
+from os_ken.services.protocols.bgp.api.prefix import (
+    FLOWSPEC_FAMILY,
+    FLOWSPEC_FAMILY_IPV4,
+    FLOWSPEC_FAMILY_VPNV4,
+    FLOWSPEC_FAMILY_IPV6,
+    FLOWSPEC_FAMILY_VPNV6,
+    FLOWSPEC_FAMILY_L2VPN,
+    FLOWSPEC_RULES,
+    FLOWSPEC_ACTIONS)
+from os_ken.services.protocols.bgp.model import ReceivedRoute
+from os_ken.services.protocols.bgp.rtconf.common import LOCAL_AS
+from os_ken.services.protocols.bgp.rtconf.common import ROUTER_ID
+from os_ken.services.protocols.bgp.rtconf.common import CLUSTER_ID
+from os_ken.services.protocols.bgp.rtconf.common import BGP_SERVER_HOSTS
+from os_ken.services.protocols.bgp.rtconf.common import BGP_SERVER_PORT
+from os_ken.services.protocols.bgp.rtconf.common import DEFAULT_BGP_SERVER_HOSTS
+from os_ken.services.protocols.bgp.rtconf.common import DEFAULT_BGP_SERVER_PORT
+from os_ken.services.protocols.bgp.rtconf.common import (
+    DEFAULT_REFRESH_MAX_EOR_TIME, DEFAULT_REFRESH_STALEPATH_TIME)
+from os_ken.services.protocols.bgp.rtconf.common import DEFAULT_LABEL_RANGE
+from os_ken.services.protocols.bgp.rtconf.common import REFRESH_MAX_EOR_TIME
+from os_ken.services.protocols.bgp.rtconf.common import REFRESH_STALEPATH_TIME
+from os_ken.services.protocols.bgp.rtconf.common import LABEL_RANGE
+from os_ken.services.protocols.bgp.rtconf.common import ALLOW_LOCAL_AS_IN_COUNT
+from os_ken.services.protocols.bgp.rtconf.common import LOCAL_PREF
+from os_ken.services.protocols.bgp.rtconf.common import DEFAULT_LOCAL_PREF
+from os_ken.services.protocols.bgp.rtconf import neighbors
+from os_ken.services.protocols.bgp.rtconf import vrfs
+from os_ken.services.protocols.bgp.rtconf.base import CAP_MBGP_IPV4
+from os_ken.services.protocols.bgp.rtconf.base import CAP_MBGP_IPV6
+from os_ken.services.protocols.bgp.rtconf.base import CAP_MBGP_VPNV4
+from os_ken.services.protocols.bgp.rtconf.base import CAP_MBGP_VPNV6
+from os_ken.services.protocols.bgp.rtconf.base import CAP_MBGP_EVPN
+from os_ken.services.protocols.bgp.rtconf.base import CAP_MBGP_IPV4FS
+from os_ken.services.protocols.bgp.rtconf.base import CAP_MBGP_IPV6FS
+from os_ken.services.protocols.bgp.rtconf.base import CAP_MBGP_VPNV4FS
+from os_ken.services.protocols.bgp.rtconf.base import CAP_MBGP_VPNV6FS
+from os_ken.services.protocols.bgp.rtconf.base import CAP_MBGP_L2VPNFS
+from os_ken.services.protocols.bgp.rtconf.base import CAP_ENHANCED_REFRESH
+from os_ken.services.protocols.bgp.rtconf.base import CAP_FOUR_OCTET_AS_NUMBER
+from os_ken.services.protocols.bgp.rtconf.base import MULTI_EXIT_DISC
+from os_ken.services.protocols.bgp.rtconf.base import SITE_OF_ORIGINS
+from os_ken.services.protocols.bgp.rtconf.neighbors import (
+    DEFAULT_CAP_MBGP_IPV4,
+    DEFAULT_CAP_MBGP_IPV6,
+    DEFAULT_CAP_MBGP_VPNV4,
+    DEFAULT_CAP_MBGP_VPNV6,
+    DEFAULT_CAP_MBGP_EVPN,
+    DEFAULT_CAP_MBGP_IPV4FS,
+    DEFAULT_CAP_MBGP_IPV6FS,
+    DEFAULT_CAP_MBGP_VPNV4FS,
+    DEFAULT_CAP_MBGP_VPNV6FS,
+    DEFAULT_CAP_MBGP_L2VPNFS,
+    DEFAULT_CAP_ENHANCED_REFRESH,
+    DEFAULT_CAP_FOUR_OCTET_AS_NUMBER,
+    DEFAULT_CONNECT_MODE,
+    REMOTE_PORT,
+    DEFAULT_BGP_PORT,
+    PEER_NEXT_HOP,
+    PASSWORD,
+    DEFAULT_IS_ROUTE_SERVER_CLIENT,
+    IS_ROUTE_SERVER_CLIENT,
+    DEFAULT_IS_ROUTE_REFLECTOR_CLIENT,
+    IS_ROUTE_REFLECTOR_CLIENT,
+    DEFAULT_IS_NEXT_HOP_SELF,
+    IS_NEXT_HOP_SELF,
+    CONNECT_MODE,
+    LOCAL_ADDRESS,
+    LOCAL_PORT,
+)
+from os_ken.services.protocols.bgp.rtconf.vrfs import SUPPORTED_VRF_RF
+from os_ken.services.protocols.bgp.info_base.base import Filter
+from os_ken.services.protocols.bgp.info_base.ipv4 import Ipv4Path
+from os_ken.services.protocols.bgp.info_base.ipv6 import Ipv6Path
+from os_ken.services.protocols.bgp.info_base.vpnv4 import Vpnv4Path
+from os_ken.services.protocols.bgp.info_base.vpnv6 import Vpnv6Path
+from os_ken.services.protocols.bgp.info_base.evpn import EvpnPath
+
+
+NEIGHBOR_CONF_MED = MULTI_EXIT_DISC  # for backward compatibility
+RF_VPN_V4 = vrfs.VRF_RF_IPV4
+RF_VPN_V6 = vrfs.VRF_RF_IPV6
+RF_L2_EVPN = vrfs.VRF_RF_L2_EVPN
+RF_VPNV4_FLOWSPEC = vrfs.VRF_RF_IPV4_FLOWSPEC
+RF_VPNV6_FLOWSPEC = vrfs.VRF_RF_IPV6_FLOWSPEC
+RF_L2VPN_FLOWSPEC = vrfs.VRF_RF_L2VPN_FLOWSPEC
+
+# Constants for the Traffic Filtering Actions of Flow Specification.
+FLOWSPEC_TA_SAMPLE = BGPFlowSpecTrafficActionCommunity.SAMPLE
+FLOWSPEC_TA_TERMINAL = BGPFlowSpecTrafficActionCommunity.TERMINAL
+
+# Constants for the VLAN Actions of Flow Specification.
+FLOWSPEC_VLAN_POP = BGPFlowSpecVlanActionCommunity.POP
+FLOWSPEC_VLAN_PUSH = BGPFlowSpecVlanActionCommunity.PUSH
+FLOWSPEC_VLAN_SWAP = BGPFlowSpecVlanActionCommunity.SWAP
+FLOWSPEC_VLAN_RW_INNER = BGPFlowSpecVlanActionCommunity.REWRITE_INNER
+FLOWSPEC_VLAN_RW_OUTER = BGPFlowSpecVlanActionCommunity.REWRITE_OUTER
+
+# Constants for the TPID Actions of Flow Specification.
+FLOWSPEC_TPID_TI = BGPFlowSpecTPIDActionCommunity.TI
+FLOWSPEC_TPID_TO = BGPFlowSpecTPIDActionCommunity.TO
+
+
+class EventPrefix(object):
+    """
+    Used to pass an update on any best remote path to
+    best_path_change_handler.
+
+    ================ ======================================================
+    Attribute        Description
+    ================ ======================================================
+    remote_as        The AS number of a peer that caused this change
+    route_dist       None in the case of IPv4 or IPv6 family
+    prefix           A prefix was changed
+    nexthop          The nexthop of the changed prefix
+    label            MPLS label for VPNv4, VPNv6 or EVPN prefix
+    path             An instance of ``info_base.base.Path`` subclass
+    is_withdraw      True if this prefix has gone otherwise False
+    ================ ======================================================
+    """
+
+    def __init__(self, path, is_withdraw):
+        self.path = path
+        self.is_withdraw = is_withdraw
+
+    @property
+    def remote_as(self):
+        return self.path.source.remote_as
+
+    @property
+    def route_dist(self):
+        if (isinstance(self.path, Vpnv4Path)
+                or isinstance(self.path, Vpnv6Path)
+                or isinstance(self.path, EvpnPath)):
+            return self.path.nlri.route_dist
+        else:
+            return None
+
+    @property
+    def prefix(self):
+        if isinstance(self.path, Ipv4Path) or isinstance(self.path, Ipv6Path):
+            return self.path.nlri.addr + '/' + str(self.path.nlri.length)
+        elif (isinstance(self.path, Vpnv4Path)
+              or isinstance(self.path, Vpnv6Path)
+              or isinstance(self.path, EvpnPath)):
+            return self.path.nlri.prefix
+        else:
+            return None
+
+    @property
+    def nexthop(self):
+        return self.path.nexthop
+
+    @property
+    def label(self):
+        if (isinstance(self.path, Vpnv4Path)
+                or isinstance(self.path, Vpnv6Path)
+                or isinstance(self.path, EvpnPath)):
+            return getattr(self.path.nlri, 'label_list', None)
+        else:
+            return None
+
+
+class BGPSpeaker(object):
+    """Class to provide the APIs of OSKen BGP Speaker.
+
+    ``as_number`` specifies an Autonomous Number. It must be an integer
+    between 1 and 65535.
+
+    ``router_id`` specifies BGP router identifier. It must be the
+    string representation of an IPv4 address (e.g. 10.0.0.1).
+
+    ``bgp_server_host`` specifies a list of TCP listen host addresses.
+
+    ``bgp_server_port`` specifies TCP listen port number. 179 is
+    used if not specified.
+
+    ``refresh_stalepath_time`` causes the BGP speaker to remove
+    stale routes from the BGP table after the timer expires, even
+    if the speaker does not receive a Router-Refresh End-of-RIB
+    message. This feature is disabled (not implemented yet).
+
+    ``refresh_max_eor_time`` causes the BGP speaker to generate a
+    Route-Refresh End-of-RIB message if it was not able to
+    generate one due to route flapping. This feature is disabled
+    (not implemented yet).
+
+    ``best_path_change_handler``, if specified, is called when any
+    best remote path is changed due to an update message or remote
+    peer down. The handler is supposed to take one argument, the
+    instance of an EventPrefix class instance.
+
+    ``adj_rib_in_change_handler``, if specified, is called when any
+    adj-RIB-in path is changed due to an update message or remote
+    peer down. The given handler should take three argument, the
+    instance of an EventPrefix class instance, str type peer's IP address
+    and int type peer's AS number.
+
+    ``peer_down_handler``, if specified, is called when BGP peering
+    session goes down.
+
+    ``peer_up_handler``, if specified, is called when BGP peering
+    session goes up.
+
+    ``ssh_console`` specifies whether or not SSH CLI need to be started.
+
+    ``ssh_port`` specifies the port number for SSH CLI server.
+    The default is bgp.operator.ssh.DEFAULT_SSH_PORT.
+
+    ``ssh_host`` specifies the IP address for SSH CLI server.
+    The default is bgp.operator.ssh.DEFAULT_SSH_HOST.
+
+    ``ssh_host_key`` specifies the path to the host key added to
+    the keys list used by SSH CLI server.
+    The default is bgp.operator.ssh.DEFAULT_SSH_HOST_KEY.
+
+    ``label_range`` specifies the range of MPLS labels generated
+    automatically.
+
+    ``allow_local_as_in_count`` maximum number of local AS number
+    occurrences in AS_PATH.  This option is useful for e.g.  auto RD/RT
+    configurations in leaf/spine architecture with shared AS numbers.
+    The default is 0 and means "local AS number is not allowed in
+    AS_PATH".  To allow local AS, 3 is recommended (Cisco's default).
+
+    ``cluster_id`` specifies the cluster identifier for Route Reflector.
+    It must be the string representation of an IPv4 address.
+    If omitted, "router_id" is used for this field.
+
+    ``local_pref`` specifies the default local preference. It must be an
+    integer.
+    """
+
+    def __init__(self, as_number, router_id,
+                 bgp_server_hosts=DEFAULT_BGP_SERVER_HOSTS,
+                 bgp_server_port=DEFAULT_BGP_SERVER_PORT,
+                 refresh_stalepath_time=DEFAULT_REFRESH_STALEPATH_TIME,
+                 refresh_max_eor_time=DEFAULT_REFRESH_MAX_EOR_TIME,
+                 best_path_change_handler=None,
+                 adj_rib_in_change_handler=None,
+                 peer_down_handler=None,
+                 peer_up_handler=None,
+                 ssh_console=False,
+                 ssh_port=None, ssh_host=None, ssh_host_key=None,
+                 label_range=DEFAULT_LABEL_RANGE,
+                 allow_local_as_in_count=0,
+                 cluster_id=None,
+                 local_pref=DEFAULT_LOCAL_PREF):
+        super(BGPSpeaker, self).__init__()
+
+        settings = {
+            LOCAL_AS: as_number,
+            ROUTER_ID: router_id,
+            BGP_SERVER_HOSTS: bgp_server_hosts,
+            BGP_SERVER_PORT: bgp_server_port,
+            REFRESH_STALEPATH_TIME: refresh_stalepath_time,
+            REFRESH_MAX_EOR_TIME: refresh_max_eor_time,
+            LABEL_RANGE: label_range,
+            ALLOW_LOCAL_AS_IN_COUNT: allow_local_as_in_count,
+            CLUSTER_ID: cluster_id,
+            LOCAL_PREF: local_pref,
+        }
+        self._core_start(settings)
+        self._init_signal_listeners()
+        self._best_path_change_handler = best_path_change_handler
+        self._adj_rib_in_change_handler = adj_rib_in_change_handler
+        self._peer_down_handler = peer_down_handler
+        self._peer_up_handler = peer_up_handler
+        if ssh_console:
+            # Note: paramiko used in bgp.operator.ssh is the optional
+            # requirements, imports bgp.operator.ssh here.
+            from os_ken.services.protocols.bgp.operator import ssh
+            ssh_settings = {
+                ssh.SSH_PORT: ssh_port or ssh.DEFAULT_SSH_PORT,
+                ssh.SSH_HOST: ssh_host or ssh.DEFAULT_SSH_HOST,
+                ssh.SSH_HOST_KEY: ssh_host_key or ssh.DEFAULT_SSH_HOST_KEY,
+            }
+            hub.spawn(ssh.SSH_CLI_CONTROLLER.start, **ssh_settings)
+
+    def _notify_peer_down(self, peer):
+        remote_ip = peer.ip_address
+        remote_as = peer.remote_as
+        if self._peer_down_handler:
+            self._peer_down_handler(remote_ip, remote_as)
+
+    def _notify_peer_up(self, peer):
+        remote_ip = peer.protocol.recv_open_msg.bgp_identifier
+        remote_as = peer.protocol.recv_open_msg.my_as
+        if self._peer_up_handler:
+            self._peer_up_handler(remote_ip, remote_as)
+
+    def _notify_best_path_changed(self, path, is_withdraw):
+        if (not path.source
+                or not isinstance(path, (Ipv4Path, Ipv6Path,
+                                         Vpnv4Path, Vpnv6Path, EvpnPath))):
+            return
+
+        ev = EventPrefix(path, is_withdraw)
+
+        if self._best_path_change_handler:
+            self._best_path_change_handler(ev)
+
+    def _notify_adj_rib_in_changed(self, peer, route):
+        if not isinstance(route, ReceivedRoute):
+            return
+
+        if self._adj_rib_in_change_handler:
+            self._adj_rib_in_change_handler(
+                EventPrefix(route.path, route.path.is_withdraw),
+                peer.ip_address, peer.remote_as)
+
+    def _init_signal_listeners(self):
+        CORE_MANAGER.get_core_service()._signal_bus.register_listener(
+            BgpSignalBus.BGP_BEST_PATH_CHANGED,
+            lambda _, info:
+            self._notify_best_path_changed(info['path'],
+                                           info['is_withdraw'])
+        )
+        CORE_MANAGER.get_core_service()._signal_bus.register_listener(
+            BgpSignalBus.BGP_ADJ_RIB_IN_CHANGED,
+            lambda _, info:
+            self._notify_adj_rib_in_changed(info['peer'],
+                                            info['received_route'])
+        )
+        CORE_MANAGER.get_core_service()._signal_bus.register_listener(
+            BgpSignalBus.BGP_ADJ_DOWN,
+            lambda _, info:
+            self._notify_peer_down(info['peer'])
+        )
+        CORE_MANAGER.get_core_service()._signal_bus.register_listener(
+            BgpSignalBus.BGP_ADJ_UP,
+            lambda _, info:
+            self._notify_peer_up(info['peer'])
+        )
+
+    def _core_start(self, settings):
+        waiter = hub.Event()
+        call('core.start', waiter=waiter, **settings)
+        waiter.wait()
+
+    def _serve_forever(self):
+        pass
+
+    def shutdown(self):
+        """ Shutdown BGP speaker
+        """
+        call('core.stop')
+
+    def neighbor_add(self, address, remote_as,
+                     remote_port=DEFAULT_BGP_PORT,
+                     enable_ipv4=DEFAULT_CAP_MBGP_IPV4,
+                     enable_ipv6=DEFAULT_CAP_MBGP_IPV6,
+                     enable_vpnv4=DEFAULT_CAP_MBGP_VPNV4,
+                     enable_vpnv6=DEFAULT_CAP_MBGP_VPNV6,
+                     enable_evpn=DEFAULT_CAP_MBGP_EVPN,
+                     enable_ipv4fs=DEFAULT_CAP_MBGP_IPV4FS,
+                     enable_ipv6fs=DEFAULT_CAP_MBGP_IPV6FS,
+                     enable_vpnv4fs=DEFAULT_CAP_MBGP_VPNV4FS,
+                     enable_vpnv6fs=DEFAULT_CAP_MBGP_VPNV6FS,
+                     enable_l2vpnfs=DEFAULT_CAP_MBGP_L2VPNFS,
+                     enable_enhanced_refresh=DEFAULT_CAP_ENHANCED_REFRESH,
+                     enable_four_octet_as_number=DEFAULT_CAP_FOUR_OCTET_AS_NUMBER,
+                     next_hop=None, password=None, multi_exit_disc=None,
+                     site_of_origins=None,
+                     is_route_server_client=DEFAULT_IS_ROUTE_SERVER_CLIENT,
+                     is_route_reflector_client=DEFAULT_IS_ROUTE_REFLECTOR_CLIENT,
+                     is_next_hop_self=DEFAULT_IS_NEXT_HOP_SELF,
+                     local_address=None,
+                     local_port=None, local_as=None,
+                     connect_mode=DEFAULT_CONNECT_MODE):
+        """ This method registers a new neighbor. The BGP speaker tries to
+        establish a bgp session with the peer (accepts a connection
+        from the peer and also tries to connect to it).
+
+        ``address`` specifies the IP address of the peer. It must be
+        the string representation of an IP address. Only IPv4 is
+        supported now.
+
+        ``remote_as`` specifies the AS number of the peer. It must be
+        an integer between 1 and 65535.
+
+        ``remote_port`` specifies the TCP port number of the peer.
+
+        ``enable_ipv4`` enables IPv4 address family for this
+        neighbor.
+
+        ``enable_ipv6`` enables IPv6 address family for this
+        neighbor.
+
+        ``enable_vpnv4`` enables VPNv4 address family for this
+        neighbor.
+
+        ``enable_vpnv6`` enables VPNv6 address family for this
+        neighbor.
+
+        ``enable_evpn`` enables Ethernet VPN address family for this
+        neighbor.
+
+        ``enable_ipv4fs`` enables IPv4 Flow Specification address family
+        for this neighbor.
+
+        ``enable_ipv6fs`` enables IPv6 Flow Specificatio

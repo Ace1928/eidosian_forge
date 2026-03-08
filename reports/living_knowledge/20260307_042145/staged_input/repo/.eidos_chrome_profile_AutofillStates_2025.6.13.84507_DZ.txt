@@ -1,0 +1,71 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/DZ
+KIND: config
+
+DZC
+
+أدرارadrar provincewilaya d'adrarولاية أدرار\
+شلفchlefchlef provincewilaya de chlefولاية الشلولاية الشلفR
+الأغواطlaghouat provincewilaya de laghouatولاية الأغواطy
+أم البواقي‎oum el bouaghi provinceoum elbouaghiwilaya d'oum el bouaghiولاية أم البواقي8
+ولاية باتنةbatna provincewilaya de batna\
+
+بجايةbéjaïabéjaïa provincevgayetwilaya de béjaïaولاية بجايةW
+بسكرة‎biskra provincewilaya de biskraبِسكرةولاية بسكرةM
+بشارbécharbéchar provincewilaya de bécharولاية بشارS
+البليدةblidablida provincewilaya de blidaولاية البليدةv
+البويرةbouirabouïrabouïra provincetuvirettwilaya de bouira
+بويرةولاية البويرةp
+تمنراستwilaya de tamanghassettamanrasset provincewilaya de tamanrassetولاية تمنراست^
+تبسةtébessatébessa provincewilaya de tébessaتيبيساولاية تبسةg
+تلمسانtlemcentlemcen provincewilaya de tlemcenتلِمسِانولاية تلمسانF
+
+تيارتtiaret provincewilaya de tiaretولاية تيارت�
+تيزي أوزو
+tizi ouzoutizi ouzou province	tiziouzouwilaya de tizi ouzouتيزي وزوولاية تيزي وزو
+الجزائرalgeralgiers provincewilaya d'algerالجزائر العاصمة
+دزايرولاية الجزائرJ
+الجلفةdjelfa provincewilaya de djelfaولاية الجلفة@
+جيجلjijel provincewilaya de jijelولاية جيجلJ
+سطيفsétifsétif provincewilaya de sétifولاية سطيفL
+صيداsaïdasaïda provincewilaya de saïdaولاية سعيدة[
+سكيكدةskikda provincewilaya de skikdaسكيكدة‎ولاية سكيكدة�
+سيدي بلعباسsidi bel abbessidi bel abbès provincesidibelabbèswilaya de sidi bel abbèsسيدي بلعباس‎ ولاية سيدي بلعباسA
+ولاية عنابةannabaannaba provincewilaya d'annabaN
+
+قالمةguelmaguelma provincewilaya de guelmaولاية قالمة�
+القسطنطينيةconstantineconstantine provincewilaya de constantineقسنطينة‎ولاية قسنطينةd
+المدية‎médéamédéa provincewilaya de médéa
+ميدياولاية المديةy
+مستغانم‎
+mostaganemmostaganem provincewilaya de mostaganemمُستَغنِمولاية مستغانمe
+المسيلة‎m'silam'sila provincewilaya de m'sila
+مسيلةولاية المسيلة`
+
+معسكرmascaramascara provincewilaya de mascaraمعسكر‎ولاية معسكر\
+
+ورجلةouarglaouargla provincewilaya d'ouargla
+ورقلةولاية ورقلة^
+ولاية وهرانoranoran provincewahrenwilaya d'oran
+وهرانوهران‎d
+
+البيضel bayadh provinceelbayadhwilaya d'el bayadhالبيض‎ولاية البيضT
+
+اليزيillizi provincewilaya d'illiziاليزي‎ولاية إليزي�
+برج بوعريريجbordj bou arréridjbordj bou arréridj provincebordjbouarreridjwilaya de bordj bou arreridjبرج بوعريريج‎"ولاية برج بوعريريجy
+بومرداس‎
+boumerdèsboumerdès provincewilaya de boumerdèsبومِردِاسولاية بومرداسf
+الطارفel taref provinceeltarefwilaya d'el tarfالطارف‎ولاية الطارفq
+
+تندوفtindouf provincewilaya de tindoufتندوف‎ولاية تندوفولاية تندوف‎m
+تسمسيلت‎tissemsilt provincewilaya de tissemsiltتيسمسيلتولاية تيسمسيلتd
+العويضel oued provinceelouedwilaya d'el ouedالوادي‎ولاية الواديe
+ولاية خنشلة	khenchelakhenchela provincewilaya de khenchelaولاية خنشلة‎�
+سوق أهراس‎souk ahras province	soukahraswilaya de souk ahrasسوق الأحراسولاية سوق أهراس^
+
+تبازةtipazatipaza provincewilaya de tipazaتيبازةولاية تيبازةK
+ميلةmila provincewilaya de milaميلة‎ولاية ميلة�
+عين الدفلى‎aïn defla province	aïndeflawilaya de aïn deflaعين الدِفلةولاية عين الدفلىt
+النعامةnaâmanaâma provincewilaya de naâmaولاية النعامةولاية النعامة‎�
+عين تموشنت‎aïn témouchentaïn témouchent provincewilaya d'aïn témouchentولاية عين تموشنتL
+ولاية غردايةghardaia province	ghardaïawilaya de ghardaïaa
+رِليزانrelizane provincewilaya de relizaneغليزان‎ولاية غليزان

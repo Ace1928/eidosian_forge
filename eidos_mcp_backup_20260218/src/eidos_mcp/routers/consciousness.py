@@ -558,7 +558,7 @@ def consciousness_kernel_full_benchmark(
     red_team_seed: int = 910000,
     persist: bool = True,
     state_dir: Optional[str] = None,
-    llm_model: str = "qwen2.5:1.5b",
+    llm_model: str = "qwen3.5:2b",
     ollama_endpoint: str = "http://127.0.0.1:11434",
     timeout_sec: float = 45.0,
 ) -> str:

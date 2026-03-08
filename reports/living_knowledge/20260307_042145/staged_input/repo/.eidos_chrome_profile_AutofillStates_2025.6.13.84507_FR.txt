@@ -1,0 +1,17 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/FR
+KIND: config
+
+FR
+auvergnerhônealpes
+bourgognefranchecomté
+bretagnebrittany
+corsecorsica
+centreval de loire
+	grand est
+hautsdefrance
+îledefranceidf
+nouvelleaquitaine
+	normandienormandy
+	occitanie
+provencealpescôte d'azur
+pays de la loire

@@ -1,0 +1,31 @@
+SOURCE_PATH: .github/CODEOWNERS
+KIND: config
+
+# Eidosian Forge - Code Ownership Matrix
+# Format: pattern @owner1 @owner2
+
+# Default ownership - applies if no other rules match
+* @Ace1928 @eidos
+
+# Core System Components
+/tools/**             @Ace1928 @eidos
+/libs/**              @Ace1928 @eidos
+/src/**               @Ace1928 @eidos
+/scripts/**           @Ace1928 @eidos
+/api/**               @Ace1928 @eidos
+
+# Configuration Files
+*.toml                @Ace1928 @eidos
+*.json                @Ace1928 @eidos
+*.yaml                @Ace1928 @eidos
+*.yml                 @Ace1928 @eidos
+
+# CI/CD Pipeline
+/.github/workflows/** @Ace1928 @eidos
+/tests/**             @Ace1928 @eidos
+/.ci/**               @Ace1928 @eidos
+
+# Documentation and Examples
+*.md                  @Ace1928 @eidos
+/docs/**              @Ace1928 @eidos
+/examples/**          @Ace1928 @eidos

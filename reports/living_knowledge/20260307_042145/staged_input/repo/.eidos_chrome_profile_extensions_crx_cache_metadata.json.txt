@@ -1,0 +1,4 @@
+SOURCE_PATH: .eidos_chrome_profile/extensions_crx_cache/metadata.json
+KIND: config
+
+{ "hashes": {} }

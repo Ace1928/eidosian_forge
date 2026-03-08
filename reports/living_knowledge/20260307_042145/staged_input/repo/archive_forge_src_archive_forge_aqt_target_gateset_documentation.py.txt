@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/aqt_target_gateset_documentation.py
+KIND: code
+
+from typing import List
+import numpy as np
+import cirq
+from cirq.protocols.decompose_protocol import DecomposeResult
+List of transformers which should be run after decomposing individual operations.

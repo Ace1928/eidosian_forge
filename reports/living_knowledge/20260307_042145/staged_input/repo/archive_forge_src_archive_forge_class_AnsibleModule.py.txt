@@ -1,0 +1,463 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AnsibleModule.py
+KIND: code
+
+from __future__ import absolute_import, division, print_function
+import sys
+import __main__
+import atexit
+import errno
+import datetime
+import grp
+import fcntl
+import locale
+import os
+import pwd
+import platform
+import re
+import select
+import shlex
+import shutil
+import signal
+import stat
+import subprocess
+import tempfile
+import time
+import traceback
+import types
+from itertools import chain, repeat
+from ansible.module_utils.compat import selectors
+from ._text import to_native, to_bytes, to_text
+from ansible.module_utils.common.text.converters import (
+from ansible.module_utils.common.arg_spec import ModuleArgumentSpecValidator
+from ansible.module_utils.common.text.formatters import (
+import hashlib
+from ansible.module_utils.six.moves.collections_abc import (
+from ansible.module_utils.common.locale import get_best_parsable_locale
+from ansible.module_utils.common.process import get_bin_path
+from ansible.module_utils.common.file import (
+from ansible.module_utils.common.sys_info import (
+from ansible.module_utils.pycompat24 import get_exception, literal_eval
+from ansible.module_utils.common.parameters import (
+from ansible.module_utils.errors import AnsibleFallbackNotFound, AnsibleValidationErrorMultiple, UnsupportedError
+from ansible.module_utils.six import (
+from ansible.module_utils.six.moves import map, reduce, shlex_quote
+from ansible.module_utils.common.validation import (
+from ansible.module_utils.common._utils import get_all_subclasses as _get_all_subclasses
+from ansible.module_utils.parsing.convert_bool import BOOLEANS, BOOLEANS_FALSE, BOOLEANS_TRUE, boolean
+from ansible.module_utils.common.warnings import (
+class AnsibleModule(object):
+
+    def __init__(self, argument_spec, bypass_checks=False, no_log=False, mutually_exclusive=None, required_together=None, required_one_of=None, add_file_common_args=False, supports_check_mode=False, required_if=None, required_by=None):
+        """
+        Common code for quickly building an ansible module in Python
+        (although you can write modules with anything that can return JSON).
+
+        See :ref:`developing_modules_general` for a general introduction
+        and :ref:`developing_program_flow_modules` for more detailed explanation.
+        """
+        self._name = os.path.basename(__file__)
+        self.argument_spec = argument_spec
+        self.supports_check_mode = supports_check_mode
+        self.check_mode = False
+        self.bypass_checks = bypass_checks
+        self.no_log = no_log
+        self.mutually_exclusive = mutually_exclusive
+        self.required_together = required_together
+        self.required_one_of = required_one_of
+        self.required_if = required_if
+        self.required_by = required_by
+        self.cleanup_files = []
+        self._debug = False
+        self._diff = False
+        self._socket_path = None
+        self._shell = None
+        self._syslog_facility = 'LOG_USER'
+        self._verbosity = 0
+        self.run_command_environ_update = {}
+        self._clean = {}
+        self._string_conversion_action = ''
+        self.aliases = {}
+        self._legal_inputs = []
+        self._options_context = list()
+        self._tmpdir = None
+        if add_file_common_args:
+            for k, v in FILE_COMMON_ARGUMENTS.items():
+                if k not in self.argument_spec:
+                    self.argument_spec[k] = v
+        self.no_log_values = set()
+        self._check_locale()
+        self._load_params()
+        self._set_internal_properties()
+        self.validator = ModuleArgumentSpecValidator(self.argument_spec, self.mutually_exclusive, self.required_together, self.required_one_of, self.required_if, self.required_by)
+        self.validation_result = self.validator.validate(self.params)
+        self.params.update(self.validation_result.validated_parameters)
+        self.no_log_values.update(self.validation_result._no_log_values)
+        self.aliases.update(self.validation_result._aliases)
+        try:
+            error = self.validation_result.errors[0]
+        except IndexError:
+            error = None
+        if error:
+            msg = self.validation_result.errors.msg
+            if isinstance(error, UnsupportedError):
+                msg = 'Unsupported parameters for ({name}) {kind}: {msg}'.format(name=self._name, kind='module', msg=msg)
+            self.fail_json(msg=msg)
+        if self.check_mode and (not self.supports_check_mode):
+            self.exit_json(skipped=True, msg='remote module (%s) does not support check mode' % self._name)
+        self._CHECK_ARGUMENT_TYPES_DISPATCHER = DEFAULT_TYPE_VALIDATORS
+        if not self.no_log:
+            self._log_invocation()
+        self._selinux_enabled = None
+        self._selinux_mls_enabled = None
+        self._selinux_initial_context = None
+        self._set_cwd()
+
+    @property
+    def tmpdir(self):
+        if self._tmpdir is None:
+            basedir = None
+            if self._remote_tmp is not None:
+                basedir = os.path.expanduser(os.path.expandvars(self._remote_tmp))
+            if basedir is not None and (not os.path.exists(basedir)):
+                try:
+                    os.makedirs(basedir, mode=448)
+                except (OSError, IOError) as e:
+                    self.warn('Unable to use %s as temporary directory, failing back to system: %s' % (basedir, to_native(e)))
+                    basedir = None
+                else:
+                    self.warn('Module remote_tmp %s did not exist and was created with a mode of 0700, this may cause issues when running as another user. To avoid this, create the remote_tmp dir with the correct permissions manually' % basedir)
+            basefile = 'ansible-moduletmp-%s-' % time.time()
+            try:
+                tmpdir = tempfile.mkdtemp(prefix=basefile, dir=basedir)
+            except (OSError, IOError) as e:
+                self.fail_json(msg='Failed to create remote module tmp path at dir %s with prefix %s: %s' % (basedir, basefile, to_native(e)))
+            if not self._keep_remote_files:
+                atexit.register(shutil.rmtree, tmpdir)
+            self._tmpdir = tmpdir
+        return self._tmpdir
+
+    def warn(self, warning):
+        warn(warning)
+        self.log('[WARNING] %s' % warning)
+
+    def deprecate(self, msg, version=None, date=None, collection_name=None):
+        if version is not None and date is not None:
+            raise AssertionError('implementation error -- version and date must not both be set')
+        deprecate(msg, version=version, date=date, collection_name=collection_name)
+        if date is not None:
+            self.log('[DEPRECATION WARNING] %s %s' % (msg, date))
+        else:
+            self.log('[DEPRECATION WARNING] %s %s' % (msg, version))
+
+    def load_file_common_arguments(self, params, path=None):
+        """
+        many modules deal with files, this encapsulates common
+        options that the file module accepts such that it is directly
+        available to all modules and they can share code.
+
+        Allows to overwrite the path/dest module argument by providing path.
+        """
+        if path is None:
+            path = params.get('path', params.get('dest', None))
+        if path is None:
+            return {}
+        else:
+            path = os.path.expanduser(os.path.expandvars(path))
+        b_path = to_bytes(path, errors='surrogate_or_strict')
+        if params.get('follow', False) and os.path.islink(b_path):
+            b_path = os.path.realpath(b_path)
+            path = to_native(b_path)
+        mode = params.get('mode', None)
+        owner = params.get('owner', None)
+        group = params.get('group', None)
+        seuser = params.get('seuser', None)
+        serole = params.get('serole', None)
+        setype = params.get('setype', None)
+        selevel = params.get('selevel', None)
+        secontext = [seuser, serole, setype]
+        if self.selinux_mls_enabled():
+            secontext.append(selevel)
+        default_secontext = self.selinux_default_context(path)
+        for i in range(len(default_secontext)):
+            if i is not None and secontext[i] == '_default':
+                secontext[i] = default_secontext[i]
+        attributes = params.get('attributes', None)
+        return dict(path=path, mode=mode, owner=owner, group=group, seuser=seuser, serole=serole, setype=setype, selevel=selevel, secontext=secontext, attributes=attributes)
+
+    def selinux_mls_enabled(self):
+        if self._selinux_mls_enabled is None:
+            self._selinux_mls_enabled = HAVE_SELINUX and selinux.is_selinux_mls_enabled() == 1
+        return self._selinux_mls_enabled
+
+    def selinux_enabled(self):
+        if self._selinux_enabled is None:
+            self._selinux_enabled = HAVE_SELINUX and selinux.is_selinux_enabled() == 1
+        return self._selinux_enabled
+
+    def selinux_initial_context(self):
+        if self._selinux_initial_context is None:
+            self._selinux_initial_context = [None, None, None]
+            if self.selinux_mls_enabled():
+                self._selinux_initial_context.append(None)
+        return self._selinux_initial_context
+
+    def selinux_default_context(self, path, mode=0):
+        context = self.selinux_initial_context()
+        if not self.selinux_enabled():
+            return context
+        try:
+            ret = selinux.matchpathcon(to_native(path, errors='surrogate_or_strict'), mode)
+        except OSError:
+            return context
+        if ret[0] == -1:
+            return context
+        context = ret[1].split(':', 3)
+        return context
+
+    def selinux_context(self, path):
+        context = self.selinux_initial_context()
+        if not self.selinux_enabled():
+            return context
+        try:
+            ret = selinux.lgetfilecon_raw(to_native(path, errors='surrogate_or_strict'))
+        except OSError as e:
+            if e.errno == errno.ENOENT:
+                self.fail_json(path=path, msg='path %s does not exist' % path)
+            else:
+                self.fail_json(path=path, msg='failed to retrieve selinux context')
+        if ret[0] == -1:
+            return context
+        context = ret[1].split(':', 3)
+        return context
+
+    def user_and_group(self, path, expand=True):
+        b_path = to_bytes(path, errors='surrogate_or_strict')
+        if expand:
+            b_path = os.path.expanduser(os.path.expandvars(b_path))
+        st = os.lstat(b_path)
+        uid = st.st_uid
+        gid = st.st_gid
+        return (uid, gid)
+
+    def find_mount_point(self, path):
+        """
+            Takes a path and returns it's mount point
+
+        :param path: a string type with a filesystem path
+        :returns: the path to the mount point as a text type
+        """
+        b_path = os.path.realpath(to_bytes(os.path.expanduser(os.path.expandvars(path)), errors='surrogate_or_strict'))
+        while not os.path.ismount(b_path):
+            b_path = os.path.dirname(b_path)
+        return to_text(b_path, errors='surrogate_or_strict')
+
+    def is_special_selinux_path(self, path):
+        """
+        Returns a tuple containing (True, selinux_context) if the given path is on a
+        NFS or other 'special' fs  mount point, otherwise the return will be (False, None).
+        """
+        try:
+            f = open('/proc/mounts', 'r')
+            mount_data = f.readlines()
+            f.close()
+        except Exception:
+            return (False, None)
+        path_mount_point = self.find_mount_point(path)
+        for line in mount_data:
+            device, mount_point, fstype, options, rest = line.split(' ', 4)
+            if to_bytes(path_mount_point) == to_bytes(mount_point):
+                for fs in self._selinux_special_fs:
+                    if fs in fstype:
+                        special_context = self.selinux_context(path_mount_point)
+                        return (True, special_context)
+        return (False, None)
+
+    def set_default_selinux_context(self, path, changed):
+        if not self.selinux_enabled():
+            return changed
+        context = self.selinux_default_context(path)
+        return self.set_context_if_different(path, context, False)
+
+    def set_context_if_different(self, path, context, changed, diff=None):
+        if not self.selinux_enabled():
+            return changed
+        if self.check_file_absent_if_check_mode(path):
+            return True
+        cur_context = self.selinux_context(path)
+        new_context = list(cur_context)
+        is_special_se, sp_context = self.is_special_selinux_path(path)
+        if is_special_se:
+            new_context = sp_context
+        else:
+            for i in range(len(cur_context)):
+                if len(context) > i:
+                    if context[i] is not None and context[i] != cur_context[i]:
+                        new_context[i] = context[i]
+                    elif context[i] is None:
+                        new_context[i] = cur_context[i]
+        if cur_context != new_context:
+            if diff is not None:
+                if 'before' not in diff:
+                    diff['before'] = {}
+                diff['before']['secontext'] = cur_context
+                if 'after' not in diff:
+                    diff['after'] = {}
+                diff['after']['secontext'] = new_context
+            try:
+                if self.check_mode:
+                    return True
+                rc = selinux.lsetfilecon(to_native(path), ':'.join(new_context))
+            except OSError as e:
+                self.fail_json(path=path, msg='invalid selinux context: %s' % to_native(e), new_context=new_context, cur_context=cur_context, input_was=context)
+            if rc != 0:
+                self.fail_json(path=path, msg='set selinux context failed')
+            changed = True
+        return changed
+
+    def set_owner_if_different(self, path, owner, changed, diff=None, expand=True):
+        if owner is None:
+            return changed
+        b_path = to_bytes(path, errors='surrogate_or_strict')
+        if expand:
+            b_path = os.path.expanduser(os.path.expandvars(b_path))
+        if self.check_file_absent_if_check_mode(b_path):
+            return True
+        orig_uid, orig_gid = self.user_and_group(b_path, expand)
+        try:
+            uid = int(owner)
+        except ValueError:
+            try:
+                uid = pwd.getpwnam(owner).pw_uid
+            except KeyError:
+                path = to_text(b_path)
+                self.fail_json(path=path, msg='chown failed: failed to look up user %s' % owner)
+        if orig_uid != uid:
+            if diff is not None:
+                if 'before' not in diff:
+                    diff['before'] = {}
+                diff['before']['owner'] = orig_uid
+                if 'after' not in diff:
+                    diff['after'] = {}
+                diff['after']['owner'] = uid
+            if self.check_mode:
+                return True
+            try:
+                os.lchown(b_path, uid, -1)
+            except (IOError, OSError) as e:
+                path = to_text(b_path)
+                self.fail_json(path=path, msg='chown failed: %s' % to_text(e))
+            changed = True
+        return changed
+
+    def set_group_if_different(self, path, group, changed, diff=None, expand=True):
+        if group is None:
+            return changed
+        b_path = to_bytes(path, errors='surrogate_or_strict')
+        if expand:
+            b_path = os.path.expanduser(os.path.expandvars(b_path))
+        if self.check_file_absent_if_check_mode(b_path):
+            return True
+        orig_uid, orig_gid = self.user_and_group(b_path, expand)
+        try:
+            gid = int(group)
+        except ValueError:
+            try:
+                gid = grp.getgrnam(group).gr_gid
+            except KeyError:
+                path = to_text(b_path)
+                self.fail_json(path=path, msg='chgrp failed: failed to look up group %s' % group)
+        if orig_gid != gid:
+            if diff is not None:
+                if 'before' not in diff:
+                    diff['before'] = {}
+                diff['before']['group'] = orig_gid
+                if 'after' not in diff:
+                    diff['after'] = {}
+                diff['after']['group'] = gid
+            if self.check_mode:
+                return True
+            try:
+                os.lchown(b_path, -1, gid)
+            except OSError:
+                path = to_text(b_path)
+                self.fail_json(path=path, msg='chgrp failed')
+            changed = True
+        return changed
+
+    def set_mode_if_different(self, path, mode, changed, diff=None, expand=True):
+        if mode is None:
+            return changed
+        b_path = to_bytes(path, errors='surrogate_or_strict')
+        if expand:
+            b_path = os.path.expanduser(os.path.expandvars(b_path))
+        if self.check_file_absent_if_check_mode(b_path):
+            return True
+        path_stat = os.lstat(b_path)
+        if not isinstance(mode, int):
+            try:
+                mode = int(mode, 8)
+            except Exception:
+                try:
+                    mode = self._symbolic_mode_to_octal(path_stat, mode)
+                except Exception as e:
+                    path = to_text(b_path)
+                    self.fail_json(path=path, msg='mode must be in octal or symbolic form', details=to_native(e))
+                if mode != stat.S_IMODE(mode):
+                    path = to_text(b_path)
+                    self.fail_json(path=path, msg='Invalid mode supplied, only permission info is allowed', details=mode)
+        prev_mode = stat.S_IMODE(path_stat.st_mode)
+        if prev_mode != mode:
+            if diff is not None:
+                if 'before' not in diff:
+                    diff['before'] = {}
+                diff['before']['mode'] = '0%03o' % prev_mode
+                if 'after' not in diff:
+                    diff['after'] = {}
+                diff['after']['mode'] = '0%03o' % mode
+            if self.check_mode:
+                return True
+            try:
+                if hasattr(os, 'lchmod'):
+                    os.lchmod(b_path, mode)
+                elif not os.path.islink(b_path):
+                    os.chmod(b_path, mode)
+                else:
+                    underlying_stat = os.stat(b_path)
+                    os.chmod(b_path, mode)
+                    new_underlying_stat = os.stat(b_path)
+                    if underlying_stat.st_mode != new_underlying_stat.st_mode:
+                        os.chmod(b_path, stat.S_IMODE(underlying_stat.st_mode))
+            except OSError as e:
+                if os.path.islink(b_path) and e.errno in (errno.EACCES, errno.EPERM, errno.EROFS):
+                    pass
+                elif e.errno in (errno.ENOENT, errno.ELOOP):
+                    pass
+                else:
+                    raise
+            except Exception as e:
+                path = to_text(b_path)
+                self.fail_json(path=path, msg='chmod failed', details=to_native(e), exception=traceback.format_exc())
+            path_stat = os.lstat(b_path)
+            new_mode = stat.S_IMODE(path_stat.st_mode)
+            if new_mode != prev_mode:
+                changed = True
+        return changed
+
+    def set_attributes_if_different(self, path, attributes, changed, diff=None, expand=True):
+        if attributes is None:
+            return changed
+        b_path = to_bytes(path, errors='surrogate_or_strict')
+        if expand:
+            b_path = os.path.expanduser(os.path.expandvars(b_path))
+        if self.check_file_absent_if_check_mode(b_path):
+            return True
+        existing = self.get_file_attributes(b_path, include_version=False)
+        attr_mod = '='
+        if attributes.startswith(('-', '+')):
+            attr_mod = attributes[0]
+            attributes = attributes[1:]
+        if existing.get('attr_flags', '') != attributes or attr_mod == '-':
+            attrcmd = self.get_bin_path('chattr')
+            if attrcmd:
+                attrcmd = [attrcmd, '%s%s' % (attr_mod, attributes), b_path]
+                chang

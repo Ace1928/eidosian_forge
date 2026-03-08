@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/bool_documentation.py
+KIND: code
+
+from ...Qt import QtWidgets
+from .basetypes import WidgetParameterItem
+
+    Registered parameter type which displays a QCheckBox

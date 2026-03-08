@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/adaptation_error_documentation.py
+KIND: code
+
+Exception raised when a requested adaptation is not possible.

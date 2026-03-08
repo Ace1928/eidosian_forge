@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_bencode_py_documentation.py
+KIND: code
+
+from typing import Dict, Type, Callable, List
+Constructor.
+
+        :param yield_tuples: if true, decode "l" elements as tuples rather than
+            lists.

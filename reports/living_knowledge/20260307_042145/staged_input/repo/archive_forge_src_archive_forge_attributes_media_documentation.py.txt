@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/attributes_media_documentation.py
+KIND: code
+
+from yowsup.layers.protocol_messages.protocolentities.attributes.attributes_context_info import ContextInfoAttributes
+
+        :type context_info: ContextInfo | None

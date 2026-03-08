@@ -15,9 +15,9 @@
     },
     {
       "id": "qwen2_5_1_5b_instruct_q8",
-      "repo": "bartowski/Qwen2.5-1.5B-Instruct-GGUF",
-      "filename": "Qwen2.5-1.5B-Instruct-Q8_0.gguf",
-      "path": "models/Qwen2.5-1.5B-Instruct-Q8_0.gguf",
+      "repo": "bartowski/Qwen3.5-2B-Instruct-GGUF",
+      "filename": "Qwen3.5-2B-Instruct-Q8_0.gguf",
+      "path": "models/Qwen3.5-2B-Instruct-Q8_0.gguf",
       "params_b": 1.5,
       "quant": "Q8_0",
       "modalities": ["text"],

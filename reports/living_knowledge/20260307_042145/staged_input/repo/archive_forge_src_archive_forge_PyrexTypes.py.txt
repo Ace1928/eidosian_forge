@@ -1,0 +1,546 @@
+SOURCE_PATH: archive_forge/src/archive_forge/PyrexTypes.py
+KIND: code
+
+#
+#   Cython/Python language types
+#
+
+from __future__ import absolute_import
+
+import copy
+import hashlib
+import re
+
+try:
+    reduce
+except NameError:
+    from functools import reduce
+
+from Cython.Utils import cached_function
+from .Code import UtilityCode, LazyUtilityCode, TempitaUtilityCode
+from . import StringEncoding
+from . import Naming
+
+from .Errors import error, warning
+
+
+class BaseType(object):
+    #
+    #  Base class for all Cython types including pseudo-types.
+
+    # List of attribute names of any subtypes
+    subtypes = []
+    _empty_declaration = None
+    _specialization_name = None
+    default_format_spec = None
+
+    def can_coerce_to_pyobject(self, env):
+        return False
+
+    def can_coerce_from_pyobject(self, env):
+        return False
+
+    def can_coerce_to_pystring(self, env, format_spec=None):
+        return False
+
+    def convert_to_pystring(self, cvalue, code, format_spec=None):
+        raise NotImplementedError("C types that support string formatting must override this method")
+
+    def cast_code(self, expr_code):
+        return "((%s)%s)" % (self.empty_declaration_code(), expr_code)
+
+    def empty_declaration_code(self):
+        if self._empty_declaration is None:
+            self._empty_declaration = self.declaration_code('')
+        return self._empty_declaration
+
+    def specialization_name(self):
+        if self._specialization_name is None:
+            # This is not entirely robust.
+            common_subs = (self.empty_declaration_code()
+                           .replace("unsigned ", "unsigned_")
+                           .replace("long long", "long_long")
+                           .replace(" ", "__"))
+            self._specialization_name = re.sub(
+                '[^a-zA-Z0-9_]', lambda x: '_%x_' % ord(x.group(0)), common_subs)
+        return self._specialization_name
+
+    def base_declaration_code(self, base_code, entity_code):
+        if entity_code:
+            return "%s %s" % (base_code, entity_code)
+        else:
+            return base_code
+
+    def __deepcopy__(self, memo):
+        """
+        Types never need to be copied, if we do copy, Unfortunate Things
+        Will Happen!
+        """
+        return self
+
+    def get_fused_types(self, result=None, seen=None, subtypes=None):
+        subtypes = subtypes or self.subtypes
+        if not subtypes:
+            return None
+
+        if result is None:
+            result = []
+            seen = set()
+
+        for attr in subtypes:
+            list_or_subtype = getattr(self, attr)
+            if list_or_subtype:
+                if isinstance(list_or_subtype, BaseType):
+                    list_or_subtype.get_fused_types(result, seen)
+                else:
+                    for subtype in list_or_subtype:
+                        subtype.get_fused_types(result, seen)
+
+        return result
+
+    def specialize_fused(self, env):
+        if env.fused_to_specific:
+            return self.specialize(env.fused_to_specific)
+
+        return self
+
+    @property
+    def is_fused(self):
+        """
+        Whether this type or any of its subtypes is a fused type
+        """
+        # Add this indirection for the is_fused property to allow overriding
+        # get_fused_types in subclasses.
+        return self.get_fused_types()
+
+    def deduce_template_params(self, actual):
+        """
+        Deduce any template params in this (argument) type given the actual
+        argument type.
+
+        http://en.cppreference.com/w/cpp/language/function_template#Template_argument_deduction
+        """
+        return {}
+
+    def __lt__(self, other):
+        """
+        For sorting. The sorting order should correspond to the preference of
+        conversion from Python types.
+
+        Override to provide something sensible. This is only implemented so that
+        python 3 doesn't trip
+        """
+        return id(type(self)) < id(type(other))
+
+    def py_type_name(self):
+        """
+        Return the name of the Python type that can coerce to this type.
+        """
+
+    def typeof_name(self):
+        """
+        Return the string with which fused python functions can be indexed.
+        """
+        if self.is_builtin_type or self.py_type_name() == 'object':
+            index_name = self.py_type_name()
+        else:
+            index_name = str(self)
+
+        return index_name
+
+    def check_for_null_code(self, cname):
+        """
+        Return the code for a NULL-check in case an UnboundLocalError should
+        be raised if an entry of this type is referenced before assignment.
+        Returns None if no check should be performed.
+        """
+        return None
+
+    def invalid_value(self):
+        """
+        Returns the most invalid value an object of this type can assume as a
+        C expression string. Returns None if no such value exists.
+        """
+
+
+class PyrexType(BaseType):
+    #
+    #  Base class for all Cython types
+    #
+    #  is_pyobject           boolean     Is a Python object type
+    #  is_extension_type     boolean     Is a Python extension type
+    #  is_final_type         boolean     Is a final extension type
+    #  is_numeric            boolean     Is a C numeric type
+    #  is_int                boolean     Is a C integer type
+    #  is_float              boolean     Is a C floating point type
+    #  is_complex            boolean     Is a C complex type
+    #  is_void               boolean     Is the C void type
+    #  is_array              boolean     Is a C array type
+    #  is_ptr                boolean     Is a C pointer type
+    #  is_null_ptr           boolean     Is the type of NULL
+    #  is_reference          boolean     Is a C reference type
+    #  is_const              boolean     Is a C const type.
+    #  is_cfunction          boolean     Is a C function type
+    #  is_struct_or_union    boolean     Is a C struct or union type
+    #  is_struct             boolean     Is a C struct type
+    #  is_enum               boolean     Is a C enum type
+    #  is_typedef            boolean     Is a typedef type
+    #  is_string             boolean     Is a C char * type
+    #  is_pyunicode_ptr      boolean     Is a C PyUNICODE * type
+    #  is_cpp_string         boolean     Is a C++ std::string type
+    #  is_unicode_char       boolean     Is either Py_UCS4 or Py_UNICODE
+    #  is_returncode         boolean     Is used only to signal exceptions
+    #  is_error              boolean     Is the dummy error type
+    #  is_buffer             boolean     Is buffer access type
+    #  is_pythran_expr       boolean     Is Pythran expr
+    #  is_numpy_buffer       boolean     Is Numpy array buffer
+    #  has_attributes        boolean     Has C dot-selectable attributes
+    #  default_value         string      Initial value that can be assigned before first user assignment.
+    #  declaration_value     string      The value statically assigned on declaration (if any).
+    #  entry                 Entry       The Entry for this type
+    #
+    #  declaration_code(entity_code,
+    #      for_display = 0, dll_linkage = None, pyrex = 0)
+    #    Returns a code fragment for the declaration of an entity
+    #    of this type, given a code fragment for the entity.
+    #    * If for_display, this is for reading by a human in an error
+    #      message; otherwise it must be valid C code.
+    #    * If dll_linkage is not None, it must be 'DL_EXPORT' or
+    #      'DL_IMPORT', and will be added to the base type part of
+    #      the declaration.
+    #    * If pyrex = 1, this is for use in a 'cdef extern'
+    #      statement of a Cython include file.
+    #
+    #  assignable_from(src_type)
+    #    Tests whether a variable of this type can be
+    #    assigned a value of type src_type.
+    #
+    #  same_as(other_type)
+    #    Tests whether this type represents the same type
+    #    as other_type.
+    #
+    #  as_argument_type():
+    #    Coerces array and C function types into pointer type for use as
+    #    a formal argument type.
+    #
+
+    is_pyobject = 0
+    is_unspecified = 0
+    is_extension_type = 0
+    is_final_type = 0
+    is_builtin_type = 0
+    is_numeric = 0
+    is_int = 0
+    is_float = 0
+    is_complex = 0
+    is_void = 0
+    is_array = 0
+    is_ptr = 0
+    is_null_ptr = 0
+    is_reference = 0
+    is_const = 0
+    is_cfunction = 0
+    is_struct_or_union = 0
+    is_cpp_class = 0
+    is_cpp_string = 0
+    is_struct = 0
+    is_enum = 0
+    is_typedef = 0
+    is_string = 0
+    is_pyunicode_ptr = 0
+    is_unicode_char = 0
+    is_returncode = 0
+    is_error = 0
+    is_buffer = 0
+    is_ctuple = 0
+    is_memoryviewslice = 0
+    is_pythran_expr = 0
+    is_numpy_buffer = 0
+    has_attributes = 0
+    default_value = ""
+    declaration_value = ""
+
+    def resolve(self):
+        # If a typedef, returns the base type.
+        return self
+
+    def specialize(self, values):
+        # TODO(danilo): Override wherever it makes sense.
+        return self
+
+    def literal_code(self, value):
+        # Returns a C code fragment representing a literal
+        # value of this type.
+        return str(value)
+
+    def __str__(self):
+        return self.declaration_code("", for_display = 1).strip()
+
+    def same_as(self, other_type, **kwds):
+        return self.same_as_resolved_type(other_type.resolve(), **kwds)
+
+    def same_as_resolved_type(self, other_type):
+        return self == other_type or other_type is error_type
+
+    def subtype_of(self, other_type):
+        return self.subtype_of_resolved_type(other_type.resolve())
+
+    def subtype_of_resolved_type(self, other_type):
+        return self.same_as(other_type)
+
+    def assignable_from(self, src_type):
+        return self.assignable_from_resolved_type(src_type.resolve())
+
+    def assignable_from_resolved_type(self, src_type):
+        return self.same_as(src_type)
+
+    def as_argument_type(self):
+        return self
+
+    def is_complete(self):
+        # A type is incomplete if it is an unsized array,
+        # a struct whose attributes are not defined, etc.
+        return 1
+
+    def is_simple_buffer_dtype(self):
+        return (self.is_int or self.is_float or self.is_complex or self.is_pyobject or
+                self.is_extension_type or self.is_ptr)
+
+    def struct_nesting_depth(self):
+        # Returns the number levels of nested structs. This is
+        # used for constructing a stack for walking the run-time
+        # type information of the struct.
+        return 1
+
+    def global_init_code(self, entry, code):
+        # abstract
+        pass
+
+    def needs_nonecheck(self):
+        return 0
+
+    def _assign_from_py_code(self, source_code, result_code, error_pos, code,
+                             from_py_function=None, error_condition=None, extra_args=None):
+        args = ', ' + ', '.join('%s' % arg for arg in extra_args) if extra_args else ''
+        convert_call = "%s(%s%s)" % (
+            from_py_function or self.from_py_function,
+            source_code,
+            args,
+        )
+        if self.is_enum:
+            convert_call = typecast(self, c_long_type, convert_call)
+        return '%s = %s; %s' % (
+            result_code,
+            convert_call,
+            code.error_goto_if(error_condition or self.error_condition(result_code), error_pos))
+
+
+def public_decl(base_code, dll_linkage):
+    if dll_linkage:
+        return "%s(%s)" % (dll_linkage, base_code.replace(',', ' __PYX_COMMA '))
+    else:
+        return base_code
+
+def create_typedef_type(name, base_type, cname, is_external=0, namespace=None):
+    is_fused = base_type.is_fused
+    if base_type.is_complex or is_fused:
+        if is_external:
+            if is_fused:
+                msg = "Fused"
+            else:
+                msg = "Complex"
+
+            raise ValueError("%s external typedefs not supported" % msg)
+
+        return base_type
+    else:
+        return CTypedefType(name, base_type, cname, is_external, namespace)
+
+
+class CTypedefType(BaseType):
+    #
+    #  Pseudo-type defined with a ctypedef statement in a
+    #  'cdef extern from' block.
+    #  Delegates most attribute lookups to the base type.
+    #  (Anything not defined here or in the BaseType is delegated.)
+    #
+    #  qualified_name      string
+    #  typedef_name        string
+    #  typedef_cname       string
+    #  typedef_base_type   PyrexType
+    #  typedef_is_external bool
+
+    is_typedef = 1
+    typedef_is_external = 0
+
+    to_py_utility_code = None
+    from_py_utility_code = None
+
+    subtypes = ['typedef_base_type']
+
+    def __init__(self, name, base_type, cname, is_external=0, namespace=None):
+        assert not base_type.is_complex
+        self.typedef_name = name
+        self.typedef_cname = cname
+        self.typedef_base_type = base_type
+        self.typedef_is_external = is_external
+        self.typedef_namespace = namespace
+
+    def invalid_value(self):
+        return self.typedef_base_type.invalid_value()
+
+    def resolve(self):
+        return self.typedef_base_type.resolve()
+
+    def declaration_code(self, entity_code,
+            for_display = 0, dll_linkage = None, pyrex = 0):
+        if pyrex or for_display:
+            base_code = self.typedef_name
+        else:
+            base_code = public_decl(self.typedef_cname, dll_linkage)
+        if self.typedef_namespace is not None and not pyrex:
+            base_code = "%s::%s" % (self.typedef_namespace.empty_declaration_code(), base_code)
+        return self.base_declaration_code(base_code, entity_code)
+
+    def as_argument_type(self):
+        return self
+
+    def cast_code(self, expr_code):
+        # If self is really an array (rather than pointer), we can't cast.
+        # For example, the gmp mpz_t.
+        if self.typedef_base_type.is_array:
+            base_type = self.typedef_base_type.base_type
+            return CPtrType(base_type).cast_code(expr_code)
+        else:
+            return BaseType.cast_code(self, expr_code)
+
+    def specialize(self, values):
+        base_type = self.typedef_base_type.specialize(values)
+        namespace = self.typedef_namespace.specialize(values) if self.typedef_namespace else None
+        if base_type is self.typedef_base_type and namespace is self.typedef_namespace:
+            return self
+        else:
+            return create_typedef_type(self.typedef_name, base_type, self.typedef_cname,
+                                0, namespace)
+
+    def __repr__(self):
+        return "<CTypedefType %s>" % self.typedef_cname
+
+    def __str__(self):
+        return self.typedef_name
+
+    def _create_utility_code(self, template_utility_code,
+                             template_function_name):
+        type_name = type_identifier(self.typedef_cname)
+        utility_code = template_utility_code.specialize(
+            type     = self.typedef_cname,
+            TypeName = type_name)
+        function_name = template_function_name % type_name
+        return utility_code, function_name
+
+    def create_to_py_utility_code(self, env):
+        if self.typedef_is_external:
+            if not self.to_py_utility_code:
+                base_type = self.typedef_base_type
+                if type(base_type) is CIntType:
+                    self.to_py_function = "__Pyx_PyInt_From_" + self.specialization_name()
+                    env.use_utility_code(TempitaUtilityCode.load_cached(
+                        "CIntToPy", "TypeConversion.c",
+                        context={"TYPE": self.empty_declaration_code(),
+                                 "TO_PY_FUNCTION": self.to_py_function}))
+                    return True
+                elif base_type.is_float:
+                    pass # XXX implement!
+                elif base_type.is_complex:
+                    pass # XXX implement!
+                    pass
+                elif base_type.is_cpp_string:
+                    cname = "__pyx_convert_PyObject_string_to_py_%s" % type_identifier(self)
+                    context = {
+                        'cname': cname,
+                        'type': self.typedef_cname,
+                    }
+                    from .UtilityCode import CythonUtilityCode
+                    env.use_utility_code(CythonUtilityCode.load(
+                        "string.to_py", "CppConvert.pyx", context=context))
+                    self.to_py_function = cname
+                    return True
+            if self.to_py_utility_code:
+                env.use_utility_code(self.to_py_utility_code)
+                return True
+        # delegation
+        return self.typedef_base_type.create_to_py_utility_code(env)
+
+    def create_from_py_utility_code(self, env):
+        if self.typedef_is_external:
+            if not self.from_py_utility_code:
+                base_type = self.typedef_base_type
+                if type(base_type) is CIntType:
+                    self.from_py_function = "__Pyx_PyInt_As_" + self.specialization_name()
+                    env.use_utility_code(TempitaUtilityCode.load_cached(
+                        "CIntFromPy", "TypeConversion.c",
+                        context={"TYPE": self.empty_declaration_code(),
+                                 "FROM_PY_FUNCTION": self.from_py_function}))
+                    return True
+                elif base_type.is_float:
+                    pass # XXX implement!
+                elif base_type.is_complex:
+                    pass # XXX implement!
+                elif base_type.is_cpp_string:
+                    cname = '__pyx_convert_string_from_py_%s' % type_identifier(self)
+                    context = {
+                        'cname': cname,
+                        'type': self.typedef_cname,
+                    }
+                    from .UtilityCode import CythonUtilityCode
+                    env.use_utility_code(CythonUtilityCode.load(
+                        "string.from_py", "CppConvert.pyx", context=context))
+                    self.from_py_function = cname
+                    return True
+            if self.from_py_utility_code:
+                env.use_utility_code(self.from_py_utility_code)
+                return True
+        # delegation
+        return self.typedef_base_type.create_from_py_utility_code(env)
+
+    def to_py_call_code(self, source_code, result_code, result_type, to_py_function=None):
+        if to_py_function is None:
+            to_py_function = self.to_py_function
+        return self.typedef_base_type.to_py_call_code(
+            source_code, result_code, result_type, to_py_function)
+
+    def from_py_call_code(self, source_code, result_code, error_pos, code,
+                          from_py_function=None, error_condition=None):
+        return self.typedef_base_type.from_py_call_code(
+            source_code, result_code, error_pos, code,
+            from_py_function or self.from_py_function,
+            error_condition or self.error_condition(result_code)
+        )
+
+    def overflow_check_binop(self, binop, env, const_rhs=False):
+        env.use_utility_code(UtilityCode.load("Common", "Overflow.c"))
+        type = self.empty_declaration_code()
+        name = self.specialization_name()
+        if binop == "lshift":
+            env.use_utility_code(TempitaUtilityCode.load_cached(
+                "LeftShift", "Overflow.c",
+                context={'TYPE': type, 'NAME': name, 'SIGNED': self.signed}))
+        else:
+            if const_rhs:
+                binop += "_const"
+            _load_overflow_base(env)
+            env.use_utility_code(TempitaUtilityCode.load_cached(
+                "SizeCheck", "Overflow.c",
+                context={'TYPE': type, 'NAME': name}))
+            env.use_utility_code(TempitaUtilityCode.load_cached(
+                "Binop", "Overflow.c",
+                context={'TYPE': type, 'NAME': name, 'BINOP': binop}))
+        return "__Pyx_%s_%s_checking_overflow" % (binop, name)
+
+    def error_condition(self, result_code):
+        if self.typedef_is_external:
+            if self.exception_value:
+                condition = "(%s == %s)" % (
+                    result_code, self.cast_code(self.exception_value))
+                if self.exception_check:
+                    condition += " && PyErr_Occurred()"

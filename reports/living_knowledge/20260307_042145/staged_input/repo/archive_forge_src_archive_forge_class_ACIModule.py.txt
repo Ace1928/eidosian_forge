@@ -1,0 +1,387 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_ACIModule.py
+KIND: code
+
+from __future__ import absolute_import, division, print_function
+import base64
+import json
+import os
+from copy import deepcopy
+from ansible.module_utils.urls import fetch_url
+from ansible.module_utils._text import to_bytes, to_native
+from ansible.module_utils.basic import env_fallback
+from ansible.module_utils.connection import Connection
+class ACIModule(object):
+
+    def __init__(self, module):
+        self.module = module
+        self.params = module.params
+        self.result = dict(changed=False)
+        self.headers = dict()
+        self.child_classes = set()
+        self.connection = None
+        self.error = dict(code=None, text=None)
+        self.existing = None
+        self.config = dict()
+        self.original = None
+        self.proposed = dict()
+        self.stdout = None
+        self.filter_string = ''
+        self.obj_filter = None
+        self.method = None
+        self.path = None
+        self.parent_path = None
+        self.response = None
+        self.status = None
+        self.url = None
+        self.httpapi_logs = list()
+        self.imdata = None
+        self.totalCount = None
+        self.define_protocol()
+        self.set_connection()
+        if self.module._debug:
+            self.module.warn('Enable debug output because ANSIBLE_DEBUG was set.')
+            self.params['output_level'] = 'debug'
+        if self.params.get('port') is not None:
+            self.base_url = '{protocol}://{host}:{port}'.format_map(self.params)
+        else:
+            self.base_url = '{protocol}://{host}'.format_map(self.params)
+        if self.params.get('private_key'):
+            if not HAS_CRYPTOGRAPHY and (not HAS_OPENSSL):
+                self.module.fail_json(msg='Cannot use signature-based authentication because cryptography (preferred) or pyopenssl are not available')
+            elif self.params.get('password') is not None:
+                self.module.warn("When doing ACI signatured-based authentication, providing parameter 'password' is not required")
+        elif self.connection is None:
+            if self.params.get('password'):
+                self.login()
+            else:
+                self.module.fail_json(msg="Either parameter 'password' or 'private_key' is required for authentication")
+
+    def boolean(self, value, true='yes', false='no'):
+        """Return an acceptable value back"""
+        if value is None:
+            return None
+        elif value is True:
+            return true
+        elif value is False:
+            return false
+        self.module.fail_json(msg="Boolean value '%s' is an invalid ACI boolean value.")
+
+    def iso8601_format(self, dt):
+        """Return an ACI-compatible ISO8601 formatted time: 2123-12-12T00:00:00.000+00:00"""
+        try:
+            return dt.isoformat(timespec='milliseconds')
+        except Exception:
+            tz = dt.strftime('%z')
+            return '%s.%03d%s:%s' % (dt.strftime('%Y-%m-%dT%H:%M:%S'), dt.microsecond / 1000, tz[:3], tz[3:])
+
+    def define_protocol(self):
+        """Set protocol based on use_ssl parameter"""
+        self.params['protocol'] = 'https' if self.params.get('use_ssl') or self.params.get('use_ssl') is None else 'http'
+
+    def set_connection(self):
+        if self.connection is None and self.module._socket_path:
+            self.connection = Connection(self.module._socket_path)
+
+    def login(self):
+        """Log in to APIC"""
+        url = '{0}/api/aaaLogin.json'.format(self.base_url)
+        payload = {'aaaUser': {'attributes': {'name': 'admin' if self.params.get('username') is None else self.params.get('username'), 'pwd': self.params.get('password')}}}
+        resp, auth = self.api_call('POST', url, data=json.dumps(payload), return_response=True)
+        if auth.get('status') != 200:
+            self.response = auth.get('msg')
+            self.status = auth.get('status')
+            try:
+                self.response_json(auth['body'])
+                self.fail_json(msg='Authentication failed: {code} {text}'.format_map(self.error))
+            except KeyError:
+                self.fail_json(msg='Connection failed for {url}. {msg}'.format_map(auth))
+        self.headers['Cookie'] = resp.headers.get('Set-Cookie')
+
+    def cert_auth(self, path=None, payload='', method=None):
+        """Perform APIC signature-based authentication, not the expected SSL client certificate authentication."""
+        if method is None:
+            method = self.params.get('method').upper()
+        if path is None:
+            path = self.path
+        path = '/' + path.lstrip('/')
+        if payload is None:
+            payload = ''
+        try:
+            if HAS_CRYPTOGRAPHY:
+                key = self.params.get('private_key').encode()
+                sig_key = serialization.load_pem_private_key(key, password=None, backend=default_backend())
+            else:
+                sig_key = load_privatekey(FILETYPE_PEM, self.params.get('private_key'))
+        except Exception:
+            if os.path.exists(self.params.get('private_key')):
+                try:
+                    permission = 'r'
+                    if HAS_CRYPTOGRAPHY:
+                        permission = 'rb'
+                    with open(self.params.get('private_key'), permission) as fh:
+                        private_key_content = fh.read()
+                except Exception:
+                    self.module.fail_json(msg="Cannot open private key file '{private_key}'.".format_map(self.params))
+                try:
+                    if HAS_CRYPTOGRAPHY:
+                        sig_key = serialization.load_pem_private_key(private_key_content, password=None, backend=default_backend())
+                    else:
+                        sig_key = load_privatekey(FILETYPE_PEM, private_key_content)
+                except Exception:
+                    self.module.fail_json(msg="Cannot load private key file '{private_key}'.".format_map(self.params))
+                if self.params.get('certificate_name') is None:
+                    self.params['certificate_name'] = os.path.basename(os.path.splitext(self.params.get('private_key'))[0])
+            else:
+                self.module.fail_json(msg='Provided private key {private_key} does not appear to be a private key or provided file does not exist.'.format_map(self.params))
+        if self.params.get('certificate_name') is None:
+            self.params['certificate_name'] = 'admin' if self.params.get('username') is None else self.params.get('username')
+        sig_request = method + path + payload
+        if HAS_CRYPTOGRAPHY:
+            sig_signature = sig_key.sign(sig_request.encode(), padding.PKCS1v15(), hashes.SHA256())
+        else:
+            sig_signature = sign(sig_key, sig_request, 'sha256')
+        sig_dn = 'uni/userext/user-{username}/usercert-{certificate_name}'.format_map(self.params)
+        self.headers['Cookie'] = 'APIC-Certificate-Algorithm=v1.0; ' + 'APIC-Certificate-DN={0}; '.format(sig_dn) + 'APIC-Certificate-Fingerprint=fingerprint; ' + 'APIC-Request-Signature={0}'.format(to_native(base64.b64encode(sig_signature)))
+
+    def response_json(self, rawoutput):
+        """Handle APIC JSON response output"""
+        try:
+            jsondata = json.loads(rawoutput)
+        except Exception as e:
+            self.error = dict(code=-1, text="Unable to parse output as JSON, see 'raw' output. {0}".format(e))
+            self.result['raw'] = rawoutput
+            return
+        self.imdata = jsondata.get('imdata')
+        if self.imdata is None:
+            self.imdata = dict()
+        self.totalCount = int(jsondata.get('totalCount'))
+        self.response_error()
+
+    def response_xml(self, rawoutput):
+        """Handle APIC XML response output"""
+        try:
+            xml = lxml.etree.fromstring(to_bytes(rawoutput))
+            xmldata = cobra.data(xml)
+        except Exception as e:
+            self.error = dict(code=-1, text="Unable to parse output as XML, see 'raw' output. {0}".format(e))
+            self.result['raw'] = rawoutput
+            return
+        self.imdata = xmldata.get('imdata', {}).get('children')
+        if self.imdata is None:
+            self.imdata = dict()
+        self.totalCount = int(xmldata.get('imdata', {}).get('attributes', {}).get('totalCount', -1))
+        self.response_error()
+
+    def response_error(self):
+        """Set error information when found"""
+        if self.totalCount != '0':
+            try:
+                self.error = self.imdata[0].get('error').get('attributes')
+            except (AttributeError, IndexError, KeyError):
+                pass
+
+    def update_qs(self, params):
+        """Append key-value pairs to self.filter_string"""
+        accepted_params = dict(((k, v) for k, v in params.items() if v is not None))
+        if accepted_params:
+            if self.filter_string:
+                self.filter_string += '&'
+            else:
+                self.filter_string = '?'
+            self.filter_string += '&'.join(['%s=%s' % (k, v) for k, v in accepted_params.items()])
+
+    def build_filter(self, obj_class, params):
+        """Build an APIC filter based on obj_class and key-value pairs"""
+        accepted_params = dict(((k, v) for k, v in params.items() if v is not None))
+        if len(accepted_params) == 1:
+            return ','.join(('eq({0}.{1},"{2}")'.format(obj_class, k, v) for k, v in accepted_params.items()))
+        elif len(accepted_params) > 1:
+            return 'and(' + ','.join(['eq({0}.{1},"{2}")'.format(obj_class, k, v) for k, v in accepted_params.items()]) + ')'
+
+    def _deep_url_path_builder(self, obj):
+        target_class = obj.get('target_class')
+        target_filter = obj.get('target_filter')
+        subtree_class = obj.get('subtree_class')
+        subtree_filter = obj.get('subtree_filter')
+        object_rn = obj.get('object_rn')
+        mo = obj.get('module_object')
+        add_subtree_filter = obj.get('add_subtree_filter')
+        add_target_filter = obj.get('add_target_filter')
+        if self.module.params.get('state') in ('absent', 'present') and mo is not None:
+            self.path = 'api/mo/uni/{0}.json'.format(object_rn)
+            self.update_qs({'rsp-prop-include': 'config-only'})
+        else:
+            if object_rn is not None:
+                self.path = 'api/mo/uni/{0}.json'.format(object_rn)
+            else:
+                self.path = 'api/class/{0}.json'.format(target_class)
+            if add_target_filter:
+                self.update_qs({'query-target-filter': self.build_filter(target_class, target_filter)})
+            if add_subtree_filter:
+                self.update_qs({'rsp-subtree-filter': self.build_filter(subtree_class, subtree_filter)})
+        if self.params.get('port') is not None:
+            self.url = '{protocol}://{host}:{port}/{path}'.format(path=self.path, **self.module.params)
+        else:
+            self.url = '{protocol}://{host}/{path}'.format(path=self.path, **self.module.params)
+        if self.child_classes:
+            self.update_qs({'rsp-subtree': 'full', 'rsp-subtree-class': ','.join(sorted(self.child_classes))})
+
+    def _deep_url_parent_object(self, parent_objects, parent_class):
+        for parent_object in parent_objects:
+            if parent_object.get('aci_class') is parent_class:
+                return parent_object
+        return None
+
+    def construct_deep_url(self, target_object, parent_objects=None, child_classes=None):
+        """
+        This method is used to retrieve the appropriate URL path and filter_string to make the request to the APIC.
+
+        :param target_object: The target class dictionary containing parent_class, aci_class, aci_rn, target_filter, and module_object keys.
+        :param parent_objects: The parent class list of dictionaries containing parent_class, aci_class, aci_rn, target_filter, and module_object keys.
+        :param child_classes: The list of child classes that the module supports along with the object.
+        :type target_object: dict
+        :type parent_objects: list[dict]
+        :type child_classes: list[string]
+        :return: The path and filter_string needed to build the full URL.
+        """
+        self.filter_string = ''
+        rn_builder = None
+        subtree_classes = None
+        add_subtree_filter = False
+        add_target_filter = False
+        has_target_query = False
+        has_target_query_compare = False
+        has_target_query_difference = False
+        has_target_query_called = False
+        if child_classes is None:
+            self.child_classes = set()
+        else:
+            self.child_classes = set(child_classes)
+        target_parent_class = target_object.get('parent_class')
+        target_class = target_object.get('aci_class')
+        target_rn = target_object.get('aci_rn')
+        target_filter = target_object.get('target_filter')
+        target_module_object = target_object.get('module_object')
+        url_path_object = dict(target_class=target_class, target_filter=target_filter, subtree_class=target_class, subtree_filter=target_filter, module_object=target_module_object)
+        if target_module_object is not None:
+            rn_builder = target_rn
+        else:
+            has_target_query = True
+            has_target_query_compare = True
+        if parent_objects is not None:
+            current_parent_class = target_parent_class
+            has_parent_query_compare = False
+            has_parent_query_difference = False
+            is_first_parent = True
+            is_single_parent = None
+            search_classes = set()
+            while current_parent_class != 'uni':
+                parent_object = self._deep_url_parent_object(parent_objects=parent_objects, parent_class=current_parent_class)
+                if parent_object is not None:
+                    parent_parent_class = parent_object.get('parent_class')
+                    parent_class = parent_object.get('aci_class')
+                    parent_rn = parent_object.get('aci_rn')
+                    parent_filter = parent_object.get('target_filter')
+                    parent_module_object = parent_object.get('module_object')
+                    if is_first_parent:
+                        is_single_parent = True
+                    else:
+                        is_single_parent = False
+                    is_first_parent = False
+                    if parent_parent_class != 'uni':
+                        search_classes.add(parent_class)
+                    if parent_module_object is not None:
+                        if rn_builder is not None:
+                            rn_builder = '{0}/{1}'.format(parent_rn, rn_builder)
+                        else:
+                            rn_builder = parent_rn
+                        url_path_object['target_class'] = parent_class
+                        url_path_object['target_filter'] = parent_filter
+                        has_target_query = False
+                    else:
+                        rn_builder = None
+                        subtree_classes = search_classes
+                        has_target_query = True
+                        if is_single_parent:
+                            has_parent_query_compare = True
+                    current_parent_class = parent_parent_class
+                else:
+                    raise ValueError("Reference error for parent_class '{0}'. Each parent_class must reference a valid object".format(current_parent_class))
+                if not has_target_query_difference and (not has_target_query_called):
+                    if has_target_query is not has_target_query_compare:
+                        has_target_query_difference = True
+                elif not has_parent_query_difference and has_target_query is not has_parent_query_compare:
+                    has_parent_query_difference = True
+                has_target_query_called = True
+            if not has_parent_query_difference and has_parent_query_compare and (target_module_object is not None):
+                add_target_filter = True
+            elif has_parent_query_difference and target_module_object is not None:
+                add_subtree_filter = True
+                self.child_classes.add(target_class)
+                if has_target_query:
+                    add_target_filter = True
+            elif has_parent_query_difference and (not has_target_query) and (target_module_object is None):
+                self.child_classes.add(target_class)
+                self.child_classes.update(subtree_classes)
+            elif not has_parent_query_difference and (not has_target_query) and (target_module_object is None):
+                self.child_classes.add(target_class)
+            elif not has_target_query and is_single_parent and (target_module_object is None):
+                self.child_classes.add(target_class)
+        url_path_object['object_rn'] = rn_builder
+        url_path_object['add_subtree_filter'] = add_subtree_filter
+        url_path_object['add_target_filter'] = add_target_filter
+        self._deep_url_path_builder(url_path_object)
+
+    def construct_url(self, root_class, subclass_1=None, subclass_2=None, subclass_3=None, subclass_4=None, subclass_5=None, child_classes=None, config_only=True):
+        """
+        This method is used to retrieve the appropriate URL path and filter_string to make the request to the APIC.
+
+        :param root_class: The top-level class dictionary containing aci_class, aci_rn, target_filter, and module_object keys.
+        :param sublass_1: The second-level class dictionary containing aci_class, aci_rn, target_filter, and module_object keys.
+        :param sublass_2: The third-level class dictionary containing aci_class, aci_rn, target_filter, and module_object keys.
+        :param sublass_3: The fourth-level class dictionary containing aci_class, aci_rn, target_filter, and module_object keys.
+        :param child_classes: The list of child classes that the module supports along with the object.
+        :type root_class: dict
+        :type subclass_1: dict
+        :type subclass_2: dict
+        :type subclass_3: dict
+        :type subclass_4: dict
+        :type subclass_5: dict
+        :type child_classes: list
+        :return: The path and filter_string needed to build the full URL.
+        """
+        self.filter_string = ''
+        if child_classes is None:
+            self.child_classes = set()
+        else:
+            self.child_classes = set(child_classes)
+        if subclass_5 is not None:
+            self._construct_url_6(root_class, subclass_1, subclass_2, subclass_3, subclass_4, subclass_5, config_only)
+        elif subclass_4 is not None:
+            self._construct_url_5(root_class, subclass_1, subclass_2, subclass_3, subclass_4, config_only)
+        elif subclass_3 is not None:
+            self._construct_url_4(root_class, subclass_1, subclass_2, subclass_3, config_only)
+        elif subclass_2 is not None:
+            self._construct_url_3(root_class, subclass_1, subclass_2, config_only)
+        elif subclass_1 is not None:
+            self._construct_url_2(root_class, subclass_1, config_only)
+        else:
+            self._construct_url_1(root_class, config_only)
+        if self.params.get('port') is not None:
+            self.url = '{protocol}://{host}:{port}/{path}'.format(path=self.path, **self.module.params)
+        else:
+            self.url = '{protocol}://{host}/{path}'.format(path=self.path, **self.module.params)
+        if self.child_classes:
+            self.update_qs({'rsp-subtree': 'full', 'rsp-subtree-class': ','.join(sorted(self.child_classes))})
+
+    def _construct_url_1(self, obj, config_only=True):
+        """
+        This method is used by construct_url when the object is the top-level class.
+        """
+        obj_class = obj.get('aci_class')
+        obj_rn = obj.get('aci_rn')
+        obj_filter = obj.get('target_filter')
+        mo = obj.get('module_object')
+        if self.module.params.get('state') in ('absent', 'present'):
+            self.path = 'api/mo/uni/{0}.json'.format(obj_rn)
+            self.parent_path = 'api/mo/

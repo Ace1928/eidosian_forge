@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/__meta___documentation.py
+KIND: code
+
+from __future__ import annotations
+from collections import namedtuple
+import re
+Get the canonical output string.

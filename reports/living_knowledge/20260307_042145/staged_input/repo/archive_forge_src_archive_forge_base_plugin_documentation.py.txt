@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/base_plugin_documentation.py
+KIND: code
+
+from abc import ABCMeta
+from abc import abstractmethod
+Creates simple plugin instance maker.
+
+        :param plugin_class: :class:`TBPlugin`

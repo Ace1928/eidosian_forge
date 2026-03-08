@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_convertions_documentation.py
+KIND: code
+
+A set of methods retained from np.compat module that
+are still used across codebase.

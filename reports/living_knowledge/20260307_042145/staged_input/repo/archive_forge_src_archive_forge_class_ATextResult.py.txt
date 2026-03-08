@@ -1,0 +1,14 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_ATextResult.py
+KIND: code
+
+import io
+import os
+import sys
+import pickle
+import subprocess
+from test import support
+import unittest
+from unittest.case import _Outcome
+from unittest.test.support import (LoggingResult,
+class ATextResult(unittest.TextTestResult, AResult):
+    pass

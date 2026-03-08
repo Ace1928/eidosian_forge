@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/cartan_type_documentation.py
+KIND: code
+
+from sympy.core import Atom, Basic
+
+        Returns the type of the Lie algebra

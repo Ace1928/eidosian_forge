@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/PKCS1_v1_5_documentation.py
+KIND: code
+
+import types
+from Cryptodome.Signature import pkcs1_15
+
+Legacy module for PKCS#1 v1.5 signatures.
+
+:undocumented: __package__

@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_dist_ver.py
+KIND: code
+
+__version__ = '4.66.2'

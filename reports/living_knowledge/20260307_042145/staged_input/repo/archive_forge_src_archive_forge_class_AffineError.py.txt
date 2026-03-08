@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AffineError.py
+KIND: code
+
+from collections import namedtuple
+import math
+import warnings
+class AffineError(Exception):
+    pass

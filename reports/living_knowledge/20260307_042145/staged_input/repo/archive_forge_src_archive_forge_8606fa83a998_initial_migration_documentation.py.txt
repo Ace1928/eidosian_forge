@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/8606fa83a998_initial_migration_documentation.py
+KIND: code
+
+import sqlalchemy as sa
+from alembic import op
+initial_migration
+
+Revision ID: 8606fa83a998
+Revises:
+Create Date: 2023-07-07 23:30:50.921970

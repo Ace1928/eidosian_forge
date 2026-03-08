@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_elementpath_documentation.py
+KIND: code
+
+import re
+compile selector pattern

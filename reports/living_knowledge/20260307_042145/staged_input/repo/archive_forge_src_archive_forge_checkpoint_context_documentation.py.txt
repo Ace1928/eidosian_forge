@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/checkpoint_context_documentation.py
+KIND: code
+
+import contextlib
+import threading
+A context for controlling metrics recording when async checkpoint is used.

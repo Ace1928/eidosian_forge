@@ -1,0 +1,607 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_county_choropleth.py
+KIND: code
+
+import io
+import numpy as np
+import os
+import pandas as pd
+import warnings
+
+from math import log, floor
+from numbers import Number
+
+from plotly import optional_imports
+import plotly.colors as clrs
+from plotly.figure_factory import utils
+from plotly.exceptions import PlotlyError
+import plotly.graph_objs as go
+
+pd.options.mode.chained_assignment = None
+
+shapely = optional_imports.get_module("shapely")
+shapefile = optional_imports.get_module("shapefile")
+gp = optional_imports.get_module("geopandas")
+_plotly_geo = optional_imports.get_module("_plotly_geo")
+
+
+def _create_us_counties_df(st_to_state_name_dict, state_to_st_dict):
+
+    # URLS
+    abs_dir_path = os.path.realpath(_plotly_geo.__file__)
+
+    abs_plotly_geo_path = os.path.dirname(abs_dir_path)
+
+    abs_package_data_dir_path = os.path.join(abs_plotly_geo_path, "package_data")
+
+    shape_pre2010 = "gz_2010_us_050_00_500k.shp"
+    shape_pre2010 = os.path.join(abs_package_data_dir_path, shape_pre2010)
+
+    df_shape_pre2010 = gp.read_file(shape_pre2010)
+    df_shape_pre2010["FIPS"] = df_shape_pre2010["STATE"] + df_shape_pre2010["COUNTY"]
+    df_shape_pre2010["FIPS"] = pd.to_numeric(df_shape_pre2010["FIPS"])
+
+    states_path = "cb_2016_us_state_500k.shp"
+    states_path = os.path.join(abs_package_data_dir_path, states_path)
+
+    df_state = gp.read_file(states_path)
+    df_state = df_state[["STATEFP", "NAME", "geometry"]]
+    df_state = df_state.rename(columns={"NAME": "STATE_NAME"})
+
+    filenames = [
+        "cb_2016_us_county_500k.dbf",
+        "cb_2016_us_county_500k.shp",
+        "cb_2016_us_county_500k.shx",
+    ]
+
+    for j in range(len(filenames)):
+        filenames[j] = os.path.join(abs_package_data_dir_path, filenames[j])
+
+    dbf = io.open(filenames[0], "rb")
+    shp = io.open(filenames[1], "rb")
+    shx = io.open(filenames[2], "rb")
+
+    r = shapefile.Reader(shp=shp, shx=shx, dbf=dbf)
+
+    attributes, geometry = [], []
+    field_names = [field[0] for field in r.fields[1:]]
+    for row in r.shapeRecords():
+        geometry.append(shapely.geometry.shape(row.shape.__geo_interface__))
+        attributes.append(dict(zip(field_names, row.record)))
+
+    gdf = gp.GeoDataFrame(data=attributes, geometry=geometry)
+
+    gdf["FIPS"] = gdf["STATEFP"] + gdf["COUNTYFP"]
+    gdf["FIPS"] = pd.to_numeric(gdf["FIPS"])
+
+    # add missing counties
+    f = 46113
+    singlerow = pd.DataFrame(
+        [
+            [
+                st_to_state_name_dict["SD"],
+                "SD",
+                df_shape_pre2010[df_shape_pre2010["FIPS"] == f]["geometry"].iloc[0],
+                df_shape_pre2010[df_shape_pre2010["FIPS"] == f]["FIPS"].iloc[0],
+                "46",
+                "Shannon",
+            ]
+        ],
+        columns=["State", "ST", "geometry", "FIPS", "STATEFP", "NAME"],
+        index=[max(gdf.index) + 1],
+    )
+    gdf = pd.concat([gdf, singlerow], sort=True)
+
+    f = 51515
+    singlerow = pd.DataFrame(
+        [
+            [
+                st_to_state_name_dict["VA"],
+                "VA",
+                df_shape_pre2010[df_shape_pre2010["FIPS"] == f]["geometry"].iloc[0],
+                df_shape_pre2010[df_shape_pre2010["FIPS"] == f]["FIPS"].iloc[0],
+                "51",
+                "Bedford City",
+            ]
+        ],
+        columns=["State", "ST", "geometry", "FIPS", "STATEFP", "NAME"],
+        index=[max(gdf.index) + 1],
+    )
+    gdf = pd.concat([gdf, singlerow], sort=True)
+
+    f = 2270
+    singlerow = pd.DataFrame(
+        [
+            [
+                st_to_state_name_dict["AK"],
+                "AK",
+                df_shape_pre2010[df_shape_pre2010["FIPS"] == f]["geometry"].iloc[0],
+                df_shape_pre2010[df_shape_pre2010["FIPS"] == f]["FIPS"].iloc[0],
+                "02",
+                "Wade Hampton",
+            ]
+        ],
+        columns=["State", "ST", "geometry", "FIPS", "STATEFP", "NAME"],
+        index=[max(gdf.index) + 1],
+    )
+    gdf = pd.concat([gdf, singlerow], sort=True)
+
+    row_2198 = gdf[gdf["FIPS"] == 2198]
+    row_2198.index = [max(gdf.index) + 1]
+    row_2198.loc[row_2198.index[0], "FIPS"] = 2201
+    row_2198.loc[row_2198.index[0], "STATEFP"] = "02"
+    gdf = pd.concat([gdf, row_2198], sort=True)
+
+    row_2105 = gdf[gdf["FIPS"] == 2105]
+    row_2105.index = [max(gdf.index) + 1]
+    row_2105.loc[row_2105.index[0], "FIPS"] = 2232
+    row_2105.loc[row_2105.index[0], "STATEFP"] = "02"
+    gdf = pd.concat([gdf, row_2105], sort=True)
+    gdf = gdf.rename(columns={"NAME": "COUNTY_NAME"})
+
+    gdf_reduced = gdf[["FIPS", "STATEFP", "COUNTY_NAME", "geometry"]]
+    gdf_statefp = gdf_reduced.merge(df_state[["STATEFP", "STATE_NAME"]], on="STATEFP")
+
+    ST = []
+    for n in gdf_statefp["STATE_NAME"]:
+        ST.append(state_to_st_dict[n])
+
+    gdf_statefp["ST"] = ST
+    return gdf_statefp, df_state
+
+
+st_to_state_name_dict = {
+    "AK": "Alaska",
+    "AL": "Alabama",
+    "AR": "Arkansas",
+    "AZ": "Arizona",
+    "CA": "California",
+    "CO": "Colorado",
+    "CT": "Connecticut",
+    "DC": "District of Columbia",
+    "DE": "Delaware",
+    "FL": "Florida",
+    "GA": "Georgia",
+    "HI": "Hawaii",
+    "IA": "Iowa",
+    "ID": "Idaho",
+    "IL": "Illinois",
+    "IN": "Indiana",
+    "KS": "Kansas",
+    "KY": "Kentucky",
+    "LA": "Louisiana",
+    "MA": "Massachusetts",
+    "MD": "Maryland",
+    "ME": "Maine",
+    "MI": "Michigan",
+    "MN": "Minnesota",
+    "MO": "Missouri",
+    "MS": "Mississippi",
+    "MT": "Montana",
+    "NC": "North Carolina",
+    "ND": "North Dakota",
+    "NE": "Nebraska",
+    "NH": "New Hampshire",
+    "NJ": "New Jersey",
+    "NM": "New Mexico",
+    "NV": "Nevada",
+    "NY": "New York",
+    "OH": "Ohio",
+    "OK": "Oklahoma",
+    "OR": "Oregon",
+    "PA": "Pennsylvania",
+    "RI": "Rhode Island",
+    "SC": "South Carolina",
+    "SD": "South Dakota",
+    "TN": "Tennessee",
+    "TX": "Texas",
+    "UT": "Utah",
+    "VA": "Virginia",
+    "VT": "Vermont",
+    "WA": "Washington",
+    "WI": "Wisconsin",
+    "WV": "West Virginia",
+    "WY": "Wyoming",
+}
+
+state_to_st_dict = {
+    "Alabama": "AL",
+    "Alaska": "AK",
+    "American Samoa": "AS",
+    "Arizona": "AZ",
+    "Arkansas": "AR",
+    "California": "CA",
+    "Colorado": "CO",
+    "Commonwealth of the Northern Mariana Islands": "MP",
+    "Connecticut": "CT",
+    "Delaware": "DE",
+    "District of Columbia": "DC",
+    "Florida": "FL",
+    "Georgia": "GA",
+    "Guam": "GU",
+    "Hawaii": "HI",
+    "Idaho": "ID",
+    "Illinois": "IL",
+    "Indiana": "IN",
+    "Iowa": "IA",
+    "Kansas": "KS",
+    "Kentucky": "KY",
+    "Louisiana": "LA",
+    "Maine": "ME",
+    "Maryland": "MD",
+    "Massachusetts": "MA",
+    "Michigan": "MI",
+    "Minnesota": "MN",
+    "Mississippi": "MS",
+    "Missouri": "MO",
+    "Montana": "MT",
+    "Nebraska": "NE",
+    "Nevada": "NV",
+    "New Hampshire": "NH",
+    "New Jersey": "NJ",
+    "New Mexico": "NM",
+    "New York": "NY",
+    "North Carolina": "NC",
+    "North Dakota": "ND",
+    "Ohio": "OH",
+    "Oklahoma": "OK",
+    "Oregon": "OR",
+    "Pennsylvania": "PA",
+    "Puerto Rico": "",
+    "Rhode Island": "RI",
+    "South Carolina": "SC",
+    "South Dakota": "SD",
+    "Tennessee": "TN",
+    "Texas": "TX",
+    "United States Virgin Islands": "VI",
+    "Utah": "UT",
+    "Vermont": "VT",
+    "Virginia": "VA",
+    "Washington": "WA",
+    "West Virginia": "WV",
+    "Wisconsin": "WI",
+    "Wyoming": "WY",
+}
+
+USA_XRANGE = [-125.0, -65.0]
+USA_YRANGE = [25.0, 49.0]
+
+
+def _human_format(number):
+    units = ["", "K", "M", "G", "T", "P"]
+    k = 1000.0
+    magnitude = int(floor(log(number, k)))
+    return "%.2f%s" % (number / k**magnitude, units[magnitude])
+
+
+def _intervals_as_labels(array_of_intervals, round_legend_values, exponent_format):
+    """
+    Transform an number interval to a clean string for legend
+
+    Example: [-inf, 30] to '< 30'
+    """
+    infs = [float("-inf"), float("inf")]
+    string_intervals = []
+    for interval in array_of_intervals:
+        # round to 2nd decimal place
+        if round_legend_values:
+            rnd_interval = [
+                (int(interval[i]) if interval[i] not in infs else interval[i])
+                for i in range(2)
+            ]
+        else:
+            rnd_interval = [round(interval[0], 2), round(interval[1], 2)]
+
+        num0 = rnd_interval[0]
+        num1 = rnd_interval[1]
+        if exponent_format:
+            if num0 not in infs:
+                num0 = _human_format(num0)
+            if num1 not in infs:
+                num1 = _human_format(num1)
+        else:
+            if num0 not in infs:
+                num0 = "{:,}".format(num0)
+            if num1 not in infs:
+                num1 = "{:,}".format(num1)
+
+        if num0 == float("-inf"):
+            as_str = "< {}".format(num1)
+        elif num1 == float("inf"):
+            as_str = "> {}".format(num0)
+        else:
+            as_str = "{} - {}".format(num0, num1)
+        string_intervals.append(as_str)
+    return string_intervals
+
+
+def _calculations(
+    df,
+    fips,
+    values,
+    index,
+    f,
+    simplify_county,
+    level,
+    x_centroids,
+    y_centroids,
+    centroid_text,
+    x_traces,
+    y_traces,
+    fips_polygon_map,
+):
+    # 0-pad FIPS code to ensure exactly 5 digits
+    padded_f = str(f).zfill(5)
+    if fips_polygon_map[f].type == "Polygon":
+        x = fips_polygon_map[f].simplify(simplify_county).exterior.xy[0].tolist()
+        y = fips_polygon_map[f].simplify(simplify_county).exterior.xy[1].tolist()
+
+        x_c, y_c = fips_polygon_map[f].centroid.xy
+        county_name_str = str(df[df["FIPS"] == f]["COUNTY_NAME"].iloc[0])
+        state_name_str = str(df[df["FIPS"] == f]["STATE_NAME"].iloc[0])
+
+        t_c = (
+            "County: "
+            + county_name_str
+            + "<br>"
+            + "State: "
+            + state_name_str
+            + "<br>"
+            + "FIPS: "
+            + padded_f
+            + "<br>Value: "
+            + str(values[index])
+        )
+
+        x_centroids.append(x_c[0])
+        y_centroids.append(y_c[0])
+        centroid_text.append(t_c)
+
+        x_traces[level] = x_traces[level] + x + [np.nan]
+        y_traces[level] = y_traces[level] + y + [np.nan]
+    elif fips_polygon_map[f].type == "MultiPolygon":
+        x = [
+            poly.simplify(simplify_county).exterior.xy[0].tolist()
+            for poly in fips_polygon_map[f].geoms
+        ]
+        y = [
+            poly.simplify(simplify_county).exterior.xy[1].tolist()
+            for poly in fips_polygon_map[f].geoms
+        ]
+
+        x_c = [poly.centroid.xy[0].tolist() for poly in fips_polygon_map[f].geoms]
+        y_c = [poly.centroid.xy[1].tolist() for poly in fips_polygon_map[f].geoms]
+
+        county_name_str = str(df[df["FIPS"] == f]["COUNTY_NAME"].iloc[0])
+        state_name_str = str(df[df["FIPS"] == f]["STATE_NAME"].iloc[0])
+        text = (
+            "County: "
+            + county_name_str
+            + "<br>"
+            + "State: "
+            + state_name_str
+            + "<br>"
+            + "FIPS: "
+            + padded_f
+            + "<br>Value: "
+            + str(values[index])
+        )
+        t_c = [text for poly in fips_polygon_map[f].geoms]
+        x_centroids = x_c + x_centroids
+        y_centroids = y_c + y_centroids
+        centroid_text = t_c + centroid_text
+        for x_y_idx in range(len(x)):
+            x_traces[level] = x_traces[level] + x[x_y_idx] + [np.nan]
+            y_traces[level] = y_traces[level] + y[x_y_idx] + [np.nan]
+
+    return x_traces, y_traces, x_centroids, y_centroids, centroid_text
+
+
+def create_choropleth(
+    fips,
+    values,
+    scope=["usa"],
+    binning_endpoints=None,
+    colorscale=None,
+    order=None,
+    simplify_county=0.02,
+    simplify_state=0.02,
+    asp=None,
+    show_hover=True,
+    show_state_data=True,
+    state_outline=None,
+    county_outline=None,
+    centroid_marker=None,
+    round_legend_values=False,
+    exponent_format=False,
+    legend_title="",
+    **layout_options,
+):
+    """
+    **deprecated**, use instead
+    :func:`plotly.express.choropleth` with custom GeoJSON.
+
+    This function also requires `shapely`, `geopandas` and `plotly-geo` to be installed.
+
+    Returns figure for county choropleth. Uses data from package_data.
+
+    :param (list) fips: list of FIPS values which correspond to the con
+        catination of state and county ids. An example is '01001'.
+    :param (list) values: list of numbers/strings which correspond to the
+        fips list. These are the values that will determine how the counties
+        are colored.
+    :param (list) scope: list of states and/or states abbreviations. Fits
+        all states in the camera tightly. Selecting ['usa'] is the equivalent
+        of appending all 50 states into your scope list. Selecting only 'usa'
+        does not include 'Alaska', 'Puerto Rico', 'American Samoa',
+        'Commonwealth of the Northern Mariana Islands', 'Guam',
+        'United States Virgin Islands'. These must be added manually to the
+        list.
+        Default = ['usa']
+    :param (list) binning_endpoints: ascending numbers which implicitly define
+        real number intervals which are used as bins. The colorscale used must
+        have the same number of colors as the number of bins and this will
+        result in a categorical colormap.
+    :param (list) colorscale: a list of colors with length equal to the
+        number of categories of colors. The length must match either all
+        unique numbers in the 'values' list or if endpoints is being used, the
+        number of categories created by the endpoints.\n
+        For example, if binning_endpoints = [4, 6, 8], then there are 4 bins:
+        [-inf, 4), [4, 6), [6, 8), [8, inf)
+    :param (list) order: a list of the unique categories (numbers/bins) in any
+        desired order. This is helpful if you want to order string values to
+        a chosen colorscale.
+    :param (float) simplify_county: determines the simplification factor
+        for the counties. The larger the number, the fewer vertices and edges
+        each polygon has. See
+        http://toblerity.org/shapely/manual.html#object.simplify for more
+        information.
+        Default = 0.02
+    :param (float) simplify_state: simplifies the state outline polygon.
+        See http://toblerity.org/shapely/manual.html#object.simplify for more
+        information.
+        Default = 0.02
+    :param (float) asp: the width-to-height aspect ratio for the camera.
+        Default = 2.5
+    :param (bool) show_hover: show county hover and centroid info
+    :param (bool) show_state_data: reveals state boundary lines
+    :param (dict) state_outline: dict of attributes of the state outline
+        including width and color. See
+        https://plot.ly/python/reference/#scatter-marker-line for all valid
+        params
+    :param (dict) county_outline: dict of attributes of the county outline
+        including width and color. See
+        https://plot.ly/python/reference/#scatter-marker-line for all valid
+        params
+    :param (dict) centroid_marker: dict of attributes of the centroid marker.
+        The centroid markers are invisible by default and appear visible on
+        selection. See https://plot.ly/python/reference/#scatter-marker for
+        all valid params
+    :param (bool) round_legend_values: automatically round the numbers that
+        appear in the legend to the nearest integer.
+        Default = False
+    :param (bool) exponent_format: if set to True, puts numbers in the K, M,
+        B number format. For example 4000.0 becomes 4.0K
+        Default = False
+    :param (str) legend_title: title that appears above the legend
+    :param **layout_options: a **kwargs argument for all layout parameters
+
+
+    Example 1: Florida::
+
+        import plotly.plotly as py
+        import plotly.figure_factory as ff
+
+        import numpy as np
+        import pandas as pd
+
+        df_sample = pd.read_csv(
+            'https://raw.githubusercontent.com/plotly/datasets/master/minoritymajority.csv'
+        )
+        df_sample_r = df_sample[df_sample['STNAME'] == 'Florida']
+
+        values = df_sample_r['TOT_POP'].tolist()
+        fips = df_sample_r['FIPS'].tolist()
+
+        binning_endpoints = list(np.mgrid[min(values):max(values):4j])
+        colorscale = ["#030512","#1d1d3b","#323268","#3d4b94","#3e6ab0",
+                    "#4989bc","#60a7c7","#85c5d3","#b7e0e4","#eafcfd"]
+        fig = ff.create_choropleth(
+            fips=fips, values=values, scope=['Florida'], show_state_data=True,
+            colorscale=colorscale, binning_endpoints=binning_endpoints,
+            round_legend_values=True, plot_bgcolor='rgb(229,229,229)',
+            paper_bgcolor='rgb(229,229,229)', legend_title='Florida Population',
+            county_outline={'color': 'rgb(255,255,255)', 'width': 0.5},
+            exponent_format=True,
+        )
+
+    Example 2: New England::
+
+        import plotly.figure_factory as ff
+
+        import pandas as pd
+
+        NE_states = ['Connecticut', 'Maine', 'Massachusetts',
+                    'New Hampshire', 'Rhode Island']
+        df_sample = pd.read_csv(
+            'https://raw.githubusercontent.com/plotly/datasets/master/minoritymajority.csv'
+        )
+        df_sample_r = df_sample[df_sample['STNAME'].isin(NE_states)]
+        colorscale = ['rgb(68.0, 1.0, 84.0)',
+        'rgb(66.0, 64.0, 134.0)',
+        'rgb(38.0, 130.0, 142.0)',
+        'rgb(63.0, 188.0, 115.0)',
+        'rgb(216.0, 226.0, 25.0)']
+
+        values = df_sample_r['TOT_POP'].tolist()
+        fips = df_sample_r['FIPS'].tolist()
+        fig = ff.create_choropleth(
+            fips=fips, values=values, scope=NE_states, show_state_data=True
+        )
+        fig.show()
+
+    Example 3: California and Surrounding States::
+
+        import plotly.figure_factory as ff
+
+        import pandas as pd
+
+        df_sample = pd.read_csv(
+            'https://raw.githubusercontent.com/plotly/datasets/master/minoritymajority.csv'
+        )
+        df_sample_r = df_sample[df_sample['STNAME'] == 'California']
+
+        values = df_sample_r['TOT_POP'].tolist()
+        fips = df_sample_r['FIPS'].tolist()
+
+        colorscale = [
+            'rgb(193, 193, 193)',
+            'rgb(239,239,239)',
+            'rgb(195, 196, 222)',
+            'rgb(144,148,194)',
+            'rgb(101,104,168)',
+            'rgb(65, 53, 132)'
+        ]
+
+        fig = ff.create_choropleth(
+            fips=fips, values=values, colorscale=colorscale,
+            scope=['CA', 'AZ', 'Nevada', 'Oregon', ' Idaho'],
+            binning_endpoints=[14348, 63983, 134827, 426762, 2081313],
+            county_outline={'color': 'rgb(255,255,255)', 'width': 0.5},
+            legend_title='California Counties',
+            title='California and Nearby States'
+        )
+        fig.show()
+
+    Example 4: USA::
+
+        import plotly.figure_factory as ff
+
+        import numpy as np
+        import pandas as pd
+
+        df_sample = pd.read_csv(
+            'https://raw.githubusercontent.com/plotly/datasets/master/laucnty16.csv'
+        )
+        df_sample['State FIPS Code'] = df_sample['State FIPS Code'].apply(
+            lambda x: str(x).zfill(2)
+        )
+        df_sample['County FIPS Code'] = df_sample['County FIPS Code'].apply(
+            lambda x: str(x).zfill(3)
+        )
+        df_sample['FIPS'] = (
+            df_sample['State FIPS Code'] + df_sample['County FIPS Code']
+        )
+
+        binning_endpoints = list(np.linspace(1, 12, len(colorscale) - 1))
+        colorscale = ["#f7fbff", "#ebf3fb", "#deebf7", "#d2e3f3", "#c6dbef",
+                    "#b3d2e9", "#9ecae1", "#85bcdb", "#6baed6", "#57a0ce",
+                    "#4292c6", "#3082be", "#2171b5", "#1361a9", "#08519c",
+                    "#0b4083","#08306b"]
+        fips = df_sample['FIPS']
+        values = df_sample['Unemployment Rate (%)']
+        fig = ff.create_choropleth(
+            fips=fips, values=values, scope=['usa'],
+            binning_endpoints=binning_endpoints, colorscale=colorscale,
+            show_hover=True, centroid_marker={'opacity': 0},
+            asp=2.9, title='USA by Unemployment %',
+            legen

@@ -1,0 +1,15 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/ET
+KIND: config
+
+ET>
+አዲስ አበባaddis ababaአዲስ አበባ ፡፡#
+	አፋርafarአፋር ፡፡
+	አማራamharaP
+ቤኒሻንጉል ጉሙዝ።benishangulgumuzቤንሻንጉልጉምዝ
+ድሬዳዋ	dire dawa
+ጋምቤላgambella5
+ሀሪሪ።harariሐረሪ ሕዝብ ክልል*
+ኦሮሚያoromiaኦሮሚያን።�
+0የደቡብ ብሔሮች ፣ ብሔረሰቦችsnnpr+southern nations, nationalities and peoplesCደቡብ ብሔሮች ብሔረሰቦችና ሕዝቦች ክልል(
+	ሶማሌsomaliሶማሌ ክልል'
+ትግራይtigrayትግራይ።

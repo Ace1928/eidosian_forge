@@ -1,0 +1,17 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/AM
+KIND: config
+
+AMH
+արագածոտնaragatsotn provinceարագածոտնի մարզ8
+արարատararat provinceարարատի մարզ=
+արմավիրarmavir provinceարմավիրի մարզ#
+երեւանyerevan
+երևանQ
+գեղարքունիքgegharkunik province!գեղարքունիքի մարզ8
+կոտայքkotayk provinceկոտայքի մարզ.
+լոռիlori provinceլոռու մարզ4
+
+շիրակshirak provinceշիրակի մարզ<
+սյունիքsyunik provinceսյունիքի մարզ8
+տավուշtavush provinceտավուշի մարզG
+վայոց ձորvayots dzor provinceվայոց ձորի մարզ

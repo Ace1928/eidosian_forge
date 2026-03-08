@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/buf_documentation.py
+KIND: code
+
+import sys
+:return: the currently set cursor which provides access to the data

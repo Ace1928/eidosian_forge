@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_gzip_documentation.py
+KIND: code
+
+from __future__ import annotations
+import gzip
+from .base import BaseCompression, logger
+from typing import Optional
+
+        Decompresses the data

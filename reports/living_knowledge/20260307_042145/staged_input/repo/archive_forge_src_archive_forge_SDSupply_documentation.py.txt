@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/SDSupply_documentation.py
+KIND: code
+
+from rdkit import Chem
+from rdkit.VLib.Supply import SupplyNode

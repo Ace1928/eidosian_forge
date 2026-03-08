@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_Amplifier.py
+KIND: code
+
+class Amplifier:
+    """Represent a single amplification from a primer."""
+
+    def __init__(self):
+        """Initialize the class."""
+        self.hit_info = ''
+        self.length = 0

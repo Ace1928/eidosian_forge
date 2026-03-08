@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_pydoctor_documentation.py
+KIND: code
+
+Report the privacy level for an object. Hide the module
+            'docstring_parser.tests'.

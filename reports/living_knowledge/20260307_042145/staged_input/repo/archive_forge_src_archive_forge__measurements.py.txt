@@ -1,0 +1,601 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_measurements.py
+KIND: code
+
+# Copyright (C) 2003-2005 Peter J. Verveer
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above
+#    copyright notice, this list of conditions and the following
+#    disclaimer in the documentation and/or other materials provided
+#    with the distribution.
+#
+# 3. The name of the author may not be used to endorse or promote
+#    products derived from this software without specific prior
+#    written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+# GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+import numpy
+import numpy as np
+from . import _ni_support
+from . import _ni_label
+from . import _nd_image
+from . import _morphology
+
+__all__ = ['label', 'find_objects', 'labeled_comprehension', 'sum', 'mean',
+           'variance', 'standard_deviation', 'minimum', 'maximum', 'median',
+           'minimum_position', 'maximum_position', 'extrema', 'center_of_mass',
+           'histogram', 'watershed_ift', 'sum_labels', 'value_indices']
+
+
+def label(input, structure=None, output=None):
+    """
+    Label features in an array.
+
+    Parameters
+    ----------
+    input : array_like
+        An array-like object to be labeled. Any non-zero values in `input` are
+        counted as features and zero values are considered the background.
+    structure : array_like, optional
+        A structuring element that defines feature connections.
+        `structure` must be centrosymmetric
+        (see Notes).
+        If no structuring element is provided,
+        one is automatically generated with a squared connectivity equal to
+        one.  That is, for a 2-D `input` array, the default structuring element
+        is::
+
+            [[0,1,0],
+             [1,1,1],
+             [0,1,0]]
+
+    output : (None, data-type, array_like), optional
+        If `output` is a data type, it specifies the type of the resulting
+        labeled feature array.
+        If `output` is an array-like object, then `output` will be updated
+        with the labeled features from this function.  This function can
+        operate in-place, by passing output=input.
+        Note that the output must be able to store the largest label, or this
+        function will raise an Exception.
+
+    Returns
+    -------
+    label : ndarray or int
+        An integer ndarray where each unique feature in `input` has a unique
+        label in the returned array.
+    num_features : int
+        How many objects were found.
+
+        If `output` is None, this function returns a tuple of
+        (`labeled_array`, `num_features`).
+
+        If `output` is a ndarray, then it will be updated with values in
+        `labeled_array` and only `num_features` will be returned by this
+        function.
+
+    See Also
+    --------
+    find_objects : generate a list of slices for the labeled features (or
+                   objects); useful for finding features' position or
+                   dimensions
+
+    Notes
+    -----
+    A centrosymmetric matrix is a matrix that is symmetric about the center.
+    See [1]_ for more information.
+
+    The `structure` matrix must be centrosymmetric to ensure
+    two-way connections.
+    For instance, if the `structure` matrix is not centrosymmetric
+    and is defined as::
+
+        [[0,1,0],
+         [1,1,0],
+         [0,0,0]]
+
+    and the `input` is::
+
+        [[1,2],
+         [0,3]]
+
+    then the structure matrix would indicate the
+    entry 2 in the input is connected to 1,
+    but 1 is not connected to 2.
+
+    References
+    ----------
+    .. [1] James R. Weaver, "Centrosymmetric (cross-symmetric)
+       matrices, their basic properties, eigenvalues, and
+       eigenvectors." The American Mathematical Monthly 92.10
+       (1985): 711-717.
+
+    Examples
+    --------
+    Create an image with some features, then label it using the default
+    (cross-shaped) structuring element:
+
+    >>> from scipy.ndimage import label, generate_binary_structure
+    >>> import numpy as np
+    >>> a = np.array([[0,0,1,1,0,0],
+    ...               [0,0,0,1,0,0],
+    ...               [1,1,0,0,1,0],
+    ...               [0,0,0,1,0,0]])
+    >>> labeled_array, num_features = label(a)
+
+    Each of the 4 features are labeled with a different integer:
+
+    >>> num_features
+    4
+    >>> labeled_array
+    array([[0, 0, 1, 1, 0, 0],
+           [0, 0, 0, 1, 0, 0],
+           [2, 2, 0, 0, 3, 0],
+           [0, 0, 0, 4, 0, 0]])
+
+    Generate a structuring element that will consider features connected even
+    if they touch diagonally:
+
+    >>> s = generate_binary_structure(2,2)
+
+    or,
+
+    >>> s = [[1,1,1],
+    ...      [1,1,1],
+    ...      [1,1,1]]
+
+    Label the image using the new structuring element:
+
+    >>> labeled_array, num_features = label(a, structure=s)
+
+    Show the 2 labeled features (note that features 1, 3, and 4 from above are
+    now considered a single feature):
+
+    >>> num_features
+    2
+    >>> labeled_array
+    array([[0, 0, 1, 1, 0, 0],
+           [0, 0, 0, 1, 0, 0],
+           [2, 2, 0, 0, 1, 0],
+           [0, 0, 0, 1, 0, 0]])
+
+    """
+    input = numpy.asarray(input)
+    if numpy.iscomplexobj(input):
+        raise TypeError('Complex type not supported')
+    if structure is None:
+        structure = _morphology.generate_binary_structure(input.ndim, 1)
+    structure = numpy.asarray(structure, dtype=bool)
+    if structure.ndim != input.ndim:
+        raise RuntimeError('structure and input must have equal rank')
+    for ii in structure.shape:
+        if ii != 3:
+            raise ValueError('structure dimensions must be equal to 3')
+
+    # Use 32 bits if it's large enough for this image.
+    # _ni_label.label() needs two entries for background and
+    # foreground tracking
+    need_64bits = input.size >= (2**31 - 2)
+
+    if isinstance(output, numpy.ndarray):
+        if output.shape != input.shape:
+            raise ValueError("output shape not correct")
+        caller_provided_output = True
+    else:
+        caller_provided_output = False
+        if output is None:
+            output = np.empty(input.shape, np.intp if need_64bits else np.int32)
+        else:
+            output = np.empty(input.shape, output)
+
+    # handle scalars, 0-D arrays
+    if input.ndim == 0 or input.size == 0:
+        if input.ndim == 0:
+            # scalar
+            maxlabel = 1 if (input != 0) else 0
+            output[...] = maxlabel
+        else:
+            # 0-D
+            maxlabel = 0
+        if caller_provided_output:
+            return maxlabel
+        else:
+            return output, maxlabel
+
+    try:
+        max_label = _ni_label._label(input, structure, output)
+    except _ni_label.NeedMoreBits as e:
+        # Make another attempt with enough bits, then try to cast to the
+        # new type.
+        tmp_output = np.empty(input.shape, np.intp if need_64bits else np.int32)
+        max_label = _ni_label._label(input, structure, tmp_output)
+        output[...] = tmp_output[...]
+        if not np.all(output == tmp_output):
+            # refuse to return bad results
+            raise RuntimeError(
+                "insufficient bit-depth in requested output type"
+            ) from e
+
+    if caller_provided_output:
+        # result was written in-place
+        return max_label
+    else:
+        return output, max_label
+
+
+def find_objects(input, max_label=0):
+    """
+    Find objects in a labeled array.
+
+    Parameters
+    ----------
+    input : ndarray of ints
+        Array containing objects defined by different labels. Labels with
+        value 0 are ignored.
+    max_label : int, optional
+        Maximum label to be searched for in `input`. If max_label is not
+        given, the positions of all objects are returned.
+
+    Returns
+    -------
+    object_slices : list of tuples
+        A list of tuples, with each tuple containing N slices (with N the
+        dimension of the input array). Slices correspond to the minimal
+        parallelepiped that contains the object. If a number is missing,
+        None is returned instead of a slice. The label ``l`` corresponds to
+        the index ``l-1`` in the returned list.
+
+    See Also
+    --------
+    label, center_of_mass
+
+    Notes
+    -----
+    This function is very useful for isolating a volume of interest inside
+    a 3-D array, that cannot be "seen through".
+
+    Examples
+    --------
+    >>> from scipy import ndimage
+    >>> import numpy as np
+    >>> a = np.zeros((6,6), dtype=int)
+    >>> a[2:4, 2:4] = 1
+    >>> a[4, 4] = 1
+    >>> a[:2, :3] = 2
+    >>> a[0, 5] = 3
+    >>> a
+    array([[2, 2, 2, 0, 0, 3],
+           [2, 2, 2, 0, 0, 0],
+           [0, 0, 1, 1, 0, 0],
+           [0, 0, 1, 1, 0, 0],
+           [0, 0, 0, 0, 1, 0],
+           [0, 0, 0, 0, 0, 0]])
+    >>> ndimage.find_objects(a)
+    [(slice(2, 5, None), slice(2, 5, None)),
+     (slice(0, 2, None), slice(0, 3, None)),
+     (slice(0, 1, None), slice(5, 6, None))]
+    >>> ndimage.find_objects(a, max_label=2)
+    [(slice(2, 5, None), slice(2, 5, None)), (slice(0, 2, None), slice(0, 3, None))]
+    >>> ndimage.find_objects(a == 1, max_label=2)
+    [(slice(2, 5, None), slice(2, 5, None)), None]
+
+    >>> loc = ndimage.find_objects(a)[0]
+    >>> a[loc]
+    array([[1, 1, 0],
+           [1, 1, 0],
+           [0, 0, 1]])
+
+    """
+    input = numpy.asarray(input)
+    if numpy.iscomplexobj(input):
+        raise TypeError('Complex type not supported')
+
+    if max_label < 1:
+        max_label = input.max()
+
+    return _nd_image.find_objects(input, max_label)
+
+
+def value_indices(arr, *, ignore_value=None):
+    """
+    Find indices of each distinct value in given array.
+
+    Parameters
+    ----------
+    arr : ndarray of ints
+        Array containing integer values.
+    ignore_value : int, optional
+        This value will be ignored in searching the `arr` array. If not
+        given, all values found will be included in output. Default
+        is None.
+
+    Returns
+    -------
+    indices : dictionary
+        A Python dictionary of array indices for each distinct value. The
+        dictionary is keyed by the distinct values, the entries are array
+        index tuples covering all occurrences of the value within the
+        array.
+
+        This dictionary can occupy significant memory, usually several times
+        the size of the input array.
+
+    See Also
+    --------
+    label, maximum, median, minimum_position, extrema, sum, mean, variance,
+    standard_deviation, numpy.where, numpy.unique
+
+    Notes
+    -----
+    For a small array with few distinct values, one might use
+    `numpy.unique()` to find all possible values, and ``(arr == val)`` to
+    locate each value within that array. However, for large arrays,
+    with many distinct values, this can become extremely inefficient,
+    as locating each value would require a new search through the entire
+    array. Using this function, there is essentially one search, with
+    the indices saved for all distinct values.
+
+    This is useful when matching a categorical image (e.g. a segmentation
+    or classification) to an associated image of other data, allowing
+    any per-class statistic(s) to then be calculated. Provides a
+    more flexible alternative to functions like ``scipy.ndimage.mean()``
+    and ``scipy.ndimage.variance()``.
+
+    Some other closely related functionality, with different strengths and
+    weaknesses, can also be found in ``scipy.stats.binned_statistic()`` and
+    the `scikit-image <https://scikit-image.org/>`_ function
+    ``skimage.measure.regionprops()``.
+
+    Note for IDL users: this provides functionality equivalent to IDL's
+    REVERSE_INDICES option (as per the IDL documentation for the
+    `HISTOGRAM <https://www.l3harrisgeospatial.com/docs/histogram.html>`_
+    function).
+
+    .. versionadded:: 1.10.0
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy import ndimage
+    >>> a = np.zeros((6, 6), dtype=int)
+    >>> a[2:4, 2:4] = 1
+    >>> a[4, 4] = 1
+    >>> a[:2, :3] = 2
+    >>> a[0, 5] = 3
+    >>> a
+    array([[2, 2, 2, 0, 0, 3],
+           [2, 2, 2, 0, 0, 0],
+           [0, 0, 1, 1, 0, 0],
+           [0, 0, 1, 1, 0, 0],
+           [0, 0, 0, 0, 1, 0],
+           [0, 0, 0, 0, 0, 0]])
+    >>> val_indices = ndimage.value_indices(a)
+
+    The dictionary `val_indices` will have an entry for each distinct
+    value in the input array.
+
+    >>> val_indices.keys()
+    dict_keys([0, 1, 2, 3])
+
+    The entry for each value is an index tuple, locating the elements
+    with that value.
+
+    >>> ndx1 = val_indices[1]
+    >>> ndx1
+    (array([2, 2, 3, 3, 4]), array([2, 3, 2, 3, 4]))
+
+    This can be used to index into the original array, or any other
+    array with the same shape.
+
+    >>> a[ndx1]
+    array([1, 1, 1, 1, 1])
+
+    If the zeros were to be ignored, then the resulting dictionary
+    would no longer have an entry for zero.
+
+    >>> val_indices = ndimage.value_indices(a, ignore_value=0)
+    >>> val_indices.keys()
+    dict_keys([1, 2, 3])
+
+    """
+    # Cope with ignore_value being None, without too much extra complexity
+    # in the C code. If not None, the value is passed in as a numpy array
+    # with the same dtype as arr.
+    ignore_value_arr = numpy.zeros((1,), dtype=arr.dtype)
+    ignoreIsNone = (ignore_value is None)
+    if not ignoreIsNone:
+        ignore_value_arr[0] = ignore_value_arr.dtype.type(ignore_value)
+
+    val_indices = _nd_image.value_indices(arr, ignoreIsNone, ignore_value_arr)
+    return val_indices
+
+
+def labeled_comprehension(input, labels, index, func, out_dtype, default,
+                          pass_positions=False):
+    """
+    Roughly equivalent to [func(input[labels == i]) for i in index].
+
+    Sequentially applies an arbitrary function (that works on array_like input)
+    to subsets of an N-D image array specified by `labels` and `index`.
+    The option exists to provide the function with positional parameters as the
+    second argument.
+
+    Parameters
+    ----------
+    input : array_like
+        Data from which to select `labels` to process.
+    labels : array_like or None
+        Labels to objects in `input`.
+        If not None, array must be same shape as `input`.
+        If None, `func` is applied to raveled `input`.
+    index : int, sequence of ints or None
+        Subset of `labels` to which to apply `func`.
+        If a scalar, a single value is returned.
+        If None, `func` is applied to all non-zero values of `labels`.
+    func : callable
+        Python function to apply to `labels` from `input`.
+    out_dtype : dtype
+        Dtype to use for `result`.
+    default : int, float or None
+        Default return value when a element of `index` does not exist
+        in `labels`.
+    pass_positions : bool, optional
+        If True, pass linear indices to `func` as a second argument.
+        Default is False.
+
+    Returns
+    -------
+    result : ndarray
+        Result of applying `func` to each of `labels` to `input` in `index`.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> a = np.array([[1, 2, 0, 0],
+    ...               [5, 3, 0, 4],
+    ...               [0, 0, 0, 7],
+    ...               [9, 3, 0, 0]])
+    >>> from scipy import ndimage
+    >>> lbl, nlbl = ndimage.label(a)
+    >>> lbls = np.arange(1, nlbl+1)
+    >>> ndimage.labeled_comprehension(a, lbl, lbls, np.mean, float, 0)
+    array([ 2.75,  5.5 ,  6.  ])
+
+    Falling back to `default`:
+
+    >>> lbls = np.arange(1, nlbl+2)
+    >>> ndimage.labeled_comprehension(a, lbl, lbls, np.mean, float, -1)
+    array([ 2.75,  5.5 ,  6.  , -1.  ])
+
+    Passing positions:
+
+    >>> def fn(val, pos):
+    ...     print("fn says: %s : %s" % (val, pos))
+    ...     return (val.sum()) if (pos.sum() % 2 == 0) else (-val.sum())
+    ...
+    >>> ndimage.labeled_comprehension(a, lbl, lbls, fn, float, 0, True)
+    fn says: [1 2 5 3] : [0 1 4 5]
+    fn says: [4 7] : [ 7 11]
+    fn says: [9 3] : [12 13]
+    array([ 11.,  11., -12.,   0.])
+
+    """
+
+    as_scalar = numpy.isscalar(index)
+    input = numpy.asarray(input)
+
+    if pass_positions:
+        positions = numpy.arange(input.size).reshape(input.shape)
+
+    if labels is None:
+        if index is not None:
+            raise ValueError("index without defined labels")
+        if not pass_positions:
+            return func(input.ravel())
+        else:
+            return func(input.ravel(), positions.ravel())
+
+    try:
+        input, labels = numpy.broadcast_arrays(input, labels)
+    except ValueError as e:
+        raise ValueError("input and labels must have the same shape "
+                            "(excepting dimensions with width 1)") from e
+
+    if index is None:
+        if not pass_positions:
+            return func(input[labels > 0])
+        else:
+            return func(input[labels > 0], positions[labels > 0])
+
+    index = numpy.atleast_1d(index)
+    if np.any(index.astype(labels.dtype).astype(index.dtype) != index):
+        raise ValueError(f"Cannot convert index values from <{index.dtype}> to "
+                         f"<{labels.dtype}> (labels' type) without loss of precision")
+
+    index = index.astype(labels.dtype)
+
+    # optimization: find min/max in index,
+    # and select those parts of labels, input, and positions
+    lo = index.min()
+    hi = index.max()
+    mask = (labels >= lo) & (labels <= hi)
+
+    # this also ravels the arrays
+    labels = labels[mask]
+    input = input[mask]
+    if pass_positions:
+        positions = positions[mask]
+
+    # sort everything by labels
+    label_order = labels.argsort()
+    labels = labels[label_order]
+    input = input[label_order]
+    if pass_positions:
+        positions = positions[label_order]
+
+    index_order = index.argsort()
+    sorted_index = index[index_order]
+
+    def do_map(inputs, output):
+        """labels must be sorted"""
+        nidx = sorted_index.size
+
+        # Find boundaries for each stretch of constant labels
+        # This could be faster, but we already paid N log N to sort labels.
+        lo = numpy.searchsorted(labels, sorted_index, side='left')
+        hi = numpy.searchsorted(labels, sorted_index, side='right')
+
+        for i, l, h in zip(range(nidx), lo, hi):
+            if l == h:
+                continue
+            output[i] = func(*[inp[l:h] for inp in inputs])
+
+    temp = numpy.empty(index.shape, out_dtype)
+    temp[:] = default
+    if not pass_positions:
+        do_map([input], temp)
+    else:
+        do_map([input, positions], temp)
+
+    output = numpy.zeros(index.shape, out_dtype)
+    output[index_order] = temp
+    if as_scalar:
+        output = output[0]
+
+    return output
+
+
+def _safely_castable_to_int(dt):
+    """Test whether the NumPy data type `dt` can be safely cast to an int."""
+    int_size = np.dtype(int).itemsize
+    safe = ((np.issubdtype(dt, np.signedinteger) and dt.itemsize <= int_size) or
+            (np.issubdtype(dt, np.unsignedinteger) and dt.itemsize < int_size))
+    return safe
+
+
+def _stats(input, labels=None, index=None, centered=False):
+    """Count, sum, and optionally compute (sum - centre)^2 of input by label
+
+    Parameters
+    ----------
+    input : array_like, N-D
+        The input data to be analyzed.
+    labels : array_like (N-D), optional
+        The labels of the data in `input`. This array must be broadcast
+        comp

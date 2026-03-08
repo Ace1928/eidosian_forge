@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/arbitrary_documentation.py
+KIND: code
+
+import logging
+
+        :param data:
+        :type data: bytes
+        :return:
+        :rtype:

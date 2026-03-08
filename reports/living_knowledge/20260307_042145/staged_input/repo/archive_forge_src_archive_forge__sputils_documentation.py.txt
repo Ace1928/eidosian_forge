@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_sputils_documentation.py
+KIND: code
+
+import cupy
+import operator
+import numpy
+from cupy._core._dtype import get_dtype
+Check validity of the shape

@@ -1,0 +1,15 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_debugger_case_raise_with_cause_msg.py
+KIND: code
+
+def method2():
+    {}['foo']
+
+
+def method():
+    try:
+        method2()
+    except Exception as e:
+        raise Exception('TEST SUCEEDED') from e
+
+
+method()

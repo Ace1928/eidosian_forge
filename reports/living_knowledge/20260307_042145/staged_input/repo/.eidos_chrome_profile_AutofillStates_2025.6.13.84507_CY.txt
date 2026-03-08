@@ -1,0 +1,11 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/CY
+KIND: config
+
+CYZ
+!επαρχία λευκωσίαςlefkoşalefkoşa kazasınicosiaλευκωσία#
+λεμεσόςlimasollimassolT
+επαρχία λάρνακαςlarnacalarnakalarnaka kazasıλάρνακα.
+αμμόχωστος	famagustagazimağusaJ
+επαρχία πάφουbafbaf kazasıgazibafpaphos
+πάφος
+κερύνειαgirne

@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_pba_2d_documentation.py
+KIND: code
+
+import math
+import numbers
+import os
+import cupy
+from ._util import _get_inttype
+Raise a RuntimeError if the arguments are invalid

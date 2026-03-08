@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_null.py
+KIND: code
+
+"""Just a NULL object for reference by other modules"""
+NULL = object()

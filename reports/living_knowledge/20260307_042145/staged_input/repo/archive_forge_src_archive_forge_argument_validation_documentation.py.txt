@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/argument_validation_documentation.py
+KIND: code
+
+Validates the correctness of a string-based arg.

@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/base_serializer_documentation.py
+KIND: code
+
+import abc
+Deserialize ``s`` to a python object.
+
+        :param s: byte string to be deserialized
+        :returns: python object

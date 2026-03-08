@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/SPF_documentation.py
+KIND: code
+
+import dns.rdtypes.txtbase
+SPF record
+
+    @see: RFC 4408

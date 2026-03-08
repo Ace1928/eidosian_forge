@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/audio_to_audio_documentation.py
+KIND: code
+
+from dataclasses import dataclass
+from typing import Any
+from .base import BaseInferenceType
+The label of the audio file.

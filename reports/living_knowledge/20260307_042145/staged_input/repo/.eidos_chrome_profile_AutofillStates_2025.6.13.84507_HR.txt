@@ -1,0 +1,25 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/HR
+KIND: config
+
+HR&
+zagrebačka županijazagreb county4
+krapinskozagorska županijakrapinazagorje county6
+sisačkomoslavačka županijasisakmoslavina county(
+karlovačka županijakarlovac county*
+varaždinska županijavaraždin county@
+"koprivničkokriževačka županijakoprivnicakriževci county:
+bjelovarskobilogorska županijabjelovarbilogora county:
+primorskogoranska županijaprimorjegorski kotar county*
+ličkosenjska županijalikasenj county=
+virovitičkopodravska županijaviroviticapodravina county6
+požeškoslavonska županijapožegaslavonia county0
+brodskoposavska županijabrodposavina county"
+zadarska županijazadar county3
+osječkobaranjska županijaosijekbaranja county1
+šibenskokninska županijašibenikknin county5
+vukovarskosrijemska županijavukovarsrijem county5
+splitskodalmatinska županijasplitdalmatia county#
+istarska županijaistria county;
+ dubrovačkoneretvanska županijadubrovnikneretva county*
+međimurska županijameđimurje county
+grad zagrebcity of zagreb

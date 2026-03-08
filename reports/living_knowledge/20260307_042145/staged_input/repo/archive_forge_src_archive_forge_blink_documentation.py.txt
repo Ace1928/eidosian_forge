@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/blink_documentation.py
+KIND: code
+
+import copy
+
+    Makes the clip blink. At each blink it will be displayed ``d_on``
+    seconds and disappear ``d_off`` seconds. Will only work in
+    composite clips.

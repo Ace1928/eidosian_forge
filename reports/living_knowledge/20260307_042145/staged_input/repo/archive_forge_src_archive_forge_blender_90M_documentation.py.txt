@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/blender_90M_documentation.py
+KIND: code
+
+from .build import build
+
+90M parameter Blender model: please see <parl.ai/project/blender>.

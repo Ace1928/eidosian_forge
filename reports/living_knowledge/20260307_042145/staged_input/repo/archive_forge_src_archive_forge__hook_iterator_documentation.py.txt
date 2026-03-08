@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_hook_iterator_documentation.py
+KIND: code
+
+import inspect
+import functools
+from enum import Enum
+import torch.autograd
+Return next with logic related to iterator validity, profiler, and incrementation of samples yielded.

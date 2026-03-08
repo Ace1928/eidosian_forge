@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AliasEvent.py
+KIND: code
+
+class AliasEvent(NodeEvent):
+    __slots__ = ()

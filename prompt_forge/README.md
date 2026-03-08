@@ -1,38 +1,60 @@
-# 🗣️ Prompt Forge
+# 🗣️ Prompt Forge ⚡
 
-[![Python: 3.12](https://img.shields.io/badge/Python-3.12-blue.svg)](../global_info.py)
-[![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+> _"The Art of Asking. Aligning silicon intent with Eidosian principle."_
 
-**The Art of Asking.**
+## 🧠 Overview
 
-> _"The quality of the thought depends on the clarity of the prompt."_
+`prompt_forge` is the central repository for the Eidosian ecosystem's alignment strategies, personas, and generative templates. It ensures that every interaction across all agents maintains a consistent "Velvet Beef" tone, adheres to the Prime Directives, and utilizes optimized few-shot logic.
 
-## 🗣️ Overview
+```ascii
+      ╭───────────────────────────────────────────╮
+      │               PROMPT FORGE                │
+      │    < Personas | Strategies | Templates >  │
+      ╰──────────┬─────────────────────┬──────────╯
+                 │                     │
+      ╭──────────┴──────────╮   ╭──────┴──────────╮
+      │   PROMPT LIBRARY    │   │ STRATEGIC ALIGN │
+      │ (YAML/MD Assets)    │   │ (Tone Control)  │
+      ╰─────────────────────╯   ╰─────────────────╯
+```
 
-`prompt_forge` is the centralized repository for Eidosian alignment strategies. It manages the "Source of Truth" for agent personas, system instructions, and few-shot examples.
+## ⚡ Current State & Metrics
 
-## 🏗️ Architecture
+- **Status**: 🟢 Elevated & Centralized
+- **Type**: Cognitive Alignment & Template Management
+- **Test Coverage**: Basic library loading verified.
+- **Architecture**:
+  - `src/prompt_forge/library.py`: Pythonic interface for managing and versioning prompt assets.
+  - `legacy_imports/`: Historic prompt strategies retained for backward compatibility.
 
-- **Asset Library**: A curated collection of Markdown and text-based prompt templates.
-- **Strategic Alignment**: Standardized personas (e.g., "Velvet Beef") ensuring consistent behavior across different models.
-- **Registry**: (In Development) A Python API to load and version prompts dynamically.
+## 🚀 Usage & Workflows
+
+### Python API
+
+```python
+from prompt_forge.library import PromptLibrary
+
+lib = PromptLibrary()
+
+# Retrieve a standardized persona
+persona = lib.get_prompt("eidos_persona", format="markdown")
+print(persona)
+```
 
 ## 🔗 System Integration
 
-- **Eidos MCP**: Uses templates from `prompt_forge` to prime the Documentation and Refactor agents.
-- **Agent Forge**: Provides the core identity and directive sets for the daemon loop.
+- **Agent Forge**: Consumes identity templates to prime the consciousness kernel and task-execution loops.
+- **Doc Forge**: Leverages instructional templates to guarantee structural elegance in automated documentation.
+- **LLM Forge**: Templates are used to optimize context window efficiency during local inference.
 
-## 🚀 Usage
+## 🎯 Master Plan & Evolution
 
-Currently, prompts are consumed as static files.
+### Immediate Goals
+- [x] Consolidate legacy docs into unified Eidosian standard.
+- [ ] Migrate all static text instructions into the versioned `PromptLibrary`.
 
-```bash
-# Example: Using a persona template
-cat prompt_forge/github_copilot_prompt_guide.md
-```
+### Future Vector (Phase 3+)
+- Implement "Dynamic Few-Shot Injection" where `knowledge_forge` concepts are automatically injected as examples into active prompt templates based on the current task objective.
 
-## 📂 Notable Templates
-
-- `eidos_persona.md`: Core identity definition.
-- `documentation_agent.txt`: Instructions for the Documentation Forge.
-- `refactor_instruction.txt`: Rules for structural code modification.
+---
+*Generated and maintained by Eidos.*

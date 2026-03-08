@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/Record_documentation.py
+KIND: code
+
+import Bio.GenBank
+Return feature qualifier as a GenBank format string.

@@ -1,0 +1,24 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/ES
+KIND: config
+
+ES
+
+andalucíaan	andalusia
+aragónararagon&
+asturiasasprincipado de asturias
+	cantabriacb&
+ceutaceciudad autónoma de ceuta)
+castilla y leónclcastile and león=
+castilla la manchacmcastilela manchacastillala mancha.
+canariascncanary islandsislas canarias
+	catalunyact	catalonia
+extremaduraex
+galiciagagaliza)
+illes balearsibpmbalearic islands)
+región de murciamcregion of murcia.
+comunidad de madridmdcommunity of madrid*
+ciudad autónoma de melillamlmelilla2
+comunidad foral de navarrancnavarranavarre,
+euskadipvbasque countryeuskal herria
+la riojari:
+comunidad valencianavcvalencian community	valència

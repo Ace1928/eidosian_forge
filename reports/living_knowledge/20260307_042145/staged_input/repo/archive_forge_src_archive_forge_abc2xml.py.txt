@@ -1,0 +1,377 @@
+SOURCE_PATH: archive_forge/src/archive_forge/abc2xml.py
+KIND: code
+
+#!/usr/bin/env python
+# coding=latin-1
+'''
+Copyright (C) 2012-2018: Willem G. Vree
+Contributions: Nils Liberg, Nicolas Froment, Norman Schmidt, Reinier Maliepaard, Martin Tarenskeen,
+               Paul Villiger, Alexander Scheutzow, Herbert Schneider, David Randolph, Michael Strasser
+
+This program is free software; you can redistribute it and/or modify it under the terms of the
+Lesser GNU General Public License as published by the Free Software Foundation;
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+See the Lesser GNU General Public License for more details. <http://www.gnu.org/licenses/lgpl.html>.
+'''
+
+from functools import reduce
+from pyparsing import Word, OneOrMore, Optional, Literal, NotAny, MatchFirst
+from pyparsing import Group, oneOf, Suppress, ZeroOrMore, Combine, FollowedBy
+from pyparsing import srange, CharsNotIn, StringEnd, LineEnd, White, Regex
+from pyparsing import nums, alphas, alphanums, ParseException, Forward
+try:    import xml.etree.cElementTree as E
+except: import xml.etree.ElementTree as E
+import types, sys, os, re, datetime
+
+VERSION = 239
+
+python3 = sys.version_info[0] > 2
+lmap = lambda f, xs: list (map (f, xs))   # eager map for python 3
+if python3:
+    int_type = int
+    list_type = list
+    str_type = str
+    uni_type = str
+    stdin = sys.stdin.buffer if sys.stdin else None  # read binary if stdin available!
+else:
+    int_type = types.IntType
+    list_type = types.ListType
+    str_type = types.StringTypes
+    uni_type = types.UnicodeType
+    stdin = sys.stdin
+
+info_list = []  # diagnostic messages
+def info (s, warn=1):
+    x = (warn and '-- ' or '') + s
+    info_list.append (x + '\n')         # collect messages
+    if __name__ == '__main__':          # only write to stdout when called as main progeam
+        try: sys.stderr.write (x + '\n')
+        except: sys.stderr.write (repr (x) + '\n')
+
+def getInfo (): # get string of diagnostic messages, then clear messages
+    global info_list
+    xs = ''.join (info_list)
+    info_list = []
+    return xs
+
+def abc_grammar ():     # header, voice and lyrics grammar for ABC
+    #-----------------------------------------------------------------
+    # expressions that catch and skip some syntax errors (see corresponding parse expressions)
+    #-----------------------------------------------------------------
+    b1 = Word (u"-,'<>\u2019#", exact=1)    # catch misplaced chars in chords
+    b2 = Regex ('[^H-Wh-w~=]*')             # same in user defined symbol definition
+    b3 = Regex ('[^=]*')                    # same, second part
+
+    #-----------------------------------------------------------------
+    # ABC header (field_str elements are matched later with reg. epr's)
+    #-----------------------------------------------------------------
+
+    number = Word (nums).setParseAction (lambda t: int (t[0]))
+    field_str = Regex (r'[^]]*')  # match anything until end of field
+    field_str.setParseAction (lambda t: t[0].strip ())  # and strip spacing
+
+    userdef_symbol  = Word (srange ('[H-Wh-w~]'), exact=1)
+    fieldId = oneOf ('K L M Q P I T C O A Z N G H R B D F S E r Y') # info fields
+    X_field = Literal ('X') + Suppress (':') + field_str
+    U_field = Literal ('U') + Suppress (':') + b2 + Optional (userdef_symbol, 'H') + b3 + Suppress ('=') + field_str
+    V_field = Literal ('V') + Suppress (':') + Word (alphanums + '_') + field_str
+    inf_fld = fieldId + Suppress (':') + field_str
+    ifield = Suppress ('[') + (X_field | U_field | V_field | inf_fld) + Suppress (']')
+    abc_header = OneOrMore (ifield) + StringEnd ()
+
+    #---------------------------------------------------------------------------------
+    # I:score with recursive part groups and {* grand staff marker
+    #---------------------------------------------------------------------------------
+
+    voiceId = Suppress (Optional ('*')) + Word (alphanums + '_')
+    voice_gr = Suppress ('(') + OneOrMore (voiceId | Suppress ('|')) + Suppress (')')
+    simple_part = voiceId | voice_gr | Suppress ('|')
+    grand_staff = oneOf ('{* {') + OneOrMore (simple_part) + Suppress ('}')
+    part = Forward ()
+    part_seq = OneOrMore (part | Suppress ('|'))
+    brace_gr = Suppress ('{') + part_seq + Suppress ('}')
+    bracket_gr = Suppress ('[') + part_seq + Suppress (']')
+    part <<= MatchFirst (simple_part | grand_staff | brace_gr | bracket_gr | Suppress ('|'))
+    abc_scoredef = Suppress (oneOf ('staves score')) + OneOrMore (part)
+
+    #----------------------------------------
+    # ABC lyric lines (white space sensitive)
+    #----------------------------------------
+
+    skip_note   = oneOf ('* - ~')
+    extend_note = Literal ('_')
+    measure_end = Literal ('|')
+    syl_str     = CharsNotIn ('*~-_| \t\n\\]')
+    syl_chars   = Combine (OneOrMore (syl_str | Regex (r'\\.')))
+    white       = Word (' \t')
+    syllable    = Combine (Optional ('~') + syl_chars + ZeroOrMore (Literal ('~') + syl_chars)) + Optional ('-')
+    lyr_elem    = (syllable | skip_note | extend_note | measure_end) + Optional (white).suppress ()
+    lyr_line    = Optional (white).suppress () + ZeroOrMore (lyr_elem)
+    
+    syllable.setParseAction (lambda t: pObj ('syl', t))
+    skip_note.setParseAction (lambda t: pObj ('skip', t))
+    extend_note.setParseAction (lambda t: pObj ('ext', t))
+    measure_end.setParseAction (lambda t: pObj ('sbar', t))
+    lyr_line_wsp = lyr_line.leaveWhitespace ()   # parse actions must be set before calling leaveWhitespace
+
+    #---------------------------------------------------------------------------------
+    # ABC voice (not white space sensitive, beams detected in note/rest parse actions)
+    #---------------------------------------------------------------------------------
+
+    inline_field =  Suppress ('[') + (inf_fld | U_field | V_field) + Suppress (']')
+    lyr_fld = Suppress ('[') + Suppress ('w') + Suppress (':') + lyr_line_wsp + Suppress (']')  # lyric line
+    lyr_blk = OneOrMore (lyr_fld)       # verses
+    fld_or_lyr = inline_field | lyr_blk # inline field or block of lyric verses
+
+    note_length = Optional (number, 1) + Group (ZeroOrMore ('/')) + Optional (number, 2)
+    octaveHigh = OneOrMore ("'").setParseAction (lambda t: len(t))
+    octaveLow = OneOrMore (',').setParseAction (lambda t: -len(t))
+    octave  = octaveHigh | octaveLow
+
+    basenote = oneOf ('C D E F G A B c d e f g a b y')  # includes spacer for parse efficiency
+    accidental = oneOf ('^^ __ ^ _ =')
+    rest_sym  = oneOf ('x X z Z')
+    slur_beg = oneOf ("( (, (' .( .(, .('") + ~Word (nums)    # no tuplet_start
+    slur_ends = OneOrMore (oneOf (') .)'))
+
+    long_decoration = Combine (oneOf ('! +') + CharsNotIn ('!+ \n') + oneOf ('! +'))
+    staccato        = Literal ('.') + ~Literal ('|')    # avoid dotted barline
+    pizzicato       = Literal ('!+!')   # special case: plus sign is old style deco marker
+    decoration      = slur_beg | staccato | userdef_symbol | long_decoration | pizzicato
+    decorations     = OneOrMore (decoration)
+
+    tie = oneOf ('.- -')
+    rest = Optional (accidental) + rest_sym + note_length
+    pitch = Optional (accidental) + basenote + Optional (octave, 0)
+    note = pitch + note_length + Optional (tie) + Optional (slur_ends)
+    dec_note = Optional (decorations) + pitch + note_length + Optional (tie) + Optional (slur_ends)
+    chord_note = dec_note | rest | b1
+    grace_notes = Forward ()
+    chord = Suppress ('[') + OneOrMore (chord_note | grace_notes) + Suppress (']') + note_length + Optional (tie) + Optional (slur_ends)
+    stem = note | chord | rest
+
+    broken = Combine (OneOrMore ('<') | OneOrMore ('>'))
+
+    tuplet_num   = Suppress ('(') + number
+    tuplet_into  = Suppress (':') + Optional (number, 0)
+    tuplet_notes = Suppress (':') + Optional (number, 0)
+    tuplet_start = tuplet_num + Optional (tuplet_into + Optional (tuplet_notes))
+
+    acciaccatura    = Literal ('/')
+    grace_stem      = Optional (decorations) + stem
+    grace_notes     <<= Group (Suppress ('{') + Optional (acciaccatura) + OneOrMore (grace_stem) + Suppress ('}'))
+
+    text_expression  = Optional (oneOf ('^ _ < > @'), '^') + Optional (CharsNotIn ('"'), "")
+    chord_accidental = oneOf ('# b =')
+    triad            = oneOf ('ma Maj maj M mi min m aug dim o + -')
+    seventh          = oneOf ('7 ma7 Maj7 M7 maj7 mi7 min7 m7 dim7 o7 -7 aug7 +7 m7b5 mi7b5')
+    sixth            = oneOf ('6 ma6 M6 mi6 min6 m6')
+    ninth            = oneOf ('9 ma9 M9 maj9 Maj9 mi9 min9 m9')
+    elevn            = oneOf ('11 ma11 M11 maj11 Maj11 mi11 min11 m11')
+    thirt            = oneOf ('13 ma13 M13 maj13 Maj13 mi13 min13 m13')
+    suspended        = oneOf ('sus sus2 sus4')
+    chord_degree     = Combine (Optional (chord_accidental) + oneOf ('2 4 5 6 7 9 11 13'))
+    chord_kind       = Optional (seventh | sixth | ninth | elevn | thirt | triad) + Optional (suspended)
+    chord_root       = oneOf ('C D E F G A B') + Optional (chord_accidental)
+    chord_bass       = oneOf ('C D E F G A B') + Optional (chord_accidental) # needs a different parse action
+    chordsym         = chord_root + chord_kind + ZeroOrMore (chord_degree) + Optional (Suppress ('/') + chord_bass)
+    chord_sym        = chordsym + Optional (Literal ('(') + CharsNotIn (')') + Literal (')')).suppress ()
+    chord_or_text    = Suppress ('"') + (chord_sym ^ text_expression) + Suppress ('"')
+
+    volta_nums = Optional ('[').suppress () + Combine (Word (nums) + ZeroOrMore (oneOf (', -') + Word (nums)))
+    volta_text = Literal ('[').suppress () + Regex (r'"[^"]+"')
+    volta = volta_nums | volta_text
+    invisible_barline = oneOf ('[|] []')
+    dashed_barline = oneOf (': .|')
+    double_rep = Literal (':') + FollowedBy (':')   # otherwise ambiguity with dashed barline
+    voice_overlay = Combine (OneOrMore ('&'))
+    bare_volta = FollowedBy (Literal ('[') + Word (nums))   # no barline, but volta follows (volta is parsed in next measure)
+    bar_left = (oneOf ('[|: |: [: :') + Optional (volta)) | Optional ('|').suppress () + volta | oneOf ('| [|')
+    bars = ZeroOrMore (':') + ZeroOrMore ('[') + OneOrMore (oneOf ('| ]'))
+    bar_right = invisible_barline | double_rep | Combine (bars) | dashed_barline | voice_overlay | bare_volta
+    
+    errors =  ~bar_right + Optional (Word (' \n')) + CharsNotIn (':&|', exact=1)
+    linebreak = Literal ('$') | ~decorations + Literal ('!')    # no need for I:linebreak !!!
+    element = fld_or_lyr | broken | decorations | stem | chord_or_text | grace_notes | tuplet_start | linebreak | errors
+    measure      = Group (ZeroOrMore (inline_field) + Optional (bar_left) + ZeroOrMore (element) + bar_right + Optional (linebreak) + Optional (lyr_blk))
+    noBarMeasure = Group (ZeroOrMore (inline_field) + Optional (bar_left) + OneOrMore (element) + Optional (linebreak) + Optional (lyr_blk))
+    abc_voice = ZeroOrMore (measure) + Optional (noBarMeasure | Group (bar_left)) + ZeroOrMore (inline_field).suppress () + StringEnd ()
+
+    #----------------------------------------
+    # I:percmap note [step] [midi] [note-head]
+    #----------------------------------------
+
+    white2 = (white | StringEnd ()).suppress ()
+    w3 = Optional (white2)
+    percid = Word (alphanums + '-')
+    step = basenote + Optional (octave, 0)
+    pitchg = Group (Optional (accidental, '') + step + FollowedBy (white2))
+    stepg = Group (step + FollowedBy (white2)) | Literal ('*')
+    midi = (Literal ('*') | number | pitchg | percid)
+    nhd = Optional (Combine (percid + Optional ('+')), '')
+    perc_wsp = Literal ('percmap') + w3 + pitchg + w3 + Optional (stepg, '*') + w3 + Optional (midi, '*') + w3 + nhd
+    abc_percmap = perc_wsp.leaveWhitespace ()
+
+    #----------------------------------------------------------------
+    # Parse actions to convert all relevant results into an abstract
+    # syntax tree where all tree nodes are instances of pObj
+    #----------------------------------------------------------------
+
+    ifield.setParseAction (lambda t: pObj ('field', t))
+    grand_staff.setParseAction (lambda t: pObj ('grand', t, 1)) # 1 = keep ordered list of results
+    brace_gr.setParseAction (lambda t: pObj ('bracegr', t, 1))
+    bracket_gr.setParseAction (lambda t: pObj ('bracketgr', t, 1))
+    voice_gr.setParseAction (lambda t: pObj ('voicegr', t, 1))
+    voiceId.setParseAction (lambda t: pObj ('vid', t, 1))
+    abc_scoredef.setParseAction (lambda t: pObj ('score', t, 1))
+    note_length.setParseAction (lambda t: pObj ('dur', (t[0], (t[2] << len (t[1])) >> 1)))
+    chordsym.setParseAction (lambda t: pObj ('chordsym', t))
+    chord_root.setParseAction (lambda t: pObj ('root', t))
+    chord_kind.setParseAction (lambda t: pObj ('kind', t))
+    chord_degree.setParseAction (lambda t: pObj ('degree', t))
+    chord_bass.setParseAction (lambda t: pObj ('bass', t))
+    text_expression.setParseAction (lambda t: pObj ('text', t))
+    inline_field.setParseAction (lambda t: pObj ('inline', t))
+    lyr_fld.setParseAction (lambda t: pObj ('lyr_fld', t, 1))
+    lyr_blk.setParseAction (lambda t: pObj ('lyr_blk', t, 1)) # 1 = keep ordered list of lyric lines
+    grace_notes.setParseAction (doGrace)
+    acciaccatura.setParseAction (lambda t: pObj ('accia', t))
+    note.setParseAction (noteActn)
+    rest.setParseAction (restActn)
+    decorations.setParseAction (lambda t: pObj ('deco', t))
+    pizzicato.setParseAction (lambda t: ['!plus!']) # translate !+!
+    slur_ends.setParseAction (lambda t: pObj ('slurs', t))
+    chord.setParseAction (lambda t: pObj ('chord', t, 1))
+    dec_note.setParseAction (noteActn)
+    tie.setParseAction (lambda t: pObj ('tie', t))
+    pitch.setParseAction (lambda t: pObj ('pitch', t))
+    bare_volta.setParseAction (lambda t: ['|']) # return barline that user forgot
+    dashed_barline.setParseAction (lambda t: ['.|'])
+    bar_right.setParseAction (lambda t: pObj ('rbar', t))
+    bar_left.setParseAction (lambda t: pObj ('lbar', t))
+    broken.setParseAction (lambda t: pObj ('broken', t))
+    tuplet_start.setParseAction (lambda t: pObj ('tup', t))
+    linebreak.setParseAction (lambda t: pObj ('linebrk', t))
+    measure.setParseAction (doMaat)
+    noBarMeasure.setParseAction (doMaat)
+    b1.setParseAction (errorWarn)
+    b2.setParseAction (errorWarn)
+    b3.setParseAction (errorWarn)
+    errors.setParseAction (errorWarn)
+
+    return abc_header, abc_voice, abc_scoredef, abc_percmap
+
+class pObj (object):    # every relevant parse result is converted into a pObj
+    def __init__ (s, name, t, seq=0):   # t = list of nested parse results
+        s.name = name   # name uniqueliy identifies this pObj
+        rest = []       # collect parse results that are not a pObj
+        attrs = {}      # new attributes
+        for x in t:     # nested pObj's become attributes of this pObj
+            if type (x) == pObj:
+                attrs [x.name] = attrs.get (x.name, []) + [x]
+            else:
+                rest.append (x)             # collect non-pObj's (mostly literals)
+        for name, xs in attrs.items ():
+            if len (xs) == 1: xs = xs[0]    # only list if more then one pObj
+            setattr (s, name, xs)           # create the new attributes
+        s.t = rest      # all nested non-pObj's (mostly literals)
+        s.objs = seq and t or []            # for nested ordered (lyric) pObj's
+
+    def __repr__ (s):   # make a nice string representation of a pObj
+        r = []
+        for nm in dir (s):
+            if nm.startswith ('_'): continue # skip build in attributes
+            elif nm == 'name': continue     # redundant
+            else:
+                x = getattr (s, nm)
+                if not x: continue          # s.t may be empty (list of non-pObj's)
+                if type (x) == list_type:  r.extend (x)
+                else:                           r.append (x)
+        xs = []
+        for x in r:     # recursively call __repr__ and convert all strings to latin-1
+            if isinstance (x, str_type): xs.append (x)          # string -> no recursion
+            else:                        xs.append (repr (x))   # pObj -> recursive call
+        return '(' + s.name + ' ' +','.join (xs) + ')'
+
+global prevloc                  # global to remember previous match position of a note/rest
+prevloc = 0
+def detectBeamBreak (line, loc, t):
+    global prevloc              # location in string 'line' of previous note match
+    xs = line[prevloc:loc+1]    # string between previous and current note match
+    xs = xs.lstrip ()           # first note match starts on a space!
+    prevloc = loc               # location in string 'line' of current note match
+    b = pObj ('bbrk', [' ' in xs])      # space somewhere between two notes -> beambreak
+    t.insert (0, b)             # insert beambreak as a nested parse result
+
+def noteActn (line, loc, t):    # detect beambreak between previous and current note/rest
+    if 'y' in t[0].t: return [] # discard spacer
+    detectBeamBreak (line, loc, t)      # adds beambreak to parse result t as side effect
+    return pObj ('note', t)
+
+def restActn (line, loc, t):    # detect beambreak between previous and current note/rest
+    detectBeamBreak (line, loc, t)  # adds beambreak to parse result t as side effect
+    return pObj ('rest', t)
+
+def errorWarn (line, loc, t):   # warning for misplaced symbols and skip them
+    if not t[0]: return []      # only warn if catched string not empty
+    info ('**misplaced symbol: %s' % t[0], warn=0)
+    lineCopy = line [:]
+    if loc > 40:
+        lineCopy = line [loc - 40: loc + 40]
+        loc = 40
+    info (lineCopy.replace ('\n', ' '), warn=0)
+    info (loc * '-' + '^', warn=0)
+    return []
+
+#-------------------------------------------------------------
+# transformations of a measure (called by parse action doMaat)
+#-------------------------------------------------------------
+
+def simplify (a, b):    # divide a and b by their greatest common divisor
+    x, y = a, b
+    while b: a, b = b, a % b
+    return x // a, y // a
+
+def doBroken (prev, brk, x):
+    if not prev: info ('error in broken rhythm: %s' % x); return    # no changes
+    nom1, den1 = prev.dur.t # duration of first note/chord
+    nom2, den2 = x.dur.t    # duration of second note/chord
+    if  brk == '>':
+        nom1, den1  = simplify (3 * nom1, 2 * den1)
+        nom2, den2  = simplify (1 * nom2, 2 * den2)
+    elif brk == '<':
+        nom1, den1  = simplify (1 * nom1, 2 * den1)
+        nom2, den2  = simplify (3 * nom2, 2 * den2)
+    elif brk == '>>':
+        nom1, den1  = simplify (7 * nom1, 4 * den1)
+        nom2, den2  = simplify (1 * nom2, 4 * den2)
+    elif brk == '<<':
+        nom1, den1  = simplify (1 * nom1, 4 * den1)
+        nom2, den2  = simplify (7 * nom2, 4 * den2)
+    else: return            # give up
+    prev.dur.t = nom1, den1 # change duration of previous note/chord
+    x.dur.t = nom2, den2    # and current note/chord
+
+def convertBroken (t):  # convert broken rhythms to normal note durations
+    prev = None # the last note/chord before the broken symbol
+    brk = ''    # the broken symbol
+    remove = [] # indexes to broken symbols (to be deleted) in measure
+    for i, x in enumerate (t):  # scan all elements in measure
+        if x.name == 'note' or x.name == 'chord' or x.name == 'rest':
+            if brk:                 # a broken symbol was encountered before
+                doBroken (prev, brk, x) # change duration previous note/chord/rest and current one
+                brk = ''
+            else:
+                prev = x            # remember the last note/chord/rest
+        elif x.name == 'broken':
+            brk = x.t[0]            # remember the broken symbol (=string)
+            remove.insert (0, i)    # and its index, highest index first
+    for i in remove: del t[i]       # delete broken symbols from high to low
+
+def ptc2midi (n):       # convert parsed pitch attribute to a midi number
+    pt = getattr (n, 'pitch', '')
+    if pt:
+        p = pt.t
+        if l

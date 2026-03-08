@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/GribStubImagePlugin_documentation.py
+KIND: code
+
+from __future__ import annotations
+from . import Image, ImageFile
+
+    Install application-specific GRIB image handler.
+
+    :param handler: Handler object.

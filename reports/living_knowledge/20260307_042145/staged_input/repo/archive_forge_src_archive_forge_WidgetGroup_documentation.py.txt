@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/WidgetGroup_documentation.py
+KIND: code
+
+import inspect
+import weakref
+from .Qt import QtCore, QtWidgets
+Return true if we should automatically search the children of this object for more.

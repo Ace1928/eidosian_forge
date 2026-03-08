@@ -1,0 +1,644 @@
+SOURCE_PATH: archive_forge/src/archive_forge/art3d.py
+KIND: code
+
+# art3d.py, original mplot3d version by John Porter
+# Parts rewritten by Reinier Heeres <reinier@heeres.eu>
+# Minor additions by Ben Axelrod <baxelrod@coroware.com>
+
+"""
+Module containing 3D artist code and functions to convert 2D
+artists into 3D versions which can be added to an Axes3D.
+"""
+
+import math
+
+import numpy as np
+
+from contextlib import contextmanager
+
+from matplotlib import (
+    artist, cbook, colors as mcolors, lines, text as mtext,
+    path as mpath)
+from matplotlib.collections import (
+    Collection, LineCollection, PolyCollection, PatchCollection, PathCollection)
+from matplotlib.colors import Normalize
+from matplotlib.patches import Patch
+from . import proj3d
+
+
+def _norm_angle(a):
+    """Return the given angle normalized to -180 < *a* <= 180 degrees."""
+    a = (a + 360) % 360
+    if a > 180:
+        a = a - 360
+    return a
+
+
+def _norm_text_angle(a):
+    """Return the given angle normalized to -90 < *a* <= 90 degrees."""
+    a = (a + 180) % 180
+    if a > 90:
+        a = a - 180
+    return a
+
+
+def get_dir_vector(zdir):
+    """
+    Return a direction vector.
+
+    Parameters
+    ----------
+    zdir : {'x', 'y', 'z', None, 3-tuple}
+        The direction. Possible values are:
+
+        - 'x': equivalent to (1, 0, 0)
+        - 'y': equivalent to (0, 1, 0)
+        - 'z': equivalent to (0, 0, 1)
+        - *None*: equivalent to (0, 0, 0)
+        - an iterable (x, y, z) is converted to an array
+
+    Returns
+    -------
+    x, y, z : array
+        The direction vector.
+    """
+    if zdir == 'x':
+        return np.array((1, 0, 0))
+    elif zdir == 'y':
+        return np.array((0, 1, 0))
+    elif zdir == 'z':
+        return np.array((0, 0, 1))
+    elif zdir is None:
+        return np.array((0, 0, 0))
+    elif np.iterable(zdir) and len(zdir) == 3:
+        return np.array(zdir)
+    else:
+        raise ValueError("'x', 'y', 'z', None or vector of length 3 expected")
+
+
+class Text3D(mtext.Text):
+    """
+    Text object with 3D position and direction.
+
+    Parameters
+    ----------
+    x, y, z : float
+        The position of the text.
+    text : str
+        The text string to display.
+    zdir : {'x', 'y', 'z', None, 3-tuple}
+        The direction of the text. See `.get_dir_vector` for a description of
+        the values.
+
+    Other Parameters
+    ----------------
+    **kwargs
+         All other parameters are passed on to `~matplotlib.text.Text`.
+    """
+
+    def __init__(self, x=0, y=0, z=0, text='', zdir='z', **kwargs):
+        mtext.Text.__init__(self, x, y, text, **kwargs)
+        self.set_3d_properties(z, zdir)
+
+    def get_position_3d(self):
+        """Return the (x, y, z) position of the text."""
+        return self._x, self._y, self._z
+
+    def set_position_3d(self, xyz, zdir=None):
+        """
+        Set the (*x*, *y*, *z*) position of the text.
+
+        Parameters
+        ----------
+        xyz : (float, float, float)
+            The position in 3D space.
+        zdir : {'x', 'y', 'z', None, 3-tuple}
+            The direction of the text. If unspecified, the *zdir* will not be
+            changed. See `.get_dir_vector` for a description of the values.
+        """
+        super().set_position(xyz[:2])
+        self.set_z(xyz[2])
+        if zdir is not None:
+            self._dir_vec = get_dir_vector(zdir)
+
+    def set_z(self, z):
+        """
+        Set the *z* position of the text.
+
+        Parameters
+        ----------
+        z : float
+        """
+        self._z = z
+        self.stale = True
+
+    def set_3d_properties(self, z=0, zdir='z'):
+        """
+        Set the *z* position and direction of the text.
+
+        Parameters
+        ----------
+        z : float
+            The z-position in 3D space.
+        zdir : {'x', 'y', 'z', 3-tuple}
+            The direction of the text. Default: 'z'.
+            See `.get_dir_vector` for a description of the values.
+        """
+        self._z = z
+        self._dir_vec = get_dir_vector(zdir)
+        self.stale = True
+
+    @artist.allow_rasterization
+    def draw(self, renderer):
+        position3d = np.array((self._x, self._y, self._z))
+        proj = proj3d._proj_trans_points(
+            [position3d, position3d + self._dir_vec], self.axes.M)
+        dx = proj[0][1] - proj[0][0]
+        dy = proj[1][1] - proj[1][0]
+        angle = math.degrees(math.atan2(dy, dx))
+        with cbook._setattr_cm(self, _x=proj[0][0], _y=proj[1][0],
+                               _rotation=_norm_text_angle(angle)):
+            mtext.Text.draw(self, renderer)
+        self.stale = False
+
+    def get_tightbbox(self, renderer=None):
+        # Overwriting the 2d Text behavior which is not valid for 3d.
+        # For now, just return None to exclude from layout calculation.
+        return None
+
+
+def text_2d_to_3d(obj, z=0, zdir='z'):
+    """
+    Convert a `.Text` to a `.Text3D` object.
+
+    Parameters
+    ----------
+    z : float
+        The z-position in 3D space.
+    zdir : {'x', 'y', 'z', 3-tuple}
+        The direction of the text. Default: 'z'.
+        See `.get_dir_vector` for a description of the values.
+    """
+    obj.__class__ = Text3D
+    obj.set_3d_properties(z, zdir)
+
+
+class Line3D(lines.Line2D):
+    """
+    3D line object.
+
+    .. note:: Use `get_data_3d` to obtain the data associated with the line.
+            `~.Line2D.get_data`, `~.Line2D.get_xdata`, and `~.Line2D.get_ydata` return
+            the x- and y-coordinates of the projected 2D-line, not the x- and y-data of
+            the 3D-line. Similarly, use `set_data_3d` to set the data, not
+            `~.Line2D.set_data`, `~.Line2D.set_xdata`, and `~.Line2D.set_ydata`.
+    """
+
+    def __init__(self, xs, ys, zs, *args, **kwargs):
+        """
+
+        Parameters
+        ----------
+        xs : array-like
+            The x-data to be plotted.
+        ys : array-like
+            The y-data to be plotted.
+        zs : array-like
+            The z-data to be plotted.
+        *args, **kwargs
+            Additional arguments are passed to `~matplotlib.lines.Line2D`.
+        """
+        super().__init__([], [], *args, **kwargs)
+        self.set_data_3d(xs, ys, zs)
+
+    def set_3d_properties(self, zs=0, zdir='z'):
+        """
+        Set the *z* position and direction of the line.
+
+        Parameters
+        ----------
+        zs : float or array of floats
+            The location along the *zdir* axis in 3D space to position the
+            line.
+        zdir : {'x', 'y', 'z'}
+            Plane to plot line orthogonal to. Default: 'z'.
+            See `.get_dir_vector` for a description of the values.
+        """
+        xs = self.get_xdata()
+        ys = self.get_ydata()
+        zs = cbook._to_unmasked_float_array(zs).ravel()
+        zs = np.broadcast_to(zs, len(xs))
+        self._verts3d = juggle_axes(xs, ys, zs, zdir)
+        self.stale = True
+
+    def set_data_3d(self, *args):
+        """
+        Set the x, y and z data
+
+        Parameters
+        ----------
+        x : array-like
+            The x-data to be plotted.
+        y : array-like
+            The y-data to be plotted.
+        z : array-like
+            The z-data to be plotted.
+
+        Notes
+        -----
+        Accepts x, y, z arguments or a single array-like (x, y, z)
+        """
+        if len(args) == 1:
+            args = args[0]
+        for name, xyz in zip('xyz', args):
+            if not np.iterable(xyz):
+                raise RuntimeError(f'{name} must be a sequence')
+        self._verts3d = args
+        self.stale = True
+
+    def get_data_3d(self):
+        """
+        Get the current data
+
+        Returns
+        -------
+        verts3d : length-3 tuple or array-like
+            The current data as a tuple or array-like.
+        """
+        return self._verts3d
+
+    @artist.allow_rasterization
+    def draw(self, renderer):
+        xs3d, ys3d, zs3d = self._verts3d
+        xs, ys, zs = proj3d.proj_transform(xs3d, ys3d, zs3d, self.axes.M)
+        self.set_data(xs, ys)
+        super().draw(renderer)
+        self.stale = False
+
+
+def line_2d_to_3d(line, zs=0, zdir='z'):
+    """
+    Convert a `.Line2D` to a `.Line3D` object.
+
+    Parameters
+    ----------
+    zs : float
+        The location along the *zdir* axis in 3D space to position the line.
+    zdir : {'x', 'y', 'z'}
+        Plane to plot line orthogonal to. Default: 'z'.
+        See `.get_dir_vector` for a description of the values.
+    """
+
+    line.__class__ = Line3D
+    line.set_3d_properties(zs, zdir)
+
+
+def _path_to_3d_segment(path, zs=0, zdir='z'):
+    """Convert a path to a 3D segment."""
+
+    zs = np.broadcast_to(zs, len(path))
+    pathsegs = path.iter_segments(simplify=False, curves=False)
+    seg = [(x, y, z) for (((x, y), code), z) in zip(pathsegs, zs)]
+    seg3d = [juggle_axes(x, y, z, zdir) for (x, y, z) in seg]
+    return seg3d
+
+
+def _paths_to_3d_segments(paths, zs=0, zdir='z'):
+    """Convert paths from a collection object to 3D segments."""
+
+    if not np.iterable(zs):
+        zs = np.broadcast_to(zs, len(paths))
+    else:
+        if len(zs) != len(paths):
+            raise ValueError('Number of z-coordinates does not match paths.')
+
+    segs = [_path_to_3d_segment(path, pathz, zdir)
+            for path, pathz in zip(paths, zs)]
+    return segs
+
+
+def _path_to_3d_segment_with_codes(path, zs=0, zdir='z'):
+    """Convert a path to a 3D segment with path codes."""
+
+    zs = np.broadcast_to(zs, len(path))
+    pathsegs = path.iter_segments(simplify=False, curves=False)
+    seg_codes = [((x, y, z), code) for ((x, y), code), z in zip(pathsegs, zs)]
+    if seg_codes:
+        seg, codes = zip(*seg_codes)
+        seg3d = [juggle_axes(x, y, z, zdir) for (x, y, z) in seg]
+    else:
+        seg3d = []
+        codes = []
+    return seg3d, list(codes)
+
+
+def _paths_to_3d_segments_with_codes(paths, zs=0, zdir='z'):
+    """
+    Convert paths from a collection object to 3D segments with path codes.
+    """
+
+    zs = np.broadcast_to(zs, len(paths))
+    segments_codes = [_path_to_3d_segment_with_codes(path, pathz, zdir)
+                      for path, pathz in zip(paths, zs)]
+    if segments_codes:
+        segments, codes = zip(*segments_codes)
+    else:
+        segments, codes = [], []
+    return list(segments), list(codes)
+
+
+class Collection3D(Collection):
+    """A collection of 3D paths."""
+
+    def do_3d_projection(self):
+        """Project the points according to renderer matrix."""
+        xyzs_list = [proj3d.proj_transform(*vs.T, self.axes.M)
+                     for vs, _ in self._3dverts_codes]
+        self._paths = [mpath.Path(np.column_stack([xs, ys]), cs)
+                       for (xs, ys, _), (_, cs) in zip(xyzs_list, self._3dverts_codes)]
+        zs = np.concatenate([zs for _, _, zs in xyzs_list])
+        return zs.min() if len(zs) else 1e9
+
+
+def collection_2d_to_3d(col, zs=0, zdir='z'):
+    """Convert a `.Collection` to a `.Collection3D` object."""
+    zs = np.broadcast_to(zs, len(col.get_paths()))
+    col._3dverts_codes = [
+        (np.column_stack(juggle_axes(
+            *np.column_stack([p.vertices, np.broadcast_to(z, len(p.vertices))]).T,
+            zdir)),
+         p.codes)
+        for p, z in zip(col.get_paths(), zs)]
+    col.__class__ = cbook._make_class_factory(Collection3D, "{}3D")(type(col))
+
+
+class Line3DCollection(LineCollection):
+    """
+    A collection of 3D lines.
+    """
+
+    def set_sort_zpos(self, val):
+        """Set the position to use for z-sorting."""
+        self._sort_zpos = val
+        self.stale = True
+
+    def set_segments(self, segments):
+        """
+        Set 3D segments.
+        """
+        self._segments3d = segments
+        super().set_segments([])
+
+    def do_3d_projection(self):
+        """
+        Project the points according to renderer matrix.
+        """
+        xyslist = [proj3d._proj_trans_points(points, self.axes.M)
+                   for points in self._segments3d]
+        segments_2d = [np.column_stack([xs, ys]) for xs, ys, zs in xyslist]
+        LineCollection.set_segments(self, segments_2d)
+
+        # FIXME
+        minz = 1e9
+        for xs, ys, zs in xyslist:
+            minz = min(minz, min(zs))
+        return minz
+
+
+def line_collection_2d_to_3d(col, zs=0, zdir='z'):
+    """Convert a `.LineCollection` to a `.Line3DCollection` object."""
+    segments3d = _paths_to_3d_segments(col.get_paths(), zs, zdir)
+    col.__class__ = Line3DCollection
+    col.set_segments(segments3d)
+
+
+class Patch3D(Patch):
+    """
+    3D patch object.
+    """
+
+    def __init__(self, *args, zs=(), zdir='z', **kwargs):
+        """
+        Parameters
+        ----------
+        verts :
+        zs : float
+            The location along the *zdir* axis in 3D space to position the
+            patch.
+        zdir : {'x', 'y', 'z'}
+            Plane to plot patch orthogonal to. Default: 'z'.
+            See `.get_dir_vector` for a description of the values.
+        """
+        super().__init__(*args, **kwargs)
+        self.set_3d_properties(zs, zdir)
+
+    def set_3d_properties(self, verts, zs=0, zdir='z'):
+        """
+        Set the *z* position and direction of the patch.
+
+        Parameters
+        ----------
+        verts :
+        zs : float
+            The location along the *zdir* axis in 3D space to position the
+            patch.
+        zdir : {'x', 'y', 'z'}
+            Plane to plot patch orthogonal to. Default: 'z'.
+            See `.get_dir_vector` for a description of the values.
+        """
+        zs = np.broadcast_to(zs, len(verts))
+        self._segment3d = [juggle_axes(x, y, z, zdir)
+                           for ((x, y), z) in zip(verts, zs)]
+
+    def get_path(self):
+        return self._path2d
+
+    def do_3d_projection(self):
+        s = self._segment3d
+        xs, ys, zs = zip(*s)
+        vxs, vys, vzs, vis = proj3d.proj_transform_clip(xs, ys, zs,
+                                                        self.axes.M)
+        self._path2d = mpath.Path(np.column_stack([vxs, vys]))
+        return min(vzs)
+
+
+class PathPatch3D(Patch3D):
+    """
+    3D PathPatch object.
+    """
+
+    def __init__(self, path, *, zs=(), zdir='z', **kwargs):
+        """
+        Parameters
+        ----------
+        path :
+        zs : float
+            The location along the *zdir* axis in 3D space to position the
+            path patch.
+        zdir : {'x', 'y', 'z', 3-tuple}
+            Plane to plot path patch orthogonal to. Default: 'z'.
+            See `.get_dir_vector` for a description of the values.
+        """
+        # Not super().__init__!
+        Patch.__init__(self, **kwargs)
+        self.set_3d_properties(path, zs, zdir)
+
+    def set_3d_properties(self, path, zs=0, zdir='z'):
+        """
+        Set the *z* position and direction of the path patch.
+
+        Parameters
+        ----------
+        path :
+        zs : float
+            The location along the *zdir* axis in 3D space to position the
+            path patch.
+        zdir : {'x', 'y', 'z', 3-tuple}
+            Plane to plot path patch orthogonal to. Default: 'z'.
+            See `.get_dir_vector` for a description of the values.
+        """
+        Patch3D.set_3d_properties(self, path.vertices, zs=zs, zdir=zdir)
+        self._code3d = path.codes
+
+    def do_3d_projection(self):
+        s = self._segment3d
+        xs, ys, zs = zip(*s)
+        vxs, vys, vzs, vis = proj3d.proj_transform_clip(xs, ys, zs,
+                                                        self.axes.M)
+        self._path2d = mpath.Path(np.column_stack([vxs, vys]), self._code3d)
+        return min(vzs)
+
+
+def _get_patch_verts(patch):
+    """Return a list of vertices for the path of a patch."""
+    trans = patch.get_patch_transform()
+    path = patch.get_path()
+    polygons = path.to_polygons(trans)
+    return polygons[0] if len(polygons) else np.array([])
+
+
+def patch_2d_to_3d(patch, z=0, zdir='z'):
+    """Convert a `.Patch` to a `.Patch3D` object."""
+    verts = _get_patch_verts(patch)
+    patch.__class__ = Patch3D
+    patch.set_3d_properties(verts, z, zdir)
+
+
+def pathpatch_2d_to_3d(pathpatch, z=0, zdir='z'):
+    """Convert a `.PathPatch` to a `.PathPatch3D` object."""
+    path = pathpatch.get_path()
+    trans = pathpatch.get_patch_transform()
+
+    mpath = trans.transform_path(path)
+    pathpatch.__class__ = PathPatch3D
+    pathpatch.set_3d_properties(mpath, z, zdir)
+
+
+class Patch3DCollection(PatchCollection):
+    """
+    A collection of 3D patches.
+    """
+
+    def __init__(self, *args, zs=0, zdir='z', depthshade=True, **kwargs):
+        """
+        Create a collection of flat 3D patches with its normal vector
+        pointed in *zdir* direction, and located at *zs* on the *zdir*
+        axis. 'zs' can be a scalar or an array-like of the same length as
+        the number of patches in the collection.
+
+        Constructor arguments are the same as for
+        :class:`~matplotlib.collections.PatchCollection`. In addition,
+        keywords *zs=0* and *zdir='z'* are available.
+
+        Also, the keyword argument *depthshade* is available to indicate
+        whether to shade the patches in order to give the appearance of depth
+        (default is *True*). This is typically desired in scatter plots.
+        """
+        self._depthshade = depthshade
+        super().__init__(*args, **kwargs)
+        self.set_3d_properties(zs, zdir)
+
+    def get_depthshade(self):
+        return self._depthshade
+
+    def set_depthshade(self, depthshade):
+        """
+        Set whether depth shading is performed on collection members.
+
+        Parameters
+        ----------
+        depthshade : bool
+            Whether to shade the patches in order to give the appearance of
+            depth.
+        """
+        self._depthshade = depthshade
+        self.stale = True
+
+    def set_sort_zpos(self, val):
+        """Set the position to use for z-sorting."""
+        self._sort_zpos = val
+        self.stale = True
+
+    def set_3d_properties(self, zs, zdir):
+        """
+        Set the *z* positions and direction of the patches.
+
+        Parameters
+        ----------
+        zs : float or array of floats
+            The location or locations to place the patches in the collection
+            along the *zdir* axis.
+        zdir : {'x', 'y', 'z'}
+            Plane to plot patches orthogonal to.
+            All patches must have the same direction.
+            See `.get_dir_vector` for a description of the values.
+        """
+        # Force the collection to initialize the face and edgecolors
+        # just in case it is a scalarmappable with a colormap.
+        self.update_scalarmappable()
+        offsets = self.get_offsets()
+        if len(offsets) > 0:
+            xs, ys = offsets.T
+        else:
+            xs = []
+            ys = []
+        self._offsets3d = juggle_axes(xs, ys, np.atleast_1d(zs), zdir)
+        self._z_markers_idx = slice(-1)
+        self._vzs = None
+        self.stale = True
+
+    def do_3d_projection(self):
+        xs, ys, zs = self._offsets3d
+        vxs, vys, vzs, vis = proj3d.proj_transform_clip(xs, ys, zs,
+                                                        self.axes.M)
+        self._vzs = vzs
+        super().set_offsets(np.column_stack([vxs, vys]))
+
+        if vzs.size > 0:
+            return min(vzs)
+        else:
+            return np.nan
+
+    def _maybe_depth_shade_and_sort_colors(self, color_array):
+        color_array = (
+            _zalpha(color_array, self._vzs)
+            if self._vzs is not None and self._depthshade
+            else color_array
+        )
+        if len(color_array) > 1:
+            color_array = color_array[self._z_markers_idx]
+        return mcolors.to_rgba_array(color_array, self._alpha)
+
+    def get_facecolor(self):
+        return self._maybe_depth_shade_and_sort_colors(super().get_facecolor())
+
+    def get_edgecolor(self):
+        # We need this check here to make sure we do not double-apply the depth
+        # based alpha shading when the edge color is "face" which means the
+        # edge colour should be identical to the face colour.
+        if cbook._str_equal(self._edgecolors, 'face'):
+            return self.get_facecolor()
+        return self._maybe_depth_shade_and_sort_colors(super().get_edgecolor())
+
+
+class

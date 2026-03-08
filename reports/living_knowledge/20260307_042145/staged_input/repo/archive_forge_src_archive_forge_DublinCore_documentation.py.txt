@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/DublinCore_documentation.py
+KIND: code
+
+@param html: a DOM node for the top level html element
+    @param options: invocation options
+    @type options: L{Options<pyRdfa.options>}
+    @param state: top level execution state
+    @type state: L{State<pyRdfa.state>}

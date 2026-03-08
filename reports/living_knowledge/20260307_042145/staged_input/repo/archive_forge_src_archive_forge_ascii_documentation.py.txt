@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/ascii_documentation.py
+KIND: code
+
+Constants and membership tests for ASCII characters

@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/all_renames_v2_documentation.py
+KIND: code
+
+from tensorflow.tools.compatibility import renames_v2
+Add support for `tf.contrib.*` alias `contrib_*.` Updates dict in place.

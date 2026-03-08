@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_cibw_runner_documentation.py
+KIND: code
+
+import sys
+import simplejson.tests
+Internal module for running tests from cibuildwheel

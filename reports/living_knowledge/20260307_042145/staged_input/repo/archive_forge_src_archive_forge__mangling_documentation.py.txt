@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_mangling_documentation.py
+KIND: code
+
+import re
+
+        Note: This only demangles names that were mangled by this specific
+        PackageMangler. It will pass through names created by a different
+        PackageMangler instance.

@@ -1,0 +1,12 @@
+SOURCE_PATH: archive_forge/src/archive_forge/Chinese-1.py
+KIND: code
+
+interface = ":"
+user = "Q"
+bot = "A"
+
+init_prompt = f'''
+Expert Questions & Helpful Answers
+
+Ask Research Experts
+'''

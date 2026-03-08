@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/MolSupplier_documentation.py
+KIND: code
+
+Must be implemented in child class

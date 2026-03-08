@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/bravais_type_engine_documentation.py
+KIND: code
+
+import itertools
+import numpy as np
+from ase.lattice import bravais_lattices, UnconventionalLattice, bravais_names
+from ase.cell import Cell
+Yield all lattices defined by the length and angle grids.

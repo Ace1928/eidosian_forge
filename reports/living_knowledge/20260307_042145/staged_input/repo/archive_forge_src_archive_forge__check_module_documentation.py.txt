@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_check_module_documentation.py
+KIND: code
+
+import os
+import sys
+Minimal implementation as required by `find`.

@@ -1,0 +1,14 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/GY
+KIND: config
+
+GY
+barimawaini
+cuyunimazaruni
+demeraramahaica
+east berbicecorentyne 
+essequibo islandswest demerara
+mahaicaberbice
+pomeroonsupenaam
+potarosiparuni
+upper demeraraberbice
+upper takutuupper essequibo

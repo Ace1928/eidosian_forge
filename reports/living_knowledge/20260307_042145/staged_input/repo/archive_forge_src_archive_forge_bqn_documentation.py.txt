@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/bqn_documentation.py
+KIND: code
+
+from pygments.lexer import RegexLexer
+from pygments.token import Comment, Operator, Keyword, Name, String, \
+
+    A simple BQN lexer.
+
+    .. versionadded:: 2.16

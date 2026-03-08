@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AmbiguityError.py
+KIND: code
+
+from django.db import DatabaseError
+class AmbiguityError(Exception):
+    """More than one migration matches a name prefix."""
+    pass

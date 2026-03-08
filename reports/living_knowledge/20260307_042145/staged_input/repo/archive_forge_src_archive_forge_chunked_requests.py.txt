@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/chunked_requests.py
+KIND: code
+
+from _plotly_future_ import _chart_studio_error
+
+_chart_studio_error("plotly.chunked_requests")

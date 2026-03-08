@@ -1,0 +1,433 @@
+SOURCE_PATH: archive_forge/src/archive_forge/builder.bak.py
+KIND: code
+
+# Copyright 2020 The HuggingFace Datasets Authors and the TensorFlow Datasets Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Lint as: python3
+"""DatasetBuilder base class."""
+
+import abc
+import contextlib
+import copy
+import inspect
+import os
+import posixpath
+import shutil
+import textwrap
+import time
+import urllib
+import warnings
+from dataclasses import dataclass
+from functools import partial
+from pathlib import Path
+from typing import Dict, Iterable, Mapping, Optional, Tuple, Union
+
+import fsspec
+from multiprocess import Pool
+from tqdm.contrib.concurrent import thread_map
+
+from datasets import ReadInstruction
+
+from . import config, utils
+from .arrow_dataset import Dataset
+from .arrow_reader import (
+    HF_GCP_BASE_URL,
+    ArrowReader,
+    DatasetNotOnHfGcsError,
+    MissingFilesOnHfGcsError,
+)
+from .arrow_writer import ArrowWriter, BeamWriter, ParquetWriter, SchemaInferenceError
+from .data_files import DataFilesDict, sanitize_patterns
+from .dataset_dict import DatasetDict, IterableDatasetDict
+from .download.download_config import DownloadConfig
+from .download.download_manager import DownloadManager, DownloadMode
+from .download.mock_download_manager import MockDownloadManager
+from .download.streaming_download_manager import StreamingDownloadManager
+from .features import Features
+from .filesystems import is_remote_filesystem
+from .fingerprint import Hasher
+from .info import DatasetInfo, DatasetInfosDict, PostProcessedInfo
+from .iterable_dataset import ExamplesIterable, IterableDataset, _generate_examples_from_tables_wrapper
+from .keyhash import DuplicatedKeysError
+from .naming import INVALID_WINDOWS_CHARACTERS_IN_PATH, camelcase_to_snakecase
+from .splits import Split, SplitDict, SplitGenerator, SplitInfo
+from .streaming import extend_dataset_builder_for_streaming
+from .utils import logging
+from .utils.file_utils import cached_path, is_remote_url
+from .utils.filelock import FileLock
+from .utils.info_utils import VerificationMode, get_size_checksum_dict, verify_checksums, verify_splits
+from .utils.py_utils import (
+    classproperty,
+    convert_file_size_to_int,
+    has_sufficient_disk_space,
+    iflatmap_unordered,
+    map_nested,
+    memoize,
+    size_str,
+    temporary_assignment,
+)
+from .utils.sharding import _number_of_shards_in_gen_kwargs, _split_gen_kwargs
+
+
+logger = logging.get_logger(__name__)
+
+
+class InvalidConfigName(ValueError):
+    pass
+
+
+class DatasetBuildError(Exception):
+    pass
+
+
+class ManualDownloadError(DatasetBuildError):
+    pass
+
+
+class DatasetGenerationError(DatasetBuildError):
+    pass
+
+
+@dataclass
+class BuilderConfig:
+    """Base class for `DatasetBuilder` data configuration.
+
+    `DatasetBuilder` subclasses with data configuration options should subclass
+    `BuilderConfig` and add their own properties.
+
+    Attributes:
+        name (`str`, defaults to `default`):
+        version (`Version` or `str`, *optional*):
+        data_dir (`str`, *optional*):
+        data_files (`str` or `Sequence` or `Mapping`, *optional*):
+            Path(s) to source data file(s).
+        description (`str`, *optional*):
+    """
+
+    name: str = "default"
+    version: Optional[Union[utils.Version, str]] = utils.Version("0.0.0")
+    data_dir: Optional[str] = None
+    data_files: Optional[DataFilesDict] = None
+    description: Optional[str] = None
+
+    def __post_init__(self):
+        # The config name is used to name the cache directory.
+        for invalid_char in INVALID_WINDOWS_CHARACTERS_IN_PATH:
+            if invalid_char in self.name:
+                raise InvalidConfigName(
+                    f"Bad characters from black list '{INVALID_WINDOWS_CHARACTERS_IN_PATH}' found in '{self.name}'. "
+                    f"They could create issues when creating a directory for this config on Windows filesystem."
+                )
+        if self.data_files is not None and not isinstance(self.data_files, DataFilesDict):
+            raise ValueError(f"Expected a DataFilesDict in data_files but got {self.data_files}")
+
+    def __eq__(self, o):
+        # we need to override the default dataclass __eq__ since it doesn't check for
+        # other attributes that the ones of the signature.
+        if set(self.__dict__.keys()) != set(o.__dict__.keys()):
+            return False
+        return all((k, getattr(self, k)) == (k, getattr(o, k)) for k in self.__dict__.keys())
+
+    def create_config_id(
+        self,
+        config_kwargs: dict,
+        custom_features: Optional[Features] = None,
+    ) -> str:
+        """
+        The config id is used to build the cache directory.
+        By default it is equal to the config name.
+        However the name of a config is not sufficient to have a unique identifier for the dataset being generated
+        since it doesn't take into account:
+        - the config kwargs that can be used to overwrite attributes
+        - the custom features used to write the dataset
+        - the data_files for json/text/csv/pandas datasets
+
+        Therefore the config id is just the config name with an optional suffix based on these.
+        """
+        # Possibly add a suffix to the name to handle custom features/data_files/config_kwargs
+        suffix: Optional[str] = None
+        config_kwargs_to_add_to_suffix = config_kwargs.copy()
+        # name and version are already used to build the cache directory
+        config_kwargs_to_add_to_suffix.pop("name", None)
+        config_kwargs_to_add_to_suffix.pop("version", None)
+        # data dir handling (when specified it points to the manually downloaded data):
+        # it was previously ignored before the introduction of config id because we didn't want
+        # to change the config name. Now it's fine to take it into account for the config id.
+        # config_kwargs_to_add_to_suffix.pop("data_dir", None)
+        if "data_dir" in config_kwargs_to_add_to_suffix and config_kwargs_to_add_to_suffix["data_dir"] is None:
+            config_kwargs_to_add_to_suffix.pop("data_dir", None)
+        if config_kwargs_to_add_to_suffix:
+            # we don't care about the order of the kwargs
+            config_kwargs_to_add_to_suffix = {
+                k: config_kwargs_to_add_to_suffix[k] for k in sorted(config_kwargs_to_add_to_suffix)
+            }
+            if all(isinstance(v, (str, bool, int, float)) for v in config_kwargs_to_add_to_suffix.values()):
+                suffix = ",".join(
+                    str(k) + "=" + urllib.parse.quote_plus(str(v)) for k, v in config_kwargs_to_add_to_suffix.items()
+                )
+                if len(suffix) > 32:  # hash if too long
+                    suffix = Hasher.hash(config_kwargs_to_add_to_suffix)
+            else:
+                suffix = Hasher.hash(config_kwargs_to_add_to_suffix)
+
+        if custom_features is not None:
+            m = Hasher()
+            if suffix:
+                m.update(suffix)
+            m.update(custom_features)
+            suffix = m.hexdigest()
+
+        if suffix:
+            config_id = self.name + "-" + suffix
+            if len(config_id) > config.MAX_DATASET_CONFIG_ID_READABLE_LENGTH:
+                config_id = self.name + "-" + Hasher.hash(suffix)
+            return config_id
+        else:
+            return self.name
+
+
+class DatasetBuilder:
+    """Abstract base class for all datasets.
+
+    `DatasetBuilder` has 3 key methods:
+
+        - [`DatasetBuilder.info`]: Documents the dataset, including feature
+          names, types, shapes, version, splits, citation, etc.
+        - [`DatasetBuilder.download_and_prepare`]: Downloads the source data
+          and writes it to disk.
+        - [`DatasetBuilder.as_dataset`]: Generates a [`Dataset`].
+
+    Some `DatasetBuilder`s expose multiple variants of the
+    dataset by defining a [`BuilderConfig`] subclass and accepting a
+    config object (or name) on construction. Configurable datasets expose a
+    pre-defined set of configurations in [`DatasetBuilder.builder_configs`].
+
+    Args:
+        cache_dir (`str`, *optional*):
+            Directory to cache data. Defaults to `"~/.cache/huggingface/datasets"`.
+        config_name (`str`, *optional*):
+            Name of the dataset configuration.
+            It affects the data generated on disk. Different configurations will have their own subdirectories and
+            versions.
+            If not provided, the default configuration is used (if it exists).
+
+            <Added version="2.3.0">
+
+            Parameter `name` was renamed to `config_name`.
+
+            </Added>
+        hash (`str`, *optional*):
+            Hash specific to the dataset code. Used to update the caching directory when the
+            dataset loading script code is updated (to avoid reusing old data).
+            The typical caching directory (defined in `self._relative_data_dir`) is `name/version/hash/`.
+        base_path (`str`, *optional*):
+            Base path for relative paths that are used to download files.
+            This can be a remote URL.
+        features ([`Features`], *optional*):
+            Features types to use with this dataset.
+            It can be used to change the [`Features`] types of a dataset, for example.
+        use_auth_token (`str` or `bool`, *optional*):
+            String or boolean to use as Bearer token for remote files on the
+            Datasets Hub. If `True`, will get token from `"~/.huggingface"`.
+        repo_id (`str`, *optional*):
+            ID of the dataset repository.
+            Used to distinguish builders with the same name but not coming from the same namespace, for example "squad"
+            and "lhoestq/squad" repo IDs. In the latter, the builder name would be "lhoestq___squad".
+        data_files (`str` or `Sequence` or `Mapping`, *optional*):
+            Path(s) to source data file(s).
+            For builders like "csv" or "json" that need the user to specify data files. They can be either
+            local or remote files. For convenience, you can use a `DataFilesDict`.
+        data_dir (`str`, *optional*):
+            Path to directory containing source data file(s).
+            Use only if `data_files` is not passed, in which case it is equivalent to passing
+            `os.path.join(data_dir, "**")` as `data_files`.
+            For builders that require manual download, it must be the path to the local directory containing the
+            manually downloaded data.
+        storage_options (`dict`, *optional*):
+            Key/value pairs to be passed on to the dataset file-system backend, if any.
+        writer_batch_size (`int`, *optional*):
+            Batch size used by the ArrowWriter.
+            It defines the number of samples that are kept in memory before writing them
+            and also the length of the arrow chunks.
+            None means that the ArrowWriter will use its default value.
+        name (`str`): Configuration name for the dataset.
+
+            <Deprecated version="2.3.0">
+
+            Use `config_name` instead.
+
+            </Deprecated>
+
+        **config_kwargs (additional keyword arguments): Keyword arguments to be passed to the corresponding builder
+            configuration class, set on the class attribute [`DatasetBuilder.BUILDER_CONFIG_CLASS`]. The builder
+            configuration class is [`BuilderConfig`] or a subclass of it.
+    """
+
+    # Default version
+    VERSION = None  # Default version set in BuilderConfig
+
+    # Class for the builder config.
+    BUILDER_CONFIG_CLASS = BuilderConfig
+
+    # Named configurations that modify the data generated by download_and_prepare.
+    BUILDER_CONFIGS = []
+
+    # Optional default config name to be used when name is None
+    DEFAULT_CONFIG_NAME = None
+
+    # Default batch size used by the ArrowWriter
+    # It defines the number of samples that are kept in memory before writing them
+    # and also the length of the arrow chunks
+    # None means that the ArrowWriter will use its default value
+    DEFAULT_WRITER_BATCH_SIZE = None
+
+    def __init__(
+        self,
+        cache_dir: Optional[str] = None,
+        config_name: Optional[str] = None,
+        hash: Optional[str] = None,
+        base_path: Optional[str] = None,
+        info: Optional[DatasetInfo] = None,
+        features: Optional[Features] = None,
+        use_auth_token: Optional[Union[bool, str]] = None,
+        repo_id: Optional[str] = None,
+        data_files: Optional[Union[str, list, dict, DataFilesDict]] = None,
+        data_dir: Optional[str] = None,
+        storage_options: Optional[dict] = None,
+        writer_batch_size: Optional[int] = None,
+        name="deprecated",
+        **config_kwargs,
+    ):
+        if name != "deprecated":
+            warnings.warn(
+                "Parameter 'name' was renamed to 'config_name' in version 2.3.0 and will be removed in 3.0.0.",
+                category=FutureWarning,
+            )
+            config_name = name
+        # DatasetBuilder name
+        self.name: str = camelcase_to_snakecase(self.__module__.split(".")[-1])
+        self.hash: Optional[str] = hash
+        self.base_path = base_path
+        self.use_auth_token = use_auth_token
+        self.repo_id = repo_id
+        self.storage_options = storage_options
+        self._writer_batch_size = writer_batch_size or self.DEFAULT_WRITER_BATCH_SIZE
+
+        if data_files is not None and not isinstance(data_files, DataFilesDict):
+            data_files = DataFilesDict.from_local_or_remote(
+                sanitize_patterns(data_files), base_path=base_path, use_auth_token=use_auth_token
+            )
+
+        # Prepare config: DatasetConfig contains name, version and description but can be extended by each dataset
+        if "features" in inspect.signature(self.BUILDER_CONFIG_CLASS.__init__).parameters and features is not None:
+            config_kwargs["features"] = features
+        if data_files is not None:
+            config_kwargs["data_files"] = data_files
+        if data_dir is not None:
+            config_kwargs["data_dir"] = data_dir
+        self.config, self.config_id = self._create_builder_config(
+            config_name=config_name,
+            custom_features=features,
+            **config_kwargs,
+        )
+
+        # prepare info: DatasetInfo are a standardized dataclass across all datasets
+        # Prefill datasetinfo
+        if info is None:
+            info = self.get_exported_dataset_info()
+            info.update(self._info())
+            info.builder_name = self.name
+            info.config_name = self.config.name
+            info.version = self.config.version
+        self.info = info
+        # update info with user specified infos
+        if features is not None:
+            self.info.features = features
+
+        # Prepare data dirs:
+        # cache_dir can be a remote bucket on GCS or S3 (when using BeamBasedBuilder for distributed data processing)
+        self._cache_dir_root = str(cache_dir or config.HF_DATASETS_CACHE)
+        self._cache_dir_root = (
+            self._cache_dir_root if is_remote_url(self._cache_dir_root) else os.path.expanduser(self._cache_dir_root)
+        )
+        path_join = posixpath.join if is_remote_url(self._cache_dir_root) else os.path.join
+        self._cache_downloaded_dir = (
+            path_join(self._cache_dir_root, config.DOWNLOADED_DATASETS_DIR)
+            if cache_dir
+            else str(config.DOWNLOADED_DATASETS_PATH)
+        )
+        self._cache_downloaded_dir = (
+            self._cache_downloaded_dir
+            if is_remote_url(self._cache_downloaded_dir)
+            else os.path.expanduser(self._cache_downloaded_dir)
+        )
+        self._cache_dir = self._build_cache_dir()
+        if not is_remote_url(self._cache_dir_root):
+            os.makedirs(self._cache_dir_root, exist_ok=True)
+            lock_path = os.path.join(self._cache_dir_root, self._cache_dir.replace(os.sep, "_") + ".lock")
+            with FileLock(lock_path):
+                if os.path.exists(self._cache_dir):  # check if data exist
+                    if len(os.listdir(self._cache_dir)) > 0:
+                        if os.path.exists(path_join(self._cache_dir, config.DATASET_INFO_FILENAME)):
+                            logger.info("Overwrite dataset info from restored data version if exists.")
+                            self.info = DatasetInfo.from_directory(self._cache_dir)
+                    else:  # dir exists but no data, remove the empty dir as data aren't available anymore
+                        logger.warning(
+                            f"Old caching folder {self._cache_dir} for dataset {self.name} exists but no data were found. Removing it. "
+                        )
+                        os.rmdir(self._cache_dir)
+
+        # Store in the cache by default unless the user specifies a custom output_dir to download_and_prepare
+        self._output_dir = self._cache_dir
+        self._fs: fsspec.AbstractFileSystem = fsspec.filesystem("file")
+
+        # Set download manager
+        self.dl_manager = None
+
+        # Set to True by "datasets-cli test" to generate file checksums for (deprecated) dataset_infos.json independently of verification_mode value.
+        self._record_infos = False
+
+        # Enable streaming (e.g. it patches "open" to work with remote files)
+        extend_dataset_builder_for_streaming(self)
+
+    def __getstate__(self):
+        return self.__dict__
+
+    def __setstate__(self, d):
+        self.__dict__ = d
+        # Re-enable streaming, since patched functions are not kept when pickling
+        extend_dataset_builder_for_streaming(self)
+
+    # Must be set for datasets that use 'data_dir' functionality - the ones
+    # that require users to do additional steps to download the data
+    # (this is usually due to some external regulations / rules).
+    # This field should contain a string with user instructions, including
+    # the list of files that should be present. It will be
+    # displayed in the dataset documentation.
+    @property
+    def manual_download_instructions(self) -> Optional[str]:
+        return None
+
+    @classmethod
+    def get_all_exported_dataset_infos(cls) -> DatasetInfosDict:
+        """Empty dict if doesn't exist
+
+        Example:
+
+        ```py
+        >>> from datasets import load_dataset_builder
+        >>> ds_builder = load_dataset_builder('rotten_tomatoes')
+        >>> ds_builder.get_all_exported_dataset_infos()
+        {'default': DatasetInfo(description="Movie Review Dataset.\nThis is a dataset of containing 5,331 positive and 5,331 negative processed\nsentences from Rotten Tomatoes movie reviews. This data was first used in Bo\nPang and Lillian Lee, ``Seeing stars: Exploiting class relationships for\nsentiment categorization with respect to rating scales.'', Proceedings of the\nACL, 2005.\n", citation='@InProceedings{Pang+Lee:05a,\n  author =       {Bo Pang and Lillian Lee},\n  title =        {Seeing stars: Exploiting class relationships for sentiment\n                  categorization with respect to rating scales},\n  booktitle =    {Proceedings of the ACL},\n  year =         2005\n}\n', homepage='http://www.cs.cornell.edu/people/pabo/movie-review-data/', license='', features={'text': Value(dtype='string', id=None), 'label': ClassLabel(num_classes=2, names=['neg', 'pos'], id=None)}, post_processed=None, supervised_keys=SupervisedKeysData(input='', output=''), task_templates=[TextClassification(task='text-classification', text_column='text', label_column='label')], builder_name='rotten_tomatoes_movie_review', config_name='default', version=1.0.0, splits={'train': SplitInfo(name='train', num_bytes=1074810, num_examples=8530

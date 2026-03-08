@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/GraphicsLayout_documentation.py
+KIND: code
+
+import numpy as np
+import pyqtgraph as pg
+
+Demonstrate the use of layouts to control placement of multiple plots / views /
+labels

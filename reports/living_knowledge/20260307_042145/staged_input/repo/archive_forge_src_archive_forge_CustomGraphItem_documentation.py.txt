@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/CustomGraphItem_documentation.py
+KIND: code
+
+import numpy as np
+import pyqtgraph as pg
+from pyqtgraph.Qt import QtCore
+
+Simple example of subclassing GraphItem.

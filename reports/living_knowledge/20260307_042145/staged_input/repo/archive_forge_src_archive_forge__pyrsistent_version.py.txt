@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_pyrsistent_version.py
+KIND: code
+
+__version__ = '0.20.0'

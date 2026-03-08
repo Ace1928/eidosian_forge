@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/camera_test.py
+KIND: code
+
+import unittest
+
+
+class CameraModuleTest(unittest.TestCase):
+    pass

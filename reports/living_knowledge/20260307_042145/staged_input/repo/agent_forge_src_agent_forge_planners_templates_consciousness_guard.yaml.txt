@@ -1,0 +1,29 @@
+SOURCE_PATH: agent_forge/src/agent_forge/planners/templates/consciousness_guard.yaml
+KIND: config
+
+steps:
+  - name: consciousness-status
+    cmd:
+      [
+        "./eidosian_venv/bin/python",
+        "-m",
+        "agent_forge.cli.eidctl",
+        "consciousness",
+        "status",
+        "--json",
+      ]
+    budget_s: 45
+  - name: consciousness-benchmark
+    cmd:
+      [
+        "./eidosian_venv/bin/python",
+        "-m",
+        "agent_forge.cli.eidctl",
+        "consciousness",
+        "benchmark",
+        "--ticks",
+        "${benchmark_ticks}",
+        "--no-persist",
+        "--json",
+      ]
+    budget_s: 180

@@ -1,0 +1,565 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_dtls.py
+KIND: code
+
+# Implementation of DTLS 1.2, using pyopenssl
+# https://datatracker.ietf.org/doc/html/rfc6347
+#
+# OpenSSL's APIs for DTLS are extremely awkward and limited, which forces us to jump
+# through a *lot* of hoops and implement important chunks of the protocol ourselves.
+# Hopefully they fix this before implementing DTLS 1.3, because it's a very different
+# protocol, and it's probably impossible to pull tricks like we do here.
+
+from __future__ import annotations
+
+import contextlib
+import enum
+import errno
+import hmac
+import os
+import struct
+import warnings
+import weakref
+from itertools import count
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Awaitable,
+    Callable,
+    Generic,
+    Iterable,
+    Iterator,
+    TypeVar,
+    Union,
+)
+from weakref import ReferenceType, WeakValueDictionary
+
+import attrs
+
+import trio
+
+from ._util import NoPublicConstructor, final
+
+if TYPE_CHECKING:
+    from types import TracebackType
+
+    # See DTLSEndpoint.__init__ for why this is imported here
+    from OpenSSL import SSL  # noqa: TCH004
+    from typing_extensions import Self, TypeAlias, TypeVarTuple, Unpack
+
+    from trio.socket import SocketType
+
+    PosArgsT = TypeVarTuple("PosArgsT")
+
+MAX_UDP_PACKET_SIZE = 65527
+
+
+def packet_header_overhead(sock: SocketType) -> int:
+    if sock.family == trio.socket.AF_INET:
+        return 28
+    else:
+        return 48
+
+
+def worst_case_mtu(sock: SocketType) -> int:
+    if sock.family == trio.socket.AF_INET:
+        return 576 - packet_header_overhead(sock)
+    else:
+        return 1280 - packet_header_overhead(sock)
+
+
+def best_guess_mtu(sock: SocketType) -> int:
+    return 1500 - packet_header_overhead(sock)
+
+
+# There are a bunch of different RFCs that define these codes, so for a
+# comprehensive collection look here:
+# https://www.iana.org/assignments/tls-parameters/tls-parameters.xhtml
+class ContentType(enum.IntEnum):
+    change_cipher_spec = 20
+    alert = 21
+    handshake = 22
+    application_data = 23
+    heartbeat = 24
+
+
+class HandshakeType(enum.IntEnum):
+    hello_request = 0
+    client_hello = 1
+    server_hello = 2
+    hello_verify_request = 3
+    new_session_ticket = 4
+    end_of_early_data = 4
+    encrypted_extensions = 8
+    certificate = 11
+    server_key_exchange = 12
+    certificate_request = 13
+    server_hello_done = 14
+    certificate_verify = 15
+    client_key_exchange = 16
+    finished = 20
+    certificate_url = 21
+    certificate_status = 22
+    supplemental_data = 23
+    key_update = 24
+    compressed_certificate = 25
+    ekt_key = 26
+    message_hash = 254
+
+
+class ProtocolVersion:
+    DTLS10 = bytes([254, 255])
+    DTLS12 = bytes([254, 253])
+
+
+EPOCH_MASK = 0xFFFF << (6 * 8)
+
+
+# Conventions:
+# - All functions that handle network data end in _untrusted.
+# - All functions end in _untrusted MUST make sure that bad data from the
+#   network cannot *only* cause BadPacket to be raised. No IndexError or
+#   struct.error or whatever.
+class BadPacket(Exception):
+    pass
+
+
+# This checks that the DTLS 'epoch' field is 0, which is true iff we're in the
+# initial handshake. It doesn't check the ContentType, because not all
+# handshake messages have ContentType==handshake -- for example,
+# ChangeCipherSpec is used during the handshake but has its own ContentType.
+#
+# Cannot fail.
+def part_of_handshake_untrusted(packet: bytes) -> bool:
+    # If the packet is too short, then slicing will successfully return a
+    # short string, which will necessarily fail to match.
+    return packet[3:5] == b"\x00\x00"
+
+
+# Cannot fail
+def is_client_hello_untrusted(packet: bytes) -> bool:
+    try:
+        return (
+            packet[0] == ContentType.handshake
+            and packet[13] == HandshakeType.client_hello
+        )
+    except IndexError:
+        # Invalid DTLS record
+        return False
+
+
+# DTLS records are:
+# - 1 byte content type
+# - 2 bytes version
+# - 8 bytes epoch+seqno
+#    Technically this is 2 bytes epoch then 6 bytes seqno, but we treat it as
+#    a single 8-byte integer, where epoch changes are represented as jumping
+#    forward by 2**(6*8).
+# - 2 bytes payload length (unsigned big-endian)
+# - payload
+RECORD_HEADER = struct.Struct("!B2sQH")
+
+
+def to_hex(data: bytes) -> str:  # pragma: no cover
+    return data.hex()
+
+
+@attrs.frozen
+class Record:
+    content_type: int
+    version: bytes = attrs.field(repr=to_hex)
+    epoch_seqno: int
+    payload: bytes = attrs.field(repr=to_hex)
+
+
+def records_untrusted(packet: bytes) -> Iterator[Record]:
+    i = 0
+    while i < len(packet):
+        try:
+            ct, version, epoch_seqno, payload_len = RECORD_HEADER.unpack_from(packet, i)
+        # Marked as no-cover because at time of writing, this code is unreachable
+        # (records_untrusted only gets called on packets that are either trusted or that
+        # have passed is_client_hello_untrusted, which filters out short packets)
+        except struct.error as exc:  # pragma: no cover
+            raise BadPacket("invalid record header") from exc
+        i += RECORD_HEADER.size
+        payload = packet[i : i + payload_len]
+        if len(payload) != payload_len:
+            raise BadPacket("short record")
+        i += payload_len
+        yield Record(ct, version, epoch_seqno, payload)
+
+
+def encode_record(record: Record) -> bytes:
+    header = RECORD_HEADER.pack(
+        record.content_type,
+        record.version,
+        record.epoch_seqno,
+        len(record.payload),
+    )
+    return header + record.payload
+
+
+# Handshake messages are:
+# - 1 byte message type
+# - 3 bytes total message length
+# - 2 bytes message sequence number
+# - 3 bytes fragment offset
+# - 3 bytes fragment length
+HANDSHAKE_MESSAGE_HEADER = struct.Struct("!B3sH3s3s")
+
+
+@attrs.frozen
+class HandshakeFragment:
+    msg_type: int
+    msg_len: int
+    msg_seq: int
+    frag_offset: int
+    frag_len: int
+    frag: bytes = attrs.field(repr=to_hex)
+
+
+def decode_handshake_fragment_untrusted(payload: bytes) -> HandshakeFragment:
+    # Raises BadPacket if decoding fails
+    try:
+        (
+            msg_type,
+            msg_len_bytes,
+            msg_seq,
+            frag_offset_bytes,
+            frag_len_bytes,
+        ) = HANDSHAKE_MESSAGE_HEADER.unpack_from(payload)
+    except struct.error as exc:
+        raise BadPacket("bad handshake message header") from exc
+    # 'struct' doesn't have built-in support for 24-bit integers, so we
+    # have to do it by hand. These can't fail.
+    msg_len = int.from_bytes(msg_len_bytes, "big")
+    frag_offset = int.from_bytes(frag_offset_bytes, "big")
+    frag_len = int.from_bytes(frag_len_bytes, "big")
+    frag = payload[HANDSHAKE_MESSAGE_HEADER.size :]
+    if len(frag) != frag_len:
+        raise BadPacket("handshake fragment length doesn't match record length")
+    return HandshakeFragment(
+        msg_type,
+        msg_len,
+        msg_seq,
+        frag_offset,
+        frag_len,
+        frag,
+    )
+
+
+def encode_handshake_fragment(hsf: HandshakeFragment) -> bytes:
+    hs_header = HANDSHAKE_MESSAGE_HEADER.pack(
+        hsf.msg_type,
+        hsf.msg_len.to_bytes(3, "big"),
+        hsf.msg_seq,
+        hsf.frag_offset.to_bytes(3, "big"),
+        hsf.frag_len.to_bytes(3, "big"),
+    )
+    return hs_header + hsf.frag
+
+
+def decode_client_hello_untrusted(packet: bytes) -> tuple[int, bytes, bytes]:
+    # Raises BadPacket if parsing fails
+    # Returns (record epoch_seqno, cookie from the packet, data that should be
+    # hashed into cookie)
+    try:
+        # ClientHello has to be the first record in the packet
+        record = next(records_untrusted(packet))
+        # no-cover because at time of writing, this is unreachable:
+        # decode_client_hello_untrusted is only called on packets that have passed
+        # is_client_hello_untrusted, which confirms the content type.
+        if record.content_type != ContentType.handshake:  # pragma: no cover
+            raise BadPacket("not a handshake record")
+        fragment = decode_handshake_fragment_untrusted(record.payload)
+        if fragment.msg_type != HandshakeType.client_hello:
+            raise BadPacket("not a ClientHello")
+        # ClientHello can't be fragmented, because reassembly requires holding
+        # per-connection state, and we refuse to allocate per-connection state
+        # until after we get a valid ClientHello.
+        if fragment.frag_offset != 0:
+            raise BadPacket("fragmented ClientHello")
+        if fragment.frag_len != fragment.msg_len:
+            raise BadPacket("fragmented ClientHello")
+
+        # As per RFC 6347:
+        #
+        #   When responding to a HelloVerifyRequest, the client MUST use the
+        #   same parameter values (version, random, session_id, cipher_suites,
+        #   compression_method) as it did in the original ClientHello.  The
+        #   server SHOULD use those values to generate its cookie and verify that
+        #   they are correct upon cookie receipt.
+        #
+        # However, the record-layer framing can and will change (e.g. the
+        # second ClientHello will have a new record-layer sequence number). So
+        # we need to pull out the handshake message alone, discarding the
+        # record-layer stuff, and then we're going to hash all of it *except*
+        # the cookie.
+
+        body = fragment.frag
+        # ClientHello is:
+        #
+        # - 2 bytes client_version
+        # - 32 bytes random
+        # - 1 byte session_id length
+        # - session_id
+        # - 1 byte cookie length
+        # - cookie
+        # - everything else
+        #
+        # So to find the cookie, so we need to figure out how long the
+        # session_id is and skip past it.
+        session_id_len = body[2 + 32]
+        cookie_len_offset = 2 + 32 + 1 + session_id_len
+        cookie_len = body[cookie_len_offset]
+
+        cookie_start = cookie_len_offset + 1
+        cookie_end = cookie_start + cookie_len
+
+        before_cookie = body[:cookie_len_offset]
+        cookie = body[cookie_start:cookie_end]
+        after_cookie = body[cookie_end:]
+
+        if len(cookie) != cookie_len:
+            raise BadPacket("short cookie")
+        return (record.epoch_seqno, cookie, before_cookie + after_cookie)
+
+    except (struct.error, IndexError) as exc:
+        raise BadPacket("bad ClientHello") from exc
+
+
+@attrs.frozen
+class HandshakeMessage:
+    record_version: bytes = attrs.field(repr=to_hex)
+    msg_type: HandshakeType
+    msg_seq: int
+    body: bytearray = attrs.field(repr=to_hex)
+
+
+# ChangeCipherSpec is part of the handshake, but it's not a "handshake
+# message" and can't be fragmented the same way. Sigh.
+@attrs.frozen
+class PseudoHandshakeMessage:
+    record_version: bytes = attrs.field(repr=to_hex)
+    content_type: int
+    payload: bytes = attrs.field(repr=to_hex)
+
+
+# The final record in a handshake is Finished, which is encrypted, can't be fragmented
+# (at least by us), and keeps its record number (because it's in a new epoch). So we
+# just pass it through unchanged. (Fortunately, the payload is only a single hash value,
+# so the largest it will ever be is 64 bytes for a 512-bit hash. Which is small enough
+# that it never requires fragmenting to fit into a UDP packet.
+@attrs.frozen
+class OpaqueHandshakeMessage:
+    record: Record
+
+
+_AnyHandshakeMessage: TypeAlias = Union[
+    HandshakeMessage, PseudoHandshakeMessage, OpaqueHandshakeMessage
+]
+
+
+# This takes a raw outgoing handshake volley that openssl generated, and
+# reconstructs the handshake messages inside it, so that we can repack them
+# into records while retransmitting. So the data ought to be well-behaved --
+# it's not coming from the network.
+def decode_volley_trusted(
+    volley: bytes,
+) -> list[_AnyHandshakeMessage]:
+    messages: list[_AnyHandshakeMessage] = []
+    messages_by_seq = {}
+    for record in records_untrusted(volley):
+        # ChangeCipherSpec isn't a handshake message, so it can't be fragmented.
+        # Handshake messages with epoch > 0 are encrypted, so we can't fragment them
+        # either. Fortunately, ChangeCipherSpec has a 1 byte payload, and the only
+        # encrypted handshake message is Finished, whose payload is a single hash value
+        # -- so 32 bytes for SHA-256, 64 for SHA-512, etc. Neither is going to be so
+        # large that it has to be fragmented to fit into a single packet.
+        if record.epoch_seqno & EPOCH_MASK:
+            messages.append(OpaqueHandshakeMessage(record))
+        elif record.content_type in (ContentType.change_cipher_spec, ContentType.alert):
+            messages.append(
+                PseudoHandshakeMessage(
+                    record.version, record.content_type, record.payload
+                )
+            )
+        else:
+            assert record.content_type == ContentType.handshake
+            fragment = decode_handshake_fragment_untrusted(record.payload)
+            msg_type = HandshakeType(fragment.msg_type)
+            if fragment.msg_seq not in messages_by_seq:
+                msg = HandshakeMessage(
+                    record.version,
+                    msg_type,
+                    fragment.msg_seq,
+                    bytearray(fragment.msg_len),
+                )
+                messages.append(msg)
+                messages_by_seq[fragment.msg_seq] = msg
+            else:
+                msg = messages_by_seq[fragment.msg_seq]
+            assert msg.msg_type == fragment.msg_type
+            assert msg.msg_seq == fragment.msg_seq
+            assert len(msg.body) == fragment.msg_len
+
+            msg.body[
+                fragment.frag_offset : fragment.frag_offset + fragment.frag_len
+            ] = fragment.frag
+
+    return messages
+
+
+class RecordEncoder:
+    def __init__(self) -> None:
+        self._record_seq = count()
+
+    def set_first_record_number(self, n: int) -> None:
+        self._record_seq = count(n)
+
+    def encode_volley(
+        self,
+        messages: Iterable[_AnyHandshakeMessage],
+        mtu: int,
+    ) -> list[bytearray]:
+        packets = []
+        packet = bytearray()
+        for message in messages:
+            if isinstance(message, OpaqueHandshakeMessage):
+                encoded = encode_record(message.record)
+                if mtu - len(packet) - len(encoded) <= 0:
+                    packets.append(packet)
+                    packet = bytearray()
+                packet += encoded
+                assert len(packet) <= mtu
+            elif isinstance(message, PseudoHandshakeMessage):
+                space = mtu - len(packet) - RECORD_HEADER.size - len(message.payload)
+                if space <= 0:
+                    packets.append(packet)
+                    packet = bytearray()
+                packet += RECORD_HEADER.pack(
+                    message.content_type,
+                    message.record_version,
+                    next(self._record_seq),
+                    len(message.payload),
+                )
+                packet += message.payload
+                assert len(packet) <= mtu
+            else:
+                msg_len_bytes = len(message.body).to_bytes(3, "big")
+                frag_offset = 0
+                frags_encoded = 0
+                # If message.body is empty, then we still want to encode it in one
+                # fragment, not zero.
+                while frag_offset < len(message.body) or not frags_encoded:
+                    space = (
+                        mtu
+                        - len(packet)
+                        - RECORD_HEADER.size
+                        - HANDSHAKE_MESSAGE_HEADER.size
+                    )
+                    if space <= 0:
+                        packets.append(packet)
+                        packet = bytearray()
+                        continue
+                    frag = message.body[frag_offset : frag_offset + space]
+                    frag_offset_bytes = frag_offset.to_bytes(3, "big")
+                    frag_len_bytes = len(frag).to_bytes(3, "big")
+                    frag_offset += len(frag)
+
+                    packet += RECORD_HEADER.pack(
+                        ContentType.handshake,
+                        message.record_version,
+                        next(self._record_seq),
+                        HANDSHAKE_MESSAGE_HEADER.size + len(frag),
+                    )
+
+                    packet += HANDSHAKE_MESSAGE_HEADER.pack(
+                        message.msg_type,
+                        msg_len_bytes,
+                        message.msg_seq,
+                        frag_offset_bytes,
+                        frag_len_bytes,
+                    )
+
+                    packet += frag
+
+                    frags_encoded += 1
+                    assert len(packet) <= mtu
+
+        if packet:
+            packets.append(packet)
+
+        return packets
+
+
+# This bit requires implementing a bona fide cryptographic protocol, so even though it's
+# a simple one let's take a moment to discuss the design.
+#
+# Our goal is to force new incoming handshakes that claim to be coming from a
+# given ip:port to prove that they can also receive packets sent to that
+# ip:port. (There's nothing in UDP to stop someone from forging the return
+# address, and it's often used for stuff like DoS reflection attacks, where
+# an attacker tries to trick us into sending data at some innocent victim.)
+# For more details, see:
+#
+#    https://datatracker.ietf.org/doc/html/rfc6347#section-4.2.1
+#
+# To do this, when we receive an initial ClientHello, we calculate a magic
+# cookie, and send it back as a HelloVerifyRequest. Then the client sends us a
+# second ClientHello, this time with the magic cookie included, and after we
+# check that this cookie is valid we go ahead and start the handshake proper.
+#
+# So the magic cookie needs the following properties:
+# - No-one can forge it without knowing our secret key
+# - It ensures that the ip, port, and ClientHello contents from the response
+#   match those in the challenge
+# - It expires after a short-ish period (so that if an attacker manages to steal one, it
+#   won't be useful for long)
+# - It doesn't require storing any peer-specific state on our side
+#
+# To do that, we take the ip/port/ClientHello data and compute an HMAC of them, using a
+# secret key we generate on startup. We also include:
+#
+# - The current time (using Trio's clock), rounded to the nearest 30 seconds
+# - A random salt
+#
+# Then the cookie is the salt and the HMAC digest concatenated together.
+#
+# When verifying a cookie, we use the salt + new ip/port/ClientHello data to recompute
+# the HMAC digest, for both the current time and the current time minus 30 seconds, and
+# if either of them match, we consider the cookie good.
+#
+# Including the rounded-off time like this means that each cookie is good for at least
+# 30 seconds, and possibly as much as 60 seconds.
+#
+# The salt is probably not necessary -- I'm pretty sure that all it does is make it hard
+# for an attacker to figure out when our clock ticks over a 30 second boundary. Which is
+# probably pretty harmless? But it's easier to add the salt than to convince myself that
+# it's *completely* harmless, so, salt it is.
+
+COOKIE_REFRESH_INTERVAL = 30  # seconds
+KEY_BYTES = 32
+COOKIE_HASH = "sha256"
+SALT_BYTES = 8
+# 32 bytes was the maximum cookie length in DTLS 1.0. DTLS 1.2 raised it to 255. I doubt
+# there are any DTLS 1.0 implementations still in the wild, but really 32 bytes is
+# plenty, and it also gets rid of a confusing warning in Wireshark output.
+#
+# We truncate the cookie to 32 bytes, of which 8 bytes is salt, so that leaves 24 bytes
+# of truncated HMAC = 192 bit security, which is still massive overkill. (TCP uses 32
+# *bits* for this.) HMAC truncation is explicitly noted as safe in RFC 2104:
+#   https://datatracker.ietf.org/doc/html/rfc2104#section-5
+COOKIE_LENGTH = 32
+
+
+def _current_cookie_tick() -> int:
+    return int(trio.current_time() / COOKIE_REFRESH_INTERVAL)
+
+
+# Simple deterministic and invertible serializer -- i.e., a useful tool for converting
+# structured data into something we can cryptographically sign.
+def _signable(*fields: bytes) -> bytes:
+    out = []
+    for field in fields:
+        out.append(struct.pack

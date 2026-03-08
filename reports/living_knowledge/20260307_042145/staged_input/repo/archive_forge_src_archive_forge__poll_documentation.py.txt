@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_poll_documentation.py
+KIND: code
+
+import warnings
+from zmq.error import InterruptedSystemCall, _check_rc
+from ._cffi import ffi
+from ._cffi import lib as C
+zmq poll function

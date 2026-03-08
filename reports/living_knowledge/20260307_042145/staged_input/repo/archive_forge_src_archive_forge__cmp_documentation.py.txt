@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_cmp_documentation.py
+KIND: code
+
+import functools
+import types
+from ._make import _make_ne
+
+        Initialize object with *value*.

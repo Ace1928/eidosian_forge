@@ -1,0 +1,17 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/IL
+KIND: config
+
+IL�
+judea and samariajudea and samaria areajudea and samaria districtיהודה ושומרון"מחוז יהודה ושומרון%الضـّفـّة الغربيـّةيهودا والسامرة�
+hadaromsouthsouth districtsouthern district
+הדרוםמחוז הדרוםالمنطقة الجنوبية
+جنوبيمحوز هدرومn
+haifahaifa districtחיפהחפהמחוז חיפהحيفامحوز حيفامنطقة حيفاy
+	jerusalemjerusalem districtyerushalayimירושליםמחוז ירושלים
+القدسمنطقة القدس�
+centercenter districtcentral districthamerkaz
+המרכזמחוז המרכזالمنطقة الوسطىمحوز هامركازهامركاز�
+tel avivtel aviv districtמחוז תל אביבתל אביבتل أبيبمحوز تل ابيبمنطقة تل أبيب�
+northnorth districtnorthern district
+הצפוןמחוז הצפוןالمنطقة الشمالية
+شماليمحوز هتسافون

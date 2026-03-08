@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AmountOutOfRange.py
+KIND: code
+
+from boto.exception import BotoServerError
+class AmountOutOfRange(ResponseError):
+    """The transaction amount is more than the allowed range.
+    """

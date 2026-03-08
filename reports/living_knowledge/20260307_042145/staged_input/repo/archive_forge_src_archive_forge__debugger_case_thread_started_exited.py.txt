@@ -1,0 +1,21 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_debugger_case_thread_started_exited.py
+KIND: code
+
+import threading
+
+
+class MyThread(threading.Thread):
+
+    def run(self):
+        pass
+
+
+threads = [MyThread() for i in range(3)]
+
+for t in threads:
+    t.start()
+
+for t in threads:
+    t.join()
+
+print('TEST SUCEEDED!')  # Break here

@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/3_observation_documentation.py
+KIND: code
+
+import os
+import datetime
+from PIL import Image as PILImage
+import numpy as np
+from traits.api import (
+ An SEM image stored in a file.

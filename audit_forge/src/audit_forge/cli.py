@@ -1,3 +1,7 @@
+"""
+Eidosian Audit Forge CLI.
+Provides terminal-based commands to manage audit coverage and tasks.
+"""
 import typer
 from rich.console import Console
 from pathlib import Path

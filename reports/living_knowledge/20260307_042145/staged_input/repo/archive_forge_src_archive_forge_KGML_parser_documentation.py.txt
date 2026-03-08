@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/KGML_parser_documentation.py
+KIND: code
+
+from xml.etree import ElementTree
+from io import StringIO
+from Bio.KEGG.KGML.KGML_pathway import Component, Entry, Graphics
+from Bio.KEGG.KGML.KGML_pathway import Pathway, Reaction, Relation
+Parse the input elements.

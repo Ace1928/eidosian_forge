@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/AMTRELAY_documentation.py
+KIND: code
+
+import struct
+import dns.exception
+import dns.immutable
+import dns.rdtypes.util
+AMTRELAY record

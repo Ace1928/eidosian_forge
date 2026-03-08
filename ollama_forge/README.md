@@ -1,40 +1,65 @@
-# 🦙 Ollama Forge
+# 🦙 Ollama Forge ⚡
 
-[![Python: 3.12](https://img.shields.io/badge/Python-3.12-blue.svg)](../global_info.py)
-[![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-
-**Local Intelligence Interface.**
-
-> _"Silicon minds running on local silicon."_
+> _"Local Intelligence Interface. Silicon minds running on local silicon."_
 
 ## 🧠 Overview
 
-`ollama_forge` provides a robust, Pythonic interface to local LLMs via [Ollama](https://ollama.com/). It abstracts the API details, providing async support, error handling, and model management.
+`ollama_forge` provides a robust, Pythonic interface to local LLMs via [Ollama](https://ollama.com/). It abstracts the underlying REST API, providing native async support, strict error handling, and automated service management for the Eidosian runtime.
 
-## 🏗️ Architecture
+```ascii
+      ╭───────────────────────────────────────────╮
+      │              OLLAMA FORGE                 │
+      │    < API Client | Management | Async >    │
+      ╰──────────┬─────────────────────┬──────────╯
+                 │                     │
+      ╭──────────┴──────────╮   ╭──────┴──────────╮
+      │   ASYNC GENERATE    │   │  MODEL MANAGER  │
+      │ (High Throughput)   │   │ (Pull / Inspect)│
+      ╰─────────────────────╯   ╰─────────────────╯
+```
 
-- **Client (`OllamaClient`)**: Unified interface for generation and embeddings.
-- **Model Manager**: Tools to pull, delete, and inspect local models.
-- **Resilience**: Automatic retries and fallback handling.
+## ⚡ Current State & Metrics
 
-## 🔗 System Integration
+- **Status**: 🟢 Elevated & Operational
+- **Type**: API Bridge & Service Management
+- **Test Coverage**: Extensive async/sync client verification.
+- **Service Stack**: Managed via `runit` for persistent background uptime.
+- **Architecture**:
+  - `client.py`: Core `OllamaClient` and `AsyncOllamaClient` implementations.
+  - `helpers/`: Utilities for automated installation and model constant definitions.
 
-- **Eidos MCP**: Uses `ollama_forge` for local inference tasks when `llama.cpp` is not available or preferred.
-- **Agent Forge**: Agents use this to "think" without external dependencies.
+## 🚀 Usage & Workflows
 
-## 🚀 Usage
+### Python API (Async)
 
 ```python
 import asyncio
 from ollama_forge import AsyncOllamaClient
 
-async def chat():
+async def run_inference():
     client = AsyncOllamaClient()
     response = await client.generate(
-        model="qwen2.5:1.5b",
-        prompt="Explain recursion."
+        model="qwen3.5:2b",
+        prompt="Synthesize the Eidosian Commandment of Structural Elegance."
     )
     print(response.text)
 
-asyncio.run(chat())
+asyncio.run(run_inference())
 ```
+
+## 🔗 System Integration
+
+- **Eidos MCP**: Acts as the secondary local inference provider for tools that prefer the Ollama orchestration layer.
+- **Agent Forge**: Provides the "thinking" substrate for agents when high-level API features (like streaming or vision) are required.
+
+## 🎯 Master Plan & Evolution
+
+### Immediate Goals
+- [x] Consolidate legacy docs into unified Eidosian standard.
+- [x] Establish high-throughput async benchmarking benchmarks.
+
+### Future Vector (Phase 3+)
+- Implement automated model "rotations" where the forge pulls updated weights based on `erais_forge` fitness evaluation metrics.
+
+---
+*Generated and maintained by Eidos.*

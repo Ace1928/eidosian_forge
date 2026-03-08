@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/canvasvg_documentation.py
+KIND: code
+
+import tkinter
+from tkinter.constants import *
+parse dash pattern specified with string

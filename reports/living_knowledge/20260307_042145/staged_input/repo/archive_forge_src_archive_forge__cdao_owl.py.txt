@@ -1,0 +1,470 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_cdao_owl.py
+KIND: code
+
+# Copyright (C) 2013 by Ben Morris (ben@bendmorris.com)
+#
+# This file is part of the Biopython distribution and governed by your
+# choice of the "Biopython License Agreement" or the "BSD 3-Clause License".
+# Please see the LICENSE file that should have been included as part of this
+# package.
+
+"""Classes to support Comparative Data Analysis Ontology (CDAO)."""
+
+import xml.etree.ElementTree as ET
+
+
+cdao_namespaces = {
+    "cdao": "http://purl.obolibrary.org/obo/cdao.owl#",
+    "obo": "http://purl.obolibrary.org/obo/",
+}
+
+
+def resolve_uri(s, namespaces=cdao_namespaces, cdao_to_obo=True, xml_style=False):
+    """Convert prefixed URIs to full URIs.
+
+    Optionally, converts CDAO named identifiers to OBO numeric identifiers.
+    """
+    if cdao_to_obo and s.startswith("cdao:"):
+        return resolve_uri(f"obo:{cdao_elements[s[5:]]}", namespaces, cdao_to_obo)
+
+    for prefix in namespaces:
+        if xml_style:
+            s = s.replace(prefix + ":", "{%s}" % namespaces[prefix])
+        else:
+            s = s.replace(prefix + ":", namespaces[prefix])
+
+    return s
+
+
+cdao_owl = """<?xml version="1.0"?>
+
+
+<!DOCTYPE rdf:RDF [
+    <!ENTITY owl "http://www.w3.org/2002/07/owl#" >
+    <!ENTITY obo "http://purl.obolibrary.org/obo/" >
+    <!ENTITY dc "http://purl.org/dc/elements/1.1/" >
+    <!ENTITY xsd "http://www.w3.org/2001/XMLSchema#" >
+    <!ENTITY rdfs "http://www.w3.org/2000/01/rdf-schema#" >
+    <!ENTITY rdf "http://www.w3.org/1999/02/22-rdf-syntax-ns#" >
+]>
+
+
+<rdf:RDF xmlns="http://www.evolutionaryontology.org/cdao/1.0/cdao.owl#"
+     xml:base="http://www.evolutionaryontology.org/cdao/1.0/cdao.owl"
+     xmlns:dc="http://purl.org/dc/elements/1.1/"
+     xmlns:obo="http://purl.obolibrary.org/obo/"
+     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+     xmlns:owl="http://www.w3.org/2002/07/owl#"
+     xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+    <owl:Ontology rdf:about="&obo;cdao.owl">
+        <dc:coverage rdf:datatype="&xsd;string">Comparison of two or more biological entities of the same class when the similarities and differences of the entities are treated explicitly as the product of an evolutionary process of descent with modification.</dc:coverage>
+        <dc:description rdf:datatype="&xsd;string">The Comparative Data Analysis Ontology (CDAO) provides a framework for understanding data in the context of evolutionary-comparative analysis.  This comparative approach is used commonly in bioinformatics and other areas of biology to draw inferences from a comparison of differently evolved versions of something, such as differently evolved versions of a protein.  In this kind of analysis, the things-to-be-compared typically are classes called &#39;OTUs&#39; (Operational Taxonomic Units).  The OTUs can represent biological species, but also may be drawn from higher or lower in a biological hierarchy, anywhere from molecules to communities.  The features to be compared among OTUs are rendered in an entity-attribute-value model sometimes referred to as the &#39;character-state data model&#39;.  For a given character, such as &#39;beak length&#39;, each OTU has a state, such as &#39;short&#39; or &#39;long&#39;.  The differences between states are understood to emerge by a historical process of evolutionary transitions in state, represented by a model (or rules) of transitions along with a phylogenetic tree.  CDAO provides the framework for representing OTUs, trees, transformations, and characters.  The representation of characters and transformations may depend on imported ontologies for a specific type of character.</dc:description>
+        <dc:creator xml:lang="en">CDAO Team</dc:creator>
+        <dc:title xml:lang="en">Comparative Data Analysis Ontology</dc:title>
+        <dc:subject xml:lang="en">comparative analysis; comparative data analysis; evolutionary comparative analysis; evolution;  phylogeny; phylogenetics</dc:subject>
+        <dc:rights rdf:resource="http://creativecommons.org/publicdomain/zero/1.0/"/>
+        <owl:versionIRI rdf:resource="&obo;cdao/2012-06-06/cdao.owl"/>
+        <owl:imports rdf:resource="&obo;iao/ontology-metadata.owl"/>
+    </owl:Ontology>
+
+
+
+    <!--
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Annotation properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    <owl:AnnotationProperty rdf:about="&dc;creator"/>
+    <owl:AnnotationProperty rdf:about="&dc;subject"/>
+    <owl:AnnotationProperty rdf:about="&dc;description"/>
+    <owl:AnnotationProperty rdf:about="&dc;coverage"/>
+    <owl:AnnotationProperty rdf:about="&dc;language"/>
+    <owl:AnnotationProperty rdf:about="&dc;identifier"/>
+    <owl:AnnotationProperty rdf:about="&dc;date"/>
+    <owl:AnnotationProperty rdf:about="&dc;source"/>
+    <owl:AnnotationProperty rdf:about="&dc;title"/>
+    <owl:AnnotationProperty rdf:about="&dc;rights"/>
+
+
+
+
+
+
+    <!--
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Object Properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+
+
+
+    <!-- http://purl.obolibrary.org/obo/CDAO_0000142 -->
+
+    <owl:ObjectProperty rdf:about="&obo;CDAO_0000142">
+        <rdfs:label rdf:datatype="&xsd;string">has_Character</rdfs:label>
+        <dc:description rdf:datatype="&xsd;string">This property associates a character data matrix with a character (a column) represented in the matrix.</dc:description>
+        <rdfs:domain rdf:resource="&obo;CDAO_0000056"/>
+        <rdfs:range rdf:resource="&obo;CDAO_0000071"/>
+        <rdfs:subPropertyOf rdf:resource="&obo;CDAO_0000178"/>
+    </owl:ObjectProperty>
+
+
+
+    <!-- http://purl.obolibrary.org/obo/CDAO_0000143 -->
+
+    <owl:ObjectProperty rdf:about="&obo;CDAO_0000143">
+        <rdfs:label rdf:datatype="&xsd;string">belongs_to_Edge_as_Child</rdfs:label>
+        <dc:description>The property links a Node to the Edge it belongs to in the child position.</dc:description>
+        <rdfs:range rdf:resource="&obo;CDAO_0000139"/>
+        <rdfs:domain rdf:resource="&obo;CDAO_0000140"/>
+        <rdfs:subPropertyOf rdf:resource="&obo;CDAO_0000146"/>
+        <owl:inverseOf rdf:resource="&obo;CDAO_0000209"/>
+    </owl:ObjectProperty>
+
+
+
+    <!-- http://purl.obolibrary.org/obo/CDAO_0000144 -->
+
+    <owl:ObjectProperty rdf:about="&obo;CDAO_0000144">
+        <rdf:type rdf:resource="&owl;TransitiveProperty"/>
+        <rdfs:label rdf:datatype="&xsd;string">has_Ancestor</rdfs:label>
+        <dc:description>The property links a node to any of the other nodes that are its ancestors in a rooted tree.</dc:description>
+        <rdfs:domain rdf:resource="&obo;CDAO_0000140"/>
+        <rdfs:range rdf:resource="&obo;CDAO_0000140"/>
+        <owl:inverseOf rdf:resource="&obo;CDAO_0000174"/>
+        <rdfs:subPropertyOf rdf:resource="&obo;CDAO_0000178"/>
+    </owl:ObjectProperty>
+
+
+
+    <!-- http://purl.obolibrary.org/obo/CDAO_0000145 -->
+
+    <owl:ObjectProperty rdf:about="&obo;CDAO_0000145">
+        <rdfs:label rdf:datatype="&xsd;string">has_Nucleotide_State</rdfs:label>
+        <dc:description rdf:datatype="&xsd;string">This property associates a nucleotide character-state instance with a state value from the domain of nucleotide states.</dc:description>
+        <rdfs:domain rdf:resource="&obo;CDAO_0000002"/>
+        <rdfs:subPropertyOf rdf:resource="&obo;CDAO_0000184"/>
+        <rdfs:range>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="&obo;CDAO_0000015"/>
+                    <rdf:Description rdf:about="&obo;CDAO_0000133"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:range>
+    </owl:ObjectProperty>
+
+
+
+    <!-- http://purl.obolibrary.org/obo/CDAO_0000146 -->
+
+    <owl:ObjectProperty rdf:about="&obo;CDAO_0000146">
+        <rdfs:label rdf:datatype="&xsd;string">belongs_to_Edge</rdfs:label>
+        <dc:description>The property links a Node to one of the edges that are incident on such node.</dc:description>
+        <rdfs:range rdf:resource="&obo;CDAO_0000099"/>
+        <rdfs:domain rdf:resource="&obo;CDAO_0000140"/>
+        <rdfs:subPropertyOf rdf:resource="&obo;CDAO_0000190"/>
+    </owl:ObjectProperty>
+
+
+
+    <!-- http://purl.obolibrary.org/obo/CDAO_0000147 -->
+
+    <owl:ObjectProperty rdf:about="&obo;CDAO_0000147">
+        <rdfs:label rdf:datatype="&xsd;string">belongs_to_Character_State_Data_Matrix</rdfs:label>
+        <rdfs:range rdf:resource="&obo;CDAO_0000056"/>
+        <rdfs:subPropertyOf rdf:resource="&obo;CDAO_0000190"/>
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="&obo;CDAO_0000071"/>
+                    <rdf:Description rdf:about="&obo;CDAO_0000138"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+    </owl:ObjectProperty>
+
+
+
+    <!-- http://purl.obolibrary.org/obo/CDAO_0000148 -->
+
+    <owl:ObjectProperty rdf:about="&obo;CDAO_0000148">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:label rdf:datatype="&xsd;string">has_Root</rdfs:label>
+        <dc:description>The property links a rooted tree to the specific node that represents the unique root of the tree.</dc:description>
+        <rdfs:domain rdf:resource="&obo;CDAO_0000012"/>
+        <rdfs:range rdf:resource="&obo;CDAO_0000140"/>
+        <rdfs:subPropertyOf rdf:resource="&obo;CDAO_0000178"/>
+    </owl:ObjectProperty>
+
+
+
+    <!-- http://purl.obolibrary.org/obo/CDAO_0000149 -->
+
+    <owl:ObjectProperty rdf:about="&obo;CDAO_0000149">
+        <rdfs:label rdf:datatype="&xsd;string">has_Child</rdfs:label>
+        <dc:description>The property links a node to a node that is an immediate descendant in the tree.</dc:description>
+        <rdfs:domain rdf:resource="&obo;CDAO_0000140"/>
+        <rdfs:range rdf:resource="&obo;CDAO_0000140"/>
+        <rdfs:subPropertyOf rdf:resource="&obo;CDAO_0000174"/>
+        <owl:inverseOf rdf:resource="&obo;CDAO_0000179"/>
+        <owl:propertyChainAxiom rdf:parseType="Collection">
+            <rdf:Description rdf:about="&obo;CDAO_0000177"/>
+            <rdf:Description rdf:about="&obo;CDAO_0000209"/>
+        </owl:propertyChainAxiom>
+    </owl:ObjectProperty>
+
+
+
+    <!-- http://purl.obolibrary.org/obo/CDAO_0000150 -->
+
+    <owl:ObjectProperty rdf:about="&obo;CDAO_0000150">
+        <rdfs:label rdf:datatype="&xsd;string">has_First_Coordinate_Item</rdfs:label>
+        <dc:description rdf:datatype="&xsd;string">The property that relates a coordinate list to the first item in the list.</dc:description>
+        <rdfs:domain rdf:resource="&obo;CDAO_0000092"/>
+        <rdfs:subPropertyOf rdf:resource="&obo;CDAO_0000178"/>
+        <rdfs:range>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="&obo;CDAO_0000003"/>
+                    <rdf:Description rdf:about="&obo;CDAO_0000095"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:range>
+    </owl:ObjectProperty>
+
+
+
+    <!-- http://purl.obolibrary.org/obo/CDAO_0000151 -->
+
+    <owl:ObjectProperty rdf:about="&obo;CDAO_0000151">
+        <rdfs:label rdf:datatype="&xsd;string">has_Coordinate</rdfs:label>
+        <rdfs:range rdf:resource="&obo;CDAO_0000022"/>
+        <rdfs:domain rdf:resource="&obo;CDAO_0000098"/>
+        <rdfs:subPropertyOf rdf:resource="&obo;CDAO_0000178"/>
+    </owl:ObjectProperty>
+
+
+
+    <!-- http://purl.obolibrary.org/obo/CDAO_0000152 -->
+
+    <owl:ObjectProperty rdf:about="&obo;CDAO_0000152">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:label rdf:datatype="&xsd;string">belongs_to_Continuous_Character</rdfs:label>
+        <rdfs:domain rdf:resource="&obo;CDAO_0000019"/>
+        <rdfs:range rdf:resource="&obo;CDAO_0000068"/>
+        <rdfs:subPropertyOf rdf:resource="&obo;CDAO_0000205"/>
+    </owl:ObjectProperty>
+
+
+
+    <!-- http://purl.obolibrary.org/obo/CDAO_0000153 -->
+
+    <owl:ObjectProperty rdf:about="&obo;CDAO_0000153">
+        <rdfs:label rdf:datatype="&xsd;string">has_Datum</rdfs:label>
+        <dc:description rdf:datatype="&xsd;string">This property relates a character to a state datum for the character.</dc:description>
+        <rdfs:range rdf:resource="&obo;CDAO_0000098"/>
+        <rdfs:subPropertyOf rdf:resource="&obo;CDAO_0000178"/>
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="&obo;CDAO_0000071"/>
+                    <rdf:Description rdf:about="&obo;CDAO_0000138"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+    </owl:ObjectProperty>
+
+
+
+    <!-- http://purl.obolibrary.org/obo/CDAO_0000154 -->
+
+    <owl:ObjectProperty rdf:about="&obo;CDAO_0000154">
+        <rdfs:label rdf:datatype="&xsd;string">has_Standard_Datum</rdfs:label>
+        <rdfs:range rdf:resource="&obo;CDAO_0000008"/>
+        <rdfs:subPropertyOf rdf:resource="&obo;CDAO_0000183"/>
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="&obo;CDAO_0000075"/>
+                    <rdf:Description rdf:about="&obo;CDAO_0000138"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+    </owl:ObjectProperty>
+
+
+
+    <!-- http://purl.obolibrary.org/obo/CDAO_0000155 -->
+
+    <owl:ObjectProperty rdf:about="&obo;CDAO_0000155">
+        <rdfs:label rdf:datatype="&xsd;string">subtree_of</rdfs:label>
+        <dc:description>This property links two networks where the latter is a substructure of the former</dc:description>
+        <rdfs:range rdf:resource="&obo;CDAO_0000006"/>
+        <rdfs:domain rdf:resource="&obo;CDAO_0000006"/>
+    </owl:ObjectProperty>
+
+
+
+    <!-- http://purl.obolibrary.org/obo/CDAO_0000156 -->
+
+    <owl:ObjectProperty rdf:about="&obo;CDAO_0000156">
+        <rdfs:label rdf:datatype="&xsd;string">has_Amino_Acid_State</rdfs:label>
+        <dc:description rdf:datatype="&xsd;string">This property associates a amino acid character-state instance with a state value from the domain of amino acid states.</dc:description>
+        <rdfs:domain rdf:resource="&obo;CDAO_0000112"/>
+        <rdfs:subPropertyOf rdf:resource="&obo;CDAO_0000184"/>
+        <rdfs:range>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="&obo;CDAO_0000015"/>
+                    <rdf:Description rdf:about="&obo;CDAO_0000076"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:range>
+    </owl:ObjectProperty>
+
+
+
+    <!-- http://purl.obolibrary.org/obo/CDAO_0000157 -->
+
+    <owl:ObjectProperty rdf:about="&obo;CDAO_0000157">
+        <rdfs:label rdf:datatype="&xsd;string">is_annotation_of</rdfs:label>
+        <rdfs:domain rdf:resource="&obo;CDAO_0000040"/>
+        <rdfs:range rdf:resource="&owl;Thing"/>
+    </owl:ObjectProperty>
+
+
+
+    <!-- http://purl.obolibrary.org/obo/CDAO_0000158 -->
+
+    <owl:ObjectProperty rdf:about="&obo;CDAO_0000158">
+        <rdfs:label rdf:datatype="&xsd;string">has_RNA_Datum</rdfs:label>
+        <rdfs:subPropertyOf rdf:resource="&obo;CDAO_0000206"/>
+    </owl:ObjectProperty>
+
+
+
+    <!-- http://purl.obolibrary.org/obo/CDAO_0000159 -->
+
+    <owl:ObjectProperty rdf:about="&obo;CDAO_0000159">
+        <rdfs:label rdf:datatype="&xsd;string">has_Left_State</rdfs:label>
+        <dc:description rdf:datatype="&xsd;string">This property relates a transformation to a &#39;left&#39; state (the state associated with the &#39;left&#39; node).</dc:description>
+        <rdfs:range rdf:resource="&obo;CDAO_0000091"/>
+        <rdfs:domain rdf:resource="&obo;CDAO_0000097"/>
+        <rdfs:subPropertyOf rdf:resource="&obo;CDAO_0000182"/>
+    </owl:ObjectProperty>
+
+
+
+    <!-- http://purl.obolibrary.org/obo/CDAO_0000160 -->
+
+    <owl:ObjectProperty rdf:about="&obo;CDAO_0000160">
+        <rdfs:label rdf:datatype="&xsd;string">precedes</rdfs:label>
+    </owl:ObjectProperty>
+
+
+
+    <!-- http://purl.obolibrary.org/obo/CDAO_0000161 -->
+
+    <owl:ObjectProperty rdf:about="&obo;CDAO_0000161">
+        <rdfs:label rdf:datatype="&xsd;string">exclude</rdfs:label>
+    </owl:ObjectProperty>
+
+
+
+    <!-- http://purl.obolibrary.org/obo/CDAO_0000162 -->
+
+    <owl:ObjectProperty rdf:about="&obo;CDAO_0000162">
+        <rdfs:label rdf:datatype="&xsd;string">has_Node</rdfs:label>
+        <dc:description>Property that associates to each Edge the Nodes it connects.</dc:description>
+        <rdfs:domain rdf:resource="&obo;CDAO_0000099"/>
+        <rdfs:range rdf:resource="&obo;CDAO_0000140"/>
+        <rdfs:subPropertyOf rdf:resource="&obo;CDAO_0000178"/>
+    </owl:ObjectProperty>
+
+
+
+    <!-- http://purl.obolibrary.org/obo/CDAO_0000163 -->
+
+    <owl:ObjectProperty rdf:about="&obo;CDAO_0000163">
+        <rdfs:label rdf:datatype="&xsd;string">nca_node_of</rdfs:label>
+        <rdfs:range rdf:resource="&obo;CDAO_0000059"/>
+        <rdfs:domain rdf:resource="&obo;CDAO_0000140"/>
+    </owl:ObjectProperty>
+
+
+
+    <!-- http://purl.obolibrary.org/obo/CDAO_0000164 -->
+
+    <owl:ObjectProperty rdf:about="&obo;CDAO_0000164">
+        <rdfs:label rdf:datatype="&xsd;string">has_External_Reference</rdfs:label>
+        <rdfs:comment rdf:datatype="&rdfs;Literal">Associates a TU to some external taxonomy reference.</rdfs:comment>
+        <rdfs:domain rdf:resource="&obo;CDAO_0000138"/>
+        <rdfs:range rdf:resource="&owl;Thing"/>
+    </owl:ObjectProperty>
+
+
+
+    <!-- http://purl.obolibrary.org/obo/CDAO_0000165 -->
+
+    <owl:ObjectProperty rdf:about="&obo;CDAO_0000165">
+        <rdfs:label rdf:datatype="&xsd;string">has_Coordinate_System</rdfs:label>
+        <dc:description rdf:datatype="&xsd;string">This property links a coordinate to the coordinate system it references.</dc:description>
+        <rdfs:domain rdf:resource="&obo;CDAO_0000022"/>
+        <rdfs:range rdf:resource="&obo;CDAO_0000104"/>
+    </owl:ObjectProperty>
+
+
+
+    <!-- http://purl.obolibrary.org/obo/CDAO_0000166 -->
+
+    <owl:ObjectProperty rdf:about="&obo;CDAO_0000166">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:label rdf:datatype="&xsd;string">belongs_to_Nucleotide_Character</rdfs:label>
+        <rdfs:domain rdf:resource="&obo;CDAO_0000002"/>
+        <rdfs:range rdf:resource="&obo;CDAO_0000094"/>
+        <rdfs:subPropertyOf rdf:resource="&obo;CDAO_0000205"/>
+    </owl:ObjectProperty>
+
+
+
+    <!-- http://purl.obolibrary.org/obo/CDAO_0000167 -->
+
+    <owl:ObjectProperty rdf:about="&obo;CDAO_0000167">
+        <rdf:type rdf:resource="&owl;SymmetricProperty"/>
+        <rdfs:label rdf:datatype="&xsd;string">connects_to</rdfs:label>
+        <owl:inverseOf rdf:resource="&obo;CDAO_0000167"/>
+    </owl:ObjectProperty>
+
+
+
+    <!-- http://purl.obolibrary.org/obo/CDAO_0000168 -->
+
+    <owl:ObjectProperty rdf:about="&obo;CDAO_0000168">
+        <rdfs:label rdf:datatype="&xsd;string">has_Amino_Acid_Datum</rdfs:label>
+        <dc:description rdf:datatype="&xsd;string">This property relates an amino acid character (a column in a protein sequence alignment) to a state datum for the character (an individual cell in the alignment column).</dc:description>
+        <rdfs:range rdf:resource="&obo;CDAO_0000112"/>
+        <rdfs:subPropertyOf rdf:resource="&obo;CDAO_0000206"/>
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="&obo;CDAO_0000131"/>
+                    <rdf:Description rdf:about="&obo;CDAO_0000138"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+    </owl:ObjectProperty>
+
+
+
+    <!-- http://purl.obolibrary.org/obo/CDAO_0000169 -->
+
+    <owl:ObjectProperty rdf:about="&obo;CDAO_0000169">
+        <rdfs

@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_eventloop_macos_documentation.py
+KIND: code
+
+import ctypes
+import ctypes.util
+from threading import Event
+run the Cocoa eventloop for the specified duration (seconds)

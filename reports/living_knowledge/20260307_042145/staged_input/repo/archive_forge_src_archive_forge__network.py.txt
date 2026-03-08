@@ -1,0 +1,549 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_network.py
+KIND: code
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+from openstack.cloud import _utils
+from openstack.cloud import exc
+from openstack import exceptions
+from openstack.network.v2._proxy import Proxy
+
+
+class NetworkCloudMixin:
+    network: Proxy
+
+    def _neutron_extensions(self):
+        extensions = set()
+        for extension in self.network.extensions():
+            extensions.add(extension['alias'])
+        return extensions
+
+    def _has_neutron_extension(self, extension_alias):
+        return extension_alias in self._neutron_extensions()
+
+    # TODO(stephenfin): Deprecate this in favour of the 'list' function
+    def search_networks(self, name_or_id=None, filters=None):
+        """Search networks
+
+        :param name_or_id: Name or ID of the desired network.
+        :param filters: A dict containing additional filters to use. e.g.
+            {'router:external': True}
+
+        :returns: A list of network ``Network`` objects matching the search
+            criteria.
+        :raises: :class:`~openstack.exceptions.SDKException` if something goes
+            wrong during the OpenStack API call.
+        """
+        query = {}
+        if name_or_id:
+            query['name'] = name_or_id
+        if filters:
+            query.update(filters)
+        return list(self.network.networks(**query))
+
+    # TODO(stephenfin): Deprecate this in favour of the 'list' function
+    def search_routers(self, name_or_id=None, filters=None):
+        """Search routers
+
+        :param name_or_id: Name or ID of the desired router.
+        :param filters: A dict containing additional filters to use. e.g.
+            {'admin_state_up': True}
+
+        :returns: A list of network ``Router`` objects matching the search
+            criteria.
+        :raises: :class:`~openstack.exceptions.SDKException` if something goes
+            wrong during the OpenStack API call.
+        """
+        query = {}
+        if name_or_id:
+            query['name'] = name_or_id
+        if filters:
+            query.update(filters)
+        return list(self.network.routers(**query))
+
+    # TODO(stephenfin): Deprecate this in favour of the 'list' function
+    def search_subnets(self, name_or_id=None, filters=None):
+        """Search subnets
+
+        :param name_or_id: Name or ID of the desired subnet.
+        :param filters: A dict containing additional filters to use. e.g.
+            {'enable_dhcp': True}
+
+        :returns: A list of network ``Subnet`` objects matching the search
+            criteria.
+        :raises: :class:`~openstack.exceptions.SDKException` if something goes
+            wrong during the OpenStack API call.
+        """
+        query = {}
+        if name_or_id:
+            query['name'] = name_or_id
+        if filters:
+            query.update(filters)
+        return list(self.network.subnets(**query))
+
+    # TODO(stephenfin): Deprecate this in favour of the 'list' function
+    def search_ports(self, name_or_id=None, filters=None):
+        """Search ports
+
+        :param name_or_id: Name or ID of the desired port.
+        :param filters: A dict containing additional filters to use. e.g.
+            {'device_id': '2711c67a-b4a7-43dd-ace7-6187b791c3f0'}
+
+        :returns: A list of network ``Port`` objects matching the search
+            criteria.
+        :raises: :class:`~openstack.exceptions.SDKException` if something goes
+            wrong during the OpenStack API call.
+        """
+        # If the filter is a string, do not push the filter down to neutron;
+        # get all the ports and filter locally.
+        # TODO(stephenfin): '_filter_list' can handle a dict - pass it down
+        if isinstance(filters, str):
+            pushdown_filters = None
+        else:
+            pushdown_filters = filters
+        ports = self.list_ports(pushdown_filters)
+        return _utils._filter_list(ports, name_or_id, filters)
+
+    def list_networks(self, filters=None):
+        """List all available networks.
+
+        :param filters: (optional) A dict of filter conditions to push down.
+        :returns: A list of network ``Network`` objects.
+        """
+        # If the cloud is running nova-network, just return an empty list.
+        if not self.has_service('network'):
+            return []
+
+        # Translate None from search interface to empty {} for kwargs below
+        if not filters:
+            filters = {}
+        return list(self.network.networks(**filters))
+
+    def list_routers(self, filters=None):
+        """List all available routers.
+
+        :param filters: (optional) A dict of filter conditions to push down
+        :returns: A list of network ``Router`` objects.
+        """
+        # If the cloud is running nova-network, just return an empty list.
+        if not self.has_service('network'):
+            return []
+
+        # Translate None from search interface to empty {} for kwargs below
+        if not filters:
+            filters = {}
+        return list(self.network.routers(**filters))
+
+    def list_subnets(self, filters=None):
+        """List all available subnets.
+
+        :param filters: (optional) A dict of filter conditions to push down
+        :returns: A list of network ``Subnet`` objects.
+        """
+        # If the cloud is running nova-network, just return an empty list.
+        if not self.has_service('network'):
+            return []
+
+        # Translate None from search interface to empty {} for kwargs below
+        if not filters:
+            filters = {}
+        return list(self.network.subnets(**filters))
+
+    def list_ports(self, filters=None):
+        """List all available ports.
+
+        :param filters: (optional) A dict of filter conditions to push down
+        :returns: A list of network ``Port`` objects.
+        """
+        # If the cloud is running nova-network, just return an empty list.
+        if not self.has_service('network'):
+            return []
+
+        # Translate None from search interface to empty {} for kwargs below
+        if not filters:
+            filters = {}
+
+        return list(self.network.ports(**filters))
+
+    # TODO(stephenfin): Deprecate 'filters'; users should use 'list' for this
+    def get_qos_policy(self, name_or_id, filters=None):
+        """Get a QoS policy by name or ID.
+
+        :param name_or_id: Name or ID of the policy.
+        :param filters: A dictionary of meta data to use for further filtering.
+            Elements of this dictionary may, themselves, be dictionaries.
+            Example::
+
+                {
+                    'last_name': 'Smith',
+                    'other': {
+                        'gender': 'Female'
+                    }
+                }
+
+            OR
+            A string containing a jmespath expression for further filtering.
+            Example:: "[?last_name==`Smith`] | [?other.gender]==`Female`]"
+
+        :returns: A network ``QoSPolicy`` object if found, else None.
+        """
+        if not self._has_neutron_extension('qos'):
+            raise exc.OpenStackCloudUnavailableExtension(
+                'QoS extension is not available on target cloud'
+            )
+
+        if not filters:
+            filters = {}
+        return self.network.find_qos_policy(
+            name_or_id=name_or_id, ignore_missing=True, **filters
+        )
+
+    # TODO(stephenfin): Deprecate this in favour of the 'list' function
+    def search_qos_policies(self, name_or_id=None, filters=None):
+        """Search QoS policies
+
+        :param name_or_id: Name or ID of the desired policy.
+        :param filters: a dict containing additional filters to use. e.g.
+            {'shared': True}
+
+        :returns: A list of network ``QosPolicy`` objects matching the search
+            criteria.
+        :raises: :class:`~openstack.exceptions.SDKException` if something goes
+            wrong during the OpenStack API call.
+        """
+        if not self._has_neutron_extension('qos'):
+            raise exc.OpenStackCloudUnavailableExtension(
+                'QoS extension is not available on target cloud'
+            )
+
+        query = {}
+        if name_or_id:
+            query['name'] = name_or_id
+        if filters:
+            query.update(filters)
+        return list(self.network.qos_policies(**query))
+
+    def list_qos_rule_types(self, filters=None):
+        """List all available QoS rule types.
+
+        :param filters: (optional) A dict of filter conditions to push down
+        :returns: A list of network ``QosRuleType`` objects.
+        """
+        if not self._has_neutron_extension('qos'):
+            raise exc.OpenStackCloudUnavailableExtension(
+                'QoS extension is not available on target cloud'
+            )
+
+        # Translate None from search interface to empty {} for kwargs below
+        if not filters:
+            filters = {}
+        return list(self.network.qos_rule_types(**filters))
+
+    # TODO(stephenfin): Deprecate 'filters'; users should use 'list' for this
+    def get_qos_rule_type_details(self, rule_type, filters=None):
+        """Get a QoS rule type details by rule type name.
+
+        :param rule_type: Name of the QoS rule type.
+        :param filters: A dictionary of meta data to use for further filtering.
+            Elements of this dictionary may, themselves, be dictionaries.
+            Example::
+
+                {
+                    'last_name': 'Smith',
+                    'other': {
+                        'gender': 'Female'
+                    }
+                }
+
+            OR
+            A string containing a jmespath expression for further filtering.
+            Example:: "[?last_name==`Smith`] | [?other.gender]==`Female`]"
+
+        :returns: A network ``QoSRuleType`` object if found, else None.
+        """
+        if not self._has_neutron_extension('qos'):
+            raise exc.OpenStackCloudUnavailableExtension(
+                'QoS extension is not available on target cloud'
+            )
+
+        if not self._has_neutron_extension('qos-rule-type-details'):
+            raise exc.OpenStackCloudUnavailableExtension(
+                'qos-rule-type-details extension is not available '
+                'on target cloud'
+            )
+
+        return self.network.get_qos_rule_type(rule_type)
+
+    def list_qos_policies(self, filters=None):
+        """List all available QoS policies.
+
+        :param filters: (optional) A dict of filter conditions to push down
+        :returns: A list of network ``QosPolicy`` objects.
+        """
+        if not self._has_neutron_extension('qos'):
+            raise exc.OpenStackCloudUnavailableExtension(
+                'QoS extension is not available on target cloud'
+            )
+        # Translate None from search interface to empty {} for kwargs below
+        if not filters:
+            filters = {}
+        return list(self.network.qos_policies(**filters))
+
+    # TODO(stephenfin): Deprecate 'filters'; users should use 'list' for this
+    def get_network(self, name_or_id, filters=None):
+        """Get a network by name or ID.
+
+        :param name_or_id: Name or ID of the network.
+        :param filters: A dictionary of meta data to use for further filtering.
+            Elements of this dictionary may, themselves, be dictionaries.
+            Example::
+
+                {
+                    'last_name': 'Smith',
+                    'other': {
+                        'gender': 'Female'
+                    }
+                }
+
+            OR
+            A string containing a jmespath expression for further filtering.
+            Example:: "[?last_name==`Smith`] | [?other.gender]==`Female`]"
+
+        :returns: A network ``Network`` object if found, else None.
+        """
+        if not filters:
+            filters = {}
+        return self.network.find_network(
+            name_or_id=name_or_id, ignore_missing=True, **filters
+        )
+
+    def get_network_by_id(self, id):
+        """Get a network by ID
+
+        :param id: ID of the network.
+        :returns: A network ``Network`` object if found, else None.
+        """
+        return self.network.get_network(id)
+
+    # TODO(stephenfin): Deprecate 'filters'; users should use 'list' for this
+    def get_router(self, name_or_id, filters=None):
+        """Get a router by name or ID.
+
+        :param name_or_id: Name or ID of the router.
+        :param filters: A dictionary of meta data to use for further filtering.
+            Elements of this dictionary may, themselves, be dictionaries.
+            Example::
+
+                {
+                    'last_name': 'Smith',
+                    'other': {
+                        'gender': 'Female'
+                    }
+                }
+
+            OR
+            A string containing a jmespath expression for further filtering.
+            Example:: "[?last_name==`Smith`] | [?other.gender]==`Female`]"
+
+        :returns: A network ``Router`` object if found, else None.
+        """
+        if not filters:
+            filters = {}
+        return self.network.find_router(
+            name_or_id=name_or_id, ignore_missing=True, **filters
+        )
+
+    # TODO(stephenfin): Deprecate 'filters'; users should use 'list' for this
+    def get_subnet(self, name_or_id, filters=None):
+        """Get a subnet by name or ID.
+
+        :param name_or_id: Name or ID of the subnet.
+        :param filters: A dictionary of meta data to use for further filtering.
+            Elements of this dictionary may, themselves, be dictionaries.
+            Example::
+
+                {
+                    'last_name': 'Smith',
+                    'other': {
+                        'gender': 'Female'
+                    }
+                }
+
+        :returns: A network ``Subnet`` object if found, else None.
+        """
+        if not filters:
+            filters = {}
+        return self.network.find_subnet(
+            name_or_id=name_or_id, ignore_missing=True, **filters
+        )
+
+    def get_subnet_by_id(self, id):
+        """Get a subnet by ID
+
+        :param id: ID of the subnet.
+        :returns: A network ``Subnet`` object if found, else None.
+        """
+        return self.network.get_subnet(id)
+
+    # TODO(stephenfin): Deprecate 'filters'; users should use 'list' for this
+    def get_port(self, name_or_id, filters=None):
+        """Get a port by name or ID.
+
+        :param name_or_id: Name or ID of the port.
+        :param filters: A dictionary of meta data to use for further filtering.
+            Elements of this dictionary may, themselves, be dictionaries.
+            Example::
+
+                {
+                    'last_name': 'Smith',
+                    'other': {
+                        'gender': 'Female'
+                    }
+                }
+
+            OR
+            A string containing a jmespath expression for further filtering.
+            Example:: "[?last_name==`Smith`] | [?other.gender]==`Female`]"
+
+        :returns: A network ``Port`` object if found, else None.
+        """
+        if not filters:
+            filters = {}
+        return self.network.find_port(
+            name_or_id=name_or_id, ignore_missing=True, **filters
+        )
+
+    def get_port_by_id(self, id):
+        """Get a port by ID
+
+        :param id: ID of the port.
+        :returns: A network ``Port`` object if found, else None.
+        """
+        return self.network.get_port(id)
+
+    def get_subnetpool(self, name_or_id):
+        """Get a subnetpool by name or ID.
+
+        :param name_or_id: Name or ID of the subnetpool.
+
+        :returns: A network ``Subnetpool`` object if found, else None.
+        """
+        return self.network.find_subnet_pool(
+            name_or_id=name_or_id, ignore_missing=True
+        )
+
+    def create_network(
+        self,
+        name,
+        shared=False,
+        admin_state_up=True,
+        external=False,
+        provider=None,
+        project_id=None,
+        availability_zone_hints=None,
+        port_security_enabled=None,
+        mtu_size=None,
+        dns_domain=None,
+    ):
+        """Create a network.
+
+        :param string name: Name of the network being created.
+        :param bool shared: Set the network as shared.
+        :param bool admin_state_up: Set the network administrative state to up.
+        :param bool external: Whether this network is externally accessible.
+        :param dict provider: A dict of network provider options. Example::
+
+            { 'network_type': 'vlan', 'segmentation_id': 'vlan1' }
+
+        :param string project_id: Specify the project ID this network
+            will be created on (admin-only).
+        :param types.ListType availability_zone_hints: A list of availability
+            zone hints.
+        :param bool port_security_enabled: Enable / Disable port security
+        :param int mtu_size: maximum transmission unit value to address
+            fragmentation. Minimum value is 68 for IPv4, and 1280 for IPv6.
+        :param string dns_domain: Specify the DNS domain associated with
+            this network.
+        :returns: The created network ``Network`` object.
+        :raises: :class:`~openstack.exceptions.SDKException` on operation
+            error.
+        """
+        network = {
+            'name': name,
+            'admin_state_up': admin_state_up,
+        }
+
+        if shared:
+            network['shared'] = shared
+
+        if project_id is not None:
+            network['project_id'] = project_id
+
+        if availability_zone_hints is not None:
+            if not isinstance(availability_zone_hints, list):
+                raise exceptions.SDKException(
+                    "Parameter 'availability_zone_hints' must be a list"
+                )
+            if not self._has_neutron_extension('network_availability_zone'):
+                raise exc.OpenStackCloudUnavailableExtension(
+                    'network_availability_zone extension is not available on '
+                    'target cloud'
+                )
+            network['availability_zone_hints'] = availability_zone_hints
+
+        if provider:
+            if not isinstance(provider, dict):
+                raise exceptions.SDKException(
+                    "Parameter 'provider' must be a dict"
+                )
+            # Only pass what we know
+            for attr in (
+                'physical_network',
+                'network_type',
+                'segmentation_id',
+            ):
+                if attr in provider:
+                    arg = "provider:" + attr
+                    network[arg] = provider[attr]
+
+        # Do not send 'router:external' unless it is explicitly
+        # set since sending it *might* cause "Forbidden" errors in
+        # some situations. It defaults to False in the client, anyway.
+        if external:
+            network['router:external'] = True
+
+        if port_security_enabled is not None:
+            if not isinstance(port_security_enabled, bool):
+                raise exceptions.SDKException(
+                    "Parameter 'port_security_enabled' must be a bool"
+                )
+            network['port_security_enabled'] = port_security_enabled
+
+        if mtu_size:
+            if not isinstance(mtu_size, int):
+                raise exceptions.SDKException(
+                    "Parameter 'mtu_size' must be an integer."
+                )
+            if not mtu_size >= 68:
+                raise exceptions.SDKException(
+                    "Parameter 'mtu_size' must be greater than 67."
+                )
+
+            network['mtu'] = mtu_size
+
+        if dns_domain:
+            network['dns_domain'] = dns_domain
+
+        network = self.network.create_network(**network)
+
+        # Reset cache so

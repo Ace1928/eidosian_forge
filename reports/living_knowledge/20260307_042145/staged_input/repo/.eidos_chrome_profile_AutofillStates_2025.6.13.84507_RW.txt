@@ -1,0 +1,9 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/RW
+KIND: config
+
+RWI
+kigalikigali citykigali provinceumujyi wa kigaliville de kigali=
+eastern provinceintara y'iburasirazubaprovince de l'est<
+northern provinceintara y'amajyaruguruprovince du nord@
+western provinceintara y'uburengerazubaprovince de l'ouest8
+southern provinceintara y'amajyepfoprovince du sud

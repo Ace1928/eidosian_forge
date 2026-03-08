@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/0011_update_proxy_permissions_documentation.py
+KIND: code
+
+import sys
+from django.core.management.color import color_style
+from django.db import IntegrityError, migrations, transaction
+from django.db.models import Q
+
+    Update the content_type of proxy model permissions to use the ContentType
+    of the concrete model.

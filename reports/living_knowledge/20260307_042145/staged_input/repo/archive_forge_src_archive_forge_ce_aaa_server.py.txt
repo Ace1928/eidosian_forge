@@ -1,0 +1,648 @@
+SOURCE_PATH: archive_forge/src/archive_forge/ce_aaa_server.py
+KIND: code
+
+#!/usr/bin/python
+#
+# This file is part of Ansible
+#
+# Ansible is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Ansible is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Ansible.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+from __future__ import (absolute_import, division, print_function)
+__metaclass__ = type
+
+DOCUMENTATION = r'''
+---
+module: ce_aaa_server
+short_description: Manages AAA server global configuration on HUAWEI CloudEngine switches.
+description:
+    - Manages AAA server global configuration on HUAWEI CloudEngine switches.
+author:
+    - wangdezhuang (@QijunPan)
+notes:
+  - This module requires the netconf system service be enabled on the remote device being managed.
+  - Recommended connection is C(netconf).
+  - This module also works with C(local) connections for legacy playbooks.
+options:
+    state:
+        description:
+            - Specify desired state of the resource.
+        type: str
+        choices: [ absent, present ]
+        default: present
+    authen_scheme_name:
+        description:
+            - Name of an authentication scheme.
+              The value is a string of 1 to 32 characters.
+        type: str
+    first_authen_mode:
+        description:
+            - Preferred authentication mode.
+        type: str
+        choices: ['invalid', 'local', 'hwtacacs', 'radius', 'none']
+        default: local
+    author_scheme_name:
+        description:
+            - Name of an authorization scheme.
+              The value is a string of 1 to 32 characters.
+        type: str
+    first_author_mode:
+        description:
+            - Preferred authorization mode.
+        type: str
+        choices: ['invalid', 'local', 'hwtacacs', 'if-authenticated', 'none']
+        default: local
+    acct_scheme_name:
+        description:
+            - Accounting scheme name.
+              The value is a string of 1 to 32 characters.
+        type: str
+    accounting_mode:
+        description:
+            - Accounting Mode.
+        type: str
+        choices: ['invalid', 'hwtacacs', 'radius', 'none']
+        default: none
+    domain_name:
+        description:
+            - Name of a domain.
+              The value is a string of 1 to 64 characters.
+        type: str
+    radius_server_group:
+        description:
+            - RADIUS server group's name.
+              The value is a string of 1 to 32 case-insensitive characters.
+        type: str
+    hwtacas_template:
+        description:
+            - Name of a HWTACACS template.
+              The value is a string of 1 to 32 case-insensitive characters.
+        type: str
+    local_user_group:
+        description:
+            - Name of the user group where the user belongs. The user inherits all the rights of the user group.
+              The value is a string of 1 to 32 characters.
+        type: str
+'''
+
+EXAMPLES = r'''
+
+- name: AAA server test
+  hosts: cloudengine
+  connection: local
+  gather_facts: false
+  vars:
+    cli:
+      host: "{{ inventory_hostname }}"
+      port: "{{ ansible_ssh_port }}"
+      username: "{{ username }}"
+      password: "{{ password }}"
+      transport: cli
+
+  tasks:
+
+  - name: "Radius authentication Server Basic settings"
+    community.network.ce_aaa_server:
+      state: present
+      authen_scheme_name: test1
+      first_authen_mode: radius
+      radius_server_group: test2
+      provider: "{{ cli }}"
+
+  - name: "Undo radius authentication Server Basic settings"
+    community.network.ce_aaa_server:
+      state: absent
+      authen_scheme_name: test1
+      first_authen_mode: radius
+      radius_server_group: test2
+      provider: "{{ cli }}"
+
+  - name: "Hwtacacs accounting Server Basic settings"
+    community.network.ce_aaa_server:
+      state: present
+      acct_scheme_name: test1
+      accounting_mode: hwtacacs
+      hwtacas_template: test2
+      provider: "{{ cli }}"
+
+  - name: "Undo hwtacacs accounting Server Basic settings"
+    community.network.ce_aaa_server:
+      state: absent
+      acct_scheme_name: test1
+      accounting_mode: hwtacacs
+      hwtacas_template: test2
+      provider: "{{ cli }}"
+'''
+
+RETURN = '''
+changed:
+    description: check to see if a change was made on the device
+    returned: always
+    type: bool
+    sample: true
+proposed:
+    description: k/v pairs of parameters passed into module
+    returned: always
+    type: dict
+    sample: {"accounting_mode": "hwtacacs", "acct_scheme_name": "test1",
+            "hwtacas_template": "test2", "state": "present"}
+existing:
+    description: k/v pairs of existing aaa server
+    returned: always
+    type: dict
+    sample: {"accounting scheme": [["hwtacacs"], ["default"]],
+            "hwtacacs template": ["huawei"]}
+end_state:
+    description: k/v pairs of aaa params after module execution
+    returned: always
+    type: dict
+    sample: {"accounting scheme": [["hwtacacs", "test1"]],
+            "hwtacacs template": ["huawei", "test2"]}
+updates:
+    description: command sent to the device
+    returned: always
+    type: list
+    sample: ["accounting-scheme test1",
+             "accounting-mode hwtacacs",
+             "hwtacacs server template test2",
+             "hwtacacs enable"]
+'''
+
+import re
+from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.community.network.plugins.module_utils.network.cloudengine.ce import get_nc_config, set_nc_config, ce_argument_spec
+
+
+SUCCESS = """success"""
+FAILED = """failed"""
+
+INVALID_SCHEME_CHAR = [' ', '/', '\\', ':', '*', '?', '"', '|', '<', '>']
+INVALID_DOMAIN_CHAR = [' ', '*', '?', '"', '\'']
+INVALID_GROUP_CHAR = ['/', '\\', ':', '*', '?', '"', '|', '<', '>']
+
+
+# get authentication scheme
+CE_GET_AUTHENTICATION_SCHEME = """
+    <filter type="subtree">
+      <aaa xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <authenticationSchemes>
+          <authenticationScheme>
+            <authenSchemeName></authenSchemeName>
+            <firstAuthenMode></firstAuthenMode>
+            <secondAuthenMode></secondAuthenMode>
+          </authenticationScheme>
+        </authenticationSchemes>
+      </aaa>
+    </filter>
+"""
+
+# merge authentication scheme
+CE_MERGE_AUTHENTICATION_SCHEME = """
+    <config>
+      <aaa xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <authenticationSchemes>
+          <authenticationScheme operation="merge">
+            <authenSchemeName>%s</authenSchemeName>
+            <firstAuthenMode>%s</firstAuthenMode>
+            <secondAuthenMode>invalid</secondAuthenMode>
+          </authenticationScheme>
+        </authenticationSchemes>
+      </aaa>
+    </config>
+"""
+
+# create authentication scheme
+CE_CREATE_AUTHENTICATION_SCHEME = """
+    <config>
+      <aaa xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <authenticationSchemes>
+          <authenticationScheme operation="create">
+            <authenSchemeName>%s</authenSchemeName>
+            <firstAuthenMode>%s</firstAuthenMode>
+            <secondAuthenMode>invalid</secondAuthenMode>
+          </authenticationScheme>
+        </authenticationSchemes>
+      </aaa>
+    </config>
+"""
+
+# delete authentication scheme
+CE_DELETE_AUTHENTICATION_SCHEME = """
+    <config>
+      <aaa xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <authenticationSchemes>
+          <authenticationScheme operation="delete">
+            <authenSchemeName>%s</authenSchemeName>
+            <firstAuthenMode>%s</firstAuthenMode>
+            <secondAuthenMode>invalid</secondAuthenMode>
+          </authenticationScheme>
+        </authenticationSchemes>
+      </aaa>
+    </config>
+"""
+
+# get authorization scheme
+CE_GET_AUTHORIZATION_SCHEME = """
+    <filter type="subtree">
+      <aaa xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <authorizationSchemes>
+          <authorizationScheme>
+            <authorSchemeName></authorSchemeName>
+            <firstAuthorMode></firstAuthorMode>
+            <secondAuthorMode></secondAuthorMode>
+          </authorizationScheme>
+        </authorizationSchemes>
+      </aaa>
+    </filter>
+"""
+
+# merge authorization scheme
+CE_MERGE_AUTHORIZATION_SCHEME = """
+    <config>
+      <aaa xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <authorizationSchemes>
+          <authorizationScheme operation="merge">
+            <authorSchemeName>%s</authorSchemeName>
+            <firstAuthorMode>%s</firstAuthorMode>
+            <secondAuthorMode>invalid</secondAuthorMode>
+          </authorizationScheme>
+        </authorizationSchemes>
+      </aaa>
+    </config>
+"""
+
+# create authorization scheme
+CE_CREATE_AUTHORIZATION_SCHEME = """
+    <config>
+      <aaa xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <authorizationSchemes>
+          <authorizationScheme operation="create">
+            <authorSchemeName>%s</authorSchemeName>
+            <firstAuthorMode>%s</firstAuthorMode>
+            <secondAuthorMode>invalid</secondAuthorMode>
+          </authorizationScheme>
+        </authorizationSchemes>
+      </aaa>
+    </config>
+"""
+
+# delete authorization scheme
+CE_DELETE_AUTHORIZATION_SCHEME = """
+    <config>
+      <aaa xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <authorizationSchemes>
+          <authorizationScheme operation="delete">
+            <authorSchemeName>%s</authorSchemeName>
+            <firstAuthorMode>%s</firstAuthorMode>
+            <secondAuthorMode>invalid</secondAuthorMode>
+          </authorizationScheme>
+        </authorizationSchemes>
+      </aaa>
+    </config>
+"""
+
+# get accounting scheme
+CE_GET_ACCOUNTING_SCHEME = """
+    <filter type="subtree">
+      <aaa xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <accountingSchemes>
+          <accountingScheme>
+            <acctSchemeName></acctSchemeName>
+            <accountingMode></accountingMode>
+          </accountingScheme>
+        </accountingSchemes>
+      </aaa>
+    </filter>
+"""
+
+# merge accounting scheme
+CE_MERGE_ACCOUNTING_SCHEME = """
+    <config>
+      <aaa xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <accountingSchemes>
+          <accountingScheme operation="merge">
+            <acctSchemeName>%s</acctSchemeName>
+            <accountingMode>%s</accountingMode>
+          </accountingScheme>
+        </accountingSchemes>
+      </aaa>
+    </config>
+"""
+
+# create accounting scheme
+CE_CREATE_ACCOUNTING_SCHEME = """
+    <config>
+      <aaa xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <accountingSchemes>
+          <accountingScheme operation="create">
+            <acctSchemeName>%s</acctSchemeName>
+            <accountingMode>%s</accountingMode>
+          </accountingScheme>
+        </accountingSchemes>
+      </aaa>
+    </config>
+"""
+
+# delete accounting scheme
+CE_DELETE_ACCOUNTING_SCHEME = """
+    <config>
+      <aaa xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <accountingSchemes>
+          <accountingScheme operation="delete">
+            <acctSchemeName>%s</acctSchemeName>
+            <accountingMode>%s</accountingMode>
+          </accountingScheme>
+        </accountingSchemes>
+      </aaa>
+    </config>
+"""
+
+# get authentication domain
+CE_GET_AUTHENTICATION_DOMAIN = """
+    <filter type="subtree">
+      <aaa xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <domains>
+          <domain>
+            <domainName></domainName>
+            <authenSchemeName></authenSchemeName>
+          </domain>
+        </domains>
+      </aaa>
+    </filter>
+"""
+
+# merge authentication domain
+CE_MERGE_AUTHENTICATION_DOMAIN = """
+    <config>
+      <aaa xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <domains>
+          <domain operation="merge">
+            <domainName>%s</domainName>
+            <authenSchemeName>%s</authenSchemeName>
+          </domain>
+        </domains>
+      </aaa>
+    </config>
+"""
+
+# create authentication domain
+CE_CREATE_AUTHENTICATION_DOMAIN = """
+    <config>
+      <aaa xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <domains>
+          <domain operation="create">
+            <domainName>%s</domainName>
+            <authenSchemeName>%s</authenSchemeName>
+          </domain>
+        </domains>
+      </aaa>
+    </config>
+"""
+
+# delete authentication domain
+CE_DELETE_AUTHENTICATION_DOMAIN = """
+    <config>
+      <aaa xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <domains>
+          <domain operation="delete">
+            <domainName>%s</domainName>
+            <authenSchemeName>%s</authenSchemeName>
+          </domain>
+        </domains>
+      </aaa>
+    </config>
+"""
+
+# get authorization domain
+CE_GET_AUTHORIZATION_DOMAIN = """
+    <filter type="subtree">
+      <aaa xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <domains>
+          <domain>
+            <domainName></domainName>
+            <authorSchemeName></authorSchemeName>
+          </domain>
+        </domains>
+      </aaa>
+    </filter>
+"""
+
+# merge authorization domain
+CE_MERGE_AUTHORIZATION_DOMAIN = """
+    <config>
+      <aaa xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <domains>
+          <domain operation="merge">
+            <domainName>%s</domainName>
+            <authorSchemeName>%s</authorSchemeName>
+          </domain>
+        </domains>
+      </aaa>
+    </config>
+"""
+
+# create authorization domain
+CE_CREATE_AUTHORIZATION_DOMAIN = """
+    <config>
+      <aaa xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <domains>
+          <domain operation="create">
+            <domainName>%s</domainName>
+            <authorSchemeName>%s</authorSchemeName>
+          </domain>
+        </domains>
+      </aaa>
+    </config>
+"""
+
+# delete authorization domain
+CE_DELETE_AUTHORIZATION_DOMAIN = """
+    <config>
+      <aaa xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <domains>
+          <domain operation="delete">
+            <domainName>%s</domainName>
+            <authorSchemeName>%s</authorSchemeName>
+          </domain>
+        </domains>
+      </aaa>
+    </config>
+"""
+
+# get accounting domain
+CE_GET_ACCOUNTING_DOMAIN = """
+    <filter type="subtree">
+      <aaa xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <domains>
+          <domain>
+            <domainName></domainName>
+            <acctSchemeName></acctSchemeName>
+          </domain>
+        </domains>
+      </aaa>
+    </filter>
+"""
+
+# merge accounting domain
+CE_MERGE_ACCOUNTING_DOMAIN = """
+    <config>
+      <aaa xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <domains>
+          <domain operation="merge">
+            <domainName>%s</domainName>
+            <acctSchemeName>%s</acctSchemeName>
+          </domain>
+        </domains>
+      </aaa>
+    </config>
+"""
+
+# create accounting domain
+CE_CREATE_ACCOUNTING_DOMAIN = """
+    <config>
+      <aaa xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <domains>
+          <domain operation="create">
+            <domainName>%s</domainName>
+            <acctSchemeName>%s</acctSchemeName>
+          </domain>
+        </domains>
+      </aaa>
+    </config>
+"""
+
+# delete accounting domain
+CE_DELETE_ACCOUNTING_DOMAIN = """
+    <config>
+      <aaa xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <domains>
+          <domain operation="delete">
+            <domainName>%s</domainName>
+            <acctSchemeName>%s</acctSchemeName>
+          </domain>
+        </domains>
+      </aaa>
+    </config>
+"""
+
+# get radius template
+CE_GET_RADIUS_TEMPLATE = """
+    <filter type="subtree">
+      <radius xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <rdsTemplates>
+          <rdsTemplate>
+            <groupName></groupName>
+            <retransmissionCount></retransmissionCount>
+            <retransmissionInterval></retransmissionInterval>
+          </rdsTemplate>
+        </rdsTemplates>
+      </radius>
+    </filter>
+"""
+
+# merge radius template
+CE_MERGE_RADIUS_TEMPLATE = """
+    <config>
+      <radius xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <rdsTemplates>
+          <rdsTemplate operation="merge">
+            <groupName>%s</groupName>
+            <retransmissionCount>3</retransmissionCount>
+            <retransmissionInterval>5</retransmissionInterval>
+          </rdsTemplate>
+        </rdsTemplates>
+      </radius>
+    </config>
+"""
+
+# create radius template
+CE_CREATE_RADIUS_TEMPLATE = """
+    <config>
+      <radius xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <rdsTemplates>
+          <rdsTemplate operation="create">
+            <groupName>%s</groupName>
+            <retransmissionCount>3</retransmissionCount>
+            <retransmissionInterval>5</retransmissionInterval>
+          </rdsTemplate>
+        </rdsTemplates>
+      </radius>
+    </config>
+"""
+
+# delete radius template
+CE_DELETE_RADIUS_TEMPLATE = """
+    <config>
+      <radius xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <rdsTemplates>
+          <rdsTemplate operation="delete">
+            <groupName>%s</groupName>
+            <retransmissionCount>3</retransmissionCount>
+            <retransmissionInterval>5</retransmissionInterval>
+          </rdsTemplate>
+        </rdsTemplates>
+      </radius>
+    </config>
+"""
+
+# get hwtacacs template
+CE_GET_HWTACACS_TEMPLATE = """
+    <filter type="subtree">
+      <hwtacacs xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <hwTacTempCfgs>
+          <hwTacTempCfg>
+            <templateName></templateName>
+            <isDomainInclude></isDomainInclude>
+            <responseTimeout></responseTimeout>
+          </hwTacTempCfg>
+        </hwTacTempCfgs>
+      </hwtacacs>
+    </filter>
+"""
+
+# merge hwtacacs template
+CE_MERGE_HWTACACS_TEMPLATE = """
+    <config>
+      <hwtacacs xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <hwTacTempCfgs>
+          <hwTacTempCfg operation="merge">
+            <templateName>%s</templateName>
+            <isDomainInclude>true</isDomainInclude>
+            <responseTimeout>5</responseTimeout>
+          </hwTacTempCfg>
+        </hwTacTempCfgs>
+      </hwtacacs>
+    </config>
+"""
+
+# create hwtacacs template
+CE_CREATE_HWTACACS_TEMPLATE = """
+    <config>
+      <hwtacacs xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <hwTacTempCfgs>
+          <hwTacTempCfg operation="create">
+            <templateName>%s</templateName>
+            <isDomainInclude>true</isDomainInclude>
+            <responseTimeout>5</responseTimeout>
+          </hwTacTempCfg>
+        </hwTacTempCfgs>
+      </hwtacacs>
+    </config>
+"""
+
+# delete hwtacacs template
+CE_DELETE_HWTACACS_TEMPLATE = """
+    <config>
+      <hwtacacs xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <hwTacTempCfgs>

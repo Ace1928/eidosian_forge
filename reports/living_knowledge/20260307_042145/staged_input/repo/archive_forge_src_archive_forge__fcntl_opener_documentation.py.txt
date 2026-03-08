@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_fcntl_opener_documentation.py
+KIND: code
+
+import errno
+import fcntl
+import time
+from oauth2client.contrib import locked_file
+Close and unlock the file using the fcntl.lockf primitive.

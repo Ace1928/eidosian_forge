@@ -1,0 +1,687 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_discrete_distns.py
+KIND: code
+
+#
+# Author:  Travis Oliphant  2002-2011 with contributions from
+#          SciPy Developers 2004-2011
+#
+from functools import partial
+
+from scipy import special
+from scipy.special import entr, logsumexp, betaln, gammaln as gamln, zeta
+from scipy._lib._util import _lazywhere, rng_integers
+from scipy.interpolate import interp1d
+
+from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh
+
+import numpy as np
+
+from ._distn_infrastructure import (rv_discrete, get_distribution_names,
+                                    _check_shape, _ShapeInfo)
+import scipy.stats._boost as _boost
+from ._biasedurn import (_PyFishersNCHypergeometric,
+                         _PyWalleniusNCHypergeometric,
+                         _PyStochasticLib3)
+
+
+def _isintegral(x):
+    return x == np.round(x)
+
+
+class binom_gen(rv_discrete):
+    r"""A binomial discrete random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability mass function for `binom` is:
+
+    .. math::
+
+       f(k) = \binom{n}{k} p^k (1-p)^{n-k}
+
+    for :math:`k \in \{0, 1, \dots, n\}`, :math:`0 \leq p \leq 1`
+
+    `binom` takes :math:`n` and :math:`p` as shape parameters,
+    where :math:`p` is the probability of a single success
+    and :math:`1-p` is the probability of a single failure.
+
+    %(after_notes)s
+
+    %(example)s
+
+    See Also
+    --------
+    hypergeom, nbinom, nhypergeom
+
+    """
+    def _shape_info(self):
+        return [_ShapeInfo("n", True, (0, np.inf), (True, False)),
+                _ShapeInfo("p", False, (0, 1), (True, True))]
+
+    def _rvs(self, n, p, size=None, random_state=None):
+        return random_state.binomial(n, p, size)
+
+    def _argcheck(self, n, p):
+        return (n >= 0) & _isintegral(n) & (p >= 0) & (p <= 1)
+
+    def _get_support(self, n, p):
+        return self.a, n
+
+    def _logpmf(self, x, n, p):
+        k = floor(x)
+        combiln = (gamln(n+1) - (gamln(k+1) + gamln(n-k+1)))
+        return combiln + special.xlogy(k, p) + special.xlog1py(n-k, -p)
+
+    def _pmf(self, x, n, p):
+        # binom.pmf(k) = choose(n, k) * p**k * (1-p)**(n-k)
+        return _boost._binom_pdf(x, n, p)
+
+    def _cdf(self, x, n, p):
+        k = floor(x)
+        return _boost._binom_cdf(k, n, p)
+
+    def _sf(self, x, n, p):
+        k = floor(x)
+        return _boost._binom_sf(k, n, p)
+
+    def _isf(self, x, n, p):
+        return _boost._binom_isf(x, n, p)
+
+    def _ppf(self, q, n, p):
+        return _boost._binom_ppf(q, n, p)
+
+    def _stats(self, n, p, moments='mv'):
+        mu = _boost._binom_mean(n, p)
+        var = _boost._binom_variance(n, p)
+        g1, g2 = None, None
+        if 's' in moments:
+            g1 = _boost._binom_skewness(n, p)
+        if 'k' in moments:
+            g2 = _boost._binom_kurtosis_excess(n, p)
+        return mu, var, g1, g2
+
+    def _entropy(self, n, p):
+        k = np.r_[0:n + 1]
+        vals = self._pmf(k, n, p)
+        return np.sum(entr(vals), axis=0)
+
+
+binom = binom_gen(name='binom')
+
+
+class bernoulli_gen(binom_gen):
+    r"""A Bernoulli discrete random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability mass function for `bernoulli` is:
+
+    .. math::
+
+       f(k) = \begin{cases}1-p  &\text{if } k = 0\\
+                           p    &\text{if } k = 1\end{cases}
+
+    for :math:`k` in :math:`\{0, 1\}`, :math:`0 \leq p \leq 1`
+
+    `bernoulli` takes :math:`p` as shape parameter,
+    where :math:`p` is the probability of a single success
+    and :math:`1-p` is the probability of a single failure.
+
+    %(after_notes)s
+
+    %(example)s
+
+    """
+    def _shape_info(self):
+        return [_ShapeInfo("p", False, (0, 1), (True, True))]
+
+    def _rvs(self, p, size=None, random_state=None):
+        return binom_gen._rvs(self, 1, p, size=size, random_state=random_state)
+
+    def _argcheck(self, p):
+        return (p >= 0) & (p <= 1)
+
+    def _get_support(self, p):
+        # Overrides binom_gen._get_support!x
+        return self.a, self.b
+
+    def _logpmf(self, x, p):
+        return binom._logpmf(x, 1, p)
+
+    def _pmf(self, x, p):
+        # bernoulli.pmf(k) = 1-p  if k = 0
+        #                  = p    if k = 1
+        return binom._pmf(x, 1, p)
+
+    def _cdf(self, x, p):
+        return binom._cdf(x, 1, p)
+
+    def _sf(self, x, p):
+        return binom._sf(x, 1, p)
+
+    def _isf(self, x, p):
+        return binom._isf(x, 1, p)
+
+    def _ppf(self, q, p):
+        return binom._ppf(q, 1, p)
+
+    def _stats(self, p):
+        return binom._stats(1, p)
+
+    def _entropy(self, p):
+        return entr(p) + entr(1-p)
+
+
+bernoulli = bernoulli_gen(b=1, name='bernoulli')
+
+
+class betabinom_gen(rv_discrete):
+    r"""A beta-binomial discrete random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The beta-binomial distribution is a binomial distribution with a
+    probability of success `p` that follows a beta distribution.
+
+    The probability mass function for `betabinom` is:
+
+    .. math::
+
+       f(k) = \binom{n}{k} \frac{B(k + a, n - k + b)}{B(a, b)}
+
+    for :math:`k \in \{0, 1, \dots, n\}`, :math:`n \geq 0`, :math:`a > 0`,
+    :math:`b > 0`, where :math:`B(a, b)` is the beta function.
+
+    `betabinom` takes :math:`n`, :math:`a`, and :math:`b` as shape parameters.
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Beta-binomial_distribution
+
+    %(after_notes)s
+
+    .. versionadded:: 1.4.0
+
+    See Also
+    --------
+    beta, binom
+
+    %(example)s
+
+    """
+    def _shape_info(self):
+        return [_ShapeInfo("n", True, (0, np.inf), (True, False)),
+                _ShapeInfo("a", False, (0, np.inf), (False, False)),
+                _ShapeInfo("b", False, (0, np.inf), (False, False))]
+
+    def _rvs(self, n, a, b, size=None, random_state=None):
+        p = random_state.beta(a, b, size)
+        return random_state.binomial(n, p, size)
+
+    def _get_support(self, n, a, b):
+        return 0, n
+
+    def _argcheck(self, n, a, b):
+        return (n >= 0) & _isintegral(n) & (a > 0) & (b > 0)
+
+    def _logpmf(self, x, n, a, b):
+        k = floor(x)
+        combiln = -log(n + 1) - betaln(n - k + 1, k + 1)
+        return combiln + betaln(k + a, n - k + b) - betaln(a, b)
+
+    def _pmf(self, x, n, a, b):
+        return exp(self._logpmf(x, n, a, b))
+
+    def _stats(self, n, a, b, moments='mv'):
+        e_p = a / (a + b)
+        e_q = 1 - e_p
+        mu = n * e_p
+        var = n * (a + b + n) * e_p * e_q / (a + b + 1)
+        g1, g2 = None, None
+        if 's' in moments:
+            g1 = 1.0 / sqrt(var)
+            g1 *= (a + b + 2 * n) * (b - a)
+            g1 /= (a + b + 2) * (a + b)
+        if 'k' in moments:
+            g2 = (a + b).astype(e_p.dtype)
+            g2 *= (a + b - 1 + 6 * n)
+            g2 += 3 * a * b * (n - 2)
+            g2 += 6 * n ** 2
+            g2 -= 3 * e_p * b * n * (6 - n)
+            g2 -= 18 * e_p * e_q * n ** 2
+            g2 *= (a + b) ** 2 * (1 + a + b)
+            g2 /= (n * a * b * (a + b + 2) * (a + b + 3) * (a + b + n))
+            g2 -= 3
+        return mu, var, g1, g2
+
+
+betabinom = betabinom_gen(name='betabinom')
+
+
+class nbinom_gen(rv_discrete):
+    r"""A negative binomial discrete random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    Negative binomial distribution describes a sequence of i.i.d. Bernoulli
+    trials, repeated until a predefined, non-random number of successes occurs.
+
+    The probability mass function of the number of failures for `nbinom` is:
+
+    .. math::
+
+       f(k) = \binom{k+n-1}{n-1} p^n (1-p)^k
+
+    for :math:`k \ge 0`, :math:`0 < p \leq 1`
+
+    `nbinom` takes :math:`n` and :math:`p` as shape parameters where :math:`n`
+    is the number of successes, :math:`p` is the probability of a single
+    success, and :math:`1-p` is the probability of a single failure.
+
+    Another common parameterization of the negative binomial distribution is
+    in terms of the mean number of failures :math:`\mu` to achieve :math:`n`
+    successes. The mean :math:`\mu` is related to the probability of success
+    as
+
+    .. math::
+
+       p = \frac{n}{n + \mu}
+
+    The number of successes :math:`n` may also be specified in terms of a
+    "dispersion", "heterogeneity", or "aggregation" parameter :math:`\alpha`,
+    which relates the mean :math:`\mu` to the variance :math:`\sigma^2`,
+    e.g. :math:`\sigma^2 = \mu + \alpha \mu^2`. Regardless of the convention
+    used for :math:`\alpha`,
+
+    .. math::
+
+       p &= \frac{\mu}{\sigma^2} \\
+       n &= \frac{\mu^2}{\sigma^2 - \mu}
+
+    %(after_notes)s
+
+    %(example)s
+
+    See Also
+    --------
+    hypergeom, binom, nhypergeom
+
+    """
+    def _shape_info(self):
+        return [_ShapeInfo("n", True, (0, np.inf), (True, False)),
+                _ShapeInfo("p", False, (0, 1), (True, True))]
+
+    def _rvs(self, n, p, size=None, random_state=None):
+        return random_state.negative_binomial(n, p, size)
+
+    def _argcheck(self, n, p):
+        return (n > 0) & (p > 0) & (p <= 1)
+
+    def _pmf(self, x, n, p):
+        # nbinom.pmf(k) = choose(k+n-1, n-1) * p**n * (1-p)**k
+        return _boost._nbinom_pdf(x, n, p)
+
+    def _logpmf(self, x, n, p):
+        coeff = gamln(n+x) - gamln(x+1) - gamln(n)
+        return coeff + n*log(p) + special.xlog1py(x, -p)
+
+    def _cdf(self, x, n, p):
+        k = floor(x)
+        return _boost._nbinom_cdf(k, n, p)
+
+    def _logcdf(self, x, n, p):
+        k = floor(x)
+        k, n, p = np.broadcast_arrays(k, n, p)
+        cdf = self._cdf(k, n, p)
+        cond = cdf > 0.5
+        def f1(k, n, p):
+            return np.log1p(-special.betainc(k + 1, n, 1 - p))
+
+        # do calc in place
+        logcdf = cdf
+        with np.errstate(divide='ignore'):
+            logcdf[cond] = f1(k[cond], n[cond], p[cond])
+            logcdf[~cond] = np.log(cdf[~cond])
+        return logcdf
+
+    def _sf(self, x, n, p):
+        k = floor(x)
+        return _boost._nbinom_sf(k, n, p)
+
+    def _isf(self, x, n, p):
+        with np.errstate(over='ignore'):  # see gh-17432
+            return _boost._nbinom_isf(x, n, p)
+
+    def _ppf(self, q, n, p):
+        with np.errstate(over='ignore'):  # see gh-17432
+            return _boost._nbinom_ppf(q, n, p)
+
+    def _stats(self, n, p):
+        return (
+            _boost._nbinom_mean(n, p),
+            _boost._nbinom_variance(n, p),
+            _boost._nbinom_skewness(n, p),
+            _boost._nbinom_kurtosis_excess(n, p),
+        )
+
+
+nbinom = nbinom_gen(name='nbinom')
+
+
+class betanbinom_gen(rv_discrete):
+    r"""A beta-negative-binomial discrete random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The beta-negative-binomial distribution is a negative binomial
+    distribution with a probability of success `p` that follows a
+    beta distribution.
+
+    The probability mass function for `betanbinom` is:
+
+    .. math::
+
+       f(k) = \binom{n + k - 1}{k} \frac{B(a + n, b + k)}{B(a, b)}
+
+    for :math:`k \ge 0`, :math:`n \geq 0`, :math:`a > 0`,
+    :math:`b > 0`, where :math:`B(a, b)` is the beta function.
+
+    `betanbinom` takes :math:`n`, :math:`a`, and :math:`b` as shape parameters.
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Beta_negative_binomial_distribution
+
+    %(after_notes)s
+
+    .. versionadded:: 1.12.0
+
+    See Also
+    --------
+    betabinom : Beta binomial distribution
+
+    %(example)s
+
+    """
+    def _shape_info(self):
+        return [_ShapeInfo("n", True, (0, np.inf), (True, False)),
+                _ShapeInfo("a", False, (0, np.inf), (False, False)),
+                _ShapeInfo("b", False, (0, np.inf), (False, False))]
+
+    def _rvs(self, n, a, b, size=None, random_state=None):
+        p = random_state.beta(a, b, size)
+        return random_state.negative_binomial(n, p, size)
+
+    def _argcheck(self, n, a, b):
+        return (n >= 0) & _isintegral(n) & (a > 0) & (b > 0)
+
+    def _logpmf(self, x, n, a, b):
+        k = floor(x)
+        combiln = -np.log(n + k) - betaln(n, k + 1)
+        return combiln + betaln(a + n, b + k) - betaln(a, b)
+
+    def _pmf(self, x, n, a, b):
+        return exp(self._logpmf(x, n, a, b))
+
+    def _stats(self, n, a, b, moments='mv'):
+        # reference: Wolfram Alpha input
+        # BetaNegativeBinomialDistribution[a, b, n]
+        def mean(n, a, b):
+            return n * b / (a - 1.)
+        mu = _lazywhere(a > 1, (n, a, b), f=mean, fillvalue=np.inf)
+        def var(n, a, b):
+            return (n * b * (n + a - 1.) * (a + b - 1.)
+                    / ((a - 2.) * (a - 1.)**2.))
+        var = _lazywhere(a > 2, (n, a, b), f=var, fillvalue=np.inf)
+        g1, g2 = None, None
+        def skew(n, a, b):
+            return ((2 * n + a - 1.) * (2 * b + a - 1.)
+                    / (a - 3.) / sqrt(n * b * (n + a - 1.) * (b + a - 1.)
+                    / (a - 2.)))
+        if 's' in moments:
+            g1 = _lazywhere(a > 3, (n, a, b), f=skew, fillvalue=np.inf)
+        def kurtosis(n, a, b):
+            term = (a - 2.)
+            term_2 = ((a - 1.)**2. * (a**2. + a * (6 * b - 1.)
+                      + 6. * (b - 1.) * b)
+                      + 3. * n**2. * ((a + 5.) * b**2. + (a + 5.)
+                      * (a - 1.) * b + 2. * (a - 1.)**2)
+                      + 3 * (a - 1.) * n
+                      * ((a + 5.) * b**2. + (a + 5.) * (a - 1.) * b
+                      + 2. * (a - 1.)**2.))
+            denominator = ((a - 4.) * (a - 3.) * b * n
+                           * (a + b - 1.) * (a + n - 1.))
+            # Wolfram Alpha uses Pearson kurtosis, so we substract 3 to get
+            # scipy's Fisher kurtosis
+            return term * term_2 / denominator - 3.
+        if 'k' in moments:
+            g2 = _lazywhere(a > 4, (n, a, b), f=kurtosis, fillvalue=np.inf)
+        return mu, var, g1, g2
+
+
+betanbinom = betanbinom_gen(name='betanbinom')
+
+
+class geom_gen(rv_discrete):
+    r"""A geometric discrete random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability mass function for `geom` is:
+
+    .. math::
+
+        f(k) = (1-p)^{k-1} p
+
+    for :math:`k \ge 1`, :math:`0 < p \leq 1`
+
+    `geom` takes :math:`p` as shape parameter,
+    where :math:`p` is the probability of a single success
+    and :math:`1-p` is the probability of a single failure.
+
+    %(after_notes)s
+
+    See Also
+    --------
+    planck
+
+    %(example)s
+
+    """
+
+    def _shape_info(self):
+        return [_ShapeInfo("p", False, (0, 1), (True, True))]
+
+    def _rvs(self, p, size=None, random_state=None):
+        return random_state.geometric(p, size=size)
+
+    def _argcheck(self, p):
+        return (p <= 1) & (p > 0)
+
+    def _pmf(self, k, p):
+        return np.power(1-p, k-1) * p
+
+    def _logpmf(self, k, p):
+        return special.xlog1py(k - 1, -p) + log(p)
+
+    def _cdf(self, x, p):
+        k = floor(x)
+        return -expm1(log1p(-p)*k)
+
+    def _sf(self, x, p):
+        return np.exp(self._logsf(x, p))
+
+    def _logsf(self, x, p):
+        k = floor(x)
+        return k*log1p(-p)
+
+    def _ppf(self, q, p):
+        vals = ceil(log1p(-q) / log1p(-p))
+        temp = self._cdf(vals-1, p)
+        return np.where((temp >= q) & (vals > 0), vals-1, vals)
+
+    def _stats(self, p):
+        mu = 1.0/p
+        qr = 1.0-p
+        var = qr / p / p
+        g1 = (2.0-p) / sqrt(qr)
+        g2 = np.polyval([1, -6, 6], p)/(1.0-p)
+        return mu, var, g1, g2
+
+    def _entropy(self, p):
+        return -np.log(p) - np.log1p(-p) * (1.0-p) / p
+
+
+geom = geom_gen(a=1, name='geom', longname="A geometric")
+
+
+class hypergeom_gen(rv_discrete):
+    r"""A hypergeometric discrete random variable.
+
+    The hypergeometric distribution models drawing objects from a bin.
+    `M` is the total number of objects, `n` is total number of Type I objects.
+    The random variate represents the number of Type I objects in `N` drawn
+    without replacement from the total population.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The symbols used to denote the shape parameters (`M`, `n`, and `N`) are not
+    universally accepted.  See the Examples for a clarification of the
+    definitions used here.
+
+    The probability mass function is defined as,
+
+    .. math:: p(k, M, n, N) = \frac{\binom{n}{k} \binom{M - n}{N - k}}
+                                   {\binom{M}{N}}
+
+    for :math:`k \in [\max(0, N - M + n), \min(n, N)]`, where the binomial
+    coefficients are defined as,
+
+    .. math:: \binom{n}{k} \equiv \frac{n!}{k! (n - k)!}.
+
+    %(after_notes)s
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.stats import hypergeom
+    >>> import matplotlib.pyplot as plt
+
+    Suppose we have a collection of 20 animals, of which 7 are dogs.  Then if
+    we want to know the probability of finding a given number of dogs if we
+    choose at random 12 of the 20 animals, we can initialize a frozen
+    distribution and plot the probability mass function:
+
+    >>> [M, n, N] = [20, 7, 12]
+    >>> rv = hypergeom(M, n, N)
+    >>> x = np.arange(0, n+1)
+    >>> pmf_dogs = rv.pmf(x)
+
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> ax.plot(x, pmf_dogs, 'bo')
+    >>> ax.vlines(x, 0, pmf_dogs, lw=2)
+    >>> ax.set_xlabel('# of dogs in our group of chosen animals')
+    >>> ax.set_ylabel('hypergeom PMF')
+    >>> plt.show()
+
+    Instead of using a frozen distribution we can also use `hypergeom`
+    methods directly.  To for example obtain the cumulative distribution
+    function, use:
+
+    >>> prb = hypergeom.cdf(x, M, n, N)
+
+    And to generate random numbers:
+
+    >>> R = hypergeom.rvs(M, n, N, size=10)
+
+    See Also
+    --------
+    nhypergeom, binom, nbinom
+
+    """
+    def _shape_info(self):
+        return [_ShapeInfo("M", True, (0, np.inf), (True, False)),
+                _ShapeInfo("n", True, (0, np.inf), (True, False)),
+                _ShapeInfo("N", True, (0, np.inf), (True, False))]
+
+    def _rvs(self, M, n, N, size=None, random_state=None):
+        return random_state.hypergeometric(n, M-n, N, size=size)
+
+    def _get_support(self, M, n, N):
+        return np.maximum(N-(M-n), 0), np.minimum(n, N)
+
+    def _argcheck(self, M, n, N):
+        cond = (M > 0) & (n >= 0) & (N >= 0)
+        cond &= (n <= M) & (N <= M)
+        cond &= _isintegral(M) & _isintegral(n) & _isintegral(N)
+        return cond
+
+    def _logpmf(self, k, M, n, N):
+        tot, good = M, n
+        bad = tot - good
+        result = (betaln(good+1, 1) + betaln(bad+1, 1) + betaln(tot-N+1, N+1) -
+                  betaln(k+1, good-k+1) - betaln(N-k+1, bad-N+k+1) -
+                  betaln(tot+1, 1))
+        return result
+
+    def _pmf(self, k, M, n, N):
+        return _boost._hypergeom_pdf(k, n, N, M)
+
+    def _cdf(self, k, M, n, N):
+        return _boost._hypergeom_cdf(k, n, N, M)
+
+    def _stats(self, M, n, N):
+        M, n, N = 1. * M, 1. * n, 1. * N
+        m = M - n
+
+        # Boost kurtosis_excess doesn't return the same as the value
+        # computed here.
+        g2 = M * (M + 1) - 6. * N * (M - N) - 6. * n * m
+        g2 *= (M - 1) * M * M
+        g2 += 6. * n * N * (M - N) * m * (5. * M - 6)
+        g2 /= n * N * (M - N) * m * (M - 2.) * (M - 3.)
+        return (
+            _boost._hypergeom_mean(n, N, M),
+            _boost._hypergeom_variance(n, N, M),
+            _boost._hypergeom_skewness(n, N, M),
+            g2,
+        )
+
+    def _entropy(self, M, n, N):
+        k = np.r_[N - (M - n):min(n, N) + 1]
+        vals = self.pmf(k, M, n, N)
+        return np.sum(entr(vals), axis=0)
+
+    def _sf(self, k, M, n, N):
+        return _boost._hypergeom_sf(k, n, N, M)
+
+    def _logsf(self, k, M, n, N):
+        res = []
+        for quant, tot, good, draw in zip(*np.broadcast_arrays(k, M, n, N)):
+            if (quant + 0.5) * (tot + 0.5) < (good - 0.5) * (draw - 0.5):
+                # Less terms to sum if we calculate log(1-cdf)
+                res.append(log1p(-exp(self.logcdf(quant, tot, good, draw))))
+            else:
+                # Integration over probability mass function using logsumexp
+                k2 = np.arange(quant + 1, draw + 1)
+                res.append(logsumexp(self._logpmf(k2, tot, good, draw)))
+        return np.asarray(res)
+
+    def _logcdf(self, k, M, n, N):
+        res = []
+        for quant, tot,

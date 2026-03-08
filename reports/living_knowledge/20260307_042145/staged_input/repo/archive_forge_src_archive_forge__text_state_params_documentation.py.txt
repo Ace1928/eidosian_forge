@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_text_state_params_documentation.py
+KIND: code
+
+import math
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Union
+from .. import mult, orient
+from ._font import Font
+Dataclass to dict for json.dumps serialization

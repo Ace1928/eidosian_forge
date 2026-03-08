@@ -1,0 +1,35 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/CN
+KIND: config
+
+CN
+北京beijing	北京市
+天津tianjin	天津市
+冀hebei河北	河北省
+山西shanxi	山西省/
+	内蒙古inner mongolia内蒙古自治区
+辽宁liaoning	辽宁省
+吉林jilin	吉林省'
+	黑龙江heilongjiang黑龙江省
+上海shanghai	上海市!
+江苏jiangsu	江苏省苏
+浙江zhejiang	浙江省
+安徽anhui	安徽省 
+福建fujian	福建省闽!
+江西jiangxi	江西省赣"
+山东shandong	山东省鲁
+河南henan	河南省豫
+湖北hubei	湖北省鄂
+湖南hunan	湖南省湘'
+广东guangdong province	广东省3
+广西guangxi广西壮族自治区	广西省
+海南hainan	海南省
+重庆	chongqing	重庆市&
+四川sichuan	四川省川蜀&
+贵guizhou贵州	贵州省黔 
+云南yunnan	云南省滇%
+藏tibet西藏西藏自治区
+陕西shaanxi	陕西省$
+甘gansu甘肃	甘肃省陇
+青海qinghai	青海省-
+宁ningxia宁夏宁夏回族自治区1
+新xinjiang新疆新疆维吾尔自治区

@@ -1,0 +1,604 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_metadata_requests.py
+KIND: code
+
+"""
+Metadata Routing Utility
+
+In order to better understand the components implemented in this file, one
+needs to understand their relationship to one another.
+
+The only relevant public API for end users are the ``set_{method}_request``,
+e.g. ``estimator.set_fit_request(sample_weight=True)``. However, third-party
+developers and users who implement custom meta-estimators, need to deal with
+the objects implemented in this file.
+
+All estimators (should) implement a ``get_metadata_routing`` method, returning
+the routing requests set for the estimator. This method is automatically
+implemented via ``BaseEstimator`` for all simple estimators, but needs a custom
+implementation for meta-estimators.
+
+In non-routing consumers, i.e. the simplest case, e.g. ``SVM``,
+``get_metadata_routing`` returns a ``MetadataRequest`` object.
+
+In routers, e.g. meta-estimators and a multi metric scorer,
+``get_metadata_routing`` returns a ``MetadataRouter`` object.
+
+An object which is both a router and a consumer, e.g. a meta-estimator which
+consumes ``sample_weight`` and routes ``sample_weight`` to its sub-estimators,
+routing information includes both information about the object itself (added
+via ``MetadataRouter.add_self_request``), as well as the routing information
+for its sub-estimators.
+
+A ``MetadataRequest`` instance includes one ``MethodMetadataRequest`` per
+method in ``METHODS``, which includes ``fit``, ``score``, etc.
+
+Request values are added to the routing mechanism by adding them to
+``MethodMetadataRequest`` instances, e.g.
+``metadatarequest.fit.add(param="sample_weight", alias="my_weights")``. This is
+used in ``set_{method}_request`` which are automatically generated, so users
+and developers almost never need to directly call methods on a
+``MethodMetadataRequest``.
+
+The ``alias`` above in the ``add`` method has to be either a string (an alias),
+or a {True (requested), False (unrequested), None (error if passed)}``. There
+are some other special values such as ``UNUSED`` and ``WARN`` which are used
+for purposes such as warning of removing a metadata in a child class, but not
+used by the end users.
+
+``MetadataRouter`` includes information about sub-objects' routing and how
+methods are mapped together. For instance, the information about which methods
+of a sub-estimator are called in which methods of the meta-estimator are all
+stored here. Conceptually, this information looks like:
+
+```
+{
+    "sub_estimator1": (
+        mapping=[(caller="fit", callee="transform"), ...],
+        router=MetadataRequest(...),  # or another MetadataRouter
+    ),
+    ...
+}
+```
+
+To give the above representation some structure, we use the following objects:
+
+- ``(caller, callee)`` is a namedtuple called ``MethodPair``
+
+- The list of ``MethodPair`` stored in the ``mapping`` field is a
+  ``MethodMapping`` object
+
+- ``(mapping=..., router=...)`` is a namedtuple called ``RouterMappingPair``
+
+The ``set_{method}_request`` methods are dynamically generated for estimators
+which inherit from the ``BaseEstimator``. This is done by attaching instances
+of the ``RequestMethod`` descriptor to classes, which is done in the
+``_MetadataRequester`` class, and ``BaseEstimator`` inherits from this mixin.
+This mixin also implements the ``get_metadata_routing``, which meta-estimators
+need to override, but it works for simple consumers as is.
+"""
+
+# Author: Adrin Jalali <adrin.jalali@gmail.com>
+# License: BSD 3 clause
+
+import inspect
+from collections import namedtuple
+from copy import deepcopy
+from typing import TYPE_CHECKING, Optional, Union
+from warnings import warn
+
+from .. import get_config
+from ..exceptions import UnsetMetadataPassedError
+from ._bunch import Bunch
+
+# Only the following methods are supported in the routing mechanism. Adding new
+# methods at the moment involves monkeypatching this list.
+# Note that if this list is changed or monkeypatched, the corresponding method
+# needs to be added under a TYPE_CHECKING condition like the one done here in
+# _MetadataRequester
+SIMPLE_METHODS = [
+    "fit",
+    "partial_fit",
+    "predict",
+    "predict_proba",
+    "predict_log_proba",
+    "decision_function",
+    "score",
+    "split",
+    "transform",
+    "inverse_transform",
+]
+
+# These methods are a composite of other methods and one cannot set their
+# requests directly. Instead they should be set by setting the requests of the
+# simple methods which make the composite ones.
+COMPOSITE_METHODS = {
+    "fit_transform": ["fit", "transform"],
+    "fit_predict": ["fit", "predict"],
+}
+
+METHODS = SIMPLE_METHODS + list(COMPOSITE_METHODS.keys())
+
+
+def _routing_enabled():
+    """Return whether metadata routing is enabled.
+
+    .. versionadded:: 1.3
+
+    Returns
+    -------
+    enabled : bool
+        Whether metadata routing is enabled. If the config is not set, it
+        defaults to False.
+    """
+    return get_config().get("enable_metadata_routing", False)
+
+
+def _raise_for_params(params, owner, method):
+    """Raise an error if metadata routing is not enabled and params are passed.
+
+    .. versionadded:: 1.4
+
+    Parameters
+    ----------
+    params : dict
+        The metadata passed to a method.
+
+    owner : object
+        The object to which the method belongs.
+
+    method : str
+        The name of the method, e.g. "fit".
+
+    Raises
+    ------
+    ValueError
+        If metadata routing is not enabled and params are passed.
+    """
+    caller = (
+        f"{owner.__class__.__name__}.{method}" if method else owner.__class__.__name__
+    )
+    if not _routing_enabled() and params:
+        raise ValueError(
+            f"Passing extra keyword arguments to {caller} is only supported if"
+            " enable_metadata_routing=True, which you can set using"
+            " `sklearn.set_config`. See the User Guide"
+            " <https://scikit-learn.org/stable/metadata_routing.html> for more"
+            f" details. Extra parameters passed are: {set(params)}"
+        )
+
+
+def _raise_for_unsupported_routing(obj, method, **kwargs):
+    """Raise when metadata routing is enabled and metadata is passed.
+
+    This is used in meta-estimators which have not implemented metadata routing
+    to prevent silent bugs. There is no need to use this function if the
+    meta-estimator is not accepting any metadata, especially in `fit`, since
+    if a meta-estimator accepts any metadata, they would do that in `fit` as
+    well.
+
+    Parameters
+    ----------
+    obj : estimator
+        The estimator for which we're raising the error.
+
+    method : str
+        The method where the error is raised.
+
+    **kwargs : dict
+        The metadata passed to the method.
+    """
+    kwargs = {key: value for key, value in kwargs.items() if value is not None}
+    if _routing_enabled() and kwargs:
+        cls_name = obj.__class__.__name__
+        raise NotImplementedError(
+            f"{cls_name}.{method} cannot accept given metadata ({set(kwargs.keys())})"
+            f" since metadata routing is not yet implemented for {cls_name}."
+        )
+
+
+class _RoutingNotSupportedMixin:
+    """A mixin to be used to remove the default `get_metadata_routing`.
+
+    This is used in meta-estimators where metadata routing is not yet
+    implemented.
+
+    This also makes it clear in our rendered documentation that this method
+    cannot be used.
+    """
+
+    def get_metadata_routing(self):
+        """Raise `NotImplementedError`.
+
+        This estimator does not support metadata routing yet."""
+        raise NotImplementedError(
+            f"{self.__class__.__name__} has not implemented metadata routing yet."
+        )
+
+
+# Request values
+# ==============
+# Each request value needs to be one of the following values, or an alias.
+
+# this is used in `__metadata_request__*` attributes to indicate that a
+# metadata is not present even though it may be present in the
+# corresponding method's signature.
+UNUSED = "$UNUSED$"
+
+# this is used whenever a default value is changed, and therefore the user
+# should explicitly set the value, otherwise a warning is shown. An example
+# is when a meta-estimator is only a router, but then becomes also a
+# consumer in a new release.
+WARN = "$WARN$"
+
+# this is the default used in `set_{method}_request` methods to indicate no
+# change requested by the user.
+UNCHANGED = "$UNCHANGED$"
+
+VALID_REQUEST_VALUES = [False, True, None, UNUSED, WARN]
+
+
+def request_is_alias(item):
+    """Check if an item is a valid alias.
+
+    Values in ``VALID_REQUEST_VALUES`` are not considered aliases in this
+    context. Only a string which is a valid identifier is.
+
+    Parameters
+    ----------
+    item : object
+        The given item to be checked if it can be an alias.
+
+    Returns
+    -------
+    result : bool
+        Whether the given item is a valid alias.
+    """
+    if item in VALID_REQUEST_VALUES:
+        return False
+
+    # item is only an alias if it's a valid identifier
+    return isinstance(item, str) and item.isidentifier()
+
+
+def request_is_valid(item):
+    """Check if an item is a valid request value (and not an alias).
+
+    Parameters
+    ----------
+    item : object
+        The given item to be checked.
+
+    Returns
+    -------
+    result : bool
+        Whether the given item is valid.
+    """
+    return item in VALID_REQUEST_VALUES
+
+
+# Metadata Request for Simple Consumers
+# =====================================
+# This section includes MethodMetadataRequest and MetadataRequest which are
+# used in simple consumers.
+
+
+class MethodMetadataRequest:
+    """A prescription of how metadata is to be passed to a single method.
+
+    Refer to :class:`MetadataRequest` for how this class is used.
+
+    .. versionadded:: 1.3
+
+    Parameters
+    ----------
+    owner : str
+        A display name for the object owning these requests.
+
+    method : str
+        The name of the method to which these requests belong.
+
+    requests : dict of {str: bool, None or str}, default=None
+        The initial requests for this method.
+    """
+
+    def __init__(self, owner, method, requests=None):
+        self._requests = requests or dict()
+        self.owner = owner
+        self.method = method
+
+    @property
+    def requests(self):
+        """Dictionary of the form: ``{key: alias}``."""
+        return self._requests
+
+    def add_request(
+        self,
+        *,
+        param,
+        alias,
+    ):
+        """Add request info for a metadata.
+
+        Parameters
+        ----------
+        param : str
+            The property for which a request is set.
+
+        alias : str, or {True, False, None}
+            Specifies which metadata should be routed to `param`
+
+            - str: the name (or alias) of metadata given to a meta-estimator that
+              should be routed to this parameter.
+
+            - True: requested
+
+            - False: not requested
+
+            - None: error if passed
+        """
+        if not request_is_alias(alias) and not request_is_valid(alias):
+            raise ValueError(
+                f"The alias you're setting for `{param}` should be either a "
+                "valid identifier or one of {None, True, False}, but given "
+                f"value is: `{alias}`"
+            )
+
+        if alias == param:
+            alias = True
+
+        if alias == UNUSED:
+            if param in self._requests:
+                del self._requests[param]
+            else:
+                raise ValueError(
+                    f"Trying to remove parameter {param} with UNUSED which doesn't"
+                    " exist."
+                )
+        else:
+            self._requests[param] = alias
+
+        return self
+
+    def _get_param_names(self, return_alias):
+        """Get names of all metadata that can be consumed or routed by this method.
+
+        This method returns the names of all metadata, even the ``False``
+        ones.
+
+        Parameters
+        ----------
+        return_alias : bool
+            Controls whether original or aliased names should be returned. If
+            ``False``, aliases are ignored and original names are returned.
+
+        Returns
+        -------
+        names : set of str
+            A set of strings with the names of all parameters.
+        """
+        return set(
+            alias if return_alias and not request_is_valid(alias) else prop
+            for prop, alias in self._requests.items()
+            if not request_is_valid(alias) or alias is not False
+        )
+
+    def _check_warnings(self, *, params):
+        """Check whether metadata is passed which is marked as WARN.
+
+        If any metadata is passed which is marked as WARN, a warning is raised.
+
+        Parameters
+        ----------
+        params : dict
+            The metadata passed to a method.
+        """
+        params = {} if params is None else params
+        warn_params = {
+            prop
+            for prop, alias in self._requests.items()
+            if alias == WARN and prop in params
+        }
+        for param in warn_params:
+            warn(
+                f"Support for {param} has recently been added to this class. "
+                "To maintain backward compatibility, it is ignored now. "
+                "You can set the request value to False to silence this "
+                "warning, or to True to consume and use the metadata."
+            )
+
+    def _route_params(self, params):
+        """Prepare the given parameters to be passed to the method.
+
+        The output of this method can be used directly as the input to the
+        corresponding method as extra props.
+
+        Parameters
+        ----------
+        params : dict
+            A dictionary of provided metadata.
+
+        Returns
+        -------
+        params : Bunch
+            A :class:`~sklearn.utils.Bunch` of {prop: value} which can be given to the
+            corresponding method.
+        """
+        self._check_warnings(params=params)
+        unrequested = dict()
+        args = {arg: value for arg, value in params.items() if value is not None}
+        res = Bunch()
+        for prop, alias in self._requests.items():
+            if alias is False or alias == WARN:
+                continue
+            elif alias is True and prop in args:
+                res[prop] = args[prop]
+            elif alias is None and prop in args:
+                unrequested[prop] = args[prop]
+            elif alias in args:
+                res[prop] = args[alias]
+        if unrequested:
+            raise UnsetMetadataPassedError(
+                message=(
+                    f"[{', '.join([key for key in unrequested])}] are passed but are"
+                    " not explicitly set as requested or not for"
+                    f" {self.owner}.{self.method}"
+                ),
+                unrequested_params=unrequested,
+                routed_params=res,
+            )
+        return res
+
+    def _consumes(self, params):
+        """Check whether the given parameters are consumed by this method.
+
+        Parameters
+        ----------
+        params : iterable of str
+            An iterable of parameters to check.
+
+        Returns
+        -------
+        consumed : set of str
+            A set of parameters which are consumed by this method.
+        """
+        params = set(params)
+        res = set()
+        for prop, alias in self._requests.items():
+            if alias is True and prop in params:
+                res.add(prop)
+            elif isinstance(alias, str) and alias in params:
+                res.add(alias)
+        return res
+
+    def _serialize(self):
+        """Serialize the object.
+
+        Returns
+        -------
+        obj : dict
+            A serialized version of the instance in the form of a dictionary.
+        """
+        return self._requests
+
+    def __repr__(self):
+        return str(self._serialize())
+
+    def __str__(self):
+        return str(repr(self))
+
+
+class MetadataRequest:
+    """Contains the metadata request info of a consumer.
+
+    Instances of `MethodMetadataRequest` are used in this class for each
+    available method under `metadatarequest.{method}`.
+
+    Consumer-only classes such as simple estimators return a serialized
+    version of this class as the output of `get_metadata_routing()`.
+
+    .. versionadded:: 1.3
+
+    Parameters
+    ----------
+    owner : str
+        The name of the object to which these requests belong.
+    """
+
+    # this is here for us to use this attribute's value instead of doing
+    # `isinstance` in our checks, so that we avoid issues when people vendor
+    # this file instead of using it directly from scikit-learn.
+    _type = "metadata_request"
+
+    def __init__(self, owner):
+        self.owner = owner
+        for method in SIMPLE_METHODS:
+            setattr(
+                self,
+                method,
+                MethodMetadataRequest(owner=owner, method=method),
+            )
+
+    def consumes(self, method, params):
+        """Check whether the given parameters are consumed by the given method.
+
+        .. versionadded:: 1.4
+
+        Parameters
+        ----------
+        method : str
+            The name of the method to check.
+
+        params : iterable of str
+            An iterable of parameters to check.
+
+        Returns
+        -------
+        consumed : set of str
+            A set of parameters which are consumed by the given method.
+        """
+        return getattr(self, method)._consumes(params=params)
+
+    def __getattr__(self, name):
+        # Called when the default attribute access fails with an AttributeError
+        # (either __getattribute__() raises an AttributeError because name is
+        # not an instance attribute or an attribute in the class tree for self;
+        # or __get__() of a name property raises AttributeError). This method
+        # should either return the (computed) attribute value or raise an
+        # AttributeError exception.
+        # https://docs.python.org/3/reference/datamodel.html#object.__getattr__
+        if name not in COMPOSITE_METHODS:
+            raise AttributeError(
+                f"'{self.__class__.__name__}' object has no attribute '{name}'"
+            )
+
+        requests = {}
+        for method in COMPOSITE_METHODS[name]:
+            mmr = getattr(self, method)
+            existing = set(requests.keys())
+            upcoming = set(mmr.requests.keys())
+            common = existing & upcoming
+            conflicts = [key for key in common if requests[key] != mmr._requests[key]]
+            if conflicts:
+                raise ValueError(
+                    f"Conflicting metadata requests for {', '.join(conflicts)} while"
+                    f" composing the requests for {name}. Metadata with the same name"
+                    f" for methods {', '.join(COMPOSITE_METHODS[name])} should have the"
+                    " same request value."
+                )
+            requests.update(mmr._requests)
+        return MethodMetadataRequest(owner=self.owner, method=name, requests=requests)
+
+    def _get_param_names(self, method, return_alias, ignore_self_request=None):
+        """Get names of all metadata that can be consumed or routed by specified \
+            method.
+
+        This method returns the names of all metadata, even the ``False``
+        ones.
+
+        Parameters
+        ----------
+        method : str
+            The name of the method for which metadata names are requested.
+
+        return_alias : bool
+            Controls whether original or aliased names should be returned. If
+            ``False``, aliases are ignored and original names are returned.
+
+        ignore_self_request : bool
+            Ignored. Present for API compatibility.
+
+        Returns
+        -------
+        names : set of str
+            A set of strings with the names of all parameters.
+        """
+        return getattr(self, method)._get_param_names(return_alias=return_alias)
+
+    def _route_params(self, *, method, params):
+        """Prepare the given parameters to be passed to the method.
+
+        The output of this method can be used directly as the input to the
+        corresponding method as extra keyword arguments to pass metadata.
+
+        Parameters
+        -----

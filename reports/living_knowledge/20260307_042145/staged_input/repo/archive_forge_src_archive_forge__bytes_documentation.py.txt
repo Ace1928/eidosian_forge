@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_bytes_documentation.py
+KIND: code
+
+import sys
+Produce a native string (i.e. different on python 2 and 3)

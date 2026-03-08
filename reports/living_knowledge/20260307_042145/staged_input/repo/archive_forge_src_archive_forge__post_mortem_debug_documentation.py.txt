@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_post_mortem_debug_documentation.py
+KIND: code
+
+import functools
+import traceback
+Constructor.
+
+        :param tb: The start of the traceback chain to filter.
+        :param filtered_traceback: The first traceback of a trailing
+               chain that is to be filtered.

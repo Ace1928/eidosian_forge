@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/chat_history.py
+KIND: code
+
+from langchain_core.chat_history import BaseChatMessageHistory
+
+__all__ = ["BaseChatMessageHistory"]

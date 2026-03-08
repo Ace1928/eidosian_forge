@@ -1,0 +1,17 @@
+SOURCE_PATH: archive_forge/src/archive_forge/auto_control_deps_utils_documentation.py
+KIND: code
+
+from tensorflow.python.framework import dtypes
+from tensorflow.python.util import object_identity
+Returns the index of `handle` in `op.inputs`.
+
+  Args:
+    op: Operation.
+    handle: Resource handle.
+
+  Returns:
+    Index in `op.inputs` receiving the resource `handle`.
+
+  Raises:
+    ValueError: If handle and its replicated input are both not found in
+    `op.inputs`.

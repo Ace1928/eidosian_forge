@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/ImageWin_documentation.py
+KIND: code
+
+from __future__ import annotations
+from . import Image
+
+        Copy display memory contents to bytes object.
+
+        :return: A bytes object containing display data.

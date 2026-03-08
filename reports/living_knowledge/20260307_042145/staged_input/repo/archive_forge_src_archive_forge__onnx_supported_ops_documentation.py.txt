@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_onnx_supported_ops_documentation.py
+KIND: code
+
+import inspect
+from typing import Dict, List, Union
+from torch import _C
+from torch.onnx import _constants
+from torch.onnx._internal import registration
+Returns schemas for all onnx supported ops.

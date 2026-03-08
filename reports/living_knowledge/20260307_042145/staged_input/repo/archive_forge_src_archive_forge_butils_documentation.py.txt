@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/butils_documentation.py
+KIND: code
+
+from .. import get_info
+Prints title string with git hash if possible, and underline

@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/autolink_documentation.py
+KIND: code
+
+import re
+import markdown
+import xml.etree.ElementTree as etree
+
+    An extension that turns URLs into links.

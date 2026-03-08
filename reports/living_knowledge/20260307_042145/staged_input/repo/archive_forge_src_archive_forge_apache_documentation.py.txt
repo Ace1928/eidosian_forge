@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/apache_documentation.py
+KIND: code
+
+from boto.pyami.installers.ubuntu.installer import Installer
+
+    Install apache2, mod_python, and libapache2-svn

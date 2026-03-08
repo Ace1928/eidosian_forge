@@ -1,0 +1,453 @@
+SOURCE_PATH: archive_forge/src/archive_forge/ROI.py
+KIND: code
+
+"""
+ROI.py -  Interactive graphics items for GraphicsView (ROI widgets)
+Copyright 2010  Luke Campagnola
+Distributed under MIT/X11 license. See license.txt for more information.
+
+Implements a series of graphics items which display movable/scalable/rotatable shapes
+for use as region-of-interest markers. ROI class automatically handles extraction 
+of array data from ImageItems.
+
+The ROI class is meant to serve as the base for more specific types; see several examples
+of how to build an ROI at the bottom of the file.
+"""
+
+import sys
+from math import atan2, cos, degrees, hypot, sin
+
+import numpy as np
+
+from .. import functions as fn
+
+#from numpy.linalg import norm
+from ..Point import Point
+from ..Qt import QtCore, QtGui, QtWidgets
+from ..SRTTransform import SRTTransform
+from .GraphicsObject import GraphicsObject
+from .UIGraphicsItem import UIGraphicsItem
+
+translate = QtCore.QCoreApplication.translate
+
+__all__ = [
+    'ROI', 
+    'TestROI', 'RectROI', 'EllipseROI', 'CircleROI', 
+    'LineROI', 'MultiLineROI', 'MultiRectROI', 'LineSegmentROI', 'PolyLineROI', 
+    'CrosshairROI','TriangleROI'
+]
+
+
+def rectStr(r):
+    return "[%f, %f] + [%f, %f]" % (r.x(), r.y(), r.width(), r.height())
+
+class ROI(GraphicsObject):
+    """
+    Generic region-of-interest widget.
+    
+    Can be used for implementing many types of selection box with 
+    rotate/translate/scale handles.
+    ROIs can be customized to have a variety of shapes (by subclassing or using
+    any of the built-in subclasses) and any combination of draggable handles
+    that allow the user to manipulate the ROI.
+
+    Default mouse interaction:
+
+      * Left drag moves the ROI
+      * Left drag + Ctrl moves the ROI with position snapping
+      * Left drag + Alt rotates the ROI
+      * Left drag + Alt + Ctrl rotates the ROI with angle snapping
+      * Left drag + Shift scales the ROI
+      * Left drag + Shift + Ctrl scales the ROI with size snapping
+
+    In addition to the above interaction modes, it is possible to attach any
+    number of handles to the ROI that can be dragged to change the ROI in
+    various ways (see the ROI.add____Handle methods).
+
+
+    ================ ===========================================================
+    **Arguments**
+    pos              (length-2 sequence) Indicates the position of the ROI's 
+                     origin. For most ROIs, this is the lower-left corner of
+                     its bounding rectangle.
+    size             (length-2 sequence) Indicates the width and height of the 
+                     ROI.
+    angle            (float) The rotation of the ROI in degrees. Default is 0.
+    invertible       (bool) If True, the user may resize the ROI to have 
+                     negative width or height (assuming the ROI has scale
+                     handles). Default is False.
+    maxBounds        (QRect, QRectF, or None) Specifies boundaries that the ROI 
+                     cannot be dragged outside of by the user. Default is None.
+    snapSize         (float) The spacing of snap positions used when *scaleSnap*
+                     or *translateSnap* are enabled. Default is 1.0.
+    scaleSnap        (bool) If True, the width and height of the ROI are forced
+                     to be integer multiples of *snapSize* when being resized
+                     by the user. Default is False.
+    translateSnap    (bool) If True, the x and y positions of the ROI are forced
+                     to be integer multiples of *snapSize* when being resized
+                     by the user. Default is False.
+    rotateSnap       (bool) If True, the ROI angle is forced to a multiple of 
+                     the ROI's snap angle (default is 15 degrees) when rotated
+                     by the user. Default is False.
+    parent           (QGraphicsItem) The graphics item parent of this ROI. It
+                     is generally not necessary to specify the parent.
+    pen              (QPen or argument to pg.mkPen) The pen to use when drawing
+                     the shape of the ROI.
+    hoverPen         (QPen or argument to mkPen) The pen to use while the
+                     mouse is hovering over the ROI shape.
+    handlePen        (QPen or argument to mkPen) The pen to use when drawing
+                     the ROI handles.
+    handleHoverPen   (QPen or argument to mkPen) The pen to use while the mouse
+                     is hovering over an ROI handle.
+    movable          (bool) If True, the ROI can be moved by dragging anywhere 
+                     inside the ROI. Default is True.
+    rotatable        (bool) If True, the ROI can be rotated by mouse drag + ALT
+    resizable        (bool) If True, the ROI can be resized by mouse drag + 
+                     SHIFT
+    removable        (bool) If True, the ROI will be given a context menu with
+                     an option to remove the ROI. The ROI emits
+                     sigRemoveRequested when this menu action is selected.
+                     Default is False.
+    ================ ===========================================================
+    
+    
+    
+    ======================= ====================================================
+    **Signals**
+    sigRegionChangeFinished Emitted when the user stops dragging the ROI (or
+                            one of its handles) or if the ROI is changed
+                            programatically.
+    sigRegionChangeStarted  Emitted when the user starts dragging the ROI (or
+                            one of its handles).
+    sigRegionChanged        Emitted any time the position of the ROI changes,
+                            including while it is being dragged by the user.
+    sigHoverEvent           Emitted when the mouse hovers over the ROI.
+    sigClicked              Emitted when the user clicks on the ROI.
+                            Note that clicking is disabled by default to prevent
+                            stealing clicks from objects behind the ROI. To 
+                            enable clicking, call 
+                            roi.setAcceptedMouseButtons(QtCore.Qt.MouseButton.LeftButton). 
+                            See QtWidgets.QGraphicsItem documentation for more 
+                            details.
+    sigRemoveRequested      Emitted when the user selects 'remove' from the 
+                            ROI's context menu (if available).
+    ======================= ====================================================
+    """
+    
+    sigRegionChangeFinished = QtCore.Signal(object)
+    sigRegionChangeStarted = QtCore.Signal(object)
+    sigRegionChanged = QtCore.Signal(object)
+    sigHoverEvent = QtCore.Signal(object)
+    sigClicked = QtCore.Signal(object, object)
+    sigRemoveRequested = QtCore.Signal(object)
+    
+    def __init__(self, pos, size=Point(1, 1), angle=0.0, invertible=False,
+                 maxBounds=None, snapSize=1.0, scaleSnap=False,
+                 translateSnap=False, rotateSnap=False, parent=None, pen=None,
+                 hoverPen=None, handlePen=None, handleHoverPen=None,
+                 movable=True, rotatable=True, resizable=True, removable=False,
+                 aspectLocked=False):
+        GraphicsObject.__init__(self, parent)
+        self.setAcceptedMouseButtons(QtCore.Qt.MouseButton.NoButton)
+        pos = Point(pos)
+        size = Point(size)
+        self.aspectLocked = aspectLocked
+        self.translatable = movable
+        self.rotatable = rotatable
+        self.resizable = resizable
+        self.removable = removable
+        self.menu = None
+        
+        self.freeHandleMoved = False ## keep track of whether free handles have moved since last change signal was emitted.
+        self.mouseHovering = False
+
+        if pen is None:
+            pen = (255, 255, 255)
+        self.setPen(pen)
+        if hoverPen is None:
+            hoverPen = (255, 255, 0)
+        self.hoverPen = fn.mkPen(hoverPen)
+        if handlePen is None:
+            handlePen = (150, 255, 255)
+        self.handlePen = fn.mkPen(handlePen)
+        if handleHoverPen is None:
+            handleHoverPen = (255, 255, 0)
+        self.handleHoverPen = handleHoverPen
+
+        self.handles = []
+        self.state = {'pos': Point(0,0), 'size': Point(1,1), 'angle': 0}  ## angle is in degrees for ease of Qt integration
+        self.lastState = None
+        self.setPos(pos)
+        self.setAngle(angle)
+        self.setSize(size)
+        self.setZValue(10)
+        self.isMoving = False
+        
+        self.handleSize = 5
+        self.invertible = invertible
+        self.maxBounds = maxBounds
+        
+        self.snapSize = snapSize
+        self.translateSnap = translateSnap
+        self.rotateSnap = rotateSnap
+        self.rotateSnapAngle = 15.0
+        self.scaleSnap = scaleSnap
+        self.scaleSnapSize = snapSize
+
+        # Implement mouse handling in a separate class to allow easier customization
+        self.mouseDragHandler = MouseDragHandler(self)
+    
+    def getState(self):
+        return self.stateCopy()
+
+    def stateCopy(self):
+        sc = {}
+        sc['pos'] = Point(self.state['pos'])
+        sc['size'] = Point(self.state['size'])
+        sc['angle'] = self.state['angle']
+        return sc
+        
+    def saveState(self):
+        """Return the state of the widget in a format suitable for storing to 
+        disk. (Points are converted to tuple)
+        
+        Combined with setState(), this allows ROIs to be easily saved and 
+        restored."""
+        state = {}
+        state['pos'] = tuple(self.state['pos'])
+        state['size'] = tuple(self.state['size'])
+        state['angle'] = self.state['angle']
+        return state
+    
+    def setState(self, state, update=True):
+        """
+        Set the state of the ROI from a structure generated by saveState() or
+        getState().
+        """
+        self.setPos(state['pos'], update=False)
+        self.setSize(state['size'], update=False)
+        self.setAngle(state['angle'], update=update)
+    
+    def setZValue(self, z):
+        QtWidgets.QGraphicsItem.setZValue(self, z)
+        for h in self.handles:
+            h['item'].setZValue(z+1)
+        
+    def parentBounds(self):
+        """
+        Return the bounding rectangle of this ROI in the coordinate system
+        of its parent.        
+        """
+        return self.mapToParent(self.boundingRect()).boundingRect()
+
+    def setPen(self, *args, **kwargs):
+        """
+        Set the pen to use when drawing the ROI shape.
+        For arguments, see :func:`mkPen <pyqtgraph.mkPen>`.
+        """
+        self.pen = fn.mkPen(*args, **kwargs)
+        self.currentPen = self.pen
+        self.update()
+        
+    def size(self):
+        """Return the size (w,h) of the ROI."""
+        return self.getState()['size']
+        
+    def pos(self):
+        """Return the position (x,y) of the ROI's origin. 
+        For most ROIs, this will be the lower-left corner."""
+        return self.getState()['pos']
+        
+    def angle(self):
+        """Return the angle of the ROI in degrees."""
+        return self.getState()['angle']
+        
+    def setPos(self, pos, y=None, update=True, finish=True):
+        """Set the position of the ROI (in the parent's coordinate system).
+        
+        Accepts either separate (x, y) arguments or a single :class:`Point` or
+        ``QPointF`` argument. 
+        
+        By default, this method causes both ``sigRegionChanged`` and
+        ``sigRegionChangeFinished`` to be emitted. If *finish* is False, then
+        ``sigRegionChangeFinished`` will not be emitted. You can then use 
+        stateChangeFinished() to cause the signal to be emitted after a series
+        of state changes.
+        
+        If *update* is False, the state change will be remembered but not processed and no signals 
+        will be emitted. You can then use stateChanged() to complete the state change. This allows
+        multiple change functions to be called sequentially while minimizing processing overhead
+        and repeated signals. Setting ``update=False`` also forces ``finish=False``.
+        """
+        if update not in (True, False):
+            raise TypeError("update argument must be bool")
+        
+        if y is None:
+            pos = Point(pos)
+        else:
+            # avoid ambiguity where update is provided as a positional argument
+            if isinstance(y, bool):
+                raise TypeError("Positional arguments to setPos() must be numerical.")
+            pos = Point(pos, y)
+
+        self.state['pos'] = pos
+        QtWidgets.QGraphicsItem.setPos(self, pos)
+        if update:
+            self.stateChanged(finish=finish)
+        
+    def setSize(self, size, center=None, centerLocal=None, snap=False, update=True, finish=True):
+        """
+        Set the ROI's size.
+        
+        =============== ==========================================================================
+        **Arguments**
+        size            (Point | QPointF | sequence) The final size of the ROI
+        center          (None | Point) Optional center point around which the ROI is scaled,
+                        expressed as [0-1, 0-1] over the size of the ROI.
+        centerLocal     (None | Point) Same as *center*, but the position is expressed in the
+                        local coordinate system of the ROI
+        snap            (bool) If True, the final size is snapped to the nearest increment (see
+                        ROI.scaleSnapSize)
+        update          (bool) See setPos()
+        finish          (bool) See setPos()
+        =============== ==========================================================================
+        """
+        if update not in (True, False):
+            raise TypeError("update argument must be bool")
+        size = Point(size)
+        if snap:
+            size[0] = round(size[0] / self.scaleSnapSize) * self.scaleSnapSize
+            size[1] = round(size[1] / self.scaleSnapSize) * self.scaleSnapSize
+
+        if centerLocal is not None:
+            oldSize = Point(self.state['size'])
+            oldSize[0] = 1 if oldSize[0] == 0 else oldSize[0]
+            oldSize[1] = 1 if oldSize[1] == 0 else oldSize[1]
+            center = Point(centerLocal) / oldSize
+
+        if center is not None:
+            center = Point(center)
+            c = self.mapToParent(Point(center) * self.state['size'])
+            c1 = self.mapToParent(Point(center) * size)
+            newPos = self.state['pos'] + c - c1
+            self.setPos(newPos, update=False, finish=False)
+        
+        self.prepareGeometryChange()
+        self.state['size'] = size
+        if update:
+            self.stateChanged(finish=finish)
+
+    def setAngle(self, angle, center=None, centerLocal=None, snap=False, update=True, finish=True):
+        """
+        Set the ROI's rotation angle.
+        
+        =============== ==========================================================================
+        **Arguments**
+        angle           (float) The final ROI angle in degrees
+        center          (None | Point) Optional center point around which the ROI is rotated,
+                        expressed as [0-1, 0-1] over the size of the ROI.
+        centerLocal     (None | Point) Same as *center*, but the position is expressed in the
+                        local coordinate system of the ROI
+        snap            (bool) If True, the final ROI angle is snapped to the nearest increment
+                        (default is 15 degrees; see ROI.rotateSnapAngle)
+        update          (bool) See setPos()
+        finish          (bool) See setPos()
+        =============== ==========================================================================
+        """
+        if update not in (True, False):
+            raise TypeError("update argument must be bool")
+
+        if snap is True:
+            angle = round(angle / self.rotateSnapAngle) * self.rotateSnapAngle
+        
+        self.state['angle'] = angle
+        tr = QtGui.QTransform()  # note: only rotation is contained in the transform
+        tr.rotate(angle)
+        if center is not None:
+            centerLocal = Point(center) * self.state['size']
+        if centerLocal is not None:
+            centerLocal = Point(centerLocal)
+            # rotate to new angle, keeping a specific point anchored as the center of rotation
+            cc = self.mapToParent(centerLocal) - (tr.map(centerLocal) + self.state['pos'])
+            self.translate(cc, update=False)
+
+        self.setTransform(tr)
+        if update:
+            self.stateChanged(finish=finish)
+        
+    def scale(self, s, center=None, centerLocal=None, snap=False, update=True, finish=True):
+        """
+        Resize the ROI by scaling relative to *center*.
+        See setPos() for an explanation of the *update* and *finish* arguments.
+        """
+        newSize = self.state['size'] * s
+        self.setSize(newSize, center=center, centerLocal=centerLocal, snap=snap, update=update, finish=finish)
+   
+    def translate(self, *args, **kargs):
+        """
+        Move the ROI to a new position.
+        Accepts either (x, y, snap) or ([x,y], snap) as arguments
+        If the ROI is bounded and the move would exceed boundaries, then the ROI
+        is moved to the nearest acceptable position instead.
+        
+        *snap* can be:
+        
+        =============== ==========================================================================
+        None (default)  use self.translateSnap and self.snapSize to determine whether/how to snap
+        False           do not snap
+        Point(w,h)      snap to rectangular grid with spacing (w,h)
+        True            snap using self.snapSize (and ignoring self.translateSnap)
+        =============== ==========================================================================
+           
+        Also accepts *update* and *finish* arguments (see setPos() for a description of these).
+        """
+
+        if len(args) == 1:
+            pt = args[0]
+        else:
+            pt = args
+            
+        newState = self.stateCopy()
+        newState['pos'] = newState['pos'] + pt
+        
+        snap = kargs.get('snap', None)
+        if snap is None:
+            snap = self.translateSnap
+        if snap is not False:
+            newState['pos'] = self.getSnapPosition(newState['pos'], snap=snap)
+        
+        if self.maxBounds is not None:
+            r = self.stateRect(newState)
+            d = Point(0,0)
+            if self.maxBounds.left() > r.left():
+                d[0] = self.maxBounds.left() - r.left()
+            elif self.maxBounds.right() < r.right():
+                d[0] = self.maxBounds.right() - r.right()
+            if self.maxBounds.top() > r.top():
+                d[1] = self.maxBounds.top() - r.top()
+            elif self.maxBounds.bottom() < r.bottom():
+                d[1] = self.maxBounds.bottom() - r.bottom()
+            newState['pos'] += d
+        
+        update = kargs.get('update', True)
+        finish = kargs.get('finish', True)
+        self.setPos(newState['pos'], update=update, finish=finish)
+
+    def rotate(self, angle, center=None, snap=False, update=True, finish=True):
+        """
+        Rotate the ROI by *angle* degrees. 
+        
+        =============== ==========================================================================
+        **Arguments**
+        angle           (float) The angle in degrees to rotate
+        center          (None | Point) Optional center point around which the ROI is rotated, in
+                        the local coordinate system of the ROI
+        snap            (bool) If True, the final ROI angle is snapped to the nearest increment
+                        (default is 15 degrees; see ROI.rotateSnapAngle)
+        update          (bool) See setPos()
+        finish          (bool) See setPos()
+        =============== ==========================================================================
+        """
+        self.setAngle(self.angle()+angle, center=center, snap=snap, update=update, finish=finish)
+
+    def handleMoveStarted(self

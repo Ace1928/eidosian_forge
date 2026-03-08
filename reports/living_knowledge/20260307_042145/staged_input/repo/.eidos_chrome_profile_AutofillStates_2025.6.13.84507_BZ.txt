@@ -1,0 +1,10 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/BZ
+KIND: config
+
+BZ
+belizebelize district
+cayocayo district
+corozalcorozal district#
+orange walkorange walk district#
+stann creekstann creek district
+toledotoledo district

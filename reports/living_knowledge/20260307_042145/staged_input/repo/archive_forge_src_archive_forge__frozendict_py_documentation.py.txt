@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_frozendict_py_documentation.py
+KIND: code
+
+from copy import deepcopy
+
+        Support for `pickle`.

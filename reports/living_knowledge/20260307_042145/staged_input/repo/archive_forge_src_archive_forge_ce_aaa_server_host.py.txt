@@ -1,0 +1,622 @@
+SOURCE_PATH: archive_forge/src/archive_forge/ce_aaa_server_host.py
+KIND: code
+
+#!/usr/bin/python
+#
+# This file is part of Ansible
+#
+# Ansible is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Ansible is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Ansible.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+from __future__ import (absolute_import, division, print_function)
+__metaclass__ = type
+
+DOCUMENTATION = '''
+---
+module: ce_aaa_server_host
+short_description: Manages AAA server host configuration on HUAWEI CloudEngine switches.
+description:
+    - Manages AAA server host configuration on HUAWEI CloudEngine switches.
+author:
+    - wangdezhuang (@QijunPan)
+notes:
+  - This module requires the netconf system service be enabled on the remote device being managed.
+  - Recommended connection is C(netconf).
+  - This module also works with C(local) connections for legacy playbooks.
+options:
+    state:
+        description:
+            - Specify desired state of the resource.
+        default: present
+        choices: ['present', 'absent']
+    local_user_name:
+        description:
+            - Name of a local user.
+              The value is a string of 1 to 253 characters.
+    local_password:
+        description:
+            - Login password of a user. The password can contain letters, numbers, and special characters.
+              The value is a string of 1 to 255 characters.
+    local_service_type:
+        description:
+            - The type of local user login through, such as ftp ssh snmp telnet.
+    local_ftp_dir:
+        description:
+            - FTP user directory.
+              The value is a string of 1 to 255 characters.
+    local_user_level:
+        description:
+            - Login level of a local user.
+              The value is an integer ranging from 0 to 15.
+    local_user_group:
+        description:
+            - Name of the user group where the user belongs. The user inherits all the rights of the user group.
+              The value is a string of 1 to 32 characters.
+    radius_group_name:
+        description:
+            - RADIUS server group's name.
+              The value is a string of 1 to 32 case-insensitive characters.
+    radius_server_type:
+        description:
+            - Type of Radius Server.
+        choices: ['Authentication', 'Accounting']
+    radius_server_ip:
+        description:
+            - IPv4 address of configured server.
+              The value is a string of 0 to 255 characters, in dotted decimal notation.
+    radius_server_ipv6:
+        description:
+            - IPv6 address of configured server.
+              The total length is 128 bits.
+    radius_server_port:
+        description:
+            - Configured server port for a particular server.
+              The value is an integer ranging from 1 to 65535.
+    radius_server_mode:
+        description:
+            - Configured primary or secondary server for a particular server.
+        choices: ['Secondary-server', 'Primary-server']
+    radius_vpn_name:
+        description:
+            - Set VPN instance.
+              The value is a string of 1 to 31 case-sensitive characters.
+    radius_server_name:
+        description:
+            - Hostname of configured server.
+              The value is a string of 0 to 255 case-sensitive characters.
+    hwtacacs_template:
+        description:
+            - Name of a HWTACACS template.
+              The value is a string of 1 to 32 case-insensitive characters.
+    hwtacacs_server_ip:
+        description:
+            - Server IPv4 address. Must be a valid unicast IP address.
+              The value is a string of 0 to 255 characters, in dotted decimal notation.
+    hwtacacs_server_ipv6:
+        description:
+            - Server IPv6 address. Must be a valid unicast IP address.
+              The total length is 128 bits.
+    hwtacacs_server_type:
+        description:
+            - Hwtacacs server type.
+        choices: ['Authentication', 'Authorization', 'Accounting', 'Common']
+    hwtacacs_is_secondary_server:
+        description:
+            - Whether the server is secondary.
+        type: bool
+        default: 'no'
+    hwtacacs_vpn_name:
+        description:
+            - VPN instance name.
+    hwtacacs_is_public_net:
+        description:
+            - Set the public-net.
+        type: bool
+        default: 'no'
+    hwtacacs_server_host_name:
+        description:
+            - Hwtacacs server host name.
+'''
+
+EXAMPLES = '''
+
+- name: AAA server host test
+  hosts: cloudengine
+  connection: local
+  gather_facts: false
+
+  tasks:
+
+  - name: "Config local user when use local scheme"
+    community.network.ce_aaa_server_host:
+      state: present
+      local_user_name: user1
+      local_password: 123456
+
+  - name: "Undo local user when use local scheme"
+    community.network.ce_aaa_server_host:
+      state: absent
+      local_user_name: user1
+      local_password: 123456
+
+  - name: "Config radius server ip"
+    community.network.ce_aaa_server_host:
+      state: present
+      radius_group_name: group1
+      radius_server_type: Authentication
+      radius_server_ip: 10.1.10.1
+      radius_server_port: 2000
+      radius_server_mode: Primary-server
+      radius_vpn_name: _public_
+
+  - name: "Undo radius server ip"
+    community.network.ce_aaa_server_host:
+      state: absent
+      radius_group_name: group1
+      radius_server_type: Authentication
+      radius_server_ip: 10.1.10.1
+      radius_server_port: 2000
+      radius_server_mode: Primary-server
+      radius_vpn_name: _public_
+
+  - name: "Config hwtacacs server ip"
+    community.network.ce_aaa_server_host:
+      state: present
+      hwtacacs_template: template
+      hwtacacs_server_ip: 10.10.10.10
+      hwtacacs_server_type: Authorization
+      hwtacacs_vpn_name: _public_
+
+  - name: "Undo hwtacacs server ip"
+    community.network.ce_aaa_server_host:
+      state: absent
+      hwtacacs_template: template
+      hwtacacs_server_ip: 10.10.10.10
+      hwtacacs_server_type: Authorization
+      hwtacacs_vpn_name: _public_
+'''
+
+RETURN = '''
+changed:
+    description: check to see if a change was made on the device
+    returned: always
+    type: bool
+    sample: true
+proposed:
+    description: k/v pairs of parameters passed into module
+    returned: always
+    type: dict
+    sample: {"hwtacacs_is_public_net": "false",
+             "hwtacacs_is_secondary_server": "false",
+             "hwtacacs_server_ip": "10.135.182.157",
+             "hwtacacs_server_type": "Authorization",
+             "hwtacacs_template": "wdz",
+             "hwtacacs_vpn_name": "_public_",
+             "local_password": "******",
+             "state": "present"}
+existing:
+    description: k/v pairs of existing aaa server host
+    returned: always
+    type: dict
+    sample: {"radius server ipv4": []}
+end_state:
+    description: k/v pairs of aaa params after module execution
+    returned: always
+    type: dict
+    sample: {"radius server ipv4": [
+             [
+                "10.1.10.1",
+                "Authentication",
+                "2000",
+                "Primary-server",
+                "_public_"
+              ]
+             ]}
+updates:
+    description: command sent to the device
+    returned: always
+    type: list
+    sample: ["hwtacacs server template test",
+             "hwtacacs server authorization 10.135.182.157 vpn-instance test_vpn public-net"]
+'''
+
+from xml.etree import ElementTree
+from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.community.network.plugins.module_utils.network.cloudengine.ce import get_nc_config, set_nc_config, ce_argument_spec, check_ip_addr
+
+SUCCESS = """success"""
+FAILED = """failed"""
+
+INVALID_USER_NAME_CHAR = [' ', '/', '\\',
+                          ':', '*', '?', '"', '\'', '<', '>', '%']
+
+# get local user name
+CE_GET_LOCAL_USER_INFO_HEADER = """
+    <filter type="subtree">
+      <aaa xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <lam>
+          <users>
+            <user>
+              <userName></userName>
+              <password></password>
+"""
+CE_GET_LOCAL_USER_INFO_TAIL = """
+            </user>
+          </users>
+        </lam>
+      </aaa>
+    </filter>
+"""
+
+# merge local user name
+CE_MERGE_LOCAL_USER_INFO_HEADER = """
+    <config>
+      <aaa xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <lam>
+          <users>
+            <user operation="merge">
+              <userName>%s</userName>
+"""
+CE_MERGE_LOCAL_USER_INFO_TAIL = """
+            </user>
+          </users>
+        </lam>
+      </aaa>
+    </config>
+"""
+
+# delete local user name
+CE_DELETE_LOCAL_USER_INFO_HEADER = """
+    <config>
+      <aaa xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <lam>
+          <users>
+            <user operation="delete">
+              <userName>%s</userName>
+"""
+CE_DELETE_LOCAL_USER_INFO_TAIL = """
+            </user>
+          </users>
+        </lam>
+      </aaa>
+    </config>
+"""
+
+# get radius server config ipv4
+CE_GET_RADIUS_SERVER_CFG_IPV4 = """
+    <filter type="subtree">
+      <radius xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <rdsTemplates>
+          <rdsTemplate>
+            <groupName>%s</groupName>
+            <rdsServerIPV4s>
+              <rdsServerIPV4>
+                <serverType></serverType>
+                <serverIPAddress></serverIPAddress>
+                <serverPort></serverPort>
+                <serverMode></serverMode>
+                <vpnName></vpnName>
+              </rdsServerIPV4>
+            </rdsServerIPV4s>
+          </rdsTemplate>
+        </rdsTemplates>
+      </radius>
+    </filter>
+"""
+
+# merge radius server config ipv4
+CE_MERGE_RADIUS_SERVER_CFG_IPV4 = """
+    <config>
+      <radius xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <rdsTemplates>
+          <rdsTemplate>
+            <groupName>%s</groupName>
+            <rdsServerIPV4s>
+              <rdsServerIPV4 operation="merge">
+                <serverType>%s</serverType>
+                <serverIPAddress>%s</serverIPAddress>
+                <serverPort>%s</serverPort>
+                <serverMode>%s</serverMode>
+                <vpnName>%s</vpnName>
+              </rdsServerIPV4>
+            </rdsServerIPV4s>
+          </rdsTemplate>
+        </rdsTemplates>
+      </radius>
+    </config>
+"""
+
+# delete radius server config ipv4
+CE_DELETE_RADIUS_SERVER_CFG_IPV4 = """
+    <config>
+      <radius xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <rdsTemplates>
+          <rdsTemplate>
+            <groupName>%s</groupName>
+            <rdsServerIPV4s>
+              <rdsServerIPV4 operation="delete">
+                <serverType>%s</serverType>
+                <serverIPAddress>%s</serverIPAddress>
+                <serverPort>%s</serverPort>
+                <serverMode>%s</serverMode>
+                <vpnName>%s</vpnName>
+              </rdsServerIPV4>
+            </rdsServerIPV4s>
+          </rdsTemplate>
+        </rdsTemplates>
+      </radius>
+    </config>
+"""
+
+# get radius server config ipv6
+CE_GET_RADIUS_SERVER_CFG_IPV6 = """
+    <filter type="subtree">
+      <radius xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <rdsTemplates>
+          <rdsTemplate>
+            <groupName>%s</groupName>
+            <rdsServerIPV6s>
+              <rdsServerIPV6>
+                <serverType></serverType>
+                <serverIPAddress></serverIPAddress>
+                <serverPort></serverPort>
+                <serverMode></serverMode>
+              </rdsServerIPV6>
+            </rdsServerIPV6s>
+          </rdsTemplate>
+        </rdsTemplates>
+      </radius>
+    </filter>
+"""
+
+# merge radius server config ipv6
+CE_MERGE_RADIUS_SERVER_CFG_IPV6 = """
+    <config>
+      <radius xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <rdsTemplates>
+          <rdsTemplate>
+            <groupName>%s</groupName>
+            <rdsServerIPV6s>
+              <rdsServerIPV6 operation="merge">
+                <serverType>%s</serverType>
+                <serverIPAddress>%s</serverIPAddress>
+                <serverPort>%s</serverPort>
+                <serverMode>%s</serverMode>
+              </rdsServerIPV6>
+            </rdsServerIPV6s>
+          </rdsTemplate>
+        </rdsTemplates>
+      </radius>
+    </config>
+"""
+
+# delete radius server config ipv6
+CE_DELETE_RADIUS_SERVER_CFG_IPV6 = """
+    <config>
+      <radius xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <rdsTemplates>
+          <rdsTemplate>
+            <groupName>%s</groupName>
+            <rdsServerIPV6s>
+              <rdsServerIPV6 operation="delete">
+                <serverType>%s</serverType>
+                <serverIPAddress>%s</serverIPAddress>
+                <serverPort>%s</serverPort>
+                <serverMode>%s</serverMode>
+              </rdsServerIPV6>
+            </rdsServerIPV6s>
+          </rdsTemplate>
+        </rdsTemplates>
+      </radius>
+    </config>
+"""
+
+# get radius server name
+CE_GET_RADIUS_SERVER_NAME = """
+    <filter type="subtree">
+      <radius xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <rdsTemplates>
+          <rdsTemplate>
+            <groupName>%s</groupName>
+            <rdsServerNames>
+              <rdsServerName>
+                <serverType></serverType>
+                <serverName></serverName>
+                <serverPort></serverPort>
+                <serverMode></serverMode>
+                <vpnName></vpnName>
+              </rdsServerName>
+            </rdsServerNames>
+          </rdsTemplate>
+        </rdsTemplates>
+      </radius>
+    </filter>
+"""
+
+# merge radius server name
+CE_MERGE_RADIUS_SERVER_NAME = """
+    <config>
+      <radius xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <rdsTemplates>
+          <rdsTemplate>
+            <groupName>%s</groupName>
+            <rdsServerNames>
+              <rdsServerName operation="merge">
+                <serverType>%s</serverType>
+                <serverName>%s</serverName>
+                <serverPort>%s</serverPort>
+                <serverMode>%s</serverMode>
+                <vpnName>%s</vpnName>
+              </rdsServerName>
+            </rdsServerNames>
+          </rdsTemplate>
+        </rdsTemplates>
+      </radius>
+    </config>
+"""
+
+# delete radius server name
+CE_DELETE_RADIUS_SERVER_NAME = """
+    <config>
+      <radius xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <rdsTemplates>
+          <rdsTemplate>
+            <groupName>%s</groupName>
+            <rdsServerNames>
+              <rdsServerName operation="delete">
+                <serverType>%s</serverType>
+                <serverName>%s</serverName>
+                <serverPort>%s</serverPort>
+                <serverMode>%s</serverMode>
+                <vpnName>%s</vpnName>
+              </rdsServerName>
+            </rdsServerNames>
+          </rdsTemplate>
+        </rdsTemplates>
+      </radius>
+    </config>
+"""
+
+# get hwtacacs server config ipv4
+CE_GET_HWTACACS_SERVER_CFG_IPV4 = """
+    <filter type="subtree">
+      <hwtacacs xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <hwTacTempCfgs>
+          <hwTacTempCfg>
+            <templateName>%s</templateName>
+            <hwTacSrvCfgs>
+              <hwTacSrvCfg>
+                <serverIpAddress></serverIpAddress>
+                <serverType></serverType>
+                <isSecondaryServer></isSecondaryServer>
+                <vpnName></vpnName>
+                <isPublicNet></isPublicNet>
+              </hwTacSrvCfg>
+            </hwTacSrvCfgs>
+          </hwTacTempCfg>
+        </hwTacTempCfgs>
+      </hwtacacs>
+    </filter>
+"""
+
+# merge hwtacacs server config ipv4
+CE_MERGE_HWTACACS_SERVER_CFG_IPV4 = """
+    <config>
+      <hwtacacs xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <hwTacTempCfgs>
+          <hwTacTempCfg>
+            <templateName>%s</templateName>
+            <hwTacSrvCfgs>
+              <hwTacSrvCfg operation="merge">
+                <serverIpAddress>%s</serverIpAddress>
+                <serverType>%s</serverType>
+                <isSecondaryServer>%s</isSecondaryServer>
+                <vpnName>%s</vpnName>
+                <isPublicNet>%s</isPublicNet>
+              </hwTacSrvCfg>
+            </hwTacSrvCfgs>
+          </hwTacTempCfg>
+        </hwTacTempCfgs>
+      </hwtacacs>
+    </config>
+"""
+
+# delete hwtacacs server config ipv4
+CE_DELETE_HWTACACS_SERVER_CFG_IPV4 = """
+    <config>
+      <hwtacacs xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <hwTacTempCfgs>
+          <hwTacTempCfg>
+            <templateName>%s</templateName>
+            <hwTacSrvCfgs>
+              <hwTacSrvCfg operation="delete">
+                <serverIpAddress>%s</serverIpAddress>
+                <serverType>%s</serverType>
+                <isSecondaryServer>%s</isSecondaryServer>
+                <vpnName>%s</vpnName>
+                <isPublicNet>%s</isPublicNet>
+              </hwTacSrvCfg>
+            </hwTacSrvCfgs>
+          </hwTacTempCfg>
+        </hwTacTempCfgs>
+      </hwtacacs>
+    </config>
+"""
+
+# get hwtacacs server config ipv6
+CE_GET_HWTACACS_SERVER_CFG_IPV6 = """
+    <filter type="subtree">
+      <hwtacacs xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <hwTacTempCfgs>
+          <hwTacTempCfg>
+            <templateName>%s</templateName>
+            <hwTacIpv6SrvCfgs>
+              <hwTacIpv6SrvCfg>
+                <serverIpAddress></serverIpAddress>
+                <serverType></serverType>
+                <isSecondaryServer></isSecondaryServer>
+                <vpnName></vpnName>
+              </hwTacIpv6SrvCfg>
+            </hwTacIpv6SrvCfgs>
+          </hwTacTempCfg>
+        </hwTacTempCfgs>
+      </hwtacacs>
+    </filter>
+"""
+
+# merge hwtacacs server config ipv6
+CE_MERGE_HWTACACS_SERVER_CFG_IPV6 = """
+    <config>
+      <hwtacacs xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <hwTacTempCfgs>
+          <hwTacTempCfg>
+            <templateName>%s</templateName>
+            <hwTacIpv6SrvCfgs>
+              <hwTacIpv6SrvCfg operation="merge">
+                <serverIpAddress>%s</serverIpAddress>
+                <serverType>%s</serverType>
+                <isSecondaryServer>%s</isSecondaryServer>
+                <vpnName>%s</vpnName>
+              </hwTacIpv6SrvCfg>
+            </hwTacIpv6SrvCfgs>
+          </hwTacTempCfg>
+        </hwTacTempCfgs>
+      </hwtacacs>
+    </config>
+"""
+
+# delete hwtacacs server config ipv6
+CE_DELETE_HWTACACS_SERVER_CFG_IPV6 = """
+    <config>
+      <hwtacacs xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+        <hwTacTempCfgs>
+          <hwTacTempCfg>
+            <templateName>%s</templateName>
+            <hwTacIpv6SrvCfgs>
+              <hwTacIpv6SrvCfg operation="delete">
+                <serverIpAddress>%s</serverIpAddress>
+                <serverType>%s</serverType>
+                <isSecondaryServer>%s</isSecondaryServer>
+                <vpnName>%s</vpnName>
+              </hwTacIpv6SrvCfg>
+            </hwTacIpv6SrvCfgs>
+          </hwTacTempCfg>
+        </hwTacTempCfgs>
+      </hwtacacs>
+    </config>
+"""
+
+# get hwtacacs host server config
+CE_GET_HWTACACS_HOST_SERVER_CFG = """
+    <filter type="

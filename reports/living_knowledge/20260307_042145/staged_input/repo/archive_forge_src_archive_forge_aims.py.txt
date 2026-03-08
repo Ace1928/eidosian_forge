@@ -1,0 +1,553 @@
+SOURCE_PATH: archive_forge/src/archive_forge/aims.py
+KIND: code
+
+"""This module defines an ASE interface to FHI-aims.
+
+Felix Hanke hanke@liverpool.ac.uk
+Jonas Bjork j.bjork@liverpool.ac.uk
+Simon P. Rittmeyer simon.rittmeyer@tum.de
+"""
+
+import os
+import warnings
+import time
+from typing import Optional
+import re
+
+import numpy as np
+
+from ase.units import Hartree
+from ase.io.aims import write_aims, read_aims
+from ase.data import atomic_numbers
+from ase.calculators.calculator import FileIOCalculator, Parameters, kpts2mp, \
+    ReadError, PropertyNotImplementedError
+
+
+def get_aims_version(string):
+    match = re.search(r'\s*FHI-aims version\s*:\s*(\S+)', string, re.M)
+    return match.group(1)
+
+
+float_keys = [
+    'charge',
+    'charge_mix_param',
+    'default_initial_moment',
+    'fixed_spin_moment',
+    'hartree_convergence_parameter',
+    'harmonic_length_scale',
+    'ini_linear_mix_param',
+    'ini_spin_mix_parma',
+    'initial_moment',
+    'MD_MB_init',
+    'MD_time_step',
+    'prec_mix_param',
+    'set_vacuum_level',
+    'spin_mix_param',
+]
+
+exp_keys = [
+    'basis_threshold',
+    'occupation_thr',
+    'sc_accuracy_eev',
+    'sc_accuracy_etot',
+    'sc_accuracy_forces',
+    'sc_accuracy_rho',
+    'sc_accuracy_stress',
+]
+
+string_keys = [
+    'communication_type',
+    'density_update_method',
+    'KS_method',
+    'mixer',
+    'output_level',
+    'packed_matrix_format',
+    'relax_unit_cell',
+    'restart',
+    'restart_read_only',
+    'restart_write_only',
+    'spin',
+    'total_energy_method',
+    'qpe_calc',
+    'xc',
+    'species_dir',
+    'run_command',
+    'plus_u',
+]
+
+int_keys = [
+    'empty_states',
+    'ini_linear_mixing',
+    'max_relaxation_steps',
+    'max_zeroin',
+    'multiplicity',
+    'n_max_pulay',
+    'sc_iter_limit',
+    'walltime',
+]
+
+bool_keys = [
+    'collect_eigenvectors',
+    'compute_forces',
+    'compute_kinetic',
+    'compute_numerical_stress',
+    'compute_analytical_stress',
+    'compute_heat_flux',
+    'distributed_spline_storage',
+    'evaluate_work_function',
+    'final_forces_cleaned',
+    'hessian_to_restart_geometry',
+    'load_balancing',
+    'MD_clean_rotations',
+    'MD_restart',
+    'override_illconditioning',
+    'override_relativity',
+    'restart_relaxations',
+    'squeeze_memory',
+    'symmetry_reduced_k_grid',
+    'use_density_matrix',
+    'use_dipole_correction',
+    'use_local_index',
+    'use_logsbt',
+    'vdw_correction_hirshfeld',
+]
+
+list_keys = [
+    'init_hess',
+    'k_grid',
+    'k_offset',
+    'MD_run',
+    'MD_schedule',
+    'MD_segment',
+    'mixer_threshold',
+    'occupation_type',
+    'output',
+    'cube',
+    'preconditioner',
+    'relativistic',
+    'relax_geometry',
+]
+
+
+class Aims(FileIOCalculator):
+    # was "command" before the refactoring to dynamical commands
+    __command_default = 'aims.version.serial.x > aims.out'
+    __outfilename_default = 'aims.out'
+
+    implemented_properties = ['energy', 'forces', 'stress', 'stresses',
+                              'dipole', 'magmom']
+
+    def __init__(self, restart=None,
+                 ignore_bad_restart_file=FileIOCalculator._deprecated,
+                 label=os.curdir, atoms=None, cubes=None, radmul=None,
+                 tier=None, aims_command=None,
+                 outfilename=None, **kwargs):
+        """Construct the FHI-aims calculator.
+
+        The keyword arguments (kwargs) can be one of the ASE standard
+        keywords: 'xc', 'kpts' and 'smearing' or any of FHI-aims'
+        native keywords.
+
+        .. note:: The behavior of command/run_command has been refactored ase X.X.X
+          It is now possible to independently specify the command to call
+          FHI-aims and the outputfile into which stdout is directed. In
+          general, we replaced
+
+              <run_command> = <aims_command> + " > " + <outfilename
+
+          That is,what used to be, e.g.,
+
+          >>> calc = Aims(run_command = "mpiexec -np 4 aims.x > aims.out")
+
+          can now be achieved with the two arguments
+
+          >>> calc = Aims(aims_command = "mpiexec -np 4 aims.x"
+          >>>             outfilename = "aims.out")
+
+          Backward compatibility, however, is provided. Also, the command
+          actually used to run FHI-aims is dynamically updated (i.e., the
+          "command" member variable). That is, e.g.,
+
+          >>> calc = Aims()
+          >>> print(calc.command)
+          aims.version.serial.x > aims.out
+          >>> calc.outfilename = "systemX.out"
+          >>> print(calc.command)
+          aims.version.serial.x > systemX.out
+          >>> calc.aims_command = "mpiexec -np 4 aims.version.scalapack.mpi.x"
+          >>> print(calc.command)
+          mpiexec -np 4 aims.version.scalapack.mpi > systemX.out
+
+
+        Arguments:
+
+        cubes: AimsCube object
+            Cube file specification.
+
+        radmul: int
+            Set radial multiplier for the basis set of all atomic species.
+
+        tier: int or array of ints
+            Set basis set tier for all atomic species.
+
+        aims_command : str
+            The full command as executed to run FHI-aims *without* the
+            redirection to stdout. For instance "mpiexec -np 4 aims.x". Note
+            that this is not the same as "command" or "run_command".
+            .. note:: Added in ase X.X.X
+
+        outfilename : str
+            The file (incl. path) to which stdout is redirected. Defaults to
+            "aims.out"
+            .. note:: Added in ase X.X.X
+
+        run_command : str, optional (default=None)
+            Same as "command", see FileIOCalculator documentation.
+            .. note:: Deprecated in ase X.X.X
+
+        outfilename : str, optional (default=aims.out)
+            File into which the stdout of the FHI aims run is piped into. Note
+            that this will be only of any effect, if the <run_command> does not
+            yet contain a '>' directive.
+        plus_u : dict
+            For DFT+U. Adds a +U term to one specific shell of the species.
+
+        kwargs : dict
+            Any of the base class arguments.
+
+        """
+        # yes, we pop the key and run it through our legacy filters
+        command = kwargs.pop('command', None)
+
+        # Check for the "run_command" (deprecated keyword)
+        # Consistently, the "command" argument should be used as suggested by the FileIO base class.
+        # For legacy reasons, however,  we here also accept "run_command"
+        run_command = kwargs.pop('run_command', None)
+        if run_command:
+            # this warning is debatable... in my eyes it is more consistent to
+            # use 'command'
+            warnings.warn('Argument "run_command" is deprecated and will be replaced with "command". Alternatively, use "aims_command" and "outfile". See documentation for more details.')
+            if command:
+                warnings.warn('Caution! Argument "command" overwrites "run_command.')
+            else:
+                command = run_command
+
+        # this is the fallback to the default value for empty init
+        if np.all([i is None for i in (command, aims_command, outfilename)]):
+            # we go for the FileIOCalculator default way (env variable) with the former default as fallback
+            command = os.environ.get('ASE_AIMS_COMMAND', Aims.__command_default)
+
+        # filter the command and set the member variables "aims_command" and "outfilename"
+        self.__init_command(command=command,
+                            aims_command=aims_command,
+                            outfilename=outfilename)
+
+        FileIOCalculator.__init__(self, restart, ignore_bad_restart_file,
+                                  label, atoms,
+                                  # well, this is not nice, but cannot work around it...
+                                  command=self.command,
+                                  **kwargs)
+
+        self.cubes = cubes
+        self.radmul = radmul
+        self.tier = tier
+
+    # handling the filtering for dynamical commands with properties,
+    @property  # type: ignore
+    def command(self) -> Optional[str]:  # type: ignore
+        return self.__command
+
+    @command.setter
+    def command(self, x):
+        self.__update_command(command=x)
+
+    @property
+    def aims_command(self):
+        return self.__aims_command
+
+    @aims_command.setter
+    def aims_command(self, x):
+        self.__update_command(aims_command=x)
+
+    @property
+    def outfilename(self):
+        return self.__outfilename
+
+    @outfilename.setter
+    def outfilename(self, x):
+        self.__update_command(outfilename=x)
+
+    def __init_command(self, command=None, aims_command=None,
+                       outfilename=None):
+        """
+        Create the private variables for which properties are defines and set
+        them accordingly.
+        """
+        # new class variables due to dynamical command handling
+        self.__aims_command = None
+        self.__outfilename = None
+        self.__command: Optional[str] = None
+
+        # filter the command and set the member variables "aims_command" and "outfilename"
+        self.__update_command(command=command,
+                              aims_command=aims_command,
+                              outfilename=outfilename)
+
+    # legacy handling of the (run_)command behavior a.k.a. a universal setter routine
+    def __update_command(self, command=None, aims_command=None,
+                         outfilename=None):
+        """
+        Abstracted generic setter routine for a dynamic behavior of "command".
+
+        The command that is actually called on the command line and enters the
+        base class, is <command> = <aims_command> > <outfilename>.
+
+        This new scheme has been introduced in order to conveniently change the
+        outfile name from the outside while automatically updating the
+        <command> member variable.
+
+        Obiously, changing <command> conflicts with changing <aims_command>
+        and/or <outfilename>, which thus raises a <ValueError>. This should,
+        however, not happen if this routine is not used outside the property
+        definitions.
+
+        Parameters
+        ----------
+        command : str
+            The full command as executed to run FHI-aims. This includes
+            any potential mpiexec call, as well as the redirection of stdout.
+            For instance "mpiexec -np 4 aims.x > aims.out".
+
+        aims_command : str
+            The full command as executed to run FHI-aims *without* the
+            redirection to stdout. For instance "mpiexec -np 4 aims.x"
+
+        outfilename : str
+            The file (incl. path) to which stdout is redirected.
+        """
+        # disentangle the command if given
+        if command:
+            if aims_command:
+                raise ValueError('Cannot specify "command" and "aims_command" simultaneously.')
+            if outfilename:
+                raise ValueError('Cannot specify "command" and "outfilename" simultaneously.')
+
+            # check if the redirection of stdout is included
+            command_spl = command.split('>')
+            if len(command_spl) > 1:
+                self.__aims_command = command_spl[0].strip()
+                self.__outfilename = command_spl[-1].strip()
+            else:
+                # this should not happen if used correctly
+                # but just to ensure legacy behavior of how "run_command" was handled
+                self.__aims_command = command.strip()
+                self.__outfilename = Aims.__outfilename_default
+        else:
+            if aims_command is not None:
+                self.__aims_command = aims_command
+            elif outfilename is None:
+                # nothing to do here, empty call with 3x None
+                return
+            if outfilename is not None:
+                self.__outfilename = outfilename
+            else:
+                # default to 'aims.out'
+                if not self.outfilename:
+                    self.__outfilename = Aims.__outfilename_default
+
+        self.__command = '{0:s} > {1:s}'.format(self.aims_command,
+                                                self.outfilename)
+
+    def set_atoms(self, atoms):
+        self.atoms = atoms
+
+    def set_label(self, label, update_outfilename=False):
+        msg = "Aims.set_label is not supported anymore, please use `directory`"
+        raise RuntimeError(msg)
+
+    @property
+    def out(self):
+        return os.path.join(self.label, self.outfilename)
+
+    def check_state(self, atoms):
+        system_changes = FileIOCalculator.check_state(self, atoms)
+        # Ignore unit cell for molecules:
+        if not atoms.pbc.any() and 'cell' in system_changes:
+            system_changes.remove('cell')
+        return system_changes
+
+    def set(self, **kwargs):
+        xc = kwargs.get('xc')
+        if xc:
+            kwargs['xc'] = {'LDA': 'pw-lda', 'PBE': 'pbe'}.get(xc, xc)
+
+        changed_parameters = FileIOCalculator.set(self, **kwargs)
+
+        if changed_parameters:
+            self.reset()
+        return changed_parameters
+
+    def write_input(self, atoms, properties=None, system_changes=None,
+                    ghosts=None, geo_constrain=None, scaled=None, velocities=None):
+        FileIOCalculator.write_input(self, atoms, properties, system_changes)
+
+        if geo_constrain is None:
+            geo_constrain = "relax_geometry" in self.parameters
+
+        if scaled is None:
+            scaled = np.all(atoms.get_pbc())
+        if velocities is None:
+            velocities = atoms.has('momenta')
+
+        have_lattice_vectors = atoms.pbc.any()
+        have_k_grid = ('k_grid' in self.parameters or
+                       'kpts' in self.parameters)
+        if have_lattice_vectors and not have_k_grid:
+            raise RuntimeError('Found lattice vectors but no k-grid!')
+        if not have_lattice_vectors and have_k_grid:
+            raise RuntimeError('Found k-grid but no lattice vectors!')
+        write_aims(
+            os.path.join(self.directory, 'geometry.in'),
+            atoms,
+            scaled,
+            geo_constrain,
+            velocities=velocities,
+            ghosts=ghosts
+        )
+        self.write_control(atoms, os.path.join(self.directory, 'control.in'))
+        self.write_species(atoms, os.path.join(self.directory, 'control.in'))
+        self.parameters.write(os.path.join(self.directory, 'parameters.ase'))
+
+    def prepare_input_files(self):
+        """
+        Wrapper function to prepare input filesi, e.g., to a run on a remote
+        machine
+        """
+        if self.atoms is None:
+            raise ValueError('No atoms object attached')
+        self.write_input(self.atoms)
+
+    def write_control(self, atoms, filename, debug=False):
+        lim = '#' + '='*79
+        output = open(filename, 'w')
+        output.write(lim + '\n')
+        for line in ['FHI-aims file: ' + filename,
+                     'Created using the Atomic Simulation Environment (ASE)',
+                     time.asctime(),
+                     ]:
+            output.write('# ' + line + '\n')
+        if debug:
+            output.write('# \n# List of parameters used to initialize the calculator:',)
+            for p, v in self.parameters.items():
+                s = '#     {} : {}\n'.format(p, v)
+                output.write(s)
+        output.write(lim + '\n')
+
+        assert not ('kpts' in self.parameters and 'k_grid' in self.parameters)
+        assert not ('smearing' in self.parameters and
+                    'occupation_type' in self.parameters)
+
+        for key, value in self.parameters.items():
+            if key == 'kpts':
+                mp = kpts2mp(atoms, self.parameters.kpts)
+                output.write('%-35s%d %d %d\n' % (('k_grid',) + tuple(mp)))
+                dk = 0.5 - 0.5 / np.array(mp)
+                output.write('%-35s%f %f %f\n' % (('k_offset',) + tuple(dk)))
+            elif key == 'species_dir' or key == 'run_command':
+                continue
+            elif key == 'plus_u':
+                continue
+            elif key == 'smearing':
+                name = self.parameters.smearing[0].lower()
+                if name == 'fermi-dirac':
+                    name = 'fermi'
+                width = self.parameters.smearing[1]
+                output.write('%-35s%s %f' % ('occupation_type', name, width))
+                if name == 'methfessel-paxton':
+                    order = self.parameters.smearing[2]
+                    output.write(' %d' % order)
+                output.write('\n' % order)
+            elif key == 'output':
+                for output_type in value:
+                    output.write('%-35s%s\n' % (key, output_type))
+            elif key == 'vdw_correction_hirshfeld' and value:
+                output.write('%-35s\n' % key)
+            elif key in bool_keys:
+                output.write('%-35s.%s.\n' % (key, repr(bool(value)).lower()))
+            elif isinstance(value, (tuple, list)):
+                output.write('%-35s%s\n' %
+                             (key, ' '.join(str(x) for x in value)))
+            elif isinstance(value, str):
+                output.write('%-35s%s\n' % (key, value))
+            else:
+                output.write('%-35s%r\n' % (key, value))
+        if self.cubes:
+            self.cubes.write(output)
+        output.write(lim + '\n\n')
+        output.close()
+
+    def read(self, label=None):
+        if label is None:
+            label = self.label
+        FileIOCalculator.read(self, label)
+        geometry = os.path.join(self.directory, 'geometry.in')
+        control = os.path.join(self.directory, 'control.in')
+
+        for filename in [geometry, control, self.out]:
+            if not os.path.isfile(filename):
+                raise ReadError
+
+        self.atoms, symmetry_block = read_aims(geometry, True)
+        self.parameters = Parameters.read(os.path.join(self.directory,
+                                                       'parameters.ase'))
+        if symmetry_block:
+            self.parameters["symmetry_block"] = symmetry_block
+        self.read_results()
+
+    def read_results(self):
+        converged = self.read_convergence()
+        if not converged:
+            os.system('tail -20 ' + self.out)
+            raise RuntimeError('FHI-aims did not converge!\n' +
+                               'The last lines of output are printed above ' +
+                               'and should give an indication why.')
+        self.read_energy()
+        if ('compute_forces' in self.parameters or
+            'sc_accuracy_forces' in self.parameters):
+            self.read_forces()
+
+        if ('sc_accuracy_stress' in self.parameters or
+                ('compute_numerical_stress' in self.parameters
+                 and self.parameters['compute_numerical_stress']) or
+                ('compute_analytical_stress' in self.parameters
+                 and self.parameters['compute_analytical_stress']) or
+                ('compute_heat_flux' in self.parameters
+                 and self.parameters['compute_heat_flux'])):
+            self.read_stress()
+
+        if ('compute_heat_flux' in self.parameters
+            and self.parameters['compute_heat_flux']):
+            self.read_stresses()
+
+        if ('dipole' in self.parameters.get('output', []) and
+            not self.atoms.pbc.any()):
+            self.read_dipole()
+
+    def write_species(self, atoms, filename):
+        self.ctrlname = filename
+        species_path = self.parameters.get('species_dir')
+        if species_path is None:
+            species_path = os.environ.get('AIMS_SPECIES_DIR')
+        if species_path is None:
+            raise RuntimeError(
+                'Missing species directory!  Use species_dir ' +
+                'parameter or set $AIMS_SPECIES_DIR environment variable.')
+        control = open(filename, 'a')
+        symbols = atoms.get_chemical_symbols()
+        symbols2 = []
+        for n, symbol in enumerate(symbols):
+            if symbol not in symbols2:
+                symbols2.append(symbol)
+        if self.tier is not None:
+            if isinstance(self.tier, int):
+                self.tierlist = np.ones(len(symbols2), 'int') * self.tier

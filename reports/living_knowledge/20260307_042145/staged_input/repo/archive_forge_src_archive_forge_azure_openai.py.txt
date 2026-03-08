@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/azure_openai.py
+KIND: code
+
+from langchain_community.embeddings.azure_openai import AzureOpenAIEmbeddings
+
+__all__ = ["AzureOpenAIEmbeddings"]

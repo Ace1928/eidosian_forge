@@ -1,0 +1,11 @@
+SOURCE_PATH: archive_forge/src/archive_forge/bufferproxy_test_documentation.py
+KIND: code
+
+import re
+import weakref
+import gc
+import ctypes
+import unittest
+import pygame
+from pygame.bufferproxy import BufferProxy
+refcount agnostic check that contained objects are freed

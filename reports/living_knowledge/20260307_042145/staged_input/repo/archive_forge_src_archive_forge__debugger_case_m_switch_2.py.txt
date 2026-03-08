@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_debugger_case_m_switch_2.py
+KIND: code
+
+class ClassToBeImported(object):
+    pass

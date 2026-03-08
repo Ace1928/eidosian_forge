@@ -1,0 +1,599 @@
+SOURCE_PATH: archive_forge/src/archive_forge/channel.py
+KIND: code
+
+"""AMQP Channels."""
+# Copyright (C) 2007-2008 Barry Pederson <bp@barryp.org>
+
+import logging
+import socket
+from collections import defaultdict
+from queue import Queue
+
+from vine import ensure_promise
+
+from . import spec
+from .abstract_channel import AbstractChannel
+from .exceptions import (ChannelError, ConsumerCancelled, MessageNacked,
+                         RecoverableChannelError, RecoverableConnectionError,
+                         error_for_code)
+from .protocol import queue_declare_ok_t
+
+__all__ = ('Channel',)
+
+AMQP_LOGGER = logging.getLogger('amqp')
+
+REJECTED_MESSAGE_WITHOUT_CALLBACK = """\
+Rejecting message with delivery tag %r for reason of having no callbacks.
+consumer_tag=%r exchange=%r routing_key=%r.\
+"""
+
+
+class VDeprecationWarning(DeprecationWarning):
+    pass
+
+
+class Channel(AbstractChannel):
+    """AMQP Channel.
+
+    The channel class provides methods for a client to establish a
+    virtual connection - a channel - to a server and for both peers to
+    operate the virtual connection thereafter.
+
+    GRAMMAR::
+
+        channel             = open-channel *use-channel close-channel
+        open-channel        = C:OPEN S:OPEN-OK
+        use-channel         = C:FLOW S:FLOW-OK
+                            / S:FLOW C:FLOW-OK
+                            / functional-class
+        close-channel       = C:CLOSE S:CLOSE-OK
+                            / S:CLOSE C:CLOSE-OK
+
+    Create a channel bound to a connection and using the specified
+    numeric channel_id, and open on the server.
+
+    The 'auto_decode' parameter (defaults to True), indicates
+    whether the library should attempt to decode the body
+    of Messages to a Unicode string if there's a 'content_encoding'
+    property for the message.  If there's no 'content_encoding'
+    property, or the decode raises an Exception, the message body
+    is left as plain bytes.
+    """
+
+    _METHODS = {
+        spec.method(spec.Channel.Close, 'BsBB'),
+        spec.method(spec.Channel.CloseOk),
+        spec.method(spec.Channel.Flow, 'b'),
+        spec.method(spec.Channel.FlowOk, 'b'),
+        spec.method(spec.Channel.OpenOk),
+        spec.method(spec.Exchange.DeclareOk),
+        spec.method(spec.Exchange.DeleteOk),
+        spec.method(spec.Exchange.BindOk),
+        spec.method(spec.Exchange.UnbindOk),
+        spec.method(spec.Queue.BindOk),
+        spec.method(spec.Queue.UnbindOk),
+        spec.method(spec.Queue.DeclareOk, 'sll'),
+        spec.method(spec.Queue.DeleteOk, 'l'),
+        spec.method(spec.Queue.PurgeOk, 'l'),
+        spec.method(spec.Basic.Cancel, 's'),
+        spec.method(spec.Basic.CancelOk, 's'),
+        spec.method(spec.Basic.ConsumeOk, 's'),
+        spec.method(spec.Basic.Deliver, 'sLbss', content=True),
+        spec.method(spec.Basic.GetEmpty, 's'),
+        spec.method(spec.Basic.GetOk, 'Lbssl', content=True),
+        spec.method(spec.Basic.QosOk),
+        spec.method(spec.Basic.RecoverOk),
+        spec.method(spec.Basic.Return, 'Bsss', content=True),
+        spec.method(spec.Tx.CommitOk),
+        spec.method(spec.Tx.RollbackOk),
+        spec.method(spec.Tx.SelectOk),
+        spec.method(spec.Confirm.SelectOk),
+        spec.method(spec.Basic.Ack, 'Lb'),
+        spec.method(spec.Basic.Nack, 'Lb'),
+    }
+    _METHODS = {m.method_sig: m for m in _METHODS}
+
+    _ALLOWED_METHODS_WHEN_CLOSING = (
+        spec.Channel.Close, spec.Channel.CloseOk
+    )
+
+    def __init__(self, connection,
+                 channel_id=None, auto_decode=True, on_open=None):
+        if channel_id:
+            connection._claim_channel_id(channel_id)
+        else:
+            channel_id = connection._get_free_channel_id()
+
+        AMQP_LOGGER.debug('using channel_id: %s', channel_id)
+
+        super().__init__(connection, channel_id)
+
+        self.is_open = False
+        self.active = True  # Flow control
+        self.returned_messages = Queue()
+        self.callbacks = {}
+        self.cancel_callbacks = {}
+        self.auto_decode = auto_decode
+        self.events = defaultdict(set)
+        self.no_ack_consumers = set()
+
+        self.on_open = ensure_promise(on_open)
+
+        # set first time basic_publish_confirm is called
+        # and publisher confirms are enabled for this channel.
+        self._confirm_selected = False
+        if self.connection.confirm_publish:
+            self.basic_publish = self.basic_publish_confirm
+
+        __slots__ = (
+        "is_open",
+        "active",
+        "returned_messages",
+        "callbacks",
+        "cancel_callbacks",
+        "events",
+        "no_ack_consumers",
+        "on_open",
+        "_confirm_selected",
+        )
+
+    def then(self, on_success, on_error=None):
+        return self.on_open.then(on_success, on_error)
+
+    def _setup_listeners(self):
+        self._callbacks.update({
+            spec.Channel.Close: self._on_close,
+            spec.Channel.CloseOk: self._on_close_ok,
+            spec.Channel.Flow: self._on_flow,
+            spec.Channel.OpenOk: self._on_open_ok,
+            spec.Basic.Cancel: self._on_basic_cancel,
+            spec.Basic.CancelOk: self._on_basic_cancel_ok,
+            spec.Basic.Deliver: self._on_basic_deliver,
+            spec.Basic.Return: self._on_basic_return,
+            spec.Basic.Ack: self._on_basic_ack,
+            spec.Basic.Nack: self._on_basic_nack,
+        })
+
+    def collect(self):
+        """Tear down this object.
+
+        Best called after we've agreed to close with the server.
+        """
+        AMQP_LOGGER.debug('Closed channel #%s', self.channel_id)
+        self.is_open = False
+        channel_id, self.channel_id = self.channel_id, None
+        connection, self.connection = self.connection, None
+        if connection:
+            connection.channels.pop(channel_id, None)
+            try:
+                connection._used_channel_ids.remove(channel_id)
+            except ValueError:
+                # channel id already removed
+                pass
+        self.callbacks.clear()
+        self.cancel_callbacks.clear()
+        self.events.clear()
+        self.no_ack_consumers.clear()
+
+    def _do_revive(self):
+        self.is_open = False
+        self.open()
+
+    def close(self, reply_code=0, reply_text='', method_sig=(0, 0),
+              argsig='BsBB'):
+        """Request a channel close.
+
+        This method indicates that the sender wants to close the
+        channel. This may be due to internal conditions (e.g. a forced
+        shut-down) or due to an error handling a specific method, i.e.
+        an exception.  When a close is due to an exception, the sender
+        provides the class and method id of the method which caused
+        the exception.
+
+        RULE:
+
+            After sending this method any received method except
+            Channel.Close-OK MUST be discarded.
+
+        RULE:
+
+            The peer sending this method MAY use a counter or timeout
+            to detect failure of the other peer to respond correctly
+            with Channel.Close-OK..
+
+        PARAMETERS:
+            reply_code: short
+
+                The reply code. The AMQ reply codes are defined in AMQ
+                RFC 011.
+
+            reply_text: shortstr
+
+                The localised reply text.  This text can be logged as an
+                aid to resolving issues.
+
+            class_id: short
+
+                failing method class
+
+                When the close is provoked by a method exception, this
+                is the class of the method.
+
+            method_id: short
+
+                failing method ID
+
+                When the close is provoked by a method exception, this
+                is the ID of the method.
+        """
+        try:
+            if self.connection is None:
+                return
+            if self.connection.channels is None:
+                return
+            if not self.is_open:
+                return
+
+            self.is_closing = True
+            return self.send_method(
+                spec.Channel.Close, argsig,
+                (reply_code, reply_text, method_sig[0], method_sig[1]),
+                wait=spec.Channel.CloseOk,
+            )
+        finally:
+            self.is_closing = False
+            self.connection = None
+
+    def _on_close(self, reply_code, reply_text, class_id, method_id):
+        """Request a channel close.
+
+        This method indicates that the sender wants to close the
+        channel. This may be due to internal conditions (e.g. a forced
+        shut-down) or due to an error handling a specific method, i.e.
+        an exception.  When a close is due to an exception, the sender
+        provides the class and method id of the method which caused
+        the exception.
+
+        RULE:
+
+            After sending this method any received method except
+            Channel.Close-OK MUST be discarded.
+
+        RULE:
+
+            The peer sending this method MAY use a counter or timeout
+            to detect failure of the other peer to respond correctly
+            with Channel.Close-OK..
+
+        PARAMETERS:
+            reply_code: short
+
+                The reply code. The AMQ reply codes are defined in AMQ
+                RFC 011.
+
+            reply_text: shortstr
+
+                The localised reply text.  This text can be logged as an
+                aid to resolving issues.
+
+            class_id: short
+
+                failing method class
+
+                When the close is provoked by a method exception, this
+                is the class of the method.
+
+            method_id: short
+
+                failing method ID
+
+                When the close is provoked by a method exception, this
+                is the ID of the method.
+        """
+        self.send_method(spec.Channel.CloseOk)
+        if not self.connection.is_closing:
+            self._do_revive()
+            raise error_for_code(
+                reply_code, reply_text, (class_id, method_id), ChannelError,
+            )
+
+    def _on_close_ok(self):
+        """Confirm a channel close.
+
+        This method confirms a Channel.Close method and tells the
+        recipient that it is safe to release resources for the channel
+        and close the socket.
+
+        RULE:
+
+            A peer that detects a socket closure without having
+            received a Channel.Close-Ok handshake method SHOULD log
+            the error.
+        """
+        self.collect()
+
+    def flow(self, active):
+        """Enable/disable flow from peer.
+
+        This method asks the peer to pause or restart the flow of
+        content data. This is a simple flow-control mechanism that a
+        peer can use to avoid overflowing its queues or otherwise
+        finding itself receiving more messages than it can process.
+        Note that this method is not intended for window control.  The
+        peer that receives a request to stop sending content should
+        finish sending the current content, if any, and then wait
+        until it receives a Flow restart method.
+
+        RULE:
+
+            When a new channel is opened, it is active.  Some
+            applications assume that channels are inactive until
+            started.  To emulate this behaviour a client MAY open the
+            channel, then pause it.
+
+        RULE:
+
+            When sending content data in multiple frames, a peer
+            SHOULD monitor the channel for incoming methods and
+            respond to a Channel.Flow as rapidly as possible.
+
+        RULE:
+
+            A peer MAY use the Channel.Flow method to throttle
+            incoming content data for internal reasons, for example,
+            when exchanging data over a slower connection.
+
+        RULE:
+
+            The peer that requests a Channel.Flow method MAY
+            disconnect and/or ban a peer that does not respect the
+            request.
+
+        PARAMETERS:
+            active: boolean
+
+                start/stop content frames
+
+                If True, the peer starts sending content frames.  If
+                False, the peer stops sending content frames.
+        """
+        return self.send_method(
+            spec.Channel.Flow, 'b', (active,), wait=spec.Channel.FlowOk,
+        )
+
+    def _on_flow(self, active):
+        """Enable/disable flow from peer.
+
+        This method asks the peer to pause or restart the flow of
+        content data. This is a simple flow-control mechanism that a
+        peer can use to avoid overflowing its queues or otherwise
+        finding itself receiving more messages than it can process.
+        Note that this method is not intended for window control.  The
+        peer that receives a request to stop sending content should
+        finish sending the current content, if any, and then wait
+        until it receives a Flow restart method.
+
+        RULE:
+
+            When a new channel is opened, it is active.  Some
+            applications assume that channels are inactive until
+            started.  To emulate this behaviour a client MAY open the
+            channel, then pause it.
+
+        RULE:
+
+            When sending content data in multiple frames, a peer
+            SHOULD monitor the channel for incoming methods and
+            respond to a Channel.Flow as rapidly as possible.
+
+        RULE:
+
+            A peer MAY use the Channel.Flow method to throttle
+            incoming content data for internal reasons, for example,
+            when exchanging data over a slower connection.
+
+        RULE:
+
+            The peer that requests a Channel.Flow method MAY
+            disconnect and/or ban a peer that does not respect the
+            request.
+
+        PARAMETERS:
+            active: boolean
+
+                start/stop content frames
+
+                If True, the peer starts sending content frames.  If
+                False, the peer stops sending content frames.
+        """
+        self.active = active
+        self._x_flow_ok(self.active)
+
+    def _x_flow_ok(self, active):
+        """Confirm a flow method.
+
+        Confirms to the peer that a flow command was received and
+        processed.
+
+        PARAMETERS:
+            active: boolean
+
+                current flow setting
+
+                Confirms the setting of the processed flow method:
+                True means the peer will start sending or continue
+                to send content frames; False means it will not.
+        """
+        return self.send_method(spec.Channel.FlowOk, 'b', (active,))
+
+    def open(self):
+        """Open a channel for use.
+
+        This method opens a virtual connection (a channel).
+
+        RULE:
+
+            This method MUST NOT be called when the channel is already
+            open.
+
+        PARAMETERS:
+            out_of_band: shortstr (DEPRECATED)
+
+                out-of-band settings
+
+                Configures out-of-band transfers on this channel.  The
+                syntax and meaning of this field will be formally
+                defined at a later date.
+        """
+        if self.is_open:
+            return
+
+        return self.send_method(
+            spec.Channel.Open, 's', ('',), wait=spec.Channel.OpenOk,
+        )
+
+    def _on_open_ok(self):
+        """Signal that the channel is ready.
+
+        This method signals to the client that the channel is ready
+        for use.
+        """
+        self.is_open = True
+        self.on_open(self)
+        AMQP_LOGGER.debug('Channel open')
+
+    #############
+    #
+    #  Exchange
+    #
+    #
+    # work with exchanges
+    #
+    # Exchanges match and distribute messages across queues.
+    # Exchanges can be configured in the server or created at runtime.
+    #
+    # GRAMMAR::
+    #
+    #     exchange            = C:DECLARE  S:DECLARE-OK
+    #                         / C:DELETE   S:DELETE-OK
+    #
+    # RULE:
+    #
+    #     The server MUST implement the direct and fanout exchange
+    #     types, and predeclare the corresponding exchanges named
+    #     amq.direct and amq.fanout in each virtual host. The server
+    #     MUST also predeclare a direct exchange to act as the default
+    #     exchange for content Publish methods and for default queue
+    #     bindings.
+    #
+    # RULE:
+    #
+    #     The server SHOULD implement the topic exchange type, and
+    #     predeclare the corresponding exchange named amq.topic in
+    #     each virtual host.
+    #
+    # RULE:
+    #
+    #     The server MAY implement the system exchange type, and
+    #     predeclare the corresponding exchanges named amq.system in
+    #     each virtual host. If the client attempts to bind a queue to
+    #     the system exchange, the server MUST raise a connection
+    #     exception with reply code 507 (not allowed).
+    #
+
+    def exchange_declare(self, exchange, type, passive=False, durable=False,
+                         auto_delete=True, nowait=False, arguments=None,
+                         argsig='BssbbbbbF'):
+        """Declare exchange, create if needed.
+
+        This method creates an exchange if it does not already exist,
+        and if the exchange exists, verifies that it is of the correct
+        and expected class.
+
+        RULE:
+
+            The server SHOULD support a minimum of 16 exchanges per
+            virtual host and ideally, impose no limit except as
+            defined by available resources.
+
+        PARAMETERS:
+            exchange: shortstr
+
+                RULE:
+
+                    Exchange names starting with "amq." are reserved
+                    for predeclared and standardised exchanges.  If
+                    the client attempts to create an exchange starting
+                    with "amq.", the server MUST raise a channel
+                    exception with reply code 403 (access refused).
+
+            type: shortstr
+
+                exchange type
+
+                Each exchange belongs to one of a set of exchange
+                types implemented by the server.  The exchange types
+                define the functionality of the exchange - i.e. how
+                messages are routed through it.  It is not valid or
+                meaningful to attempt to change the type of an
+                existing exchange.
+
+                RULE:
+
+                    If the exchange already exists with a different
+                    type, the server MUST raise a connection exception
+                    with a reply code 507 (not allowed).
+
+                RULE:
+
+                    If the server does not support the requested
+                    exchange type it MUST raise a connection exception
+                    with a reply code 503 (command invalid).
+
+            passive: boolean
+
+                do not create exchange
+
+                If set, the server will not create the exchange.  The
+                client can use this to check whether an exchange
+                exists without modifying the server state.
+
+                RULE:
+
+                    If set, and the exchange does not already exist,
+                    the server MUST raise a channel exception with
+                    reply code 404 (not found).
+
+            durable: boolean
+
+                request a durable exchange
+
+                If set when creating a new exchange, the exchange will
+                be marked as durable.  Durable exchanges remain active
+                when a server restarts. Non-durable exchanges
+                (transient exchanges) are purged if/when a server
+                restarts.
+
+                RULE:
+
+                    The server MUST support both durable and transient
+                    exchanges.
+
+                RULE:
+
+                    The server MUST ignore the durable field if the
+                    exchange already exists.
+
+            auto_delete: boolean
+
+                auto-delete when unused
+
+                If set, the exchange is deleted when all queues have
+                finished using it.
+
+                RULE:
+
+                    The server SHOULD allow for a reasonable delay
+                    between the point when it determines that an
+                    exchange is not being used (or no longer used),
+                    and the point when it deletes t

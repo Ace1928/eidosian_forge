@@ -1,0 +1,581 @@
+SOURCE_PATH: archive_forge/src/archive_forge/27e647c0fad4_initial_version.py
+KIND: code
+
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+"""Initial version.
+
+Revision ID: 27e647c0fad4
+Revises:
+Create Date: 2021-12-23 11:13:26.305412
+"""
+
+import datetime
+import textwrap
+
+from alembic import op
+from oslo_log import log
+import sqlalchemy as sql
+
+from keystone.assignment.backends import sql as assignment_sql
+from keystone.common import sql as ks_sql
+import keystone.conf
+from keystone.identity.mapping_backends import mapping as mapping_backend
+
+# revision identifiers, used by Alembic.
+revision = '27e647c0fad4'
+down_revision = None
+depends_on = None
+
+CONF = keystone.conf.CONF
+LOG = log.getLogger(__name__)
+
+NULL_DOMAIN_ID = '<<keystone.domain.root>>'
+
+
+def upgrade():
+    bind = op.get_bind()
+
+    if bind.engine.name == 'mysql':
+        # Set default DB charset to UTF8.
+        op.execute(
+            'ALTER DATABASE %s DEFAULT CHARACTER SET utf8'
+            % bind.engine.url.database
+        )
+
+    op.create_table(
+        'application_credential',
+        sql.Column(
+            'internal_id', sql.Integer, primary_key=True, nullable=False
+        ),
+        sql.Column('id', sql.String(length=64), nullable=False),
+        sql.Column('name', sql.String(length=255), nullable=False),
+        sql.Column('secret_hash', sql.String(length=255), nullable=False),
+        sql.Column('description', sql.Text),
+        sql.Column('user_id', sql.String(length=64), nullable=False),
+        sql.Column('project_id', sql.String(64), nullable=True),
+        sql.Column('expires_at', ks_sql.DateTimeInt()),
+        sql.Column('system', sql.String(64), nullable=True),
+        sql.Column('unrestricted', sql.Boolean),
+        sql.UniqueConstraint(
+            'user_id', 'name', name='duplicate_app_cred_constraint'
+        ),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8',
+    )
+
+    op.create_table(
+        'assignment',
+        sql.Column(
+            'type',
+            sql.Enum(
+                assignment_sql.AssignmentType.USER_PROJECT,
+                assignment_sql.AssignmentType.GROUP_PROJECT,
+                assignment_sql.AssignmentType.USER_DOMAIN,
+                assignment_sql.AssignmentType.GROUP_DOMAIN,
+                name='type',
+            ),
+            nullable=False,
+        ),
+        sql.Column('actor_id', sql.String(64), nullable=False),
+        sql.Column('target_id', sql.String(64), nullable=False),
+        sql.Column('role_id', sql.String(64), nullable=False),
+        sql.Column('inherited', sql.Boolean, default=False, nullable=False),
+        sql.PrimaryKeyConstraint(
+            'type',
+            'actor_id',
+            'target_id',
+            'role_id',
+            'inherited',
+        ),
+        sql.Index('ix_actor_id', 'actor_id'),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8',
+    )
+
+    op.create_table(
+        'access_rule',
+        sql.Column('id', sql.Integer, primary_key=True, nullable=False),
+        sql.Column('service', sql.String(64)),
+        sql.Column('path', sql.String(128)),
+        sql.Column('method', sql.String(16)),
+        sql.Column('external_id', sql.String(64)),
+        sql.Column('user_id', sql.String(64)),
+        sql.UniqueConstraint(
+            'external_id',
+            name='access_rule_external_id_key',
+        ),
+        sql.UniqueConstraint(
+            'user_id',
+            'service',
+            'path',
+            'method',
+            name='duplicate_access_rule_for_user_constraint',
+        ),
+        sql.Index('user_id', 'user_id'),
+        sql.Index('external_id', 'external_id'),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8',
+    )
+
+    op.create_table(
+        'config_register',
+        sql.Column('type', sql.String(64), primary_key=True),
+        sql.Column('domain_id', sql.String(64), nullable=False),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8',
+    )
+
+    op.create_table(
+        'consumer',
+        sql.Column('id', sql.String(64), primary_key=True, nullable=False),
+        sql.Column('description', sql.String(64), nullable=True),
+        sql.Column('secret', sql.String(64), nullable=False),
+        sql.Column('extra', sql.Text(), nullable=False),
+    )
+
+    op.create_table(
+        'credential',
+        sql.Column('id', sql.String(length=64), primary_key=True),
+        sql.Column('user_id', sql.String(length=64), nullable=False),
+        sql.Column('project_id', sql.String(length=64)),
+        sql.Column('type', sql.String(length=255), nullable=False),
+        sql.Column('extra', ks_sql.JsonBlob.impl),
+        sql.Column('key_hash', sql.String(64), nullable=False),
+        sql.Column(
+            'encrypted_blob',
+            ks_sql.Text,
+            nullable=False,
+        ),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8',
+    )
+
+    op.create_table(
+        'group',
+        sql.Column('id', sql.String(length=64), primary_key=True),
+        sql.Column('domain_id', sql.String(length=64), nullable=False),
+        sql.Column('name', sql.String(length=64), nullable=False),
+        sql.Column('description', sql.Text),
+        sql.Column('extra', ks_sql.JsonBlob.impl),
+        sql.UniqueConstraint(
+            'domain_id',
+            'name',
+            name='ixu_group_name_domain_id',
+        ),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8',
+    )
+
+    op.create_table(
+        'id_mapping',
+        sql.Column('public_id', sql.String(64), primary_key=True),
+        sql.Column('domain_id', sql.String(64), nullable=False),
+        sql.Column('local_id', sql.String(255), nullable=False),
+        sql.Column(
+            'entity_type',
+            sql.Enum(
+                mapping_backend.EntityType.USER,
+                mapping_backend.EntityType.GROUP,
+                name='entity_type',
+            ),
+            nullable=False,
+        ),
+        sql.UniqueConstraint(
+            'domain_id',
+            'local_id',
+            'entity_type',
+            name='domain_id',
+        ),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8',
+    )
+
+    op.create_table(
+        'identity_provider',
+        sql.Column('id', sql.String(64), primary_key=True),
+        sql.Column('enabled', sql.Boolean, nullable=False),
+        sql.Column('description', sql.Text(), nullable=True),
+        sql.Column('domain_id', sql.String(64), nullable=False),
+        sql.Column('authorization_ttl', sql.Integer, nullable=True),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8',
+    )
+
+    op.create_table(
+        'idp_remote_ids',
+        sql.Column(
+            'idp_id',
+            sql.String(64),
+            sql.ForeignKey('identity_provider.id', ondelete='CASCADE'),
+        ),
+        sql.Column('remote_id', sql.String(255), primary_key=True),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8',
+    )
+
+    op.create_table(
+        'mapping',
+        sql.Column('id', sql.String(64), primary_key=True),
+        sql.Column('rules', sql.Text(), nullable=False),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8',
+    )
+
+    op.create_table(
+        'policy',
+        sql.Column('id', sql.String(length=64), primary_key=True),
+        sql.Column('type', sql.String(length=255), nullable=False),
+        sql.Column('blob', ks_sql.JsonBlob, nullable=False),
+        sql.Column('extra', ks_sql.JsonBlob.impl),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8',
+    )
+
+    op.create_table(
+        'policy_association',
+        sql.Column('id', sql.String(64), primary_key=True),
+        sql.Column('policy_id', sql.String(64), nullable=False),
+        sql.Column('endpoint_id', sql.String(64), nullable=True),
+        sql.Column('service_id', sql.String(64), nullable=True),
+        sql.Column('region_id', sql.String(64), nullable=True),
+        sql.UniqueConstraint('endpoint_id', 'service_id', 'region_id'),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8',
+    )
+
+    op.create_table(
+        'project',
+        sql.Column('id', sql.String(length=64), primary_key=True),
+        sql.Column('name', sql.String(length=64), nullable=False),
+        sql.Column('extra', ks_sql.JsonBlob.impl),
+        sql.Column('description', sql.Text),
+        sql.Column('enabled', sql.Boolean),
+        sql.Column(
+            'domain_id',
+            sql.String(length=64),
+            sql.ForeignKey(
+                'project.id',
+                name='project_domain_id_fkey',
+            ),
+            nullable=False,
+        ),
+        sql.Column(
+            'parent_id',
+            sql.String(64),
+            sql.ForeignKey(
+                'project.id',
+                name='project_parent_id_fkey',
+            ),
+            nullable=True,
+        ),
+        sql.Column(
+            'is_domain',
+            sql.Boolean,
+            nullable=False,
+            server_default='0',
+            default=False,
+        ),
+        sql.UniqueConstraint(
+            'domain_id',
+            'name',
+            name='ixu_project_name_domain_id',
+        ),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8',
+    )
+
+    op.create_table(
+        'project_endpoint',
+        sql.Column(
+            'endpoint_id', sql.String(64), primary_key=True, nullable=False
+        ),
+        sql.Column(
+            'project_id', sql.String(64), primary_key=True, nullable=False
+        ),
+    )
+
+    op.create_table(
+        'project_option',
+        sql.Column(
+            'project_id',
+            sql.String(64),
+            sql.ForeignKey('project.id', ondelete='CASCADE'),
+            nullable=False,
+            primary_key=True,
+        ),
+        sql.Column(
+            'option_id', sql.String(4), nullable=False, primary_key=True
+        ),
+        sql.Column('option_value', ks_sql.JsonBlob, nullable=True),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8',
+    )
+
+    # NOTE(lamt) To allow tag name to be case sensitive for MySQL, the 'name'
+    # column needs to use collation, which is incompatible with Postgresql.
+    # Using unicode to mirror nova's server tag:
+    # https://github.com/openstack/nova/blob/master/nova/db/sqlalchemy/models.py
+    op.create_table(
+        'project_tag',
+        sql.Column(
+            'project_id',
+            sql.String(64),
+            sql.ForeignKey('project.id', ondelete='CASCADE'),
+            nullable=False,
+            primary_key=True,
+        ),
+        sql.Column('name', sql.Unicode(255), nullable=False, primary_key=True),
+        sql.UniqueConstraint('project_id', 'name'),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8',
+    )
+
+    op.create_table(
+        'region',
+        sql.Column('id', sql.String(255), primary_key=True),
+        sql.Column('description', sql.String(255), nullable=False),
+        sql.Column('parent_region_id', sql.String(255), nullable=True),
+        sql.Column('extra', sql.Text()),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8',
+    )
+
+    op.create_table(
+        'registered_limit',
+        sql.Column('id', sql.String(length=64), nullable=False),
+        sql.Column('service_id', sql.String(255)),
+        sql.Column('region_id', sql.String(64), nullable=True),
+        sql.Column('resource_name', sql.String(255)),
+        sql.Column('default_limit', sql.Integer, nullable=False),
+        sql.Column('description', sql.Text),
+        sql.Column('internal_id', sql.Integer, primary_key=True),
+        # NOTE(stephenfin): Name chosen to preserve backwards compatibility
+        # with names used for primary key unique constraints
+        sql.UniqueConstraint('id', name='registered_limit_id_key'),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8',
+    )
+
+    op.create_table(
+        'request_token',
+        sql.Column('id', sql.String(64), primary_key=True, nullable=False),
+        sql.Column('request_secret', sql.String(64), nullable=False),
+        sql.Column('verifier', sql.String(64), nullable=True),
+        sql.Column('authorizing_user_id', sql.String(64), nullable=True),
+        sql.Column('requested_project_id', sql.String(64), nullable=False),
+        sql.Column('role_ids', sql.Text(), nullable=True),
+        sql.Column(
+            'consumer_id',
+            sql.String(64),
+            sql.ForeignKey('consumer.id'),
+            nullable=False,
+            index=True,
+        ),
+        sql.Column('expires_at', sql.String(64), nullable=True),
+    )
+
+    op.create_table(
+        'revocation_event',
+        sql.Column('id', sql.Integer, primary_key=True),
+        sql.Column('domain_id', sql.String(64)),
+        sql.Column('project_id', sql.String(64)),
+        sql.Column('user_id', sql.String(64)),
+        sql.Column('role_id', sql.String(64)),
+        sql.Column('trust_id', sql.String(64)),
+        sql.Column('consumer_id', sql.String(64)),
+        sql.Column('access_token_id', sql.String(64)),
+        sql.Column('issued_before', sql.DateTime(), nullable=False),
+        sql.Column('expires_at', sql.DateTime()),
+        sql.Column('revoked_at', sql.DateTime(), nullable=False),
+        sql.Column('audit_id', sql.String(32), nullable=True),
+        sql.Column('audit_chain_id', sql.String(32), nullable=True),
+        # NOTE(stephenfin): The '_new' suffix here is due to migration 095,
+        # which changed the 'id' column from String(64) to Integer. It did this
+        # by creating a 'revocation_event_new' table and populating it with
+        # data from the 'revocation_event' table before deleting the
+        # 'revocation_event' table and renaming the 'revocation_event_new'
+        # table to 'revocation_event'. Because the 'revoked_at' column had
+        # 'index=True', sqlalchemy automatically generated the index name as
+        # 'ix_{table}_{column}'. However, when intitially created, '{table}'
+        # was 'revocation_event_new' so the index got that name. We may wish to
+        # rename this eventually.
+        sql.Index('ix_revocation_event_new_revoked_at', 'revoked_at'),
+        sql.Index('ix_revocation_event_issued_before', 'issued_before'),
+        sql.Index(
+            'ix_revocation_event_project_id_issued_before',
+            'project_id',
+            'issued_before',
+        ),
+        sql.Index(
+            'ix_revocation_event_user_id_issued_before',
+            'user_id',
+            'issued_before',
+        ),
+        sql.Index(
+            'ix_revocation_event_audit_id_issued_before',
+            'audit_id',
+            'issued_before',
+        ),
+    )
+
+    op.create_table(
+        'role',
+        sql.Column('id', sql.String(length=64), primary_key=True),
+        sql.Column('name', sql.String(length=255), nullable=False),
+        sql.Column('extra', ks_sql.JsonBlob.impl),
+        sql.Column(
+            'domain_id',
+            sql.String(64),
+            nullable=False,
+            server_default='<<null>>',
+        ),
+        sql.Column('description', sql.String(255), nullable=True),
+        sql.UniqueConstraint(
+            'name',
+            'domain_id',
+            name='ixu_role_name_domain_id',
+        ),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8',
+    )
+
+    op.create_table(
+        'role_option',
+        sql.Column(
+            'role_id',
+            sql.String(64),
+            sql.ForeignKey('role.id', ondelete='CASCADE'),
+            nullable=False,
+            primary_key=True,
+        ),
+        sql.Column(
+            'option_id', sql.String(4), nullable=False, primary_key=True
+        ),
+        sql.Column('option_value', ks_sql.JsonBlob, nullable=True),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8',
+    )
+
+    op.create_table(
+        'sensitive_config',
+        sql.Column('domain_id', sql.String(64), primary_key=True),
+        sql.Column('group', sql.String(255), primary_key=True),
+        sql.Column('option', sql.String(255), primary_key=True),
+        sql.Column('value', ks_sql.JsonBlob.impl, nullable=False),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8',
+    )
+
+    op.create_table(
+        'service',
+        sql.Column('id', sql.String(length=64), primary_key=True),
+        sql.Column('type', sql.String(length=255)),
+        sql.Column(
+            'enabled',
+            sql.Boolean,
+            nullable=False,
+            default=True,
+            server_default='1',
+        ),
+        sql.Column('extra', ks_sql.JsonBlob.impl),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8',
+    )
+
+    op.create_table(
+        'service_provider',
+        sql.Column('auth_url', sql.String(256), nullable=False),
+        sql.Column('id', sql.String(64), primary_key=True),
+        sql.Column('enabled', sql.Boolean, nullable=False),
+        sql.Column('description', sql.Text(), nullable=True),
+        sql.Column('sp_url', sql.String(256), nullable=False),
+        sql.Column(
+            'relay_state_prefix',
+            sql.String(256),
+            nullable=False,
+            server_default=CONF.saml.relay_state_prefix,
+        ),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8',
+    )
+
+    op.create_table(
+        'system_assignment',
+        sql.Column('type', sql.String(64), nullable=False),
+        sql.Column('actor_id', sql.String(64), nullable=False),
+        sql.Column('target_id', sql.String(64), nullable=False),
+        sql.Column('role_id', sql.String(64), nullable=False),
+        sql.Column('inherited', sql.Boolean, default=False, nullable=False),
+        sql.PrimaryKeyConstraint(
+            'type', 'actor_id', 'target_id', 'role_id', 'inherited'
+        ),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8',
+    )
+
+    op.create_table(
+        'token',
+        sql.Column('id', sql.String(length=64), primary_key=True),
+        sql.Column('expires', sql.DateTime, default=None),
+        sql.Column('extra', ks_sql.JsonBlob.impl),
+        sql.Column('valid', sql.Boolean, default=True, nullable=False),
+        sql.Column('trust_id', sql.String(length=64)),
+        sql.Column('user_id', sql.String(length=64)),
+        sql.Index('ix_token_expires', 'expires'),
+        sql.Index('ix_token_expires_valid', 'expires', 'valid'),
+        sql.Index('ix_token_user_id', 'user_id'),
+        sql.Index('ix_token_trust_id', 'trust_id'),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8',
+    )
+
+    op.create_table(
+        'trust',
+        sql.Column('id', sql.String(length=64), primary_key=True),
+        sql.Column('trustor_user_id', sql.String(length=64), nullable=False),
+        sql.Column('trustee_user_id', sql.String(length=64), nullable=False),
+        sql.Column('project_id', sql.String(length=64)),
+        sql.Column('impersonation', sql.Boolean, nullable=False),
+        sql.Column('deleted_at', sql.DateTime),
+        sql.Column('expires_at', sql.DateTime),
+        sql.Column('remaining_uses', sql.Integer, nullable=True),
+        sql.Column('extra', ks_sql.JsonBlob.impl),
+        sql.Column('expires_at_int', ks_sql.DateTimeInt()),
+        sql.UniqueConstraint(
+            'trustor_user_id',
+            'trustee_user_id',
+            'project_id',
+            'impersonation',
+            'expires_at',
+            'expires_at_int',
+            name='duplicate_trust_constraint_expanded',
+        ),
+        sql.Column(
+            'redelegated_trust_id',
+            sql.String(64),
+            nullable=True,
+        ),
+        sql.Column(
+            'redelegation_count',
+            sql.Integer,
+            nullable=True,
+        ),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8',
+    )
+
+    op.create_table(
+        'trust_role',
+        sql.Column(
+            'trust_id', sql.String(length

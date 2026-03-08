@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/attach_script_documentation.py
+KIND: code
+
+:param unlikely_thread_id:
+        Pass to mark some thread id as not likely the main thread.
+
+    :return tuple(thread_id, critical_warning)

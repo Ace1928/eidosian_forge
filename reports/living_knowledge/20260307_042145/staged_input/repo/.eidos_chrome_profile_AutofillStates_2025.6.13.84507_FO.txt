@@ -1,0 +1,13 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/FO
+KIND: config
+
+FO
+sandoyarsandoy
+
+eysturoyareysturoy
+vága kommunavágavágar
+
+streymoyarstreymoy
+
+suðuroyarsuduroy
+norðoyanorthern isles

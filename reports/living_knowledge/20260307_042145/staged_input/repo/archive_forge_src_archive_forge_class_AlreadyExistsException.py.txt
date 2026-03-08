@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AlreadyExistsException.py
+KIND: code
+
+from boto.exception import BotoServerError
+class AlreadyExistsException(BotoServerError):
+    pass

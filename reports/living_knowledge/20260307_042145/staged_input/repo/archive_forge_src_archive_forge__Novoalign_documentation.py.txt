@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_Novoalign_documentation.py
+KIND: code
+
+from Bio.Application import _Option, AbstractCommandline
+Initialize the class.

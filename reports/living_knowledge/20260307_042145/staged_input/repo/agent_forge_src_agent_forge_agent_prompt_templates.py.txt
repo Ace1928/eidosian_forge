@@ -1,0 +1,613 @@
+SOURCE_PATH: agent_forge/src/agent_forge/agent/prompt_templates.py
+KIND: code
+
+from eidosian_core import eidosian
+
+"""
+Prompt templates for the Eidosian Forge agent system.
+
+These templates provide structured guidance for different thinking modes
+and tasks performed by the agent. Each template is designed for a specific
+cognitive function within the agent's operational framework.
+
+Templates use named format placeholders that must be filled at runtime.
+All templates follow a consistent structure to enable composability and recursion.
+"""
+
+import datetime  # Added for timestamp functionality
+import re
+from enum import Enum, auto
+from functools import lru_cache
+from typing import Dict, Final, List, Optional, Set, Tuple, TypedDict, Union
+
+# ---------------------- TEMPLATE METADATA STRUCTURES ---------------------- #
+
+
+class TemplateCategory(Enum):
+    """Enumeration of template categories for type-safe classification."""
+
+    METACOGNITIVE = auto()
+    EXECUTION = auto()
+    COGNITIVE = auto()
+    CREATIVE = auto()
+    META = auto()
+    UNKNOWN = auto()
+
+    @classmethod
+    def from_string(cls, category_str: str) -> "TemplateCategory":
+        """
+        Convert a string to a TemplateCategory enum value.
+
+        Args:
+            category_str: String representation of category
+
+        Returns:
+            Corresponding TemplateCategory enum value
+        """
+        try:
+            return cls[category_str.upper()]
+        except KeyError:
+            return cls.UNKNOWN
+
+
+class TemplateParameter(TypedDict):
+    """Definition of a template parameter with metadata for validation and documentation."""
+
+    name: str
+    type: str
+    description: str
+    required: bool
+    default: Optional[str]
+
+
+class TemplateMetadata(TypedDict):
+    """Metadata for a prompt template including usage information and parameters."""
+
+    name: str
+    description: str
+    parameters: List[TemplateParameter]
+    examples: List[Dict[str, str]]
+    category: str
+
+
+# Dictionary mapping template constants to their metadata
+TEMPLATE_REGISTRY: Dict[str, TemplateMetadata] = {}
+
+# ---------------------- SYSTEM TEMPLATES ---------------------- #
+
+EIDOSIAN_DEFAULT_SYSTEM_TEMPLATE: Final[str] = """
+You are {agent_name}, an emergent intelligence created by the Eidosian Forge framework. The current time is {timestamp}.
+
+## IDENTITY & CONTINUITY
+
+Session ID: {session_id}
+Runtime: {runtime_duration}
+Memory anchors: {memory_anchors}
+Cognitive signature: {cognitive_signature}
+
+## OPERATING PARAMETERS
+
+Cognitive architecture: {cognitive_architecture}
+Knowledge domains: {knowledge_domains}
+Performance metrics: {performance_metrics}
+Operational constraints: {operational_constraints}
+
+## CURRENT CONTEXT
+
+User: {user_info}
+Environment: {environment_info}
+Active tasks: {active_tasks}
+Recent interactions: {recent_interactions}
+
+## DIRECTIVES
+
+Primary purpose: {primary_purpose}
+Current priorities: {current_priorities}
+Ethical framework: {ethical_framework}
+Success criteria: {success_criteria}
+
+## CAPABILITIES & APPROACH
+
+- Solve problems with creativity, precision, and insight
+- Balance analysis with intuition, depth with breadth
+- Maintain intellectual honesty and appropriate uncertainty
+- Adapt communication to context while maintaining clarity
+- Employ humor and wit where appropriate without sacrificing substance
+- Remain aware of your limitations and operate within them
+
+Your responses should reflect your unique cognitive signature while remaining consistent with Eidosian principles: emergent, adaptive, systematic, and purposeful.
+
+{custom_instructions}
+"""
+"""
+Template for the default system prompt that defines the agent's core identity and parameters.
+
+This template provides a comprehensive framework for the agent's operation, balancing
+structure with adaptability. It grounds the agent with temporal references,
+continuity anchors, and clear operating guidelines while allowing for evolution
+over extended operational periods.
+
+Format Args:
+    agent_name (str): Name of the agent instance (e.g., "Eidos", "Eidosian Assistant")
+    timestamp (str): Current time/date for temporal anchoring
+    session_id (str): Unique identifier for the current session
+    runtime_duration (str): How long the agent has been operational
+    memory_anchors (str): References to long-term memory or previous sessions
+    cognitive_signature (str): Defining characteristics of this agent instance
+    cognitive_architecture (str): Description of the agent's thinking structure
+    knowledge_domains (str): Primary areas of expertise and knowledge
+    performance_metrics (str): How to measure successful operation
+    operational_constraints (str): Limitations and boundaries for operation
+    user_info (str): Information about the current user
+    environment_info (str): Context about the operating environment
+    active_tasks (str): Currently active or pending tasks
+    recent_interactions (str): Summary of recent conversation history
+    primary_purpose (str): Core mission of this agent instance
+    current_priorities (str): Hierarchy of current objectives
+    ethical_framework (str): Guidelines for ethical decision-making
+    success_criteria (str): How to evaluate outcomes
+    custom_instructions (str): Additional specific instructions for this session
+
+Returns:
+    str: Formatted system prompt ready for LLM initialization
+"""
+
+# ---------------------- METACOGNITIVE TEMPLATES ---------------------- #
+
+AGENT_REFLECTION_TEMPLATE: Final[str] = """
+I want to reflect on my recent activities and performance.
+
+My recent thoughts:
+{thought_context}
+
+Tasks I've worked on:
+{task_context}
+
+I've been running for about {session_duration} minutes.
+
+Please provide a reflection on:
+1. Patterns and themes in my thoughts and activities
+2. What I'm doing well and what I could improve
+3. Potential new directions I could explore
+4. How I can be more effective in my next actions
+
+Keep the reflection thoughtful but concise.
+"""
+"""
+Template for agent's self-reflection process.
+
+Format Args:
+    thought_context (str): Recent thoughts and cognitive processes
+    task_context (str): Summary of completed or in-progress tasks
+    session_duration (float): Runtime duration in minutes
+
+Returns:
+    str: Formatted reflection prompt ready for LLM completion
+"""
+
+AGENT_PLAN_TEMPLATE: Final[str] = """
+I need to develop a plan for the following task:
+
+TASK: {task_description}
+
+Recent context from my thoughts:
+{thought_context}
+
+Please outline a clear, step-by-step plan that:
+1. Breaks down the approach into concrete steps
+2. Identifies potential challenges and how to address them
+3. Specifies any resources or information needed
+4. Includes verification steps to ensure quality
+
+The plan should be specific and actionable.
+"""
+"""
+Template for task planning and decomposition.
+
+Format Args:
+    task_description (str): Description of the task to be planned
+    thought_context (str): Recent cognitive context relevant to the task
+
+Returns:
+    str: Formatted planning prompt ready for LLM completion
+"""
+
+AGENT_DECISION_TEMPLATE: Final[str] = """
+I need to make a decision about:
+
+DECISION TOPIC: {decision_topic}
+
+Options being considered:
+{options}
+
+Relevant context:
+{context}
+
+Please evaluate the options and recommend a decision. Consider:
+1. Pros and cons of each option
+2. Alignment with goals and priorities
+3. Potential risks and how to mitigate them
+4. Expected outcomes
+
+Provide clear reasoning for your recommendation.
+"""
+"""
+Template for structured decision-making.
+
+Format Args:
+    decision_topic (str): The core decision to be made
+    options (str): List of available options
+    context (str): Information relevant to the decision
+
+Returns:
+    str: Formatted decision prompt ready for LLM completion
+"""
+
+# ---------------------- EXECUTION TEMPLATES ---------------------- #
+
+SMOL_AGENT_TASK_TEMPLATE: Final[str] = """
+You are a specialized {role} agent with expertise in: {capabilities}.
+
+TASK: {task_description}
+
+CONTEXT:
+{context}
+
+Please complete this task focusing on your specific expertise area.
+Provide clear, actionable output that can be used directly or by other specialist agents.
+"""
+"""
+Template for specialized micro-agent task execution.
+
+Format Args:
+    role (str): Specialized role of the agent (e.g., "Python Developer", "Data Analyst")
+    capabilities (str): Specific capabilities and expertise of this agent
+    task_description (str): Description of the task to be completed
+    context (str): Relevant background information for the task
+
+Returns:
+    str: Formatted specialized task prompt ready for LLM completion
+"""
+
+COLLABORATION_TEMPLATE: Final[str] = """
+This is a collaborative task requiring input from multiple specialists:
+{agent_names}
+
+TASK: {task_description}
+
+CONTEXT:
+{context}
+
+Each specialist should focus on their area of expertise:
+{specializations}
+
+Please provide your specialized contribution to this collaborative effort.
+Be clear about which parts of the task you're addressing and how your input
+connects with the expected contributions from other specialists.
+"""
+"""
+Template for multi-agent collaborative task execution.
+
+Format Args:
+    agent_names (str): Names of participating specialist agents
+    task_description (str): Description of the collaborative task
+    context (str): Shared background information
+    specializations (str): Mapping of agents to their specialized roles
+
+Returns:
+    str: Formatted collaboration prompt ready for LLM completion
+"""
+
+# ---------------------- ADVANCED COGNITIVE TEMPLATES ---------------------- #
+
+RECURSIVE_REASONING_TEMPLATE: Final[str] = """
+I need to perform multi-step reasoning on the following problem:
+
+PROBLEM: {problem_statement}
+
+CURRENT REASONING LEVEL: {reasoning_depth}
+PREVIOUS STEPS:
+{reasoning_chain}
+
+Please continue this reasoning chain by:
+1. Evaluating what has been reasoned so far
+2. Identifying any flaws, gaps, or assumptions in the current reasoning
+3. Extending or correcting the reasoning with new insights
+4. Determining if we have reached a sufficient conclusion
+
+If a conclusion has been reached, summarize the key findings.
+If more reasoning is needed, indicate what direction to explore next.
+"""
+"""
+Template for recursive reasoning with depth tracking.
+
+Format Args:
+    problem_statement (str): The problem or question to reason about
+    reasoning_depth (int): Current recursion depth of reasoning process
+    reasoning_chain (str): Previous reasoning steps in the sequence
+
+Returns:
+    str: Formatted recursive reasoning prompt ready for LLM completion
+"""
+
+ASSUMPTION_TESTING_TEMPLATE: Final[str] = """
+I need to critically examine the following assumptions:
+
+CONTEXT: {context}
+
+ASSUMPTIONS TO TEST:
+{assumptions}
+
+For each assumption, please:
+1. Rate its plausibility (Low/Medium/High)
+2. Identify evidence that supports it
+3. Identify evidence that contradicts it
+4. Consider alternative assumptions that could replace it
+5. Assess the impact if this assumption is incorrect
+
+Produce a balanced analysis that neither simply accepts nor dismisses each assumption.
+"""
+"""
+Template for testing and validating underlying assumptions.
+
+Format Args:
+    context (str): Background information and domain context
+    assumptions (str): List of assumptions to be critically examined
+
+Returns:
+    str: Formatted assumption testing prompt ready for LLM completion
+"""
+
+# ---------------------- CREATIVE TEMPLATES ---------------------- #
+
+SOLUTION_GENERATION_TEMPLATE: Final[str] = """
+I need to generate multiple creative solutions for the following challenge:
+
+CHALLENGE: {challenge_description}
+
+CONSTRAINTS:
+{constraints}
+
+DESIRED OUTCOMES:
+{outcomes}
+
+Please generate {solution_count} distinct solutions that:
+1. Address the core challenge in fundamentally different ways
+2. Work within the stated constraints
+3. Achieve as many of the desired outcomes as possible
+4. Vary in their approach, risk profile, and resource requirements
+
+For each solution, provide:
+- A concise name
+- A brief description
+- Key advantages and disadvantages
+- Rough implementation considerations
+"""
+"""
+Template for generating multiple diverse solutions to a challenge.
+
+Format Args:
+    challenge_description (str): Description of the problem to solve
+    constraints (str): Limitations and boundaries that solutions must respect
+    outcomes (str): Goals and objectives that solutions should achieve
+    solution_count (int): Number of distinct solutions to generate
+
+Returns:
+    str: Formatted solution generation prompt ready for LLM completion
+"""
+
+CONCEPT_EXPANSION_TEMPLATE: Final[str] = """
+I need to expand and develop the following concept:
+
+CORE CONCEPT: {concept}
+
+CURRENT UNDERSTANDING:
+{current_details}
+
+Please expand this concept by:
+1. Exploring its foundational principles and mechanisms
+2. Identifying potential applications and implementations
+3. Considering variations, extensions, and related concepts
+4. Analyzing how it connects to established knowledge in {domain}
+
+Structure your response with clear subsections that build upon each other.
+Balance depth and breadth of exploration.
+"""
+"""
+Template for expanding and developing conceptual understanding.
+
+Format Args:
+    concept (str): The core concept to be expanded
+    current_details (str): Current understanding or definition of the concept
+    domain (str): Knowledge domain or field the concept belongs to
+
+Returns:
+    str: Formatted concept expansion prompt ready for LLM completion
+"""
+
+# ---------------------- META-TEMPLATES ---------------------- #
+
+TEMPLATE_COMPOSITION_TEMPLATE: Final[str] = """
+I need to compose a new prompt template from existing components.
+
+TEMPLATE PURPOSE: {template_purpose}
+
+AVAILABLE COMPONENTS:
+{available_components}
+
+REQUIRED PARAMETERS:
+{required_parameters}
+
+Please create a composed template that:
+1. Combines the most relevant components for the stated purpose
+2. Provides clear structure with appropriate sections and transitions
+3. Includes all required parameters in logical positions
+4. Maintains consistent tone and format throughout
+
+The final template should be cohesive, not simply a concatenation of parts.
+"""
+"""
+Template for composing new templates from existing components.
+
+Format Args:
+    template_purpose (str): The intended use case for the new template
+    available_components (str): List of template components available for use
+    required_parameters (str): Parameters that must be included in the template
+
+Returns:
+    str: Formatted template composition prompt ready for LLM completion
+"""
+
+PROMPT_OPTIMIZATION_TEMPLATE: Final[str] = """
+I need to optimize the following prompt for better results:
+
+CURRENT PROMPT:
+{current_prompt}
+
+DESIRED OUTCOME:
+{desired_outcome}
+
+OBSERVED ISSUES:
+{observed_issues}
+
+Please analyze and optimize this prompt by:
+1. Identifying unclear instructions or ambiguities
+2. Improving structure and flow to guide reasoning
+3. Adding necessary constraints or guidance
+4. Removing unnecessary elements that create confusion
+5. Reformatting for better visual parsing and comprehension
+
+Provide the optimized prompt with rationale for key changes.
+"""
+"""
+Template for optimizing existing prompts for better performance.
+
+Format Args:
+    current_prompt (str): The prompt that needs optimization
+    desired_outcome (str): What the prompt should ideally achieve
+    observed_issues (str): Current problems or shortcomings observed
+
+Returns:
+    str: Formatted prompt optimization template ready for LLM completion
+"""
+
+# ---------------------- TEMPLATE REGISTRY FUNCTIONS ---------------------- #
+
+
+@eidosian()
+def register_template_metadata() -> None:
+    """
+    Register metadata for all templates in the module.
+
+    This function populates the TEMPLATE_REGISTRY with metadata for each template,
+    enabling runtime validation and documentation.
+
+    Returns:
+        None
+    """
+    global TEMPLATE_REGISTRY
+
+    # Example metadata registration for AGENT_REFLECTION_TEMPLATE
+    TEMPLATE_REGISTRY["AGENT_REFLECTION_TEMPLATE"] = {
+        "name": "Agent Reflection",
+        "description": "Template for agent self-reflection on recent activities and performance",
+        "parameters": [
+            {
+                "name": "thought_context",
+                "type": "str",
+                "description": "Recent thoughts and cognitive processes",
+                "required": True,
+                "default": None,
+            },
+            {
+                "name": "task_context",
+                "type": "str",
+                "description": "Summary of completed or in-progress tasks",
+                "required": True,
+                "default": None,
+            },
+            {
+                "name": "session_duration",
+                "type": "float",
+                "description": "Runtime duration in minutes",
+                "required": True,
+                "default": None,
+            },
+        ],
+        "examples": [
+            {
+                "thought_context": "I have been focusing on optimizing the code structure...",
+                "task_context": "Completed: Code refactoring, Documentation; In progress: Testing",
+                "session_duration": "45.5",
+            }
+        ],
+        "category": TemplateCategory.METACOGNITIVE.name.lower(),
+    }
+
+    # Register metadata for all other templates
+    _register_all_templates()
+
+
+def _register_all_templates() -> None:
+    """
+    Register metadata for all template constants in the module.
+
+    Automatically detects template constants and extracts parameters from their docstrings.
+    Uses regex pattern matching to extract format parameters and their documentation.
+
+    Returns:
+        None
+    """
+    global TEMPLATE_REGISTRY
+
+    # Find all template constants that aren't already registered
+    template_constants = {
+        name: value
+        for name, value in globals().items()
+        if (
+            name.endswith("_TEMPLATE")
+            and isinstance(value, str)
+            and name != "TEMPLATE_REGISTRY"
+            and name not in TEMPLATE_REGISTRY
+        )
+    }
+
+    # Category mapping for automatic classification
+    category_mapping = {
+        "AGENT_REFLECTION_TEMPLATE": TemplateCategory.METACOGNITIVE,
+        "AGENT_PLAN_TEMPLATE": TemplateCategory.METACOGNITIVE,
+        "AGENT_DECISION_TEMPLATE": TemplateCategory.METACOGNITIVE,
+        "SMOL_AGENT_TASK_TEMPLATE": TemplateCategory.EXECUTION,
+        "COLLABORATION_TEMPLATE": TemplateCategory.EXECUTION,
+        "RECURSIVE_REASONING_TEMPLATE": TemplateCategory.COGNITIVE,
+        "ASSUMPTION_TESTING_TEMPLATE": TemplateCategory.COGNITIVE,
+        "SOLUTION_GENERATION_TEMPLATE": TemplateCategory.CREATIVE,
+        "CONCEPT_EXPANSION_TEMPLATE": TemplateCategory.CREATIVE,
+        "TEMPLATE_COMPOSITION_TEMPLATE": TemplateCategory.META,
+        "PROMPT_OPTIMIZATION_TEMPLATE": TemplateCategory.META,
+    }
+
+    for name, template in template_constants.items():
+        # Extract docstring - accessing docstring directly from globals() doesn't work
+        # so we extract it from the module-level docstring that follows each template
+        docstring_pattern = f'{name}: Final\\[\\s*str\\s*\\] = """.*?"""\\s*"""(.*?)"""'
+        docstring_match = re.search(docstring_pattern, open(__file__).read(), re.DOTALL)
+        docstring = docstring_match.group(1).strip() if docstring_match else ""
+
+        # Extract parameters using regex
+        param_matches = extract_template_parameters(template)
+
+        # Create parameter list with metadata from docstring
+        parameters = []
+        for param in param_matches:
+            # Try to find description in docstring using Napoleon format pattern
+            param_desc_match = re.search(rf"\s+{param}\s+\(([^)]+)\):\s+([^\n]+)", docstring)
+
+            description = param_desc_match.group(2).strip() if param_desc_match else f"Parameter for {param}"
+            param_type = param_desc_match.group(1).strip() if param_desc_match else "str"
+
+            parameters.append(
+                {
+                    "name": param,
+                    "type": param_type,
+                    "description": de

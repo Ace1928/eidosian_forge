@@ -1,0 +1,11 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_debugger_case_evaluate.py
+KIND: code
+
+def Call():
+    var_1 = 5
+
+    var_all = 1  # Break here
+
+if __name__ == '__main__':
+    Call()
+    print('TEST SUCEEDED!')

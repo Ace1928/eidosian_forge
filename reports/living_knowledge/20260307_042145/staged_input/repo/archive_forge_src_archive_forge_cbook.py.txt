@@ -1,0 +1,616 @@
+SOURCE_PATH: archive_forge/src/archive_forge/cbook.py
+KIND: code
+
+"""
+A collection of utility functions and classes.  Originally, many
+(but not all) were from the Python Cookbook -- hence the name cbook.
+"""
+
+import collections
+import collections.abc
+import contextlib
+import functools
+import gzip
+import itertools
+import math
+import operator
+import os
+from pathlib import Path
+import shlex
+import subprocess
+import sys
+import time
+import traceback
+import types
+import weakref
+
+import numpy as np
+
+try:
+    from numpy.exceptions import VisibleDeprecationWarning  # numpy >= 1.25
+except ImportError:
+    from numpy import VisibleDeprecationWarning
+
+import matplotlib
+from matplotlib import _api, _c_internal_utils
+
+
+def _get_running_interactive_framework():
+    """
+    Return the interactive framework whose event loop is currently running, if
+    any, or "headless" if no event loop can be started, or None.
+
+    Returns
+    -------
+    Optional[str]
+        One of the following values: "qt", "gtk3", "gtk4", "wx", "tk",
+        "macosx", "headless", ``None``.
+    """
+    # Use ``sys.modules.get(name)`` rather than ``name in sys.modules`` as
+    # entries can also have been explicitly set to None.
+    QtWidgets = (
+        sys.modules.get("PyQt6.QtWidgets")
+        or sys.modules.get("PySide6.QtWidgets")
+        or sys.modules.get("PyQt5.QtWidgets")
+        or sys.modules.get("PySide2.QtWidgets")
+    )
+    if QtWidgets and QtWidgets.QApplication.instance():
+        return "qt"
+    Gtk = sys.modules.get("gi.repository.Gtk")
+    if Gtk:
+        if Gtk.MAJOR_VERSION == 4:
+            from gi.repository import GLib
+            if GLib.main_depth():
+                return "gtk4"
+        if Gtk.MAJOR_VERSION == 3 and Gtk.main_level():
+            return "gtk3"
+    wx = sys.modules.get("wx")
+    if wx and wx.GetApp():
+        return "wx"
+    tkinter = sys.modules.get("tkinter")
+    if tkinter:
+        codes = {tkinter.mainloop.__code__, tkinter.Misc.mainloop.__code__}
+        for frame in sys._current_frames().values():
+            while frame:
+                if frame.f_code in codes:
+                    return "tk"
+                frame = frame.f_back
+        # premetively break reference cycle between locals and the frame
+        del frame
+    macosx = sys.modules.get("matplotlib.backends._macosx")
+    if macosx and macosx.event_loop_is_running():
+        return "macosx"
+    if not _c_internal_utils.display_is_valid():
+        return "headless"
+    return None
+
+
+def _exception_printer(exc):
+    if _get_running_interactive_framework() in ["headless", None]:
+        raise exc
+    else:
+        traceback.print_exc()
+
+
+class _StrongRef:
+    """
+    Wrapper similar to a weakref, but keeping a strong reference to the object.
+    """
+
+    def __init__(self, obj):
+        self._obj = obj
+
+    def __call__(self):
+        return self._obj
+
+    def __eq__(self, other):
+        return isinstance(other, _StrongRef) and self._obj == other._obj
+
+    def __hash__(self):
+        return hash(self._obj)
+
+
+def _weak_or_strong_ref(func, callback):
+    """
+    Return a `WeakMethod` wrapping *func* if possible, else a `_StrongRef`.
+    """
+    try:
+        return weakref.WeakMethod(func, callback)
+    except TypeError:
+        return _StrongRef(func)
+
+
+class CallbackRegistry:
+    """
+    Handle registering, processing, blocking, and disconnecting
+    for a set of signals and callbacks:
+
+        >>> def oneat(x):
+        ...     print('eat', x)
+        >>> def ondrink(x):
+        ...     print('drink', x)
+
+        >>> from matplotlib.cbook import CallbackRegistry
+        >>> callbacks = CallbackRegistry()
+
+        >>> id_eat = callbacks.connect('eat', oneat)
+        >>> id_drink = callbacks.connect('drink', ondrink)
+
+        >>> callbacks.process('drink', 123)
+        drink 123
+        >>> callbacks.process('eat', 456)
+        eat 456
+        >>> callbacks.process('be merry', 456)   # nothing will be called
+
+        >>> callbacks.disconnect(id_eat)
+        >>> callbacks.process('eat', 456)        # nothing will be called
+
+        >>> with callbacks.blocked(signal='drink'):
+        ...     callbacks.process('drink', 123)  # nothing will be called
+        >>> callbacks.process('drink', 123)
+        drink 123
+
+    In practice, one should always disconnect all callbacks when they are
+    no longer needed to avoid dangling references (and thus memory leaks).
+    However, real code in Matplotlib rarely does so, and due to its design,
+    it is rather difficult to place this kind of code.  To get around this,
+    and prevent this class of memory leaks, we instead store weak references
+    to bound methods only, so when the destination object needs to die, the
+    CallbackRegistry won't keep it alive.
+
+    Parameters
+    ----------
+    exception_handler : callable, optional
+       If not None, *exception_handler* must be a function that takes an
+       `Exception` as single parameter.  It gets called with any `Exception`
+       raised by the callbacks during `CallbackRegistry.process`, and may
+       either re-raise the exception or handle it in another manner.
+
+       The default handler prints the exception (with `traceback.print_exc`) if
+       an interactive event loop is running; it re-raises the exception if no
+       interactive event loop is running.
+
+    signals : list, optional
+        If not None, *signals* is a list of signals that this registry handles:
+        attempting to `process` or to `connect` to a signal not in the list
+        throws a `ValueError`.  The default, None, does not restrict the
+        handled signals.
+    """
+
+    # We maintain two mappings:
+    #   callbacks: signal -> {cid -> weakref-to-callback}
+    #   _func_cid_map: signal -> {weakref-to-callback -> cid}
+
+    def __init__(self, exception_handler=_exception_printer, *, signals=None):
+        self._signals = None if signals is None else list(signals)  # Copy it.
+        self.exception_handler = exception_handler
+        self.callbacks = {}
+        self._cid_gen = itertools.count()
+        self._func_cid_map = {}
+        # A hidden variable that marks cids that need to be pickled.
+        self._pickled_cids = set()
+
+    def __getstate__(self):
+        return {
+            **vars(self),
+            # In general, callbacks may not be pickled, so we just drop them,
+            # unless directed otherwise by self._pickled_cids.
+            "callbacks": {s: {cid: proxy() for cid, proxy in d.items()
+                              if cid in self._pickled_cids}
+                          for s, d in self.callbacks.items()},
+            # It is simpler to reconstruct this from callbacks in __setstate__.
+            "_func_cid_map": None,
+            "_cid_gen": next(self._cid_gen)
+        }
+
+    def __setstate__(self, state):
+        cid_count = state.pop('_cid_gen')
+        vars(self).update(state)
+        self.callbacks = {
+            s: {cid: _weak_or_strong_ref(func, self._remove_proxy)
+                for cid, func in d.items()}
+            for s, d in self.callbacks.items()}
+        self._func_cid_map = {
+            s: {proxy: cid for cid, proxy in d.items()}
+            for s, d in self.callbacks.items()}
+        self._cid_gen = itertools.count(cid_count)
+
+    def connect(self, signal, func):
+        """Register *func* to be called when signal *signal* is generated."""
+        if self._signals is not None:
+            _api.check_in_list(self._signals, signal=signal)
+        self._func_cid_map.setdefault(signal, {})
+        proxy = _weak_or_strong_ref(func, self._remove_proxy)
+        if proxy in self._func_cid_map[signal]:
+            return self._func_cid_map[signal][proxy]
+        cid = next(self._cid_gen)
+        self._func_cid_map[signal][proxy] = cid
+        self.callbacks.setdefault(signal, {})
+        self.callbacks[signal][cid] = proxy
+        return cid
+
+    def _connect_picklable(self, signal, func):
+        """
+        Like `.connect`, but the callback is kept when pickling/unpickling.
+
+        Currently internal-use only.
+        """
+        cid = self.connect(signal, func)
+        self._pickled_cids.add(cid)
+        return cid
+
+    # Keep a reference to sys.is_finalizing, as sys may have been cleared out
+    # at that point.
+    def _remove_proxy(self, proxy, *, _is_finalizing=sys.is_finalizing):
+        if _is_finalizing():
+            # Weakrefs can't be properly torn down at that point anymore.
+            return
+        for signal, proxy_to_cid in list(self._func_cid_map.items()):
+            cid = proxy_to_cid.pop(proxy, None)
+            if cid is not None:
+                del self.callbacks[signal][cid]
+                self._pickled_cids.discard(cid)
+                break
+        else:
+            # Not found
+            return
+        # Clean up empty dicts
+        if len(self.callbacks[signal]) == 0:
+            del self.callbacks[signal]
+            del self._func_cid_map[signal]
+
+    def disconnect(self, cid):
+        """
+        Disconnect the callback registered with callback id *cid*.
+
+        No error is raised if such a callback does not exist.
+        """
+        self._pickled_cids.discard(cid)
+        # Clean up callbacks
+        for signal, cid_to_proxy in list(self.callbacks.items()):
+            proxy = cid_to_proxy.pop(cid, None)
+            if proxy is not None:
+                break
+        else:
+            # Not found
+            return
+
+        proxy_to_cid = self._func_cid_map[signal]
+        for current_proxy, current_cid in list(proxy_to_cid.items()):
+            if current_cid == cid:
+                assert proxy is current_proxy
+                del proxy_to_cid[current_proxy]
+        # Clean up empty dicts
+        if len(self.callbacks[signal]) == 0:
+            del self.callbacks[signal]
+            del self._func_cid_map[signal]
+
+    def process(self, s, *args, **kwargs):
+        """
+        Process signal *s*.
+
+        All of the functions registered to receive callbacks on *s* will be
+        called with ``*args`` and ``**kwargs``.
+        """
+        if self._signals is not None:
+            _api.check_in_list(self._signals, signal=s)
+        for ref in list(self.callbacks.get(s, {}).values()):
+            func = ref()
+            if func is not None:
+                try:
+                    func(*args, **kwargs)
+                # this does not capture KeyboardInterrupt, SystemExit,
+                # and GeneratorExit
+                except Exception as exc:
+                    if self.exception_handler is not None:
+                        self.exception_handler(exc)
+                    else:
+                        raise
+
+    @contextlib.contextmanager
+    def blocked(self, *, signal=None):
+        """
+        Block callback signals from being processed.
+
+        A context manager to temporarily block/disable callback signals
+        from being processed by the registered listeners.
+
+        Parameters
+        ----------
+        signal : str, optional
+            The callback signal to block. The default is to block all signals.
+        """
+        orig = self.callbacks
+        try:
+            if signal is None:
+                # Empty out the callbacks
+                self.callbacks = {}
+            else:
+                # Only remove the specific signal
+                self.callbacks = {k: orig[k] for k in orig if k != signal}
+            yield
+        finally:
+            self.callbacks = orig
+
+
+class silent_list(list):
+    """
+    A list with a short ``repr()``.
+
+    This is meant to be used for a homogeneous list of artists, so that they
+    don't cause long, meaningless output.
+
+    Instead of ::
+
+        [<matplotlib.lines.Line2D object at 0x7f5749fed3c8>,
+         <matplotlib.lines.Line2D object at 0x7f5749fed4e0>,
+         <matplotlib.lines.Line2D object at 0x7f5758016550>]
+
+    one will get ::
+
+        <a list of 3 Line2D objects>
+
+    If ``self.type`` is None, the type name is obtained from the first item in
+    the list (if any).
+    """
+
+    def __init__(self, type, seq=None):
+        self.type = type
+        if seq is not None:
+            self.extend(seq)
+
+    def __repr__(self):
+        if self.type is not None or len(self) != 0:
+            tp = self.type if self.type is not None else type(self[0]).__name__
+            return f"<a list of {len(self)} {tp} objects>"
+        else:
+            return "<an empty list>"
+
+
+def _local_over_kwdict(
+        local_var, kwargs, *keys,
+        warning_cls=_api.MatplotlibDeprecationWarning):
+    out = local_var
+    for key in keys:
+        kwarg_val = kwargs.pop(key, None)
+        if kwarg_val is not None:
+            if out is None:
+                out = kwarg_val
+            else:
+                _api.warn_external(f'"{key}" keyword argument will be ignored',
+                                   warning_cls)
+    return out
+
+
+def strip_math(s):
+    """
+    Remove latex formatting from mathtext.
+
+    Only handles fully math and fully non-math strings.
+    """
+    if len(s) >= 2 and s[0] == s[-1] == "$":
+        s = s[1:-1]
+        for tex, plain in [
+                (r"\times", "x"),  # Specifically for Formatter support.
+                (r"\mathdefault", ""),
+                (r"\rm", ""),
+                (r"\cal", ""),
+                (r"\tt", ""),
+                (r"\it", ""),
+                ("\\", ""),
+                ("{", ""),
+                ("}", ""),
+        ]:
+            s = s.replace(tex, plain)
+    return s
+
+
+def _strip_comment(s):
+    """Strip everything from the first unquoted #."""
+    pos = 0
+    while True:
+        quote_pos = s.find('"', pos)
+        hash_pos = s.find('#', pos)
+        if quote_pos < 0:
+            without_comment = s if hash_pos < 0 else s[:hash_pos]
+            return without_comment.strip()
+        elif 0 <= hash_pos < quote_pos:
+            return s[:hash_pos].strip()
+        else:
+            closing_quote_pos = s.find('"', quote_pos + 1)
+            if closing_quote_pos < 0:
+                raise ValueError(
+                    f"Missing closing quote in: {s!r}. If you need a double-"
+                    'quote inside a string, use escaping: e.g. "the \" char"')
+            pos = closing_quote_pos + 1  # behind closing quote
+
+
+def is_writable_file_like(obj):
+    """Return whether *obj* looks like a file object with a *write* method."""
+    return callable(getattr(obj, 'write', None))
+
+
+def file_requires_unicode(x):
+    """
+    Return whether the given writable file-like object requires Unicode to be
+    written to it.
+    """
+    try:
+        x.write(b'')
+    except TypeError:
+        return True
+    else:
+        return False
+
+
+def to_filehandle(fname, flag='r', return_opened=False, encoding=None):
+    """
+    Convert a path to an open file handle or pass-through a file-like object.
+
+    Consider using `open_file_cm` instead, as it allows one to properly close
+    newly created file objects more easily.
+
+    Parameters
+    ----------
+    fname : str or path-like or file-like
+        If `str` or `os.PathLike`, the file is opened using the flags specified
+        by *flag* and *encoding*.  If a file-like object, it is passed through.
+    flag : str, default: 'r'
+        Passed as the *mode* argument to `open` when *fname* is `str` or
+        `os.PathLike`; ignored if *fname* is file-like.
+    return_opened : bool, default: False
+        If True, return both the file object and a boolean indicating whether
+        this was a new file (that the caller needs to close).  If False, return
+        only the new file.
+    encoding : str or None, default: None
+        Passed as the *mode* argument to `open` when *fname* is `str` or
+        `os.PathLike`; ignored if *fname* is file-like.
+
+    Returns
+    -------
+    fh : file-like
+    opened : bool
+        *opened* is only returned if *return_opened* is True.
+    """
+    if isinstance(fname, os.PathLike):
+        fname = os.fspath(fname)
+    if isinstance(fname, str):
+        if fname.endswith('.gz'):
+            fh = gzip.open(fname, flag)
+        elif fname.endswith('.bz2'):
+            # python may not be compiled with bz2 support,
+            # bury import until we need it
+            import bz2
+            fh = bz2.BZ2File(fname, flag)
+        else:
+            fh = open(fname, flag, encoding=encoding)
+        opened = True
+    elif hasattr(fname, 'seek'):
+        fh = fname
+        opened = False
+    else:
+        raise ValueError('fname must be a PathLike or file handle')
+    if return_opened:
+        return fh, opened
+    return fh
+
+
+def open_file_cm(path_or_file, mode="r", encoding=None):
+    r"""Pass through file objects and context-manage path-likes."""
+    fh, opened = to_filehandle(path_or_file, mode, True, encoding)
+    return fh if opened else contextlib.nullcontext(fh)
+
+
+def is_scalar_or_string(val):
+    """Return whether the given object is a scalar or string like."""
+    return isinstance(val, str) or not np.iterable(val)
+
+
+@_api.delete_parameter(
+    "3.8", "np_load", alternative="open(get_sample_data(..., asfileobj=False))")
+def get_sample_data(fname, asfileobj=True, *, np_load=True):
+    """
+    Return a sample data file.  *fname* is a path relative to the
+    :file:`mpl-data/sample_data` directory.  If *asfileobj* is `True`
+    return a file object, otherwise just a file path.
+
+    Sample data files are stored in the 'mpl-data/sample_data' directory within
+    the Matplotlib package.
+
+    If the filename ends in .gz, the file is implicitly ungzipped.  If the
+    filename ends with .npy or .npz, and *asfileobj* is `True`, the file is
+    loaded with `numpy.load`.
+    """
+    path = _get_data_path('sample_data', fname)
+    if asfileobj:
+        suffix = path.suffix.lower()
+        if suffix == '.gz':
+            return gzip.open(path)
+        elif suffix in ['.npy', '.npz']:
+            if np_load:
+                return np.load(path)
+            else:
+                return path.open('rb')
+        elif suffix in ['.csv', '.xrc', '.txt']:
+            return path.open('r')
+        else:
+            return path.open('rb')
+    else:
+        return str(path)
+
+
+def _get_data_path(*args):
+    """
+    Return the `pathlib.Path` to a resource file provided by Matplotlib.
+
+    ``*args`` specify a path relative to the base data path.
+    """
+    return Path(matplotlib.get_data_path(), *args)
+
+
+def flatten(seq, scalarp=is_scalar_or_string):
+    """
+    Return a generator of flattened nested containers.
+
+    For example:
+
+        >>> from matplotlib.cbook import flatten
+        >>> l = (('John', ['Hunter']), (1, 23), [[([42, (5, 23)], )]])
+        >>> print(list(flatten(l)))
+        ['John', 'Hunter', 1, 23, 42, 5, 23]
+
+    By: Composite of Holger Krekel and Luther Blissett
+    From: https://code.activestate.com/recipes/121294/
+    and Recipe 1.12 in cookbook
+    """
+    for item in seq:
+        if scalarp(item) or item is None:
+            yield item
+        else:
+            yield from flatten(item, scalarp)
+
+
+@_api.deprecated("3.8")
+class Stack:
+    """
+    Stack of elements with a movable cursor.
+
+    Mimics home/back/forward in a web browser.
+    """
+
+    def __init__(self, default=None):
+        self.clear()
+        self._default = default
+
+    def __call__(self):
+        """Return the current element, or None."""
+        if not self._elements:
+            return self._default
+        else:
+            return self._elements[self._pos]
+
+    def __len__(self):
+        return len(self._elements)
+
+    def __getitem__(self, ind):
+        return self._elements[ind]
+
+    def forward(self):
+        """Move the position forward and return the current element."""
+        self._pos = min(self._pos + 1, len(self._elements) - 1)
+        return self()
+
+    def back(self):
+        """Move the position back and return the current element."""
+        if self._pos > 0:
+            self._pos -= 1
+        return self()
+
+    def push(self, o):
+        """
+        Push *o* to the stack at current position.  Discard all later elements.
+
+        *o* is returned.
+        """
+        self._elements = self._elements[:self._pos + 1] + [o]
+        self._pos = len(self._elem

@@ -1,0 +1,384 @@
+SOURCE_PATH: archive_forge/src/archive_forge/44fU.py
+KIND: code
+
+"""
+.. _standard_decorator:
+
+================================================================================
+Title: Standard Decorator for Enhanced Functionality
+================================================================================
+    Path: EVIE/standard_decorator.py
+    ================================================================================
+    Description:
+        This module defines the StandardDecorator class, designed to augment functions
+        with advanced features such as logging, error handling, performance monitoring,
+        automatic retry mechanisms, result caching, and input validation. It serves as
+        a versatile tool within the INDEGO project to ensure functions meet high standards
+        of reliability and efficiency.
+    ================================================================================
+    Overview:
+        The StandardDecorator class encapsulates a decorator pattern that enhances
+        functions with a suite of advanced features. It is designed for seamless
+        integration across various use cases within the INDEGO project, providing a
+        robust framework for error-resilient and efficient development.
+    ================================================================================
+    Purpose:
+        To provide a robust framework that enhances the functionality of standard
+        functions with minimal overhead, facilitating a more efficient and error-resilient
+        development process within the INDEGO project.
+    ================================================================================
+    Scope:
+        The module is intended for use within the INDEGO project but designed with
+        generic functionality to be adaptable to other projects requiring similar
+        advanced function enhancements.
+    ================================================================================
+    Definitions:
+        - StandardDecorator: A class that wraps functions to provide additional
+        features like logging, error handling, and result caching.
+        - Retry Mechanism: A process that automatically retries a function execution
+        upon encountering specified exceptions.
+        - LRU Cache: Least Recently Used caching strategy for optimizing memory usage
+        by discarding the least recently used items.
+    ================================================================================
+    Key Features:
+        - Automatic retries on transient failures with customizable retry counts and delays.
+        - Performance logging with adjustable log levels. Default logging level is robust and detailed.
+        - Input validation and sanitization based on dynamic rules.
+        - Result caching with a thread-safe LRU cache strategy and long-term file cache.
+        - Asynchronous operation support.
+    ================================================================================
+    Usage:
+        To use the StandardDecorator for enhancing a function, annotate the function
+        with the decorator and specify any desired configurations:
+        ''' python
+                @StandardDecorator() # Default Configuration is Highly Detailed and Flexible
+                def my_function(param1):
+                # Function body
+    '''
+    ================================================================================
+    Dependencies:
+        - Python 3.8 or higher
+        - collections
+        - logging
+        - asyncio
+        - functools
+        - time
+        - inspect
+        - typing
+        - tracemalloc
+    ================================================================================
+    References:
+        - Decorators in Python: A comprehensive guide on decorators, covering their definition, creation, and use cases. [Real Python Tutorial on Decorators](https://realpython.com/primer-on-python-decorators/)
+        - Python 3 Documentation: The official Python documentation, providing in-depth information on Python's standard library, language reference, and more. [Python 3 Documentation](https://docs.python.org/3/)
+        - PEP 318 -- Decorators for Functions and Methods: A Python Enhancement Proposal discussing the introduction of decorators into Python. [PEP 318](https://peps.python.org/pep-0318/)
+        - Python Decorator Library: A collection of decorator examples and patterns. [Python Decorator Library](https://wiki.python.org/moin/PythonDecoratorLibrary)
+        - functools.wraps: A decorator for updating attributes of wrapping functions. [functools.wraps](https://docs.python.org/3/library/functools.html#functools.wraps)
+    ================================================================================
+    Authorship and Versioning Details:
+        Author: Lloyd Handyside
+        Creation Date: 2024-04-10 (ISO 8601 Format)
+        Last Modified: 2024-04-13 (ISO 8601 Format)
+        Version: 1.0.3 (Semantic Versioning)
+        Contact: lloyd.handyside@neuroforge.io
+        Ownership: Neuro Forge
+        Status: Draft (Subject to change)
+    ================================================================================
+    Functionalities:
+        - Enhances functions with advanced features for improved reliability and efficiency.
+        - Supports both synchronous and asynchronous functions.
+        - Customizable for specific needs through various configuration parameters.
+    ================================================================================
+    Notes:
+        - The decorator is designed with extensibility in mind, allowing for future
+        enhancements and additional features.
+        - Performance benchmarks and optimization strategies can be tailored to specific
+            use cases to maximize efficiency.
+        - The decorator can be further extended to support additional features like
+            distributed caching, advanced logging, and adaptive retry strategies.
+        - The end goal of the decorator is to provide a comprehensive universal toolset for
+            enhancing function behavior and ease debugging efforts within the INDEGO(INDEGO) project.
+    ================================================================================
+    Change Log:
+        - 2024-04-10, Version 1.0.0: Initial release. Implementation of core functionalities.
+        - 2024-04-11, Version 1.0.1: Added support for asynchronous operations and dynamic retry strategies.
+        - 2024-04-12, Version 1.0.2: Enhanced performance logging and input validation capabilities.
+        - 2024-04-13, Version 1.0.3: Improved caching mechanism and file cache management.
+    ================================================================================
+    License:
+        The contents of this document, including but not limited to its code, documentation, and related materials, are proprietary to Neuro Forge. Personal, educational, and research use of this document and its contents are permitted on the condition that such use does not involve any commercial purposes. All projects, research, or products derived from or incorporating any part of this document must explicitly acknowledge Neuro Forge and INDEGO as contributors. Furthermore, Neuro Forge shall be entitled to a 5% stake in any derivative commercial products, procedures, or intellectual properties resulting from the utilization of this document or its derivatives. This entitlement does not imply endorsement or representation of the derived efforts by Neuro Forge, and such derived products do not necessarily reflect the views or beliefs of Neuro Forge or its affiliates. Unauthorized commercial use is strictly prohibited. For specific licensing inquiries, permissions, terms of use, and detailed conditions regarding the acknowledgment and entitlements, please direct all correspondence to legal@neuroforge.io. All rights not expressly granted herein are reserved by Neuro Forge.
+    ================================================================================
+    Tags: Decorator, Python, Asynchronous, Caching, Logging, Error Handling, Validation
+    ================================================================================
+    Contributors:
+        - INDEGO: Digital Intelligence, Primary Developer, Ongoing contributions to the development and maintenance of the StandardDecorator.
+        - Lloyd Handyside: Author of the StandardDecorator module and associated documentation.
+    ================================================================================
+    Security Considerations:
+        - Ensure that logging does not inadvertently expose sensitive information.
+        - Ideally obfuscate data without losing any detail
+        - Investigate default homeomorphic encryption for all stored and utilised data
+        - Validate inputs rigorously to prevent injection attacks.
+        - Use secure serialization formats for caching to avoid deserialization vulnerabilities.
+    ================================================================================
+    Privacy Considerations:
+        - Do not log or cache personal identifiable information (PII) without explicit consent.
+        - Ideally anonymize or pseudonymize data before caching or logging.
+        - Implement proper access controls for cached data.
+    ================================================================================
+    Performance Benchmarks:
+        - The decorator introduces an average overhead to be calculated. The assumed value, although low, is innacurate as it produces negative values.
+        - Caching can reduce execution time by up to 80% for frequently called functions with expensive computations.
+    ================================================================================
+    Limitations:
+        - Performance logging does not account for the overhead introduced by the decorator itself, which may skew metrics slightly.
+        - If the code is poorly type hinted there can be issues, look into a method to apply dynamic type hinting to adaptively figure out correct parameters to use etc.
+    ================================================================================
+"""
+
+__all__ = ["StandardDecorator", "import_from_path", "setup_logging"]
+# Comprehensive and optimized import statements with detailed explanations for clarity, maintainability, and adherence to Python 3.12 standards.
+
+# Standard Library Imports
+import asyncio  # Essential for asynchronous operations. Documentation: https://docs.python.org/3/library/asyncio.html
+import collections  # Provides support for container datatypes. Documentation: https://docs.python.org/3/library/collections.html
+import collections.abc  # Offers abstract base classes for collections. Documentation: https://docs.python.org/3/library/collections.abc.html
+import functools  # Utilities for higher-order functions and operations on callable objects. Documentation: https://docs.python.org/3/library/functools.html
+import importlib.util  # Facilitates dynamic module loading. Documentation: https://docs.python.org/3/library/importlib.html#importlib.util
+import inspect  # Inspects live objects. Documentation: https://docs.python.org/3/library/inspect.html
+import logging  # Facilitates logging capabilities. Documentation: https://docs.python.org/3/library/logging.html
+import logging.handlers  # Additional handlers for logging. Documentation: https://docs.python.org/3/library/logging.handlers.html
+import os  # Interaction with the operating system. Documentation: https://docs.python.org/3/library/os.html
+import pickle  # Object serialization and deserialization. Documentation: https://docs.python.org/3/library/pickle.html
+import psutil  # System monitoring and resource management. Documentation: https://psutil.readthedocs.io/en/latest/
+import random  # Generates pseudo-random numbers. Documentation: https://docs.python.org/3/library/random.html
+import signal  # Set handlers for asynchronous events. Documentation: https://docs.python.org/3/library/signal.html
+import sys  # Access to some variables used or maintained by the Python interpreter. Documentation: https://docs.python.org/3/library/sys.html
+import threading  # Higher-level threading interface. Documentation: https://docs.python.org/3/library/threading.html
+import time  # Time access and conversions. Documentation: https://docs.python.org/3/library/time.html
+import tracemalloc  # Trace memory allocations. Documentation: https://docs.python.org/3/library/tracemalloc.html
+import types  # Dynamic creation of new types. Documentation: https://docs.python.org/3/library/types.html
+from types import (
+    ModuleType,
+)  # Type definition for module objects. Documentation: https://docs.python.org/3/library/types.html#types.ModuleType
+
+# Third-Party Imports
+import aiofiles  # Asynchronous file operations. Documentation: https://aiofiles.readthedocs.io/en/latest/
+from aiofile import (
+    AIOFile,
+    Writer,
+)  # Asynchronous file operations. Documentation: https://aiofile.readthedocs.io/en/latest/
+import numpy as np  # Fundamental package for scientific computing. Documentation: https://numpy.org/doc/
+
+# Python Typing Imports
+from typing import (  # Typing constructs for type hinting. Documentation: https://docs.python.org/3/library/typing.html
+    Any,
+    Callable,
+    Dict,
+    Tuple,
+    TypeVar,
+    Optional,
+    Type,
+    Union,
+    cast,
+    overload,
+    TYPE_CHECKING,
+    List,
+    Set,
+    AnyStr,
+    Sequence,
+    Iterable,
+    Mapping,
+    Generator,
+    ContextManager,
+    AsyncContextManager,
+    Protocol,
+    runtime_checkable,
+    Literal,
+    ForwardRef,
+    Annotated,
+    get_type_hints,
+    get_origin,
+    get_args,
+    _SpecialForm,
+)
+
+# Specific Imports from Standard Library Modules
+from datetime import (
+    datetime,
+    timedelta,
+)  # Date and time types. Documentation: https://docs.python.org/3/library/datetime.html
+from functools import (
+    wraps,
+)  # Decorator to preserve function metadata. Documentation: https://docs.python.org/3/library/functools.html#functools.wraps
+from inspect import (  # Inspection and introspection of live objects. Documentation: https://docs.python.org/3/library/inspect.html
+    _empty,
+    signature,
+    BoundArguments,
+    Parameter,
+    iscoroutinefunction,
+    iscoroutine,
+)
+
+# Mathematical Functions and Logical Operators from numpy and math
+from numpy import (  # Numerical operations and array processing. Documentation: https://numpy.org/doc/stable/reference/routines.math.html
+    sin,
+    cos,
+    tan,
+    sinh,
+    cosh,
+    tanh,
+    exp,
+    log,
+    log10,
+    log2,
+    log1p,
+    sqrt,
+    ceil,
+    floor,
+    trunc,
+    pi,
+    e,
+    inf,
+    nan,
+)
+from math import (  # Mathematical functions. Documentation: https://docs.python.org/3/library/math.html
+    atan,
+    atan2,
+    asin,
+    acos,
+    acosh,
+    asinh,
+    atanh,
+    degrees,
+    radians,
+    isfinite,
+    copysign,
+    hypot,
+    erf,
+    erfc,
+    gamma,
+    lgamma,
+    fmod,
+    modf,
+    frexp,
+    ldexp,
+)
+
+# Alias commonly used mathematical functions for ease of access and readability
+# Note: Aliasing is organized to avoid duplication and ensure clarity in usage.
+
+# Type variable F, bound to Callable, for generic function annotations
+F = TypeVar("F", bound=Callable[..., Any])
+
+
+class AsyncFileHandler(logging.Handler):
+    """
+    An asynchronous logging handler using aiofile for non-blocking file writing.
+    """
+
+    def __init__(self, filename: str, mode: str = "a", loop=None):
+        super().__init__()
+        self.filename = filename
+        self.mode = mode
+        self.loop = loop or asyncio.get_event_loop()
+        self.aiofile = AIOFile(filename, mode)
+        self.writer = Writer(self.aiofile)
+
+    async def aio_write(self, msg: str):
+        """
+        Asynchronously writes a log message to the file.
+        """
+        await self.writer(msg)
+        await self.aiofile.fsync()
+
+    def emit(self, record):
+        """
+        Overrides the emit method to write logs asynchronously.
+        """
+        msg = self.format(record)
+        asyncio.run_coroutine_threadsafe(self.aio_write(msg + "\n"), self.loop)
+
+
+class ResourceProfiler:
+    """
+    Profiles resource usage (CPU, memory, etc.) and logs the metrics at specified intervals.
+    """
+
+    def __init__(self, interval: int = 60, output: str = "resource_usage.log"):
+        """
+        Initializes the resource profiler.
+
+        :param interval: The interval (in seconds) at which to log resource usage.
+        :param output: The file path for resource profiling logs.
+        """
+        self.interval = interval
+        self.output = output
+        self.running = False
+        self.lock = (
+            asyncio.Lock()
+        )  # Use asyncio.Lock for thread safety in async context
+
+    async def start(self):
+        """
+        Starts the resource profiling in a background coroutine.
+        """
+        async with self.lock:
+            if not self.running:
+                self.running = True
+                tracemalloc.start()
+                asyncio.create_task(self._profile())
+
+    async def stop(self):
+        """
+        Stops the resource profiling.
+        """
+        async with self.lock:
+            self.running = False
+            tracemalloc.stop()
+
+    async def _profile(self):
+        """
+        Periodically logs resource usage until stopped.
+        """
+        while self.running:
+            await self._log_resource_usage()
+            await asyncio.sleep(self.interval)
+
+    async def _log_resource_usage(self):
+        """
+        Logs the current resource usage asynchronously.
+        """
+        process = psutil.Process()
+        cpu_usage = psutil.cpu_percent()
+        memory_usage = process.memory_percent()
+        current, peak = tracemalloc.get_traced_memory()
+        with open(self.output, "a") as f:
+            f.write(
+                f"Resource Usage - CPU: {cpu_usage}%, Memory: {memory_usage}%, Traced Memory: Current {current} bytes, Peak {peak} bytes\n"
+            )
+        logging.info(
+            f"Resource Usage - CPU: {cpu_usage}%, Memory: {memory_usage}%, Traced Memory: Current {current} bytes, Peak {peak} bytes"
+        )
+
+
+class StandardDecorator:
+    """
+    A class encapsulating a decorator that enhances functions with comprehensive features including logging, error handling,
+    performance monitoring, automatic retrying on transient failures, optional result caching, dynamic input validation and sanitization.
+    It is designed for broad application across various projects, providing a robust framework for function execution enhancement.
+    Features include automatic retries on specified exceptions, performance logging, input validation, result caching with a thread-safe strategy,
+    and dynamic retry strategies. It allows for granular control over logging levels, supports complex validation rules, making it highly customizable.
+
+    Attributes:
+        retries (int): Number of retry attempts for the decorated function upon failure.
+        delay (int): Delay (in seconds) between retry attempts.
+        cache_results (bool): Flag to enable or disable result caching for the decorated function.
+        log_level (int): Logging level for logging messages.
+        validation_rules (Optional[Dict[str, Callable[[Any], bool]]]): Dictionary mapping argument names to validation functions.
+        retry_exceptions (Tuple[Type[BaseException], ...]): Tuple of exception types that should trigger a retry.
+        cache_maxsize (int): Maximum size of the cache (number of items) when result caching is enabled.
+        enable_performance_logging (bool): Flag to enable or disable performance logging.
+        dynamic_retry_enabled (bool): Flag to enable or disable the dynamic retry strategy.
+        cache_key_strategy (Optional[Callable[[Callable, Tuple[Any, ...], Dict[str, Any]], Tuple[Any, ...]]]): Custom function for generating cache keys.
+        enable_caching (bool): Flag to enable or disable caching.
+        enable_validation (bool): Flag t

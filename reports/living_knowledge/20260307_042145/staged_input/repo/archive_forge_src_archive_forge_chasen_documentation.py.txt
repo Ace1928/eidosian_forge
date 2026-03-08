@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/chasen_documentation.py
+KIND: code
+
+import sys
+from nltk.corpus.reader import util
+from nltk.corpus.reader.api import *
+from nltk.corpus.reader.util import *
+Reads one paragraph at a time.

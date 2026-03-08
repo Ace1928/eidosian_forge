@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_bootstrap_documentation.py
+KIND: code
+
+Release the import lock regardless of any raised exceptions.

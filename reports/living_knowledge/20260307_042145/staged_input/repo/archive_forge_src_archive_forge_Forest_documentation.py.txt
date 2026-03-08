@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/Forest_documentation.py
+KIND: code
+
+import pickle
+import numpy
+from rdkit.ML.DecTree import CrossValidate, PruneTree
+ allows the forest to show itself as a string

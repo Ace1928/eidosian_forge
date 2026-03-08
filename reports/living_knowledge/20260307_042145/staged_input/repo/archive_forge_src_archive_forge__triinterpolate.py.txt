@@ -1,0 +1,475 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_triinterpolate.py
+KIND: code
+
+"""
+Interpolation inside triangular grids.
+"""
+
+import numpy as np
+
+from matplotlib import _api
+from matplotlib.tri import Triangulation
+from matplotlib.tri._trifinder import TriFinder
+from matplotlib.tri._tritools import TriAnalyzer
+
+__all__ = ('TriInterpolator', 'LinearTriInterpolator', 'CubicTriInterpolator')
+
+
+class TriInterpolator:
+    """
+    Abstract base class for classes used to interpolate on a triangular grid.
+
+    Derived classes implement the following methods:
+
+    - ``__call__(x, y)``,
+      where x, y are array-like point coordinates of the same shape, and
+      that returns a masked array of the same shape containing the
+      interpolated z-values.
+
+    - ``gradient(x, y)``,
+      where x, y are array-like point coordinates of the same
+      shape, and that returns a list of 2 masked arrays of the same shape
+      containing the 2 derivatives of the interpolator (derivatives of
+      interpolated z values with respect to x and y).
+    """
+
+    def __init__(self, triangulation, z, trifinder=None):
+        _api.check_isinstance(Triangulation, triangulation=triangulation)
+        self._triangulation = triangulation
+
+        self._z = np.asarray(z)
+        if self._z.shape != self._triangulation.x.shape:
+            raise ValueError("z array must have same length as triangulation x"
+                             " and y arrays")
+
+        _api.check_isinstance((TriFinder, None), trifinder=trifinder)
+        self._trifinder = trifinder or self._triangulation.get_trifinder()
+
+        # Default scaling factors : 1.0 (= no scaling)
+        # Scaling may be used for interpolations for which the order of
+        # magnitude of x, y has an impact on the interpolant definition.
+        # Please refer to :meth:`_interpolate_multikeys` for details.
+        self._unit_x = 1.0
+        self._unit_y = 1.0
+
+        # Default triangle renumbering: None (= no renumbering)
+        # Renumbering may be used to avoid unnecessary computations
+        # if complex calculations are done inside the Interpolator.
+        # Please refer to :meth:`_interpolate_multikeys` for details.
+        self._tri_renum = None
+
+    # __call__ and gradient docstrings are shared by all subclasses
+    # (except, if needed, relevant additions).
+    # However these methods are only implemented in subclasses to avoid
+    # confusion in the documentation.
+    _docstring__call__ = """
+        Returns a masked array containing interpolated values at the specified
+        (x, y) points.
+
+        Parameters
+        ----------
+        x, y : array-like
+            x and y coordinates of the same shape and any number of
+            dimensions.
+
+        Returns
+        -------
+        np.ma.array
+            Masked array of the same shape as *x* and *y*; values corresponding
+            to (*x*, *y*) points outside of the triangulation are masked out.
+
+        """
+
+    _docstringgradient = r"""
+        Returns a list of 2 masked arrays containing interpolated derivatives
+        at the specified (x, y) points.
+
+        Parameters
+        ----------
+        x, y : array-like
+            x and y coordinates of the same shape and any number of
+            dimensions.
+
+        Returns
+        -------
+        dzdx, dzdy : np.ma.array
+            2 masked arrays of the same shape as *x* and *y*; values
+            corresponding to (x, y) points outside of the triangulation
+            are masked out.
+            The first returned array contains the values of
+            :math:`\frac{\partial z}{\partial x}` and the second those of
+            :math:`\frac{\partial z}{\partial y}`.
+
+        """
+
+    def _interpolate_multikeys(self, x, y, tri_index=None,
+                               return_keys=('z',)):
+        """
+        Versatile (private) method defined for all TriInterpolators.
+
+        :meth:`_interpolate_multikeys` is a wrapper around method
+        :meth:`_interpolate_single_key` (to be defined in the child
+        subclasses).
+        :meth:`_interpolate_single_key actually performs the interpolation,
+        but only for 1-dimensional inputs and at valid locations (inside
+        unmasked triangles of the triangulation).
+
+        The purpose of :meth:`_interpolate_multikeys` is to implement the
+        following common tasks needed in all subclasses implementations:
+
+        - calculation of containing triangles
+        - dealing with more than one interpolation request at the same
+          location (e.g., if the 2 derivatives are requested, it is
+          unnecessary to compute the containing triangles twice)
+        - scaling according to self._unit_x, self._unit_y
+        - dealing with points outside of the grid (with fill value np.nan)
+        - dealing with multi-dimensional *x*, *y* arrays: flattening for
+          :meth:`_interpolate_params` call and final reshaping.
+
+        (Note that np.vectorize could do most of those things very well for
+        you, but it does it by function evaluations over successive tuples of
+        the input arrays. Therefore, this tends to be more time-consuming than
+        using optimized numpy functions - e.g., np.dot - which can be used
+        easily on the flattened inputs, in the child-subclass methods
+        :meth:`_interpolate_single_key`.)
+
+        It is guaranteed that the calls to :meth:`_interpolate_single_key`
+        will be done with flattened (1-d) array-like input parameters *x*, *y*
+        and with flattened, valid `tri_index` arrays (no -1 index allowed).
+
+        Parameters
+        ----------
+        x, y : array-like
+            x and y coordinates where interpolated values are requested.
+        tri_index : array-like of int, optional
+            Array of the containing triangle indices, same shape as
+            *x* and *y*. Defaults to None. If None, these indices
+            will be computed by a TriFinder instance.
+            (Note: For point outside the grid, tri_index[ipt] shall be -1).
+        return_keys : tuple of keys from {'z', 'dzdx', 'dzdy'}
+            Defines the interpolation arrays to return, and in which order.
+
+        Returns
+        -------
+        list of arrays
+            Each array-like contains the expected interpolated values in the
+            order defined by *return_keys* parameter.
+        """
+        # Flattening and rescaling inputs arrays x, y
+        # (initial shape is stored for output)
+        x = np.asarray(x, dtype=np.float64)
+        y = np.asarray(y, dtype=np.float64)
+        sh_ret = x.shape
+        if x.shape != y.shape:
+            raise ValueError("x and y shall have same shapes."
+                             f" Given: {x.shape} and {y.shape}")
+        x = np.ravel(x)
+        y = np.ravel(y)
+        x_scaled = x/self._unit_x
+        y_scaled = y/self._unit_y
+        size_ret = np.size(x_scaled)
+
+        # Computes & ravels the element indexes, extract the valid ones.
+        if tri_index is None:
+            tri_index = self._trifinder(x, y)
+        else:
+            if tri_index.shape != sh_ret:
+                raise ValueError(
+                    "tri_index array is provided and shall"
+                    " have same shape as x and y. Given: "
+                    f"{tri_index.shape} and {sh_ret}")
+            tri_index = np.ravel(tri_index)
+
+        mask_in = (tri_index != -1)
+        if self._tri_renum is None:
+            valid_tri_index = tri_index[mask_in]
+        else:
+            valid_tri_index = self._tri_renum[tri_index[mask_in]]
+        valid_x = x_scaled[mask_in]
+        valid_y = y_scaled[mask_in]
+
+        ret = []
+        for return_key in return_keys:
+            # Find the return index associated with the key.
+            try:
+                return_index = {'z': 0, 'dzdx': 1, 'dzdy': 2}[return_key]
+            except KeyError as err:
+                raise ValueError("return_keys items shall take values in"
+                                 " {'z', 'dzdx', 'dzdy'}") from err
+
+            # Sets the scale factor for f & df components
+            scale = [1., 1./self._unit_x, 1./self._unit_y][return_index]
+
+            # Computes the interpolation
+            ret_loc = np.empty(size_ret, dtype=np.float64)
+            ret_loc[~mask_in] = np.nan
+            ret_loc[mask_in] = self._interpolate_single_key(
+                return_key, valid_tri_index, valid_x, valid_y) * scale
+            ret += [np.ma.masked_invalid(ret_loc.reshape(sh_ret), copy=False)]
+
+        return ret
+
+    def _interpolate_single_key(self, return_key, tri_index, x, y):
+        """
+        Interpolate at points belonging to the triangulation
+        (inside an unmasked triangles).
+
+        Parameters
+        ----------
+        return_key : {'z', 'dzdx', 'dzdy'}
+            The requested values (z or its derivatives).
+        tri_index : 1D int array
+            Valid triangle index (cannot be -1).
+        x, y : 1D arrays, same shape as `tri_index`
+            Valid locations where interpolation is requested.
+
+        Returns
+        -------
+        1-d array
+            Returned array of the same size as *tri_index*
+        """
+        raise NotImplementedError("TriInterpolator subclasses" +
+                                  "should implement _interpolate_single_key!")
+
+
+class LinearTriInterpolator(TriInterpolator):
+    """
+    Linear interpolator on a triangular grid.
+
+    Each triangle is represented by a plane so that an interpolated value at
+    point (x, y) lies on the plane of the triangle containing (x, y).
+    Interpolated values are therefore continuous across the triangulation, but
+    their first derivatives are discontinuous at edges between triangles.
+
+    Parameters
+    ----------
+    triangulation : `~matplotlib.tri.Triangulation`
+        The triangulation to interpolate over.
+    z : (npoints,) array-like
+        Array of values, defined at grid points, to interpolate between.
+    trifinder : `~matplotlib.tri.TriFinder`, optional
+        If this is not specified, the Triangulation's default TriFinder will
+        be used by calling `.Triangulation.get_trifinder`.
+
+    Methods
+    -------
+    `__call__` (x, y) : Returns interpolated values at (x, y) points.
+    `gradient` (x, y) : Returns interpolated derivatives at (x, y) points.
+
+    """
+    def __init__(self, triangulation, z, trifinder=None):
+        super().__init__(triangulation, z, trifinder)
+
+        # Store plane coefficients for fast interpolation calculations.
+        self._plane_coefficients = \
+            self._triangulation.calculate_plane_coefficients(self._z)
+
+    def __call__(self, x, y):
+        return self._interpolate_multikeys(x, y, tri_index=None,
+                                           return_keys=('z',))[0]
+    __call__.__doc__ = TriInterpolator._docstring__call__
+
+    def gradient(self, x, y):
+        return self._interpolate_multikeys(x, y, tri_index=None,
+                                           return_keys=('dzdx', 'dzdy'))
+    gradient.__doc__ = TriInterpolator._docstringgradient
+
+    def _interpolate_single_key(self, return_key, tri_index, x, y):
+        _api.check_in_list(['z', 'dzdx', 'dzdy'], return_key=return_key)
+        if return_key == 'z':
+            return (self._plane_coefficients[tri_index, 0]*x +
+                    self._plane_coefficients[tri_index, 1]*y +
+                    self._plane_coefficients[tri_index, 2])
+        elif return_key == 'dzdx':
+            return self._plane_coefficients[tri_index, 0]
+        else:  # 'dzdy'
+            return self._plane_coefficients[tri_index, 1]
+
+
+class CubicTriInterpolator(TriInterpolator):
+    r"""
+    Cubic interpolator on a triangular grid.
+
+    In one-dimension - on a segment - a cubic interpolating function is
+    defined by the values of the function and its derivative at both ends.
+    This is almost the same in 2D inside a triangle, except that the values
+    of the function and its 2 derivatives have to be defined at each triangle
+    node.
+
+    The CubicTriInterpolator takes the value of the function at each node -
+    provided by the user - and internally computes the value of the
+    derivatives, resulting in a smooth interpolation.
+    (As a special feature, the user can also impose the value of the
+    derivatives at each node, but this is not supposed to be the common
+    usage.)
+
+    Parameters
+    ----------
+    triangulation : `~matplotlib.tri.Triangulation`
+        The triangulation to interpolate over.
+    z : (npoints,) array-like
+        Array of values, defined at grid points, to interpolate between.
+    kind : {'min_E', 'geom', 'user'}, optional
+        Choice of the smoothing algorithm, in order to compute
+        the interpolant derivatives (defaults to 'min_E'):
+
+        - if 'min_E': (default) The derivatives at each node is computed
+          to minimize a bending energy.
+        - if 'geom': The derivatives at each node is computed as a
+          weighted average of relevant triangle normals. To be used for
+          speed optimization (large grids).
+        - if 'user': The user provides the argument *dz*, no computation
+          is hence needed.
+
+    trifinder : `~matplotlib.tri.TriFinder`, optional
+        If not specified, the Triangulation's default TriFinder will
+        be used by calling `.Triangulation.get_trifinder`.
+    dz : tuple of array-likes (dzdx, dzdy), optional
+        Used only if  *kind* ='user'. In this case *dz* must be provided as
+        (dzdx, dzdy) where dzdx, dzdy are arrays of the same shape as *z* and
+        are the interpolant first derivatives at the *triangulation* points.
+
+    Methods
+    -------
+    `__call__` (x, y) : Returns interpolated values at (x, y) points.
+    `gradient` (x, y) : Returns interpolated derivatives at (x, y) points.
+
+    Notes
+    -----
+    This note is a bit technical and details how the cubic interpolation is
+    computed.
+
+    The interpolation is based on a Clough-Tocher subdivision scheme of
+    the *triangulation* mesh (to make it clearer, each triangle of the
+    grid will be divided in 3 child-triangles, and on each child triangle
+    the interpolated function is a cubic polynomial of the 2 coordinates).
+    This technique originates from FEM (Finite Element Method) analysis;
+    the element used is a reduced Hsieh-Clough-Tocher (HCT)
+    element. Its shape functions are described in [1]_.
+    The assembled function is guaranteed to be C1-smooth, i.e. it is
+    continuous and its first derivatives are also continuous (this
+    is easy to show inside the triangles but is also true when crossing the
+    edges).
+
+    In the default case (*kind* ='min_E'), the interpolant minimizes a
+    curvature energy on the functional space generated by the HCT element
+    shape functions - with imposed values but arbitrary derivatives at each
+    node. The minimized functional is the integral of the so-called total
+    curvature (implementation based on an algorithm from [2]_ - PCG sparse
+    solver):
+
+    .. math::
+
+        E(z) = \frac{1}{2} \int_{\Omega} \left(
+            \left( \frac{\partial^2{z}}{\partial{x}^2} \right)^2 +
+            \left( \frac{\partial^2{z}}{\partial{y}^2} \right)^2 +
+            2\left( \frac{\partial^2{z}}{\partial{y}\partial{x}} \right)^2
+        \right) dx\,dy
+
+    If the case *kind* ='geom' is chosen by the user, a simple geometric
+    approximation is used (weighted average of the triangle normal
+    vectors), which could improve speed on very large grids.
+
+    References
+    ----------
+    .. [1] Michel Bernadou, Kamal Hassan, "Basis functions for general
+        Hsieh-Clough-Tocher triangles, complete or reduced.",
+        International Journal for Numerical Methods in Engineering,
+        17(5):784 - 789. 2.01.
+    .. [2] C.T. Kelley, "Iterative Methods for Optimization".
+
+    """
+    def __init__(self, triangulation, z, kind='min_E', trifinder=None,
+                 dz=None):
+        super().__init__(triangulation, z, trifinder)
+
+        # Loads the underlying c++ _triangulation.
+        # (During loading, reordering of triangulation._triangles may occur so
+        # that all final triangles are now anti-clockwise)
+        self._triangulation.get_cpp_triangulation()
+
+        # To build the stiffness matrix and avoid zero-energy spurious modes
+        # we will only store internally the valid (unmasked) triangles and
+        # the necessary (used) points coordinates.
+        # 2 renumbering tables need to be computed and stored:
+        #  - a triangle renum table in order to translate the result from a
+        #    TriFinder instance into the internal stored triangle number.
+        #  - a node renum table to overwrite the self._z values into the new
+        #    (used) node numbering.
+        tri_analyzer = TriAnalyzer(self._triangulation)
+        (compressed_triangles, compressed_x, compressed_y, tri_renum,
+         node_renum) = tri_analyzer._get_compressed_triangulation()
+        self._triangles = compressed_triangles
+        self._tri_renum = tri_renum
+        # Taking into account the node renumbering in self._z:
+        valid_node = (node_renum != -1)
+        self._z[node_renum[valid_node]] = self._z[valid_node]
+
+        # Computing scale factors
+        self._unit_x = np.ptp(compressed_x)
+        self._unit_y = np.ptp(compressed_y)
+        self._pts = np.column_stack([compressed_x / self._unit_x,
+                                     compressed_y / self._unit_y])
+        # Computing triangle points
+        self._tris_pts = self._pts[self._triangles]
+        # Computing eccentricities
+        self._eccs = self._compute_tri_eccentricities(self._tris_pts)
+        # Computing dof estimations for HCT triangle shape function
+        _api.check_in_list(['user', 'geom', 'min_E'], kind=kind)
+        self._dof = self._compute_dof(kind, dz=dz)
+        # Loading HCT element
+        self._ReferenceElement = _ReducedHCT_Element()
+
+    def __call__(self, x, y):
+        return self._interpolate_multikeys(x, y, tri_index=None,
+                                           return_keys=('z',))[0]
+    __call__.__doc__ = TriInterpolator._docstring__call__
+
+    def gradient(self, x, y):
+        return self._interpolate_multikeys(x, y, tri_index=None,
+                                           return_keys=('dzdx', 'dzdy'))
+    gradient.__doc__ = TriInterpolator._docstringgradient
+
+    def _interpolate_single_key(self, return_key, tri_index, x, y):
+        _api.check_in_list(['z', 'dzdx', 'dzdy'], return_key=return_key)
+        tris_pts = self._tris_pts[tri_index]
+        alpha = self._get_alpha_vec(x, y, tris_pts)
+        ecc = self._eccs[tri_index]
+        dof = np.expand_dims(self._dof[tri_index], axis=1)
+        if return_key == 'z':
+            return self._ReferenceElement.get_function_values(
+                alpha, ecc, dof)
+        else:  # 'dzdx', 'dzdy'
+            J = self._get_jacobian(tris_pts)
+            dzdx = self._ReferenceElement.get_function_derivatives(
+                alpha, J, ecc, dof)
+            if return_key == 'dzdx':
+                return dzdx[:, 0, 0]
+            else:
+                return dzdx[:, 1, 0]
+
+    def _compute_dof(self, kind, dz=None):
+        """
+        Compute and return nodal dofs according to kind.
+
+        Parameters
+        ----------
+        kind : {'min_E', 'geom', 'user'}
+            Choice of the _DOF_estimator subclass to estimate the gradient.
+        dz : tuple of array-likes (dzdx, dzdy), optional
+            Used only if *kind*=user; in this case passed to the
+            :class:`_DOF_estimator_user`.
+
+        Returns
+        -------
+        array-like, shape (npts, 2)
+            Estimation of the gradient at triangulation nodes (stored as
+            degree of freedoms of reduced-HCT triangle elements).
+        """
+        if kind == 'user':
+            if dz is None:
+                raise ValueError("For a CubicTriInterpolator with "
+                                 "*kind*='user', a valid *dz* "
+                                 "argument is expected.")
+            TE = _DOF_estimator_user(self, dz=dz)
+        elif kind == 'geom':

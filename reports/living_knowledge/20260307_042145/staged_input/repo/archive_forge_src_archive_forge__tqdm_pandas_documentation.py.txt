@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_tqdm_pandas_documentation.py
+KIND: code
+
+import sys
+
+    Registers the given `tqdm` instance with
+    `pandas.core.groupby.DataFrameGroupBy.progress_apply`.

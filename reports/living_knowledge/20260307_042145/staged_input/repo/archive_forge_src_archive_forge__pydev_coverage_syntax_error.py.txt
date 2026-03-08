@@ -1,0 +1,11 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_pydev_coverage_syntax_error.py
+KIND: code
+
+# -*- coding: iso-8859-5 -*-
+
+# Ʋ����
+class Dummy(object):
+    def Print(self)
+        print ('Ʋ����')
+
+Dummy().Print()

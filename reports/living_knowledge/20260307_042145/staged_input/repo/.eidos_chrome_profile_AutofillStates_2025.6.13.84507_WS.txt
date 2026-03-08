@@ -1,0 +1,16 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/WS
+KIND: config
+
+WS
+a'ana
+
+aigailetai
+atua
+fa'asaleleaga
+gaga'emaugagagaʻemauga
+gaga'ifomauga	
+palauli
+satupa'itea
+	tuamasaga
+va'aofonoti
+	vaisigano

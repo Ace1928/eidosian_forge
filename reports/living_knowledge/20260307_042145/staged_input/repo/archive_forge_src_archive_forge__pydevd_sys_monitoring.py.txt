@@ -1,0 +1,566 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_pydevd_sys_monitoring.py
+KIND: code
+
+# Copyright: Brainwy Software
+#
+# License: EPL
+
+from collections import namedtuple
+import dis
+import os
+import re
+import sys
+from _pydev_bundle._pydev_saved_modules import threading
+from types import CodeType, FrameType
+from typing import Dict, Optional, Tuple, Any
+from os.path import basename, splitext
+
+from _pydev_bundle import pydev_log
+from _pydevd_bundle import pydevd_dont_trace
+from _pydevd_bundle.pydevd_constants import (GlobalDebuggerHolder, ForkSafeLock,
+    PYDEVD_IPYTHON_CONTEXT, EXCEPTION_TYPE_USER_UNHANDLED, RETURN_VALUES_DICT,
+    PYTHON_SUSPEND)
+from pydevd_file_utils import (NORM_PATHS_AND_BASE_CONTAINER,
+    get_abs_path_real_path_and_base_from_file,
+    get_abs_path_real_path_and_base_from_frame)
+from _pydevd_bundle.pydevd_trace_dispatch import should_stop_on_exception, handle_exception
+from _pydevd_bundle.pydevd_constants import EXCEPTION_TYPE_HANDLED
+from _pydevd_bundle.pydevd_trace_dispatch import is_unhandled_exception
+from _pydevd_bundle.pydevd_breakpoints import stop_on_unhandled_exception
+from _pydevd_bundle.pydevd_utils import get_clsname_for_code
+
+# IFDEF CYTHON
+# import cython
+# from _pydevd_bundle.pydevd_cython cimport set_additional_thread_info, any_thread_stepping, PyDBAdditionalThreadInfo
+# ELSE
+from _pydevd_bundle.pydevd_additional_thread_info import set_additional_thread_info, any_thread_stepping, PyDBAdditionalThreadInfo
+# ENDIF
+
+try:
+    from _pydevd_bundle.pydevd_bytecode_utils import get_smart_step_into_variant_from_frame_offset
+except ImportError:
+
+    def get_smart_step_into_variant_from_frame_offset(*args, **kwargs):
+        return None
+
+if hasattr(sys, 'monitoring'):
+    DEBUGGER_ID = sys.monitoring.DEBUGGER_ID
+    monitor = sys.monitoring
+
+_thread_local_info = threading.local()
+_get_ident = threading.get_ident
+_thread_active = threading._active  # noqa
+
+STATE_SUSPEND: int = 2
+CMD_STEP_INTO: int = 107
+CMD_STEP_OVER: int = 108
+CMD_STEP_OVER_MY_CODE: int = 159
+CMD_STEP_INTO_MY_CODE: int = 144
+CMD_STEP_INTO_COROUTINE: int = 206
+CMD_SMART_STEP_INTO: int = 128
+can_skip: bool = True
+CMD_STEP_RETURN: int = 109
+CMD_STEP_OVER_MY_CODE: int = 159
+CMD_STEP_RETURN_MY_CODE: int = 160
+CMD_SET_BREAK: int = 111
+CMD_SET_FUNCTION_BREAK: int = 208
+STATE_RUN: int = 1
+STATE_SUSPEND: int = 2
+
+IGNORE_EXCEPTION_TAG = re.compile('[^#]*#.*@IgnoreException')
+DEBUG_START = ('pydevd.py', 'run')
+DEBUG_START_PY3K = ('_pydev_execfile.py', 'execfile')
+TRACE_PROPERTY = 'pydevd_traceproperty.py'
+
+_global_notify_skipped_step_in = False
+_global_notify_skipped_step_in_lock = ForkSafeLock()
+
+
+# IFDEF CYTHON
+# cdef _notify_skipped_step_in_because_of_filters(py_db, frame):
+# ELSE
+def _notify_skipped_step_in_because_of_filters(py_db, frame):
+# ENDIF
+    global _global_notify_skipped_step_in
+
+    with _global_notify_skipped_step_in_lock:
+        if _global_notify_skipped_step_in:
+            # Check with lock in place (callers should actually have checked
+            # before without the lock in place due to performance).
+            return
+        _global_notify_skipped_step_in = True
+        py_db.notify_skipped_step_in_because_of_filters(frame)
+
+
+# Easy for cython: always get the one at level 0 as that's the caller frame
+# (on Python we have to control the depth to get the first user frame).
+# IFDEF CYTHON
+# @cython.cfunc
+# def _getframe(depth=0):
+#     return sys._getframe()
+# ELSE
+_getframe = sys._getframe
+# ENDIF
+
+
+# IFDEF CYTHON
+# cdef _get_bootstrap_frame(depth):
+# ELSE
+def _get_bootstrap_frame(depth: int) -> Tuple[Optional[FrameType], bool]:
+# ENDIF
+    try:
+        return _thread_local_info.f_bootstrap, _thread_local_info.is_bootstrap_frame_internal
+    except:
+        frame = _getframe(depth)
+        f_bootstrap = frame
+        # print('called at', f_bootstrap.f_code.co_name, f_bootstrap.f_code.co_filename, f_bootstrap.f_code.co_firstlineno)
+        is_bootstrap_frame_internal = False
+        while f_bootstrap is not None:
+            filename = f_bootstrap.f_code.co_filename
+            name = splitext(basename(filename))[0]
+
+            if name == 'threading':
+                if f_bootstrap.f_code.co_name in ('__bootstrap', '_bootstrap'):
+                    # We need __bootstrap_inner, not __bootstrap.
+                    return None, False
+
+                elif f_bootstrap.f_code.co_name in ('__bootstrap_inner', '_bootstrap_inner', 'is_alive'):
+                    # Note: be careful not to use threading.current_thread to avoid creating a dummy thread.
+                    is_bootstrap_frame_internal = True
+                    break
+
+            elif name == 'pydev_monkey':
+                if f_bootstrap.f_code.co_name == '__call__':
+                    is_bootstrap_frame_internal = True
+                    break
+
+            elif name == 'pydevd':
+                if f_bootstrap.f_code.co_name in ('run', 'main'):
+                    # We need to get to _exec
+                    return None, False
+
+                if f_bootstrap.f_code.co_name == '_exec':
+                    is_bootstrap_frame_internal = True
+                    break
+
+            elif f_bootstrap.f_back is None:
+                break
+
+            f_bootstrap = f_bootstrap.f_back
+
+        if f_bootstrap is not None:
+            _thread_local_info.is_bootstrap_frame_internal = is_bootstrap_frame_internal
+            _thread_local_info.f_bootstrap = f_bootstrap
+            return _thread_local_info.f_bootstrap, _thread_local_info.is_bootstrap_frame_internal
+
+        return f_bootstrap, is_bootstrap_frame_internal
+
+
+# IFDEF CYTHON
+# cdef _get_unhandled_exception_frame(int depth):
+# ELSE
+def _get_unhandled_exception_frame(depth: int) -> Optional[FrameType]:
+# ENDIF
+    try:
+        return _thread_local_info.f_unhandled
+    except:
+        frame = _getframe(depth)
+        f_unhandled = frame
+
+        while f_unhandled is not None and f_unhandled.f_back is not None:
+            f_back = f_unhandled.f_back
+            filename = f_back.f_code.co_filename
+            name = splitext(basename(filename))[0]
+
+            # When the back frame is the bootstrap (or if we have no back
+            # frame) then use this frame as the one to track.
+            if name == 'threading':
+                if f_back.f_code.co_name in ('__bootstrap', '_bootstrap', '__bootstrap_inner', '_bootstrap_inner', 'run'):
+                    break
+
+            elif name == 'pydev_monkey':
+                if f_back.f_code.co_name == '__call__':
+                    break
+
+            elif name == 'pydevd':
+                if f_back.f_code.co_name in ('_exec', 'run', 'main'):
+                    break
+
+            elif name == 'pydevd_runpy':
+                if f_back.f_code.co_name.startswith(('run', '_run')):
+                    break
+
+            f_unhandled = f_back
+
+        if f_unhandled is not None:
+            _thread_local_info.f_unhandled = f_unhandled
+            return _thread_local_info.f_unhandled
+
+        return f_unhandled
+
+
+# IFDEF CYTHON
+# cdef class ThreadInfo:
+#     cdef unsigned long thread_ident
+#     cdef PyDBAdditionalThreadInfo additional_info
+#     thread: threading.Thread
+#     trace: bool
+# ELSE
+class ThreadInfo:
+    additional_info: PyDBAdditionalThreadInfo
+    thread_ident: int
+    thread: threading.Thread
+    trace: bool
+# ENDIF
+
+# IFDEF CYTHON
+#     def __init__(self, thread, unsigned long thread_ident, bint trace, PyDBAdditionalThreadInfo additional_info):
+# ELSE
+    def __init__(self, thread: threading.Thread, thread_ident: int, trace: bool, additional_info: PyDBAdditionalThreadInfo):
+# ENDIF
+        self.thread = thread
+        self.thread_ident = thread_ident
+        self.additional_info = additional_info
+        self.trace = trace
+
+
+class _DeleteDummyThreadOnDel:
+    '''
+    Helper class to remove a dummy thread from threading._active on __del__.
+    '''
+
+    def __init__(self, dummy_thread):
+        self._dummy_thread = dummy_thread
+        self._tident = dummy_thread.ident
+        # Put the thread on a thread local variable so that when
+        # the related thread finishes this instance is collected.
+        #
+        # Note: no other references to this instance may be created.
+        # If any client code creates a reference to this instance,
+        # the related _DummyThread will be kept forever!
+        _thread_local_info._track_dummy_thread_ref = self
+
+    def __del__(self):
+        with threading._active_limbo_lock:
+            if _thread_active.get(self._tident) is self._dummy_thread:
+                _thread_active.pop(self._tident, None)
+
+
+# IFDEF CYTHON
+# cdef _create_thread_info(depth):
+#     cdef unsigned long thread_ident
+# ELSE
+def _create_thread_info(depth):
+# ENDIF
+    # Don't call threading.currentThread because if we're too early in the process
+    # we may create a dummy thread.
+    thread_ident = _get_ident()
+
+    f_bootstrap_frame, is_bootstrap_frame_internal = _get_bootstrap_frame(depth + 1)
+    if f_bootstrap_frame is None:
+        return None  # Case for threading when it's still in bootstrap or early in pydevd.
+
+    if is_bootstrap_frame_internal:
+        t = None
+        if f_bootstrap_frame.f_code.co_name in ('__bootstrap_inner', '_bootstrap_inner', 'is_alive'):
+            # Note: be careful not to use threading.current_thread to avoid creating a dummy thread.
+            t = f_bootstrap_frame.f_locals.get('self')
+            if not isinstance(t, threading.Thread):
+                t = None
+
+        elif f_bootstrap_frame.f_code.co_name in ('_exec', '__call__'):
+            # Note: be careful not to use threading.current_thread to avoid creating a dummy thread.
+            t = f_bootstrap_frame.f_locals.get('t')
+            if not isinstance(t, threading.Thread):
+                t = None
+
+    else:
+        # This means that the first frame is not in threading nor in pydevd.
+        # In practice this means it's some unmanaged thread, so, creating
+        # a dummy thread is ok in this use-case.
+        t = threading.current_thread()
+
+    if t is None:
+        t = _thread_active.get(thread_ident)
+
+    if isinstance(t, threading._DummyThread):
+        _thread_local_info._ref = _DeleteDummyThreadOnDel(t)
+
+    if t is None:
+        return None
+
+    if getattr(t, 'is_pydev_daemon_thread', False):
+        return ThreadInfo(t, thread_ident, False, None)
+    else:
+        try:
+            additional_info = t.additional_info
+            if additional_info is None:
+                raise AttributeError()
+        except:
+            additional_info = set_additional_thread_info(t)
+        return ThreadInfo(t, thread_ident, True, additional_info)
+
+
+# IFDEF CYTHON
+# cdef class FuncCodeInfo:
+#     cdef str co_filename
+#     cdef str canonical_normalized_filename
+#     cdef str abs_path_filename
+#     cdef bint always_skip_code
+#     cdef bint breakpoint_found
+#     cdef bint function_breakpoint_found
+#     cdef bint plugin_line_breakpoint_found
+#     cdef bint plugin_call_breakpoint_found
+#     cdef bint plugin_line_stepping
+#     cdef bint plugin_call_stepping
+#     cdef bint plugin_return_stepping
+#     cdef int pydb_mtime
+#     cdef dict bp_line_to_breakpoint
+#     cdef object function_breakpoint
+#     cdef bint always_filtered_out
+#     cdef bint filtered_out_force_checked
+#     cdef object try_except_container_obj
+#     cdef object code_obj
+#     cdef str co_name
+# ELSE
+class FuncCodeInfo:
+
+# ENDIF
+    def __init__(self):
+        self.co_filename: str = ''
+        self.canonical_normalized_filename:str = ''
+        self.abs_path_filename: str = ''
+
+        # These is never seen and we never stop, even if it's a callback coming
+        # from user code (these are completely invisible to the debugging tracing).
+        self.always_skip_code: bool = False
+
+        self.breakpoint_found: bool = False
+        self.function_breakpoint_found: bool = False
+
+        # A plugin can choose whether to stop on function calls or line events.
+        self.plugin_line_breakpoint_found: bool = False
+        self.plugin_call_breakpoint_found: bool = False
+
+        self.plugin_line_stepping: bool = False
+        self.plugin_call_stepping: bool = False
+        self.plugin_return_stepping: bool = False
+
+        # When pydb_mtime != PyDb.mtime the validity of breakpoints have
+        # to be re-evaluated (if invalid a new FuncCodeInfo must be created and
+        # tracing can't be disabled for the related frames).
+        self.pydb_mtime: int = -1
+
+        self.bp_line_to_breakpoint: Dict[int, Any] = {}
+        self.function_breakpoint = None
+
+        # This means some file is globally filtered out during debugging. Note
+        # that we may still need to pause in it (in a step return to user code,
+        # we may need to track this one).
+        self.always_filtered_out: bool = False
+
+        # This should be used to filter code in a CMD_STEP_INTO_MY_CODE
+        # (and other XXX_MY_CODE variants).
+        self.filtered_out_force_checked: bool = False
+
+        self.try_except_container_obj: Optional[_TryExceptContainerObj] = None
+        self.code_obj: CodeType = None
+        self.co_name: str = ''
+
+    def get_line_of_offset(self, offset):
+        for start, end, line in self.code_obj.co_lines():
+            if offset >= start and offset <= end:
+                return line
+        return -1
+
+
+# IFDEF CYTHON
+# cdef _get_thread_info(bint create, int depth):
+# ELSE
+def _get_thread_info(create: bool, depth:int) -> Optional[ThreadInfo]:
+# ENDIF
+    '''
+    Provides thread-related info.
+
+    May return None if the thread is still not active.
+    '''
+    try:
+        # Note: changing to a `dict[thread.ident] = thread_info` had almost no
+        # effect in the performance.
+        return _thread_local_info.thread_info
+    except:
+        if not create:
+            return None
+        thread_info = _create_thread_info(depth + 1)
+        if thread_info is None:
+            return None
+
+        _thread_local_info.thread_info = thread_info
+        return _thread_local_info.thread_info
+
+
+_CodeLineInfo = namedtuple('_CodeLineInfo', 'line_to_offset, first_line, last_line')
+
+
+# Note: this method has a version in cython too
+# IFDEF CYTHON
+# cdef _get_code_line_info(code_obj, _cache={}):
+# ELSE
+def _get_code_line_info(code_obj, _cache={}):
+# ENDIF
+    try:
+        return _cache[code_obj]
+    except:
+        line_to_offset = {}
+        first_line = None
+        last_line = None
+
+        for offset, line in dis.findlinestarts(code_obj):
+            line_to_offset[line] = offset
+
+        if line_to_offset:
+            first_line = min(line_to_offset)
+            last_line = max(line_to_offset)
+        ret = _CodeLineInfo(line_to_offset, first_line, last_line)
+        _cache[code_obj] = ret
+        return ret
+
+
+_code_to_func_code_info_cache: Dict[CodeType, 'FuncCodeInfo'] = {}
+
+
+# IFDEF CYTHON
+# cpdef FuncCodeInfo _get_func_code_info(code_obj, frame_or_depth):
+#     cdef FuncCodeInfo func_code_info
+# ELSE
+def _get_func_code_info(code_obj, frame_or_depth) -> FuncCodeInfo:
+# ENDIF
+    '''
+    Provides code-object related info.
+
+    Note that it contains informations on the breakpoints for a given function.
+    If breakpoints change a new FuncCodeInfo instance will be created.
+
+    Note that this can be called by any thread.
+    '''
+    py_db = GlobalDebuggerHolder.global_dbg
+    if py_db is None:
+        return None
+
+    func_code_info = _code_to_func_code_info_cache.get(code_obj)
+    if func_code_info is not None:
+        if func_code_info.pydb_mtime == py_db.mtime:
+            # if DEBUG:
+            # print('_get_func_code_info: matched mtime', key, code_obj)
+            return func_code_info
+
+# IFDEF CYTHON
+#     cdef dict cache_file_type
+#     cdef tuple cache_file_type_key
+#     cdef PyCodeObject * code
+#     cdef str co_filename
+#     cdef str co_name
+#     code = <PyCodeObject *> code_obj
+#     co_filename = <str> code.co_filename
+#     co_name = <str> code.co_name
+# ELSE
+    cache_file_type: dict
+    cache_file_type_key: tuple
+    code = code_obj
+    co_filename: str = code.co_filename
+    co_name: str = code.co_name
+# ENDIF
+
+    # print('_get_func_code_info: new (mtime did not match)', key, code_obj)
+
+    func_code_info = FuncCodeInfo()
+    func_code_info.code_obj = code_obj
+    code_line_info = _get_code_line_info(code_obj)
+    line_to_offset = code_line_info.line_to_offset
+    func_code_info.pydb_mtime = py_db.mtime
+
+    func_code_info.co_filename = co_filename
+    func_code_info.co_name = co_name
+
+    # Compute whether to always skip this.
+    try:
+        abs_path_real_path_and_base = NORM_PATHS_AND_BASE_CONTAINER[co_filename]
+    except:
+        abs_path_real_path_and_base = get_abs_path_real_path_and_base_from_file(co_filename)
+
+    func_code_info.abs_path_filename = abs_path_real_path_and_base[0]
+    func_code_info.canonical_normalized_filename = abs_path_real_path_and_base[1]
+
+    frame = None
+    cache_file_type = py_db.get_cache_file_type()
+    # Note: this cache key must be the same from PyDB.get_file_type() -- see it for comments
+    # on the cache.
+    cache_file_type_key = (code.co_firstlineno, abs_path_real_path_and_base[0], code_obj)
+    try:
+        file_type = cache_file_type[cache_file_type_key]  # Make it faster
+    except:
+        if frame is None:
+            if frame_or_depth.__class__ == int:
+                frame = _getframe(frame_or_depth + 1)
+            else:
+                frame = frame_or_depth
+            assert frame.f_code is code_obj, '%s != %s' % (frame.f_code, code_obj)
+
+        file_type = py_db.get_file_type(frame, abs_path_real_path_and_base)  # we don't want to debug anything related to pydevd
+
+    if file_type is not None:
+        func_code_info.always_skip_code = True
+        func_code_info.always_filtered_out = True
+        _code_to_func_code_info_cache[code_obj] = func_code_info
+        return func_code_info
+
+    # still not set, check for dont trace comments.
+    if pydevd_dont_trace.should_trace_hook is not None:
+        # I.e.: cache the result skip (no need to evaluate the same frame multiple times).
+        # Note that on a code reload, we won't re-evaluate this because in practice, the frame.f_code
+        # Which will be handled by this frame is read-only, so, we can cache it safely.
+        if not pydevd_dont_trace.should_trace_hook(code_obj, func_code_info.abs_path_filename):
+            if frame is None:
+                if frame_or_depth.__class__ == int:
+                    frame = _getframe(frame_or_depth + 1)
+                else:
+                    frame = frame_or_depth
+            assert frame.f_code is code_obj
+
+            func_code_info.always_filtered_out = True
+            _code_to_func_code_info_cache[code_obj] = func_code_info
+            return func_code_info
+
+    if frame is None:
+        if frame_or_depth.__class__ == int:
+            frame = _getframe(frame_or_depth + 1)
+        else:
+            frame = frame_or_depth
+        assert frame.f_code is code_obj
+
+    func_code_info.filtered_out_force_checked = py_db.apply_files_filter(frame, func_code_info.abs_path_filename, True)
+
+    if py_db.is_files_filter_enabled:
+        func_code_info.always_filtered_out = func_code_info.filtered_out_force_checked
+        if func_code_info.always_filtered_out:
+            _code_to_func_code_info_cache[code_obj] = func_code_info
+            return func_code_info
+
+    else:
+        func_code_info.always_filtered_out = False
+
+    # Handle regular breakpoints
+    breakpoints: dict = py_db.breakpoints.get(func_code_info.canonical_normalized_filename)
+    function_breakpoint: object = py_db.function_breakpoint_name_to_breakpoint.get(func_code_info.co_name)
+    # print('\n---')
+    # print(py_db.breakpoints)
+    # print(func_code_info.canonical_normalized_filename)
+    # print(py_db.breakpoints.get(func_code_info.canonical_normalized_filename))
+    if function_breakpoint:
+        # Go directly into tracing mode
+        func_code_info.function_breakpoint_found = True
+        func_code_info.function_breakpoint = function_breakpoint
+
+    if breakpoints:
+        # if DEBUG:
+        #    print('found bre

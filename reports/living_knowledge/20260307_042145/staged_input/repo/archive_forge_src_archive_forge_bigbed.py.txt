@@ -1,0 +1,533 @@
+SOURCE_PATH: archive_forge/src/archive_forge/bigbed.py
+KIND: code
+
+# Copyright 2022 by Michiel de Hoon.  All rights reserved.
+#
+# This file is part of the Biopython distribution and governed by your
+# choice of the "Biopython License Agreement" or the "BSD 3-Clause License".
+# Please see the LICENSE file that should have been included as part of this
+# package.
+"""Bio.Align support for alignment files in the bigBed format.
+
+The bigBed format stores a series of pairwise alignments in a single indexed
+binary file. Typically they are used for transcript to genome alignments. As
+in the BED format, the alignment positions and alignment scores are stored,
+but the aligned sequences are not.
+
+See http://genome.ucsc.edu/goldenPath/help/bigBed.html for more information.
+
+You are expected to use this module via the Bio.Align functions.
+"""
+
+# This parser was written based on the description of the bigBed file format in
+# W. J. Kent, A. S. Zweig,* G. Barber, A. S. Hinrichs, and D. Karolchik:
+# "BigWig and BigBed: enabling browsing of large distributed datasets."
+# Bioinformatics 26(17): 2204–2207 (2010)
+# in particular the tables in the supplemental materials listing the contents
+# of a bigBed file byte-by-byte.
+
+# The writer is based on files in the src/lib and src/utils/bedToBigBed
+# directories in Jim Kent's source code from UCSC.
+
+# These program files are provided by the University of California Santa Cruz
+# under the following license:
+
+# ------------------------------------------------------------------------------
+# Copyright (C) 2001 UC Regents
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy of
+# this software and associated documentation files (the "Software"), to deal in
+# the Software without restriction, including without limitation the rights to
+# use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+# the Software, and to permit persons to whom the Software is furnished to do so,
+# subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+# FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+# COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+# IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# ------------------------------------------------------------------------------
+
+
+import sys
+import io
+import copy
+import array
+import itertools
+import struct
+import zlib
+from collections import namedtuple
+from io import BytesIO
+import numpy as np
+
+
+from Bio.Align import Alignment
+from Bio.Align import interfaces
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
+
+
+Field = namedtuple("Field", ("as_type", "name", "comment"))
+
+
+class AutoSQLTable(list):
+    """AutoSQL table describing the columns of an (possibly extended) BED format."""
+
+    default: "AutoSQLTable"
+
+    def __init__(self, name, comment, fields):
+        """Create an AutoSQL table describing the columns of an (extended) BED format."""
+        self.name = name
+        self.comment = comment
+        self[:] = fields
+
+    @classmethod
+    def from_bytes(cls, data):
+        """Return an AutoSQLTable initialized using the bytes object data."""
+        assert data.endswith(b"\0")  # NULL-terminated string
+        text = data[:-1].decode()
+        word, text = text.split(None, 1)
+        assert word == "table"
+        name, text = text.split(None, 1)
+        assert text.startswith('"')
+        i = text.find('"', 1)
+        comment = text[1:i]
+        text = text[i + 1 :].strip()
+        assert text.startswith("(")
+        assert text.endswith(")")
+        text = text[1:-1].strip()
+        fields = []
+        while text:
+            i = text.index('"')
+            j = text.index('"', i + 1)
+            field_comment = text[i + 1 : j]
+            definition = text[:i].strip()
+            assert definition.endswith(";")
+            field_type, field_name = definition[:-1].rsplit(None, 1)
+            if field_type.endswith("]"):
+                i = field_type.index("[")
+                data_type = field_type[:i]
+            else:
+                data_type = field_type
+            assert data_type in (
+                "int",
+                "uint",
+                "short",
+                "ushort",
+                "byte",
+                "ubyte",
+                "float",
+                "char",
+                "string",
+                "lstring",
+            )
+            field = Field(field_type, field_name, field_comment)
+            fields.append(field)
+            text = text[j + 1 :].strip()
+        return AutoSQLTable(name, comment, fields)
+
+    @classmethod
+    def from_string(cls, data):
+        """Return an AutoSQLTable initialized using the string object data."""
+        return cls.from_bytes(data.encode() + b"\0")
+
+    def __str__(self):
+        type_width = max(len(str(field.as_type)) for field in self)
+        name_width = max(len(field.name) for field in self) + 1
+        lines = []
+        lines.append("table %s\n" % self.name)
+        lines.append('"%s"\n' % self.comment)
+        lines.append("(\n")
+        for field in self:
+            name = field.name + ";"
+            lines.append(
+                f'   %-{type_width}s %-{name_width}s    "%s"\n'
+                % (
+                    field.as_type,
+                    name,
+                    field.comment,
+                )
+            )
+        lines.append(")\n")
+        return "".join(lines)
+
+    def __bytes__(self):
+        return str(self).encode() + b"\0"
+
+    def __getitem__(self, i):
+        if isinstance(i, slice):
+            fields = super().__getitem__(i)
+            return AutoSQLTable(self.name, self.comment, fields)
+        else:
+            return super().__getitem__(i)
+
+
+AutoSQLTable.default = AutoSQLTable(
+    "bed",
+    "Browser Extensible Data",
+    [
+        Field(
+            as_type="string",
+            name="chrom",
+            comment="Reference sequence chromosome or scaffold",
+        ),
+        Field(
+            as_type="uint",
+            name="chromStart",
+            comment="Start position in chromosome",
+        ),
+        Field(
+            as_type="uint",
+            name="chromEnd",
+            comment="End position in chromosome",
+        ),
+        Field(as_type="string", name="name", comment="Name of item."),
+        Field(as_type="uint", name="score", comment="Score (0-1000)"),
+        Field(as_type="char[1]", name="strand", comment="+ or - for strand"),
+        Field(
+            as_type="uint",
+            name="thickStart",
+            comment="Start of where display should be thick (start codon)",
+        ),
+        Field(
+            as_type="uint",
+            name="thickEnd",
+            comment="End of where display should be thick (stop codon)",
+        ),
+        Field(
+            as_type="uint",
+            name="reserved",
+            comment="Used as itemRgb as of 2004-11-22",
+        ),
+        Field(as_type="int", name="blockCount", comment="Number of blocks"),
+        Field(
+            as_type="int[blockCount]",
+            name="blockSizes",
+            comment="Comma separated list of block sizes",
+        ),
+        Field(
+            as_type="int[blockCount]",
+            name="chromStarts",
+            comment="Start positions relative to chromStart",
+        ),
+    ],
+)
+
+
+class AlignmentWriter(interfaces.AlignmentWriter):
+    """Alignment file writer for the bigBed file format."""
+
+    fmt = "bigBed"
+    mode = "wb"
+
+    def __init__(
+        self,
+        target,
+        bedN=12,
+        declaration=None,
+        targets=None,
+        compress=True,
+        extraIndex=(),
+    ):
+        """Create an AlignmentWriter object.
+
+        Arguments:
+         - target      - output stream or file name.
+         - bedN        - number of columns in the BED file.
+                         This must be between 3 and 12; default value is 12.
+         - declaration - an AutoSQLTable object declaring the fields in the BED file.
+                         Required only if the BED file contains extra (custom) fields.
+                         Default value is None.
+         - targets     - A list of SeqRecord objects with the chromosomes in the
+                         order as they appear in the alignments. The sequence
+                         contents in each SeqRecord may be undefined, but the
+                         sequence length must be defined, as in this example:
+
+                         SeqRecord(Seq(None, length=248956422), id="chr1")
+
+                         If targets is None (the default value), the alignments
+                         must have an attribute .targets providing the list of
+                         SeqRecord objects.
+         - compress    - If True (default), compress data using zlib.
+                         If False, do not compress data.
+         - extraIndex  - List of strings with the names of extra columns to be
+                         indexed.
+                         Default value is an empty list.
+        """
+        if bedN < 3 or bedN > 12:
+            raise ValueError("bedN must be between 3 and 12")
+        super().__init__(target)
+        self.bedN = bedN
+        self.declaration = declaration
+        self.targets = targets
+        self.compress = compress
+        self.extraIndexNames = extraIndex
+        self.itemsPerSlot = 512
+        self.blockSize = 256
+
+    def write_file(self, stream, alignments):
+        """Write the alignments to the file strenm, and return the number of alignments.
+
+        alignments - A list or iterator returning Alignment objects
+        stream     - Output file stream.
+        """
+        if self.targets is None:
+            targets = alignments.targets
+        else:
+            targets = self.targets
+        header = _Header()
+        header.definedFieldCount = self.bedN
+        if self.declaration is None:
+            try:
+                self.declaration = alignments.declaration[: self.bedN]
+            except AttributeError:
+                self.declaration = AutoSQLTable.default[: self.bedN]
+        declaration = self.declaration
+        header.fieldCount = len(declaration)
+        extra_indices = _ExtraIndices(self.extraIndexNames, declaration)
+        chromUsageList, aveSize = self._get_chrom_usage(
+            alignments, targets, extra_indices
+        )
+        stream.write(bytes(header.size))
+        stream.write(bytes(_ZoomLevels.size))
+        header.autoSqlOffset = stream.tell()
+        stream.write(bytes(declaration))
+        header.totalSummaryOffset = stream.tell()
+        stream.write(bytes(_Summary.size))
+        header.extraIndicesOffset = stream.tell()
+        stream.write(bytes(extra_indices.size))
+        header.chromosomeTreeOffset = stream.tell()
+        _BPlusTreeFormatter().write(
+            chromUsageList, min(self.blockSize, len(chromUsageList)), stream
+        )
+        header.fullDataOffset = stream.tell()
+        reductions = _ZoomLevels.calculate_reductions(aveSize)
+        stream.write(len(alignments).to_bytes(8, sys.byteorder))
+        extra_indices.initialize(len(alignments))
+        maxBlockSize, regions = self.write_alignments(
+            alignments,
+            stream,
+            reductions,
+            extra_indices,
+        )
+        if self.compress:
+            header.uncompressBufSize = max(
+                maxBlockSize, self.itemsPerSlot * _RegionSummary.size
+            )
+        else:
+            header.uncompressBufSize = 0
+        header.fullIndexOffset = stream.tell()
+        _RTreeFormatter().write(
+            regions, self.blockSize, 1, header.fullIndexOffset, stream
+        )
+        zoomList, totalSum = self._write_zoom_levels(
+            alignments,
+            stream,
+            header.fullIndexOffset - header.fullDataOffset,
+            chromUsageList,
+            reductions,
+        )
+        header.zoomLevels = len(zoomList)
+        for extra_index in extra_indices:
+            extra_index.fileOffset = stream.tell()
+            extra_index.chunks.sort()
+            _BPlusTreeFormatter().write(extra_index.chunks, self.blockSize, stream)
+        stream.seek(0)
+        stream.write(bytes(header))
+        stream.write(bytes(zoomList))
+        stream.seek(header.totalSummaryOffset)
+        stream.write(bytes(totalSum))
+        assert header.extraIndicesOffset == stream.tell()
+        extra_indices.tofile(stream)
+        stream.seek(0, io.SEEK_END)
+        data = header.signature.to_bytes(4, sys.byteorder)
+        stream.write(data)
+
+    def _get_chrom_usage(cls, alignments, targets, extra_indices):
+        aveSize = 0
+        chromId = 0
+        totalBases = 0
+        bedCount = 0
+        name = ""
+        chromUsageList = []
+        keySize = 0
+        chromSize = -1
+        minDiff = sys.maxsize
+        for alignment in alignments:
+            chrom = alignment.sequences[0].id
+            # Note that for MAF files, this may be a multiple alignment, so
+            # alignment.target.id won't necessarily work.
+            start = alignment.coordinates[0, 0]
+            end = alignment.coordinates[0, -1]
+            for extra_index in extra_indices:
+                extra_index.updateMaxFieldSize(alignment)
+            if start > end:
+                raise ValueError(
+                    f"end ({end}) before start ({start}) in alignment [{bedCount}]"
+                )
+            bedCount += 1
+            totalBases += end - start
+            if name != chrom:
+                if name > chrom:
+                    raise ValueError(
+                        f"alignments are not sorted by target name at alignment [{bedCount}]"
+                    )
+                if name:
+                    chromUsageList.append((name, chromId, chromSize))
+                    chromId += 1
+                for target in targets:
+                    if target.id == chrom:
+                        break
+                else:
+                    raise ValueError(
+                        f"failed to find target '{chrom}' in target list at alignment [{bedCount}]"
+                    )
+                name = chrom
+                keySize = max(keySize, len(chrom))
+                chromSize = len(target)
+                lastStart = -1
+            if end > chromSize:
+                raise ValueError(
+                    f"end coordinate {end} bigger than {chrom} size of {chromSize} at alignment [{bedCount}]'"
+                )
+            if lastStart >= 0:
+                diff = start - lastStart
+                if diff < minDiff:
+                    if diff < 0:
+                        raise ValueError(
+                            f"alignments are not sorted at alignment [{bedCount}]"
+                        )
+                    minDiff = diff
+            lastStart = start
+        if name:
+            chromUsageList.append((name, chromId, chromSize))
+        chromUsageList = np.array(
+            chromUsageList,
+            dtype=[("name", f"S{keySize}"), ("id", "=i4"), ("size", "=i4")],
+        )
+        if bedCount > 0:
+            aveSize = totalBases / bedCount
+        alignments._len = bedCount
+        return chromUsageList, aveSize
+
+    def _write_zoom_levels(
+        self, alignments, output, dataSize, chromUsageList, reductions
+    ):
+        zoomList = _ZoomLevels()
+        totalSum = _Summary()
+        if len(alignments) == 0:
+            totalSum.minVal = 0.0
+            totalSum.maxVal = 0.0
+        else:
+            blockSize = self.blockSize
+            doCompress = self.compress
+            itemsPerSlot = self.itemsPerSlot
+            maxReducedSize = dataSize / 2
+            zoomList[0].dataOffset = output.tell()
+            for initialReduction in reductions:
+                reducedSize = initialReduction["size"] * _RegionSummary.size
+                if doCompress:
+                    reducedSize /= 2
+                if reducedSize <= maxReducedSize:
+                    break
+            else:
+                initialReduction = reductions[0]
+            initialReduction["size"].tofile(output)
+            size = itemsPerSlot * _RegionSummary.size
+            if doCompress:
+                buffer = _ZippedBufferedStream(output, size)
+            else:
+                buffer = _BufferedStream(output, size)
+            regions = []
+            rezoomedList = []
+            trees = _RangeTree.generate(chromUsageList, alignments)
+            scale = initialReduction["scale"]
+            doubleReductionSize = scale * _ZoomLevels.bbiResIncrement
+            for tree in trees:
+                start = -sys.maxsize
+                summaries = tree.generate_summaries(scale, totalSum)
+                for summary in summaries:
+                    buffer.write(summary)
+                    regions.append(summary)
+                    if start + doubleReductionSize < summary.end:
+                        rezoomed = copy.copy(summary)
+                        start = rezoomed.start
+                        rezoomedList.append(rezoomed)
+                    else:
+                        rezoomed += summary
+            buffer.flush()
+            assert len(regions) == initialReduction["size"]
+            zoomList[0].amount = initialReduction["scale"]
+            indexOffset = output.tell()
+            zoomList[0].indexOffset = indexOffset
+            _RTreeFormatter().write(
+                regions, blockSize, itemsPerSlot, indexOffset, output
+            )
+            if doCompress:
+                buffer = _ZippedBufferedStream(output, size)
+            else:
+                buffer = _BufferedStream(output, _RegionSummary.size)
+            zoomList.reduce(
+                rezoomedList, initialReduction, buffer, blockSize, itemsPerSlot
+            )
+        return zoomList, totalSum
+
+    def _extract_fields(self, alignment):
+        bedN = self.bedN
+        row = []
+        chrom = alignment.target.id
+        if len(chrom) >= 255:
+            raise ValueError(
+                f"alignment target name '{chrom}' is too long (must not exceed 254 characters)"
+            )
+        if len(chrom) < 1:
+            raise ValueError("alignment target name cannot be blank or empty")
+        chromStart = alignment.coordinates[0, 0]
+        chromEnd = alignment.coordinates[0, -1]
+        if chromEnd < chromStart:
+            raise ValueError(f"chromStart after chromEnd ({chromEnd} > {chromStart})")
+        if bedN > 3:
+            name = alignment.query.id
+            if name == "":
+                name = "."
+            elif len(name) > 255:
+                raise ValueError(
+                    f"alignment query name '{name}' is too long (must not exceed 255 characters"
+                )
+            row.append(name)
+        if bedN > 4:
+            try:
+                score = alignment.score
+            except AttributeError:
+                score = "."
+            else:
+                if score < 0 or score > 1000:
+                    raise ValueError(f"score ({score}) must be between 0 and 1000")
+                score = str(score)
+            row.append(score)
+        if bedN > 5:
+            if alignment.coordinates[1, 0] <= alignment.coordinates[1, -1]:
+                strand = "+"
+            else:
+                strand = "-"
+            row.append(strand)
+        if bedN > 6:
+            try:
+                thickStart = alignment.thickStart
+            except AttributeError:
+                thickStart = chromStart
+            row.append(str(thickStart))
+        if bedN > 7:
+            try:
+                thickEnd = alignment.thickEnd
+            except AttributeError:
+                thickEnd = chromEnd
+            else:
+                if thickEnd < thickStart:
+                    raise ValueError(
+                        f"thic

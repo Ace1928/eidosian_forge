@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/Base64LikeDT_documentation.py
+KIND: code
+
+Given a base64-like encoding, return the DT code and, if present in the
+    encoding as well, return the flips, otherwise None.

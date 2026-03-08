@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_nested_sequence_documentation.py
+KIND: code
+
+from __future__ import annotations
+from collections.abc import Iterator
+from typing import (
+Return the first index of `value`.

@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/byterange_documentation.py
+KIND: code
+
+import re
+
+            Parse the header.  May return None if it cannot parse.

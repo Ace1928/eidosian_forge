@@ -1,0 +1,13 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/GM
+KIND: config
+
+GM
+mansa konko
+janjanbureh
+banjul
+basse
+
+kanifing	
+brikama	
+kerewan	
+kuntaur

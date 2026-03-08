@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/auto_match_documentation.py
+KIND: code
+
+import re
+from prompt_toolkit.key_binding import KeyPressEvent
+Delete auto-closed parenthesis

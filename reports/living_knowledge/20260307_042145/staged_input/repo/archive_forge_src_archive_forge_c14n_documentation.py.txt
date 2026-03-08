@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/c14n_documentation.py
+KIND: code
+
+import string
+from xml.dom import Node
+_do_element(self, node, initial_other_attrs = [], unused = {}) -> None
+        Process an element (and its children).

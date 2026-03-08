@@ -1,0 +1,32 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/UA
+KIND: config
+
+UAI
+вінницькаvinnytsia oblast!вінницька областьL
+волинська облvolyn oblast!волинська областьN
+луганська облluhansk oblast!луганська областьq
+'дніпропетровська облdnipropetrovsk oblast/дніпропетровська областьJ
+донецька облdonetsk oblastдонецька областьW
+житомирська облzhytomyr oblast%житомирська область^
+закарпатська облzakarpattia oblast'закарпатська областьU
+запорізька облzaporizhia oblast#запорізька областьq
+'іванофранківська облivanofrankivsk oblast/іванофранківська область 
+місто київ	kyiv city@
+київськаkyiv oblastкиївська областьe
+#кіровоградська облkirovohrad oblast+кіровоградська областьG
+севастополь
+sevastopol!город севастопольU
+ар крымcrimea2автономная республика крымкрымK
+львівська облlviv oblast!львівська область:
+'миколаївська областьmykolaiv oblastT
+одеська облodesa oblastодеська областьодещинаR
+полтавська облpoltava oblast#полтавська областьP
+рівненська облrivne oblast#рівненська областьC
+сумська облsumy oblastсумська область]
+тернопільска облternopil oblast)тернопільська областьR
+харківська облkharkiv oblast#харківська областьR
+херсонська облkherson oblast#херсонська область[
+хмельницька облkhmelnytskyi oblast%хмельницька областьO
+черкаська облcherkasy oblast!черкаська область\
+чернігівська облchernihiv oblast'чернігівська область:
+%чернівецька областьchernivtsi oblast

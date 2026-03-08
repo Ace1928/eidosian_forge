@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/boxplots_documentation.py
+KIND: code
+
+import numpy as np
+from scipy.stats import gaussian_kde
+from . import utils
+Return array with correct range, with which violins can be plotted.

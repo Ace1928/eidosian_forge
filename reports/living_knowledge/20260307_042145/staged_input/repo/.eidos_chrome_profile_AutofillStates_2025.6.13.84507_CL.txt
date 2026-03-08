@@ -1,0 +1,31 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/CL
+KIND: config
+
+CL�
+
+11 región,aisén del general carlos ibáñez del campoaysén,aysén del general carlos ibáñez del campo4región aisén del general carlos ibáñez del campo7región de aysén del general carlos ibáñez del campo
+xi región7xi región aisén del general carlos ibáñez del campoW
+	2 regiónantofagasta
+ii regiónii región de antofagastaregión de antofagastal
+	15 regionarica y parinacotaregión de arica y parinacota
+xv región xv región de arica y parinacotat
+	9 región	araucania
+araucanía
+ix regiónix región de la araucaníala araucaníaregión de la araucaníaM
+	3 regiónatacamaiii regióniii región de atacamaregión de atacama�
+	8 regiónbio biobiobío	bío bíoregión del biobíoregión del bío bíoregión del bíobíoviii regiónviii región del bío bíoN
+	4 regióncoquimbo
+iv regióniv región de coquimboregión de coquimbo�
+	6 región%libertador general bernardo o'higgins'libertador general bernardo o’higgins	o'higginsregión de o’higgins3región del libertador general bernardo o’higgins
+vi región6vi región del libertador general bernardo o’higginsP
+
+10 región	los lagosregión de los lagos	x regiónx región de los lagosT
+
+14 región	los ríosregión de los ríosxiv regiónxiv región de los ríos�
+
+12 región!magallanes and chilean antarctica%magallanes y de la antártica chilena"magallanes y la antártica chilena0región de magallanes y de la antártica chilena-región de magallanes y la antártica chilenaxii región1xii región de magallanes y la antártica chilenaI
+	7 regiónmauleregión del maulevii regiónvii región del maule0
+provincia de ñubleregión de ñubleñuble�
+metropolitana de santiagoregión metropolitana!región metropolitana de santiagorm$rm región metropolitana de santiagosantiago metropolitan regionO
+	1 región	i regióni región de tarapacáregión de tarapacá	tarapacáU
+	5 regiónregión de valparaíso	v regiónv región de valparaísovalparaíso

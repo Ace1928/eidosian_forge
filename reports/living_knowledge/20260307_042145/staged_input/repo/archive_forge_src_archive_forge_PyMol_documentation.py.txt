@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/PyMol_documentation.py
+KIND: code
+
+import os
+import sys
+import tempfile
+from rdkit import Chem
+ toggles display of collisions between the protein and a specified molecule

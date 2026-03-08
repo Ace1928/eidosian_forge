@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/assistant_tool_choice_function_param_documentation.py
+KIND: code
+
+from __future__ import annotations
+from typing_extensions import Required, TypedDict
+The name of the function to call.

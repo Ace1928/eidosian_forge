@@ -1,0 +1,536 @@
+SOURCE_PATH: archive_forge/src/archive_forge/argparse_custom.py
+KIND: code
+
+# coding=utf-8
+"""
+This module adds capabilities to argparse by patching a few of its functions.
+It also defines a parser class called Cmd2ArgumentParser which improves error
+and help output over normal argparse. All cmd2 code uses this parser and it is
+recommended that developers of cmd2-based apps either use it or write their own
+parser that inherits from it. This will give a consistent look-and-feel between
+the help/error output of built-in cmd2 commands and the app-specific commands.
+If you wish to override the parser used by cmd2's built-in commands, see
+override_parser.py example.
+
+Since the new capabilities are added by patching at the argparse API level,
+they are available whether or not Cmd2ArgumentParser is used. However, the help
+and error output of Cmd2ArgumentParser is customized to notate nargs ranges
+whereas any other parser class won't be as explicit in their output.
+
+
+**Added capabilities**
+
+Extends argparse nargs functionality by allowing tuples which specify a range
+(min, max). To specify a max value with no upper bound, use a 1-item tuple
+(min,)
+
+Example::
+
+    # -f argument expects at least 3 values
+    parser.add_argument('-f', nargs=(3,))
+
+    # -f argument expects 3 to 5 values
+    parser.add_argument('-f', nargs=(3, 5))
+
+
+**Tab Completion**
+
+cmd2 uses its ArgparseCompleter class to enable argparse-based tab completion
+on all commands that use the @with_argparse wrappers. Out of the box you get
+tab completion of commands, subcommands, and flag names, as well as instructive
+hints about the current argument that print when tab is pressed. In addition,
+you can add tab completion for each argument's values using parameters passed
+to add_argument().
+
+Below are the 3 add_argument() parameters for enabling tab completion of an
+argument's value. Only one can be used at a time.
+
+``choices`` - pass a list of values to the choices parameter.
+
+    Example::
+
+        my_list = ['An Option', 'SomeOtherOption']
+        parser.add_argument('-o', '--options', choices=my_list)
+
+``choices_provider`` - pass a function that returns choices. This is good in
+cases where the choice list is dynamically generated when the user hits tab.
+
+    Example::
+
+        def my_choices_provider(self):
+            ...
+            return my_generated_list
+
+        parser.add_argument("arg", choices_provider=my_choices_provider)
+
+``completer`` - pass a tab completion function that does custom completion.
+
+cmd2 provides a few completer methods for convenience (e.g., path_complete,
+delimiter_complete)
+
+    Example::
+
+        # This adds file-path completion to an argument
+        parser.add_argument('-o', '--options', completer=cmd2.Cmd.path_complete)
+
+    You can use functools.partial() to prepopulate values of the underlying
+    choices and completer functions/methods.
+
+    Example::
+
+        # This says to call path_complete with a preset value for its path_filter argument
+        dir_completer = functools.partial(path_complete,
+                                          path_filter=lambda path: os.path.isdir(path))
+        parser.add_argument('-o', '--options', completer=dir_completer)
+
+For ``choices_provider`` and ``completer``, do not set them to a bound method. This
+is because ArgparseCompleter passes the `self` argument explicitly to these
+functions. When ArgparseCompleter calls one, it will detect whether it is bound
+to a `Cmd` subclass or `CommandSet`. If bound to a `cmd2.Cmd subclass`, it will
+pass the app instance as the `self` argument. If bound to a `cmd2.CommandSet`
+subclass, it will pass the `CommandSet` instance as the `self` argument.
+Therefore instead of passing something like `self.path_complete`, pass
+`cmd2.Cmd.path_complete`.
+
+``choices_provider`` and ``completer`` functions can also be implemented as
+standalone functions (i.e. not a member of a class). In this case,
+ArgparseCompleter will pass its ``cmd2.Cmd`` app instance as the first
+positional argument.
+
+Of the 3 tab completion parameters, ``choices`` is the only one where argparse
+validates user input against items in the choices list. This is because the
+other 2 parameters are meant to tab complete data sets that are viewed as
+dynamic. Therefore it is up to the developer to validate if the user has typed
+an acceptable value for these arguments.
+
+There are times when what's being tab completed is determined by a previous
+argument on the command line. In theses cases, ArgparseCompleter can pass a
+dictionary that maps the command line tokens up through the one being completed
+to their argparse argument name. To receive this dictionary, your
+choices/completer function should have an argument called arg_tokens.
+
+    Example::
+
+        def my_choices_provider(self, arg_tokens)
+        def my_completer(self, text, line, begidx, endidx, arg_tokens)
+
+All values of the arg_tokens dictionary are lists, even if a particular
+argument expects only 1 token. Since ArgparseCompleter is for tab completion,
+it does not convert the tokens to their actual argument types or validate their
+values. All tokens are stored in the dictionary as the raw strings provided on
+the command line. It is up to the developer to determine if the user entered
+the correct argument type (e.g. int) and validate their values.
+
+CompletionItem Class - This class was added to help in cases where
+uninformative data is being tab completed. For instance, tab completing ID
+numbers isn't very helpful to a user without context. Returning a list of
+CompletionItems instead of a regular string for completion results will signal
+the ArgparseCompleter to output the completion results in a table of completion
+tokens with descriptions instead of just a table of tokens::
+
+    Instead of this:
+        1     2     3
+
+    The user sees this:
+        ITEM_ID     Item Name
+        ============================
+        1           My item
+        2           Another item
+        3           Yet another item
+
+
+The left-most column is the actual value being tab completed and its header is
+that value's name. The right column header is defined using the
+descriptive_header parameter of add_argument(). The right column values come
+from the CompletionItem.description value.
+
+Example::
+
+    token = 1
+    token_description = "My Item"
+    completion_item = CompletionItem(token, token_description)
+
+Since descriptive_header and CompletionItem.description are just strings, you
+can format them in such a way to have multiple columns::
+
+    ITEM_ID     Item Name            Checked Out    Due Date
+    ==========================================================
+    1           My item              True           02/02/2022
+    2           Another item         False
+    3           Yet another item     False
+
+To use CompletionItems, just return them from your choices_provider or
+completer functions. They can also be used as argparse choices. When a
+CompletionItem is created, it stores the original value (e.g. ID number) and
+makes it accessible through a property called orig_value. cmd2 has patched
+argparse so that when evaluating choices, input is compared to
+CompletionItem.orig_value instead of the CompletionItem instance.
+
+To avoid printing a ton of information to the screen at once when a user
+presses tab, there is a maximum threshold for the number of CompletionItems
+that will be shown. Its value is defined in cmd2.Cmd.max_completion_items. It
+defaults to 50, but can be changed. If the number of completion suggestions
+exceeds this number, they will be displayed in the typical columnized format
+and will not include the description value of the CompletionItems.
+
+
+**Patched argparse functions**
+
+``argparse._ActionsContainer.add_argument`` - adds arguments related to tab
+completion and enables nargs range parsing. See _add_argument_wrapper for
+more details on these arguments.
+
+``argparse.ArgumentParser._check_value`` - adds support for using
+``CompletionItems`` as argparse choices. When evaluating choices, input is
+compared to ``CompletionItem.orig_value`` instead of the ``CompletionItem``
+instance.
+See _ArgumentParser_check_value for more details.
+
+``argparse.ArgumentParser._get_nargs_pattern`` - adds support for nargs ranges.
+See _get_nargs_pattern_wrapper for more details.
+
+``argparse.ArgumentParser._match_argument`` - adds support for nargs ranges.
+See _match_argument_wrapper for more details.
+
+``argparse._SubParsersAction.remove_parser`` - new function which removes a
+sub-parser from a sub-parsers group. See _SubParsersAction_remove_parser for
+more details.
+
+**Added accessor methods**
+
+cmd2 has patched ``argparse.Action`` to include the following accessor methods
+for cases in which you need to manually access the cmd2-specific attributes.
+
+- ``argparse.Action.get_choices_callable()`` - See
+  :func:`_action_get_choices_callable` for more details.
+- ``argparse.Action.set_choices_provider()`` - See
+  :func:`_action_set_choices_provider` for more details.
+- ``argparse.Action.set_completer()`` - See
+  :func:`_action_set_completer` for more details.
+- ``argparse.Action.get_descriptive_header()`` - See
+  :func:`_action_get_descriptive_header` for more details.
+- ``argparse.Action.set_descriptive_header()`` - See
+  :func:`_action_set_descriptive_header` for more details.
+- ``argparse.Action.get_nargs_range()`` - See
+  :func:`_action_get_nargs_range` for more details.
+- ``argparse.Action.set_nargs_range()`` - See
+  :func:`_action_set_nargs_range` for more details.
+- ``argparse.Action.get_suppress_tab_hint()`` - See
+  :func:`_action_get_suppress_tab_hint` for more details.
+- ``argparse.Action.set_suppress_tab_hint()`` - See
+  :func:`_action_set_suppress_tab_hint` for more details.
+
+cmd2 has patched ``argparse.ArgumentParser`` to include the following accessor methods
+
+- ``argparse.ArgumentParser.get_ap_completer_type()`` - See
+  :func:`_ArgumentParser_get_ap_completer_type` for more details.
+- ``argparse.Action.set_ap_completer_type()`` - See
+  :func:`_ArgumentParser_set_ap_completer_type` for more details.
+
+**Subcommand removal**
+
+cmd2 has patched ``argparse._SubParsersAction`` to include a ``remove_parser()``
+method which can be used to remove a subcommand.
+
+``argparse._SubParsersAction.remove_parser`` - new function which removes a
+sub-parser from a sub-parsers group. See
+:func:`_SubParsersAction_remove_parser` for more details.
+"""
+
+import argparse
+import re
+import sys
+
+# noinspection PyUnresolvedReferences,PyProtectedMember
+from argparse import (
+    ONE_OR_MORE,
+    ZERO_OR_MORE,
+    ArgumentError,
+)
+from gettext import (
+    gettext,
+)
+from typing import (
+    IO,
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    NoReturn,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
+
+from . import (
+    ansi,
+    constants,
+)
+
+try:
+    from typing import (
+        Protocol,
+        runtime_checkable,
+    )
+except ImportError:
+    from typing_extensions import (  # type: ignore[assignment]
+        Protocol,
+        runtime_checkable,
+    )
+
+
+if TYPE_CHECKING:  # pragma: no cover
+    from .argparse_completer import (
+        ArgparseCompleter,
+    )
+
+
+def generate_range_error(range_min: int, range_max: Union[int, float]) -> str:
+    """Generate an error message when the the number of arguments provided is not within the expected range"""
+    err_str = "expected "
+
+    if range_max == constants.INFINITY:
+        plural = '' if range_min == 1 else 's'
+        err_str += f"at least {range_min}"
+    else:
+        plural = '' if range_max == 1 else 's'
+        if range_min == range_max:
+            err_str += f"{range_min}"
+        else:
+            err_str += f"{range_min} to {range_max}"
+
+    err_str += f" argument{plural}"
+
+    return err_str
+
+
+class CompletionItem(str):
+    """
+    Completion item with descriptive text attached
+
+    See header of this file for more information
+    """
+
+    def __new__(cls, value: object, *args: Any, **kwargs: Any) -> 'CompletionItem':
+        return super(CompletionItem, cls).__new__(cls, value)
+
+    # noinspection PyUnusedLocal
+    def __init__(self, value: object, description: str = '', *args: Any) -> None:
+        """
+        CompletionItem Initializer
+
+        :param value: the value being tab completed
+        :param description: description text to display
+        :param args: args for str __init__
+        :param kwargs: kwargs for str __init__
+        """
+        super().__init__(*args)
+        self.description = description
+
+        # Save the original value to support CompletionItems as argparse choices.
+        # cmd2 has patched argparse so input is compared to this value instead of the CompletionItem instance.
+        self._orig_value = value
+
+    @property
+    def orig_value(self) -> Any:
+        """Read-only property for _orig_value"""
+        return self._orig_value
+
+
+############################################################################################################
+# Class and functions related to ChoicesCallable
+############################################################################################################
+
+
+@runtime_checkable
+class ChoicesProviderFuncBase(Protocol):
+    """
+    Function that returns a list of choices in support of tab completion
+    """
+
+    def __call__(self) -> List[str]:
+        ...  # pragma: no cover
+
+
+@runtime_checkable
+class ChoicesProviderFuncWithTokens(Protocol):
+    """
+    Function that returns a list of choices in support of tab completion and accepts a dictionary of prior arguments.
+    """
+
+    def __call__(self, *, arg_tokens: Dict[str, List[str]] = {}) -> List[str]:
+        ...  # pragma: no cover
+
+
+ChoicesProviderFunc = Union[ChoicesProviderFuncBase, ChoicesProviderFuncWithTokens]
+
+
+@runtime_checkable
+class CompleterFuncBase(Protocol):
+    """
+    Function to support tab completion with the provided state of the user prompt
+    """
+
+    def __call__(
+        self,
+        text: str,
+        line: str,
+        begidx: int,
+        endidx: int,
+    ) -> List[str]:
+        ...  # pragma: no cover
+
+
+@runtime_checkable
+class CompleterFuncWithTokens(Protocol):
+    """
+    Function to support tab completion with the provided state of the user prompt and accepts a dictionary of prior
+    arguments.
+    """
+
+    def __call__(
+        self,
+        text: str,
+        line: str,
+        begidx: int,
+        endidx: int,
+        *,
+        arg_tokens: Dict[str, List[str]] = {},
+    ) -> List[str]:
+        ...  # pragma: no cover
+
+
+CompleterFunc = Union[CompleterFuncBase, CompleterFuncWithTokens]
+
+
+class ChoicesCallable:
+    """
+    Enables using a callable as the choices provider for an argparse argument.
+    While argparse has the built-in choices attribute, it is limited to an iterable.
+    """
+
+    def __init__(
+        self,
+        is_completer: bool,
+        to_call: Union[CompleterFunc, ChoicesProviderFunc],
+    ) -> None:
+        """
+        Initializer
+        :param is_completer: True if to_call is a tab completion routine which expects
+                             the args: text, line, begidx, endidx
+        :param to_call: the callable object that will be called to provide choices for the argument
+        """
+        self.is_completer = is_completer
+        if is_completer:
+            if not isinstance(to_call, (CompleterFuncBase, CompleterFuncWithTokens)):  # pragma: no cover
+                # runtime checking of Protocols do not currently check the parameters of a function.
+                raise ValueError(
+                    'With is_completer set to true, to_call must be either CompleterFunc, CompleterFuncWithTokens'
+                )
+        else:
+            if not isinstance(to_call, (ChoicesProviderFuncBase, ChoicesProviderFuncWithTokens)):  # pragma: no cover
+                # runtime checking of Protocols do not currently check the parameters of a function.
+                raise ValueError(
+                    'With is_completer set to false, to_call must be either: '
+                    'ChoicesProviderFuncBase, ChoicesProviderFuncWithTokens'
+                )
+        self.to_call = to_call
+
+    @property
+    def completer(self) -> CompleterFunc:
+        if not isinstance(self.to_call, (CompleterFuncBase, CompleterFuncWithTokens)):  # pragma: no cover
+            # this should've been caught in the constructor, just a backup check
+            raise ValueError('Function is not a CompleterFunc')
+        return self.to_call
+
+    @property
+    def choices_provider(self) -> ChoicesProviderFunc:
+        if not isinstance(self.to_call, (ChoicesProviderFuncBase, ChoicesProviderFuncWithTokens)):  # pragma: no cover
+            # this should've been caught in the constructor, just a backup check
+            raise ValueError('Function is not a ChoicesProviderFunc')
+        return self.to_call
+
+
+############################################################################################################
+# The following are names of custom argparse Action attributes added by cmd2
+############################################################################################################
+
+# ChoicesCallable object that specifies the function to be called which provides choices to the argument
+ATTR_CHOICES_CALLABLE = 'choices_callable'
+
+# Descriptive header that prints when using CompletionItems
+ATTR_DESCRIPTIVE_HEADER = 'descriptive_header'
+
+# A tuple specifying nargs as a range (min, max)
+ATTR_NARGS_RANGE = 'nargs_range'
+
+# Pressing tab normally displays the help text for the argument if no choices are available
+# Setting this attribute to True will suppress these hints
+ATTR_SUPPRESS_TAB_HINT = 'suppress_tab_hint'
+
+
+############################################################################################################
+# Patch argparse.Action with accessors for choice_callable attribute
+############################################################################################################
+def _action_get_choices_callable(self: argparse.Action) -> Optional[ChoicesCallable]:
+    """
+    Get the choices_callable attribute of an argparse Action.
+
+    This function is added by cmd2 as a method called ``get_choices_callable()`` to ``argparse.Action`` class.
+
+    To call: ``action.get_choices_callable()``
+
+    :param self: argparse Action being queried
+    :return: A ChoicesCallable instance or None if attribute does not exist
+    """
+    return cast(Optional[ChoicesCallable], getattr(self, ATTR_CHOICES_CALLABLE, None))
+
+
+setattr(argparse.Action, 'get_choices_callable', _action_get_choices_callable)
+
+
+def _action_set_choices_callable(self: argparse.Action, choices_callable: ChoicesCallable) -> None:
+    """
+    Set the choices_callable attribute of an argparse Action.
+
+    This function is added by cmd2 as a method called ``_set_choices_callable()`` to ``argparse.Action`` class.
+
+    Call this using the convenience wrappers ``set_choices_provider()`` and ``set_completer()`` instead.
+
+    :param self: action being edited
+    :param choices_callable: the ChoicesCallable instance to use
+    :raises: TypeError if used on incompatible action type
+    """
+    # Verify consistent use of parameters
+    if self.choices is not None:
+        err_msg = "None of the following parameters can be used alongside a choices parameter:\n" "choices_provider, completer"
+        raise (TypeError(err_msg))
+    elif self.nargs == 0:
+        err_msg = (
+            "None of the following parameters can be used on an action that takes no arguments:\n"
+            "choices_provider, completer"
+        )
+        raise (TypeError(err_msg))
+
+    setattr(self, ATTR_CHOICES_CALLABLE, choices_callable)
+
+
+setattr(argparse.Action, '_set_choices_callable', _action_set_choices_callable)
+
+
+def _action_set_choices_provider(
+    self: argparse.Action,
+    choices_provider: ChoicesProviderFunc,
+) -> None:
+    """
+    Set choices_provider of an argparse Action.
+
+    This function is added by cmd2 as a method called ``set_choices_callable()`` to ``argparse.Action`` class.
+
+    To call: ``action.set_choices_provider(choices_provi

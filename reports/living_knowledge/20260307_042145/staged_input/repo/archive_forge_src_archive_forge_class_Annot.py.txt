@@ -1,0 +1,522 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_Annot.py
+KIND: code
+
+import atexit
+import binascii
+import collections
+import glob
+import inspect
+import io
+import math
+import os
+import pathlib
+import re
+import string
+import sys
+import tarfile
+import typing
+import warnings
+import weakref
+import zipfile
+from . import extra
+from . import _extra
+from . import utils
+from .table import find_tables
+class Annot:
+
+    def __init__(self, annot):
+        assert isinstance(annot, mupdf.PdfAnnot)
+        self.this = annot
+
+    def __repr__(self):
+        parent = getattr(self, 'parent', '<>')
+        return "'%s' annotation on %s" % (self.type[1], str(parent))
+
+    def __str__(self):
+        return self.__repr__()
+
+    def _erase(self):
+        if getattr(self, 'thisown', False):
+            self.thisown = False
+
+    def _get_redact_values(self):
+        annot = self.this
+        if mupdf.pdf_annot_type(annot) != mupdf.PDF_ANNOT_REDACT:
+            return
+        values = dict()
+        try:
+            obj = mupdf.pdf_dict_gets(mupdf.pdf_annot_obj(annot), 'RO')
+            if obj.m_internal:
+                JM_Warning("Ignoring redaction key '/RO'.")
+                xref = mupdf.pdf_to_num(obj)
+                values[dictkey_xref] = xref
+            obj = mupdf.pdf_dict_gets(mupdf.pdf_annot_obj(annot), 'OverlayText')
+            if obj.m_internal:
+                text = mupdf.pdf_to_text_string(obj)
+                values[dictkey_text] = JM_UnicodeFromStr(text)
+            else:
+                values[dictkey_text] = ''
+            obj = mupdf.pdf_dict_get(mupdf.pdf_annot_obj(annot), PDF_NAME('Q'))
+            align = 0
+            if obj.m_internal:
+                align = mupdf.pdf_to_int(obj)
+            values[dictkey_align] = align
+        except Exception:
+            if g_exceptions_verbose:
+                exception_info()
+            return
+        val = values
+        if not val:
+            return val
+        val['rect'] = self.rect
+        text_color, fontname, fontsize = TOOLS._parse_da(self)
+        val['text_color'] = text_color
+        val['fontname'] = fontname
+        val['fontsize'] = fontsize
+        fill = self.colors['fill']
+        val['fill'] = fill
+        return val
+
+    def _getAP(self):
+        if g_use_extra:
+            assert isinstance(self.this, mupdf.PdfAnnot)
+            ret = extra.Annot_getAP(self.this)
+            assert isinstance(ret, bytes)
+            return ret
+        else:
+            r = None
+            res = None
+            annot = self.this
+            assert isinstance(annot, mupdf.PdfAnnot)
+            annot_obj = mupdf.pdf_annot_obj(annot)
+            ap = mupdf.pdf_dict_getl(annot_obj, PDF_NAME('AP'), PDF_NAME('N'))
+            if mupdf.pdf_is_stream(ap):
+                res = mupdf.pdf_load_stream(ap)
+            if res and res.m_internal:
+                r = JM_BinFromBuffer(res)
+            return r
+
+    def _setAP(self, buffer_, rect=0):
+        try:
+            annot = self.this
+            annot_obj = mupdf.pdf_annot_obj(annot)
+            page = mupdf.pdf_annot_page(annot)
+            apobj = mupdf.pdf_dict_getl(annot_obj, PDF_NAME('AP'), PDF_NAME('N'))
+            if not apobj.m_internal:
+                raise RuntimeError(MSG_BAD_APN)
+            if not mupdf.pdf_is_stream(apobj):
+                raise RuntimeError(MSG_BAD_APN)
+            res = JM_BufferFromBytes(buffer_)
+            if not res.m_internal:
+                raise ValueError(MSG_BAD_BUFFER)
+            JM_update_stream(page.doc(), apobj, res, 1)
+            if rect:
+                bbox = mupdf.pdf_dict_get_rect(annot_obj, PDF_NAME('Rect'))
+                mupdf.pdf_dict_put_rect(apobj, PDF_NAME('BBox'), bbox)
+        except Exception:
+            if g_exceptions_verbose:
+                exception_info()
+
+    def _update_appearance(self, opacity=-1, blend_mode=None, fill_color=None, rotate=-1):
+        annot = self.this
+        assert annot.m_internal
+        annot_obj = mupdf.pdf_annot_obj(annot)
+        page = mupdf.pdf_annot_page(annot)
+        pdf = page.doc()
+        type_ = mupdf.pdf_annot_type(annot)
+        nfcol, fcol = JM_color_FromSequence(fill_color)
+        try:
+            if nfcol == 0 or type_ not in (mupdf.PDF_ANNOT_SQUARE, mupdf.PDF_ANNOT_CIRCLE, mupdf.PDF_ANNOT_LINE, mupdf.PDF_ANNOT_POLY_LINE, mupdf.PDF_ANNOT_POLYGON):
+                mupdf.pdf_dict_del(annot_obj, PDF_NAME('IC'))
+            elif nfcol > 0:
+                mupdf.pdf_set_annot_interior_color(annot, fcol[:nfcol])
+            insert_rot = 1 if rotate >= 0 else 0
+            if type_ not in (mupdf.PDF_ANNOT_CARET, mupdf.PDF_ANNOT_CIRCLE, mupdf.PDF_ANNOT_FREE_TEXT, mupdf.PDF_ANNOT_FILE_ATTACHMENT, mupdf.PDF_ANNOT_INK, mupdf.PDF_ANNOT_LINE, mupdf.PDF_ANNOT_POLY_LINE, mupdf.PDF_ANNOT_POLYGON, mupdf.PDF_ANNOT_SQUARE, mupdf.PDF_ANNOT_STAMP, mupdf.PDF_ANNOT_TEXT):
+                insert_rot = 0
+            if insert_rot:
+                mupdf.pdf_dict_put_int(annot_obj, PDF_NAME('Rotate'), rotate)
+            mupdf.pdf_dirty_annot(annot)
+            mupdf.pdf_update_annot(annot)
+            pdf.resynth_required = 0
+            if type_ == mupdf.PDF_ANNOT_FREE_TEXT:
+                if nfcol > 0:
+                    mupdf.pdf_set_annot_color(annot, fcol[:nfcol])
+            elif nfcol > 0:
+                col = mupdf.pdf_new_array(page.doc(), nfcol)
+                for i in range(nfcol):
+                    mupdf.pdf_array_push_real(col, fcol[i])
+                mupdf.pdf_dict_put(annot_obj, PDF_NAME('IC'), col)
+        except Exception as e:
+            if g_exceptions_verbose:
+                exception_info()
+            message(f'cannot update annot: {e}', file=sys.stderr)
+            raise
+        if (opacity < 0 or opacity >= 1) and (not blend_mode):
+            return True
+        try:
+            ap = mupdf.pdf_dict_getl(mupdf.pdf_annot_obj(annot), PDF_NAME('AP'), PDF_NAME('N'))
+            if not ap.m_internal:
+                raise RuntimeError(MSG_BAD_APN)
+            resources = mupdf.pdf_dict_get(ap, PDF_NAME('Resources'))
+            if not resources.m_internal:
+                resources = mupdf.pdf_dict_put_dict(ap, PDF_NAME('Resources'), 2)
+            alp0 = mupdf.pdf_new_dict(page.doc(), 3)
+            if opacity >= 0 and opacity < 1:
+                mupdf.pdf_dict_put_real(alp0, PDF_NAME('CA'), opacity)
+                mupdf.pdf_dict_put_real(alp0, PDF_NAME('ca'), opacity)
+                mupdf.pdf_dict_put_real(annot_obj, PDF_NAME('CA'), opacity)
+            if blend_mode:
+                mupdf.pdf_dict_put_name(alp0, PDF_NAME('BM'), blend_mode)
+                mupdf.pdf_dict_put_name(annot_obj, PDF_NAME('BM'), blend_mode)
+            extg = mupdf.pdf_dict_get(resources, PDF_NAME('ExtGState'))
+            if not extg.m_internal:
+                extg = mupdf.pdf_dict_put_dict(resources, PDF_NAME('ExtGState'), 2)
+            mupdf.pdf_dict_put(extg, PDF_NAME('H'), alp0)
+        except Exception as e:
+            if g_exceptions_verbose:
+                exception_info()
+            message(f'cannot set opacity or blend mode\n: {e}', file=sys.stderr)
+            raise
+        return True
+
+    @property
+    def apn_bbox(self):
+        """annotation appearance bbox"""
+        CheckParent(self)
+        annot = self.this
+        annot_obj = mupdf.pdf_annot_obj(annot)
+        ap = mupdf.pdf_dict_getl(annot_obj, PDF_NAME('AP'), PDF_NAME('N'))
+        if not ap.m_internal:
+            val = JM_py_from_rect(mupdf.FzRect(mupdf.FzRect.Fixed_INFINITE))
+        else:
+            rect = mupdf.pdf_dict_get_rect(ap, PDF_NAME('BBox'))
+            val = JM_py_from_rect(rect)
+        val = Rect(val) * self.get_parent().transformation_matrix
+        val *= self.get_parent().derotation_matrix
+        return val
+
+    @property
+    def apn_matrix(self):
+        """annotation appearance matrix"""
+        try:
+            CheckParent(self)
+            annot = self.this
+            assert isinstance(annot, mupdf.PdfAnnot)
+            ap = mupdf.pdf_dict_getl(mupdf.pdf_annot_obj(annot), mupdf.PDF_ENUM_NAME_AP, mupdf.PDF_ENUM_NAME_N)
+            if not ap.m_internal:
+                return JM_py_from_matrix(mupdf.FzMatrix())
+            mat = mupdf.pdf_dict_get_matrix(ap, mupdf.PDF_ENUM_NAME_Matrix)
+            val = JM_py_from_matrix(mat)
+            val = Matrix(val)
+            return val
+        except Exception:
+            if g_exceptions_verbose:
+                exception_info()
+            raise
+
+    @property
+    def blendmode(self):
+        """annotation BlendMode"""
+        CheckParent(self)
+        annot = self.this
+        annot_obj = mupdf.pdf_annot_obj(annot)
+        obj = mupdf.pdf_dict_get(annot_obj, PDF_NAME('BM'))
+        blend_mode = None
+        if obj.m_internal:
+            blend_mode = JM_UnicodeFromStr(mupdf.pdf_to_name(obj))
+            return blend_mode
+        obj = mupdf.pdf_dict_getl(annot_obj, PDF_NAME('AP'), PDF_NAME('N'), PDF_NAME('Resources'), PDF_NAME('ExtGState'))
+        if mupdf.pdf_is_dict(obj):
+            n = mupdf.pdf_dict_len(obj)
+            for i in range(n):
+                obj1 = mupdf.pdf_dict_get_val(obj, i)
+                if mupdf.pdf_is_dict(obj1):
+                    m = mupdf.pdf_dict_len(obj1)
+                    for j in range(m):
+                        obj2 = mupdf.pdf_dict_get_key(obj1, j)
+                        if mupdf.pdf_objcmp(obj2, PDF_NAME('BM')) == 0:
+                            blend_mode = JM_UnicodeFromStr(mupdf.pdf_to_name(mupdf.pdf_dict_get_val(obj1, j)))
+                            return blend_mode
+        return blend_mode
+
+    @property
+    def border(self):
+        """Border information."""
+        CheckParent(self)
+        atype = self.type[0]
+        if atype not in (mupdf.PDF_ANNOT_CIRCLE, mupdf.PDF_ANNOT_FREE_TEXT, mupdf.PDF_ANNOT_INK, mupdf.PDF_ANNOT_LINE, mupdf.PDF_ANNOT_POLY_LINE, mupdf.PDF_ANNOT_POLYGON, mupdf.PDF_ANNOT_SQUARE):
+            return dict()
+        ao = mupdf.pdf_annot_obj(self.this)
+        ret = JM_annot_border(ao)
+        return ret
+
+    def clean_contents(self, sanitize=1):
+        """Clean appearance contents stream."""
+        CheckParent(self)
+        annot = self.this
+        pdf = mupdf.pdf_get_bound_document(mupdf.pdf_annot_obj(annot))
+        filter_ = _make_PdfFilterOptions(recurse=1, instance_forms=0, ascii=0, sanitize=sanitize)
+        mupdf.pdf_filter_annot_contents(pdf, annot, filter_)
+
+    @property
+    def colors(self):
+        """Color definitions."""
+        try:
+            CheckParent(self)
+            annot = self.this
+            assert isinstance(annot, mupdf.PdfAnnot)
+            return JM_annot_colors(mupdf.pdf_annot_obj(annot))
+        except Exception:
+            if g_exceptions_verbose:
+                exception_info()
+            raise
+
+    def delete_responses(self):
+        """Delete 'Popup' and responding annotations."""
+        CheckParent(self)
+        annot = self.this
+        annot_obj = mupdf.pdf_annot_obj(annot)
+        page = mupdf.pdf_annot_page(annot)
+        while 1:
+            irt_annot = JM_find_annot_irt(annot)
+            if not irt_annot.m_internal:
+                break
+            mupdf.pdf_delete_annot(page, irt_annot)
+        mupdf.pdf_dict_del(annot_obj, PDF_NAME('Popup'))
+        annots = mupdf.pdf_dict_get(page.obj(), PDF_NAME('Annots'))
+        n = mupdf.pdf_array_len(annots)
+        found = 0
+        for i in range(n - 1, -1, -1):
+            o = mupdf.pdf_array_get(annots, i)
+            p = mupdf.pdf_dict_get(o, PDF_NAME('Parent'))
+            if not o.m_internal:
+                continue
+            if not mupdf.pdf_objcmp(p, annot_obj):
+                mupdf.pdf_array_delete(annots, i)
+                found = 1
+        if found:
+            mupdf.pdf_dict_put(page.obj(), PDF_NAME('Annots'), annots)
+
+    @property
+    def file_info(self):
+        """Attached file information."""
+        CheckParent(self)
+        res = dict()
+        length = -1
+        size = -1
+        desc = None
+        annot = self.this
+        annot_obj = mupdf.pdf_annot_obj(annot)
+        type_ = mupdf.pdf_annot_type(annot)
+        if type_ != mupdf.PDF_ANNOT_FILE_ATTACHMENT:
+            raise TypeError(MSG_BAD_ANNOT_TYPE)
+        stream = mupdf.pdf_dict_getl(annot_obj, PDF_NAME('FS'), PDF_NAME('EF'), PDF_NAME('F'))
+        if not stream.m_internal:
+            RAISEPY('bad PDF: file entry not found', JM_Exc_FileDataError)
+        fs = mupdf.pdf_dict_get(annot_obj, PDF_NAME('FS'))
+        o = mupdf.pdf_dict_get(fs, PDF_NAME('UF'))
+        if o.m_internal:
+            filename = mupdf.pdf_to_text_string(o)
+        else:
+            o = mupdf.pdf_dict_get(fs, PDF_NAME('F'))
+            if o.m_internal:
+                filename = mupdf.pdf_to_text_string(o)
+        o = mupdf.pdf_dict_get(fs, PDF_NAME('Desc'))
+        if o.m_internal:
+            desc = mupdf.pdf_to_text_string(o)
+        o = mupdf.pdf_dict_get(stream, PDF_NAME('Length'))
+        if o.m_internal:
+            length = mupdf.pdf_to_int(o)
+        o = mupdf.pdf_dict_getl(stream, PDF_NAME('Params'), PDF_NAME('Size'))
+        if o.m_internal:
+            size = mupdf.pdf_to_int(o)
+        res[dictkey_filename] = JM_EscapeStrFromStr(filename)
+        res[dictkey_desc] = JM_UnicodeFromStr(desc)
+        res[dictkey_length] = length
+        res[dictkey_size] = size
+        return res
+
+    @property
+    def flags(self):
+        """Flags field."""
+        CheckParent(self)
+        annot = self.this
+        return mupdf.pdf_annot_flags(annot)
+
+    def get_file(self):
+        """Retrieve attached file content."""
+        CheckParent(self)
+        annot = self.this
+        annot_obj = mupdf.pdf_annot_obj(annot)
+        type = mupdf.pdf_annot_type(annot)
+        if type != mupdf.PDF_ANNOT_FILE_ATTACHMENT:
+            raise TypeError(MSG_BAD_ANNOT_TYPE)
+        stream = mupdf.pdf_dict_getl(annot_obj, PDF_NAME('FS'), PDF_NAME('EF'), PDF_NAME('F'))
+        if not stream.m_internal:
+            RAISEPY('bad PDF: file entry not found', JM_Exc_FileDataError)
+        buf = mupdf.pdf_load_stream(stream)
+        res = JM_BinFromBuffer(buf)
+        return res
+
+    def get_oc(self):
+        """Get annotation optional content reference."""
+        CheckParent(self)
+        oc = 0
+        annot = self.this
+        annot_obj = mupdf.pdf_annot_obj(annot)
+        obj = mupdf.pdf_dict_get(annot_obj, PDF_NAME('OC'))
+        if obj.m_internal:
+            oc = mupdf.pdf_to_num(obj)
+        return oc
+
+    def get_parent(self):
+        try:
+            ret = getattr(self, 'parent')
+        except AttributeError:
+            page = mupdf.pdf_annot_page(self.this)
+            assert isinstance(page, mupdf.PdfPage)
+            document = Document(page.doc()) if page.m_internal else None
+            ret = Page(page, document)
+            self.parent = ret
+        return ret
+
+    def get_pixmap(self, matrix=None, dpi=None, colorspace=None, alpha=0):
+        """annotation Pixmap"""
+        CheckParent(self)
+        cspaces = {'gray': csGRAY, 'rgb': csRGB, 'cmyk': csCMYK}
+        if type(colorspace) is str:
+            colorspace = cspaces.get(colorspace.lower(), None)
+        if dpi:
+            matrix = Matrix(dpi / 72, dpi / 72)
+        ctm = JM_matrix_from_py(matrix)
+        cs = colorspace
+        if not cs:
+            cs = mupdf.fz_device_rgb()
+        pix = mupdf.pdf_new_pixmap_from_annot(self.this, ctm, cs, mupdf.FzSeparations(0), alpha)
+        if dpi:
+            pix.set_dpi(dpi, dpi)
+        return Pixmap(pix)
+
+    def get_sound(self):
+        """Retrieve sound stream."""
+        CheckParent(self)
+        annot = self.this
+        annot_obj = mupdf.pdf_annot_obj(annot)
+        type = mupdf.pdf_annot_type(annot)
+        sound = mupdf.pdf_dict_get(annot_obj, PDF_NAME('Sound'))
+        if type != mupdf.PDF_ANNOT_SOUND or not sound.m_internal:
+            raise TypeError(MSG_BAD_ANNOT_TYPE)
+        if mupdf.pdf_dict_get(sound, PDF_NAME('F')).m_internal:
+            RAISEPY('unsupported sound stream', JM_Exc_FileDataError)
+        res = dict()
+        obj = mupdf.pdf_dict_get(sound, PDF_NAME('R'))
+        if obj.m_internal:
+            res['rate'] = mupdf.pdf_to_real(obj)
+        obj = mupdf.pdf_dict_get(sound, PDF_NAME('C'))
+        if obj.m_internal:
+            res['channels'] = mupdf.pdf_to_int(obj)
+        obj = mupdf.pdf_dict_get(sound, PDF_NAME('B'))
+        if obj.m_internal:
+            res['bps'] = mupdf.pdf_to_int(obj)
+        obj = mupdf.pdf_dict_get(sound, PDF_NAME('E'))
+        if obj.m_internal:
+            res['encoding'] = mupdf.pdf_to_name(obj)
+        obj = mupdf.pdf_dict_gets(sound, 'CO')
+        if obj.m_internal:
+            res['compression'] = mupdf.pdf_to_name(obj)
+        buf = mupdf.pdf_load_stream(sound)
+        stream = JM_BinFromBuffer(buf)
+        res['stream'] = stream
+        return res
+
+    def get_textpage(self, clip=None, flags=0):
+        """Make annotation TextPage."""
+        CheckParent(self)
+        options = mupdf.FzStextOptions()
+        options.flags = flags
+        annot = self.this
+        stextpage = mupdf.FzStextPage(annot, options)
+        ret = TextPage(stextpage)
+        p = self.get_parent()
+        if isinstance(p, weakref.ProxyType):
+            ret.parent = p
+        else:
+            ret.parent = weakref.proxy(p)
+        return ret
+
+    @property
+    def has_popup(self):
+        """Check if annotation has a Popup."""
+        CheckParent(self)
+        annot = self.this
+        obj = mupdf.pdf_dict_get(mupdf.pdf_annot_obj(annot), PDF_NAME('Popup'))
+        return True if obj.m_internal else False
+
+    @property
+    def info(self):
+        """Various information details."""
+        CheckParent(self)
+        annot = self.this
+        res = dict()
+        res[dictkey_content] = JM_UnicodeFromStr(mupdf.pdf_annot_contents(annot))
+        o = mupdf.pdf_dict_get(mupdf.pdf_annot_obj(annot), PDF_NAME('Name'))
+        res[dictkey_name] = JM_UnicodeFromStr(mupdf.pdf_to_name(o))
+        o = mupdf.pdf_dict_get(mupdf.pdf_annot_obj(annot), PDF_NAME('T'))
+        res[dictkey_title] = JM_UnicodeFromStr(mupdf.pdf_to_text_string(o))
+        o = mupdf.pdf_dict_gets(mupdf.pdf_annot_obj(annot), 'CreationDate')
+        res[dictkey_creationDate] = JM_UnicodeFromStr(mupdf.pdf_to_text_string(o))
+        o = mupdf.pdf_dict_get(mupdf.pdf_annot_obj(annot), PDF_NAME('M'))
+        res[dictkey_modDate] = JM_UnicodeFromStr(mupdf.pdf_to_text_string(o))
+        o = mupdf.pdf_dict_gets(mupdf.pdf_annot_obj(annot), 'Subj')
+        res[dictkey_subject] = mupdf.pdf_to_text_string(o)
+        o = mupdf.pdf_dict_gets(mupdf.pdf_annot_obj(annot), 'NM')
+        res[dictkey_id] = JM_UnicodeFromStr(mupdf.pdf_to_text_string(o))
+        return res
+
+    @property
+    def irt_xref(self):
+        """
+        annotation IRT xref
+        """
+        annot = self.this
+        annot_obj = mupdf.pdf_annot_obj(annot)
+        irt = mupdf.pdf_dict_get(annot_obj, PDF_NAME('IRT'))
+        if not irt.m_internal:
+            return 0
+        return mupdf.pdf_to_num(irt)
+
+    @property
+    def is_open(self):
+        """Get 'open' status of annotation or its Popup."""
+        CheckParent(self)
+        return mupdf.pdf_annot_is_open(self.this)
+
+    @property
+    def language(self):
+        """annotation language"""
+        this_annot = self.this
+        lang = mupdf.pdf_annot_language(this_annot)
+        if lang == mupdf.FZ_LANG_UNSET:
+            return
+        assert hasattr(mupdf, 'fz_string_from_text_language2')
+        return mupdf.fz_string_from_text_language2(lang)
+
+    @property
+    def line_ends(self):
+        """Line end codes."""
+        CheckParent(self)
+        annot = self.this
+        if not mupdf.pdf_annot_has_line_ending_styles(annot):
+            return
+        lstart = mupdf.pdf_annot_line_start_style(annot)
+        lend = mupdf.pdf_annot_line_end_style(annot)
+        return (lstart, lend)
+
+    @property
+    def next(self):
+        """Next annotation."""
+        CheckParent(self)
+        this_annot = self.this
+        assert isinstance(this_annot, mupdf.PdfAnnot)
+        assert this_annot.m_internal
+        type_ = mupdf.pdf_annot_type(this

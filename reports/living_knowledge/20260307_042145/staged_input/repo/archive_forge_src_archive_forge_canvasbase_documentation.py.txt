@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/canvasbase_documentation.py
+KIND: code
+
+import math
+Complete any remaining draw operation
+
+           This is supposed to be the last operation on the canvas before
+           saving it

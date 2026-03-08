@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_convenience_documentation.py
+KIND: code
+
+from ._ithreads import AlreadyQuit
+
+        Check if the flag has been set.
+
+        @raise AlreadyQuit: If it has been set.

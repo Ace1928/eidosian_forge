@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/FeatFinderCLI_documentation.py
+KIND: code
+
+import argparse
+import os
+import re
+from rdkit import Chem, RDLogger
+from rdkit.Chem import ChemicalFeatures
+ Main application

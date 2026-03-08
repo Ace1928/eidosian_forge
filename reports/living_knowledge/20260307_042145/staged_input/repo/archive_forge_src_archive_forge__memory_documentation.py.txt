@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_memory_documentation.py
+KIND: code
+
+from zope.interface import implementer
+from . import IWorker
+from ._convenience import Quit
+
+        Quit this worker.

@@ -1,0 +1,517 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_qubit_device.py
+KIND: code
+
+# Copyright 2018-2021 Xanadu Quantum Technologies Inc.
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""
+This module contains the :class:`QubitDevice` abstract base class.
+"""
+
+
+# For now, arguments may be different from the signatures provided in Device
+# e.g. instead of expval(self, observable, wires, par) have expval(self, observable)
+# pylint: disable=arguments-differ, abstract-method, no-value-for-parameter,too-many-instance-attributes,too-many-branches, no-member, bad-option-value, arguments-renamed
+# pylint: disable=too-many-arguments
+import abc
+import itertools
+import warnings
+from collections import defaultdict
+from typing import Union, List
+import inspect
+import logging
+
+import numpy as np
+
+import pennylane as qml
+from pennylane import Device, DeviceError
+from pennylane.math import multiply as qmlmul
+from pennylane.math import sum as qmlsum
+from pennylane.measurements import (
+    ClassicalShadowMP,
+    CountsMP,
+    ExpectationMP,
+    MeasurementProcess,
+    MeasurementTransform,
+    MeasurementValue,
+    MutualInfoMP,
+    ProbabilityMP,
+    SampleMeasurement,
+    SampleMP,
+    ShadowExpvalMP,
+    StateMeasurement,
+    StateMP,
+    VarianceMP,
+    VnEntropyMP,
+    Shots,
+)
+from pennylane.resource import Resources
+from pennylane.operation import operation_derivative, Operation
+from pennylane.tape import QuantumTape
+from pennylane.wires import Wires
+
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
+
+
+def _sample_to_str(sample):
+    """Converts a bit-array to a string. For example, ``[0, 1]`` would become '01'."""
+    return "".join(map(str, sample))
+
+
+class QubitDevice(Device):
+    """Abstract base class for PennyLane qubit devices.
+
+    The following abstract method **must** be defined:
+
+    * :meth:`~.apply`: append circuit operations, compile the circuit (if applicable),
+      and perform the quantum computation.
+
+    Devices that generate their own samples (such as hardware) may optionally
+    overwrite :meth:`~.probability`. This method otherwise automatically
+    computes the probabilities from the generated samples, and **must**
+    overwrite the following method:
+
+    * :meth:`~.generate_samples`: Generate samples from the device from the
+      exact or approximate probability distribution.
+
+    Analytic devices **must** overwrite the following method:
+
+    * :meth:`~.analytic_probability`: returns the probability or marginal probability from the
+      device after circuit execution. :meth:`~.marginal_prob` may be used here.
+
+    This device contains common utility methods for qubit-based devices. These
+    do not need to be overwritten. Utility methods include:
+
+    * :meth:`~.expval`, :meth:`~.var`, :meth:`~.sample`: return expectation values,
+      variances, and samples of observables after the circuit has been rotated
+      into the observable eigenbasis.
+
+    Args:
+        wires (int, Iterable[Number, str]]): Number of subsystems represented by the device,
+            or iterable that contains unique labels for the subsystems as numbers (i.e., ``[-1, 0, 2]``)
+            or strings (``['ancilla', 'q1', 'q2']``). Default 1 if not specified.
+        shots (None, int, list[int]): Number of circuit evaluations/random samples used to estimate
+            expectation values of observables. If ``None``, the device calculates probability, expectation values,
+            and variances analytically. If an integer, it specifies the number of samples to estimate these quantities.
+            If a list of integers is passed, the circuit evaluations are batched over the list of shots.
+        r_dtype: Real floating point precision type.
+        c_dtype: Complex floating point precision type.
+    """
+
+    # pylint: disable=too-many-public-methods
+
+    _asarray = staticmethod(np.asarray)
+    _dot = staticmethod(np.dot)
+    _abs = staticmethod(np.abs)
+    _reduce_sum = staticmethod(lambda array, axes: np.sum(array, axis=tuple(axes)))
+    _reshape = staticmethod(np.reshape)
+    _flatten = staticmethod(lambda array: array.flatten())
+    _gather = staticmethod(
+        lambda array, indices, axis=0: array[:, indices] if axis == 1 else array[indices]
+    )  # Make sure to only use _gather with axis=0 or axis=1
+    _einsum = staticmethod(np.einsum)
+    _cast = staticmethod(np.asarray)
+    _transpose = staticmethod(np.transpose)
+    _tensordot = staticmethod(np.tensordot)
+    _conj = staticmethod(np.conj)
+    _imag = staticmethod(np.imag)
+    _roll = staticmethod(np.roll)
+    _stack = staticmethod(np.stack)
+    _outer = staticmethod(np.outer)
+    _diag = staticmethod(np.diag)
+    _real = staticmethod(np.real)
+    _size = staticmethod(np.size)
+    _ndim = staticmethod(np.ndim)
+
+    @staticmethod
+    def _scatter(indices, array, new_dimensions):
+        new_array = np.zeros(new_dimensions, dtype=array.dtype.type)
+        new_array[indices] = array
+        return new_array
+
+    @staticmethod
+    def _const_mul(constant, array):
+        """Data type preserving multiply operation"""
+        return qmlmul(constant, array, dtype=array.dtype)
+
+    observables = {
+        "PauliX",
+        "PauliY",
+        "PauliZ",
+        "Hadamard",
+        "Hermitian",
+        "Identity",
+        "Projector",
+        "Sum",
+        "Sprod",
+        "Prod",
+    }
+
+    measurement_map = defaultdict(lambda: "")  # e.g. {SampleMP: "sample"}
+    """Mapping used to override the logic of measurement processes. The dictionary maps a
+    measurement class to a string containing the name of a device's method that overrides the
+    measurement process. The method defined by the device should have the following arguments:
+
+    * measurement (MeasurementProcess): measurement to override
+    * shot_range (tuple[int]): 2-tuple of integers specifying the range of samples
+        to use. If not specified, all samples are used.
+    * bin_size (int): Divides the shot range into bins of size ``bin_size``, and
+        returns the measurement statistic separately over each bin. If not
+        provided, the entire shot range is treated as a single bin.
+
+    .. note::
+
+        When overriding the logic of a :class:`~pennylane.measurements.MeasurementTransform`, the
+        method defined by the device should only have a single argument:
+
+        * tape: quantum tape to transform
+
+    **Example:**
+
+    Let's create a device that inherits from :class:`~pennylane.devices.DefaultQubitLegacy` and overrides the
+    logic of the `qml.sample` measurement. To do so we will need to update the ``measurement_map``
+    dictionary:
+
+    .. code-block:: python
+
+        class NewDevice(DefaultQubitLegacy):
+            def __init__(self, wires, shots):
+                super().__init__(wires=wires, shots=shots)
+                self.measurement_map[SampleMP] = "sample_measurement"
+
+            def sample_measurement(self, measurement, shot_range=None, bin_size=None):
+                return 2
+
+    >>> dev = NewDevice(wires=2, shots=1000)
+    >>> @qml.qnode(dev)
+    ... def circuit():
+    ...     return qml.sample()
+    >>> circuit()
+    tensor(2, requires_grad=True)
+    """
+
+    def __init__(
+        self, wires=1, shots=None, *, r_dtype=np.float64, c_dtype=np.complex128, analytic=None
+    ):
+        super().__init__(wires=wires, shots=shots, analytic=analytic)
+
+        if "float" not in str(r_dtype):
+            raise DeviceError("Real datatype must be a floating point type.")
+        if "complex" not in str(c_dtype):
+            raise DeviceError("Complex datatype must be a complex floating point type.")
+
+        self.C_DTYPE = c_dtype
+        self.R_DTYPE = r_dtype
+
+        self._samples = None
+        """None or array[int]: stores the samples generated by the device
+        *after* rotation to diagonalize the observables."""
+
+    @classmethod
+    def capabilities(cls):
+        capabilities = super().capabilities().copy()
+        capabilities.update(
+            model="qubit",
+            supports_broadcasting=False,
+            supports_finite_shots=True,
+            supports_tensor_observables=True,
+            returns_probs=True,
+        )
+        return capabilities
+
+    def reset(self):
+        """Reset the backend state.
+
+        After the reset, the backend should be as if it was just constructed.
+        Most importantly the quantum state is reset to its initial value.
+        """
+        self._samples = None
+
+    def execute(self, circuit, **kwargs):
+        """It executes a queue of quantum operations on the device and then measure the given observables.
+
+        For plugin developers: instead of overwriting this, consider
+        implementing a suitable subset of
+
+        * :meth:`apply`
+
+        * :meth:`~.generate_samples`
+
+        * :meth:`~.probability`
+
+        Additional keyword arguments may be passed to this method
+        that can be utilised by :meth:`apply`. An example would be passing
+        the ``QNode`` hash that can be used later for parametric compilation.
+
+        Args:
+            circuit (~.tape.QuantumTape): circuit to execute on the device
+
+        Raises:
+            QuantumFunctionError: if the value of :attr:`~.Observable.return_type` is not supported
+
+        Returns:
+            array[float]: measured value(s)
+        """
+
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(
+                "Entry with args=(circuit=%s, kwargs=%s) called by=%s",
+                circuit,
+                kwargs,
+                "::L".join(
+                    str(i) for i in inspect.getouterframes(inspect.currentframe(), 2)[1][1:3]
+                ),
+            )
+
+        self.check_validity(circuit.operations, circuit.observables)
+
+        # apply all circuit operations
+        self.apply(circuit.operations, rotations=self._get_diagonalizing_gates(circuit), **kwargs)
+
+        # generate computational basis samples
+        sample_type = (SampleMP, CountsMP, ClassicalShadowMP, ShadowExpvalMP)
+        if self.shots is not None or any(isinstance(m, sample_type) for m in circuit.measurements):
+            # Lightning does not support apply(rotations) anymore, so we need to rotate here
+            # Lightning without binaries fallbacks to `QubitDevice`, and hence the _CPP_BINARY_AVAILABLE condition
+            is_lightning = (
+                hasattr(self, "name")
+                and isinstance(self.name, str)
+                and "Lightning" in self.name
+                and getattr(self, "_CPP_BINARY_AVAILABLE", False)
+            )
+            diagonalizing_gates = self._get_diagonalizing_gates(circuit) if is_lightning else None
+            if is_lightning and diagonalizing_gates:
+                self.apply(diagonalizing_gates)
+            self._samples = self.generate_samples()
+            if is_lightning and diagonalizing_gates:
+                self.apply([qml.adjoint(g, lazy=False) for g in reversed(diagonalizing_gates)])
+
+        # compute the required statistics
+        if self._shot_vector is not None:
+            results = self.shot_vec_statistics(circuit)
+
+        else:
+            results = self.statistics(circuit)
+            single_measurement = len(circuit.measurements) == 1
+
+            results = results[0] if single_measurement else tuple(results)
+        # increment counter for number of executions of qubit device
+        self._num_executions += 1
+
+        if self.tracker.active:
+            shots_from_dev = self._shots if not self.shot_vector else self._raw_shot_sequence
+            tape_resources = circuit.specs["resources"]
+
+            resources = Resources(  # temporary until shots get updated on tape !
+                tape_resources.num_wires,
+                tape_resources.num_gates,
+                tape_resources.gate_types,
+                tape_resources.gate_sizes,
+                tape_resources.depth,
+                Shots(shots_from_dev),
+            )
+            self.tracker.update(
+                executions=1, shots=self._shots, results=results, resources=resources
+            )
+            self.tracker.record()
+
+        return results
+
+    def shot_vec_statistics(self, circuit: QuantumTape):
+        """Process measurement results from circuit execution using a device
+        with a shot vector and return statistics.
+
+        This is an auxiliary method of execute and uses statistics.
+
+        When using shot vectors, measurement results for each item of the shot
+        vector are contained in a tuple.
+
+        Args:
+            circuit (~.tape.QuantumTape): circuit to execute on the device
+
+        Raises:
+            QuantumFunctionError: if the value of :attr:`~.Observable.return_type` is not supported
+
+        Returns:
+            tuple: statistics for each shot item from the shot vector
+        """
+        results = []
+        s1 = 0
+
+        measurements = circuit.measurements
+        counts_exist = any(isinstance(m, CountsMP) for m in measurements)
+        single_measurement = len(measurements) == 1
+
+        for shot_tuple in self._shot_vector:
+            s2 = s1 + np.prod(shot_tuple)
+            r = self.statistics(circuit, shot_range=[s1, s2], bin_size=shot_tuple.shots)
+
+            # This will likely be required:
+            # if qml.math.get_interface(*r) == "jax":  # pylint: disable=protected-access
+            #     r = r[0]
+
+            if single_measurement:
+                r = r[0]
+            elif shot_tuple.copies == 1:
+                r = tuple(r_[0] if isinstance(r_, list) else r_.T for r_ in r)
+            elif counts_exist:
+                r = self._multi_meas_with_counts_shot_vec(circuit, shot_tuple, r)
+            else:
+                # r is a nested sequence, contains the results for
+                # multiple measurements
+                #
+                # Each item of r has copies length, we need to extract
+                # each measurement result from the arrays
+
+                # 1. transpose: applied because measurements like probs
+                # for multiple copies output results with shape (N,
+                # copies) and we'd like to index straight to get rows
+                # which requires a shape of (copies, N)
+                # 2. asarray: done because indexing into a flat array produces a
+                # scalar instead of a scalar shaped array
+                r = [
+                    tuple(self._asarray(r_.T[idx]) for r_ in r) for idx in range(shot_tuple.copies)
+                ]
+
+            if isinstance(r, qml.numpy.ndarray):
+                if shot_tuple.copies > 1:
+                    results.extend([self._asarray(r_) for r_ in qml.math.unstack(r.T)])
+                else:
+                    results.append(r.T)
+
+            elif single_measurement and counts_exist:
+                # Results are nested in a sequence
+                results.extend(r)
+            elif not single_measurement and shot_tuple.copies > 1:
+                # Some samples may still be transposed, fix their shapes
+                # Leave dictionaries intact
+                r = [tuple(elem if isinstance(elem, dict) else elem.T for elem in r_) for r_ in r]
+
+                results.extend(r)
+            else:
+                results.append(r)
+
+            s1 = s2
+
+        return tuple(results)
+
+    def _multi_meas_with_counts_shot_vec(self, circuit: QuantumTape, shot_tuple, r):
+        """Auxiliary function of the shot_vec_statistics and execute
+        functions for post-processing the results of multiple measurements at
+        least one of which was a counts measurement.
+
+        The measurements were executed on a device that defines a shot vector.
+        """
+        # First: iterate over each group of measurement
+        # results that contain copies many outcomes for a
+        # single measurement
+        new_r = []
+
+        # Each item of r has copies length
+        for idx in range(shot_tuple.copies):
+            result_group = []
+
+            for idx2, r_ in enumerate(r):
+                measurement_proc = circuit.measurements[idx2]
+                if isinstance(measurement_proc, ProbabilityMP) or (
+                    isinstance(measurement_proc, SampleMP) and measurement_proc.obs
+                ):
+                    # Here, the result has a shape of (num_basis_states, shot_tuple.copies)
+                    # Extract a single row -> shape (num_basis_states,)
+                    result = r_[:, idx]
+                else:
+                    result = r_[idx]
+
+                if not isinstance(measurement_proc, CountsMP):
+                    result = self._asarray(result.T)
+
+                result_group.append(result)
+
+            new_r.append(tuple(result_group))
+
+        return new_r
+
+    def batch_execute(self, circuits):
+        """Execute a batch of quantum circuits on the device.
+
+        The circuits are represented by tapes, and they are executed one-by-one using the
+        device's ``execute`` method. The results are collected in a list.
+
+        For plugin developers: This function should be overwritten if the device can efficiently run multiple
+        circuits on a backend, for example using parallel and/or asynchronous executions.
+
+        Args:
+            circuits (list[~.tape.QuantumTape]): circuits to execute on the device
+
+        Returns:
+            list[array[float]]: list of measured value(s)
+        """
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(
+                """Entry with args=(circuits=%s) called by=%s""",
+                circuits,
+                "::L".join(
+                    str(i) for i in inspect.getouterframes(inspect.currentframe(), 2)[1][1:3]
+                ),
+            )
+
+        results = []
+        for circuit in circuits:
+            # we need to reset the device here, else it will
+            # not start the next computation in the zero state
+            self.reset()
+
+            res = self.execute(circuit)
+            results.append(res)
+
+        if self.tracker.active:
+            self.tracker.update(batches=1, batch_len=len(circuits))
+            self.tracker.record()
+
+        return results
+
+    @abc.abstractmethod
+    def apply(self, operations, **kwargs):
+        """Apply quantum operations, rotate the circuit into the measurement
+        basis, and compile and execute the quantum circuit.
+
+        This method receives a list of quantum operations queued by the QNode,
+        and should be responsible for:
+
+        * Constructing the quantum program
+        * (Optional) Rotating the quantum circuit using the rotation
+          operations provided. This diagonalizes the circuit so that arbitrary
+          observables can be measured in the computational basis.
+        * Compile the circuit
+        * Execute the quantum circuit
+
+        Both arguments are provided as lists of PennyLane :class:`~.Operation`
+        instances. Useful properties include :attr:`~.Operation.name`,
+        :attr:`~.Operation.wires`, and :attr:`~.Operation.parameters`:
+
+        >>> op = qml.RX(0.2, wires=[0])
+        >>> op.name # returns the operation name
+        "RX"
+        >>> op.wires # returns a Wires object representing the wires that the operation acts on
+        <Wires = [0]>
+        >>> op.parameters # returns a list of parameters
+        [0.2]
+
+        Args:
+            operations (list[~.Operation]): operations to apply to the device
+
+        Keyword args:
+            rotations (list[~.Operation]): operations that rotate the circuit
+                pre-measurement into the eigenbasis of the observables.
+            hash (int): the hash value of the circuit constructed by `CircuitGraph.hash`

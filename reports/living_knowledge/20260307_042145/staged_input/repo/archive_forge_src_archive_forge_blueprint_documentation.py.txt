@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/blueprint_documentation.py
+KIND: code
+
+import re
+from pygments.lexer import RegexLexer, include, bygroups, words
+from pygments.token import (
+
+    For Blueprint UI markup.
+
+    .. versionadded:: 2.16

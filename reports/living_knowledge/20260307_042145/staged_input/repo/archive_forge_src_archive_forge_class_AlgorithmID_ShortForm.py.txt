@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AlgorithmID_ShortForm.py
+KIND: code
+
+from pyasn1.type import namedtype
+from pyasn1.type import namedval
+from pyasn1.type import tag
+from pyasn1.type import univ
+class AlgorithmID_ShortForm(univ.Integer):
+    pass

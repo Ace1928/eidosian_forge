@@ -1,0 +1,500 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_geo.py
+KIND: code
+
+from plotly.basedatatypes import BaseLayoutHierarchyType as _BaseLayoutHierarchyType
+import copy as _copy
+
+
+class Geo(_BaseLayoutHierarchyType):
+
+    # class properties
+    # --------------------
+    _parent_path_str = "layout"
+    _path_str = "layout.geo"
+    _valid_props = {
+        "bgcolor",
+        "center",
+        "coastlinecolor",
+        "coastlinewidth",
+        "countrycolor",
+        "countrywidth",
+        "domain",
+        "fitbounds",
+        "framecolor",
+        "framewidth",
+        "lakecolor",
+        "landcolor",
+        "lataxis",
+        "lonaxis",
+        "oceancolor",
+        "projection",
+        "resolution",
+        "rivercolor",
+        "riverwidth",
+        "scope",
+        "showcoastlines",
+        "showcountries",
+        "showframe",
+        "showlakes",
+        "showland",
+        "showocean",
+        "showrivers",
+        "showsubunits",
+        "subunitcolor",
+        "subunitwidth",
+        "uirevision",
+        "visible",
+    }
+
+    # bgcolor
+    # -------
+    @property
+    def bgcolor(self):
+        """
+        Set the background color of the map
+
+        The 'bgcolor' property is a color and may be specified as:
+          - A hex string (e.g. '#ff0000')
+          - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+          - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+          - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+          - A named CSS color:
+                aliceblue, antiquewhite, aqua, aquamarine, azure,
+                beige, bisque, black, blanchedalmond, blue,
+                blueviolet, brown, burlywood, cadetblue,
+                chartreuse, chocolate, coral, cornflowerblue,
+                cornsilk, crimson, cyan, darkblue, darkcyan,
+                darkgoldenrod, darkgray, darkgrey, darkgreen,
+                darkkhaki, darkmagenta, darkolivegreen, darkorange,
+                darkorchid, darkred, darksalmon, darkseagreen,
+                darkslateblue, darkslategray, darkslategrey,
+                darkturquoise, darkviolet, deeppink, deepskyblue,
+                dimgray, dimgrey, dodgerblue, firebrick,
+                floralwhite, forestgreen, fuchsia, gainsboro,
+                ghostwhite, gold, goldenrod, gray, grey, green,
+                greenyellow, honeydew, hotpink, indianred, indigo,
+                ivory, khaki, lavender, lavenderblush, lawngreen,
+                lemonchiffon, lightblue, lightcoral, lightcyan,
+                lightgoldenrodyellow, lightgray, lightgrey,
+                lightgreen, lightpink, lightsalmon, lightseagreen,
+                lightskyblue, lightslategray, lightslategrey,
+                lightsteelblue, lightyellow, lime, limegreen,
+                linen, magenta, maroon, mediumaquamarine,
+                mediumblue, mediumorchid, mediumpurple,
+                mediumseagreen, mediumslateblue, mediumspringgreen,
+                mediumturquoise, mediumvioletred, midnightblue,
+                mintcream, mistyrose, moccasin, navajowhite, navy,
+                oldlace, olive, olivedrab, orange, orangered,
+                orchid, palegoldenrod, palegreen, paleturquoise,
+                palevioletred, papayawhip, peachpuff, peru, pink,
+                plum, powderblue, purple, red, rosybrown,
+                royalblue, rebeccapurple, saddlebrown, salmon,
+                sandybrown, seagreen, seashell, sienna, silver,
+                skyblue, slateblue, slategray, slategrey, snow,
+                springgreen, steelblue, tan, teal, thistle, tomato,
+                turquoise, violet, wheat, white, whitesmoke,
+                yellow, yellowgreen
+
+        Returns
+        -------
+        str
+        """
+        return self["bgcolor"]
+
+    @bgcolor.setter
+    def bgcolor(self, val):
+        self["bgcolor"] = val
+
+    # center
+    # ------
+    @property
+    def center(self):
+        """
+        The 'center' property is an instance of Center
+        that may be specified as:
+          - An instance of :class:`plotly.graph_objs.layout.geo.Center`
+          - A dict of string/value properties that will be passed
+            to the Center constructor
+
+            Supported dict properties:
+
+                lat
+                    Sets the latitude of the map's center. For all
+                    projection types, the map's latitude center
+                    lies at the middle of the latitude range by
+                    default.
+                lon
+                    Sets the longitude of the map's center. By
+                    default, the map's longitude center lies at the
+                    middle of the longitude range for scoped
+                    projection and above `projection.rotation.lon`
+                    otherwise.
+
+        Returns
+        -------
+        plotly.graph_objs.layout.geo.Center
+        """
+        return self["center"]
+
+    @center.setter
+    def center(self, val):
+        self["center"] = val
+
+    # coastlinecolor
+    # --------------
+    @property
+    def coastlinecolor(self):
+        """
+        Sets the coastline color.
+
+        The 'coastlinecolor' property is a color and may be specified as:
+          - A hex string (e.g. '#ff0000')
+          - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+          - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+          - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+          - A named CSS color:
+                aliceblue, antiquewhite, aqua, aquamarine, azure,
+                beige, bisque, black, blanchedalmond, blue,
+                blueviolet, brown, burlywood, cadetblue,
+                chartreuse, chocolate, coral, cornflowerblue,
+                cornsilk, crimson, cyan, darkblue, darkcyan,
+                darkgoldenrod, darkgray, darkgrey, darkgreen,
+                darkkhaki, darkmagenta, darkolivegreen, darkorange,
+                darkorchid, darkred, darksalmon, darkseagreen,
+                darkslateblue, darkslategray, darkslategrey,
+                darkturquoise, darkviolet, deeppink, deepskyblue,
+                dimgray, dimgrey, dodgerblue, firebrick,
+                floralwhite, forestgreen, fuchsia, gainsboro,
+                ghostwhite, gold, goldenrod, gray, grey, green,
+                greenyellow, honeydew, hotpink, indianred, indigo,
+                ivory, khaki, lavender, lavenderblush, lawngreen,
+                lemonchiffon, lightblue, lightcoral, lightcyan,
+                lightgoldenrodyellow, lightgray, lightgrey,
+                lightgreen, lightpink, lightsalmon, lightseagreen,
+                lightskyblue, lightslategray, lightslategrey,
+                lightsteelblue, lightyellow, lime, limegreen,
+                linen, magenta, maroon, mediumaquamarine,
+                mediumblue, mediumorchid, mediumpurple,
+                mediumseagreen, mediumslateblue, mediumspringgreen,
+                mediumturquoise, mediumvioletred, midnightblue,
+                mintcream, mistyrose, moccasin, navajowhite, navy,
+                oldlace, olive, olivedrab, orange, orangered,
+                orchid, palegoldenrod, palegreen, paleturquoise,
+                palevioletred, papayawhip, peachpuff, peru, pink,
+                plum, powderblue, purple, red, rosybrown,
+                royalblue, rebeccapurple, saddlebrown, salmon,
+                sandybrown, seagreen, seashell, sienna, silver,
+                skyblue, slateblue, slategray, slategrey, snow,
+                springgreen, steelblue, tan, teal, thistle, tomato,
+                turquoise, violet, wheat, white, whitesmoke,
+                yellow, yellowgreen
+
+        Returns
+        -------
+        str
+        """
+        return self["coastlinecolor"]
+
+    @coastlinecolor.setter
+    def coastlinecolor(self, val):
+        self["coastlinecolor"] = val
+
+    # coastlinewidth
+    # --------------
+    @property
+    def coastlinewidth(self):
+        """
+        Sets the coastline stroke width (in px).
+
+        The 'coastlinewidth' property is a number and may be specified as:
+          - An int or float in the interval [0, inf]
+
+        Returns
+        -------
+        int|float
+        """
+        return self["coastlinewidth"]
+
+    @coastlinewidth.setter
+    def coastlinewidth(self, val):
+        self["coastlinewidth"] = val
+
+    # countrycolor
+    # ------------
+    @property
+    def countrycolor(self):
+        """
+        Sets line color of the country boundaries.
+
+        The 'countrycolor' property is a color and may be specified as:
+          - A hex string (e.g. '#ff0000')
+          - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+          - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+          - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+          - A named CSS color:
+                aliceblue, antiquewhite, aqua, aquamarine, azure,
+                beige, bisque, black, blanchedalmond, blue,
+                blueviolet, brown, burlywood, cadetblue,
+                chartreuse, chocolate, coral, cornflowerblue,
+                cornsilk, crimson, cyan, darkblue, darkcyan,
+                darkgoldenrod, darkgray, darkgrey, darkgreen,
+                darkkhaki, darkmagenta, darkolivegreen, darkorange,
+                darkorchid, darkred, darksalmon, darkseagreen,
+                darkslateblue, darkslategray, darkslategrey,
+                darkturquoise, darkviolet, deeppink, deepskyblue,
+                dimgray, dimgrey, dodgerblue, firebrick,
+                floralwhite, forestgreen, fuchsia, gainsboro,
+                ghostwhite, gold, goldenrod, gray, grey, green,
+                greenyellow, honeydew, hotpink, indianred, indigo,
+                ivory, khaki, lavender, lavenderblush, lawngreen,
+                lemonchiffon, lightblue, lightcoral, lightcyan,
+                lightgoldenrodyellow, lightgray, lightgrey,
+                lightgreen, lightpink, lightsalmon, lightseagreen,
+                lightskyblue, lightslategray, lightslategrey,
+                lightsteelblue, lightyellow, lime, limegreen,
+                linen, magenta, maroon, mediumaquamarine,
+                mediumblue, mediumorchid, mediumpurple,
+                mediumseagreen, mediumslateblue, mediumspringgreen,
+                mediumturquoise, mediumvioletred, midnightblue,
+                mintcream, mistyrose, moccasin, navajowhite, navy,
+                oldlace, olive, olivedrab, orange, orangered,
+                orchid, palegoldenrod, palegreen, paleturquoise,
+                palevioletred, papayawhip, peachpuff, peru, pink,
+                plum, powderblue, purple, red, rosybrown,
+                royalblue, rebeccapurple, saddlebrown, salmon,
+                sandybrown, seagreen, seashell, sienna, silver,
+                skyblue, slateblue, slategray, slategrey, snow,
+                springgreen, steelblue, tan, teal, thistle, tomato,
+                turquoise, violet, wheat, white, whitesmoke,
+                yellow, yellowgreen
+
+        Returns
+        -------
+        str
+        """
+        return self["countrycolor"]
+
+    @countrycolor.setter
+    def countrycolor(self, val):
+        self["countrycolor"] = val
+
+    # countrywidth
+    # ------------
+    @property
+    def countrywidth(self):
+        """
+        Sets line width (in px) of the country boundaries.
+
+        The 'countrywidth' property is a number and may be specified as:
+          - An int or float in the interval [0, inf]
+
+        Returns
+        -------
+        int|float
+        """
+        return self["countrywidth"]
+
+    @countrywidth.setter
+    def countrywidth(self, val):
+        self["countrywidth"] = val
+
+    # domain
+    # ------
+    @property
+    def domain(self):
+        """
+        The 'domain' property is an instance of Domain
+        that may be specified as:
+          - An instance of :class:`plotly.graph_objs.layout.geo.Domain`
+          - A dict of string/value properties that will be passed
+            to the Domain constructor
+
+            Supported dict properties:
+
+                column
+                    If there is a layout grid, use the domain for
+                    this column in the grid for this geo subplot .
+                    Note that geo subplots are constrained by
+                    domain. In general, when `projection.scale` is
+                    set to 1. a map will fit either its x or y
+                    domain, but not both.
+                row
+                    If there is a layout grid, use the domain for
+                    this row in the grid for this geo subplot .
+                    Note that geo subplots are constrained by
+                    domain. In general, when `projection.scale` is
+                    set to 1. a map will fit either its x or y
+                    domain, but not both.
+                x
+                    Sets the horizontal domain of this geo subplot
+                    (in plot fraction). Note that geo subplots are
+                    constrained by domain. In general, when
+                    `projection.scale` is set to 1. a map will fit
+                    either its x or y domain, but not both.
+                y
+                    Sets the vertical domain of this geo subplot
+                    (in plot fraction). Note that geo subplots are
+                    constrained by domain. In general, when
+                    `projection.scale` is set to 1. a map will fit
+                    either its x or y domain, but not both.
+
+        Returns
+        -------
+        plotly.graph_objs.layout.geo.Domain
+        """
+        return self["domain"]
+
+    @domain.setter
+    def domain(self, val):
+        self["domain"] = val
+
+    # fitbounds
+    # ---------
+    @property
+    def fitbounds(self):
+        """
+        Determines if this subplot's view settings are auto-computed to
+        fit trace data. On scoped maps, setting `fitbounds` leads to
+        `center.lon` and `center.lat` getting auto-filled. On maps with
+        a non-clipped projection, setting `fitbounds` leads to
+        `center.lon`, `center.lat`, and `projection.rotation.lon`
+        getting auto-filled. On maps with a clipped projection, setting
+        `fitbounds` leads to `center.lon`, `center.lat`,
+        `projection.rotation.lon`, `projection.rotation.lat`,
+        `lonaxis.range` and `lonaxis.range` getting auto-filled. If
+        "locations", only the trace's visible locations are considered
+        in the `fitbounds` computations. If "geojson", the entire trace
+        input `geojson` (if provided) is considered in the `fitbounds`
+        computations, Defaults to False.
+
+        The 'fitbounds' property is an enumeration that may be specified as:
+          - One of the following enumeration values:
+                [False, 'locations', 'geojson']
+
+        Returns
+        -------
+        Any
+        """
+        return self["fitbounds"]
+
+    @fitbounds.setter
+    def fitbounds(self, val):
+        self["fitbounds"] = val
+
+    # framecolor
+    # ----------
+    @property
+    def framecolor(self):
+        """
+        Sets the color the frame.
+
+        The 'framecolor' property is a color and may be specified as:
+          - A hex string (e.g. '#ff0000')
+          - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+          - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+          - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+          - A named CSS color:
+                aliceblue, antiquewhite, aqua, aquamarine, azure,
+                beige, bisque, black, blanchedalmond, blue,
+                blueviolet, brown, burlywood, cadetblue,
+                chartreuse, chocolate, coral, cornflowerblue,
+                cornsilk, crimson, cyan, darkblue, darkcyan,
+                darkgoldenrod, darkgray, darkgrey, darkgreen,
+                darkkhaki, darkmagenta, darkolivegreen, darkorange,
+                darkorchid, darkred, darksalmon, darkseagreen,
+                darkslateblue, darkslategray, darkslategrey,
+                darkturquoise, darkviolet, deeppink, deepskyblue,
+                dimgray, dimgrey, dodgerblue, firebrick,
+                floralwhite, forestgreen, fuchsia, gainsboro,
+                ghostwhite, gold, goldenrod, gray, grey, green,
+                greenyellow, honeydew, hotpink, indianred, indigo,
+                ivory, khaki, lavender, lavenderblush, lawngreen,
+                lemonchiffon, lightblue, lightcoral, lightcyan,
+                lightgoldenrodyellow, lightgray, lightgrey,
+                lightgreen, lightpink, lightsalmon, lightseagreen,
+                lightskyblue, lightslategray, lightslategrey,
+                lightsteelblue, lightyellow, lime, limegreen,
+                linen, magenta, maroon, mediumaquamarine,
+                mediumblue, mediumorchid, mediumpurple,
+                mediumseagreen, mediumslateblue, mediumspringgreen,
+                mediumturquoise, mediumvioletred, midnightblue,
+                mintcream, mistyrose, moccasin, navajowhite, navy,
+                oldlace, olive, olivedrab, orange, orangered,
+                orchid, palegoldenrod, palegreen, paleturquoise,
+                palevioletred, papayawhip, peachpuff, peru, pink,
+                plum, powderblue, purple, red, rosybrown,
+                royalblue, rebeccapurple, saddlebrown, salmon,
+                sandybrown, seagreen, seashell, sienna, silver,
+                skyblue, slateblue, slategray, slategrey, snow,
+                springgreen, steelblue, tan, teal, thistle, tomato,
+                turquoise, violet, wheat, white, whitesmoke,
+                yellow, yellowgreen
+
+        Returns
+        -------
+        str
+        """
+        return self["framecolor"]
+
+    @framecolor.setter
+    def framecolor(self, val):
+        self["framecolor"] = val
+
+    # framewidth
+    # ----------
+    @property
+    def framewidth(self):
+        """
+        Sets the stroke width (in px) of the frame.
+
+        The 'framewidth' property is a number and may be specified as:
+          - An int or float in the interval [0, inf]
+
+        Returns
+        -------
+        int|float
+        """
+        return self["framewidth"]
+
+    @framewidth.setter
+    def framewidth(self, val):
+        self["framewidth"] = val
+
+    # lakecolor
+    # ---------
+    @property
+    def lakecolor(self):
+        """
+        Sets the color of the lakes.
+
+        The 'lakecolor' property is a color and may be specified as:
+          - A hex string (e.g. '#ff0000')
+          - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+          - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+          - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+          - A named CSS color:
+                aliceblue, antiquewhite, aqua, aquamarine, azure,
+                beige, bisque, black, blanchedalmond, blue,
+                blueviolet, brown, burlywood, cadetblue,
+                chartreuse, chocolate, coral, cornflowerblue,
+                cornsilk, crimson, cyan, darkblue, darkcyan,
+                darkgoldenrod, darkgray, darkgrey, darkgreen,
+                darkkhaki, darkmagenta, darkolivegreen, darkorange,
+                darkorchid, darkred, darksalmon, darkseagreen,
+                darkslateblue, darkslategray, darkslategrey,
+                darkturquoise, darkviolet, deeppink, deepskyblue,
+                dimgray, dimgrey, dodgerblue, firebrick,
+                floralwhite, forestgreen, fuchsia, gainsboro,
+                ghostwhite, gold, goldenrod, gray, grey, green,
+                greenyellow, honeydew, hotpink, indianred, indigo,
+                ivory, khaki, lavender, lavenderblush, lawngreen,
+                lemonchiffon, lightblue, lightcoral, lightcyan,
+                lightgoldenrodyellow, lightgray, lightgrey,
+                lightgreen, lightpink, lightsalmon, lightseagreen,
+                lightskyblue, lightslategray, lightslategrey,
+                lightsteelblue, lightyellow, lime, limegreen,
+                linen, magenta, maroon, mediumaquamarine,
+                mediumblue, mediumorchid, mediumpurple,
+                mediumseagreen, mediumslateblue, mediumspringgreen,
+                mediumturquoise, mediumvioletred, midnightblue,
+                mintcream, mistyrose, m

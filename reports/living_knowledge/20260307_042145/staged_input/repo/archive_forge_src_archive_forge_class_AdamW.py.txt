@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AdamW.py
+KIND: code
+
+from ..utils import DummyObject, requires_backends
+class AdamW(metaclass=DummyObject):
+    _backends = ['torch']
+
+    def __init__(self, *args, **kwargs):
+        requires_backends(self, ['torch'])

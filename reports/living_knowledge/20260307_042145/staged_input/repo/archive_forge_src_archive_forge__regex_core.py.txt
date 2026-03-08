@@ -1,0 +1,663 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_regex_core.py
+KIND: code
+
+#
+# Secret Labs' Regular Expression Engine core module
+#
+# Copyright (c) 1998-2001 by Secret Labs AB.  All rights reserved.
+#
+# This version of the SRE library can be redistributed under CNRI's
+# Python 1.6 license.  For any other use, please contact Secret Labs
+# AB (info@pythonware.com).
+#
+# Portions of this engine have been developed in cooperation with
+# CNRI.  Hewlett-Packard provided funding for 1.6 integration and
+# other compatibility work.
+#
+# 2010-01-16 mrab Python front-end re-written and extended
+
+import enum
+import string
+import unicodedata
+from collections import defaultdict
+
+import regex._regex as _regex
+
+__all__ = ["A", "ASCII", "B", "BESTMATCH", "D", "DEBUG", "E", "ENHANCEMATCH",
+  "F", "FULLCASE", "I", "IGNORECASE", "L", "LOCALE", "M", "MULTILINE", "P",
+  "POSIX", "R", "REVERSE", "S", "DOTALL", "T", "TEMPLATE", "U", "UNICODE",
+  "V0", "VERSION0", "V1", "VERSION1", "W", "WORD", "X", "VERBOSE", "error",
+  "Scanner", "RegexFlag"]
+
+# The regex exception.
+class error(Exception):
+    """Exception raised for invalid regular expressions.
+
+    Attributes:
+
+        msg: The unformatted error message
+        pattern: The regular expression pattern
+        pos: The position in the pattern where compilation failed, or None
+        lineno: The line number where compilation failed, unless pos is None
+        colno: The column number where compilation failed, unless pos is None
+    """
+
+    def __init__(self, message, pattern=None, pos=None):
+        newline = '\n' if isinstance(pattern, str) else b'\n'
+        self.msg = message
+        self.pattern = pattern
+        self.pos = pos
+        if pattern is not None and pos is not None:
+            self.lineno = pattern.count(newline, 0, pos) + 1
+            self.colno = pos - pattern.rfind(newline, 0, pos)
+
+            message = "{} at position {}".format(message, pos)
+
+            if newline in pattern:
+                message += " (line {}, column {})".format(self.lineno,
+                  self.colno)
+
+        Exception.__init__(self, message)
+
+# The exception for when a positional flag has been turned on in the old
+# behaviour.
+class _UnscopedFlagSet(Exception):
+    pass
+
+# The exception for when parsing fails and we want to try something else.
+class ParseError(Exception):
+    pass
+
+# The exception for when there isn't a valid first set.
+class _FirstSetError(Exception):
+    pass
+
+# Flags.
+class RegexFlag(enum.IntFlag):
+    A = ASCII = 0x80          # Assume ASCII locale.
+    B = BESTMATCH = 0x1000    # Best fuzzy match.
+    D = DEBUG = 0x200         # Print parsed pattern.
+    E = ENHANCEMATCH = 0x8000 # Attempt to improve the fit after finding the first
+                              # fuzzy match.
+    F = FULLCASE = 0x4000     # Unicode full case-folding.
+    I = IGNORECASE = 0x2      # Ignore case.
+    L = LOCALE = 0x4          # Assume current 8-bit locale.
+    M = MULTILINE = 0x8       # Make anchors look for newline.
+    P = POSIX = 0x10000       # POSIX-style matching (leftmost longest).
+    R = REVERSE = 0x400       # Search backwards.
+    S = DOTALL = 0x10         # Make dot match newline.
+    U = UNICODE = 0x20        # Assume Unicode locale.
+    V0 = VERSION0 = 0x2000    # Old legacy behaviour.
+    V1 = VERSION1 = 0x100     # New enhanced behaviour.
+    W = WORD = 0x800          # Default Unicode word breaks.
+    X = VERBOSE = 0x40        # Ignore whitespace and comments.
+    T = TEMPLATE = 0x1        # Template (present because re module has it).
+
+    def __repr__(self):
+        if self._name_ is not None:
+            return 'regex.%s' % self._name_
+
+        value = self._value_
+        members = []
+        negative = value < 0
+
+        if negative:
+            value = ~value
+
+        for m in self.__class__:
+            if value & m._value_:
+                value &= ~m._value_
+                members.append('regex.%s' % m._name_)
+
+        if value:
+            members.append(hex(value))
+
+        res = '|'.join(members)
+
+        if negative:
+            if len(members) > 1:
+                res = '~(%s)' % res
+            else:
+                res = '~%s' % res
+
+        return res
+
+    __str__ = object.__str__
+
+globals().update(RegexFlag.__members__)
+
+DEFAULT_VERSION = VERSION1
+
+_ALL_VERSIONS = VERSION0 | VERSION1
+_ALL_ENCODINGS = ASCII | LOCALE | UNICODE
+
+# The default flags for the various versions.
+DEFAULT_FLAGS = {VERSION0: 0, VERSION1: FULLCASE}
+
+# The mask for the flags.
+GLOBAL_FLAGS = (_ALL_VERSIONS | BESTMATCH | DEBUG | ENHANCEMATCH | POSIX |
+  REVERSE)
+SCOPED_FLAGS = (FULLCASE | IGNORECASE | MULTILINE | DOTALL | WORD | VERBOSE |
+  _ALL_ENCODINGS)
+
+ALPHA = frozenset(string.ascii_letters)
+DIGITS = frozenset(string.digits)
+ALNUM = ALPHA | DIGITS
+OCT_DIGITS = frozenset(string.octdigits)
+HEX_DIGITS = frozenset(string.hexdigits)
+SPECIAL_CHARS = frozenset("()|?*+{^$.[\\#") | frozenset([""])
+NAMED_CHAR_PART = ALNUM | frozenset(" -")
+PROPERTY_NAME_PART = ALNUM | frozenset(" &_-.")
+SET_OPS = ("||", "~~", "&&", "--")
+
+# The width of the code words inside the regex engine.
+BYTES_PER_CODE = _regex.get_code_size()
+BITS_PER_CODE = BYTES_PER_CODE * 8
+
+# The repeat count which represents infinity.
+UNLIMITED = (1 << BITS_PER_CODE) - 1
+
+# The regular expression flags.
+REGEX_FLAGS = {"a": ASCII, "b": BESTMATCH, "e": ENHANCEMATCH, "f": FULLCASE,
+  "i": IGNORECASE, "L": LOCALE, "m": MULTILINE, "p": POSIX, "r": REVERSE,
+  "s": DOTALL, "u": UNICODE, "V0": VERSION0, "V1": VERSION1, "w": WORD, "x":
+  VERBOSE}
+
+# The case flags.
+CASE_FLAGS = FULLCASE | IGNORECASE
+NOCASE = 0
+FULLIGNORECASE = FULLCASE | IGNORECASE
+
+FULL_CASE_FOLDING = UNICODE | FULLIGNORECASE
+
+CASE_FLAGS_COMBINATIONS = {0: 0, FULLCASE: 0, IGNORECASE: IGNORECASE,
+  FULLIGNORECASE: FULLIGNORECASE}
+
+# The number of digits in hexadecimal escapes.
+HEX_ESCAPES = {"x": 2, "u": 4, "U": 8}
+
+# The names of the opcodes.
+OPCODES = """
+FAILURE
+SUCCESS
+ANY
+ANY_ALL
+ANY_ALL_REV
+ANY_REV
+ANY_U
+ANY_U_REV
+ATOMIC
+BOUNDARY
+BRANCH
+CALL_REF
+CHARACTER
+CHARACTER_IGN
+CHARACTER_IGN_REV
+CHARACTER_REV
+CONDITIONAL
+DEFAULT_BOUNDARY
+DEFAULT_END_OF_WORD
+DEFAULT_START_OF_WORD
+END
+END_OF_LINE
+END_OF_LINE_U
+END_OF_STRING
+END_OF_STRING_LINE
+END_OF_STRING_LINE_U
+END_OF_WORD
+FUZZY
+GRAPHEME_BOUNDARY
+GREEDY_REPEAT
+GROUP
+GROUP_CALL
+GROUP_EXISTS
+KEEP
+LAZY_REPEAT
+LOOKAROUND
+NEXT
+PROPERTY
+PROPERTY_IGN
+PROPERTY_IGN_REV
+PROPERTY_REV
+PRUNE
+RANGE
+RANGE_IGN
+RANGE_IGN_REV
+RANGE_REV
+REF_GROUP
+REF_GROUP_FLD
+REF_GROUP_FLD_REV
+REF_GROUP_IGN
+REF_GROUP_IGN_REV
+REF_GROUP_REV
+SEARCH_ANCHOR
+SET_DIFF
+SET_DIFF_IGN
+SET_DIFF_IGN_REV
+SET_DIFF_REV
+SET_INTER
+SET_INTER_IGN
+SET_INTER_IGN_REV
+SET_INTER_REV
+SET_SYM_DIFF
+SET_SYM_DIFF_IGN
+SET_SYM_DIFF_IGN_REV
+SET_SYM_DIFF_REV
+SET_UNION
+SET_UNION_IGN
+SET_UNION_IGN_REV
+SET_UNION_REV
+SKIP
+START_OF_LINE
+START_OF_LINE_U
+START_OF_STRING
+START_OF_WORD
+STRING
+STRING_FLD
+STRING_FLD_REV
+STRING_IGN
+STRING_IGN_REV
+STRING_REV
+FUZZY_EXT
+"""
+
+# Define the opcodes in a namespace.
+class Namespace:
+    pass
+
+OP = Namespace()
+for i, op in enumerate(OPCODES.split()):
+    setattr(OP, op, i)
+
+def _shrink_cache(cache_dict, args_dict, locale_sensitive, max_length, divisor=5):
+    """Make room in the given cache.
+
+    Args:
+        cache_dict: The cache dictionary to modify.
+        args_dict: The dictionary of named list args used by patterns.
+        max_length: Maximum # of entries in cache_dict before it is shrunk.
+        divisor: Cache will shrink to max_length - 1/divisor*max_length items.
+    """
+    # Toss out a fraction of the entries at random to make room for new ones.
+    # A random algorithm was chosen as opposed to simply cache_dict.popitem()
+    # as popitem could penalize the same regular expression repeatedly based
+    # on its internal hash value.  Being random should spread the cache miss
+    # love around.
+    cache_keys = tuple(cache_dict.keys())
+    overage = len(cache_keys) - max_length
+    if overage < 0:
+        # Cache is already within limits.  Normally this should not happen
+        # but it could due to multithreading.
+        return
+
+    number_to_toss = max_length // divisor + overage
+
+    # The import is done here to avoid a circular dependency.
+    import random
+    if not hasattr(random, 'sample'):
+        # Do nothing while resolving the circular dependency:
+        #  re->random->warnings->tokenize->string->re
+        return
+
+    for doomed_key in random.sample(cache_keys, number_to_toss):
+        try:
+            del cache_dict[doomed_key]
+        except KeyError:
+            # Ignore problems if the cache changed from another thread.
+            pass
+
+    # Rebuild the arguments and locale-sensitivity dictionaries.
+    args_dict.clear()
+    sensitivity_dict = {}
+    for pattern, pattern_type, flags, args, default_version, locale in tuple(cache_dict):
+        args_dict[pattern, pattern_type, flags, default_version, locale] = args
+        try:
+            sensitivity_dict[pattern_type, pattern] = locale_sensitive[pattern_type, pattern]
+        except KeyError:
+            pass
+
+    locale_sensitive.clear()
+    locale_sensitive.update(sensitivity_dict)
+
+def _fold_case(info, string):
+    "Folds the case of a string."
+    flags = info.flags
+    if (flags & _ALL_ENCODINGS) == 0:
+        flags |= info.guess_encoding
+
+    return _regex.fold_case(flags, string)
+
+def is_cased_i(info, char):
+    "Checks whether a character is cased."
+    return len(_regex.get_all_cases(info.flags, char)) > 1
+
+def is_cased_f(flags, char):
+    "Checks whether a character is cased."
+    return len(_regex.get_all_cases(flags, char)) > 1
+
+def _compile_firstset(info, fs):
+    "Compiles the firstset for the pattern."
+    reverse = bool(info.flags & REVERSE)
+    fs = _check_firstset(info, reverse, fs)
+    if not fs:
+        return []
+
+    # Compile the firstset.
+    return fs.compile(reverse)
+
+def _check_firstset(info, reverse, fs):
+    "Checks the firstset for the pattern."
+    if not fs or None in fs:
+        return None
+
+    # If we ignore the case, for simplicity we won't build a firstset.
+    members = set()
+    case_flags = NOCASE
+    for i in fs:
+        if isinstance(i, Character) and not i.positive:
+            return None
+
+#        if i.case_flags:
+#            if isinstance(i, Character):
+#                if is_cased_i(info, i.value):
+#                    return []
+#            elif isinstance(i, SetBase):
+#                return []
+        case_flags |= i.case_flags
+        members.add(i.with_flags(case_flags=NOCASE))
+
+    if case_flags == (FULLCASE | IGNORECASE):
+        return None
+
+    # Build the firstset.
+    fs = SetUnion(info, list(members), case_flags=case_flags & ~FULLCASE,
+      zerowidth=True)
+    fs = fs.optimise(info, reverse, in_set=True)
+
+    return fs
+
+def _flatten_code(code):
+    "Flattens the code from a list of tuples."
+    flat_code = []
+    for c in code:
+        flat_code.extend(c)
+
+    return flat_code
+
+def make_case_flags(info):
+    "Makes the case flags."
+    flags = info.flags & CASE_FLAGS
+
+    # Turn off FULLCASE if ASCII is turned on.
+    if info.flags & ASCII:
+        flags &= ~FULLCASE
+
+    return flags
+
+def make_character(info, value, in_set=False):
+    "Makes a character literal."
+    if in_set:
+        # A character set is built case-sensitively.
+        return Character(value)
+
+    return Character(value, case_flags=make_case_flags(info))
+
+def make_ref_group(info, name, position):
+    "Makes a group reference."
+    return RefGroup(info, name, position, case_flags=make_case_flags(info))
+
+def make_string_set(info, name):
+    "Makes a string set."
+    return StringSet(info, name, case_flags=make_case_flags(info))
+
+def make_property(info, prop, in_set):
+    "Makes a property."
+    if in_set:
+        return prop
+
+    return prop.with_flags(case_flags=make_case_flags(info))
+
+def _parse_pattern(source, info):
+    "Parses a pattern, eg. 'a|b|c'."
+    branches = [parse_sequence(source, info)]
+    while source.match("|"):
+        branches.append(parse_sequence(source, info))
+
+    if len(branches) == 1:
+        return branches[0]
+    return Branch(branches)
+
+def parse_sequence(source, info):
+    "Parses a sequence, eg. 'abc'."
+    sequence = [None]
+    case_flags = make_case_flags(info)
+    while True:
+        saved_pos = source.pos
+        ch = source.get()
+        if ch in SPECIAL_CHARS:
+            if ch in ")|":
+                # The end of a sequence. At the end of the pattern ch is "".
+                source.pos = saved_pos
+                break
+            elif ch == "\\":
+                # An escape sequence outside a set.
+                sequence.append(parse_escape(source, info, False))
+            elif ch == "(":
+                # A parenthesised subpattern or a flag.
+                element = parse_paren(source, info)
+                if element is None:
+                    case_flags = make_case_flags(info)
+                else:
+                    sequence.append(element)
+            elif ch == ".":
+                # Any character.
+                if info.flags & DOTALL:
+                    sequence.append(AnyAll())
+                elif info.flags & WORD:
+                    sequence.append(AnyU())
+                else:
+                    sequence.append(Any())
+            elif ch == "[":
+                # A character set.
+                sequence.append(parse_set(source, info))
+            elif ch == "^":
+                # The start of a line or the string.
+                if info.flags & MULTILINE:
+                    if info.flags & WORD:
+                        sequence.append(StartOfLineU())
+                    else:
+                        sequence.append(StartOfLine())
+                else:
+                    sequence.append(StartOfString())
+            elif ch == "$":
+                # The end of a line or the string.
+                if info.flags & MULTILINE:
+                    if info.flags & WORD:
+                        sequence.append(EndOfLineU())
+                    else:
+                        sequence.append(EndOfLine())
+                else:
+                    if info.flags & WORD:
+                        sequence.append(EndOfStringLineU())
+                    else:
+                        sequence.append(EndOfStringLine())
+            elif ch in "?*+{":
+                # Looks like a quantifier.
+                counts = parse_quantifier(source, info, ch)
+                if counts:
+                    # It _is_ a quantifier.
+                    apply_quantifier(source, info, counts, case_flags, ch,
+                      saved_pos, sequence)
+                    sequence.append(None)
+                else:
+                    # It's not a quantifier. Maybe it's a fuzzy constraint.
+                    constraints = parse_fuzzy(source, info, ch, case_flags)
+                    if constraints:
+                        # It _is_ a fuzzy constraint.
+                        apply_constraint(source, info, constraints, case_flags,
+                          saved_pos, sequence)
+                        sequence.append(None)
+                    else:
+                        # The element was just a literal.
+                        sequence.append(Character(ord(ch),
+                          case_flags=case_flags))
+            else:
+                # A literal.
+                sequence.append(Character(ord(ch), case_flags=case_flags))
+        else:
+            # A literal.
+            sequence.append(Character(ord(ch), case_flags=case_flags))
+
+    sequence = [item for item in sequence if item is not None]
+    return Sequence(sequence)
+
+def apply_quantifier(source, info, counts, case_flags, ch, saved_pos,
+  sequence):
+    element = sequence.pop()
+    if element is None:
+        if sequence:
+            raise error("multiple repeat", source.string, saved_pos)
+        raise error("nothing to repeat", source.string, saved_pos)
+
+    if isinstance(element, (GreedyRepeat, LazyRepeat, PossessiveRepeat)):
+        raise error("multiple repeat", source.string, saved_pos)
+
+    min_count, max_count = counts
+    saved_pos = source.pos
+    ch = source.get()
+    if ch == "?":
+        # The "?" suffix that means it's a lazy repeat.
+        repeated = LazyRepeat
+    elif ch == "+":
+        # The "+" suffix that means it's a possessive repeat.
+        repeated = PossessiveRepeat
+    else:
+        # No suffix means that it's a greedy repeat.
+        source.pos = saved_pos
+        repeated = GreedyRepeat
+
+    # Ignore the quantifier if it applies to a zero-width item or the number of
+    # repeats is fixed at 1.
+    if not element.is_empty() and (min_count != 1 or max_count != 1):
+        element = repeated(element, min_count, max_count)
+
+    sequence.append(element)
+
+def apply_constraint(source, info, constraints, case_flags, saved_pos,
+  sequence):
+    element = sequence.pop()
+    if element is None:
+        raise error("nothing for fuzzy constraint", source.string, saved_pos)
+
+    # If a group is marked as fuzzy then put all of the fuzzy part in the
+    # group.
+    if isinstance(element, Group):
+        element.subpattern = Fuzzy(element.subpattern, constraints)
+        sequence.append(element)
+    else:
+        sequence.append(Fuzzy(element, constraints))
+
+_QUANTIFIERS = {"?": (0, 1), "*": (0, None), "+": (1, None)}
+
+def parse_quantifier(source, info, ch):
+    "Parses a quantifier."
+    q = _QUANTIFIERS.get(ch)
+    if q:
+        # It's a quantifier.
+        return q
+
+    if ch == "{":
+        # Looks like a limited repeated element, eg. 'a{2,3}'.
+        counts = parse_limited_quantifier(source)
+        if counts:
+            return counts
+
+    return None
+
+def is_above_limit(count):
+    "Checks whether a count is above the maximum."
+    return count is not None and count >= UNLIMITED
+
+def parse_limited_quantifier(source):
+    "Parses a limited quantifier."
+    saved_pos = source.pos
+    min_count = parse_count(source)
+    if source.match(","):
+        max_count = parse_count(source)
+
+        # No minimum means 0 and no maximum means unlimited.
+        min_count = int(min_count or 0)
+        max_count = int(max_count) if max_count else None
+    else:
+        if not min_count:
+            source.pos = saved_pos
+            return None
+
+        min_count = max_count = int(min_count)
+
+    if not source.match ("}"):
+        source.pos = saved_pos
+        return None
+
+    if is_above_limit(min_count) or is_above_limit(max_count):
+        raise error("repeat count too big", source.string, saved_pos)
+
+    if max_count is not None and min_count > max_count:
+        raise error("min repeat greater than max repeat", source.string,
+          saved_pos)
+
+    return min_count, max_count
+
+def parse_fuzzy(source, info, ch, case_flags):
+    "Parses a fuzzy setting, if present."
+    saved_pos = source.pos
+
+    if ch != "{":
+        return None
+
+    constraints = {}
+    try:
+        parse_fuzzy_item(source, constraints)
+        while source.match(","):
+            parse_fuzzy_item(source, constraints)
+    except ParseError:
+        source.pos = saved_pos
+        return None
+
+    if source.match(":"):
+        constraints["test"] = parse_fuzzy_test(source, info, case_flags)
+
+    if not source.match("}"):
+        raise error("expected }", source.string, source.pos)
+
+    return constraints
+
+def parse_fuzzy_item(source, constraints):
+    "Parses a fuzzy setting item."
+    saved_pos = source.pos
+    try:
+        parse_cost_constraint(source, constraints)
+    except ParseError:
+        source.pos = saved_pos
+
+        parse_cost_equation(source, constraints)
+
+def parse_cost_constraint(source, constraints):
+    "Parses a cost constraint."
+    saved_pos = source.pos
+    ch = source.get()
+    if ch in ALPHA:
+        # Syntax: constraint [("<=" | "<") cost]
+        constraint = parse_constraint(source, constraints, ch)
+
+        max_inc = parse_fuzzy_compare(source)
+
+        if max_inc is None:
+            # No maximum cost.
+            constraints[constraint] = 0, None
+        else:
+            # There's a maximum cost.
+            cost_pos = source.pos
+            max_cost = parse_cost_limit(source)
+
+            # Inclusive or exclusive

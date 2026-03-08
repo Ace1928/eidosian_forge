@@ -1,0 +1,496 @@
+SOURCE_PATH: archive_forge/src/archive_forge/aot_autograd.py
+KIND: code
+
+# mypy: ignore-errors
+
+import itertools
+from contextlib import nullcontext
+from functools import partial, wraps
+from typing import Any, Callable, Dict, List, Optional, Tuple
+from unittest.mock import patch
+
+import torch
+import torch.nn as nn
+import torch.utils._pytree as pytree
+import torch.utils.dlpack
+from torch import Tensor
+from torch._dispatch.python import enable_python_dispatcher
+from torch._dynamo import compiled_autograd
+from torch._dynamo.utils import dynamo_timed, preserve_rng_state
+from torch._guards import detect_fake_mode
+from torch._subclasses import FakeTensor, FakeTensorMode
+from torch.fx.experimental.proxy_tensor import make_fx
+from torch.fx.experimental.symbolic_shapes import (
+    ShapeEnv
+)
+from torch.utils._python_dispatch import is_traceable_wrapper_subclass
+from torch._decomp.decompositions_for_rng import PhiloxStateTracker, rng_decompositions
+from . import config
+from .partitioners import default_partition
+
+from ._aot_autograd.utils import (  # noqa: F401
+    strict_zip,
+    _get_symint_hints,
+    KNOWN_TYPES,
+    partial_flatten_asdict,
+    normalize_as_list,
+    _get_autocast_states,
+    make_boxed_func,
+    make_boxed_compiler,
+    call_func_at_runtime_with_args,
+    create_tree_flattened_fn,
+    maybe_to_fresh_input,
+)
+from ._aot_autograd.logging_utils import (  # noqa: F401
+    graph_being_compiled,
+    nth_graph,
+    model_name,
+    set_model_name,
+    get_aot_compilation_context,
+    get_aot_graph_name,
+    get_graph_being_compiled,
+    track_graph_compiling,
+    callback_set,
+    setup_stacktrace_preservation_hooks,
+    describe_input,
+    format_guard_bug_msg,
+)
+from ._aot_autograd.functional_utils import (  # noqa: F401
+    is_fun,
+    to_fun,
+    from_fun,
+    sync_functional_tensor,
+    has_metadata_mutation,
+    has_data_mutation,
+    are_all_mutations_hidden_from_autograd,
+    are_all_mutations_under_no_grad_or_inference_mode,
+    gen_alias_from_base,
+    assert_functional_graph,
+    _check_if_mutation_can_be_in_graph,
+)
+from ._aot_autograd.schemas import (  # noqa: F401
+    OutputType,
+    OutputAliasInfo,
+    MutationType,
+    InputAliasInfo,
+    SubclassCreationMeta,
+    ViewAndMutationMeta,
+    SubclassMeta,
+    TensorAlias,
+    BackwardSignature,
+    GraphOutputName,
+    GraphInputName,
+    FQN,
+    GraphSignature,
+    AOTConfig,
+)
+from ._aot_autograd.subclass_utils import (  # noqa: F401
+    requires_subclass_dispatch,
+    unwrap_tensor_subclasses,
+    wrap_tensor_subclasses,
+    wrap_tensor_subclasses_maybe_joint,
+    create_metadata_for_subclass,
+)
+from ._aot_autograd.collect_metadata_analysis import (  # noqa: F401
+    run_functionalized_fw_and_collect_metadata,
+)
+from ._aot_autograd.input_output_analysis import (  # noqa: F401
+    remove_dupe_metadata,
+    create_synthetic_base_metadata,
+    _tensors_definitely_do_not_overlap,
+    compute_overlapping_inputs,
+    create_graph_signature,
+)
+from ._aot_autograd.traced_function_transforms import (  # noqa: F401
+    fn_input_mutations_to_outputs,
+    fn_prepped_for_autograd,
+    create_functionalized_fn,
+    create_functionalized_rng_ops_wrapper,
+    aot_dispatch_subclass,
+    create_functional_call,
+    create_joint,
+)
+from ._aot_autograd.runtime_wrappers import (  # noqa: F401
+    create_runtime_wrapper,
+    functionalized_rng_runtime_epilogue,
+    aot_dispatch_subclass_wrapper,
+    aot_wrapper_dedupe,
+    aot_wrapper_synthetic_base,
+    merge_view_inputs,
+)
+from ._aot_autograd.dispatch_and_compile_graph import (  # noqa: F401
+    aot_dispatch_base_graph,
+    aot_dispatch_autograd_graph,
+)
+from ._aot_autograd.jit_compile_runtime_wrappers import (  # noqa: F401
+    aot_dispatch_base,
+    aot_dispatch_autograd,
+)
+
+zip = strict_zip
+
+# This global counter increments every time we compile a graph with
+# AOTAutograd.  You can use this to correlate runtime error messages
+# with compile time (e.g., if you get an error at runtime saying
+# compiled graph 3 failed, you can set a breakpoint at compile time
+# for this graph number to investigate further at compile time.)
+#
+# NB: this is different from get_aot_compilation_context, which tracks
+# each underlying graph that is compiled.  In contrast, AOT_COUNTER
+# corresponds to top-level invocations of aot_module/aot_function;
+# one counter is allocated per entire compiled block (but this block
+# may involve compiling multiple subgraphs; e.g., for forwards/backwards)
+AOT_COUNTER = itertools.count()
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+# AOT Autograd contains a pretty non-trivial amount of logic to handle edge cases around aliasing and mutation
+# that are external to the graph (they show up as side effects in some way when you run the graph).
+#
+# Take a look at `test_aotdispatch.py TestAOTAutograd.test_input_mutation*` tests for some examples functions
+# and what they're compiled graphs looks like.
+# Below is a very long comment detailing several edge cases, and showing how AOT Autograd handles them.
+#
+# Note [AOT Autograd: input data mutations]
+#
+# If we compile a function that mutates inputs, then those input mutations are real side effects
+# that a user expects to see after running the compiled graph.
+# However, the graph that we want to send to a backend needs to be *entirely* functional.
+# The way we reconcile this difference is that we remove the mutations completely from the graph that we compile
+# but we update the graph to return (updated_inputs, user_outputs).
+# In the epilogue that runs after the compiled graph is executed, we copy the updated inputs back to the originals.
+#
+# Example: original user code:
+# def f(x):
+#     x.mul_(2)
+#     out = x.mul(3)
+#     return out
+#
+# After AOT Autograd compiles, we end up with a:
+# (a) compiled graph
+# (b) autograd.Function.forward() method, that executes the compiled graph
+# (c) wrapper function, that calls the autograd.Function.forward() and performs the epilogue
+#
+# The output of (a, b, c) are all written below.
+#
+# def compiled_forward_graph(x):
+#     x_updated = x.mul(2)
+#     out = x_updated.mul(3)
+#     return x_updated, out
+#
+# # x_updated gets a gradient in the compiled backward
+# def compiled_backward_graph(grad_x_updated, grad_out):
+#     grad_x = ...
+#     return grad_x
+#
+# def autograd.Function.forward(x):
+#     x_updated, out = compiled_forward_graph(x)
+#     return x_updated, out
+#
+# def compiled_wrapper(x):
+#     x_updated, out = autograd.Function.apply(x)
+#     x.copy_(x_updated)
+#     return out
+#
+# Another important thing to note is that updated inputs (due to data mutations) *do* participate
+# in the compiled backward graph! Since the compiled forward graph gets N extra outputs
+# (due to updated inputs showing up as graph outputs),
+# The compiled backward gets an additional N inputs.
+# That way, during the x.copy_(x_updated) bit in the epilogue, gradients will flow from the updated input
+# back to the original input.
+
+
+# Note [AOT Autograd: input metadata mutations]
+#
+# For the same reason as input mutations, we also don't put input metadata mutations in the graph.
+# Instead, we return the updated version of the input (a view), and mutate the input's metadata outside of the graph
+#
+# Example: original user code:
+# def f(x):
+#     x.t_()
+#     out = x.mul(3)
+#     return out
+#
+# AOT Autograd output (compiled graph, autograd.Function.forward(), wrapper function):
+# def compiled_forward_graph(x):
+#     x_updated = x.t()
+#     out = x_updated.mul(3)
+#     return x_updated, out
+#
+# # x_updated does *not* get a gradient in the compiled backward
+# def compiled_backward_graph(grad_out):
+#     grad_x = ...
+#     return grad_x
+#
+# def autograd.Function.forward(x):
+#     x_updated, out = compiled_forward_graph(x)
+#     return x_updated, out
+#
+# def compiled_wrapper(x):
+#     x_updated, out = autograd.Function.apply(x)
+#     x.as_strided_(x_updated)
+#     return out
+
+
+# Note [AOT Autograd: outputs aliasing inputs or intermediates!]
+#
+# AOT Autograd needs special handling for outputs that alias graph inputs or intermediates!
+# Why?
+# (1) autograd.Function.forward() has a limitation, where views that returned in the forward cannot later be mutated.
+# (2) views don't need to be compiled in the graph anyway - it's cheap to generate them outside of the compiled graph,
+#     in an epilogue.
+# For outputs that alias inputs, we do the following:
+# (a) *still* return the aliased output as a graph output
+# (b) In the AOT Autograd wrapper/epilogue, we don't return that aliased output. Instead, we use it to regenerate the output.
+#
+# For outputs that alias *intermediates*, we do the following:
+# (a) Return the output in the compiled forward, **and** return it's ._base (a graph intermediates) as an output in the forward
+# (b) Use (output, graph_intermediate) to regenerate the alias, and return that to the user (instead of the compiled fw output).
+# You might wonder why we return the aliased output directly in the graph (and making the graph compute it),
+# only to not return it and instead generate a fresh alias off of the intermediate,
+# instead of (say) just storing metadata about the size/stride of the output somewhere to generate the alias. There are two reasons:
+# (1) Getting the actual alias tensor allows us to use view-replay to generate the alias, instead of an as_strided() call
+# (2) Inductor (and other backends) are free to change the memory format of graph outputs, if it results in better performance.
+#     This can result in problems if a user later tries to .view() that output expecting it to have one set of strides,
+#     when it has a different set of strides.
+#     By including the view op directly in the graph, inductor takes that into account when deciding what memory format
+#     the graph intermediate should be.
+#
+# Another important thing to note is how our traced backward() graph handles aliases.
+# (this applies to outputs aliasing inputs, outputs aliasing intermediates,
+#  *and* updated inputs returned in the compiled forward due to metadata-only mutations).
+# Any outputs that alias (either inputs or intermediates) do NOT participate in the compiled backward graph
+# It would be wasteful to include them in the compiled backward(), because we regenerate them eagerly
+# at the end of the forward.
+#
+# Example: original user code:
+# def f(x):
+#     out1 = x.t()
+#     intermediate = x.mul(2)
+#     out2 = intermediate.view(-1)
+#     return out1, out2
+#
+# AOT Autograd output (compiled graph, autograd.Function.forward(), wrapper function):
+# def compiled_forward_graph(x):
+#     out1 = x.t()
+#     intermediate = x.mul(2)
+#     out2 = intermediate.view(-1)
+#     # the compiled graph also returns the intermediate
+#     return out1, out2, intermediate
+#
+# # intermediate gets a gradient in the compiled backward.
+# # both output aliases (out1 and out2) do not.
+# def compiled_backward_graph(grad_intermediate):
+#     grad_x = ...
+#     return grad_x
+#
+# def autograd.Function.forward(x):
+#     out1, out2, intermediate = compiled_forward_graph(x)
+#     return out1, out2, intermediate
+#
+# def compiled_wrapper(x):
+#     out1, out2, intermediate = autograd.Function.apply(x)
+#     # regenerate out1 from the input
+#     out1_regenerated = out1._view_func(x)
+#     # regenerate out1 from the intermediate
+#     out2_regenerated = out2._view_func(intermediate)
+#     return out1_regenerated, out2_regenerated
+
+
+# Note [AOT Autograd: mutations to inputs that alias other inputs]
+#
+# Another edge case that is (only partially) handled today is when an input is mutated, but itself aliases another input.
+# AOT Autograd needs to **ensure** that functionalization knows that the two inputs are aliased to each other.
+# That way, when the aliased input is accessed later in the graph, functionalization knows to "update" the alias
+# given the mutation that occurred.
+#
+# This is handled by updating the calling convention: we create a "synthetic base" that becomes a new input
+# in the compiled function, and we regenerate the original (aliased) inputs directly off of the base
+# inside of the compiled function.
+#
+# This logic is fully encapsulated in aot_wrapper_synthetic_base()
+#
+# Example: original user code:
+# def f(x, x_view):
+#     x.mul_(2)
+#     out = x * x_view
+#     return out
+# f(x, x.view(-1))
+#
+# AOT Autograd output (compiled graph, autograd.Function.forward(), wrapper function):
+# def compiled_forward_graph(base)
+#     x = generate_x(base)
+#     x_view = generate_x_view(base)
+#     x_updated = x.mul(2)
+#     x_view_updated = x_updated.view(-1)
+#     out = x_updated * x_view_updated
+#     return x_updated, out
+#
+# # The calling convention change from (aliases) -> (base) happens
+# # *outside* of the autograd.Function.forward().
+# # That means the forward() only has 1 input (base),
+# # and the backward() only has 1 output (grad_base)
+# def compiled_backward_graph(grad_out):
+#     grad_base = ...
+#     return grad_base
+#
+# def autograd.Function.forward(base):
+#     x_updated, out = compiled_forward_graph(base)
+#     return x_updated, out
+#
+# # The compiled wrapper is where we create synthetic bases.
+# # The info on which inputs are mutated is also tracked *before* synthetic base creation.
+# def compiled_wrapper(x, x_view):
+#     base = merge_view_inputs(x, x_view)
+#     x_updated, out = autograd.Function.apply(base)
+#     # x and x_view are aliased in eager mode, so this mutation to x will automatically affect x_view.
+#     x.copy_(x_updated)
+#     return out
+
+
+# Note [AOT Autograd: Views to avoid tangents aliasing inputs]
+#
+# We view every forward output when creating out tangent tensors to handle the problematic
+# case in which a subclass does extra aliasing between graph outputs/inputs in a way that
+# is not visible above the sublass.
+#
+# Ordinarily, when constructing the joint function that we want to trace in AOTAutograd,
+# we're guaranteed that the tangent tensors that we pass
+# into the joint are distinct tensors from the primals. This is because when
+# decide which forward outputs to create tangents for, we only create tangents
+# for forward outputs that are not aliases of inputs (See Note
+# [AOT Autograd: outputs aliasing inputs or intermediates!]).
+#
+# However, when wrapper tensor subclasses enter the picture, it is possible
+# to have an output of the forward that is a subclass that is not an
+# input / alias of an input, but one of its inner tensors is an alias!
+# NestedTensor is an example: Performing an out-of-place pointwise op on a
+# NestedTensor constructs a fresh NestedTensor that holds onto the input's
+# offsets tensor directly.
+#
+# Having tangent tensors that are the same as the (primal) forward inputs,
+# can cause problems during tracing as make_fx() will specialize on our
+# duplicate inputs: If we passed in the same tensor for primals_1 and
+# tangents_1 during tracing, make_fx() will happily sub out all usages of
+# tangents_1 with primals_1 in the graph, which is not what we want.
+#
+# To work around this, we view every forward output when creating out tangent
+# tensors so that tangents can never be the same as forward inputs even if
+# forward inputs alias forward outputs.
+
+# Note [Side-Effectful Tokens in AOTAutograd]
+#
+# We allow some some side-effectful operators in
+# the post-AOTAutograd (functional) graph, such as prints and torchbind operations.
+# To ensure that these side-effects are compatible to future graph passes that
+# assume that the graph is functional, we will thread "effect tokens" to show
+# data dependence between these side-effectful operators. Practically speaking,
+# effect tokens are just dummy values (torch.tensor([])). The graph would look
+# like the following:
+#
+# def gm(self, token0, reader):
+#    token1, frame = with_token(ordered_effect_op, (reader,), token0)
+#    frame = frame * 2
+#    token2, frame2 = with_token(ordered_effect_op, (reader,), token1)
+#    frame2 = frame2 * 2
+#    return token2, frame, frame2
+#
+# We will pass the token as an input to the graph, thread it through
+# side-effectful operators using the `with_effects` high order operator, and then
+# return the updated token as an output.
+# So the signature of the graph input would look something like
+# (*tokens, *params_buffers, *user_inputs), and the signature of the graph
+# output would look something like (*tokens, *outputs).
+
+#
+#
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+aot_autograd_decompositions = {}
+
+@dynamo_timed
+def create_aot_dispatcher_function(
+    flat_fn, flat_args: List[Any], aot_config: AOTConfig
+):
+    """
+    Traces the forward and backward graphs of the attr:`flat_fn` to generate a
+    joint graph. The joint graph is an Fx graph with Aten ops. Please refer to
+    the tracing mechanism to understand the graph capturing details.
+
+    The joint graph is then passed through attr:`partition_fn` to isolate the
+    forward and backward portions, which are then respectively compiled via the
+    provided attr:`fw_compiler` and attr:`bw_compiler`.
+
+    The resulting compiled forward and backward graphs are then wrapped up in a
+    ``torch.autograd.Function`` object.
+
+    The calling convention here is that the first aot_config.num_params_buffers
+    inputs in flat_args are parameters and buffers, and the rest are inputs.
+
+    We use this to assume that parameters/buffer's shapes don't change.
+
+    Note: this function is used both by aot_function and aot_export (controlled by aot_config.is_export)
+        When aot_config.is_export is True, we return an FX graph + metadata
+        When aot_config.is_export is False, we return an ordinary runtime function
+    """
+
+    # This is the main entry point.
+    # TODO: Chillee argues that dynamo itself should pass in fake tensors to
+    # the list of arguments when compiling; at the moment we do not do this
+
+    if aot_config.decompositions is None:
+        aot_config.decompositions = {}
+
+
+    aot_config.decompositions = {
+        **aot_autograd_decompositions,
+        **aot_config.decompositions,
+    }
+
+    if config.functionalize_rng_ops:
+        # Update the decompositions with functionalized random decompositions
+        aot_config.decompositions = {
+            **rng_decompositions,
+            **aot_config.decompositions,
+        }
+
+    # Check flat_args to see if they're already fake.  If so, use that fake
+    # mode instead.
+
+    fake_mode = detect_fake_mode(flat_args)
+    if fake_mode is None:
+        shape_env = ShapeEnv() if aot_config.dynamic_shapes else None
+        fake_mode = FakeTensorMode(shape_env=shape_env)
+    else:
+        shape_env = fake_mode.shape_env
+
+    python_dispatcher_mode = (
+        enable_python_dispatcher() if shape_env is not None else nullcontext()
+    )
+
+    with torch.autograd.set_multithreading_enabled(
+        False
+    ), preserve_rng_state(), fake_mode, python_dispatcher_mode, PhiloxStateTracker():
+
+        def process_inputs(flat_args):
+            def convert(idx, x):
+                if shape_env is not None:
+                    from torch._dynamo.source import ConstantSource
+                    if isinstance(x, int):
+                        # We always specialize on scalar values in export.
+                        if aot_config.is_export:
+                            return x
+                        source = ConstantSource(f"sym_{idx}")
+                        return shape_env.create_symintnode(
+                            shape_env.create_symbol(x, source),
+                            hint=x,
+                            source=source
+                        )
+                if not isinstance(x, torch.Tensor):
+                    return x
+                if isinstance(x, FakeTensor):
+                    assert x.fake_mode is fake_mode
+                    ret

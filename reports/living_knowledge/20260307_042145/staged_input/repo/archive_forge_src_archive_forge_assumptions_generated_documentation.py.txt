@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/assumptions_generated_documentation.py
+KIND: code
+
+Do NOT manually edit this file.
+Instead, run ./bin/ask_update.py.

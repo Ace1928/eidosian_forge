@@ -1,0 +1,483 @@
+SOURCE_PATH: archive_forge/src/archive_forge/azure_rm_appgateway.py
+KIND: code
+
+#!/usr/bin/python
+#
+# Copyright (c) 2017 Zim Kalinowski, <zikalino@microsoft.com>
+#
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+from __future__ import absolute_import, division, print_function
+__metaclass__ = type
+
+
+DOCUMENTATION = '''
+---
+module: azure_rm_appgateway
+version_added: "0.1.2"
+short_description: Manage Application Gateway instance
+description:
+    - Create, update and delete instance of Application Gateway.
+
+options:
+    resource_group:
+        description:
+            - The name of the resource group.
+        required: True
+        type: str
+    name:
+        description:
+            - The name of the application gateway.
+        required: True
+        type: str
+    location:
+        description:
+            - Resource location. If not set, location from the resource group will be used as default.
+        type: str
+    sku:
+        description:
+            - SKU of the application gateway resource.
+        type: dict
+        suboptions:
+            name:
+                description:
+                    - Name of an application gateway SKU.
+                type: str
+                choices:
+                    - 'standard_small'
+                    - 'standard_medium'
+                    - 'standard_large'
+                    - 'standard_v2'
+                    - 'waf_medium'
+                    - 'waf_large'
+                    - 'waf_v2'
+            tier:
+                description:
+                    - Tier of an application gateway.
+                type: str
+                choices:
+                    - 'standard'
+                    - 'standard_v2'
+                    - 'waf'
+                    - 'waf_v2'
+            capacity:
+                description:
+                    - Capacity (instance count) of an application gateway.
+                type: int
+    ssl_policy:
+        description:
+            - SSL policy of the application gateway resource.
+        type: dict
+        suboptions:
+            disabled_ssl_protocols:
+                description:
+                    - List of SSL protocols to be disabled on application gateway.
+                type: list
+                elements: str
+                choices:
+                    - 'tls_v1_0'
+                    - 'tls_v1_1'
+                    - 'tls_v1_2'
+            policy_type:
+                description:
+                    - Type of SSL Policy.
+                type: str
+                choices:
+                    - 'predefined'
+                    - 'custom'
+            policy_name:
+                description:
+                    - Name of Ssl C(predefined) policy.
+                type: str
+                choices:
+                    - 'ssl_policy20150501'
+                    - 'ssl_policy20170401'
+                    - 'ssl_policy20170401_s'
+            cipher_suites:
+                description:
+                    - List of SSL cipher suites to be enabled in the specified order to application gateway.
+                type: list
+                elements: str
+                choices:
+                    - tls_ecdhe_rsa_with_aes_256_gcm_sha384
+                    - tls_ecdhe_rsa_with_aes_128_gcm_sha256
+                    - tls_ecdhe_rsa_with_aes_256_cbc_sha384
+                    - tls_ecdhe_rsa_with_aes_128_cbc_sha256
+                    - tls_ecdhe_rsa_with_aes_256_cbc_sha
+                    - tls_ecdhe_rsa_with_aes_128_cbc_sha
+                    - tls_dhe_rsa_with_aes_256_gcm_sha384
+                    - tls_dhe_rsa_with_aes_128_gcm_sha256
+                    - tls_dhe_rsa_with_aes_256_cbc_sha
+                    - tls_dhe_rsa_with_aes_128_cbc_sha
+                    - tls_rsa_with_aes_256_gcm_sha384
+                    - tls_rsa_with_aes_128_gcm_sha256
+                    - tls_rsa_with_aes_256_cbc_sha256
+                    - tls_rsa_with_aes_128_cbc_sha256
+                    - tls_rsa_with_aes_256_cbc_sha
+                    - tls_rsa_with_aes_128_cbc_sha
+                    - tls_ecdhe_ecdsa_with_aes_256_gcm_sha384
+                    - tls_ecdhe_ecdsa_with_aes_128_gcm_sha256
+                    - tls_ecdhe_ecdsa_with_aes_256_cbc_sha384
+                    - tls_ecdhe_ecdsa_with_aes_128_cbc_sha256
+                    - tls_ecdhe_ecdsa_with_aes_256_cbc_sha
+                    - tls_ecdhe_ecdsa_with_aes_128_cbc_sha
+                    - tls_dhe_dss_with_aes_256_cbc_sha256
+                    - tls_dhe_dss_with_aes_128_cbc_sha256
+                    - tls_dhe_dss_with_aes_256_cbc_sha
+                    - tls_dhe_dss_with_aes_128_cbc_sha
+                    - tls_rsa_with_3des_ede_cbc_sha
+                    - tls_dhe_dss_with_3des_ede_cbc_sha
+            min_protocol_version:
+                description:
+                    - Minimum version of SSL protocol to be supported on application gateway.
+                type: str
+                choices:
+                    - 'tls_v1_0'
+                    - 'tls_v1_1'
+                    - 'tls_v1_2'
+    gateway_ip_configurations:
+        description:
+            - List of subnets used by the application gateway.
+        type: list
+        elements: dict
+        suboptions:
+            subnet:
+                description:
+                    - Reference of the subnet resource. A subnet from where application gateway gets its private address.
+                type: dict
+                suboptions:
+                    id:
+                        description:
+                            - Full ID of the subnet resource. Required if I(name) and I(virtual_network_name) are not provided.
+                        type: str
+                    name:
+                        description:
+                            - Name of the subnet. Only used if I(virtual_network_name) is also provided.
+                        type: str
+                    virtual_network_name:
+                        description:
+                            - Name of the virtual network. Only used if I(name) is also provided.
+                        type: str
+            name:
+                description:
+                    - Name of the resource that is unique within a resource group. This name can be used to access the resource.
+                type: str
+    authentication_certificates:
+        description:
+            - Authentication certificates of the application gateway resource.
+        type: list
+        elements: dict
+        suboptions:
+            data:
+                description:
+                    - Certificate public data - base64 encoded pfx.
+                type: str
+            name:
+                description:
+                    - Name of the resource that is unique within a resource group. This name can be used to access the resource.
+                type: str
+    redirect_configurations:
+        description:
+            - Redirect configurations of the application gateway resource.
+        type: list
+        elements: dict
+        suboptions:
+            redirect_type:
+                description:
+                    - Redirection type.
+                type: str
+                choices:
+                    - 'permanent'
+                    - 'found'
+                    - 'see_other'
+                    - 'temporary'
+            target_listener:
+                description:
+                    - Reference to a listener to redirect the request to.
+                type: str
+            request_routing_rules:
+                description:
+                    - List of c(basic) request routing rule names within the application gateway to which the redirect is bound.
+                version_added: "1.10.0"
+                type: list
+                elements: str
+            url_path_maps:
+                description:
+                    - List of URL path map names (c(path_based_routing) rules) within the application gateway to which the redirect is bound.
+                type: list
+                elements: str
+                version_added: "1.10.0"
+            path_rules:
+                description:
+                    - List of URL path rules within a c(path_based_routing) rule to which the redirect is bound.
+                type: list
+                elements: dict
+                suboptions:
+                    name:
+                        description:
+                            - Name of the URL rule.
+                        type: str
+                    path_map_name:
+                        description:
+                            - Name of URL path map.
+                        type: str
+                version_added: "1.10.0"
+            include_path:
+                description:
+                    - Include path in the redirected url.
+                type: bool
+            include_query_string:
+                description:
+                    - Include query string in the redirected url.
+                type: bool
+            name:
+                description:
+                    - Name of the resource that is unique within a resource group.
+                type: str
+    rewrite_rule_sets:
+        description:
+            - List of rewrite configurations for the application gateway resource.
+        type: list
+        elements: dict
+        version_added: "1.11.0"
+        suboptions:
+            name:
+                description:
+                    - Name of the rewrite rule set.
+                type: str
+                required: True
+            rewrite_rules:
+                description:
+                    - List of rewrite rules.
+                required: True
+                type: list
+                elements: dict
+                suboptions:
+                    name:
+                        description:
+                            - Name of the rewrite rule.
+                        required: True
+                        type: str
+                    rule_sequence:
+                        description:
+                            - Sequence of the rule that determines the order of execution within the set.
+                        required: True
+                        type: int
+                    conditions:
+                        description:
+                            - Conditions based on which the action set execution will be evaluated.
+                        type: list
+                        elements: dict
+                        default: []
+                        suboptions:
+                            variable:
+                                description:
+                                    - The parameter for the condition.
+                                type: str
+                                required: True
+                            pattern:
+                                description:
+                                    - The pattern, either fixed string or regular expression, that evaluates the truthfulness of the condition.
+                                type: str
+                                required: True
+                            ignore_case:
+                                description:
+                                    - Setting this value to true will force the pattern to do a case in-sensitive comparison.
+                                type: bool
+                                default: True
+                            negate:
+                                description:
+                                    - Setting this value to true will force to check the negation of the condition given by the user.
+                                type: bool
+                                default: False
+                    action_set:
+                        description:
+                            - Set of actions to be done as part of the rewrite rule.
+                        required: True
+                        type: dict
+                        suboptions:
+                            request_header_configurations:
+                                description:
+                                    - List of actions to be taken on request headers.
+                                type: list
+                                elements: dict
+                                default: []
+                                suboptions:
+                                    header_name:
+                                        description:
+                                            - Name of the header.
+                                        type: str
+                                        required: True
+                                    header_value:
+                                        description:
+                                            - Value of the header.
+                                            - Leave the parameter unset to remove the header.
+                                        type: str
+                                        default: ''
+                            response_header_configurations:
+                                description:
+                                    - List of actions to be taken on response headers.
+                                type: list
+                                elements: dict
+                                default: []
+                                suboptions:
+                                    header_name:
+                                        description:
+                                            - Name of the header.
+                                        type: str
+                                        required: True
+                                    header_value:
+                                        description:
+                                            - Value of the header.
+                                            - Leave the parameter unset to remove the header.
+                                        type: str
+                                        default: ''
+                            url_configuration:
+                                description:
+                                    - Action to be taken on the URL.
+                                type: dict
+                                suboptions:
+                                    modified_path:
+                                        description:
+                                            - Value to which the URL path will be rewriten.
+                                            - Leave parameter unset to keep the original URL path.
+                                        type: str
+                                    modified_query_string:
+                                        description:
+                                            - Value to which the URL query string will be rewriten.
+                                            - Leave parameter unset to keep the original URL query string.
+                                        type: str
+                                    reroute:
+                                        description:
+                                            - If set to true, will re-evaluate the path map provided in path-based request routing rules using modified path.
+                                        type: bool
+                                        default: False
+    ssl_certificates:
+        description:
+            - SSL certificates of the application gateway resource.
+        type: list
+        elements: dict
+        suboptions:
+            data:
+                description:
+                    - Base-64 encoded pfx certificate.
+                    - Only applicable in PUT Request.
+                type: str
+            password:
+                description:
+                    - Password for the pfx file specified in I(data).
+                    - Only applicable in PUT request.
+                type: str
+            name:
+                description:
+                    - Name of the resource that is unique within a resource group. This name can be used to access the resource.
+                type: str
+    trusted_root_certificates:
+        version_added: "1.15.0"
+        description:
+            - Trusted Root certificates of the application gateway resource.
+        type: list
+        elements: dict
+        suboptions:
+            name:
+                description:
+                    - Name of the trusted root certificate that is unique within an Application Gateway.
+                type: str
+            data:
+                description:
+                    - Certificate public data.
+                type: str
+            key_vault_secret_id:
+                description:
+                    - Secret Id of (base-64 encoded unencrypted pfx) 'Secret' or 'Certificate' object stored in KeyVault.
+                default: ''
+                type: str
+    frontend_ip_configurations:
+        description:
+            - Frontend IP addresses of the application gateway resource.
+        type: list
+        elements: dict
+        suboptions:
+            private_ip_address:
+                description:
+                    - PrivateIPAddress of the network interface IP Configuration.
+                type: str
+            private_ip_allocation_method:
+                description:
+                    - PrivateIP allocation method.
+                type: str
+                choices:
+                    - 'static'
+                    - 'dynamic'
+            subnet:
+                description:
+                    - Reference of the subnet resource.
+                type: dict
+                suboptions:
+                    id:
+                        description:
+                            - Full ID of the subnet resource. Required if I(name) and I(virtual_network_name) are not provided.
+                        type: str
+                    name:
+                        description:
+                            - Name of the subnet. Only used if I(virtual_network_name) is also provided.
+                        type: str
+                    virtual_network_name:
+                        description:
+                            - Name of the virtual network. Only used if I(name) is also provided.
+                        type: str
+            public_ip_address:
+                description:
+                    - Reference of the PublicIP resource.
+                type: raw
+            name:
+                description:
+                    - Name of the resource that is unique within a resource group. This name can be used to access the resource.
+                type: str
+    frontend_ports:
+        description:
+            - List of frontend ports of the application gateway resource.
+        type: list
+        elements: dict
+        suboptions:
+            port:
+                description:
+                    - Frontend port.
+                type: str
+            name:
+                description:
+                    - Name of the resource that is unique within a resource group. This name can be used to access the resource.
+                type: str
+    backend_address_pools:
+        description:
+            - List of backend address pool of the application gateway resource.
+        type: list
+        elements: dict
+        suboptions:
+            backend_addresses:
+                description:
+                    - List of backend addresses.
+                type: list
+                elements: dict
+                suboptions:
+                    fqdn:
+                        description:
+                            - Fully qualified domain name (FQDN).
+                        type: str
+                    ip_address:
+                        description:
+                            - IP address.
+                        type: str
+            name:
+                description:
+                    - Resource that is unique within a resource group. This name can be used to access the resource.
+                type: str
+    probes:
+        description:
+            - Probes available to the application gateway resource.
+        type: list
+        elements: dict
+        suboptions:
+            name:
+                description:
+                    - Nam

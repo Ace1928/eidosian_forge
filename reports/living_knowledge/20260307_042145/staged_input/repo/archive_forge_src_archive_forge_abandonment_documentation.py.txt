@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/abandonment_documentation.py
+KIND: code
+
+Indicates that some computation is being abandoned.
+
+    Abandoning a computation is different than returning a value or raising
+    an exception indicating some operational or programming defect.

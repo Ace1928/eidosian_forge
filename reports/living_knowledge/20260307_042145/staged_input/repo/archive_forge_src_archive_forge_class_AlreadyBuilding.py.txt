@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AlreadyBuilding.py
+KIND: code
+
+from . import errors
+class AlreadyBuilding(errors.BzrError):
+    _fmt = 'The tree builder is already building a tree.'

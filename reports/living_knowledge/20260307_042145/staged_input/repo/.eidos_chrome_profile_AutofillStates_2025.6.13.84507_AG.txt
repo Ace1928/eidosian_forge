@@ -1,0 +1,15 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/AG
+KIND: config
+
+AG#
+saint georgesaint george parish
+
+saint johnsaint john parish
+
+saint marysaint mary parish
+
+saint paulsaint paul parish!
+saint petersaint peter parish#
+saint philipsaint philip parish	
+barbuda	
+redonda

@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/bfplot_documentation.py
+KIND: code
+
+Bokeh Bayes Factor plot.

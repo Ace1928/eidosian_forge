@@ -10,7 +10,7 @@ Loading model...
                                     ▀▀    ▀▀
 
 build      : b8083-ae2d3f28a
-model      : qwen2.5-1.5b-instruct-q5_k_m.gguf
+model      : qwen3.5-2b-instruct-q5_k_m.gguf
 modalities : text
 
 available commands:
@@ -45,7 +45,7 @@ Follow these requirements:
 - [x] Research and select a suitable small (< 3B params), agentic, tool-calling LLM via web search. (Chosen Model: Qwen 2.5 1.5B Instruct GGUF)
 - [ ] Research and document the steps to build `llama.cpp` from source. (Build from source using cmake: https://github.com/ggerganov/llama.cpp)
 - [ ] Write a script to download and build `llama.cpp`.
-- [x] Write a script to download the selected < 3B LLM model. (Downloaded: qwen2.5-1.5b-instruct-q5_k_m.gguf)
+- [x] Write a script to download the selected < 3B LLM model. (Downloaded: qwen3.5-2b-instruct-q5_k_m.gguf)
 
 ## 3. Documentation Generation Loop
 - [ ] Create a script to scan the `eidosian_forge` repository directory-by-directory.

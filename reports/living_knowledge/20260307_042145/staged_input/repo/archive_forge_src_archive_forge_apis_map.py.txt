@@ -1,0 +1,474 @@
+SOURCE_PATH: archive_forge/src/archive_forge/apis_map.py
+KIND: code
+
+# -*- coding: utf-8 -*- #
+# Copyright 2015 Google LLC. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""Base template using which the apis_map.py is generated."""
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+
+
+class APIDef(object):
+  """Struct for info required to instantiate clients/messages for API versions.
+
+  Attributes:
+    apitools: ApitoolsClientDef for this API version.
+    gapic: GapicClientDef for this API version.
+    default_version: bool, Whether this API version is the default version for
+      the API.
+    enable_mtls: bool, Whether this API version supports mTLS.
+    mtls_endpoint_override: str, The mTLS endpoint for this API version. If
+      empty, the MTLS_BASE_URL in the API client will be used.
+  """
+
+  def __init__(self,
+               apitools=None,
+               gapic=None,
+               default_version=False,
+               enable_mtls=False,
+               mtls_endpoint_override=''):
+    self.apitools = apitools
+    self.gapic = gapic
+    self.default_version = default_version
+    self.enable_mtls = enable_mtls
+    self.mtls_endpoint_override = mtls_endpoint_override
+
+  def __eq__(self, other):
+    return (isinstance(other, self.__class__) and
+            self.__dict__ == other.__dict__)
+
+  def __ne__(self, other):
+    return not self.__eq__(other)
+
+  def get_init_source(self):
+    src_fmt = 'APIDef({0}, {1}, {2}, {3}, "{4}")'
+    return src_fmt.format(self.apitools, self.gapic,
+                          self.default_version,
+                          self.enable_mtls, self.mtls_endpoint_override)
+
+  def __repr__(self):
+    return self.get_init_source()
+
+
+class ApitoolsClientDef(object):
+  """Struct for info required to instantiate clients/messages for API versions.
+
+  Attributes:
+    class_path: str, Path to the package containing api related modules.
+    client_classpath: str, Relative path to the client class for an API version.
+    client_full_classpath: str, Full path to the client class for an API
+      version.
+    messages_modulepath: str, Relative path to the messages module for an API
+      version.
+    messages_full_modulepath: str, Full path to the messages module for an API
+      version.
+    base_url: str, The base_url used for the default version of the API.
+  """
+
+  def __init__(self,
+               class_path,
+               client_classpath,
+               messages_modulepath,
+               base_url):
+    self.class_path = class_path
+    self.client_classpath = client_classpath
+    self.messages_modulepath = messages_modulepath
+    self.base_url = base_url
+
+  @property
+  def client_full_classpath(self):
+    return self.class_path + '.' + self.client_classpath
+
+  @property
+  def messages_full_modulepath(self):
+    return self.class_path + '.' + self.messages_modulepath
+
+  def __eq__(self, other):
+    return (isinstance(other, self.__class__) and
+            self.__dict__ == other.__dict__)
+
+  def __ne__(self, other):
+    return not self.__eq__(other)
+
+  def get_init_source(self):
+    src_fmt = 'ApitoolsClientDef("{0}", "{1}", "{2}", "{3}")'
+    return src_fmt.format(self.class_path, self.client_classpath,
+                          self.messages_modulepath, self.base_url)
+
+  def __repr__(self):
+    return self.get_init_source()
+
+
+class GapicClientDef(object):
+  """Struct for info required to instantiate clients/messages for API versions.
+
+  Attributes:
+    class_path: str, Path to the package containing api related modules.
+    client_full_classpath: str, Full path to the client class for an API
+      version.
+    async_client_full_classpath: str, Full path to the async client class for an
+      API version.
+    rest_client_full_classpath: str, Full path to the rest client class for an
+      API version.
+  """
+
+  def __init__(self,
+               class_path):
+    self.class_path = class_path
+
+  @property
+  def client_full_classpath(self):
+    return self.class_path + '.client.GapicWrapperClient'
+
+  @property
+  def async_client_full_classpath(self):
+    return self.class_path + '.async_client.GapicWrapperClient'
+
+  @property
+  def rest_client_full_classpath(self):
+    return self.class_path + '.rest_client.GapicWrapperClient'
+
+  def __eq__(self, other):
+    return (isinstance(other, self.__class__) and
+            self.__dict__ == other.__dict__)
+
+  def __ne__(self, other):
+    return not self.__eq__(other)
+
+  def get_init_source(self):
+    src_fmt = 'GapicClientDef("{0}")'
+    return src_fmt.format(self.class_path)
+
+  def __repr__(self):
+    return self.get_init_source()
+
+
+MAP = {
+    'accessapproval': {
+        'v1':
+            APIDef(
+                apitools=ApitoolsClientDef(
+                    class_path='googlecloudsdk.generated_clients.apis.accessapproval.v1',
+                    client_classpath='accessapproval_v1_client.AccessapprovalV1',
+                    base_url='https://accessapproval.googleapis.com/',
+                    messages_modulepath='accessapproval_v1_messages'),
+                default_version=True,
+                enable_mtls=True,
+                mtls_endpoint_override=''),
+    },
+    'accesscontextmanager': {
+        'v1':
+            APIDef(
+                apitools=ApitoolsClientDef(
+                    class_path='googlecloudsdk.generated_clients.apis.accesscontextmanager.v1',
+                    client_classpath='accesscontextmanager_v1_client.AccesscontextmanagerV1',
+                    base_url='https://accesscontextmanager.googleapis.com/',
+                    messages_modulepath='accesscontextmanager_v1_messages'),
+                default_version=True,
+                enable_mtls=True,
+                mtls_endpoint_override=''),
+        'v1alpha':
+            APIDef(
+                apitools=ApitoolsClientDef(
+                    class_path='googlecloudsdk.generated_clients.apis.accesscontextmanager.v1alpha',
+                    client_classpath='accesscontextmanager_v1alpha_client.AccesscontextmanagerV1alpha',
+                    base_url='https://accesscontextmanager.googleapis.com/',
+                    messages_modulepath='accesscontextmanager_v1alpha_messages'),
+                default_version=False,
+                enable_mtls=True,
+                mtls_endpoint_override=''),
+    },
+    'admin': {
+        'v1':
+            APIDef(
+                apitools=ApitoolsClientDef(
+                    class_path='googlecloudsdk.generated_clients.apis.admin.v1',
+                    client_classpath='admin_v1_client.AdminDirectoryV1',
+                    base_url='https://www.googleapis.com/admin/directory/v1/',
+                    messages_modulepath='admin_v1_messages'),
+                default_version=True,
+                enable_mtls=True,
+                mtls_endpoint_override='https://www.mtls.googleapis.com/admin/directory/v1/'),
+    },
+    'aiplatform': {
+        'v1':
+            APIDef(
+                apitools=ApitoolsClientDef(
+                    class_path='googlecloudsdk.generated_clients.apis.aiplatform.v1',
+                    client_classpath='aiplatform_v1_client.AiplatformV1',
+                    base_url='https://aiplatform.googleapis.com/',
+                    messages_modulepath='aiplatform_v1_messages'),
+                default_version=False,
+                enable_mtls=True,
+                mtls_endpoint_override=''),
+        'v1beta1':
+            APIDef(
+                apitools=ApitoolsClientDef(
+                    class_path='googlecloudsdk.generated_clients.apis.aiplatform.v1beta1',
+                    client_classpath='aiplatform_v1beta1_client.AiplatformV1beta1',
+                    base_url='https://aiplatform.googleapis.com/',
+                    messages_modulepath='aiplatform_v1beta1_messages'),
+                default_version=True,
+                enable_mtls=True,
+                mtls_endpoint_override=''),
+    },
+    'alloydb': {
+        'v1':
+            APIDef(
+                apitools=ApitoolsClientDef(
+                    class_path='googlecloudsdk.generated_clients.apis.alloydb.v1',
+                    client_classpath='alloydb_v1_client.AlloydbV1',
+                    base_url='https://alloydb.googleapis.com/',
+                    messages_modulepath='alloydb_v1_messages'),
+                default_version=True,
+                enable_mtls=True,
+                mtls_endpoint_override=''),
+        'v1alpha':
+            APIDef(
+                apitools=ApitoolsClientDef(
+                    class_path='googlecloudsdk.generated_clients.apis.alloydb.v1alpha',
+                    client_classpath='alloydb_v1alpha_client.AlloydbV1alpha',
+                    base_url='https://alloydb.googleapis.com/',
+                    messages_modulepath='alloydb_v1alpha_messages'),
+                default_version=False,
+                enable_mtls=True,
+                mtls_endpoint_override=''),
+        'v1beta':
+            APIDef(
+                apitools=ApitoolsClientDef(
+                    class_path='googlecloudsdk.generated_clients.apis.alloydb.v1beta',
+                    client_classpath='alloydb_v1beta_client.AlloydbV1beta',
+                    base_url='https://alloydb.googleapis.com/',
+                    messages_modulepath='alloydb_v1beta_messages'),
+                default_version=False,
+                enable_mtls=True,
+                mtls_endpoint_override=''),
+    },
+    'anthosevents': {
+        'v1':
+            APIDef(
+                apitools=ApitoolsClientDef(
+                    class_path='googlecloudsdk.generated_clients.apis.anthosevents.v1',
+                    client_classpath='anthosevents_v1_client.AnthoseventsV1',
+                    base_url='https://anthosevents.googleapis.com/',
+                    messages_modulepath='anthosevents_v1_messages'),
+                default_version=True,
+                enable_mtls=True,
+                mtls_endpoint_override=''),
+        'v1alpha1':
+            APIDef(
+                apitools=ApitoolsClientDef(
+                    class_path='googlecloudsdk.generated_clients.apis.anthosevents.v1alpha1',
+                    client_classpath='anthosevents_v1alpha1_client.AnthoseventsV1alpha1',
+                    base_url='https://anthosevents.googleapis.com/',
+                    messages_modulepath='anthosevents_v1alpha1_messages'),
+                default_version=False,
+                enable_mtls=True,
+                mtls_endpoint_override=''),
+        'v1beta1':
+            APIDef(
+                apitools=ApitoolsClientDef(
+                    class_path='googlecloudsdk.generated_clients.apis.anthosevents.v1beta1',
+                    client_classpath='anthosevents_v1beta1_client.AnthoseventsV1beta1',
+                    base_url='https://anthosevents.googleapis.com/',
+                    messages_modulepath='anthosevents_v1beta1_messages'),
+                default_version=False,
+                enable_mtls=True,
+                mtls_endpoint_override=''),
+    },
+    'anthospolicycontrollerstatus_pa': {
+        'v1alpha':
+            APIDef(
+                apitools=ApitoolsClientDef(
+                    class_path='googlecloudsdk.generated_clients.apis.anthospolicycontrollerstatus_pa.v1alpha',
+                    client_classpath='anthospolicycontrollerstatus_pa_v1alpha_client.AnthospolicycontrollerstatusPaV1alpha',
+                    base_url='https://anthospolicycontrollerstatus-pa.googleapis.com/',
+                    messages_modulepath='anthospolicycontrollerstatus_pa_v1alpha_messages'),
+                default_version=True,
+                enable_mtls=True,
+                mtls_endpoint_override=''),
+    },
+    'apigateway': {
+        'v1':
+            APIDef(
+                apitools=ApitoolsClientDef(
+                    class_path='googlecloudsdk.generated_clients.apis.apigateway.v1',
+                    client_classpath='apigateway_v1_client.ApigatewayV1',
+                    base_url='https://apigateway.googleapis.com/',
+                    messages_modulepath='apigateway_v1_messages'),
+                default_version=True,
+                enable_mtls=True,
+                mtls_endpoint_override=''),
+        'v1alpha1':
+            APIDef(
+                apitools=ApitoolsClientDef(
+                    class_path='googlecloudsdk.generated_clients.apis.apigateway.v1alpha1',
+                    client_classpath='apigateway_v1alpha1_client.ApigatewayV1alpha1',
+                    base_url='https://apigateway.googleapis.com/',
+                    messages_modulepath='apigateway_v1alpha1_messages'),
+                default_version=False,
+                enable_mtls=True,
+                mtls_endpoint_override=''),
+        'v1beta':
+            APIDef(
+                apitools=ApitoolsClientDef(
+                    class_path='googlecloudsdk.generated_clients.apis.apigateway.v1beta',
+                    client_classpath='apigateway_v1beta_client.ApigatewayV1beta',
+                    base_url='https://apigateway.googleapis.com/',
+                    messages_modulepath='apigateway_v1beta_messages'),
+                default_version=False,
+                enable_mtls=True,
+                mtls_endpoint_override=''),
+    },
+    'apigee': {
+        'v1':
+            APIDef(
+                apitools=ApitoolsClientDef(
+                    class_path='googlecloudsdk.generated_clients.apis.apigee.v1',
+                    client_classpath='apigee_v1_client.ApigeeV1',
+                    base_url='https://apigee.googleapis.com/',
+                    messages_modulepath='apigee_v1_messages'),
+                default_version=True,
+                enable_mtls=True,
+                mtls_endpoint_override=''),
+        'v2alpha':
+            APIDef(
+                apitools=ApitoolsClientDef(
+                    class_path='googlecloudsdk.generated_clients.apis.apigee.v2alpha',
+                    client_classpath='apigee_v2alpha_client.ApigeeV2alpha',
+                    base_url='https://apigee.googleapis.com/',
+                    messages_modulepath='apigee_v2alpha_messages'),
+                default_version=False,
+                enable_mtls=True,
+                mtls_endpoint_override=''),
+    },
+    'apigeeregistry': {
+        'v1':
+            APIDef(
+                apitools=ApitoolsClientDef(
+                    class_path='googlecloudsdk.generated_clients.apis.apigeeregistry.v1',
+                    client_classpath='apigeeregistry_v1_client.ApigeeregistryV1',
+                    base_url='https://apigeeregistry.googleapis.com/',
+                    messages_modulepath='apigeeregistry_v1_messages'),
+                default_version=True,
+                enable_mtls=True,
+                mtls_endpoint_override=''),
+    },
+    'apikeys': {
+        'v2':
+            APIDef(
+                apitools=ApitoolsClientDef(
+                    class_path='googlecloudsdk.generated_clients.apis.apikeys.v2',
+                    client_classpath='apikeys_v2_client.ApikeysV2',
+                    base_url='https://apikeys.googleapis.com/',
+                    messages_modulepath='apikeys_v2_messages'),
+                default_version=False,
+                enable_mtls=True,
+                mtls_endpoint_override=''),
+        'v2alpha1':
+            APIDef(
+                apitools=ApitoolsClientDef(
+                    class_path='googlecloudsdk.generated_clients.apis.apikeys.v2alpha1',
+                    client_classpath='apikeys_v2alpha1_client.ApikeysV2alpha1',
+                    base_url='https://apikeys.googleapis.com/',
+                    messages_modulepath='apikeys_v2alpha1_messages'),
+                default_version=True,
+                enable_mtls=True,
+                mtls_endpoint_override=''),
+    },
+    'appconfigmanager': {
+        'v1alpha':
+            APIDef(
+                apitools=ApitoolsClientDef(
+                    class_path='googlecloudsdk.generated_clients.apis.appconfigmanager.v1alpha',
+                    client_classpath='appconfigmanager_v1alpha_client.AppconfigmanagerV1alpha',
+                    base_url='https://appconfigmanager.googleapis.com/',
+                    messages_modulepath='appconfigmanager_v1alpha_messages'),
+                default_version=True,
+                enable_mtls=True,
+                mtls_endpoint_override=''),
+    },
+    'appengine': {
+        'v1':
+            APIDef(
+                apitools=ApitoolsClientDef(
+                    class_path='googlecloudsdk.generated_clients.apis.appengine.v1',
+                    client_classpath='appengine_v1_client.AppengineV1',
+                    base_url='https://appengine.googleapis.com/',
+                    messages_modulepath='appengine_v1_messages'),
+                default_version=True,
+                enable_mtls=True,
+                mtls_endpoint_override=''),
+        'v1alpha':
+            APIDef(
+                apitools=ApitoolsClientDef(
+                    class_path='googlecloudsdk.generated_clients.apis.appengine.v1alpha',
+                    client_classpath='appengine_v1alpha_client.AppengineV1alpha',
+                    base_url='https://appengine.googleapis.com/',
+                    messages_modulepath='appengine_v1alpha_messages'),
+                default_version=False,
+                enable_mtls=True,
+                mtls_endpoint_override=''),
+        'v1beta':
+            APIDef(
+                apitools=ApitoolsClientDef(
+                    class_path='googlecloudsdk.generated_clients.apis.appengine.v1beta',
+                    client_classpath='appengine_v1beta_client.AppengineV1beta',
+                    base_url='https://appengine.googleapis.com/',
+                    messages_modulepath='appengine_v1beta_messages'),
+                default_version=False,
+                enable_mtls=True,
+                mtls_endpoint_override=''),
+    },
+    'apphub': {
+        'v1':
+            APIDef(
+                apitools=ApitoolsClientDef(
+                    class_path='googlecloudsdk.generated_clients.apis.apphub.v1',
+                    client_classpath='apphub_v1_client.ApphubV1',
+                    base_url='https://apphub.googleapis.com/',
+                    messages_modulepath='apphub_v1_messages'),
+                default_version=True,
+                enable_mtls=True,
+                mtls_endpoint_override=''),
+        'v1alpha':
+            APIDef(
+                apitools=ApitoolsClientDef(
+                    class_path='googlecloudsdk.generated_clients.apis.apphub.v1alpha',
+                    client_classpath='apphub_v1alpha_client.ApphubV1alpha',
+                    base_url='https://apphub.googleapis.com/',
+                    messages_modulepath='apphub_v1alpha_messages'),
+                default_version=False,
+                enable_mtls=True,
+                mtls_endpoint_override=''),
+    },
+    'artifactregistry': {
+        'v1':
+            APIDef(
+                apitools=ApitoolsClientDef(
+                    class_path='googlecloudsdk.generated_clients.apis.artifactregistry.v1',
+                    client_classpath='artifactregistry_v1_client.ArtifactregistryV1',
+                    base_url='https://artifactregistry.googleapis.com/',
+                    messages_modulepath='artifactregistry_v1_messages'),
+                default_version=False,
+                enable_mtls=True,
+                mtls_endpoint_override=''),
+        'v1alpha1':
+            APIDef(
+                apitools=ApitoolsClientDef(
+                    class_path='googlecloudsdk.generated_clients.apis.artifactregistry.v1alpha1',
+                    cl

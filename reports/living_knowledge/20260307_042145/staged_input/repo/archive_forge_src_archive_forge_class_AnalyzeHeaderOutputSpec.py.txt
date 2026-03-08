@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AnalyzeHeaderOutputSpec.py
+KIND: code
+
+import os
+import glob
+from ...utils.filemanip import split_filename
+from ..base import (
+class AnalyzeHeaderOutputSpec(TraitedSpec):
+    header = File(exists=True, desc='Analyze header')

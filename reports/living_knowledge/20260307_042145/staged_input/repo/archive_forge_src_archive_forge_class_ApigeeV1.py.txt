@@ -1,0 +1,257 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_ApigeeV1.py
+KIND: code
+
+from __future__ import absolute_import
+from apitools.base.py import base_api
+from googlecloudsdk.generated_clients.apis.apigee.v1 import apigee_v1_messages as messages
+class ApigeeV1(base_api.BaseApiClient):
+    """Generated client library for service apigee version v1."""
+    MESSAGES_MODULE = messages
+    BASE_URL = 'https://apigee.googleapis.com/'
+    MTLS_BASE_URL = 'https://apigee.mtls.googleapis.com/'
+    _PACKAGE = 'apigee'
+    _SCOPES = ['https://www.googleapis.com/auth/cloud-platform']
+    _VERSION = 'v1'
+    _CLIENT_ID = 'CLIENT_ID'
+    _CLIENT_SECRET = 'CLIENT_SECRET'
+    _USER_AGENT = 'google-cloud-sdk'
+    _CLIENT_CLASS_NAME = 'ApigeeV1'
+    _URL_VERSION = 'v1'
+    _API_KEY = None
+
+    def __init__(self, url='', credentials=None, get_credentials=True, http=None, model=None, log_request=False, log_response=False, credentials_args=None, default_global_params=None, additional_http_headers=None, response_encoding=None):
+        """Create a new apigee handle."""
+        url = url or self.BASE_URL
+        super(ApigeeV1, self).__init__(url, credentials=credentials, get_credentials=get_credentials, http=http, model=model, log_request=log_request, log_response=log_response, credentials_args=credentials_args, default_global_params=default_global_params, additional_http_headers=additional_http_headers, response_encoding=response_encoding)
+        self.hybrid_issuers = self.HybridIssuersService(self)
+        self.hybrid = self.HybridService(self)
+        self.organizations_analytics_datastores = self.OrganizationsAnalyticsDatastoresService(self)
+        self.organizations_analytics = self.OrganizationsAnalyticsService(self)
+        self.organizations_apiproducts_attributes = self.OrganizationsApiproductsAttributesService(self)
+        self.organizations_apiproducts_rateplans = self.OrganizationsApiproductsRateplansService(self)
+        self.organizations_apiproducts = self.OrganizationsApiproductsService(self)
+        self.organizations_apis_deployments = self.OrganizationsApisDeploymentsService(self)
+        self.organizations_apis_keyvaluemaps_entries = self.OrganizationsApisKeyvaluemapsEntriesService(self)
+        self.organizations_apis_keyvaluemaps = self.OrganizationsApisKeyvaluemapsService(self)
+        self.organizations_apis_revisions_deployments = self.OrganizationsApisRevisionsDeploymentsService(self)
+        self.organizations_apis_revisions = self.OrganizationsApisRevisionsService(self)
+        self.organizations_apis = self.OrganizationsApisService(self)
+        self.organizations_appgroups_apps_keys_apiproducts = self.OrganizationsAppgroupsAppsKeysApiproductsService(self)
+        self.organizations_appgroups_apps_keys = self.OrganizationsAppgroupsAppsKeysService(self)
+        self.organizations_appgroups_apps = self.OrganizationsAppgroupsAppsService(self)
+        self.organizations_appgroups = self.OrganizationsAppgroupsService(self)
+        self.organizations_apps = self.OrganizationsAppsService(self)
+        self.organizations_datacollectors = self.OrganizationsDatacollectorsService(self)
+        self.organizations_deployments = self.OrganizationsDeploymentsService(self)
+        self.organizations_developers_apps_attributes = self.OrganizationsDevelopersAppsAttributesService(self)
+        self.organizations_developers_apps_keys_apiproducts = self.OrganizationsDevelopersAppsKeysApiproductsService(self)
+        self.organizations_developers_apps_keys_create = self.OrganizationsDevelopersAppsKeysCreateService(self)
+        self.organizations_developers_apps_keys = self.OrganizationsDevelopersAppsKeysService(self)
+        self.organizations_developers_apps = self.OrganizationsDevelopersAppsService(self)
+        self.organizations_developers_attributes = self.OrganizationsDevelopersAttributesService(self)
+        self.organizations_developers_balance = self.OrganizationsDevelopersBalanceService(self)
+        self.organizations_developers_subscriptions = self.OrganizationsDevelopersSubscriptionsService(self)
+        self.organizations_developers = self.OrganizationsDevelopersService(self)
+        self.organizations_endpointAttachments = self.OrganizationsEndpointAttachmentsService(self)
+        self.organizations_envgroups_attachments = self.OrganizationsEnvgroupsAttachmentsService(self)
+        self.organizations_envgroups = self.OrganizationsEnvgroupsService(self)
+        self.organizations_environments_addonsConfig = self.OrganizationsEnvironmentsAddonsConfigService(self)
+        self.organizations_environments_analytics_admin = self.OrganizationsEnvironmentsAnalyticsAdminService(self)
+        self.organizations_environments_analytics_exports = self.OrganizationsEnvironmentsAnalyticsExportsService(self)
+        self.organizations_environments_analytics = self.OrganizationsEnvironmentsAnalyticsService(self)
+        self.organizations_environments_apis_deployments = self.OrganizationsEnvironmentsApisDeploymentsService(self)
+        self.organizations_environments_apis_revisions_debugsessions_data = self.OrganizationsEnvironmentsApisRevisionsDebugsessionsDataService(self)
+        self.organizations_environments_apis_revisions_debugsessions = self.OrganizationsEnvironmentsApisRevisionsDebugsessionsService(self)
+        self.organizations_environments_apis_revisions_deployments = self.OrganizationsEnvironmentsApisRevisionsDeploymentsService(self)
+        self.organizations_environments_apis_revisions = self.OrganizationsEnvironmentsApisRevisionsService(self)
+        self.organizations_environments_apis = self.OrganizationsEnvironmentsApisService(self)
+        self.organizations_environments_archiveDeployments = self.OrganizationsEnvironmentsArchiveDeploymentsService(self)
+        self.organizations_environments_caches = self.OrganizationsEnvironmentsCachesService(self)
+        self.organizations_environments_deployments = self.OrganizationsEnvironmentsDeploymentsService(self)
+        self.organizations_environments_flowhooks = self.OrganizationsEnvironmentsFlowhooksService(self)
+        self.organizations_environments_keystores_aliases = self.OrganizationsEnvironmentsKeystoresAliasesService(self)
+        self.organizations_environments_keystores = self.OrganizationsEnvironmentsKeystoresService(self)
+        self.organizations_environments_keyvaluemaps_entries = self.OrganizationsEnvironmentsKeyvaluemapsEntriesService(self)
+        self.organizations_environments_keyvaluemaps = self.OrganizationsEnvironmentsKeyvaluemapsService(self)
+        self.organizations_environments_optimizedStats = self.OrganizationsEnvironmentsOptimizedStatsService(self)
+        self.organizations_environments_queries = self.OrganizationsEnvironmentsQueriesService(self)
+        self.organizations_environments_references = self.OrganizationsEnvironmentsReferencesService(self)
+        self.organizations_environments_resourcefiles = self.OrganizationsEnvironmentsResourcefilesService(self)
+        self.organizations_environments_securityActions = self.OrganizationsEnvironmentsSecurityActionsService(self)
+        self.organizations_environments_securityIncidents = self.OrganizationsEnvironmentsSecurityIncidentsService(self)
+        self.organizations_environments_securityReports = self.OrganizationsEnvironmentsSecurityReportsService(self)
+        self.organizations_environments_securityStats = self.OrganizationsEnvironmentsSecurityStatsService(self)
+        self.organizations_environments_sharedflows_deployments = self.OrganizationsEnvironmentsSharedflowsDeploymentsService(self)
+        self.organizations_environments_sharedflows_revisions = self.OrganizationsEnvironmentsSharedflowsRevisionsService(self)
+        self.organizations_environments_sharedflows = self.OrganizationsEnvironmentsSharedflowsService(self)
+        self.organizations_environments_stats = self.OrganizationsEnvironmentsStatsService(self)
+        self.organizations_environments_targetservers = self.OrganizationsEnvironmentsTargetserversService(self)
+        self.organizations_environments_traceConfig_overrides = self.OrganizationsEnvironmentsTraceConfigOverridesService(self)
+        self.organizations_environments_traceConfig = self.OrganizationsEnvironmentsTraceConfigService(self)
+        self.organizations_environments = self.OrganizationsEnvironmentsService(self)
+        self.organizations_hostQueries = self.OrganizationsHostQueriesService(self)
+        self.organizations_hostSecurityReports = self.OrganizationsHostSecurityReportsService(self)
+        self.organizations_hostStats = self.OrganizationsHostStatsService(self)
+        self.organizations_instances_attachments = self.OrganizationsInstancesAttachmentsService(self)
+        self.organizations_instances_canaryevaluations = self.OrganizationsInstancesCanaryevaluationsService(self)
+        self.organizations_instances_natAddresses = self.OrganizationsInstancesNatAddressesService(self)
+        self.organizations_instances = self.OrganizationsInstancesService(self)
+        self.organizations_keyvaluemaps_entries = self.OrganizationsKeyvaluemapsEntriesService(self)
+        self.organizations_keyvaluemaps = self.OrganizationsKeyvaluemapsService(self)
+        self.organizations_operations = self.OrganizationsOperationsService(self)
+        self.organizations_optimizedHostStats = self.OrganizationsOptimizedHostStatsService(self)
+        self.organizations_reports = self.OrganizationsReportsService(self)
+        self.organizations_securityAssessmentResults = self.OrganizationsSecurityAssessmentResultsService(self)
+        self.organizations_securityFeedback = self.OrganizationsSecurityFeedbackService(self)
+        self.organizations_securityProfiles_environments = self.OrganizationsSecurityProfilesEnvironmentsService(self)
+        self.organizations_securityProfiles = self.OrganizationsSecurityProfilesService(self)
+        self.organizations_securityProfilesV2 = self.OrganizationsSecurityProfilesV2Service(self)
+        self.organizations_securityincidentenvironments = self.OrganizationsSecurityincidentenvironmentsService(self)
+        self.organizations_sharedflows_deployments = self.OrganizationsSharedflowsDeploymentsService(self)
+        self.organizations_sharedflows_revisions_deployments = self.OrganizationsSharedflowsRevisionsDeploymentsService(self)
+        self.organizations_sharedflows_revisions = self.OrganizationsSharedflowsRevisionsService(self)
+        self.organizations_sharedflows = self.OrganizationsSharedflowsService(self)
+        self.organizations_sites_apicategories = self.OrganizationsSitesApicategoriesService(self)
+        self.organizations_sites_apidocs = self.OrganizationsSitesApidocsService(self)
+        self.organizations_sites = self.OrganizationsSitesService(self)
+        self.organizations = self.OrganizationsService(self)
+        self.projects = self.ProjectsService(self)
+
+    class HybridIssuersService(base_api.BaseApiService):
+        """Service class for the hybrid_issuers resource."""
+        _NAME = 'hybrid_issuers'
+
+        def __init__(self, client):
+            super(ApigeeV1.HybridIssuersService, self).__init__(client)
+            self._upload_configs = {}
+
+        def List(self, request, global_params=None):
+            """Lists hybrid services and its trusted issuers service account ids. This api is authenticated and unauthorized(allow all the users) and used by runtime authn-authz service to query control plane's issuer service account ids.
+
+      Args:
+        request: (ApigeeHybridIssuersListRequest) input message
+        global_params: (StandardQueryParameters, default: None) global arguments
+      Returns:
+        (GoogleCloudApigeeV1ListHybridIssuersResponse) The response message.
+      """
+            config = self.GetMethodConfig('List')
+            return self._RunMethod(config, request, global_params=global_params)
+        List.method_config = lambda: base_api.ApiMethodInfo(flat_path='v1/hybrid/issuers', http_method='GET', method_id='apigee.hybrid.issuers.list', ordered_params=['name'], path_params=['name'], query_params=[], relative_path='v1/{+name}', request_field='', request_type_name='ApigeeHybridIssuersListRequest', response_type_name='GoogleCloudApigeeV1ListHybridIssuersResponse', supports_download=False)
+
+    class HybridService(base_api.BaseApiService):
+        """Service class for the hybrid resource."""
+        _NAME = 'hybrid'
+
+        def __init__(self, client):
+            super(ApigeeV1.HybridService, self).__init__(client)
+            self._upload_configs = {}
+
+    class OrganizationsAnalyticsDatastoresService(base_api.BaseApiService):
+        """Service class for the organizations_analytics_datastores resource."""
+        _NAME = 'organizations_analytics_datastores'
+
+        def __init__(self, client):
+            super(ApigeeV1.OrganizationsAnalyticsDatastoresService, self).__init__(client)
+            self._upload_configs = {}
+
+        def Create(self, request, global_params=None):
+            """Create a Datastore for an org.
+
+      Args:
+        request: (ApigeeOrganizationsAnalyticsDatastoresCreateRequest) input message
+        global_params: (StandardQueryParameters, default: None) global arguments
+      Returns:
+        (GoogleCloudApigeeV1Datastore) The response message.
+      """
+            config = self.GetMethodConfig('Create')
+            return self._RunMethod(config, request, global_params=global_params)
+        Create.method_config = lambda: base_api.ApiMethodInfo(flat_path='v1/organizations/{organizationsId}/analytics/datastores', http_method='POST', method_id='apigee.organizations.analytics.datastores.create', ordered_params=['parent'], path_params=['parent'], query_params=[], relative_path='v1/{+parent}/analytics/datastores', request_field='googleCloudApigeeV1Datastore', request_type_name='ApigeeOrganizationsAnalyticsDatastoresCreateRequest', response_type_name='GoogleCloudApigeeV1Datastore', supports_download=False)
+
+        def Delete(self, request, global_params=None):
+            """Delete a Datastore from an org.
+
+      Args:
+        request: (ApigeeOrganizationsAnalyticsDatastoresDeleteRequest) input message
+        global_params: (StandardQueryParameters, default: None) global arguments
+      Returns:
+        (GoogleProtobufEmpty) The response message.
+      """
+            config = self.GetMethodConfig('Delete')
+            return self._RunMethod(config, request, global_params=global_params)
+        Delete.method_config = lambda: base_api.ApiMethodInfo(flat_path='v1/organizations/{organizationsId}/analytics/datastores/{datastoresId}', http_method='DELETE', method_id='apigee.organizations.analytics.datastores.delete', ordered_params=['name'], path_params=['name'], query_params=[], relative_path='v1/{+name}', request_field='', request_type_name='ApigeeOrganizationsAnalyticsDatastoresDeleteRequest', response_type_name='GoogleProtobufEmpty', supports_download=False)
+
+        def Get(self, request, global_params=None):
+            """Get a Datastore.
+
+      Args:
+        request: (ApigeeOrganizationsAnalyticsDatastoresGetRequest) input message
+        global_params: (StandardQueryParameters, default: None) global arguments
+      Returns:
+        (GoogleCloudApigeeV1Datastore) The response message.
+      """
+            config = self.GetMethodConfig('Get')
+            return self._RunMethod(config, request, global_params=global_params)
+        Get.method_config = lambda: base_api.ApiMethodInfo(flat_path='v1/organizations/{organizationsId}/analytics/datastores/{datastoresId}', http_method='GET', method_id='apigee.organizations.analytics.datastores.get', ordered_params=['name'], path_params=['name'], query_params=[], relative_path='v1/{+name}', request_field='', request_type_name='ApigeeOrganizationsAnalyticsDatastoresGetRequest', response_type_name='GoogleCloudApigeeV1Datastore', supports_download=False)
+
+        def List(self, request, global_params=None):
+            """List Datastores.
+
+      Args:
+        request: (ApigeeOrganizationsAnalyticsDatastoresListRequest) input message
+        global_params: (StandardQueryParameters, default: None) global arguments
+      Returns:
+        (GoogleCloudApigeeV1ListDatastoresResponse) The response message.
+      """
+            config = self.GetMethodConfig('List')
+            return self._RunMethod(config, request, global_params=global_params)
+        List.method_config = lambda: base_api.ApiMethodInfo(flat_path='v1/organizations/{organizationsId}/analytics/datastores', http_method='GET', method_id='apigee.organizations.analytics.datastores.list', ordered_params=['parent'], path_params=['parent'], query_params=['targetType'], relative_path='v1/{+parent}/analytics/datastores', request_field='', request_type_name='ApigeeOrganizationsAnalyticsDatastoresListRequest', response_type_name='GoogleCloudApigeeV1ListDatastoresResponse', supports_download=False)
+
+        def Test(self, request, global_params=None):
+            """Test if Datastore configuration is correct. This includes checking if credentials provided by customer have required permissions in target destination storage.
+
+      Args:
+        request: (ApigeeOrganizationsAnalyticsDatastoresTestRequest) input message
+        global_params: (StandardQueryParameters, default: None) global arguments
+      Returns:
+        (GoogleCloudApigeeV1TestDatastoreResponse) The response message.
+      """
+            config = self.GetMethodConfig('Test')
+            return self._RunMethod(config, request, global_params=global_params)
+        Test.method_config = lambda: base_api.ApiMethodInfo(flat_path='v1/organizations/{organizationsId}/analytics/datastores:test', http_method='POST', method_id='apigee.organizations.analytics.datastores.test', ordered_params=['parent'], path_params=['parent'], query_params=[], relative_path='v1/{+parent}/analytics/datastores:test', request_field='googleCloudApigeeV1Datastore', request_type_name='ApigeeOrganizationsAnalyticsDatastoresTestRequest', response_type_name='GoogleCloudApigeeV1TestDatastoreResponse', supports_download=False)
+
+        def Update(self, request, global_params=None):
+            """Update a Datastore.
+
+      Args:
+        request: (ApigeeOrganizationsAnalyticsDatastoresUpdateRequest) input message
+        global_params: (StandardQueryParameters, default: None) global arguments
+      Returns:
+        (GoogleCloudApigeeV1Datastore) The response message.
+      """
+            config = self.GetMethodConfig('Update')
+            return self._RunMethod(config, request, global_params=global_params)
+        Update.method_config = lambda: base_api.ApiMethodInfo(flat_path='v1/organizations/{organizationsId}/analytics/datastores/{datastoresId}', http_method='PUT', method_id='apigee.organizations.analytics.datastores.update', ordered_params=['name'], path_params=['name'], query_params=[], relative_path='v1/{+name}', request_field='googleCloudApigeeV1Datastore', request_type_name='ApigeeOrganizationsAnalyticsDatastoresUpdateRequest', response_type_name='GoogleCloudApigeeV1Datastore', supports_download=False)
+
+    class OrganizationsAnalyticsService(base_api.BaseApiService):
+        """Service class for the organizations_analytics resource."""
+        _NAME = 'organizations_analytics'
+
+        def __init__(self, client):
+            super(ApigeeV1.OrganizationsAnalyticsService, self).__init__(client)
+            self._upload_configs = {}
+
+    class OrganizationsApiproductsAttributesService(base_api.BaseApiService):
+        """Service class for the organizations_apiproducts_attributes resource."""
+        _NAME = 'organizations_apiproducts_attributes'
+
+        def __init__(self, client):
+            super(ApigeeV1.OrganizationsApiproductsAttributesService, self).__init__(client)
+            self._upload_configs = {}
+
+        def Delete(self, request, global_params=None):
+            """Deletes an API product attribute.
+
+      Args:
+        request: (ApigeeOrganizationsApiproductsAttributesDeleteRequest) input message
+        global_params: (StandardQueryParameters, default: None) global arguments
+      Retur

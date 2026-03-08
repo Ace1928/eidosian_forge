@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_observer_graph_documentation.py
+KIND: code
+
+Return true if another object is an ObserverGraph with the
+        same content. The order of children is not taken into account
+        in the comparison.

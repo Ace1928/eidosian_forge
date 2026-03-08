@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_py2traceback_documentation.py
+KIND: code
+
+import types
+Return a list of a single line -- normal case for format_exception_only

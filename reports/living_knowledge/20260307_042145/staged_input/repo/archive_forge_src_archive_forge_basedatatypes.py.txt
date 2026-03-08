@@ -1,0 +1,540 @@
+SOURCE_PATH: archive_forge/src/archive_forge/basedatatypes.py
+KIND: code
+
+import collections
+from collections import OrderedDict
+import re
+import warnings
+from contextlib import contextmanager
+from copy import deepcopy, copy
+import itertools
+from functools import reduce
+
+from _plotly_utils.utils import (
+    _natural_sort_strings,
+    _get_int_type,
+    split_multichar,
+    split_string_positions,
+    display_string_positions,
+    chomp_empty_strings,
+    find_closest_string,
+)
+from _plotly_utils.exceptions import PlotlyKeyError
+from .optional_imports import get_module
+
+from . import shapeannotation
+from . import _subplots
+
+# Create Undefined sentinel value
+#   - Setting a property to None removes any existing value
+#   - Setting a property to Undefined leaves existing value unmodified
+Undefined = object()
+
+
+def _len_dict_item(item):
+    """
+    Because a parsed dict path is a tuple containings strings or integers, to
+    know the length of the resulting string when printing we might need to
+    convert to a string before calling len on it.
+    """
+    try:
+        l = len(item)
+    except TypeError:
+        try:
+            l = len("%d" % (item,))
+        except TypeError:
+            raise ValueError(
+                "Cannot find string length of an item that is not string-like nor an integer."
+            )
+    return l
+
+
+def _str_to_dict_path_full(key_path_str):
+    """
+    Convert a key path string into a tuple of key path elements and also
+    return a tuple of indices marking the beginning of each element in the
+    string.
+
+    Parameters
+    ----------
+    key_path_str : str
+        Key path string, where nested keys are joined on '.' characters
+        and array indexes are specified using brackets
+        (e.g. 'foo.bar[1]')
+    Returns
+    -------
+    tuple[str | int]
+    tuple [int]
+    """
+    # skip all the parsing if the string is empty
+    if len(key_path_str):
+        # split string on ".[]" and filter out empty strings
+        key_path2 = split_multichar([key_path_str], list(".[]"))
+        # Split out underscore
+        # e.g. ['foo', 'bar_baz', '1'] -> ['foo', 'bar', 'baz', '1']
+        key_path3 = []
+        underscore_props = BaseFigure._valid_underscore_properties
+
+        def _make_hyphen_key(key):
+            if "_" in key[1:]:
+                # For valid properties that contain underscores (error_x)
+                # replace the underscores with hyphens to protect them
+                # from being split up
+                for under_prop, hyphen_prop in underscore_props.items():
+                    key = key.replace(under_prop, hyphen_prop)
+            return key
+
+        def _make_underscore_key(key):
+            return key.replace("-", "_")
+
+        key_path2b = list(map(_make_hyphen_key, key_path2))
+        # Here we want to split up each non-empty string in the list at
+        # underscores and recombine the strings using chomp_empty_strings so
+        # that leading, trailing and multiple _ will be preserved
+        def _split_and_chomp(s):
+            if not len(s):
+                return s
+            s_split = split_multichar([s], list("_"))
+            # handle key paths like "a_path_", "_another_path", or
+            # "yet__another_path" by joining extra "_" to the string to the right or
+            # the empty string if at the end
+            s_chomped = chomp_empty_strings(s_split, "_", reverse=True)
+            return s_chomped
+
+        # after running _split_and_chomp on key_path2b, it will be a list
+        # containing strings and lists of strings; concatenate the sublists with
+        # the list ("lift" the items out of the sublists)
+        key_path2c = list(
+            reduce(
+                lambda x, y: x + y if type(y) == type(list()) else x + [y],
+                map(_split_and_chomp, key_path2b),
+                [],
+            )
+        )
+
+        key_path2d = list(map(_make_underscore_key, key_path2c))
+        all_elem_idcs = tuple(split_string_positions(list(key_path2d)))
+        # remove empty strings, and indices pointing to them
+        key_elem_pairs = list(filter(lambda t: len(t[1]), enumerate(key_path2d)))
+        key_path3 = [x for _, x in key_elem_pairs]
+        elem_idcs = [all_elem_idcs[i] for i, _ in key_elem_pairs]
+
+        # Convert elements to ints if possible.
+        # e.g. ['foo', 'bar', '0'] -> ['foo', 'bar', 0]
+        for i in range(len(key_path3)):
+            try:
+                key_path3[i] = int(key_path3[i])
+            except ValueError as _:
+                pass
+    else:
+        key_path3 = []
+        elem_idcs = []
+
+    return (tuple(key_path3), elem_idcs)
+
+
+def _remake_path_from_tuple(props):
+    """
+    try to remake a path using the properties in props
+    """
+    if len(props) == 0:
+        return ""
+
+    def _add_square_brackets_to_number(n):
+        if type(n) == type(int()):
+            return "[%d]" % (n,)
+        return n
+
+    def _prepend_dot_if_not_number(s):
+        if not s.startswith("["):
+            return "." + s
+        return s
+
+    props_all_str = list(map(_add_square_brackets_to_number, props))
+    props_w_underscore = props_all_str[:1] + list(
+        map(_prepend_dot_if_not_number, props_all_str[1:])
+    )
+    return "".join(props_w_underscore)
+
+
+def _check_path_in_prop_tree(obj, path, error_cast=None):
+    """
+    obj:        the object in which the first property is looked up
+    path:       the path that will be split into properties to be looked up
+                path can also be a tuple. In this case, it is combined using .
+                and [] because it is impossible to reconstruct the string fully
+                in order to give a decent error message.
+    error_cast: this function walks down the property tree by looking up values
+                in objects. So this will throw exceptions that are thrown by
+                __getitem__, but in some cases we are checking the path for a
+                different reason and would prefer throwing a more relevant
+                exception (e.g., __getitem__ throws KeyError but __setitem__
+                throws ValueError for subclasses of BasePlotlyType and
+                BaseFigure). So the resulting error can be "casted" to the
+                passed in type, if not None.
+    returns
+          an Exception object or None. The caller can raise this
+          exception to see where the lookup error occurred.
+    """
+    if isinstance(path, tuple):
+        path = _remake_path_from_tuple(path)
+    prop, prop_idcs = _str_to_dict_path_full(path)
+    prev_objs = []
+    for i, p in enumerate(prop):
+        arg = ""
+        prev_objs.append(obj)
+        try:
+            obj = obj[p]
+        except (ValueError, KeyError, IndexError, TypeError) as e:
+            arg = e.args[0]
+            if issubclass(e.__class__, TypeError):
+                # If obj doesn't support subscripting, state that and show the
+                # (valid) property that gives the object that doesn't support
+                # subscripting.
+                if i > 0:
+                    validator = prev_objs[i - 1]._get_validator(prop[i - 1])
+                    arg += """
+
+Invalid value received for the '{plotly_name}' property of {parent_name}
+
+{description}""".format(
+                        parent_name=validator.parent_name,
+                        plotly_name=validator.plotly_name,
+                        description=validator.description(),
+                    )
+                # In case i is 0, the best we can do is indicate the first
+                # property in the string as having caused the error
+                disp_i = max(i - 1, 0)
+                dict_item_len = _len_dict_item(prop[disp_i])
+                # if the path has trailing underscores, the prop string will start with "_"
+                trailing_underscores = ""
+                if prop[i][0] == "_":
+                    trailing_underscores = " and path has trailing underscores"
+                # if the path has trailing underscores and the display index is
+                # one less than the prop index (see above), then we can also
+                # indicate the offending underscores
+                if (trailing_underscores != "") and (disp_i != i):
+                    dict_item_len += _len_dict_item(prop[i])
+                arg += """
+
+Property does not support subscripting%s:
+%s
+%s""" % (
+                    trailing_underscores,
+                    path,
+                    display_string_positions(
+                        prop_idcs, disp_i, length=dict_item_len, char="^"
+                    ),
+                )
+            else:
+                # State that the property for which subscripting was attempted
+                # is bad and indicate the start of the bad property.
+                arg += """
+Bad property path:
+%s
+%s""" % (
+                    path,
+                    display_string_positions(
+                        prop_idcs, i, length=_len_dict_item(prop[i]), char="^"
+                    ),
+                )
+            # Make KeyError more pretty by changing it to a PlotlyKeyError,
+            # because the Python interpreter has a special way of printing
+            # KeyError
+            if isinstance(e, KeyError):
+                e = PlotlyKeyError()
+            if error_cast is not None:
+                e = error_cast()
+            e.args = (arg,)
+            return e
+    return None
+
+
+def _combine_dicts(dicts):
+    all_args = dict()
+    for d in dicts:
+        for k in d:
+            all_args[k] = d[k]
+    return all_args
+
+
+def _indexing_combinations(dims, alls, product=False):
+    """
+    Gives indexing tuples specified by the coordinates in dims.
+    If a member of dims is 'all' then it is replaced by the corresponding member
+    in alls.
+    If product is True, then the cartesian product of all the indices is
+    returned, otherwise the zip (that means index lists of mis-matched length
+    will yield a list of tuples whose length is the length of the shortest
+    list).
+    """
+    if len(dims) == 0:
+        # this is because list(itertools.product(*[])) returns [()] which has non-zero
+        # length!
+        return []
+    if len(dims) != len(alls):
+        raise ValueError(
+            "Must have corresponding values in alls for each value of dims. Got dims=%s and alls=%s."
+            % (str(dims), str(alls))
+        )
+    r = []
+    for d, a in zip(dims, alls):
+        if d == "all":
+            d = a
+        elif not isinstance(d, list):
+            d = [d]
+        r.append(d)
+    if product:
+        return itertools.product(*r)
+    else:
+        return zip(*r)
+
+
+def _is_select_subplot_coordinates_arg(*args):
+    """Returns true if any args are lists or the string 'all'"""
+    return any((a == "all") or isinstance(a, list) for a in args)
+
+
+def _axis_spanning_shapes_docstr(shape_type):
+    docstr = ""
+    if shape_type == "hline":
+        docstr = """
+Add a horizontal line to a plot or subplot that extends infinitely in the
+x-dimension.
+
+Parameters
+----------
+y: float or int
+    A number representing the y coordinate of the horizontal line."""
+    elif shape_type == "vline":
+        docstr = """
+Add a vertical line to a plot or subplot that extends infinitely in the
+y-dimension.
+
+Parameters
+----------
+x: float or int
+    A number representing the x coordinate of the vertical line."""
+    elif shape_type == "hrect":
+        docstr = """
+Add a rectangle to a plot or subplot that extends infinitely in the
+x-dimension.
+
+Parameters
+----------
+y0: float or int
+    A number representing the y coordinate of one side of the rectangle.
+y1: float or int
+    A number representing the y coordinate of the other side of the rectangle."""
+    elif shape_type == "vrect":
+        docstr = """
+Add a rectangle to a plot or subplot that extends infinitely in the
+y-dimension.
+
+Parameters
+----------
+x0: float or int
+    A number representing the x coordinate of one side of the rectangle.
+x1: float or int
+    A number representing the x coordinate of the other side of the rectangle."""
+    docstr += """
+exclude_empty_subplots: Boolean
+    If True (default) do not place the shape on subplots that have no data
+    plotted on them.
+row: None, int or 'all'
+    Subplot row for shape indexed starting at 1. If 'all', addresses all rows in
+    the specified column(s). If both row and col are None, addresses the
+    first subplot if subplots exist, or the only plot. By default is "all".
+col: None, int or 'all'
+    Subplot column for shape indexed starting at 1. If 'all', addresses all rows in
+    the specified column(s). If both row and col are None, addresses the
+    first subplot if subplots exist, or the only plot. By default is "all".
+annotation: dict or plotly.graph_objects.layout.Annotation. If dict(),
+    it is interpreted as describing an annotation. The annotation is
+    placed relative to the shape based on annotation_position (see
+    below) unless its x or y value has been specified for the annotation
+    passed here. xref and yref are always the same as for the added
+    shape and cannot be overridden."""
+    if shape_type in ["hline", "vline"]:
+        docstr += """
+annotation_position: a string containing optionally ["top", "bottom"]
+    and ["left", "right"] specifying where the text should be anchored
+    to on the line. Example positions are "bottom left", "right top",
+    "right", "bottom". If an annotation is added but annotation_position is
+    not specified, this defaults to "top right"."""
+    elif shape_type in ["hrect", "vrect"]:
+        docstr += """
+annotation_position: a string containing optionally ["inside", "outside"], ["top", "bottom"]
+    and ["left", "right"] specifying where the text should be anchored
+    to on the rectangle. Example positions are "outside top left", "inside
+    bottom", "right", "inside left", "inside" ("outside" is not supported). If
+    an annotation is added but annotation_position is not specified this
+    defaults to "inside top right"."""
+    docstr += """
+annotation_*: any parameters to go.layout.Annotation can be passed as
+    keywords by prefixing them with "annotation_". For example, to specify the
+    annotation text "example" you can pass annotation_text="example" as a
+    keyword argument.
+**kwargs:
+    Any named function parameters that can be passed to 'add_shape',
+    except for x0, x1, y0, y1 or type."""
+    return docstr
+
+
+def _generator(i):
+    """ "cast" an iterator to a generator"""
+    for x in i:
+        yield x
+
+
+class BaseFigure(object):
+    """
+    Base class for all figure types (both widget and non-widget)
+    """
+
+    _bracket_re = re.compile(r"^(.*)\[(\d+)\]$")
+
+    _valid_underscore_properties = {
+        "error_x": "error-x",
+        "error_y": "error-y",
+        "error_z": "error-z",
+        "copy_xstyle": "copy-xstyle",
+        "copy_ystyle": "copy-ystyle",
+        "copy_zstyle": "copy-zstyle",
+        "paper_bgcolor": "paper-bgcolor",
+        "plot_bgcolor": "plot-bgcolor",
+    }
+
+    _set_trace_uid = False
+    _allow_disable_validation = True
+
+    # Constructor
+    # -----------
+    def __init__(
+        self, data=None, layout_plotly=None, frames=None, skip_invalid=False, **kwargs
+    ):
+        """
+        Construct a BaseFigure object
+
+        Parameters
+        ----------
+        data
+            One of:
+            - A list or tuple of trace objects (or dicts that can be coerced
+            into trace objects)
+
+            - If `data` is a dict that contains a 'data',
+            'layout', or 'frames' key then these values are used to
+            construct the figure.
+
+            - If `data` is a `BaseFigure` instance then the `data`, `layout`,
+            and `frames` properties are extracted from the input figure
+        layout_plotly
+            The plotly layout dict.
+
+            Note: this property is named `layout_plotly` rather than `layout`
+            to deconflict it with the `layout` constructor parameter of the
+            `widgets.DOMWidget` ipywidgets class, as the `BaseFigureWidget`
+            class is a subclass of both BaseFigure and widgets.DOMWidget.
+
+            If the `data` property is a BaseFigure instance, or a dict that
+            contains a 'layout' key, then this property is ignored.
+        frames
+            A list or tuple of `plotly.graph_objs.Frame` objects (or dicts
+            that can be coerced into Frame objects)
+
+            If the `data` property is a BaseFigure instance, or a dict that
+            contains a 'frames' key, then this property is ignored.
+
+        skip_invalid: bool
+            If True, invalid properties in the figure specification will be
+            skipped silently. If False (default) invalid properties in the
+            figure specification will result in a ValueError
+
+        Raises
+        ------
+        ValueError
+            if a property in the specification of data, layout, or frames
+            is invalid AND skip_invalid is False
+        """
+        from .validators import DataValidator, LayoutValidator, FramesValidator
+
+        super(BaseFigure, self).__init__()
+
+        # Initialize validation
+        self._validate = kwargs.pop("_validate", True)
+
+        # Assign layout_plotly to layout
+        # ------------------------------
+        # See docstring note for explanation
+        layout = layout_plotly
+
+        # Subplot properties
+        # ------------------
+        # These properties are used by the tools.make_subplots logic.
+        # We initialize them to None here, before checking if the input data
+        # object is a BaseFigure, or a dict with _grid_str and _grid_ref
+        # properties, in which case we bring over the _grid* properties of
+        # the input
+        self._grid_str = None
+        self._grid_ref = None
+
+        # Handle case where data is a Figure or Figure-like dict
+        # ------------------------------------------------------
+        if isinstance(data, BaseFigure):
+            # Bring over subplot fields
+            self._grid_str = data._grid_str
+            self._grid_ref = data._grid_ref
+
+            # Extract data, layout, and frames
+            data, layout, frames = data.data, data.layout, data.frames
+
+        elif isinstance(data, dict) and (
+            "data" in data or "layout" in data or "frames" in data
+        ):
+
+            # Bring over subplot fields
+            self._grid_str = data.get("_grid_str", None)
+            self._grid_ref = data.get("_grid_ref", None)
+
+            # Extract data, layout, and frames
+            data, layout, frames = (
+                data.get("data", None),
+                data.get("layout", None),
+                data.get("frames", None),
+            )
+
+        # Handle data (traces)
+        # --------------------
+        # ### Construct data validator ###
+        # This is the validator that handles importing sequences of trace
+        # objects
+        self._data_validator = DataValidator(set_uid=self._set_trace_uid)
+
+        # ### Import traces ###
+        data = self._data_validator.validate_coerce(
+            data, skip_invalid=skip_invalid, _validate=self._validate
+        )
+
+        # ### Save tuple of trace objects ###
+        self._data_objs = data
+
+        # ### Import clone of trace properties ###
+        # The _data property is a list of dicts containing the properties
+        # explicitly set by the user for each trace.
+        self._data = [deepcopy(trace._props) for trace in data]
+
+        # ### Create data defaults ###
+        # _data_defaults is a tuple of dicts, one for each trace. When
+        # running in a widget context, these defaults are populated with
+        # all property values chosen by the Plotly.js library that
+        # aren't explicitly specified by the user.
+        #
+        # Note: No property should exist in both the _data and
+        # _data_defaults for the same trace.
+        self._data_defaults = [{} for _ in data]
+
+        # ### Reparent trace objects ###
+        for trace_ind, trace in enumerate(data):
+            # By setting the trace's parent to be this figure, we tell the
+            # trace object

@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/cddl_documentation.py
+KIND: code
+
+from pygments.lexer import RegexLexer, bygroups, include, words
+from pygments.token import Comment, Error, Keyword, Name, Number, Operator, \
+
+    Lexer for CDDL definitions.
+
+    .. versionadded:: 2.8

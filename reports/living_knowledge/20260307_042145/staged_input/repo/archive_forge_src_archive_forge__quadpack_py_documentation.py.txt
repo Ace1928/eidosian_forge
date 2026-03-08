@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_quadpack_py_documentation.py
+KIND: code
+
+import sys
+import warnings
+from functools import partial
+from . import _quadpack
+import numpy as np
+Return stored dict.

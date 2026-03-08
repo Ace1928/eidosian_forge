@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_saferef_documentation.py
+KIND: code
+
+import operator
+import sys
+import traceback
+import weakref
+Set self.isDead to True when method or instance is destroyed.

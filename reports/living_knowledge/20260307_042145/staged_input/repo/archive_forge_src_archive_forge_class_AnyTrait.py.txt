@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AnyTrait.py
+KIND: code
+
+import unittest
+import warnings
+from traits.api import (
+from traits.testing.optional_dependencies import requires_traitsui
+class AnyTrait(HasTraits):
+    value = Any

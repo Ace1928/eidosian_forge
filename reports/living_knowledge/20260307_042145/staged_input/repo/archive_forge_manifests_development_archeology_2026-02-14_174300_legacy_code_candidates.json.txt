@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/manifests/development_archeology_2026-02-14_174300/legacy_code_candidates.json
+KIND: config
+
+version https://git-lfs.github.com/spec/v1
+oid sha256:d12aad1839810fc6cef8c271552fd62ba0f19856e0160ce6af43d16aa2d5f256
+size 25325

@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/asciidoc_documentation.py
+KIND: code
+
+from traitlets import default
+from traitlets.config import Config
+from .templateexporter import TemplateExporter
+
+    Exports to an ASCIIDoc document (.asciidoc)

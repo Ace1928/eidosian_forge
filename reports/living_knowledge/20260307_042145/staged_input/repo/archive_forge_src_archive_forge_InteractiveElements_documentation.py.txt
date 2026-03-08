@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/InteractiveElements_documentation.py
+KIND: code
+
+import tkinter as tk
+from tkinter import ttk
+from tkinter import messagebox
+
+    Creates a graphical user interface for the application.

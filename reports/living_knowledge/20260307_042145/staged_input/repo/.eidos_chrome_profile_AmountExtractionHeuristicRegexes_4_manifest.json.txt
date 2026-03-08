@@ -1,0 +1,8 @@
+SOURCE_PATH: .eidos_chrome_profile/AmountExtractionHeuristicRegexes/4/manifest.json
+KIND: config
+
+{
+  "manifest_version": 2,
+  "name": "Amount Extraction Heuristic Regexes",
+  "version": "4"
+}

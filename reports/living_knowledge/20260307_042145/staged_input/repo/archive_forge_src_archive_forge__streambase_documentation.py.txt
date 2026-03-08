@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_streambase_documentation.py
+KIND: code
+
+from abc import ABC, abstractmethod
+Base Event class abstraction for multi backends Event to herit from

@@ -1,0 +1,84 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/MK
+KIND: config
+
+MK_
+	aracinovokomuna e haraçinësmunicipality of aracinovo!општина арачиновоP
+berovokomuna e berovësmunicipality of berovoопштина беровоR
+bitolakomuna e manastiritmunicipality of bitolaопштина битолаl
+bogdancikomuna e bogdancësmunicipality of bogdanciбогданциопштина богданци\
+	bogovinjekomuna e bogovinësmunicipality of bogovinjeопштина боговињеl
+bosilovokomuna e bosilovësmunicipality of bosilovoбосиловоопштина босилово\
+brvenicakomuna e bërvenicësmunicipality of brvenicaопштина брвеницаt
+	valandovokomuna e vallandovësmunicipality of valandovoваландово!општина валандовоZ
+vasilevokomuna e vasilevësmunicipality of vasilevoопштина василевоb
+vevcanikomuna e veçanitvevčani municipalityвевчаниопштина вевчаниe
+veleskomuna e velesitkomuna velesmunicipality of veles
+велесопштина велесP
+vinicakomuna e vinicësmunicipality of vinicaопштина виницаw
+
+vrapcištekomuna e vrapçishtitmunicipality of vrapčišteврапчиште!општина врапчиштеr
+	gevgelijakomuna e gjevgjelisëmunicipality of gevgelijaгевгелиjа општина гевгелиjаl
+gostivarkomuna e gostivaritmunicipality of gostivarгостиваропштина гостиварT
+gradskokomuna e grackësmunicipality of gradskoопштина градскоi
+debarkomnua e dibrëskomuna e dibrësmunicipality of debar
+дебаропштина дебарe
+debarcakomuna e debarcësmunicipality of debarcaдебарцаопштина дебарцаg
+delcevokomuna e dellçevësmunicipality of delcevoделчевоопштина делчевоk
+demir kapijakomuna e demir kapisëmunicipality of demir kapija%општина демир капиjаh
+demir hisarkomuna e demir hisaritmunicipality of demir hisar$општина демир хисар]
+dojrankomuna e dojranitmunicipality of dojranдојранопштина доjранL
+општина долнениkomuna e dollnenitmunicipality of dolnenia
+želinokomuna e zhelinësmunicipality of želinoжелиноопштина желиноz
+
+zelenikovokomuna e zelenikovësmunicipality of zelenikovoзелениково#општина зелениковоe
+zrnovcikomuna e zërnocitmunicipality of zrnovciзрновциопштина зрновциf
+ilindenkomuna e belimbegutmunicipality of ilindenилинденопштина илинденo
+	jegunovcejегуновцеkomuna e jegunocitmunicipality of jegunovce општина jегуновце]
+	kavadarcikomuna e kavadaritmunicipality of kavadarci!општина кавадарциZ
+karbincikomuna e karbincësmunicipality of karbinciопштина карбинциQ
+kichevokičevo municipalitykomuna e kerçovësопштина кичевоM
+koncekomuna e konçësmunicipality of koncheопштина кончеe
+kocanikomuna e koçanitkočanikočani municipalityкочаниопштина кочаниU
+kratovokomuna e kratovësmunicipality of kratovoопштина кратовоs
+kriva palankakomuna e kriva pallankësmunicipality of kriva palanka(општина крива паланкаp
+krivogaštanikomuna e krivogashtanitmunicipality of krivogaštani'општина кривогаштаниX
+kruševokomuna e krushevësmunicipality of kruševoопштина крушевоl
+kumanovokomuna e kumanovësmunicipality of kumanovoкумановоопштина кумановоd
+lipkovokomuna e likovësmunicipality of lipkovoлипковоопштина липковоN
+lozovokomuna e llozovëslozovo municipalityопштина лозово�
+mavrovoirostuša#komuna e mavrovës dhe radostushës$municipality of mavrovo and rostuša/општина маврово и ростуша�
+makedonska kamenicakomuna e kamenicës#municipality of makedonska kamenicaкаменица%македонска каменица4општина македонска каменицаq
+makedonski brodkomuna e broditmunicipality of makedonski brod,општина македонски бродG
+mogilakomuna e mogillësмогилаопштина могила�
+negotinokomuna e negotinitkomuna e negotinësmunicipality of negotinoнеготиноопштина неготиноO
+novacikomuna e novacitmunicipality of novaciопштина новациq
+	novo selokomuna e novosellësmunicipality of novo seloново село општина ново селоU
+општина охридkomuna e ohritmunicipality of ohridohër
+охридZ
+petroveckomuna e petrovecitmunicipality of petrovecопштина петровецf
+pehcevokomuna e peçevësmunicipality of pehčevoопштина пехчевопехчевоi
+plasnicakomuna e plasnicësplasnica municipalityопштина пласницапласница[
+prilepkomuna e prilepitprilep municipalityопштина прилепприлепs
+
+probištipkomuna e probishtipitprobištip municipality!општина пробиштиппробиштипi
+radoviškomuna e radovishtitmunicipality of radovišопштина радовишрадовишX
+rankovcekomuna e rankocitmunicipality of rankovceопштина ранковцеX
+resenkomuna e resnjësmunicipality of resenопштина ресен
+ресенU
+rosomankomuna e rosomanitmunicipality of rosomanопштина росоман�
+sveti nikolekomuna e sveti nikollësmunicipality of sveti nikole&општина свети николесвети николеh
+sopištekomuna e sopishtësmunicipality of sopišteопштина сопиштесопиште�
+staro nagoricanekomuna e nagoriçit të vjetër!municipality of staro nagorichane.општина старо нагоричанестаро нагоричанеP
+strugakomuna e strugësmunicipality of strugaопштина стругаx
+strumicakomuna e strumicësmunicipality of strumitsa	strumicëопштина струмицаструмица�
+%општина студеничаниkomuna e studeniçanitmunicipality of studeničani
+studeniqanstudeniçaniстуденичаниf
+tearcekomuna e tearcësmunicipality of tearcetearcaопштина теарцетеарцеo
+tetovokomuna e tetovësmunicipality of tetovotetovatetovëопштина тетовотетово�
+centar župakomuna e qendrës zhupamunicipality of centar župa$општина центар жупацентар жупа\
+caškakomuna e çashkësmunicipality of čaškaопштина чашка
+чашка�
+cešinovoobleševokomuna e çeshinovoobleshevës#municipality of češinovoobleševo/општина чешиновооблешево чешиновооблешево�
+cucersandevokomuna e çuçersandevësmunicipality of čučersandevo(општина чучер сандево'општина чучерсандевоS
+štipkomuna e shtipitmunicipality of štipопштина штипштипx
+град скопjеskскgreater skopjeqyteti i shkupitrajoni i shkupitград скопјескопjе

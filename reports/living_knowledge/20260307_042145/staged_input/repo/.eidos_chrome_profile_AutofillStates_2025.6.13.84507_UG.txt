@@ -1,0 +1,8 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/UG
+KIND: config
+
+UG'
+centralcentral regionmkoa wa kati,
+easterneastern regionmkoa wa mashariki.
+northernmkoa wa kaskazininorthern region,
+westernmkoa wa magharibiwestern region

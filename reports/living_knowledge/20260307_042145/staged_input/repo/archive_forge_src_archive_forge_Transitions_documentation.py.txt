@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/Transitions_documentation.py
+KIND: code
+
+Check data structure integrity.

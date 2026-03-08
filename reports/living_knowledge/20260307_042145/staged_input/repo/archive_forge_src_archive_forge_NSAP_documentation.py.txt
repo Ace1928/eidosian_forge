@@ -1,0 +1,12 @@
+SOURCE_PATH: archive_forge/src/archive_forge/NSAP_documentation.py
+KIND: code
+
+import binascii
+import dns.exception
+import dns.rdata
+import dns.tokenizer
+NSAP record.
+
+    @ivar address: a NASP
+    @type address: string
+    @see: RFC 1706

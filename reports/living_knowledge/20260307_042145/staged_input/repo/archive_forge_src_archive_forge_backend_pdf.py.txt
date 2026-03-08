@@ -1,0 +1,630 @@
+SOURCE_PATH: archive_forge/src/archive_forge/backend_pdf.py
+KIND: code
+
+"""
+A PDF Matplotlib backend.
+
+Author: Jouni K Seppänen <jks@iki.fi> and others.
+"""
+
+import codecs
+from datetime import timezone
+from datetime import datetime
+from enum import Enum
+from functools import total_ordering
+from io import BytesIO
+import itertools
+import logging
+import math
+import os
+import string
+import struct
+import sys
+import time
+import types
+import warnings
+import zlib
+
+import numpy as np
+from PIL import Image
+
+import matplotlib as mpl
+from matplotlib import _api, _text_helpers, _type1font, cbook, dviread
+from matplotlib._pylab_helpers import Gcf
+from matplotlib.backend_bases import (
+    _Backend, FigureCanvasBase, FigureManagerBase, GraphicsContextBase,
+    RendererBase)
+from matplotlib.backends.backend_mixed import MixedModeRenderer
+from matplotlib.figure import Figure
+from matplotlib.font_manager import get_font, fontManager as _fontManager
+from matplotlib._afm import AFM
+from matplotlib.ft2font import (FIXED_WIDTH, ITALIC, LOAD_NO_SCALE,
+                                LOAD_NO_HINTING, KERNING_UNFITTED, FT2Font)
+from matplotlib.transforms import Affine2D, BboxBase
+from matplotlib.path import Path
+from matplotlib.dates import UTC
+from matplotlib import _path
+from . import _backend_pdf_ps
+
+_log = logging.getLogger(__name__)
+
+# Overview
+#
+# The low-level knowledge about pdf syntax lies mainly in the pdfRepr
+# function and the classes Reference, Name, Operator, and Stream.  The
+# PdfFile class knows about the overall structure of pdf documents.
+# It provides a "write" method for writing arbitrary strings in the
+# file, and an "output" method that passes objects through the pdfRepr
+# function before writing them in the file.  The output method is
+# called by the RendererPdf class, which contains the various draw_foo
+# methods.  RendererPdf contains a GraphicsContextPdf instance, and
+# each draw_foo calls self.check_gc before outputting commands.  This
+# method checks whether the pdf graphics state needs to be modified
+# and outputs the necessary commands.  GraphicsContextPdf represents
+# the graphics state, and its "delta" method returns the commands that
+# modify the state.
+
+# Add "pdf.use14corefonts: True" in your configuration file to use only
+# the 14 PDF core fonts. These fonts do not need to be embedded; every
+# PDF viewing application is required to have them. This results in very
+# light PDF files you can use directly in LaTeX or ConTeXt documents
+# generated with pdfTeX, without any conversion.
+
+# These fonts are: Helvetica, Helvetica-Bold, Helvetica-Oblique,
+# Helvetica-BoldOblique, Courier, Courier-Bold, Courier-Oblique,
+# Courier-BoldOblique, Times-Roman, Times-Bold, Times-Italic,
+# Times-BoldItalic, Symbol, ZapfDingbats.
+#
+# Some tricky points:
+#
+# 1. The clip path can only be widened by popping from the state
+# stack.  Thus the state must be pushed onto the stack before narrowing
+# the clip path.  This is taken care of by GraphicsContextPdf.
+#
+# 2. Sometimes it is necessary to refer to something (e.g., font,
+# image, or extended graphics state, which contains the alpha value)
+# in the page stream by a name that needs to be defined outside the
+# stream.  PdfFile provides the methods fontName, imageObject, and
+# alphaState for this purpose.  The implementations of these methods
+# should perhaps be generalized.
+
+# TODOs:
+#
+# * encoding of fonts, including mathtext fonts and Unicode support
+# * TTF support has lots of small TODOs, e.g., how do you know if a font
+#   is serif/sans-serif, or symbolic/non-symbolic?
+# * draw_quad_mesh
+
+
+def _fill(strings, linelen=75):
+    """
+    Make one string from sequence of strings, with whitespace in between.
+
+    The whitespace is chosen to form lines of at most *linelen* characters,
+    if possible.
+    """
+    currpos = 0
+    lasti = 0
+    result = []
+    for i, s in enumerate(strings):
+        length = len(s)
+        if currpos + length < linelen:
+            currpos += length + 1
+        else:
+            result.append(b' '.join(strings[lasti:i]))
+            lasti = i
+            currpos = length
+    result.append(b' '.join(strings[lasti:]))
+    return b'\n'.join(result)
+
+
+def _create_pdf_info_dict(backend, metadata):
+    """
+    Create a PDF infoDict based on user-supplied metadata.
+
+    A default ``Creator``, ``Producer``, and ``CreationDate`` are added, though
+    the user metadata may override it. The date may be the current time, or a
+    time set by the ``SOURCE_DATE_EPOCH`` environment variable.
+
+    Metadata is verified to have the correct keys and their expected types. Any
+    unknown keys/types will raise a warning.
+
+    Parameters
+    ----------
+    backend : str
+        The name of the backend to use in the Producer value.
+
+    metadata : dict[str, Union[str, datetime, Name]]
+        A dictionary of metadata supplied by the user with information
+        following the PDF specification, also defined in
+        `~.backend_pdf.PdfPages` below.
+
+        If any value is *None*, then the key will be removed. This can be used
+        to remove any pre-defined values.
+
+    Returns
+    -------
+    dict[str, Union[str, datetime, Name]]
+        A validated dictionary of metadata.
+    """
+
+    # get source date from SOURCE_DATE_EPOCH, if set
+    # See https://reproducible-builds.org/specs/source-date-epoch/
+    source_date_epoch = os.getenv("SOURCE_DATE_EPOCH")
+    if source_date_epoch:
+        source_date = datetime.fromtimestamp(int(source_date_epoch), timezone.utc)
+        source_date = source_date.replace(tzinfo=UTC)
+    else:
+        source_date = datetime.today()
+
+    info = {
+        'Creator': f'Matplotlib v{mpl.__version__}, https://matplotlib.org',
+        'Producer': f'Matplotlib {backend} backend v{mpl.__version__}',
+        'CreationDate': source_date,
+        **metadata
+    }
+    info = {k: v for (k, v) in info.items() if v is not None}
+
+    def is_string_like(x):
+        return isinstance(x, str)
+    is_string_like.text_for_warning = "an instance of str"
+
+    def is_date(x):
+        return isinstance(x, datetime)
+    is_date.text_for_warning = "an instance of datetime.datetime"
+
+    def check_trapped(x):
+        if isinstance(x, Name):
+            return x.name in (b'True', b'False', b'Unknown')
+        else:
+            return x in ('True', 'False', 'Unknown')
+    check_trapped.text_for_warning = 'one of {"True", "False", "Unknown"}'
+
+    keywords = {
+        'Title': is_string_like,
+        'Author': is_string_like,
+        'Subject': is_string_like,
+        'Keywords': is_string_like,
+        'Creator': is_string_like,
+        'Producer': is_string_like,
+        'CreationDate': is_date,
+        'ModDate': is_date,
+        'Trapped': check_trapped,
+    }
+    for k in info:
+        if k not in keywords:
+            _api.warn_external(f'Unknown infodict keyword: {k!r}. '
+                               f'Must be one of {set(keywords)!r}.')
+        elif not keywords[k](info[k]):
+            _api.warn_external(f'Bad value for infodict keyword {k}. '
+                               f'Got {info[k]!r} which is not '
+                               f'{keywords[k].text_for_warning}.')
+    if 'Trapped' in info:
+        info['Trapped'] = Name(info['Trapped'])
+
+    return info
+
+
+def _datetime_to_pdf(d):
+    """
+    Convert a datetime to a PDF string representing it.
+
+    Used for PDF and PGF.
+    """
+    r = d.strftime('D:%Y%m%d%H%M%S')
+    z = d.utcoffset()
+    if z is not None:
+        z = z.seconds
+    else:
+        if time.daylight:
+            z = time.altzone
+        else:
+            z = time.timezone
+    if z == 0:
+        r += 'Z'
+    elif z < 0:
+        r += "+%02d'%02d'" % ((-z) // 3600, (-z) % 3600)
+    else:
+        r += "-%02d'%02d'" % (z // 3600, z % 3600)
+    return r
+
+
+def _calculate_quad_point_coordinates(x, y, width, height, angle=0):
+    """
+    Calculate the coordinates of rectangle when rotated by angle around x, y
+    """
+
+    angle = math.radians(-angle)
+    sin_angle = math.sin(angle)
+    cos_angle = math.cos(angle)
+    a = x + height * sin_angle
+    b = y + height * cos_angle
+    c = x + width * cos_angle + height * sin_angle
+    d = y - width * sin_angle + height * cos_angle
+    e = x + width * cos_angle
+    f = y - width * sin_angle
+    return ((x, y), (e, f), (c, d), (a, b))
+
+
+def _get_coordinates_of_block(x, y, width, height, angle=0):
+    """
+    Get the coordinates of rotated rectangle and rectangle that covers the
+    rotated rectangle.
+    """
+
+    vertices = _calculate_quad_point_coordinates(x, y, width,
+                                                 height, angle)
+
+    # Find min and max values for rectangle
+    # adjust so that QuadPoints is inside Rect
+    # PDF docs says that QuadPoints should be ignored if any point lies
+    # outside Rect, but for Acrobat it is enough that QuadPoints is on the
+    # border of Rect.
+
+    pad = 0.00001 if angle % 90 else 0
+    min_x = min(v[0] for v in vertices) - pad
+    min_y = min(v[1] for v in vertices) - pad
+    max_x = max(v[0] for v in vertices) + pad
+    max_y = max(v[1] for v in vertices) + pad
+    return (tuple(itertools.chain.from_iterable(vertices)),
+            (min_x, min_y, max_x, max_y))
+
+
+def _get_link_annotation(gc, x, y, width, height, angle=0):
+    """
+    Create a link annotation object for embedding URLs.
+    """
+    quadpoints, rect = _get_coordinates_of_block(x, y, width, height, angle)
+    link_annotation = {
+        'Type': Name('Annot'),
+        'Subtype': Name('Link'),
+        'Rect': rect,
+        'Border': [0, 0, 0],
+        'A': {
+            'S': Name('URI'),
+            'URI': gc.get_url(),
+        },
+    }
+    if angle % 90:
+        # Add QuadPoints
+        link_annotation['QuadPoints'] = quadpoints
+    return link_annotation
+
+
+# PDF strings are supposed to be able to include any eight-bit data, except
+# that unbalanced parens and backslashes must be escaped by a backslash.
+# However, sf bug #2708559 shows that the carriage return character may get
+# read as a newline; these characters correspond to \gamma and \Omega in TeX's
+# math font encoding. Escaping them fixes the bug.
+_str_escapes = str.maketrans({
+    '\\': '\\\\', '(': '\\(', ')': '\\)', '\n': '\\n', '\r': '\\r'})
+
+
+def pdfRepr(obj):
+    """Map Python objects to PDF syntax."""
+
+    # Some objects defined later have their own pdfRepr method.
+    if hasattr(obj, 'pdfRepr'):
+        return obj.pdfRepr()
+
+    # Floats. PDF does not have exponential notation (1.0e-10) so we
+    # need to use %f with some precision.  Perhaps the precision
+    # should adapt to the magnitude of the number?
+    elif isinstance(obj, (float, np.floating)):
+        if not np.isfinite(obj):
+            raise ValueError("Can only output finite numbers in PDF")
+        r = b"%.10f" % obj
+        return r.rstrip(b'0').rstrip(b'.')
+
+    # Booleans. Needs to be tested before integers since
+    # isinstance(True, int) is true.
+    elif isinstance(obj, bool):
+        return [b'false', b'true'][obj]
+
+    # Integers are written as such.
+    elif isinstance(obj, (int, np.integer)):
+        return b"%d" % obj
+
+    # Non-ASCII Unicode strings are encoded in UTF-16BE with byte-order mark.
+    elif isinstance(obj, str):
+        return pdfRepr(obj.encode('ascii') if obj.isascii()
+                       else codecs.BOM_UTF16_BE + obj.encode('UTF-16BE'))
+
+    # Strings are written in parentheses, with backslashes and parens
+    # escaped. Actually balanced parens are allowed, but it is
+    # simpler to escape them all. TODO: cut long strings into lines;
+    # I believe there is some maximum line length in PDF.
+    # Despite the extra decode/encode, translate is faster than regex.
+    elif isinstance(obj, bytes):
+        return (
+            b'(' +
+            obj.decode('latin-1').translate(_str_escapes).encode('latin-1')
+            + b')')
+
+    # Dictionaries. The keys must be PDF names, so if we find strings
+    # there, we make Name objects from them. The values may be
+    # anything, so the caller must ensure that PDF names are
+    # represented as Name objects.
+    elif isinstance(obj, dict):
+        return _fill([
+            b"<<",
+            *[Name(k).pdfRepr() + b" " + pdfRepr(v) for k, v in obj.items()],
+            b">>",
+        ])
+
+    # Lists.
+    elif isinstance(obj, (list, tuple)):
+        return _fill([b"[", *[pdfRepr(val) for val in obj], b"]"])
+
+    # The null keyword.
+    elif obj is None:
+        return b'null'
+
+    # A date.
+    elif isinstance(obj, datetime):
+        return pdfRepr(_datetime_to_pdf(obj))
+
+    # A bounding box
+    elif isinstance(obj, BboxBase):
+        return _fill([pdfRepr(val) for val in obj.bounds])
+
+    else:
+        raise TypeError(f"Don't know a PDF representation for {type(obj)} "
+                        "objects")
+
+
+def _font_supports_glyph(fonttype, glyph):
+    """
+    Returns True if the font is able to provide codepoint *glyph* in a PDF.
+
+    For a Type 3 font, this method returns True only for single-byte
+    characters. For Type 42 fonts this method return True if the character is
+    from the Basic Multilingual Plane.
+    """
+    if fonttype == 3:
+        return glyph <= 255
+    if fonttype == 42:
+        return glyph <= 65535
+    raise NotImplementedError()
+
+
+class Reference:
+    """
+    PDF reference object.
+
+    Use PdfFile.reserveObject() to create References.
+    """
+
+    def __init__(self, id):
+        self.id = id
+
+    def __repr__(self):
+        return "<Reference %d>" % self.id
+
+    def pdfRepr(self):
+        return b"%d 0 R" % self.id
+
+    def write(self, contents, file):
+        write = file.write
+        write(b"%d 0 obj\n" % self.id)
+        write(pdfRepr(contents))
+        write(b"\nendobj\n")
+
+
+@total_ordering
+class Name:
+    """PDF name object."""
+    __slots__ = ('name',)
+    _hexify = {c: '#%02x' % c
+               for c in {*range(256)} - {*range(ord('!'), ord('~') + 1)}}
+
+    def __init__(self, name):
+        if isinstance(name, Name):
+            self.name = name.name
+        else:
+            if isinstance(name, bytes):
+                name = name.decode('ascii')
+            self.name = name.translate(self._hexify).encode('ascii')
+
+    def __repr__(self):
+        return "<Name %s>" % self.name
+
+    def __str__(self):
+        return '/' + self.name.decode('ascii')
+
+    def __eq__(self, other):
+        return isinstance(other, Name) and self.name == other.name
+
+    def __lt__(self, other):
+        return isinstance(other, Name) and self.name < other.name
+
+    def __hash__(self):
+        return hash(self.name)
+
+    def pdfRepr(self):
+        return b'/' + self.name
+
+
+class Verbatim:
+    """Store verbatim PDF command content for later inclusion in the stream."""
+    def __init__(self, x):
+        self._x = x
+
+    def pdfRepr(self):
+        return self._x
+
+
+class Op(Enum):
+    """PDF operators (not an exhaustive list)."""
+
+    close_fill_stroke = b'b'
+    fill_stroke = b'B'
+    fill = b'f'
+    closepath = b'h'
+    close_stroke = b's'
+    stroke = b'S'
+    endpath = b'n'
+    begin_text = b'BT'
+    end_text = b'ET'
+    curveto = b'c'
+    rectangle = b're'
+    lineto = b'l'
+    moveto = b'm'
+    concat_matrix = b'cm'
+    use_xobject = b'Do'
+    setgray_stroke = b'G'
+    setgray_nonstroke = b'g'
+    setrgb_stroke = b'RG'
+    setrgb_nonstroke = b'rg'
+    setcolorspace_stroke = b'CS'
+    setcolorspace_nonstroke = b'cs'
+    setcolor_stroke = b'SCN'
+    setcolor_nonstroke = b'scn'
+    setdash = b'd'
+    setlinejoin = b'j'
+    setlinecap = b'J'
+    setgstate = b'gs'
+    gsave = b'q'
+    grestore = b'Q'
+    textpos = b'Td'
+    selectfont = b'Tf'
+    textmatrix = b'Tm'
+    show = b'Tj'
+    showkern = b'TJ'
+    setlinewidth = b'w'
+    clip = b'W'
+    shading = b'sh'
+
+    def pdfRepr(self):
+        return self.value
+
+    @classmethod
+    def paint_path(cls, fill, stroke):
+        """
+        Return the PDF operator to paint a path.
+
+        Parameters
+        ----------
+        fill : bool
+            Fill the path with the fill color.
+        stroke : bool
+            Stroke the outline of the path with the line color.
+        """
+        if stroke:
+            if fill:
+                return cls.fill_stroke
+            else:
+                return cls.stroke
+        else:
+            if fill:
+                return cls.fill
+            else:
+                return cls.endpath
+
+
+class Stream:
+    """
+    PDF stream object.
+
+    This has no pdfRepr method. Instead, call begin(), then output the
+    contents of the stream by calling write(), and finally call end().
+    """
+    __slots__ = ('id', 'len', 'pdfFile', 'file', 'compressobj', 'extra', 'pos')
+
+    def __init__(self, id, len, file, extra=None, png=None):
+        """
+        Parameters
+        ----------
+        id : int
+            Object id of the stream.
+        len : Reference or None
+            An unused Reference object for the length of the stream;
+            None means to use a memory buffer so the length can be inlined.
+        file : PdfFile
+            The underlying object to write the stream to.
+        extra : dict from Name to anything, or None
+            Extra key-value pairs to include in the stream header.
+        png : dict or None
+            If the data is already png encoded, the decode parameters.
+        """
+        self.id = id            # object id
+        self.len = len          # id of length object
+        self.pdfFile = file
+        self.file = file.fh      # file to which the stream is written
+        self.compressobj = None  # compression object
+        if extra is None:
+            self.extra = dict()
+        else:
+            self.extra = extra.copy()
+        if png is not None:
+            self.extra.update({'Filter':      Name('FlateDecode'),
+                               'DecodeParms': png})
+
+        self.pdfFile.recordXref(self.id)
+        if mpl.rcParams['pdf.compression'] and not png:
+            self.compressobj = zlib.compressobj(
+                mpl.rcParams['pdf.compression'])
+        if self.len is None:
+            self.file = BytesIO()
+        else:
+            self._writeHeader()
+            self.pos = self.file.tell()
+
+    def _writeHeader(self):
+        write = self.file.write
+        write(b"%d 0 obj\n" % self.id)
+        dict = self.extra
+        dict['Length'] = self.len
+        if mpl.rcParams['pdf.compression']:
+            dict['Filter'] = Name('FlateDecode')
+
+        write(pdfRepr(dict))
+        write(b"\nstream\n")
+
+    def end(self):
+        """Finalize stream."""
+
+        self._flush()
+        if self.len is None:
+            contents = self.file.getvalue()
+            self.len = len(contents)
+            self.file = self.pdfFile.fh
+            self._writeHeader()
+            self.file.write(contents)
+            self.file.write(b"\nendstream\nendobj\n")
+        else:
+            length = self.file.tell() - self.pos
+            self.file.write(b"\nendstream\nendobj\n")
+            self.pdfFile.writeObject(self.len, length)
+
+    def write(self, data):
+        """Write some data on the stream."""
+
+        if self.compressobj is None:
+            self.file.write(data)
+        else:
+            compressed = self.compressobj.compress(data)
+            self.file.write(compressed)
+
+    def _flush(self):
+        """Flush the compression object."""
+
+        if self.compressobj is not None:
+            compressed = self.compressobj.flush()
+            self.file.write(compressed)
+            self.compressobj = None
+
+
+def _get_pdf_charprocs(font_path, glyph_ids):
+    font = get_font(font_path, hinting_factor=1)
+    conv = 1000 / font.units_per_EM  # Conversion to PS units (1/1000's).
+    procs = {}
+    for glyph_id in glyph_ids:
+        g = font.load_glyph(glyph_id, LOAD_NO_SCALE)
+        # NOTE: We should be using round(), but instead use
+        # "(x+.5).astype(int)" to keep backcompat with the old ttconv code
+        # (this is different for negative x's).
+        d1 = (np.array([g.horiAdvance, 0, *g.bbox]) * conv + .5).astype(int)
+        v, c = font.get_path()
+        v = (v * 64).astype(int)  # Back to TrueType's internal units (1/64's).
+        # B

@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_Albanian.py
+KIND: code
+
+from ...language import BaseDefaults, Language
+from .stop_words import STOP_WORDS
+class Albanian(Language):
+    lang = 'sq'
+    Defaults = AlbanianDefaults

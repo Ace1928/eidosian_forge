@@ -1,0 +1,4 @@
+SOURCE_PATH: .eidos_chrome_profile/Default/Session Storage/CURRENT
+KIND: config
+
+MANIFEST-000001

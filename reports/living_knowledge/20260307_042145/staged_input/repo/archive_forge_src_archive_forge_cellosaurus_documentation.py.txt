@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/cellosaurus_documentation.py
+KIND: code
+
+Return a readable string representation of the Record object.

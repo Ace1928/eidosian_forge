@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/arma_mle_documentation.py
+KIND: code
+
+Removed in 0.14. Use SARIMAX, ARIMA or AutoReg.
+
+    See Also
+    --------
+    statsmodels.tsa.statespace.sarimax.SARIMAX
+    statsmodels.tsa.arima.model.ARIMA
+    statsmodels.tsa.ar_model.AutoReg

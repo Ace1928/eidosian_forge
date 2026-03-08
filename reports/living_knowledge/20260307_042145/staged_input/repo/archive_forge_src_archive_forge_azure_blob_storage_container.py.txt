@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/azure_blob_storage_container.py
+KIND: code
+
+from langchain_community.document_loaders.azure_blob_storage_container import (
+    AzureBlobStorageContainerLoader,
+)
+
+__all__ = ["AzureBlobStorageContainerLoader"]

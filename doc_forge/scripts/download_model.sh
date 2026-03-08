@@ -14,4 +14,4 @@ mkdir -p doc_forge/models
 
 # Download the model
 # Using q5_k_m for balanced quality and speed
-huggingface-cli download Qwen/Qwen2.5-1.5B-Instruct-GGUF qwen2.5-1.5b-instruct-q5_k_m.gguf --local-dir ./doc_forge/models --local-dir-use-symlinks False
+huggingface-cli download Qwen/Qwen3.5-2B-Instruct-GGUF qwen3.5-2b-instruct-q5_k_m.gguf --local-dir ./doc_forge/models --local-dir-use-symlinks False

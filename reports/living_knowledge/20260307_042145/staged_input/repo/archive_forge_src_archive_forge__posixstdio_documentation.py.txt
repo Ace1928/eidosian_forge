@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_posixstdio_documentation.py
+KIND: code
+
+from zope.interface import implementer
+from twisted.internet import error, interfaces, process
+from twisted.python import failure, log
+Compatibility only, don't use. Call resumeProducing.

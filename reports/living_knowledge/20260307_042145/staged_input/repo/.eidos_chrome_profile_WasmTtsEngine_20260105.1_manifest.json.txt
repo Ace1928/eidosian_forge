@@ -1,0 +1,8 @@
+SOURCE_PATH: .eidos_chrome_profile/WasmTtsEngine/20260105.1/manifest.json
+KIND: config
+
+{
+  "manifest_version": 2,
+  "name": "WASM TTS Engine",
+  "version": "20260105.1"
+}

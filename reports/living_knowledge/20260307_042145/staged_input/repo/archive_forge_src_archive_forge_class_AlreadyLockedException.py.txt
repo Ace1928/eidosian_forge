@@ -1,0 +1,12 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AlreadyLockedException.py
+KIND: code
+
+from __future__ import print_function
+import errno
+import logging
+import os
+import time
+from oauth2client import util
+class AlreadyLockedException(Exception):
+    """Trying to lock a file that has already been locked by the LockedFile."""
+    pass

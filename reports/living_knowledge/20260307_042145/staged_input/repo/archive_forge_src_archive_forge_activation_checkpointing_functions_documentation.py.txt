@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/activation_checkpointing_functions_documentation.py
+KIND: code
+
+from functools import partial
+from torch.distributed.algorithms._checkpoint.checkpoint_wrapper import (
+from transformers.models.llama.modeling_llama import LlamaDecoderLayer
+apply activation checkpointing to model
+    returns None as model is updated directly

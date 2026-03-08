@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_tricontour_documentation.py
+KIND: code
+
+import numpy as np
+from matplotlib import _docstring
+from matplotlib.contour import ContourSet
+from matplotlib.tri._triangulation import Triangulation
+
+        Process args and kwargs.

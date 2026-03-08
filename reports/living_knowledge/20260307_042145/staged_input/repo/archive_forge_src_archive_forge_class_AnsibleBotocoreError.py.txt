@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AnsibleBotocoreError.py
+KIND: code
+
+from ansible.module_utils._text import to_native
+class AnsibleBotocoreError(AnsibleAWSError):
+    pass

@@ -1,0 +1,570 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_recompute.py
+KIND: code
+
+"""Handle re-computation of values of a function given its abstract syntax tree and function frame."""
+
+import ast
+import builtins
+import copy
+import functools
+import inspect
+import sys
+import uuid
+from typing import (
+    Any,
+    Mapping,
+    Dict,
+    List,
+    Optional,
+    Union,
+    Tuple,
+    Set,
+    Callable,
+    cast,
+    Iterable,
+    TypeVar,
+)  # pylint: disable=unused-import
+
+from _ast import If
+
+
+class Placeholder:
+    """Represent a placeholder for variables local to the lambda such as targets in generator expressions."""
+
+    def __repr__(self) -> str:
+        """Represent the placeholder as <Placeholder>."""
+        return "<Placeholder>"
+
+
+PLACEHOLDER = Placeholder()
+
+
+class FirstExceptionInAll:
+    """Represent a first exception case for which an all quantifier does not apply."""
+
+    def __init__(self, result: Any, inputs: Tuple[Tuple[str, Any]]) -> None:
+        """
+        Initialize with the given values.
+
+        :param result: value of the evaluation which was not truthy
+        :param inputs: all the target loop variables set during the iteration
+        """
+        self.result = result
+        self.inputs = inputs
+
+    def __bool__(self) -> Any:
+        """Return the result of the ELT evaluation which invalidated the ``all`` quantifier."""
+        return self.result
+
+
+ContextT = TypeVar("ContextT", bound=ast.expr_context)
+
+
+class _CollectStoredNamesVisitor(ast.NodeVisitor):
+    """Traverse the abstract syntax tree and collect all the names which are stored."""
+
+    def __init__(self) -> None:
+        self.names = []  # type: List[str]
+        self._name_set = set()  # type: Set[str]
+
+    def visit_Name(self, node: ast.Name) -> Any:  # pylint: disable=invalid-name
+        """Collect the name if it is in a store context."""
+        if isinstance(node.ctx, ast.Store) and node.id not in self._name_set:
+            self.names.append(node.id)
+            self._name_set.add(node.id)
+
+
+def _collect_stored_names(nodes: Iterable[ast.expr]) -> List[str]:
+    visitor = _CollectStoredNamesVisitor()
+    for node in nodes:
+        visitor.visit(node)
+    return visitor.names
+
+
+class _CollectNameLoadsVisitor(ast.NodeVisitor):
+    """Traverse the abstract syntax tree and collect all the name nodes in Load context."""
+
+    def __init__(self) -> None:
+        self.nodes = []  # type: List[ast.expr]
+
+    def visit_Name(self, node: ast.Name) -> Any:  # pylint: disable=invalid-name
+        """Collect the name if it is in a load context."""
+        if isinstance(node.ctx, ast.Load):
+            self.nodes.append(node)
+
+
+def _collect_name_loads(nodes: Iterable[ast.expr]) -> List[ast.expr]:
+    visitor = _CollectNameLoadsVisitor()
+    for node in nodes:
+        visitor.visit(node)
+    return visitor.nodes
+
+
+# noinspection PyTypeChecker
+def _translate_all_expression_to_a_module(
+    generator_exp: ast.GeneratorExp,
+    generated_function_name: str,
+    name_to_value: Mapping[str, Any],
+) -> ast.Module:
+    """
+    Generate the AST of the module to trace an all quantifier on an generator expression.
+
+    :param generator_exp: generator expression to be translated
+    :param generated_function_name: UUID of the tracing function to be used in the code
+    :param name_to_value:
+        mapping of all resolved values to the variable names
+        (passed as arguments to the function so that the generation can access them)
+    :return: translation to a module
+    """
+    assert generated_function_name not in name_to_value
+    assert not hasattr(builtins, generated_function_name)
+
+    # Collect all the names involved in the generation
+    relevant_names = _collect_stored_names(
+        generator.target for generator in generator_exp.generators
+    )
+
+    assert generated_function_name not in relevant_names
+
+    # Work backwards, from the most-inner block outwards
+
+    result_id = "icontract_tracing_all_result_{}".format(uuid.uuid4().hex)
+    result_assignment = ast.Assign(
+        targets=[ast.Name(id=result_id, ctx=ast.Store())], value=generator_exp.elt
+    )
+
+    exceptional_return = ast.Return(
+        ast.Tuple(
+            elts=[
+                ast.Name(id=result_id, ctx=ast.Load()),
+                ast.Tuple(
+                    elts=[
+                        ast.Tuple(
+                            elts=[
+                                ast.Constant(value=relevant_name, kind=None),
+                                ast.Name(id=relevant_name, ctx=ast.Load()),
+                            ],
+                            ctx=ast.Load(),
+                        )
+                        for relevant_name in relevant_names
+                    ],
+                    ctx=ast.Load(),
+                ),
+            ],
+            ctx=ast.Load(),
+        )
+    )
+
+    # While happy return shall not be executed, we add it here for robustness in case
+    # future refactorings forget to check for that edge case.
+    happy_return = ast.Return(
+        ast.Tuple(
+            elts=[
+                ast.Name(id=result_id, ctx=ast.Load()),
+                ast.Constant(value=None, kind=None),
+            ],
+            ctx=ast.Load(),
+        )
+    )
+
+    critical_if: If = ast.If(
+        test=ast.Name(id=result_id, ctx=ast.Load()),
+        body=[ast.Pass()],
+        orelse=[exceptional_return],
+    )
+
+    # Previous inner block to be added as body to the next outer block
+    block = None  # type: Optional[List[ast.stmt]]
+    for i, comprehension in enumerate(reversed(generator_exp.generators)):
+        if i == 0:
+            # This is the inner-most comprehension.
+            block = [result_assignment, critical_if]
+        assert block is not None
+
+        for condition in reversed(comprehension.ifs):
+            block = [ast.If(test=condition, body=block, orelse=[])]
+
+        if not comprehension.is_async:
+            block = [
+                ast.For(
+                    target=comprehension.target,
+                    iter=comprehension.iter,
+                    body=block,
+                    orelse=[],
+                )
+            ]
+        else:
+            block = [
+                ast.AsyncFor(
+                    target=comprehension.target,
+                    iter=comprehension.iter,
+                    body=block,
+                    orelse=[],
+                )
+            ]
+
+    assert block is not None
+
+    block.append(happy_return)
+
+    # Now we are ready to generate the function.
+
+    is_async = any(comprehension.is_async for comprehension in generator_exp.generators)
+
+    args = [ast.arg(arg=name, annotation=None) for name in sorted(name_to_value.keys())]
+
+    if sys.version_info < (3, 5):
+        raise NotImplementedError(
+            "Python versions below 3.5 not supported, got: {}".format(sys.version_info)
+        )
+
+    if not is_async:
+        if sys.version_info < (3, 8):
+            func_def_node = ast.FunctionDef(
+                name=generated_function_name,
+                args=ast.arguments(
+                    args=args,
+                    kwonlyargs=[],
+                    kw_defaults=[],
+                    defaults=[],
+                    vararg=None,
+                    kwarg=None,
+                ),
+                decorator_list=[],
+                body=block,
+            )  # type: Union[ast.FunctionDef, ast.AsyncFunctionDef]
+
+            module_node = ast.Module(body=[func_def_node])
+        else:
+            func_def_node = ast.FunctionDef(
+                name=generated_function_name,
+                args=ast.arguments(
+                    args=args,
+                    posonlyargs=[],
+                    kwonlyargs=[],
+                    kw_defaults=[],
+                    defaults=[],
+                    vararg=None,
+                    kwarg=None,
+                ),
+                decorator_list=[],
+                body=block,
+            )
+
+            module_node = ast.Module(body=[func_def_node], type_ignores=[])
+    else:
+        if sys.version_info < (3, 8):
+            async_func_def_node = ast.AsyncFunctionDef(
+                name=generated_function_name,
+                args=ast.arguments(
+                    args=args,
+                    kwonlyargs=[],
+                    kw_defaults=[],
+                    defaults=[],
+                    vararg=None,
+                    kwarg=None,
+                ),
+                decorator_list=[],
+                body=block,
+            )
+
+            module_node = ast.Module(body=[async_func_def_node])
+        else:
+            async_func_def_node = ast.AsyncFunctionDef(
+                name=generated_function_name,
+                args=ast.arguments(
+                    args=args,
+                    posonlyargs=[],
+                    kwonlyargs=[],
+                    kw_defaults=[],
+                    defaults=[],
+                    vararg=None,
+                    kwarg=None,
+                ),
+                decorator_list=[],
+                body=block,
+            )
+
+            module_node = ast.Module(body=[async_func_def_node], type_ignores=[])
+
+    ast.fix_missing_locations(module_node)
+
+    return module_node
+
+
+# noinspection PyTypeChecker
+class Visitor(ast.NodeVisitor):
+    """
+    Traverse the abstract syntax tree and recompute the values of each node defined by the function frame.
+
+    :ivar recomputed_values: mapping node -> value assigned to each visited node
+    :type recomputed_values: Mapping[ast.AST, Any]
+    """
+
+    # pylint: disable=invalid-name
+    # pylint: disable=missing-docstring
+
+    def __init__(self, variable_lookup: List[Mapping[str, Any]]) -> None:
+        """
+        Initialize.
+
+        :param variable_lookup: list of lookup tables to look-up the values of the variables, sorted by precedence
+        """
+        # _name_to_value maps the variable names to variable values.
+        # This is important for Load contexts as well as Store contexts in, e.g., named expressions.
+        self._name_to_value = dict()  # type: Dict[str, Any]
+
+        # Resolve precedence of variable lookups
+        for lookup in variable_lookup:
+            for name, value in lookup.items():
+                if name not in self._name_to_value:
+                    self._name_to_value[name] = value
+
+        # value assigned to each visited node
+        self.recomputed_values = dict()  # type: Dict[ast.AST, Any]
+
+    if sys.version_info < (3, 8):
+
+        def visit_Num(self, node: ast.Num) -> Union[int, float]:
+            """Recompute the value as the number at the node."""
+            result = node.n
+
+            self.recomputed_values[node] = result
+
+            assert isinstance(result, (int, float))
+            return result
+
+        def visit_Str(self, node: ast.Str) -> str:
+            """Recompute the value as the string at the node."""
+            result = node.s
+
+            self.recomputed_values[node] = result
+            return result
+
+        def visit_Bytes(self, node: ast.Bytes) -> bytes:
+            """Recompute the value as the bytes at the node."""
+            result = node.s
+
+            self.recomputed_values[node] = result
+            return node.s
+
+        def visit_NameConstant(self, node: ast.NameConstant) -> Any:
+            """Forward the node value as a result."""
+            self.recomputed_values[node] = node.value
+            return node.value
+
+    else:
+
+        def visit_Constant(self, node: ast.Constant) -> Any:
+            """Forward the node value as a result."""
+            self.recomputed_values[node] = node.value
+            return node.value
+
+    if sys.version_info >= (3, 6):
+
+        def visit_FormattedValue(
+            self, node: ast.FormattedValue
+        ) -> Union[str, Placeholder]:
+            """Format the node value."""
+            recomputed_format_spec = None  # type: Optional[Union[str, Placeholder]]
+            if node.format_spec is not None:
+                # The following assert serves only documentation purposes so that the code is easier to follow.
+                assert isinstance(node.format_spec, ast.JoinedStr)
+                recomputed_format_spec = self.visit(node.format_spec)
+                assert isinstance(recomputed_format_spec, (str, Placeholder))
+
+            recomputed_value = self.visit(node.value)
+
+            # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION"
+            if recomputed_format_spec is PLACEHOLDER or recomputed_value is PLACEHOLDER:
+                return PLACEHOLDER
+
+            fmt = ["{"]
+            # See https://docs.python.org/3/library/ast.html#ast.FormattedValue for these
+            # constants
+            if node.conversion == -1:
+                pass
+            elif node.conversion == 115:
+                fmt.append("!s")
+            elif node.conversion == 114:
+                fmt.append("!r")
+            elif node.conversion == 97:
+                fmt.append("!a")
+            else:
+                raise NotImplementedError(
+                    "Unhandled conversion of a formatted value node {!r}: {}".format(
+                        node, node.conversion
+                    )
+                )
+
+            if recomputed_format_spec is not None:
+                fmt.append(f":{recomputed_format_spec}")
+
+            fmt.append("}")
+
+            return "".join(fmt).format(recomputed_value)
+
+        def visit_JoinedStr(self, node: ast.JoinedStr) -> Union[str, Placeholder]:
+            """Visit the values and concatenate them."""
+            recomputed_values = [self.visit(value_node) for value_node in node.values]
+
+            # See "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION" above.
+            if PLACEHOLDER in recomputed_values:
+                return PLACEHOLDER
+
+            joined_str = "".join(recomputed_values)
+
+            self.recomputed_values[node] = joined_str
+            return joined_str
+
+    def visit_List(self, node: ast.List) -> Union[List[Any], Placeholder]:
+        """Visit the elements and assemble the results into a list."""
+        if isinstance(node.ctx, ast.Store):
+            raise NotImplementedError("Can not compute the value of a Store on a list")
+
+        recomputed_elts = [self.visit(node=elt) for elt in node.elts]
+
+        # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION"
+        if any(recomputed_elt is PLACEHOLDER for recomputed_elt in recomputed_elts):
+            return PLACEHOLDER
+
+        self.recomputed_values[node] = recomputed_elts
+        return recomputed_elts
+
+    def visit_Tuple(self, node: ast.Tuple) -> Union[Tuple[Any, ...], Placeholder]:
+        """Visit the elements and assemble the results into a tuple."""
+        if isinstance(node.ctx, ast.Store):
+            raise NotImplementedError("Can not compute the value of a Store on a tuple")
+
+        recomputed_elts = tuple(self.visit(node=elt) for elt in node.elts)
+        # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION"
+        if any(recomputed_elt is PLACEHOLDER for recomputed_elt in recomputed_elts):
+            return PLACEHOLDER
+
+        self.recomputed_values[node] = recomputed_elts
+        return recomputed_elts
+
+    def visit_Set(self, node: ast.Set) -> Union[Set[Any], Placeholder]:
+        """Visit the elements and assemble the results into a set."""
+        recomputed_elts = set(self.visit(node=elt) for elt in node.elts)
+        # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION"
+        if any(recomputed_elt is PLACEHOLDER for recomputed_elt in recomputed_elts):
+            return PLACEHOLDER
+
+        self.recomputed_values[node] = recomputed_elts
+        return recomputed_elts
+
+    def visit_Dict(self, node: ast.Dict) -> Union[Dict[Any, Any], Placeholder]:
+        """Visit keys and values and assemble a dictionary with the results."""
+        recomputed_dict = dict()  # type: Dict[Any, Any]
+        for key, val in zip(node.keys, node.values):
+            assert isinstance(key, ast.AST)
+            assert isinstance(val, ast.AST)
+
+            recomputed_dict[self.visit(node=key)] = self.visit(node=val)
+
+        # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION"
+        if any(
+            key is PLACEHOLDER or value is PLACEHOLDER
+            for key, value in recomputed_dict.items()
+        ):
+            return PLACEHOLDER
+
+        self.recomputed_values[node] = recomputed_dict
+        return recomputed_dict
+
+    def visit_Name(self, node: ast.Name) -> Any:
+        """Load the variable by looking it up in the variable look-up and in the built-ins."""
+        if not isinstance(node.ctx, ast.Load):
+            raise NotImplementedError(
+                "Can only compute a value of Load on a name {}, but got context: {}".format(
+                    node.id, node.ctx
+                )
+            )
+
+        result = None  # type: Optional[Any]
+
+        if node.id in self._name_to_value:
+            result = self._name_to_value[node.id]
+
+        if result is None and hasattr(builtins, node.id):
+            result = getattr(builtins, node.id)
+
+        if result is None and node.id != "None":
+            # The variable refers to a name local of the lambda (e.g., a target in the generator expression).
+            # Since we evaluate generator expressions with runtime compilation, None is returned here as a placeholder.
+            return PLACEHOLDER
+
+        self.recomputed_values[node] = result
+        return result
+
+    def visit_Expr(self, node: ast.Expr) -> Any:
+        """Visit the node's ``value``."""
+        recomputed_value = self.visit(node=node.value)
+
+        # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION"
+        if recomputed_value is PLACEHOLDER:
+            return PLACEHOLDER
+
+        self.recomputed_values[node] = recomputed_value
+        return recomputed_value
+
+    def visit_UnaryOp(self, node: ast.UnaryOp) -> Any:
+        """Visit the node operand and apply the operation on the result."""
+        recomputed_operand = self.visit(node=node.operand)
+
+        # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION"
+        if recomputed_operand is PLACEHOLDER:
+            return PLACEHOLDER
+
+        if isinstance(node.op, ast.UAdd):
+            result = +recomputed_operand
+        elif isinstance(node.op, ast.USub):
+            result = -recomputed_operand
+        elif isinstance(node.op, ast.Not):
+            result = not recomputed_operand
+        elif isinstance(node.op, ast.Invert):
+            result = ~recomputed_operand
+        else:
+            raise NotImplementedError("Unhandled op of {}: {}".format(node, node.op))
+
+        self.recomputed_values[node] = result
+        return result
+
+    def visit_BinOp(self, node: ast.BinOp) -> Any:
+        """Recursively visit the left and right operand, respectively, and apply the operation on the results."""
+        left = self.visit(node=node.left)
+        right = self.visit(node=node.right)
+
+        # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION"
+        if left is PLACEHOLDER or right is PLACEHOLDER:
+            return PLACEHOLDER
+
+        if isinstance(node.op, ast.Add):
+            result = left + right
+        elif isinstance(node.op, ast.Sub):
+            result = left - right
+        elif isinstance(node.op, ast.Mult):
+            result = left * right
+        elif isinstance(node.op, ast.Div):
+            result = left / right
+        elif isinstance(node.op, ast.FloorDiv):
+            result = left // right
+        elif isinstance(node.op, ast.Mod):
+            result = left % right
+        elif isinstance(node.op, ast.Pow):
+            result = left**right
+        elif isinstance(node.op, ast.LShift):
+            result = left << right
+        elif isinstance(node.op, ast.RShift):
+            result = left >> right
+        elif isinstance(node.op, ast.BitOr):
+            result = left | right
+        elif isinstance(node.op, ast.BitXor):
+            result = left ^ right
+        elif isinstance(node.op, ast.BitAnd):
+            result = left & right
+        elif isinstance(node.op, ast.MatMult):
+            result = left @ right
+        else:
+            raise NotImplementedError("Unhandled op of {}:

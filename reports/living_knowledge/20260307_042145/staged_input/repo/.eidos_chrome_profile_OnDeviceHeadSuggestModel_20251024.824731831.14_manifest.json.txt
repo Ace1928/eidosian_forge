@@ -1,0 +1,8 @@
+SOURCE_PATH: .eidos_chrome_profile/OnDeviceHeadSuggestModel/20251024.824731831.14/manifest.json
+KIND: config
+
+{
+  "manifest_version": 2,
+  "name": "OnDeviceHeadSuggestENGB500000",
+  "version": "20251024.824731831.14"
+}

@@ -1,0 +1,16 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/KG
+KIND: config
+
+KGI
+bishkekbishkek cityбишкек шаарыгород бишкек7
+	osh shaarosh cityгород ошош шаарыg
+batkenbatken regionбаткенбаткен областы#баткенская область`
+chüychüy regionчуйская областьчүй областычүй облусу`
+	jalalabadjalalabad regionджалалабад+джалалабадская областьx
+narynnaryn region
+нарыннарын областынарын облусу!нарынская областьI
+osh
+osh regionошош областыошская область_
+talastalas region
+таласталас областы!таласская область�
+ysykkölissykkul region)иссыккульская областьысык көл областыысык көл облусуысыккөл областы

@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/async_utils_documentation.py
+KIND: code
+
+import futurist
+Make and return a future completed with a given result.

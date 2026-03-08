@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/ClassificationModel_documentation.py
+KIND: code
+
+import numpy
+from rdkit.ML.Data import Quantize
+ Classify an example by summing over the conditional probabilities
+        The most likely class is the one with the largest probability

@@ -1,0 +1,4 @@
+SOURCE_PATH: .eidos_chrome_profile/CookieReadinessList/2024.11.26.0/cookie-readiness-list.json
+KIND: config
+
+{}

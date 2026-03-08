@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_docstring_documentation.py
+KIND: code
+
+import inspect
+from . import _api
+
+        Update ``self.params`` (which must be a dict) with the supplied args.

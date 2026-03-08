@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_structures_documentation.py
+KIND: code
+
+Vendoered from
+https://github.com/pypa/packaging/blob/main/packaging/_structures.py

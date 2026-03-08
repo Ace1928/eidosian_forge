@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/attributed_documentation.py
+KIND: code
+
+import re
+import ast
+import pyglet
+Extensible attributed text format for representing pyglet formatted
+documents.

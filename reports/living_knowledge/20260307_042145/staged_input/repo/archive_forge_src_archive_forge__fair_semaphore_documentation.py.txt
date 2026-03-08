@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_fair_semaphore_documentation.py
+KIND: code
+
+import queue
+import threading
+import time
+Release the semaphore.

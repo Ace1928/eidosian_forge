@@ -1,0 +1,15 @@
+SOURCE_PATH: archive_forge/src/archive_forge/approximations_documentation.py
+KIND: code
+
+import numpy as np
+from scipy import sparse
+from pygsp import utils
+
+    TODO short description
+
+    Parameters
+    ----------
+    A: ndarray
+
+    Returns
+    -------

@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_debugger_case_m_switch.py
+KIND: code
+
+from . import _debugger_case_m_switch_2
+print(_debugger_case_m_switch_2.ClassToBeImported)
+print('TEST SUCEEDED!')

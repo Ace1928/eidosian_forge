@@ -1,0 +1,246 @@
+SOURCE_PATH: .github/workflows/format.yml
+KIND: config
+
+name: Auto Format Code
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_changes:
+        description: Commit and push formatting changes
+        required: false
+        default: true
+        type: boolean
+      scope:
+        description: Formatting scope
+        required: false
+        default: changed
+        type: choice
+        options:
+          - changed
+          - all
+  pull_request:
+    types: [opened, synchronize]
+  push:
+    branches: [main, master, develop]
+    paths:
+      - "**/*.py"
+      - "**/*.ts"
+      - "**/*.tsx"
+      - "**/*.js"
+      - "**/*.jsx"
+      - "**/*.json"
+      - "**/*.yaml"
+      - "**/*.yml"
+      - "pyproject.toml"
+      - "ruff.toml"
+      - ".prettierrc*"
+
+env:
+  PYTHONUNBUFFERED: 1
+  FORCE_COLOR: 1
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Resolve Changed Scope
+    runs-on: ubuntu-latest
+    outputs:
+      manifest: ${{ steps.manifest.outputs.manifest }}
+      has_python: ${{ steps.manifest.outputs.has_python }}
+      has_prettier: ${{ steps.manifest.outputs.has_prettier }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - id: manifest
+        name: Build changed manifest
+        shell: bash
+        run: |
+          set -eu
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.scope }}" = "all" ]; then
+            MANIFEST="$(python scripts/ci/changed_manifest.py --all)"
+          else
+            if [ "${{ github.event_name }}" = "pull_request" ]; then
+              BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            elif [ -n "${{ github.event.before }}" ] && [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
+              BASE_SHA="${{ github.event.before }}"
+            else
+              BASE_SHA=""
+            fi
+
+            if [ -n "$BASE_SHA" ]; then
+              git diff --name-only "$BASE_SHA" "${{ github.sha }}" > changed_files.txt || true
+            else
+              git ls-files > changed_files.txt
+            fi
+            MANIFEST="$(python scripts/ci/changed_manifest.py --changed-files changed_files.txt)"
+          fi
+          {
+            echo "manifest<<EOF"
+            echo "$MANIFEST"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+          MANIFEST_JSON="$MANIFEST" python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          import os
+          payload = json.loads(os.environ["MANIFEST_JSON"])
+          print(f"has_python={str(payload.get('has_python_files', False)).lower()}")
+          print(f"has_prettier={str(payload.get('has_prettier_files', False)).lower()}")
+          PY
+
+  format-python:
+    name: Format Python
+    needs: validate
+    if: needs.validate.outputs.has_python == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install formatters
+        run: |
+          python -m pip install --upgrade pip
+          pip install black isort ruff
+
+      - name: Format changed Python files
+        shell: bash
+        env:
+          MANIFEST_JSON: ${{ needs.validate.outputs.manifest }}
+        run: |
+          set -eu
+          python - <<'PY' > python_targets.txt
+          import json
+          import os
+          payload = json.loads(os.environ["MANIFEST_JSON"])
+          for path in payload.get("python_files", []):
+              print(path)
+          PY
+          mapfile -t TARGETS < python_targets.txt
+          if [ "${#TARGETS[@]}" -eq 0 ]; then
+            echo "::notice::No Python files to format."
+            exit 0
+          fi
+          black "${TARGETS[@]}" --fast --line-length=120
+          isort "${TARGETS[@]}" --profile=black --line-length=120 --filter-files
+          if ! ruff check "${TARGETS[@]}" --fix --config=ruff.toml; then
+            echo "::warning::Ruff left non-fixable findings in changed Python files after auto-fix."
+          fi
+
+      - name: Check for changes
+        id: check_changes
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            echo "changes=true" >> "$GITHUB_OUTPUT"
+            git --no-pager diff --stat
+          else
+            echo "changes=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit changes
+        if: steps.check_changes.outputs.changes == 'true' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.commit_changes == 'true'))
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add -A
+          git commit -m "🎨 Auto-format changed Python files [skip ci]" || echo "No changes to commit"
+          git push || echo "Nothing to push"
+
+  format-typescript:
+    name: Format JS TS JSON YAML
+    needs: validate
+    if: needs.validate.outputs.has_prettier == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: game_forge/src/autoseed/package-lock.json
+
+      - name: Install Prettier
+        run: npm install -g prettier@3.4.2
+
+      - name: Format changed Prettier targets
+        shell: bash
+        env:
+          MANIFEST_JSON: ${{ needs.validate.outputs.manifest }}
+        run: |
+          set -eu
+          python - <<'PY' > prettier_targets.txt
+          import json
+          import os
+          payload = json.loads(os.environ["MANIFEST_JSON"])
+          for path in payload.get("prettier_files", []):
+              print(path)
+          PY
+          mapfile -t TARGETS < prettier_targets.txt
+          if [ "${#TARGETS[@]}" -eq 0 ]; then
+            echo "::notice::No Prettier targets to format."
+            exit 0
+          fi
+          prettier "${TARGETS[@]}" --write --ignore-unknown --log-level warn
+
+      - name: Check for changes
+        id: check_changes
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            echo "changes=true" >> "$GITHUB_OUTPUT"
+            git --no-pager diff --stat
+          else
+            echo "changes=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit changes
+        if: steps.check_changes.outputs.changes == 'true' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.commit_changes == 'true'))
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add -A
+          git commit -m "🎨 Auto-format changed JS/TS/YAML/JSON files [skip ci]" || echo "No changes to commit"
+          git push || echo "Nothing to push"
+
+  format-summary:
+    name: Format Summary
+    needs: [validate, format-python, format-typescript]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Summary
+        run: |
+          echo "### Formatting Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Job | Status |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|-----|--------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Scope resolution | ${{ needs.validate.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Python formatting | ${{ needs.format-python.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| JS/TS formatting | ${{ needs.format-typescript.result }} |" >> "$GITHUB_STEP_SUMMARY"

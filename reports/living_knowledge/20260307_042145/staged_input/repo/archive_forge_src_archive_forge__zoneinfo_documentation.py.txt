@@ -1,0 +1,12 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_zoneinfo_documentation.py
+KIND: code
+
+import bisect
+import calendar
+import collections
+import functools
+import re
+import weakref
+from datetime import datetime, timedelta, tzinfo
+from . import _common, _tzpath
+Calculates the datetime of the occurrence from the year

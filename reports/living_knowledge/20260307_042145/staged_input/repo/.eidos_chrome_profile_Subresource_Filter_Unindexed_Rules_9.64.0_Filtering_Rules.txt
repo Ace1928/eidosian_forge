@@ -1,0 +1,741 @@
+SOURCE_PATH: .eidos_chrome_profile/Subresource Filter/Unindexed Rules/9.64.0/Filtering Rules
+KIND: config
+
+�
+!��08@Rhfdjmoedkjf.asia^
+��08@R-728x90.
+��08@R
+adtdp.com^
+��08@R-728x90/
+��08@Ryomeno.xyz^
+��08@R/468x60/
+��08@Ryellowblue.io^
+g��*
+laurelberninteriors.com*
+mediaite.com08@R,ads.adthrive.com/builds/core/*/prebid.min.js
+��08@R_468_60.
+��08@Radrecover.com^
+��08@Rpemsrv.com^
+��08@Rmnaspm.com^
+ ��08@Rcolossusssp.com^
+$��08@Rtags.refinery89.com^
+,��08@Rmysmth.net/nForum/*/ADAgent_
+>��*
+worldstar.com08@Rjs.assemblyexchange.com/wana.
+��08@Rreceptivity.io^
+��08@Rindoleads.com^
+%08@Rdiscordapp.com/banners/
+(��08@Rlooker.com/api/internal/
+#��08@Rbroadstreetads.com^
+ 08@R/ads.bundle.min.js
+(��08@Rshikoku-np.co.jp/img/ad/
+!08@Rlinkbucks.com/tmpl/
+#��08@Raltitude-arena.com^
+08@Rxhmoon5.com^
+��08@Rclicktripz.com^
+��08@R-ad-manager/
+��08@R8a53b29c07.com^
+08@Rfiles.slack.com^
+�*
+bigescapegames.com*
+geotastic.net*
+cuberealm.io*
+
+brofist.io*
+
+findcat.io*
+
+lordz.io08@Rapi.adinplay.com/libs/aiptag/
+$��08@Radmitad-connect.com^
+2��08@R"cloudfront.net/js/common/invoke.js
+��08@R	/300-250.
+��08@Rinnity.com^
+��08@Radmicro.vn^
+��08@R	://adsrv.
+$��08@Rpubpowerplatform.io^
+��08@Rclickagy.com^
+#��08@Rscarabresearch.com^
+��08@Radspirit.de^
+2��08@R"www.google.*/adsense/search/ads.js
++��08@Rexperienceleague.adobe.com^
+��08@Rdianomi.com^
+��08@Rpopads.net^
+��08@Rlinkslot.ru^
+08@R	/adimage.
+R*
+independent.co.uk08@R/pub.pixels.ai/wrap-independent-no-prebid-lib.js
+��08@R
+m32.media^
+��08@Rexoclick.com^
+%��*
+	ads-i.org08@R/ads1.
+R08@RDgovernment-and-constitution.org/images/presidential-seal-300-250.gif
+��08@Rclickiocdn.com^
+��08@Rbngdin.com^
+&��08@Rsyndicatedsearch.goog^
+=��*
+akinator.mobi08@Rakinator.mobi.cdn.ezoic.net^
+, 08@Rstartrek.website/pictrs/image/
+��08@Rb46c27d3ea.com^
+��08@Rspadsync.com^
+3��08@R#popin.cc/popin_discovery/recommend?
+M*
+wunderground.com08@R+pagead2.googlesyndication.com/tag/js/gpt.js
+��08@Radsninja.ca^
+ ��08@Raff.bstatic.com^
+; 08@R-v.fwmrm.net/ad/g/1?csid=vcbs_cbsnews_desktop_�
++��08@Rgitlab.com/api/v4/projects/
+��08@R	begun.ru^
+��08@R_728_90.
+;��*
+
+filmweb.pl08@Rsmartadserver.com/genericpost
+!��08@Ravantisvideo.com^
+��08@Rcdntrf.com^
+@��*
+adtrack.yacast.fr*
+
+adtrack.ca08@R	/adtrack.
+.��08@Rd3u598arehftfk.cloudfront.net^
+*�*
+	hanime.tv08@Radtng.com/get/
+$��08@R/search/tsc.php?ses=
+S��*
+googleads.g.doubleclick.net08@R$tpc.googlesyndication.com/pagead/js/
+ ��08@Rmetricswpsh.com^
+8��08@R(sanyonews.jp/files/image/ad/okachoku.jpg
+�*
+skiresort.info*
+skiresort.de*
+skiresort.fr*
+skiresort.it*
+skiresort.nl08@R6adserver.skiresort-service.com/www/delivery/spcjs.php?
+��08@R	-500x100.
+��08@Rstat-rock.com^
+(08@R/detroitchicago/raleigh.js
+��08@R-728x90_
+$08@Reinthusan.tv/prebid.js
+"��08@Rexmarketplace.com^
+D��08@R4makeuseof.com/public/build/images/bg-advert-with-us.
+08@R	/300x250.
+��08@Rpgammedia.com^
+��08@Rmicroad.jp^
+8��08@R(infoworld.com/www/js/ads/gpt_includes.js
+08@R://xhamster.
+��08@Rdtscdn.com^
+"�*	
+dlh.net08@Rdlh.net^
+��08@Rad-tech.ru^
+4��*
+zone.msn.com08@Radnxs.com/ast/ast.js
+508@R'radiosun.fi/wp-content/uploads/*300x250
+%��08@Rbilling.roofnrack.us^
+M��*
+
+thegay.com08@R/thegay.com/assets//jwplayer-*/provider.hlsjs.js
+1��08@R!minigame.aeriagames.jp/*/ae-tpgs-
+D��*
+adplayer.pro*
+4shared.com08@Rstat-rock.com/player/
+,��08@Rendowmentoverhangutmost.com^
+4��08@R$live.lequipe.fr/thirdparty/prebid.js
+08@Radjust.com^
+L��*
+analytics.twitter.com*
+ads.twitter.com08@Rads.twitter.com^
+;��*
+netaffiliation.com08@Rmetaffiliation.com^
+F��*
+	ncsoft.jp08@R)googleadservices.com/pagead/conversion.js
+��08@Rcanstrm.com^
+1*
+pointtown.com08@Rvaluecommerce.com^
+=�*
+sudokugame.org08@Rg.doubleclick.net/pagead/ads
+��08@R
+://banner.
+��08@Raudience.io^
+��08@R/asyncspc.php
+$�08@Rhcaptcha.com/captcha/
+$��08@Rshaiwourtijogno.net^
+��08@Ripromcloud.com^
++��08@Rgpt-worldwide.com/js/gpt.js
+#��08@Rbilsyndication.com^
+B��08@R2/wp-content/uploads/useful_banner_manager_banners/
+��08@Rdeehalig.net^
+08@Rxhamster2.com^
+��08@R
+adnxs.com^
+��08@R
+sddan.com^
+��08@R	w55c.net^
+O�08@R@candidate.hr-manager.net/Advertisement/PreviewAdvertisement.aspx
+#��08@Runwelcomehurry.com^
+��08@Radverticum.net^
+F��*
+
+thegay.com08@R(thegay.com/assets/jwplayer-*/jwplayer.js
+��08@Rmmvideocdn.com^
+!��08@Rcouphaithuph.net^�
+o��*
+pirateproxy.live*
+thehiddenbay.com*
+thepiratebay.org08@R#thepiratebay.*/static/js/details.js
+D08@R6salfordonline.com/wp-content/plugins/wp_pro_ad_system/
+��08@R
+fresh8.co^
+.��08@Rd22xmn10vbouk4.cloudfront.net^
+��08@Rpurpleads.io^
+"��08@Rfriendsfrozen.com^
+��08@Ryieldmo.com^
+��08@Rvidverto.io^
+��08@R
+kargo.com^
+ ��08@R2495may2024.com^
+��08@R
+rlcdn.com^
+��08@R	rqtrk.eu^
+��08@R
+adapex.io^
+$��08@Rtrvl-px.com/trvl-px/
+' 08@Rnextcloud.com/remote.php/
+��08@R	ayads.co^
+��08@R://pt.*?psid=
+. 08@R commons.wikimedia.org/w/api.php?
+��08@Rsmac-ad.com^
+; *
+si.com08@R#vms-videos.minutemediaservices.com^
+��08@Rgroovinads.com^
+��08@Ra11ybar.com^
+'08@Rv.fwmrm.net/ad/g/*Nelonen
+#��08@Rrubiconproject.com^
+��08@R
+flashb.id^
+��08@Rbrowsiprod.com^
+��08@R	amt3.com^
+��08@Rtruoptik.com^
+��08@Rsacwumsf.com^
+,��08@Rjobs.bg/front_job_search.php
+D��*
+carmagazine.co.uk08@Rbauersecure.com/dist/js/prebid/
+"��08@Rvaluecommerce.com^
+��08@Rmoviead55.ru^
+��08@Radswizz.com^
+��08@Rtopincome.cc^
+$��08@Rimpactradius-go.com^
+"��08@Rbobapsoabauns.com^
+Q��*
+weatherbug.com08@R/web-ads.pulse.weatherbug.net/api/ads/targeting/
+��08@R
+tqlkg.com^
+%08@R/parsonsmaize/olathe.js
+��08@Rnewormedia.com^
+8��*
+research.hchs.hc.edu.tw08@R/banner.php
+08@R/adengine.js
+��08@R
+aidata.io^
+��08@Rthecoreadv.com^
+��08@Rkimberlite.io^
+��08@Rftd.agency^
+��08@Rdeepintent.com^
+C08@R5przegladpiaseczynski.pl/wp-content/uploads/*-300x250-
+?*
+extrarebates.com08@Rpepperjamnetwork.com/banners/
+%��08@Rdiscretemath.org/ads/
+G08@R9almayadeen.net/Content/VideoJS/js/videoPlayer/VideoAds.js
+ ��08@Rcasalemedia.com^
+���*
+clickondetroit.com*
+click2houston.com*
+video.timeout.com*
+clickorlando.com*
+therealdeal.com*
+dictionary.com*
+news4jax.com*
+heute.at*
+ksat.com*
+wsls.com08@Ranyclip.com^
+g*
+wunderground.com08@REpagead2.googlesyndication.com/pagead/managed/js/gpt/*/pubads_impl.js?
+�"* 
+managedhealthcareexecutive.com*
+chromatographyonline.com*
+laurelberninteriors.com*
+physicianspractice.com*
+epaper.timesgroup.com*
+adamtheautomator.com*
+medicaleconomics.com*
+games.coolgames.com*
+journaldequebec.com*
+formularywatch.com*
+blog.nicovideo.jp*
+digitaltrends.com*
+edy.rakuten.co.jp*
+wralsportsfan.com*
+blastingnews.com*
+cornwalllive.com*
+accuweather.com*
+gearpatrol.com*
+standard.co.uk*
+bloomberg.com*
+metropcs.mobi*
+bestiefy.com*
+devclass.com*
+euronews.com*
+mediaite.com*
+repretel.com*
+samsclub.com*
+weather.com*
+
+filmweb.pl*
+
+spiegel.de*
+	nycgo.com*
+
+hoyme.jp*
+
+telsu.fi*
+
+theta.tv*	
+kino.de*
+olx.pl08@Rg.doubleclick.net/tag/js/gpt.js
+08@Rcloud.mail.ru^
+��08@Rvideoroll.net^
+�08@Rpromo.com/embed/
+��08@R://banners.
+��08@Raj1907.online^
+:*
+rakuten.co.jp08@Rias.global.rakuten.com/adv/
+��08@Rust-ad.com^
+��08@Rr2b2.io^�
+��08@R.ar/ads/
+���*
+the-independent.com*
+barstoolsports.com*
+familyhandyman.com*
+gamingbible.co.uk*
+independent.co.uk*
+blastingnews.com*
+accuweather.com*
+foxbusiness.com*
+tasteofhome.com*
+sportbible.com*
+thehealthy.com*
+wellgames.com*
+inquirer.com*
+keloland.com*
+history.com*
+
+wvnstv.com*
+	radio.com*
+
+time.com*
+
+wboy.com*
+
+wkrn.com*
+
+wlns.com*	
+cnn.com*
+rd.com*
+si.com08@R"amazon-adsystem.com/aax2/apstag.js
+208@R$taipit-mebel.ru/upload/resize_cache/
+��08@Ryieldlab.net^
+"��08@Rbidder.criteo.com^
+'��08@Rwebcontentassessor.com^
+�*
+game.anymanager.io*
+sudokugame.org08@RJpagead2.googlesyndication.com/pagead/managed/js/adsense/*/slotcar_library_
+��08@Rkllastroad.com^
+��08@Rad-nex.com^
+<08@R.crystalmark.info/wp-content/uploads/*-300x250.
+��08@R	mgid.com^
+508@R'hiveworkscomics.com/frontboxes/300x250_
+��08@Riagrus.com^
+C��08@R3borneobulletin.com.bn/wp-content/banners/bblogo.jpg
+��08@R	/160x600.
+008@R"radiotimes.com/static/advertising/
+@��08@R0kabumap.com/servlets/kabumap/html/common/img/ad/
+$08@Rinfotel.ca/images/ads/
+��08@Readsrv.com^
+��08@R	/adverts/
+��08@Radthrive.com^
+ ��08@Rrealclick.co.kr^
+��08@R1rx.io^
+��08@Rexitbee.com^
+$��08@Rredintelligence.net^
+3��08@R#yaytrade.com^*/chunks/pages/advert/
+��08@R	.160x600.
+��08@Reskimi.com^
+$��08@Radxpremium.services^
+��08@Radipolo.com^
+08@Rxhamster.desi^
+��08@Rintergient.com^
+#��08@Rawin1.com/cshow.php
+3*
+
+icons8.com08@Rimage.shutterstock.com^
+��08@R_468x60.
+3��*
+	ncsoft.jp08@Rads-twitter.com/oct.js
+(��08@Rlibs.outbrain.com/video/
+��08@R	-160x600.
+08@R/prebidlink/
+B*
+
+odysee.com*
+
+pogo.com08@Rplayer.aniview.com/script/
+q��*
+
+spiegel.de08@RSamazonaws.com/prod.iqdcontroller.iqdigital/cdn_iqdspiegel/live/iqadcontroller.js.gz
+*��08@Rhighperformanceformat.com^
+' 08@Rfacebook.com/ads/profile/
+��08@Rakavita.com^
+��08@Radotone.com^
+08@Rxhwide5.com^
+���*
+xn--allestrungen-9ib.at*
+xn--allestrungen-9ib.ch*
+xn--allestrungen-9ib.de*
+downdetector.com.ar*
+downdetector.com.au*
+downdetector.com.br*
+downdetector.com.co*
+downdetector.web.tr*
+downdetector.co.nz*
+downdetector.co.uk*
+downdetector.co.za*
+allestoringen.be*
+allestoringen.nl*
+downdetector.com*
+downdetector.ae*
+downdetector.ca*
+downdetector.cl*
+downdetector.cz*
+downdetector.dk*
+downdetector.ec*
+downdetector.es*
+downdetector.fi*
+downdetector.fr*
+downdetector.gr*
+downdetector.hk*
+downdetector.hr*
+downdetector.hu*
+downdetector.id*
+downdetector.ie*
+downdetector.in*
+downdetector.it*
+downdetector.jp*
+downdetector.mx*
+downdetector.my*
+downdetector.no*
+downdetector.pe*
+downdetector.ph*
+downdetector.pk*
+downdetector.pl*
+downdetector.pt*
+downdetector.ro*
+downdetector.ru*
+downdetector.se*
+downdetector.sg*
+downdetector.sk*
+downdetector.tw08@R#googletagservices.com/tag/js/gpt.js
+F08@R8hinagiku-u.ed.jp/wp54/wp-content/themes/hinagiku/images/
+��08@Rterratraf.com^
+7��*
+mcclatchydc.com08@Rntv.io/serve/load.js
+4
+08@R&/wp-content/plugins/amazon-auto-links/
+F��*
+yuukinohana.co.jp08@R!s0.2mdn.net/ads/studio/Enabler.js
+-08@Raccuweather.com/bundles/prebid.
+��08@Rad-arrow.com^
+C*
+scrippsdigital.com08@Rscrippsdigital.com/cms/videojs/
+$��08@Rplayer.avplayer.com^
+��08@Rcams.gratis^
+#��08@Rbetteradsystem.com^
+$��08@Rcleverwebserver.com^
+��08@Radtechium.com^
+:*
+gadgets.ndtv.com08@Rapis.kostprice.com/fapi/
+��08@Rrtbsystem.com^
+%��08@Rnovel-inevitable.com^
+ ��08@Rextremereach.io^�#
+"08@Rbetterads.org/hubfs/
+��08@R33across.com^
+)*
+
+hotair.com08@Rp.d.1emn.com^
+08@Rxhtotal.com^
+��08@Rwasp-182b.com^
+��08@R
+socdm.com^
+.��08@Rjwpcdn.com/player/*/googima.js
+!��08@Rflippanttale.com^
+��08@Rcnt.my^
+J��08@R:az.hp.transer.com/content/dam/isetan_mitsukoshi/advertise/
+08@R/adsimg/
+"��08@Rchaturbate.com/in/
+08@Rsucceedscene.com^
+��08@Rbmcdn6.com^
+08@R/ad_img/
+!��08@Rvemtoutcheeg.com^
+ ��08@Rasg.sdtraff.com^
+608@R(nihasi.ru/upload/resize_cache/*/300_250_
+��08@Rhdbkome.com^
+��08@R84302764.xyz^
+&��08@Rtopcreativeformat.com^
+��08@R/728_90.
+V��*
+videos.john-livingston.fr08@R)lostpod.space/static/streaming-playlists/
+008@R"suntory.co.jp/beer/kinmugi/img/ad/
+C��08@R3mistore.jp/content/dam/isetan_mitsukoshi/advertise/
+��08@R
+xoalt.com^
+9��*
+novelgame.jp*
+	weblio.jp08@R/img/ad/
+��08@Rbttrack.com^
+��08@Rsnigelweb.com^
+��08@R
+bliink.io^
+��08@Rxlirdr.com^
+0�*
+crunchyroll.com08@Rstatic.vrv.co^
+��08@Rsppopups.com^
+��08@Rownlocal.com^
+.��08@Radfurikun.jp/adfurikun/images/
+E *
+imasdk.googleapis.com08@Rd.socdm.com/adsv/*/tver_splive
+��08@Rautoads.asia^
+ ��08@Rads-twitter.com^
+08@Rxhspot.com^
+��08@Rbannerboo.com^
+08@R/didna_config.js
+$��08@Rti.tradetracker.net^
+��08@R4wnetwork.com^
+C��*
+animallabo.hange.jp08@Rsite-banner.hange.jp/adshow?
+��08@Rlduhtrp.net^
+���* 
+ads.atmosphere.copernicus.eu*
+ads.realizeperformance.com*
+ads.elevateplatform.co.uk*
+ads.mercadolivre.com.br*
+ads.colombiaonline.com*
+ads.viksaffiliates.com*
+ads.siriusxmmedia.com*
+ads.socialtheater.com*
+ads.buscaempresas.co*
+ads.business.bell.ca*
+ads.adstream.com.ro*
+ads.ferrarichat.com*
+ads.mojagazetka.com*
+ads.studyplus.co.jp*
+ads.8designers.com*
+ads.bestprints.biz*
+ads.scotiabank.com*
+ads.wildberries.ru*
+ads.cafebazaar.ir*
+ads.instacart.com*
+ads.microsoft.com*
+ads.midwayusa.com*
+ads.mobilebet.com*
+ads.pinterest.com*
+ads.shopee.com.br*
+ads.shopee.com.mx*
+ads.shopee.com.my*
+ads.smartnews.com*
+ads.us.tiktok.com*
+ads.bikepump.com*
+ads.doordash.com*
+ads.jiosaavn.com*
+ads.listonic.com*
+ads.rohlik.group*
+ads.safi-gmbh.ch*
+ads.shopee.co.th*
+ads.snapchat.com*
+ads.dosocial.ge*
+ads.dosocial.me*
+ads.flytant.com*
+ads.harvard.edu*
+ads.kaipoke.biz*
+ads.luarmor.net*
+ads.msstate.edu*
+ads.spotify.com*
+ads.taboola.com*
+ads.twitter.com*
+ads.allegro.pl*
+ads.comeon.com*
+ads.google.com*
+ads.gurkerl.at*
+ads.magalu.com*
+ads.misskey.io*
+ads.nipr.ac.jp*
+ads.selfip.com*
+ads.tiktok.com*
+ads.typepad.jp*
+ads.apple.com*
+ads.brave.com*
+ads.chewy.com*
+ads.google.cn*
+ads.knuspr.de*
+ads.rohlik.cz*
+ads.shopee.cn*
+ads.shopee.kr*
+ads.shopee.ph*
+ads.shopee.pl*
+ads.shopee.sg*
+ads.shopee.tw*
+ads.shopee.vn*
+ads.watson.ch*
+reempresa.org*
+ads.gree.net*
+ads.kifli.hu*
+ads.mgid.com*
+ads.remix.es*
+ads.route.cc*
+ads.tuver.ru*
+ads.axon.ai*
+ads.cvut.cz*
+ads.finance*
+
+ads.amazon*
+
+ads.mst.dk*
+
+ads.olx.pl*
+
+ads.vk.com*
+
+ads.yandex*
+	ads.ac.uk*
+	ads.vk.ru*
+	ads.x.com*
+ads.band*
+ads.fund*
+
+ads.am*
+
+ads.mt*
+
+ads.nc08@R://ads.
+08@R/concert_ads-
+#��08@Radlooxtracking.com^
+5��*
+bannersnack.dev08@Rbannersnack.com^
+��08@Rpoflix.com^
+c*
+metacritic.com*
+giantbomb.com*
+gamespot.com08@R"at.adtech.redventures.io/lib/dist/
+��08@R	tanx.com^
+��08@Rsperaspace.com^
+,��*
+toggo.de08@Rsmartclip.net^
+0��08@R securenetsystems.net/v5/scripts/
+ ��08@Rcreativecdn.com^
+��08@R_468x60_
+��08@Rkueezrtb.com^
+��08@R	-160x600_
+��08@Ronclckbnr.com^
+/*
+thepiratebay.org08@Rjsdelivr.net^
+@��*
+gemini.yahoo.com08@Rgemini.yahoo.com/advertiser/
+#��08@Rdeclareddetect.com^
+.��08@Rd32hwlnfiv2gyn.cloudfront.net^�
+��08@Rcinarra.com^
+- *
+
+go.cnn.com08@Rprebid.adnxs.com^
+(*
+poa.st08@Rpoastcdn.org/ad/
+��08@Rid5-sync.com^
+208@R$somewheresouth.net/banner/banner.php
+'��08@Rrunative-syndicate.com^
+��08@Rmookie1.com^
+308@R%luminalearning.com/affiliate-content/
+��08@R
+loopme.me^
+��08@R
+adingo.jp^
+!��08@Rtribalfusion.com^
+��08@Rdecide.dev^
+��08@Ronclckmn.com^
+8*
+bestiefy.com08@Rthisiswaldo.com/static/js/
+"��08@Rtaboola.com/vpaid/
+��08@Ripromote.com^
++��08@Rgoogle.com/recaptcha/api.js
+���* 
+managedhealthcareexecutive.com*
+chromatographyonline.com*
+physicianspractice.com*
+epaper.timesgroup.com*
+medicaleconomics.com*
+games.coolgames.com*
+formularywatch.com*
+game.anymanager.io*
+nationalreview.com*
+digitaltrends.com*
+edy.rakuten.co.jp*
+nationalworld.com*
+blastingnews.com*
+cornwalllive.com*
+downdetector.com*
+accuweather.com*
+bloomberg.com*
+chelseafc.com*
+nbcsports.com*
+mediaite.com*
+scotsman.com*
+weather.com*
+	nycgo.com*
+
+telsu.fi*
+
+voici.fr08@R"g.doubleclick.net/gpt/pubads_impl_
+��08@Rtrmzum.com^
+ ��08@Rspringserve.com^
+N��*"
+ viewscreen.githubusercontent.com08@Rraw.githubusercontent.com^
+D*
+support.google.com08@R gstatic.com/ads/external/images/
+_��*
+news.yahoo.co.jp08@R;yimg.jp/images/news-web/all/images/jsonld_image_300x250.png
+ ��08@Rdirectadvert.ru^
+D*
+rule34hentai.net*
+
+imgbox.com08@Rajax.googleapis.com^
+c *
+imasdk.googleapis.com08@R<search.spotxchange.com/vmap/*&content_page_url=www.bsfuji.tv
+1��*	
+pch.com08@Roptimatic.com/shell.js
+��08@R	zog.link^
+$��08@Ritv.com/itv/tserver/
+��08@Rdefybrick.com^
+��08@R
+adgrx.com^
+��08@Rundertone.com^
+��08@Rdtssrv.com^
+%��08@Rcpmstar.com/view.aspx
+��08@R92540760ee.com^
+.08@R yandexcdn.com/ad/api/popunder.js
+��08@Radroll.com^
+208@R$/plugins/ad-invalid-click-protector/
+��08@Rafp.ai^
+>*
+
+wral.com08@R$blueconic.net/capitolbroadcasting.js
+08@Rasahi.com/ads/
+��08@Rsmadex.com^
+D��08@R4basinnow.com/admin/upload/settings/advertise-img.jpg
+ 08@Rvidazoo.com/basev/
+08@Rrunescape.wiki^
+��08@Rmonu.delivery^
+��08@Rdtsco

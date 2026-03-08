@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_ANON_S.py
+KIND: code
+
+import unittest
+import test.support
+from ctypes import *
+class ANON_S(Structure):
+    _fields_ = [('a', c_int)]

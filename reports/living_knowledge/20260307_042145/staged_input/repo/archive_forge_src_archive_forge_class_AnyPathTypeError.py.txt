@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AnyPathTypeError.py
+KIND: code
+
+class AnyPathTypeError(CloudPathException, TypeError):
+    pass

@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/GameGUI_Loop_Implementation.py
+KIND: code
+
+from GameGUI import GameGUI
+
+game = GameGUI()
+
+while game.running:
+    game.curr_menu.display_menu()
+    game.game_loop()

@@ -1,0 +1,13 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/CR
+KIND: config
+
+CR4
+alajuelaalajuela provinceprovincia de alajuela1
+cartagocartago provinceprovincia de cartago:
+
+guanacasteguanacaste provinceprovincia de guanacaste1
+herediaheredia provinceprovincia de heredia5
+limonlimónlimón provinceprovincia de limón:
+provincia de puntarenas
+puntarenaspuntarenas province7
+provincia de san josé	san josésan josé province

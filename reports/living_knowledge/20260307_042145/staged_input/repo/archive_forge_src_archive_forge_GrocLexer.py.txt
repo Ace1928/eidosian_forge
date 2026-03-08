@@ -1,0 +1,919 @@
+SOURCE_PATH: archive_forge/src/archive_forge/GrocLexer.py
+KIND: code
+
+# Copyright 2016 Google LLC. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import sys
+from antlr3 import *
+from antlr3.compat import set, frozenset
+
+
+# for convenience in actions
+HIDDEN = BaseRecognizer.HIDDEN
+
+# token types
+MONTH=27
+THURSDAY=23
+FOURTH_OR_FIFTH=16
+THIRD=13
+DECEMBER=39
+FROM=41
+EVERY=6
+WEDNESDAY=22
+QUARTER=40
+SATURDAY=25
+SYNCHRONIZED=9
+JANUARY=28
+SUNDAY=26
+TUESDAY=21
+SEPTEMBER=36
+UNKNOWN_TOKEN=45
+AUGUST=35
+JULY=34
+MAY=32
+FRIDAY=24
+DIGITS=8
+FEBRUARY=29
+TWO_DIGIT_HOUR_TIME=43
+OF=4
+WS=44
+EOF=-1
+APRIL=31
+COMMA=10
+JUNE=33
+OCTOBER=37
+TIME=5
+FIFTH=15
+NOVEMBER=38
+FIRST=11
+DIGIT=7
+FOURTH=14
+MONDAY=20
+HOURS=17
+MARCH=30
+SECOND=12
+MINUTES=18
+TO=42
+DAY=19
+
+
+class GrocLexer(Lexer):
+
+    grammarFileName = "borg/borgcron/py/Groc.g"
+    antlr_version = version_str_to_tuple("3.1.1")
+    antlr_version_str = "3.1.1"
+
+    def __init__(self, input=None, state=None):
+        if state is None:
+            state = RecognizerSharedState()
+        Lexer.__init__(self, input, state)
+
+        self.dfa26 = self.DFA26(
+            self, 26,
+            eot = self.DFA26_eot,
+            eof = self.DFA26_eof,
+            min = self.DFA26_min,
+            max = self.DFA26_max,
+            accept = self.DFA26_accept,
+            special = self.DFA26_special,
+            transition = self.DFA26_transition
+            )
+
+
+
+
+
+
+    # $ANTLR start "TIME"
+    def mTIME(self, ):
+
+        try:
+            _type = TIME
+            _channel = DEFAULT_CHANNEL
+
+            # borg/borgcron/py/Groc.g:228:11: ( ( DIGIT ':' '0' .. '5' DIGIT ) )
+            # borg/borgcron/py/Groc.g:228:13: ( DIGIT ':' '0' .. '5' DIGIT )
+            pass 
+            # borg/borgcron/py/Groc.g:228:13: ( DIGIT ':' '0' .. '5' DIGIT )
+            # borg/borgcron/py/Groc.g:228:15: DIGIT ':' '0' .. '5' DIGIT
+            pass 
+            self.mDIGIT()
+            self.match(58)
+            self.matchRange(48, 53)
+            self.mDIGIT()
+
+
+
+
+
+
+            self._state.type = _type
+            self._state.channel = _channel
+
+        finally:
+
+            pass
+
+    # $ANTLR end "TIME"
+
+
+
+    # $ANTLR start "TWO_DIGIT_HOUR_TIME"
+    def mTWO_DIGIT_HOUR_TIME(self, ):
+
+        try:
+            _type = TWO_DIGIT_HOUR_TIME
+            _channel = DEFAULT_CHANNEL
+
+            # borg/borgcron/py/Groc.g:230:11: ( ( ( ( '0' DIGIT ) | ( '1' DIGIT ) | ( '2' '0' .. '3' ) ) ':' ( '0' .. '5' DIGIT ) ) )
+            # borg/borgcron/py/Groc.g:230:13: ( ( ( '0' DIGIT ) | ( '1' DIGIT ) | ( '2' '0' .. '3' ) ) ':' ( '0' .. '5' DIGIT ) )
+            pass 
+            # borg/borgcron/py/Groc.g:230:13: ( ( ( '0' DIGIT ) | ( '1' DIGIT ) | ( '2' '0' .. '3' ) ) ':' ( '0' .. '5' DIGIT ) )
+            # borg/borgcron/py/Groc.g:230:15: ( ( '0' DIGIT ) | ( '1' DIGIT ) | ( '2' '0' .. '3' ) ) ':' ( '0' .. '5' DIGIT )
+            pass 
+            # borg/borgcron/py/Groc.g:230:15: ( ( '0' DIGIT ) | ( '1' DIGIT ) | ( '2' '0' .. '3' ) )
+            alt1 = 3
+            LA1 = self.input.LA(1)
+            if LA1 == 48:
+                alt1 = 1
+            elif LA1 == 49:
+                alt1 = 2
+            elif LA1 == 50:
+                alt1 = 3
+            else:
+                if self._state.backtracking > 0:
+                    raise BacktrackingFailed
+
+                nvae = NoViableAltException("", 1, 0, self.input)
+
+                raise nvae
+
+            if alt1 == 1:
+                # borg/borgcron/py/Groc.g:230:17: ( '0' DIGIT )
+                pass 
+                # borg/borgcron/py/Groc.g:230:17: ( '0' DIGIT )
+                # borg/borgcron/py/Groc.g:230:19: '0' DIGIT
+                pass 
+                self.match(48)
+                self.mDIGIT()
+
+
+
+
+
+            elif alt1 == 2:
+                # borg/borgcron/py/Groc.g:230:33: ( '1' DIGIT )
+                pass 
+                # borg/borgcron/py/Groc.g:230:33: ( '1' DIGIT )
+                # borg/borgcron/py/Groc.g:230:34: '1' DIGIT
+                pass 
+                self.match(49)
+                self.mDIGIT()
+
+
+
+
+
+            elif alt1 == 3:
+                # borg/borgcron/py/Groc.g:230:47: ( '2' '0' .. '3' )
+                pass 
+                # borg/borgcron/py/Groc.g:230:47: ( '2' '0' .. '3' )
+                # borg/borgcron/py/Groc.g:230:48: '2' '0' .. '3'
+                pass 
+                self.match(50)
+                self.matchRange(48, 51)
+
+
+
+
+
+
+            self.match(58)
+            # borg/borgcron/py/Groc.g:232:15: ( '0' .. '5' DIGIT )
+            # borg/borgcron/py/Groc.g:232:17: '0' .. '5' DIGIT
+            pass 
+            self.matchRange(48, 53)
+            self.mDIGIT()
+
+
+
+            if self._state.backtracking == 0:
+                _type = TIME; 
+
+
+
+
+
+
+
+            self._state.type = _type
+            self._state.channel = _channel
+
+        finally:
+
+            pass
+
+    # $ANTLR end "TWO_DIGIT_HOUR_TIME"
+
+
+
+    # $ANTLR start "SYNCHRONIZED"
+    def mSYNCHRONIZED(self, ):
+
+        try:
+            _type = SYNCHRONIZED
+            _channel = DEFAULT_CHANNEL
+
+            # borg/borgcron/py/Groc.g:234:14: ( 'synchronized' )
+            # borg/borgcron/py/Groc.g:234:16: 'synchronized'
+            pass 
+            self.match("synchronized")
+
+
+
+            self._state.type = _type
+            self._state.channel = _channel
+
+        finally:
+
+            pass
+
+    # $ANTLR end "SYNCHRONIZED"
+
+
+
+    # $ANTLR start "FIRST"
+    def mFIRST(self, ):
+
+        try:
+            _type = FIRST
+            _channel = DEFAULT_CHANNEL
+
+            # borg/borgcron/py/Groc.g:237:11: ( ( '1st' | 'first' ) )
+            # borg/borgcron/py/Groc.g:237:13: ( '1st' | 'first' )
+            pass 
+            # borg/borgcron/py/Groc.g:237:13: ( '1st' | 'first' )
+            alt2 = 2
+            LA2_0 = self.input.LA(1)
+
+            if (LA2_0 == 49) :
+                alt2 = 1
+            elif (LA2_0 == 102) :
+                alt2 = 2
+            else:
+                if self._state.backtracking > 0:
+                    raise BacktrackingFailed
+
+                nvae = NoViableAltException("", 2, 0, self.input)
+
+                raise nvae
+
+            if alt2 == 1:
+                # borg/borgcron/py/Groc.g:237:15: '1st'
+                pass 
+                self.match("1st")
+
+
+            elif alt2 == 2:
+                # borg/borgcron/py/Groc.g:237:23: 'first'
+                pass 
+                self.match("first")
+
+
+
+
+
+
+            self._state.type = _type
+            self._state.channel = _channel
+
+        finally:
+
+            pass
+
+    # $ANTLR end "FIRST"
+
+
+
+    # $ANTLR start "SECOND"
+    def mSECOND(self, ):
+
+        try:
+            _type = SECOND
+            _channel = DEFAULT_CHANNEL
+
+            # borg/borgcron/py/Groc.g:238:11: ( ( '2nd' | 'second' ) )
+            # borg/borgcron/py/Groc.g:238:13: ( '2nd' | 'second' )
+            pass 
+            # borg/borgcron/py/Groc.g:238:13: ( '2nd' | 'second' )
+            alt3 = 2
+            LA3_0 = self.input.LA(1)
+
+            if (LA3_0 == 50) :
+                alt3 = 1
+            elif (LA3_0 == 115) :
+                alt3 = 2
+            else:
+                if self._state.backtracking > 0:
+                    raise BacktrackingFailed
+
+                nvae = NoViableAltException("", 3, 0, self.input)
+
+                raise nvae
+
+            if alt3 == 1:
+                # borg/borgcron/py/Groc.g:238:15: '2nd'
+                pass 
+                self.match("2nd")
+
+
+            elif alt3 == 2:
+                # borg/borgcron/py/Groc.g:238:23: 'second'
+                pass 
+                self.match("second")
+
+
+
+
+
+
+            self._state.type = _type
+            self._state.channel = _channel
+
+        finally:
+
+            pass
+
+    # $ANTLR end "SECOND"
+
+
+
+    # $ANTLR start "THIRD"
+    def mTHIRD(self, ):
+
+        try:
+            _type = THIRD
+            _channel = DEFAULT_CHANNEL
+
+            # borg/borgcron/py/Groc.g:239:11: ( ( '3rd' | 'third' ) )
+            # borg/borgcron/py/Groc.g:239:13: ( '3rd' | 'third' )
+            pass 
+            # borg/borgcron/py/Groc.g:239:13: ( '3rd' | 'third' )
+            alt4 = 2
+            LA4_0 = self.input.LA(1)
+
+            if (LA4_0 == 51) :
+                alt4 = 1
+            elif (LA4_0 == 116) :
+                alt4 = 2
+            else:
+                if self._state.backtracking > 0:
+                    raise BacktrackingFailed
+
+                nvae = NoViableAltException("", 4, 0, self.input)
+
+                raise nvae
+
+            if alt4 == 1:
+                # borg/borgcron/py/Groc.g:239:15: '3rd'
+                pass 
+                self.match("3rd")
+
+
+            elif alt4 == 2:
+                # borg/borgcron/py/Groc.g:239:23: 'third'
+                pass 
+                self.match("third")
+
+
+
+
+
+
+            self._state.type = _type
+            self._state.channel = _channel
+
+        finally:
+
+            pass
+
+    # $ANTLR end "THIRD"
+
+
+
+    # $ANTLR start "FOURTH"
+    def mFOURTH(self, ):
+
+        try:
+            _type = FOURTH
+            _channel = DEFAULT_CHANNEL
+
+            # borg/borgcron/py/Groc.g:240:11: ( ( '4th' ) )
+            # borg/borgcron/py/Groc.g:240:13: ( '4th' )
+            pass 
+            # borg/borgcron/py/Groc.g:240:13: ( '4th' )
+            # borg/borgcron/py/Groc.g:240:15: '4th'
+            pass 
+            self.match("4th")
+
+
+
+
+
+
+            self._state.type = _type
+            self._state.channel = _channel
+
+        finally:
+
+            pass
+
+    # $ANTLR end "FOURTH"
+
+
+
+    # $ANTLR start "FIFTH"
+    def mFIFTH(self, ):
+
+        try:
+            _type = FIFTH
+            _channel = DEFAULT_CHANNEL
+
+            # borg/borgcron/py/Groc.g:241:11: ( ( '5th' ) )
+            # borg/borgcron/py/Groc.g:241:13: ( '5th' )
+            pass 
+            # borg/borgcron/py/Groc.g:241:13: ( '5th' )
+            # borg/borgcron/py/Groc.g:241:15: '5th'
+            pass 
+            self.match("5th")
+
+
+
+
+
+
+            self._state.type = _type
+            self._state.channel = _channel
+
+        finally:
+
+            pass
+
+    # $ANTLR end "FIFTH"
+
+
+
+    # $ANTLR start "FOURTH_OR_FIFTH"
+    def mFOURTH_OR_FIFTH(self, ):
+
+        try:
+            _type = FOURTH_OR_FIFTH
+            _channel = DEFAULT_CHANNEL
+
+            # borg/borgcron/py/Groc.g:248:11: ( ( ( 'fourth' ) | ( 'fifth' ) ) )
+            # borg/borgcron/py/Groc.g:248:13: ( ( 'fourth' ) | ( 'fifth' ) )
+            pass 
+            # borg/borgcron/py/Groc.g:248:13: ( ( 'fourth' ) | ( 'fifth' ) )
+            alt5 = 2
+            LA5_0 = self.input.LA(1)
+
+            if (LA5_0 == 102) :
+                LA5_1 = self.input.LA(2)
+
+                if (LA5_1 == 111) :
+                    alt5 = 1
+                elif (LA5_1 == 105) :
+                    alt5 = 2
+                else:
+                    if self._state.backtracking > 0:
+                        raise BacktrackingFailed
+
+                    nvae = NoViableAltException("", 5, 1, self.input)
+
+                    raise nvae
+
+            else:
+                if self._state.backtracking > 0:
+                    raise BacktrackingFailed
+
+                nvae = NoViableAltException("", 5, 0, self.input)
+
+                raise nvae
+
+            if alt5 == 1:
+                # borg/borgcron/py/Groc.g:248:15: ( 'fourth' )
+                pass 
+                # borg/borgcron/py/Groc.g:248:15: ( 'fourth' )
+                # borg/borgcron/py/Groc.g:248:16: 'fourth'
+                pass 
+                self.match("fourth")
+                if self._state.backtracking == 0:
+                    _type = FOURTH; 
+
+
+
+
+
+
+            elif alt5 == 2:
+                # borg/borgcron/py/Groc.g:249:15: ( 'fifth' )
+                pass 
+                # borg/borgcron/py/Groc.g:249:15: ( 'fifth' )
+                # borg/borgcron/py/Groc.g:249:16: 'fifth'
+                pass 
+                self.match("fifth")
+                if self._state.backtracking == 0:
+                    _type = FIFTH; 
+
+
+
+
+
+
+
+
+
+
+            self._state.type = _type
+            self._state.channel = _channel
+
+        finally:
+
+            pass
+
+    # $ANTLR end "FOURTH_OR_FIFTH"
+
+
+
+    # $ANTLR start "DAY"
+    def mDAY(self, ):
+
+        try:
+            _type = DAY
+            _channel = DEFAULT_CHANNEL
+
+            # borg/borgcron/py/Groc.g:252:8: ( 'day' )
+            # borg/borgcron/py/Groc.g:252:10: 'day'
+            pass 
+            self.match("day")
+
+
+
+            self._state.type = _type
+            self._state.channel = _channel
+
+        finally:
+
+            pass
+
+    # $ANTLR end "DAY"
+
+
+
+    # $ANTLR start "MONDAY"
+    def mMONDAY(self, ):
+
+        try:
+            _type = MONDAY
+            _channel = DEFAULT_CHANNEL
+
+            # borg/borgcron/py/Groc.g:254:11: ( 'mon' ( 'day' )? )
+            # borg/borgcron/py/Groc.g:254:13: 'mon' ( 'day' )?
+            pass 
+            self.match("mon")
+            # borg/borgcron/py/Groc.g:254:19: ( 'day' )?
+            alt6 = 2
+            LA6_0 = self.input.LA(1)
+
+            if (LA6_0 == 100) :
+                alt6 = 1
+            if alt6 == 1:
+                # borg/borgcron/py/Groc.g:254:20: 'day'
+                pass 
+                self.match("day")
+
+
+
+
+
+
+            self._state.type = _type
+            self._state.channel = _channel
+
+        finally:
+
+            pass
+
+    # $ANTLR end "MONDAY"
+
+
+
+    # $ANTLR start "TUESDAY"
+    def mTUESDAY(self, ):
+
+        try:
+            _type = TUESDAY
+            _channel = DEFAULT_CHANNEL
+
+            # borg/borgcron/py/Groc.g:255:11: ( 'tue' ( 'sday' )? )
+            # borg/borgcron/py/Groc.g:255:13: 'tue' ( 'sday' )?
+            pass 
+            self.match("tue")
+            # borg/borgcron/py/Groc.g:255:19: ( 'sday' )?
+            alt7 = 2
+            LA7_0 = self.input.LA(1)
+
+            if (LA7_0 == 115) :
+                alt7 = 1
+            if alt7 == 1:
+                # borg/borgcron/py/Groc.g:255:20: 'sday'
+                pass 
+                self.match("sday")
+
+
+
+
+
+
+            self._state.type = _type
+            self._state.channel = _channel
+
+        finally:
+
+            pass
+
+    # $ANTLR end "TUESDAY"
+
+
+
+    # $ANTLR start "WEDNESDAY"
+    def mWEDNESDAY(self, ):
+
+        try:
+            _type = WEDNESDAY
+            _channel = DEFAULT_CHANNEL
+
+            # borg/borgcron/py/Groc.g:256:11: ( 'wed' ( 'nesday' )? )
+            # borg/borgcron/py/Groc.g:256:13: 'wed' ( 'nesday' )?
+            pass 
+            self.match("wed")
+            # borg/borgcron/py/Groc.g:256:19: ( 'nesday' )?
+            alt8 = 2
+            LA8_0 = self.input.LA(1)
+
+            if (LA8_0 == 110) :
+                alt8 = 1
+            if alt8 == 1:
+                # borg/borgcron/py/Groc.g:256:20: 'nesday'
+                pass 
+                self.match("nesday")
+
+
+
+
+
+
+            self._state.type = _type
+            self._state.channel = _channel
+
+        finally:
+
+            pass
+
+    # $ANTLR end "WEDNESDAY"
+
+
+
+    # $ANTLR start "THURSDAY"
+    def mTHURSDAY(self, ):
+
+        try:
+            _type = THURSDAY
+            _channel = DEFAULT_CHANNEL
+
+            # borg/borgcron/py/Groc.g:257:11: ( 'thu' ( 'rsday' )? )
+            # borg/borgcron/py/Groc.g:257:13: 'thu' ( 'rsday' )?
+            pass 
+            self.match("thu")
+            # borg/borgcron/py/Groc.g:257:19: ( 'rsday' )?
+            alt9 = 2
+            LA9_0 = self.input.LA(1)
+
+            if (LA9_0 == 114) :
+                alt9 = 1
+            if alt9 == 1:
+                # borg/borgcron/py/Groc.g:257:20: 'rsday'
+                pass 
+                self.match("rsday")
+
+
+
+
+
+
+            self._state.type = _type
+            self._state.channel = _channel
+
+        finally:
+
+            pass
+
+    # $ANTLR end "THURSDAY"
+
+
+
+    # $ANTLR start "FRIDAY"
+    def mFRIDAY(self, ):
+
+        try:
+            _type = FRIDAY
+            _channel = DEFAULT_CHANNEL
+
+            # borg/borgcron/py/Groc.g:258:11: ( 'fri' ( 'day' )? )
+            # borg/borgcron/py/Groc.g:258:13: 'fri' ( 'day' )?
+            pass 
+            self.match("fri")
+            # borg/borgcron/py/Groc.g:258:19: ( 'day' )?
+            alt10 = 2
+            LA10_0 = self.input.LA(1)
+
+            if (LA10_0 == 100) :
+                alt10 = 1
+            if alt10 == 1:
+                # borg/borgcron/py/Groc.g:258:20: 'day'
+                pass 
+                self.match("day")
+
+
+
+
+
+
+            self._state.type = _type
+            self._state.channel = _channel
+
+        finally:
+
+            pass
+
+    # $ANTLR end "FRIDAY"
+
+
+
+    # $ANTLR start "SATURDAY"
+    def mSATURDAY(self, ):
+
+        try:
+            _type = SATURDAY
+            _channel = DEFAULT_CHANNEL
+
+            # borg/borgcron/py/Groc.g:259:11: ( 'sat' ( 'urday' )? )
+            # borg/borgcron/py/Groc.g:259:13: 'sat' ( 'urday' )?
+            pass 
+            self.match("sat")
+            # borg/borgcron/py/Groc.g:259:19: ( 'urday' )?
+            alt11 = 2
+            LA11_0 = self.input.LA(1)
+
+            if (LA11_0 == 117) :
+                alt11 = 1
+            if alt11 == 1:
+                # borg/borgcron/py/Groc.g:259:20: 'urday'
+                pass 
+                self.match("urday")
+
+
+
+
+
+
+            self._state.type = _type
+            self._state.channel = _channel
+
+        finally:
+
+            pass
+
+    # $ANTLR end "SATURDAY"
+
+
+
+    # $ANTLR start "SUNDAY"
+    def mSUNDAY(self, ):
+
+        try:
+            _type = SUNDAY
+            _channel = DEFAULT_CHANNEL
+
+            # borg/borgcron/py/Groc.g:260:11: ( 'sun' ( 'day' )? )
+            # borg/borgcron/py/Groc.g:260:13: 'sun' ( 'day' )?
+            pass 
+            self.match("sun")
+            # borg/borgcron/py/Groc.g:260:19: ( 'day' )?
+            alt12 = 2
+            LA12_0 = self.input.LA(1)
+
+            if (LA12_0 == 100) :
+                alt12 = 1
+            if alt12 == 1:
+                # borg/borgcron/py/Groc.g:260:20: 'day'
+                pass 
+                self.match("day")
+
+
+
+
+
+
+            self._state.type = _type
+            self._state.channel = _channel
+
+        finally:
+
+            pass
+
+    # $ANTLR end "SUNDAY"
+
+
+
+    # $ANTLR start "JANUARY"
+    def mJANUARY(self, ):
+
+        try:
+            _type = JANUARY
+            _channel = DEFAULT_CHANNEL
+
+            # borg/borgcron/py/Groc.g:263:11: ( 'jan' ( 'uary' )? )
+            # borg/borgcron/py/Groc.g:263:13: 'jan' ( 'uary' )?
+            pass 
+            self.match("jan")
+            # borg/borgcron/py/Groc.g:263:19: ( 'uary' )?
+            alt13 = 2
+            LA13_0 = self.input.LA(1)
+
+            if (LA13_0 == 117) :
+                alt13 = 1
+            if alt13 == 1:
+                # borg/borgcron/py/Groc.g:263:20: 'uary'
+                pass 
+                self.match("uary")
+
+
+
+
+
+
+            self._state.type = _type
+            self._state.channel = _channel
+
+        finally:
+
+            pass
+
+    # $ANTLR end "JANUARY"
+
+
+
+    # $ANTLR start "FEBRUARY"
+    def mFEBRUARY(self, ):
+
+        try:
+            _type = FEBRUARY
+            _channel = DEFAULT_CHANNEL
+
+            # borg/borgcron/py/Groc.g:264:11: ( 'feb' ( 'ruary' )? )
+            # borg/borgcron/py/Groc.g:264:13: 'feb' ( 'ruary' )?
+            pass 
+            self.match("feb")
+            # borg/borgcron/py/Groc.g:264:19: ( 'ruary' )?
+            alt14 = 2
+            LA14_0 = self.input.LA(1)
+
+            if (LA14_0 == 114) :
+                alt14 = 1
+            if alt14 == 1:
+                # borg/borgcron/py/Groc.g:264:20: 'ruary'
+                pass 
+                self.match("ruary")
+
+
+
+
+
+
+            self._state.type = _type
+            self._state.channel = _channel
+
+        finally:

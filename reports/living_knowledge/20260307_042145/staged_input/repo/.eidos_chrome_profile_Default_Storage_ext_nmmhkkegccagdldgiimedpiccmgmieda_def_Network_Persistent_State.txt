@@ -1,0 +1,4 @@
+SOURCE_PATH: .eidos_chrome_profile/Default/Storage/ext/nmmhkkegccagdldgiimedpiccmgmieda/def/Network Persistent State
+KIND: config
+
+{"net":{"http_server_properties":{"servers":[],"version":5},"network_qualities":{"CAISABiAgICA+P////8B":"4G"}}}

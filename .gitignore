@@ -130,3 +130,4 @@ lib/lancedb_src/
 .tmp_test/
 reports/ci/*.log
 reports/local_test_audit/
+data/gemini_sessions/

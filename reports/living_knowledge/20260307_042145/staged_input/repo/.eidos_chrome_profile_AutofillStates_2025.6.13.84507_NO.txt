@@ -1,0 +1,28 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/NO
+KIND: config
+
+NO
+
+akershus
+
+buskerud
+
+telemark
+
+finnmark
+
+østfold
+
+vestfold
+troms
+oslo
+
+rogaland
+møre og romsdal
+
+nordland
+	innlandet
+agder
+vestland fylkevestland
+
+trøndelag

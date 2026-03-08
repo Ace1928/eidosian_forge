@@ -1,0 +1,15 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_debugger_case_yield_from.py
+KIND: code
+
+def method():
+    a = [1, 2]
+
+    def b():  # break1
+        yield from [j for j in a if j % 2 == 0]  # break2
+
+    for j in b():
+        print(j)
+
+
+method()
+print('TEST SUCEEDED')

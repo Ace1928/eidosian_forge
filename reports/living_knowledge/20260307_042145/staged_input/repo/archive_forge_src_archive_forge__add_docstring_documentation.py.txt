@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_add_docstring_documentation.py
+KIND: code
+
+import re
+import textwrap
+from ._array_like import NDArray
+Convert all docstrings in ``_docstrings_list`` into a single
+    sphinx-legible text block.

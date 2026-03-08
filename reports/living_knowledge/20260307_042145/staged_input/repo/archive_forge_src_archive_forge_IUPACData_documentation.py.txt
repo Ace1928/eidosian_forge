@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/IUPACData_documentation.py
+KIND: code
+
+Information about the IUPAC alphabets.

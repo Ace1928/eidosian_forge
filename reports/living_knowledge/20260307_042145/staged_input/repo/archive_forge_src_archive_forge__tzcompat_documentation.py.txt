@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_tzcompat_documentation.py
+KIND: code
+
+from datetime import timedelta, tzinfo
+UTC

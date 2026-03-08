@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/alphabets.py
+KIND: code
+
+greeks = ('alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta',
+                    'eta', 'theta', 'iota', 'kappa', 'lambda', 'mu', 'nu',
+                    'xi', 'omicron', 'pi', 'rho', 'sigma', 'tau', 'upsilon',
+                    'phi', 'chi', 'psi', 'omega')

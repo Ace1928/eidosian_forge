@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/KNNModel_documentation.py
+KIND: code
+
+from rdkit.DataStructs.TopNContainer import TopNContainer
+ Returns the k nearest neighbors of the example

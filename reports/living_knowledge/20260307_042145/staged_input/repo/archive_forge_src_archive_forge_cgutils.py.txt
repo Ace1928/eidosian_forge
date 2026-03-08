@@ -1,0 +1,642 @@
+SOURCE_PATH: archive_forge/src/archive_forge/cgutils.py
+KIND: code
+
+"""
+Generic helpers for LLVM code generation.
+"""
+
+
+import collections
+from contextlib import contextmanager, ExitStack
+import functools
+
+from llvmlite import ir
+
+from numba.core import utils, types, config, debuginfo
+import numba.core.datamodel
+
+
+bool_t = ir.IntType(1)
+int8_t = ir.IntType(8)
+int32_t = ir.IntType(32)
+intp_t = ir.IntType(utils.MACHINE_BITS)
+voidptr_t = int8_t.as_pointer()
+
+true_bit = bool_t(1)
+false_bit = bool_t(0)
+true_byte = int8_t(1)
+false_byte = int8_t(0)
+
+
+def as_bool_bit(builder, value):
+    return builder.icmp_unsigned('!=', value, value.type(0))
+
+
+def make_anonymous_struct(builder, values, struct_type=None):
+    """
+    Create an anonymous struct containing the given LLVM *values*.
+    """
+    if struct_type is None:
+        struct_type = ir.LiteralStructType([v.type for v in values])
+    struct_val = struct_type(ir.Undefined)
+    for i, v in enumerate(values):
+        struct_val = builder.insert_value(struct_val, v, i)
+    return struct_val
+
+
+def make_bytearray(buf):
+    """
+    Make a byte array constant from *buf*.
+    """
+    b = bytearray(buf)
+    n = len(b)
+    return ir.Constant(ir.ArrayType(ir.IntType(8), n), b)
+
+
+_struct_proxy_cache = {}
+
+
+def create_struct_proxy(fe_type, kind='value'):
+    """
+    Returns a specialized StructProxy subclass for the given fe_type.
+    """
+    cache_key = (fe_type, kind)
+    res = _struct_proxy_cache.get(cache_key)
+    if res is None:
+        base = {'value': ValueStructProxy,
+                'data': DataStructProxy,
+                }[kind]
+        clsname = base.__name__ + '_' + str(fe_type)
+        bases = (base,)
+        clsmembers = dict(_fe_type=fe_type)
+        res = type(clsname, bases, clsmembers)
+
+        _struct_proxy_cache[cache_key] = res
+    return res
+
+
+def copy_struct(dst, src, repl={}):
+    """
+    Copy structure from *src* to *dst* with replacement from *repl*.
+    """
+    repl = repl.copy()
+    # copy data from src or use those in repl
+    for k in src._datamodel._fields:
+        v = repl.pop(k, getattr(src, k))
+        setattr(dst, k, v)
+    # use remaining key-values in repl
+    for k, v in repl.items():
+        setattr(dst, k, v)
+    return dst
+
+
+class _StructProxy(object):
+    """
+    Creates a `Structure` like interface that is constructed with information
+    from DataModel instance.  FE type must have a data model that is a
+    subclass of StructModel.
+    """
+    # The following class members must be overridden by subclass
+    _fe_type = None
+
+    def __init__(self, context, builder, value=None, ref=None):
+        self._context = context
+        self._datamodel = self._context.data_model_manager[self._fe_type]
+        if not isinstance(self._datamodel, numba.core.datamodel.StructModel):
+            raise TypeError(
+                "Not a structure model: {0}".format(self._datamodel))
+        self._builder = builder
+
+        self._be_type = self._get_be_type(self._datamodel)
+        assert not is_pointer(self._be_type)
+
+        outer_ref, ref = self._make_refs(ref)
+        if ref.type.pointee != self._be_type:
+            raise AssertionError("bad ref type: expected %s, got %s"
+                                 % (self._be_type.as_pointer(), ref.type))
+
+        if value is not None:
+            if value.type != outer_ref.type.pointee:
+                raise AssertionError("bad value type: expected %s, got %s"
+                                     % (outer_ref.type.pointee, value.type))
+            self._builder.store(value, outer_ref)
+
+        self._value = ref
+        self._outer_ref = outer_ref
+
+    def _make_refs(self, ref):
+        """
+        Return an (outer ref, value ref) pair.  By default, these are
+        the same pointers, but a derived class may override this.
+        """
+        if ref is None:
+            ref = alloca_once(self._builder, self._be_type, zfill=True)
+        return ref, ref
+
+    def _get_be_type(self, datamodel):
+        raise NotImplementedError
+
+    def _cast_member_to_value(self, index, val):
+        raise NotImplementedError
+
+    def _cast_member_from_value(self, index, val):
+        raise NotImplementedError
+
+    def _get_ptr_by_index(self, index):
+        return gep_inbounds(self._builder, self._value, 0, index)
+
+    def _get_ptr_by_name(self, attrname):
+        index = self._datamodel.get_field_position(attrname)
+        return self._get_ptr_by_index(index)
+
+    def __getattr__(self, field):
+        """
+        Load the LLVM value of the named *field*.
+        """
+        if not field.startswith('_'):
+            return self[self._datamodel.get_field_position(field)]
+        else:
+            raise AttributeError(field)
+
+    def __setattr__(self, field, value):
+        """
+        Store the LLVM *value* into the named *field*.
+        """
+        if field.startswith('_'):
+            return super(_StructProxy, self).__setattr__(field, value)
+        self[self._datamodel.get_field_position(field)] = value
+
+    def __getitem__(self, index):
+        """
+        Load the LLVM value of the field at *index*.
+        """
+        member_val = self._builder.load(self._get_ptr_by_index(index))
+        return self._cast_member_to_value(index, member_val)
+
+    def __setitem__(self, index, value):
+        """
+        Store the LLVM *value* into the field at *index*.
+        """
+        ptr = self._get_ptr_by_index(index)
+        value = self._cast_member_from_value(index, value)
+        if value.type != ptr.type.pointee:
+            if (is_pointer(value.type) and is_pointer(ptr.type.pointee)
+                    and value.type.pointee == ptr.type.pointee.pointee):
+                # Differ by address-space only
+                # Auto coerce it
+                value = self._context.addrspacecast(self._builder,
+                                                    value,
+                                                    ptr.type.pointee.addrspace)
+            else:
+                raise TypeError("Invalid store of {value.type} to "
+                                "{ptr.type.pointee} in "
+                                "{self._datamodel} "
+                                "(trying to write member #{index})"
+                                .format(value=value, ptr=ptr, self=self,
+                                        index=index))
+        self._builder.store(value, ptr)
+
+    def __len__(self):
+        """
+        Return the number of fields.
+        """
+        return self._datamodel.field_count
+
+    def _getpointer(self):
+        """
+        Return the LLVM pointer to the underlying structure.
+        """
+        return self._outer_ref
+
+    def _getvalue(self):
+        """
+        Load and return the value of the underlying LLVM structure.
+        """
+        return self._builder.load(self._outer_ref)
+
+    def _setvalue(self, value):
+        """
+        Store the value in this structure.
+        """
+        assert not is_pointer(value.type)
+        assert value.type == self._be_type, (value.type, self._be_type)
+        self._builder.store(value, self._value)
+
+
+class ValueStructProxy(_StructProxy):
+    """
+    Create a StructProxy suitable for accessing regular values
+    (e.g. LLVM values or alloca slots).
+    """
+    def _get_be_type(self, datamodel):
+        return datamodel.get_value_type()
+
+    def _cast_member_to_value(self, index, val):
+        return val
+
+    def _cast_member_from_value(self, index, val):
+        return val
+
+
+class DataStructProxy(_StructProxy):
+    """
+    Create a StructProxy suitable for accessing data persisted in memory.
+    """
+    def _get_be_type(self, datamodel):
+        return datamodel.get_data_type()
+
+    def _cast_member_to_value(self, index, val):
+        model = self._datamodel.get_model(index)
+        return model.from_data(self._builder, val)
+
+    def _cast_member_from_value(self, index, val):
+        model = self._datamodel.get_model(index)
+        return model.as_data(self._builder, val)
+
+
+class Structure(object):
+    """
+    A high-level object wrapping a alloca'ed LLVM structure, including
+    named fields and attribute access.
+    """
+
+    # XXX Should this warrant several separate constructors?
+    def __init__(self, context, builder, value=None, ref=None, cast_ref=False):
+        self._type = context.get_struct_type(self)
+        self._context = context
+        self._builder = builder
+        if ref is None:
+            self._value = alloca_once(builder, self._type, zfill=True)
+            if value is not None:
+                assert not is_pointer(value.type)
+                assert value.type == self._type, (value.type, self._type)
+                builder.store(value, self._value)
+        else:
+            assert value is None
+            assert is_pointer(ref.type)
+            if self._type != ref.type.pointee:
+                if cast_ref:
+                    ref = builder.bitcast(ref, self._type.as_pointer())
+                else:
+                    raise TypeError(
+                        "mismatching pointer type: got %s, expected %s"
+                        % (ref.type.pointee, self._type))
+            self._value = ref
+
+        self._namemap = {}
+        self._fdmap = []
+        self._typemap = []
+        base = int32_t(0)
+        for i, (k, tp) in enumerate(self._fields):
+            self._namemap[k] = i
+            self._fdmap.append((base, int32_t(i)))
+            self._typemap.append(tp)
+
+    def _get_ptr_by_index(self, index):
+        ptr = self._builder.gep(self._value, self._fdmap[index], inbounds=True)
+        return ptr
+
+    def _get_ptr_by_name(self, attrname):
+        return self._get_ptr_by_index(self._namemap[attrname])
+
+    def __getattr__(self, field):
+        """
+        Load the LLVM value of the named *field*.
+        """
+        if not field.startswith('_'):
+            return self[self._namemap[field]]
+        else:
+            raise AttributeError(field)
+
+    def __setattr__(self, field, value):
+        """
+        Store the LLVM *value* into the named *field*.
+        """
+        if field.startswith('_'):
+            return super(Structure, self).__setattr__(field, value)
+        self[self._namemap[field]] = value
+
+    def __getitem__(self, index):
+        """
+        Load the LLVM value of the field at *index*.
+        """
+
+        return self._builder.load(self._get_ptr_by_index(index))
+
+    def __setitem__(self, index, value):
+        """
+        Store the LLVM *value* into the field at *index*.
+        """
+        ptr = self._get_ptr_by_index(index)
+        if ptr.type.pointee != value.type:
+            fmt = "Type mismatch: __setitem__(%d, ...) expected %r but got %r"
+            raise AssertionError(fmt % (index,
+                                        str(ptr.type.pointee),
+                                        str(value.type)))
+        self._builder.store(value, ptr)
+
+    def __len__(self):
+        """
+        Return the number of fields.
+        """
+        return len(self._namemap)
+
+    def _getpointer(self):
+        """
+        Return the LLVM pointer to the underlying structure.
+        """
+        return self._value
+
+    def _getvalue(self):
+        """
+        Load and return the value of the underlying LLVM structure.
+        """
+        return self._builder.load(self._value)
+
+    def _setvalue(self, value):
+        """Store the value in this structure"""
+        assert not is_pointer(value.type)
+        assert value.type == self._type, (value.type, self._type)
+        self._builder.store(value, self._value)
+
+    # __iter__ is derived by Python from __len__ and __getitem__
+
+
+def alloca_once(builder, ty, size=None, name='', zfill=False):
+    """Allocate stack memory at the entry block of the current function
+    pointed by ``builder`` with llvm type ``ty``.  The optional ``size`` arg
+    set the number of element to allocate.  The default is 1.  The optional
+    ``name`` arg set the symbol name inside the llvm IR for debugging.
+    If ``zfill`` is set, fill the memory with zeros at the current
+    use-site location.  Note that the memory is always zero-filled after the
+    ``alloca`` at init-site (the entry block).
+    """
+    if isinstance(size, int):
+        size = ir.Constant(intp_t, size)
+    # suspend debug metadata emission else it links up python source lines with
+    # alloca in the entry block as well as their actual location and it makes
+    # the debug info "jump about".
+    with debuginfo.suspend_emission(builder):
+        with builder.goto_entry_block():
+            ptr = builder.alloca(ty, size=size, name=name)
+            # Always zero-fill at init-site.  This is safe.
+            builder.store(ty(None), ptr)
+        # Also zero-fill at the use-site
+        if zfill:
+            builder.store(ptr.type.pointee(None), ptr)
+        return ptr
+
+
+def sizeof(builder, ptr_type):
+    """Compute sizeof using GEP
+    """
+    null = ptr_type(None)
+    offset = null.gep([int32_t(1)])
+    return builder.ptrtoint(offset, intp_t)
+
+
+def alloca_once_value(builder, value, name='', zfill=False):
+    """
+    Like alloca_once(), but passing a *value* instead of a type.  The
+    type is inferred and the allocated slot is also initialized with the
+    given value.
+    """
+    storage = alloca_once(builder, value.type, zfill=zfill)
+    builder.store(value, storage)
+    return storage
+
+
+def insert_pure_function(module, fnty, name):
+    """
+    Insert a pure function (in the functional programming sense) in the
+    given module.
+    """
+    fn = get_or_insert_function(module, fnty, name)
+    fn.attributes.add("readonly")
+    fn.attributes.add("nounwind")
+    return fn
+
+
+def get_or_insert_function(module, fnty, name):
+    """
+    Get the function named *name* with type *fnty* from *module*, or insert it
+    if it doesn't exist.
+    """
+    fn = module.globals.get(name, None)
+    if fn is None:
+        fn = ir.Function(module, fnty, name)
+    return fn
+
+
+def get_or_insert_named_metadata(module, name):
+    try:
+        return module.get_named_metadata(name)
+    except KeyError:
+        return module.add_named_metadata(name)
+
+
+def add_global_variable(module, ty, name, addrspace=0):
+    unique_name = module.get_unique_name(name)
+    return ir.GlobalVariable(module, ty, unique_name, addrspace)
+
+
+def terminate(builder, bbend):
+    bb = builder.basic_block
+    if bb.terminator is None:
+        builder.branch(bbend)
+
+
+def get_null_value(ltype):
+    return ltype(None)
+
+
+def is_null(builder, val):
+    null = get_null_value(val.type)
+    return builder.icmp_unsigned('==', null, val)
+
+
+def is_not_null(builder, val):
+    null = get_null_value(val.type)
+    return builder.icmp_unsigned('!=', null, val)
+
+
+def if_unlikely(builder, pred):
+    return builder.if_then(pred, likely=False)
+
+
+def if_likely(builder, pred):
+    return builder.if_then(pred, likely=True)
+
+
+def ifnot(builder, pred):
+    return builder.if_then(builder.not_(pred))
+
+
+def increment_index(builder, val):
+    """
+    Increment an index *val*.
+    """
+    one = val.type(1)
+    # We pass the "nsw" flag in the hope that LLVM understands the index
+    # never changes sign.  Unfortunately this doesn't always work
+    # (e.g. ndindex()).
+    return builder.add(val, one, flags=['nsw'])
+
+
+Loop = collections.namedtuple('Loop', ('index', 'do_break'))
+
+
+@contextmanager
+def for_range(builder, count, start=None, intp=None):
+    """
+    Generate LLVM IR for a for-loop in [start, count).
+    *start* is equal to 0 by default.
+
+    Yields a Loop namedtuple with the following members:
+    - `index` is the loop index's value
+    - `do_break` is a no-argument callable to break out of the loop
+    """
+    if intp is None:
+        intp = count.type
+    if start is None:
+        start = intp(0)
+    stop = count
+
+    bbcond = builder.append_basic_block("for.cond")
+    bbbody = builder.append_basic_block("for.body")
+    bbend = builder.append_basic_block("for.end")
+
+    def do_break():
+        builder.branch(bbend)
+
+    bbstart = builder.basic_block
+    builder.branch(bbcond)
+
+    with builder.goto_block(bbcond):
+        index = builder.phi(intp, name="loop.index")
+        pred = builder.icmp_signed('<', index, stop)
+        builder.cbranch(pred, bbbody, bbend)
+
+    with builder.goto_block(bbbody):
+        yield Loop(index, do_break)
+        # Update bbbody as a new basic block may have been activated
+        bbbody = builder.basic_block
+        incr = increment_index(builder, index)
+        terminate(builder, bbcond)
+
+    index.add_incoming(start, bbstart)
+    index.add_incoming(incr, bbbody)
+
+    builder.position_at_end(bbend)
+
+
+@contextmanager
+def for_range_slice(builder, start, stop, step, intp=None, inc=True):
+    """
+    Generate LLVM IR for a for-loop based on a slice.  Yields a
+    (index, count) tuple where `index` is the slice index's value
+    inside the loop, and `count` the iteration count.
+
+    Parameters
+    -------------
+    builder : object
+        IRBuilder object
+    start : int
+        The beginning value of the slice
+    stop : int
+        The end value of the slice
+    step : int
+        The step value of the slice
+    intp :
+        The data type
+    inc : boolean, optional
+        Signals whether the step is positive (True) or negative (False).
+
+    Returns
+    -----------
+        None
+    """
+    if intp is None:
+        intp = start.type
+
+    bbcond = builder.append_basic_block("for.cond")
+    bbbody = builder.append_basic_block("for.body")
+    bbend = builder.append_basic_block("for.end")
+    bbstart = builder.basic_block
+    builder.branch(bbcond)
+
+    with builder.goto_block(bbcond):
+        index = builder.phi(intp, name="loop.index")
+        count = builder.phi(intp, name="loop.count")
+        if (inc):
+            pred = builder.icmp_signed('<', index, stop)
+        else:
+            pred = builder.icmp_signed('>', index, stop)
+        builder.cbranch(pred, bbbody, bbend)
+
+    with builder.goto_block(bbbody):
+        yield index, count
+        bbbody = builder.basic_block
+        incr = builder.add(index, step)
+        next_count = increment_index(builder, count)
+        terminate(builder, bbcond)
+
+    index.add_incoming(start, bbstart)
+    index.add_incoming(incr, bbbody)
+    count.add_incoming(ir.Constant(intp, 0), bbstart)
+    count.add_incoming(next_count, bbbody)
+    builder.position_at_end(bbend)
+
+
+@contextmanager
+def for_range_slice_generic(builder, start, stop, step):
+    """
+    A helper wrapper for for_range_slice().  This is a context manager which
+    yields two for_range_slice()-alike context managers, the first for
+    the positive step case, the second for the negative step case.
+
+    Use:
+        with for_range_slice_generic(...) as (pos_range, neg_range):
+            with pos_range as (idx, count):
+                ...
+            with neg_range as (idx, count):
+                ...
+    """
+    intp = start.type
+    is_pos_step = builder.icmp_signed('>=', step, ir.Constant(intp, 0))
+
+    pos_for_range = for_range_slice(builder, start, stop, step, intp, inc=True)
+    neg_for_range = for_range_slice(builder, start, stop, step, intp, inc=False)
+
+    @contextmanager
+    def cm_cond(cond, inner_cm):
+        with cond:
+            with inner_cm as value:
+                yield value
+
+    with builder.if_else(is_pos_step, likely=True) as (then, otherwise):
+        yield cm_cond(then, pos_for_range), cm_cond(otherwise, neg_for_range)
+
+
+@contextmanager
+def loop_nest(builder, shape, intp, order='C'):
+    """
+    Generate a loop nest walking a N-dimensional array.
+    Yields a tuple of N indices for use in the inner loop body,
+    iterating over the *shape* space.
+
+    If *order* is 'C' (the default), indices are incremented inside-out
+    (i.e. (0,0), (0,1), (0,2), (1,0) etc.).
+    If *order* is 'F', they are incremented outside-in
+    (i.e. (0,0), (1,0), (2,0), (0,1) etc.).
+    This has performance implications when walking an array as it impacts
+    the spatial locality of memory accesses.
+    """
+    assert order in 'CF'
+    if not shape:
+        # 0-d array
+        yield ()
+    else:
+        if order == 'F':
+            _swap = lambda x: x[::-1]
+        else:

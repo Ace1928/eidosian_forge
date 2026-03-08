@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_stan_documentation.py
+KIND: code
+
+from inspect import iscoroutine, isgenerator
+from typing import TYPE_CHECKING, Dict, List, Optional, Union
+from warnings import warn
+import attr
+
+        Clear any existing children from this tag.

@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/GitReleaseAsset_documentation.py
+KIND: code
+
+from __future__ import annotations
+from datetime import datetime
+from typing import Any
+import github.NamedUser
+from github.GithubObject import Attribute, CompletableGithubObject, NotSet
+
+        Update asset metadata.

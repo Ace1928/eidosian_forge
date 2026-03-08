@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/atomicfile_documentation.py
+KIND: code
+
+import os
+import stat
+from breezy import errors, osutils
+Discard the file unless already committed.

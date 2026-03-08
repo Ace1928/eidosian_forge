@@ -1,0 +1,22 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/NI
+KIND: config
+
+NI�
+"región autónoma atlántico norteraan'north caribbean coast autonomous region*región autónoma de la costa caribe norte&región autónoma del atlántico norte�
+ región autónoma atlántico surraas(región autónoma de la costa caribe sur$región autónoma del atlántico sur'south caribbean coast autonomous region
+boacodepartamento de boaco 
+carazodepartamento de carazo(
+
+chinandegadepartamento de chinandega&
+	chontalesdepartamento de chontales*
+departamento de estelíesteliestelí"
+departamento de granadagranada$
+departamento de jinotegajinotega$
+departamento de leónleonleón 
+departamento de madrizmadriz&
+departamento de managuamnmanagua 
+departamento de masayamasaya&
+departamento de matagalpa	matagalpa.
+departamento de nueva segovianueva segovia
+departamento de rivasrivas<
+departamento de río san juanrio san juanrío san juan

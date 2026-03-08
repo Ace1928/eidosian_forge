@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/asyncgen_documentation.py
+KIND: code
+
+from typing import AsyncGenerator, AsyncIterable, Iterable, Union
+Wraps an iterable (sync or async) into an async generator.

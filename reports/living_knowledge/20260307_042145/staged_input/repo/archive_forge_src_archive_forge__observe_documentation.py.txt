@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_observe_documentation.py
+KIND: code
+
+Add or remove user notifiers for the objects observed by the root
+        observer.

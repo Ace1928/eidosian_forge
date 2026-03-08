@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_mysql_builtins_documentation.py
+KIND: code
+
+Overwrite this file with content parsed from MySQL's source code.

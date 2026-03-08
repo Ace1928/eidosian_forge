@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/abnf_regexp_documentation.py
+KIND: code
+
+import sys
+Module for the regular expressions crafted from ABNF.

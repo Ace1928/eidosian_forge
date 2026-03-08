@@ -1,0 +1,11 @@
+SOURCE_PATH: archive_forge/src/archive_forge/byte_bounds_documentation.py
+KIND: code
+
+Returns pointers to the end-points of an array.
+
+    Args:
+        a: ndarray
+    Returns:
+        Tuple[int, int]: pointers to the end-points of an array
+
+    .. seealso:: :func:`numpy.byte_bounds`

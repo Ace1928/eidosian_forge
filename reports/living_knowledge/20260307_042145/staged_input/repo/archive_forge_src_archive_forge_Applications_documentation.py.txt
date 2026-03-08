@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/Applications_documentation.py
+KIND: code
+
+from Bio.Application import _Option, AbstractCommandline, _Switch
+Initialize the class.

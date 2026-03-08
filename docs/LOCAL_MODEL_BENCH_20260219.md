@@ -16,7 +16,7 @@ All models were fetched via `scripts/download_local_models.py` using `config/mod
 
 - `models/Qwen2.5-0.5B-Instruct-Q8_0.gguf`
 - `models/Llama-3.2-1B-Instruct-Q8_0.gguf`
-- `models/Qwen2.5-1.5B-Instruct-Q8_0.gguf`
+- `models/Qwen3.5-2B-Instruct-Q8_0.gguf`
 - `models/Qwen2.5-3B-Instruct-Q6_K.gguf`
 - `models/Arch-Function-3B-Q6_K.gguf`
 - `models/Qwen2.5-Coder-3B-Instruct-Q6_K.gguf`
@@ -31,10 +31,10 @@ All models were fetched via `scripts/download_local_models.py` using `config/mod
 ```bash
 ./eidosian_venv/bin/python scripts/download_local_models.py --profile toolcalling
 ./eidosian_venv/bin/python scripts/download_local_models.py --profile multimodal
-./eidosian_venv/bin/python benchmarks/graphrag_model_sweep.py --model qwen_0_5b=models/Qwen2.5-0.5B-Instruct-Q8_0.gguf --model llama_1b=models/Llama-3.2-1B-Instruct-Q8_0.gguf --model qwen_1_5b=models/Qwen2.5-1.5B-Instruct-Q8_0.gguf
+./eidosian_venv/bin/python benchmarks/graphrag_model_sweep.py --model qwen_0_5b=models/Qwen2.5-0.5B-Instruct-Q8_0.gguf --model llama_1b=models/Llama-3.2-1B-Instruct-Q8_0.gguf --model qwen_1_5b=models/Qwen3.5-2B-Instruct-Q8_0.gguf
 ./eidosian_venv/bin/python benchmarks/run_graphrag_bench.py --query "What is the relationship between Kael and Seraphina?"
 ./eidosian_venv/bin/python benchmarks/graphrag_qualitative_assessor.py --workspace-root data/graphrag_test/workspace --report-dir reports/graphrag --metrics-json reports/graphrag/bench_metrics_20260219_210522.json
-./eidosian_venv/bin/python benchmarks/model_domain_suite.py --max-tokens 160 --model qwen_0_5b=models/Qwen2.5-0.5B-Instruct-Q8_0.gguf --model llama_1b=models/Llama-3.2-1B-Instruct-Q8_0.gguf --model qwen_1_5b=models/Qwen2.5-1.5B-Instruct-Q8_0.gguf --model smollm2_1_7b=models/SmolLM2-1.7B-Instruct-Q6_K.gguf
+./eidosian_venv/bin/python benchmarks/model_domain_suite.py --max-tokens 160 --model qwen_0_5b=models/Qwen2.5-0.5B-Instruct-Q8_0.gguf --model llama_1b=models/Llama-3.2-1B-Instruct-Q8_0.gguf --model qwen_1_5b=models/Qwen3.5-2B-Instruct-Q8_0.gguf --model smollm2_1_7b=models/SmolLM2-1.7B-Instruct-Q6_K.gguf
 ./eidosian_venv/bin/python benchmarks/model_domain_suite.py --profile multimodal --max-tokens 128
 ./eidosian_venv/bin/python benchmarks/model_domain_suite.py --skip-judges --max-tokens 96 --model qwen_3b=models/Qwen2.5-3B-Instruct-Q6_K.gguf
 ./eidosian_venv/bin/python benchmarks/model_domain_suite.py --skip-judges --max-tokens 96 --model arch_3b=models/Arch-Function-3B-Q6_K.gguf
@@ -53,7 +53,7 @@ Qwen2.5-0.5B result:
 - `query_output`: `The relationship between Kael and Seraphina is that they are lovers.`
 - qualitative score: `0.9121` (`A`)
 
-Qwen2.5-1.5B result:
+Qwen3.5-2B result:
 - failed strict GraphRAG quality gate in `create_community_reports_text` (placeholder disabled).
 
 ### Multi-domain suite (with judges)
@@ -89,7 +89,7 @@ Scores:
   - embedding: `models/nomic-embed-text-v1.5.Q4_K_M.gguf`
 
 - Tool-calling default (balanced judged run):
-  - `models/Qwen2.5-1.5B-Instruct-Q8_0.gguf`
+  - `models/Qwen3.5-2B-Instruct-Q8_0.gguf`
 
 - Tool-calling max quality (deterministic suite, slower):
   - `models/Qwen2.5-3B-Instruct-Q6_K.gguf`

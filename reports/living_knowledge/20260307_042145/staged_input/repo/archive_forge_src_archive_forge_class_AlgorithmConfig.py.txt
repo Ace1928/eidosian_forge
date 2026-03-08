@@ -1,0 +1,437 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AlgorithmConfig.py
+KIND: code
+
+import copy
+import logging
+import math
+import os
+import sys
+from typing import (
+from packaging import version
+import ray
+from ray.rllib.algorithms.callbacks import DefaultCallbacks
+from ray.rllib.core.learner.learner import LearnerHyperparameters
+from ray.rllib.core.learner.learner_group_config import LearnerGroupConfig, ModuleSpec
+from ray.rllib.core.rl_module.marl_module import MultiAgentRLModuleSpec
+from ray.rllib.core.rl_module.rl_module import ModuleID, SingleAgentRLModuleSpec
+from ray.rllib.core.learner.learner import TorchCompileWhatToCompile
+from ray.rllib.env.env_context import EnvContext
+from ray.rllib.env.multi_agent_env import MultiAgentEnv
+from ray.rllib.env.wrappers.atari_wrappers import is_atari
+from ray.rllib.evaluation.collectors.sample_collector import SampleCollector
+from ray.rllib.evaluation.collectors.simple_list_collector import SimpleListCollector
+from ray.rllib.evaluation.rollout_worker import RolloutWorker
+from ray.rllib.models import MODEL_DEFAULTS
+from ray.rllib.policy.policy import Policy, PolicySpec
+from ray.rllib.policy.sample_batch import DEFAULT_POLICY_ID
+from ray.rllib.utils import deep_update, merge_dicts
+from ray.rllib.utils.annotations import (
+from ray.rllib.utils.deprecation import (
+from ray.rllib.utils.framework import try_import_tf, try_import_torch
+from ray.rllib.utils.from_config import NotProvided, from_config
+from ray.rllib.utils.gym import (
+from ray.rllib.utils.policy import validate_policy_id
+from ray.rllib.utils.schedules.scheduler import Scheduler
+from ray.rllib.utils.serialization import (
+from ray.rllib.utils.torch_utils import TORCH_COMPILE_REQUIRED_VERSION
+from ray.rllib.utils.typing import (
+from ray.tune.logger import Logger
+from ray.tune.registry import get_trainable_cls
+from ray.tune.result import TRIAL_INFO
+from ray.tune.tune import _Config
+class AlgorithmConfig(_Config):
+    """A RLlib AlgorithmConfig builds an RLlib Algorithm from a given configuration.
+
+    .. testcode::
+
+        from ray.rllib.algorithms.ppo import PPOConfig
+        from ray.rllib.algorithms.callbacks import MemoryTrackingCallbacks
+        # Construct a generic config object, specifying values within different
+        # sub-categories, e.g. "training".
+        config = (PPOConfig().training(gamma=0.9, lr=0.01)
+                .environment(env="CartPole-v1")
+                .resources(num_gpus=0)
+                .rollouts(num_rollout_workers=0)
+                .callbacks(MemoryTrackingCallbacks)
+            )
+        # A config object can be used to construct the respective Algorithm.
+        rllib_algo = config.build()
+
+    .. testcode::
+
+        from ray.rllib.algorithms.ppo import PPOConfig
+        from ray import tune
+        # In combination with a tune.grid_search:
+        config = PPOConfig()
+        config.training(lr=tune.grid_search([0.01, 0.001]))
+        # Use `to_dict()` method to get the legacy plain python config dict
+        # for usage with `tune.Tuner().fit()`.
+        tune.Tuner("PPO", param_space=config.to_dict())
+    """
+
+    @staticmethod
+    def DEFAULT_POLICY_MAPPING_FN(aid, episode, worker, **kwargs):
+        return DEFAULT_POLICY_ID
+
+    @classmethod
+    def from_dict(cls, config_dict: dict) -> 'AlgorithmConfig':
+        """Creates an AlgorithmConfig from a legacy python config dict.
+
+        .. testcode::
+
+            from ray.rllib.algorithms.ppo.ppo import PPOConfig
+            # pass a RLlib config dict
+            ppo_config = PPOConfig.from_dict({})
+            ppo = ppo_config.build(env="Pendulum-v1")
+
+        Args:
+            config_dict: The legacy formatted python config dict for some algorithm.
+
+        Returns:
+             A new AlgorithmConfig object that matches the given python config dict.
+        """
+        config_obj = cls()
+        config_dict.pop('_is_frozen', None)
+        config_obj.update_from_dict(config_dict)
+        return config_obj
+
+    @classmethod
+    def overrides(cls, **kwargs):
+        """Generates and validates a set of config key/value pairs (passed via kwargs).
+
+        Validation whether given config keys are valid is done immediately upon
+        construction (by comparing against the properties of a default AlgorithmConfig
+        object of this class).
+        Allows combination with a full AlgorithmConfig object to yield a new
+        AlgorithmConfig object.
+
+        Used anywhere, we would like to enable the user to only define a few config
+        settings that would change with respect to some main config, e.g. in multi-agent
+        setups and evaluation configs.
+
+        .. testcode::
+
+            from ray.rllib.algorithms.ppo import PPOConfig
+            from ray.rllib.policy.policy import PolicySpec
+            config = (
+                PPOConfig()
+                .multi_agent(
+                    policies={
+                        "pol0": PolicySpec(config=PPOConfig.overrides(lambda_=0.95))
+                    },
+                )
+            )
+
+
+        .. testcode::
+
+            from ray.rllib.algorithms.algorithm_config import AlgorithmConfig
+            from ray.rllib.algorithms.ppo import PPOConfig
+            config = (
+                PPOConfig()
+                .evaluation(
+                    evaluation_num_workers=1,
+                    evaluation_interval=1,
+                    evaluation_config=AlgorithmConfig.overrides(explore=False),
+                )
+            )
+
+        Returns:
+            A dict mapping valid config property-names to values.
+
+        Raises:
+            KeyError: In case a non-existing property name (kwargs key) is being
+            passed in. Valid property names are taken from a default AlgorithmConfig
+            object of `cls`.
+        """
+        default_config = cls()
+        config_overrides = {}
+        for key, value in kwargs.items():
+            if not hasattr(default_config, key):
+                raise KeyError(f'Invalid property name {key} for config class {cls.__name__}!')
+            key = cls._translate_special_keys(key, warn_deprecated=True)
+            config_overrides[key] = value
+        return config_overrides
+
+    def __init__(self, algo_class=None):
+        self.algo_class = algo_class
+        self.extra_python_environs_for_driver = {}
+        self.extra_python_environs_for_worker = {}
+        self.num_gpus = 0
+        self.num_cpus_per_worker = 1
+        self.num_gpus_per_worker = 0
+        self._fake_gpus = False
+        self.num_cpus_for_local_worker = 1
+        self.num_learner_workers = 0
+        self.num_gpus_per_learner_worker = 0
+        self.num_cpus_per_learner_worker = 1
+        self.local_gpu_idx = 0
+        self.custom_resources_per_worker = {}
+        self.placement_strategy = 'PACK'
+        self.framework_str = 'torch'
+        self.eager_tracing = True
+        self.eager_max_retraces = 20
+        self.tf_session_args = {'intra_op_parallelism_threads': 2, 'inter_op_parallelism_threads': 2, 'gpu_options': {'allow_growth': True}, 'log_device_placement': False, 'device_count': {'CPU': 1}, 'allow_soft_placement': True}
+        self.local_tf_session_args = {'intra_op_parallelism_threads': 8, 'inter_op_parallelism_threads': 8}
+        self.torch_compile_learner = False
+        self.torch_compile_learner_what_to_compile = TorchCompileWhatToCompile.FORWARD_TRAIN
+        self.torch_compile_learner_dynamo_backend = 'aot_eager' if sys.platform == 'darwin' else 'inductor'
+        self.torch_compile_learner_dynamo_mode = None
+        self.torch_compile_worker = False
+        self.torch_compile_worker_dynamo_backend = 'aot_eager' if sys.platform == 'darwin' else 'onnxrt'
+        self.torch_compile_worker_dynamo_mode = None
+        self.env = None
+        self.env_config = {}
+        self.observation_space = None
+        self.action_space = None
+        self.env_task_fn = None
+        self.render_env = False
+        self.clip_rewards = None
+        self.normalize_actions = True
+        self.clip_actions = False
+        self.disable_env_checking = False
+        self.auto_wrap_old_gym_envs = True
+        self.action_mask_key = 'action_mask'
+        self._is_atari = None
+        self.env_runner_cls = None
+        self.num_rollout_workers = 0
+        self.num_envs_per_worker = 1
+        self.create_env_on_local_worker = False
+        self.enable_connectors = True
+        self.rollout_fragment_length = 200
+        self.batch_mode = 'truncate_episodes'
+        self.validate_workers_after_construction = True
+        self.compress_observations = False
+        self.sampler_perf_stats_ema_coef = None
+        self.sample_async = False
+        self.remote_worker_envs = False
+        self.remote_env_batch_wait_ms = 0
+        self.enable_tf1_exec_eagerly = False
+        self.sample_collector = SimpleListCollector
+        self.preprocessor_pref = 'deepmind'
+        self.observation_filter = 'NoFilter'
+        self.update_worker_filter_stats = True
+        self.use_worker_filter_stats = True
+        self.gamma = 0.99
+        self.lr = 0.001
+        self.grad_clip = None
+        self.grad_clip_by = 'global_norm'
+        self.train_batch_size = 32
+        try:
+            self.model = copy.deepcopy(MODEL_DEFAULTS)
+        except AttributeError:
+            pass
+        self.optimizer = {}
+        self.max_requests_in_flight_per_sampler_worker = 2
+        self._learner_class = None
+        self.callbacks_class = DefaultCallbacks
+        self.explore = True
+        self.exploration_config = {}
+        self.policies = {DEFAULT_POLICY_ID: PolicySpec()}
+        self.algorithm_config_overrides_per_module = {}
+        self.policy_map_capacity = 100
+        self.policy_mapping_fn = self.DEFAULT_POLICY_MAPPING_FN
+        self.policies_to_train = None
+        self.policy_states_are_swappable = False
+        self.observation_fn = None
+        self.count_steps_by = 'env_steps'
+        self.input_ = 'sampler'
+        self.input_config = {}
+        self.actions_in_input_normalized = False
+        self.postprocess_inputs = False
+        self.shuffle_buffer_size = 0
+        self.output = None
+        self.output_config = {}
+        self.output_compress_columns = ['obs', 'new_obs']
+        self.output_max_file_size = 64 * 1024 * 1024
+        self.offline_sampling = False
+        self.evaluation_interval = None
+        self.evaluation_duration = 10
+        self.evaluation_duration_unit = 'episodes'
+        self.evaluation_sample_timeout_s = 180.0
+        self.evaluation_parallel_to_training = False
+        self.evaluation_config = None
+        self.off_policy_estimation_methods = {}
+        self.ope_split_batch_by_episode = True
+        self.evaluation_num_workers = 0
+        self.custom_evaluation_function = None
+        self.always_attach_evaluation_results = False
+        self.enable_async_evaluation = False
+        self.in_evaluation = False
+        self.sync_filters_on_rollout_workers_timeout_s = 60.0
+        self.keep_per_episode_custom_metrics = False
+        self.metrics_episode_collection_timeout_s = 60.0
+        self.metrics_num_episodes_for_smoothing = 100
+        self.min_time_s_per_iteration = None
+        self.min_train_timesteps_per_iteration = 0
+        self.min_sample_timesteps_per_iteration = 0
+        self.export_native_model_files = False
+        self.checkpoint_trainable_policies_only = False
+        self.logger_creator = None
+        self.logger_config = None
+        self.log_level = 'WARN'
+        self.log_sys_usage = True
+        self.fake_sampler = False
+        self.seed = None
+        self.ignore_worker_failures = False
+        self.recreate_failed_workers = False
+        self.max_num_worker_restarts = 1000
+        self.delay_between_worker_restarts_s = 60.0
+        self.restart_failed_sub_environments = False
+        self.num_consecutive_worker_failures_tolerance = 100
+        self.worker_health_probe_timeout_s = 60
+        self.worker_restore_timeout_s = 1800
+        self._rl_module_spec = None
+        self.__prior_exploration_config = None
+        self._enable_new_api_stack = False
+        self._tf_policy_handles_more_than_one_loss = False
+        self._disable_preprocessor_api = False
+        self._disable_action_flattening = False
+        self._disable_execution_plan_api = True
+        self._disable_initialize_loss_from_dummy_batch = False
+        self._is_frozen = False
+        self.simple_optimizer = DEPRECATED_VALUE
+        self.monitor = DEPRECATED_VALUE
+        self.evaluation_num_episodes = DEPRECATED_VALUE
+        self.metrics_smoothing_episodes = DEPRECATED_VALUE
+        self.timesteps_per_iteration = DEPRECATED_VALUE
+        self.min_iter_time_s = DEPRECATED_VALUE
+        self.collect_metrics_timeout = DEPRECATED_VALUE
+        self.min_time_s_per_reporting = DEPRECATED_VALUE
+        self.min_train_timesteps_per_reporting = DEPRECATED_VALUE
+        self.min_sample_timesteps_per_reporting = DEPRECATED_VALUE
+        self.input_evaluation = DEPRECATED_VALUE
+        self.policy_map_cache = DEPRECATED_VALUE
+        self.worker_cls = DEPRECATED_VALUE
+        self.synchronize_filters = DEPRECATED_VALUE
+        self.sample_async = DEPRECATED_VALUE
+        self.buffer_size = DEPRECATED_VALUE
+        self.prioritized_replay = DEPRECATED_VALUE
+        self.learning_starts = DEPRECATED_VALUE
+        self.replay_batch_size = DEPRECATED_VALUE
+        self.replay_sequence_length = None
+        self.replay_mode = DEPRECATED_VALUE
+        self.prioritized_replay_alpha = DEPRECATED_VALUE
+        self.prioritized_replay_beta = DEPRECATED_VALUE
+        self.prioritized_replay_eps = DEPRECATED_VALUE
+        self.min_time_s_per_reporting = DEPRECATED_VALUE
+        self.min_train_timesteps_per_reporting = DEPRECATED_VALUE
+        self.min_sample_timesteps_per_reporting = DEPRECATED_VALUE
+
+    def to_dict(self) -> AlgorithmConfigDict:
+        """Converts all settings into a legacy config dict for backward compatibility.
+
+        Returns:
+            A complete AlgorithmConfigDict, usable in backward-compatible Tune/RLlib
+            use cases, e.g. w/ `tune.Tuner().fit()`.
+        """
+        config = copy.deepcopy(vars(self))
+        config.pop('algo_class')
+        config.pop('_is_frozen')
+        if 'lambda_' in config:
+            assert hasattr(self, 'lambda_')
+            config['lambda'] = getattr(self, 'lambda_')
+            config.pop('lambda_')
+        if 'input_' in config:
+            assert hasattr(self, 'input_')
+            config['input'] = getattr(self, 'input_')
+            config.pop('input_')
+        if 'policies' in config and isinstance(config['policies'], dict):
+            policies_dict = {}
+            for policy_id, policy_spec in config.pop('policies').items():
+                if isinstance(policy_spec, PolicySpec):
+                    policies_dict[policy_id] = (policy_spec.policy_class, policy_spec.observation_space, policy_spec.action_space, policy_spec.config)
+                else:
+                    policies_dict[policy_id] = policy_spec
+            config['policies'] = policies_dict
+        config['callbacks'] = config.pop('callbacks_class', DefaultCallbacks)
+        config['create_env_on_driver'] = config.pop('create_env_on_local_worker', 1)
+        config['custom_eval_function'] = config.pop('custom_evaluation_function', None)
+        config['framework'] = config.pop('framework_str', None)
+        config['num_cpus_for_driver'] = config.pop('num_cpus_for_local_worker', 1)
+        config['num_workers'] = config.pop('num_rollout_workers', 0)
+        for dep_k in ['monitor', 'evaluation_num_episodes', 'metrics_smoothing_episodes', 'timesteps_per_iteration', 'min_iter_time_s', 'collect_metrics_timeout', 'buffer_size', 'prioritized_replay', 'learning_starts', 'replay_batch_size', 'replay_mode', 'prioritized_replay_alpha', 'prioritized_replay_beta', 'prioritized_replay_eps', 'min_time_s_per_reporting', 'min_train_timesteps_per_reporting', 'min_sample_timesteps_per_reporting', 'input_evaluation']:
+            if config.get(dep_k) == DEPRECATED_VALUE:
+                config.pop(dep_k, None)
+        return config
+
+    def update_from_dict(self, config_dict: PartialAlgorithmConfigDict) -> 'AlgorithmConfig':
+        """Modifies this AlgorithmConfig via the provided python config dict.
+
+        Warns if `config_dict` contains deprecated keys.
+        Silently sets even properties of `self` that do NOT exist. This way, this method
+        may be used to configure custom Policies which do not have their own specific
+        AlgorithmConfig classes, e.g.
+        `ray.rllib.examples.policy.random_policy::RandomPolicy`.
+
+        Args:
+            config_dict: The old-style python config dict (PartialAlgorithmConfigDict)
+                to use for overriding some properties defined in there.
+
+        Returns:
+            This updated AlgorithmConfig object.
+        """
+        eval_call = {}
+        if '_enable_new_api_stack' in config_dict:
+            self.experimental(_enable_new_api_stack=config_dict['_enable_new_api_stack'])
+        for key, value in config_dict.items():
+            key = self._translate_special_keys(key, warn_deprecated=False)
+            if key == TRIAL_INFO:
+                continue
+            if key == '_enable_new_api_stack':
+                continue
+            elif key == 'multiagent':
+                kwargs = {k: value[k] for k in ['policies', 'policy_map_capacity', 'policy_mapping_fn', 'policies_to_train', 'policy_states_are_swappable', 'observation_fn', 'count_steps_by'] if k in value}
+                self.multi_agent(**kwargs)
+            elif key == 'callbacks_class' and value != NOT_SERIALIZABLE:
+                if isinstance(value, str):
+                    value = deserialize_type(value, error=True)
+                self.callbacks(callbacks_class=value)
+            elif key == 'env_config':
+                self.environment(env_config=value)
+            elif key.startswith('evaluation_'):
+                eval_call[key] = value
+            elif key == 'exploration_config':
+                if config_dict.get('_enable_new_api_stack', False):
+                    self.exploration_config = value
+                    continue
+                if isinstance(value, dict) and 'type' in value:
+                    value['type'] = deserialize_type(value['type'])
+                self.exploration(exploration_config=value)
+            elif key == 'model':
+                if isinstance(value, dict) and value.get('custom_model'):
+                    value['custom_model'] = deserialize_type(value['custom_model'])
+                self.training(**{key: value})
+            elif key == 'optimizer':
+                self.training(**{key: value})
+            elif key == 'replay_buffer_config':
+                if isinstance(value, dict) and 'type' in value:
+                    value['type'] = deserialize_type(value['type'])
+                self.training(**{key: value})
+            elif key == 'sample_collector':
+                value = deserialize_type(value)
+                self.rollouts(sample_collector=value)
+            else:
+                setattr(self, key, value)
+        self.evaluation(**eval_call)
+        return self
+
+    def serialize(self) -> Mapping[str, Any]:
+        """Returns a mapping from str to JSON'able values representing this config.
+
+        The resulting values will not have any code in them.
+        Classes (such as `callbacks_class`) will be converted to their full
+        classpath, e.g. `ray.rllib.algorithms.callbacks.DefaultCallbacks`.
+        Actual code such as lambda functions will be written as their source
+        code (str) plus any closure information for properly restoring the
+        code inside the AlgorithmConfig object made from the returned dict data.
+        Dataclass objects get converted to dicts.
+
+        Returns:
+            A mapping from str to JSON'able values.
+        """
+        config = self.to_dict()
+        return self._serialize_dict(config)
+
+    def copy(self, copy_frozen: Optional[bool]=None) -> 'AlgorithmConfig':
+        """Creates a deep copy of this config and (un)freezes if necessary

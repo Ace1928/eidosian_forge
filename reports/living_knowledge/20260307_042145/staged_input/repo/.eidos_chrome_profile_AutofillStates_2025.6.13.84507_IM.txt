@@ -1,0 +1,31 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/IM
+KIND: config
+
+IM
+
+castletown
+bride
+lonan
+jurby
+rushen
+
+maughold
+santon	
+andreas
+german	
+patrick
+
+ballaugh
+arbory
+laxey
+malew	
+michael
+peel	
+lezayre
+marown
+port st mary
+ramsey	
+douglas
+onchan
+	port erin	
+braddan

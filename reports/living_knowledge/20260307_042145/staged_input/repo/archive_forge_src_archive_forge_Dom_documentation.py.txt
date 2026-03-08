@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/Dom_documentation.py
+KIND: code
+
+from .Residues import Residues
+Represent the SCOP domain record as a tab-separated string.

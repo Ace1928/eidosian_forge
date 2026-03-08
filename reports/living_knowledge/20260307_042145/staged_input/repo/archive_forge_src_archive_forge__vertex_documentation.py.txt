@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_vertex_documentation.py
+KIND: code
+
+import collections
+from abc import ABC, abstractmethod
+import numpy as np
+from scipy._lib._util import MapWrapper
+Check for minimisers.

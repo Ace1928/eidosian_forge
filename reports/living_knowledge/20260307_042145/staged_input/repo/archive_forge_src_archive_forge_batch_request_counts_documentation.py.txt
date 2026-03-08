@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/batch_request_counts_documentation.py
+KIND: code
+
+from .._models import BaseModel
+Total number of requests in the batch.

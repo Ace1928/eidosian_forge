@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_Abstract_Algebra.py
+KIND: code
+
+class Abstract_Algebra:
+
+    def __init__(self):
+        self.theories = []

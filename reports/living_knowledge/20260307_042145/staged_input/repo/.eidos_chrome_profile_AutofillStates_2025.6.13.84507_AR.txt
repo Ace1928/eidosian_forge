@@ -1,0 +1,31 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/AR
+KIND: config
+
+AR+
+provincia de saltasaltasalta province@
+buenos airesbuenos aires provinceprovincia de buenos aires_
+buenos airescabacapital federal ciudad autónoma de buenos airesciudad de buenos aires4
+provincia de san luissan luissan luis province=
+entre ríosentre ríos provinceprovincia de entre ríos4
+la riojala rioja provinceprovincia de la riojaU
+ provincia de santiago del esterosantiago del esterosantiago del estero province,
+chacochaco provinceprovincia del chaco4
+provincia de san juansan juansan juan province#
+	catamarcaprovincia de catamarca4
+la pampala pampa provinceprovincia de la pampa1
+mendozamendoza provinceprovincia de mendoza4
+misionesmisiones provinceprovincia de misiones1
+formosaformosa provinceprovincia de formosa5
+neuquénneuquén provinceprovincia del neuquén:
+provincia de río negro
+río negrorío negro province4
+provincia de santa fesanta fesanta fe province4
+provincia de tucumántucumántucumán province/
+chubutchubut provinceprovincia del chubutL
+provincia de tierra del fuegotierra del fuegotierra del fuego province:
+
+corrientescorrientes provinceprovincia de corrientes4
+córdobacórdoba provinceprovincia de córdoba+
+jujuyjujuy provinceprovincia de jujuy:
+provincia de santa cruz
+santa cruzsanta cruz province

@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_opaque_documentation.py
+KIND: code
+
+import ctypes
+Allow these pointers to be used as keys in dictionaries

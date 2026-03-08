@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/apiproxy_errors_documentation.py
+KIND: code
+
+Raised by APIProxy when loading rpc authority from the environment.

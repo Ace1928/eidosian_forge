@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/cairoCanvas_documentation.py
+KIND: code
+
+import array
+import math
+import os
+import re
+from PIL import Image
+from rdkit.Chem.Draw.canvasbase import CanvasBase
+temporary interface, must be splitted to different methods,

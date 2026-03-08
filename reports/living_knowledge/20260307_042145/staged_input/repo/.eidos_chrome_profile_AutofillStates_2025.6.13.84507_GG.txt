@@ -1,0 +1,18 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/GG
+KIND: config
+
+GG(
+saint sampsonsaintsamson
+st sampson
+valele valle
+saint savioursaintsauveurI
+saint petersaint pierre du boissaintpierreduboisst pierre du bois
+
+torteval&
+saint martinsaintmartin	st martin#
+saint peter portsaintpierreport
+sarksercq
+alderneyaurigny3
+saint andrewsaintandrédelapommeraye	st andrew%
+castelcâtelsaintemarieducâtel
+forest	la forêt

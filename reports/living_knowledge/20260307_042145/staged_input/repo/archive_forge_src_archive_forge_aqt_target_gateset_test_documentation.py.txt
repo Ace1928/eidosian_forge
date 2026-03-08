@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/aqt_target_gateset_test_documentation.py
+KIND: code
+
+import pytest
+import sympy
+import cirq
+from cirq_aqt import aqt_target_gateset
+Tests for AQTTargetGateset.

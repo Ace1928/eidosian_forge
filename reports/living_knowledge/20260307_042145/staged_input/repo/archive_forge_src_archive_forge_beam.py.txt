@@ -1,0 +1,513 @@
+SOURCE_PATH: archive_forge/src/archive_forge/beam.py
+KIND: code
+
+"""
+This module can be used to solve 2D beam bending problems with
+singularity functions in mechanics.
+"""
+
+from sympy.core import S, Symbol, diff, symbols
+from sympy.core.add import Add
+from sympy.core.expr import Expr
+from sympy.core.function import (Derivative, Function)
+from sympy.core.mul import Mul
+from sympy.core.relational import Eq
+from sympy.core.sympify import sympify
+from sympy.solvers import linsolve
+from sympy.solvers.ode.ode import dsolve
+from sympy.solvers.solvers import solve
+from sympy.printing import sstr
+from sympy.functions import SingularityFunction, Piecewise, factorial
+from sympy.integrals import integrate
+from sympy.series import limit
+from sympy.plotting import plot, PlotGrid
+from sympy.geometry.entity import GeometryEntity
+from sympy.external import import_module
+from sympy.sets.sets import Interval
+from sympy.utilities.lambdify import lambdify
+from sympy.utilities.decorator import doctest_depends_on
+from sympy.utilities.iterables import iterable
+
+numpy = import_module('numpy', import_kwargs={'fromlist':['arange']})
+
+
+
+class Beam:
+    """
+    A Beam is a structural element that is capable of withstanding load
+    primarily by resisting against bending. Beams are characterized by
+    their cross sectional profile(Second moment of area), their length
+    and their material.
+
+    .. note::
+       A consistent sign convention must be used while solving a beam
+       bending problem; the results will
+       automatically follow the chosen sign convention. However, the
+       chosen sign convention must respect the rule that, on the positive
+       side of beam's axis (in respect to current section), a loading force
+       giving positive shear yields a negative moment, as below (the
+       curved arrow shows the positive moment and rotation):
+
+    .. image:: allowed-sign-conventions.png
+
+    Examples
+    ========
+    There is a beam of length 4 meters. A constant distributed load of 6 N/m
+    is applied from half of the beam till the end. There are two simple supports
+    below the beam, one at the starting point and another at the ending point
+    of the beam. The deflection of the beam at the end is restricted.
+
+    Using the sign convention of downwards forces being positive.
+
+    >>> from sympy.physics.continuum_mechanics.beam import Beam
+    >>> from sympy import symbols, Piecewise
+    >>> E, I = symbols('E, I')
+    >>> R1, R2 = symbols('R1, R2')
+    >>> b = Beam(4, E, I)
+    >>> b.apply_load(R1, 0, -1)
+    >>> b.apply_load(6, 2, 0)
+    >>> b.apply_load(R2, 4, -1)
+    >>> b.bc_deflection = [(0, 0), (4, 0)]
+    >>> b.boundary_conditions
+    {'deflection': [(0, 0), (4, 0)], 'slope': []}
+    >>> b.load
+    R1*SingularityFunction(x, 0, -1) + R2*SingularityFunction(x, 4, -1) + 6*SingularityFunction(x, 2, 0)
+    >>> b.solve_for_reaction_loads(R1, R2)
+    >>> b.load
+    -3*SingularityFunction(x, 0, -1) + 6*SingularityFunction(x, 2, 0) - 9*SingularityFunction(x, 4, -1)
+    >>> b.shear_force()
+    3*SingularityFunction(x, 0, 0) - 6*SingularityFunction(x, 2, 1) + 9*SingularityFunction(x, 4, 0)
+    >>> b.bending_moment()
+    3*SingularityFunction(x, 0, 1) - 3*SingularityFunction(x, 2, 2) + 9*SingularityFunction(x, 4, 1)
+    >>> b.slope()
+    (-3*SingularityFunction(x, 0, 2)/2 + SingularityFunction(x, 2, 3) - 9*SingularityFunction(x, 4, 2)/2 + 7)/(E*I)
+    >>> b.deflection()
+    (7*x - SingularityFunction(x, 0, 3)/2 + SingularityFunction(x, 2, 4)/4 - 3*SingularityFunction(x, 4, 3)/2)/(E*I)
+    >>> b.deflection().rewrite(Piecewise)
+    (7*x - Piecewise((x**3, x > 0), (0, True))/2
+         - 3*Piecewise(((x - 4)**3, x > 4), (0, True))/2
+         + Piecewise(((x - 2)**4, x > 2), (0, True))/4)/(E*I)
+
+    Calculate the support reactions for a fully symbolic beam of length L.
+    There are two simple supports below the beam, one at the starting point
+    and another at the ending point of the beam. The deflection of the beam
+    at the end is restricted. The beam is loaded with:
+
+    * a downward point load P1 applied at L/4
+    * an upward point load P2 applied at L/8
+    * a counterclockwise moment M1 applied at L/2
+    * a clockwise moment M2 applied at 3*L/4
+    * a distributed constant load q1, applied downward, starting from L/2
+      up to 3*L/4
+    * a distributed constant load q2, applied upward, starting from 3*L/4
+      up to L
+
+    No assumptions are needed for symbolic loads. However, defining a positive
+    length will help the algorithm to compute the solution.
+
+    >>> E, I = symbols('E, I')
+    >>> L = symbols("L", positive=True)
+    >>> P1, P2, M1, M2, q1, q2 = symbols("P1, P2, M1, M2, q1, q2")
+    >>> R1, R2 = symbols('R1, R2')
+    >>> b = Beam(L, E, I)
+    >>> b.apply_load(R1, 0, -1)
+    >>> b.apply_load(R2, L, -1)
+    >>> b.apply_load(P1, L/4, -1)
+    >>> b.apply_load(-P2, L/8, -1)
+    >>> b.apply_load(M1, L/2, -2)
+    >>> b.apply_load(-M2, 3*L/4, -2)
+    >>> b.apply_load(q1, L/2, 0, 3*L/4)
+    >>> b.apply_load(-q2, 3*L/4, 0, L)
+    >>> b.bc_deflection = [(0, 0), (L, 0)]
+    >>> b.solve_for_reaction_loads(R1, R2)
+    >>> print(b.reaction_loads[R1])
+    (-3*L**2*q1 + L**2*q2 - 24*L*P1 + 28*L*P2 - 32*M1 + 32*M2)/(32*L)
+    >>> print(b.reaction_loads[R2])
+    (-5*L**2*q1 + 7*L**2*q2 - 8*L*P1 + 4*L*P2 + 32*M1 - 32*M2)/(32*L)
+    """
+
+    def __init__(self, length, elastic_modulus, second_moment, area=Symbol('A'), variable=Symbol('x'), base_char='C'):
+        """Initializes the class.
+
+        Parameters
+        ==========
+
+        length : Sympifyable
+            A Symbol or value representing the Beam's length.
+
+        elastic_modulus : Sympifyable
+            A SymPy expression representing the Beam's Modulus of Elasticity.
+            It is a measure of the stiffness of the Beam material. It can
+            also be a continuous function of position along the beam.
+
+        second_moment : Sympifyable or Geometry object
+            Describes the cross-section of the beam via a SymPy expression
+            representing the Beam's second moment of area. It is a geometrical
+            property of an area which reflects how its points are distributed
+            with respect to its neutral axis. It can also be a continuous
+            function of position along the beam. Alternatively ``second_moment``
+            can be a shape object such as a ``Polygon`` from the geometry module
+            representing the shape of the cross-section of the beam. In such cases,
+            it is assumed that the x-axis of the shape object is aligned with the
+            bending axis of the beam. The second moment of area will be computed
+            from the shape object internally.
+
+        area : Symbol/float
+            Represents the cross-section area of beam
+
+        variable : Symbol, optional
+            A Symbol object that will be used as the variable along the beam
+            while representing the load, shear, moment, slope and deflection
+            curve. By default, it is set to ``Symbol('x')``.
+
+        base_char : String, optional
+            A String that will be used as base character to generate sequential
+            symbols for integration constants in cases where boundary conditions
+            are not sufficient to solve them.
+        """
+        self.length = length
+        self.elastic_modulus = elastic_modulus
+        if isinstance(second_moment, GeometryEntity):
+            self.cross_section = second_moment
+        else:
+            self.cross_section = None
+            self.second_moment = second_moment
+        self.variable = variable
+        self._base_char = base_char
+        self._boundary_conditions = {'deflection': [], 'slope': []}
+        self._load = 0
+        self.area = area
+        self._applied_supports = []
+        self._support_as_loads = []
+        self._applied_loads = []
+        self._reaction_loads = {}
+        self._ild_reactions = {}
+        self._ild_shear = 0
+        self._ild_moment = 0
+        # _original_load is a copy of _load equations with unsubstituted reaction
+        # forces. It is used for calculating reaction forces in case of I.L.D.
+        self._original_load = 0
+        self._composite_type = None
+        self._hinge_position = None
+
+    def __str__(self):
+        shape_description = self._cross_section if self._cross_section else self._second_moment
+        str_sol = 'Beam({}, {}, {})'.format(sstr(self._length), sstr(self._elastic_modulus), sstr(shape_description))
+        return str_sol
+
+    @property
+    def reaction_loads(self):
+        """ Returns the reaction forces in a dictionary."""
+        return self._reaction_loads
+
+    @property
+    def ild_shear(self):
+        """ Returns the I.L.D. shear equation."""
+        return self._ild_shear
+
+    @property
+    def ild_reactions(self):
+        """ Returns the I.L.D. reaction forces in a dictionary."""
+        return self._ild_reactions
+
+    @property
+    def ild_moment(self):
+        """ Returns the I.L.D. moment equation."""
+        return self._ild_moment
+
+    @property
+    def length(self):
+        """Length of the Beam."""
+        return self._length
+
+    @length.setter
+    def length(self, l):
+        self._length = sympify(l)
+
+    @property
+    def area(self):
+        """Cross-sectional area of the Beam. """
+        return self._area
+
+    @area.setter
+    def area(self, a):
+        self._area = sympify(a)
+
+    @property
+    def variable(self):
+        """
+        A symbol that can be used as a variable along the length of the beam
+        while representing load distribution, shear force curve, bending
+        moment, slope curve and the deflection curve. By default, it is set
+        to ``Symbol('x')``, but this property is mutable.
+
+        Examples
+        ========
+
+        >>> from sympy.physics.continuum_mechanics.beam import Beam
+        >>> from sympy import symbols
+        >>> E, I, A = symbols('E, I, A')
+        >>> x, y, z = symbols('x, y, z')
+        >>> b = Beam(4, E, I)
+        >>> b.variable
+        x
+        >>> b.variable = y
+        >>> b.variable
+        y
+        >>> b = Beam(4, E, I, A, z)
+        >>> b.variable
+        z
+        """
+        return self._variable
+
+    @variable.setter
+    def variable(self, v):
+        if isinstance(v, Symbol):
+            self._variable = v
+        else:
+            raise TypeError("""The variable should be a Symbol object.""")
+
+    @property
+    def elastic_modulus(self):
+        """Young's Modulus of the Beam. """
+        return self._elastic_modulus
+
+    @elastic_modulus.setter
+    def elastic_modulus(self, e):
+        self._elastic_modulus = sympify(e)
+
+    @property
+    def second_moment(self):
+        """Second moment of area of the Beam. """
+        return self._second_moment
+
+    @second_moment.setter
+    def second_moment(self, i):
+        self._cross_section = None
+        if isinstance(i, GeometryEntity):
+            raise ValueError("To update cross-section geometry use `cross_section` attribute")
+        else:
+            self._second_moment = sympify(i)
+
+    @property
+    def cross_section(self):
+        """Cross-section of the beam"""
+        return self._cross_section
+
+    @cross_section.setter
+    def cross_section(self, s):
+        if s:
+            self._second_moment = s.second_moment_of_area()[0]
+        self._cross_section = s
+
+    @property
+    def boundary_conditions(self):
+        """
+        Returns a dictionary of boundary conditions applied on the beam.
+        The dictionary has three keywords namely moment, slope and deflection.
+        The value of each keyword is a list of tuple, where each tuple
+        contains location and value of a boundary condition in the format
+        (location, value).
+
+        Examples
+        ========
+        There is a beam of length 4 meters. The bending moment at 0 should be 4
+        and at 4 it should be 0. The slope of the beam should be 1 at 0. The
+        deflection should be 2 at 0.
+
+        >>> from sympy.physics.continuum_mechanics.beam import Beam
+        >>> from sympy import symbols
+        >>> E, I = symbols('E, I')
+        >>> b = Beam(4, E, I)
+        >>> b.bc_deflection = [(0, 2)]
+        >>> b.bc_slope = [(0, 1)]
+        >>> b.boundary_conditions
+        {'deflection': [(0, 2)], 'slope': [(0, 1)]}
+
+        Here the deflection of the beam should be ``2`` at ``0``.
+        Similarly, the slope of the beam should be ``1`` at ``0``.
+        """
+        return self._boundary_conditions
+
+    @property
+    def bc_slope(self):
+        return self._boundary_conditions['slope']
+
+    @bc_slope.setter
+    def bc_slope(self, s_bcs):
+        self._boundary_conditions['slope'] = s_bcs
+
+    @property
+    def bc_deflection(self):
+        return self._boundary_conditions['deflection']
+
+    @bc_deflection.setter
+    def bc_deflection(self, d_bcs):
+        self._boundary_conditions['deflection'] = d_bcs
+
+    def join(self, beam, via="fixed"):
+        """
+        This method joins two beams to make a new composite beam system.
+        Passed Beam class instance is attached to the right end of calling
+        object. This method can be used to form beams having Discontinuous
+        values of Elastic modulus or Second moment.
+
+        Parameters
+        ==========
+        beam : Beam class object
+            The Beam object which would be connected to the right of calling
+            object.
+        via : String
+            States the way two Beam object would get connected
+            - For axially fixed Beams, via="fixed"
+            - For Beams connected via hinge, via="hinge"
+
+        Examples
+        ========
+        There is a cantilever beam of length 4 meters. For first 2 meters
+        its moment of inertia is `1.5*I` and `I` for the other end.
+        A pointload of magnitude 4 N is applied from the top at its free end.
+
+        >>> from sympy.physics.continuum_mechanics.beam import Beam
+        >>> from sympy import symbols
+        >>> E, I = symbols('E, I')
+        >>> R1, R2 = symbols('R1, R2')
+        >>> b1 = Beam(2, E, 1.5*I)
+        >>> b2 = Beam(2, E, I)
+        >>> b = b1.join(b2, "fixed")
+        >>> b.apply_load(20, 4, -1)
+        >>> b.apply_load(R1, 0, -1)
+        >>> b.apply_load(R2, 0, -2)
+        >>> b.bc_slope = [(0, 0)]
+        >>> b.bc_deflection = [(0, 0)]
+        >>> b.solve_for_reaction_loads(R1, R2)
+        >>> b.load
+        80*SingularityFunction(x, 0, -2) - 20*SingularityFunction(x, 0, -1) + 20*SingularityFunction(x, 4, -1)
+        >>> b.slope()
+        (-((-80*SingularityFunction(x, 0, 1) + 10*SingularityFunction(x, 0, 2) - 10*SingularityFunction(x, 4, 2))/I + 120/I)/E + 80.0/(E*I))*SingularityFunction(x, 2, 0)
+        - 0.666666666666667*(-80*SingularityFunction(x, 0, 1) + 10*SingularityFunction(x, 0, 2) - 10*SingularityFunction(x, 4, 2))*SingularityFunction(x, 0, 0)/(E*I)
+        + 0.666666666666667*(-80*SingularityFunction(x, 0, 1) + 10*SingularityFunction(x, 0, 2) - 10*SingularityFunction(x, 4, 2))*SingularityFunction(x, 2, 0)/(E*I)
+        """
+        x = self.variable
+        E = self.elastic_modulus
+        new_length = self.length + beam.length
+        if self.second_moment != beam.second_moment:
+            new_second_moment = Piecewise((self.second_moment, x<=self.length),
+                                    (beam.second_moment, x<=new_length))
+        else:
+            new_second_moment = self.second_moment
+
+        if via == "fixed":
+            new_beam = Beam(new_length, E, new_second_moment, x)
+            new_beam._composite_type = "fixed"
+            return new_beam
+
+        if via == "hinge":
+            new_beam = Beam(new_length, E, new_second_moment, x)
+            new_beam._composite_type = "hinge"
+            new_beam._hinge_position = self.length
+            return new_beam
+
+    def apply_support(self, loc, type="fixed"):
+        """
+        This method applies support to a particular beam object.
+
+        Parameters
+        ==========
+        loc : Sympifyable
+            Location of point at which support is applied.
+        type : String
+            Determines type of Beam support applied. To apply support structure
+            with
+            - zero degree of freedom, type = "fixed"
+            - one degree of freedom, type = "pin"
+            - two degrees of freedom, type = "roller"
+
+        Examples
+        ========
+        There is a beam of length 30 meters. A moment of magnitude 120 Nm is
+        applied in the clockwise direction at the end of the beam. A pointload
+        of magnitude 8 N is applied from the top of the beam at the starting
+        point. There are two simple supports below the beam. One at the end
+        and another one at a distance of 10 meters from the start. The
+        deflection is restricted at both the supports.
+
+        Using the sign convention of upward forces and clockwise moment
+        being positive.
+
+        >>> from sympy.physics.continuum_mechanics.beam import Beam
+        >>> from sympy import symbols
+        >>> E, I = symbols('E, I')
+        >>> b = Beam(30, E, I)
+        >>> b.apply_support(10, 'roller')
+        >>> b.apply_support(30, 'roller')
+        >>> b.apply_load(-8, 0, -1)
+        >>> b.apply_load(120, 30, -2)
+        >>> R_10, R_30 = symbols('R_10, R_30')
+        >>> b.solve_for_reaction_loads(R_10, R_30)
+        >>> b.load
+        -8*SingularityFunction(x, 0, -1) + 6*SingularityFunction(x, 10, -1)
+        + 120*SingularityFunction(x, 30, -2) + 2*SingularityFunction(x, 30, -1)
+        >>> b.slope()
+        (-4*SingularityFunction(x, 0, 2) + 3*SingularityFunction(x, 10, 2)
+            + 120*SingularityFunction(x, 30, 1) + SingularityFunction(x, 30, 2) + 4000/3)/(E*I)
+        """
+        loc = sympify(loc)
+        self._applied_supports.append((loc, type))
+        if type in ("pin", "roller"):
+            reaction_load = Symbol('R_'+str(loc))
+            self.apply_load(reaction_load, loc, -1)
+            self.bc_deflection.append((loc, 0))
+        else:
+            reaction_load = Symbol('R_'+str(loc))
+            reaction_moment = Symbol('M_'+str(loc))
+            self.apply_load(reaction_load, loc, -1)
+            self.apply_load(reaction_moment, loc, -2)
+            self.bc_deflection.append((loc, 0))
+            self.bc_slope.append((loc, 0))
+            self._support_as_loads.append((reaction_moment, loc, -2, None))
+
+        self._support_as_loads.append((reaction_load, loc, -1, None))
+
+    def apply_load(self, value, start, order, end=None):
+        """
+        This method adds up the loads given to a particular beam object.
+
+        Parameters
+        ==========
+        value : Sympifyable
+            The value inserted should have the units [Force/(Distance**(n+1)]
+            where n is the order of applied load.
+            Units for applied loads:
+
+               - For moments, unit = kN*m
+               - For point loads, unit = kN
+               - For constant distributed load, unit = kN/m
+               - For ramp loads, unit = kN/m/m
+               - For parabolic ramp loads, unit = kN/m/m/m
+               - ... so on.
+
+        start : Sympifyable
+            The starting point of the applied load. For point moments and
+            point forces this is the location of application.
+        order : Integer
+            The order of the applied load.
+
+               - For moments, order = -2
+               - For point loads, order =-1
+               - For constant distributed load, order = 0
+               - For ramp loads, order = 1
+               - For parabolic ramp loads, order = 2
+               - ... so on.
+
+        end : Sympifyable, optional
+            An optional argument that can be used if the load has an end point
+            within the length of the beam.
+
+        Examples
+        ========
+        There is a beam of length 4 meters. A moment of magnitude 3 Nm is
+        applied in the clockwise direction at the starting point of the beam.
+        A point load of magnitude 4 N is applied from the top of the beam at
+        2 meters from the starting point and a parabolic ramp load of magnitude
+        2 N/m is applied bel

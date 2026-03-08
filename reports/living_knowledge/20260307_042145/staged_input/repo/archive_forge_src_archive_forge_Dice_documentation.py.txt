@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/Dice_documentation.py
+KIND: code
+
+import re
+import warnings
+from Bio.PDB.PDBIO import PDBIO
+from Bio import BiopythonWarning
+Verify if atoms are not Hydrogen.

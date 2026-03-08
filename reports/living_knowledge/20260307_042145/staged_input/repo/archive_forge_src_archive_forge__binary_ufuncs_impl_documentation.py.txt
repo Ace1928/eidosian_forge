@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_binary_ufuncs_impl_documentation.py
+KIND: code
+
+import torch
+from torch import (  # noqa: F401
+from . import _dtypes_impl, _util
+Export torch work functions for binary ufuncs, rename/tweak to match numpy.
+This listing is further exported to public symbols in the `torch._numpy/_ufuncs.py` module.

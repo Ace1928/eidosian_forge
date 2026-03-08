@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_dependency_checks.py
+KIND: code
+
+from .version_requirements import is_installed
+
+has_mpl = is_installed("matplotlib", ">=3.3")

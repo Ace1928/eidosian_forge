@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_op_translations_opset13_documentation.py
+KIND: code
+
+import re
+import logging
+import numpy as np
+from .._export_onnx import MXNetGraph as mx_op
+Map MXNet's _split_v2 operator

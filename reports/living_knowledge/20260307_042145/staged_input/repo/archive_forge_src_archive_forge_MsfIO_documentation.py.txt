@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/MsfIO_documentation.py
+KIND: code
+
+from Bio.Align import MultipleSeqAlignment
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
+from .Interfaces import AlignmentIterator
+Parse the next alignment from the handle.

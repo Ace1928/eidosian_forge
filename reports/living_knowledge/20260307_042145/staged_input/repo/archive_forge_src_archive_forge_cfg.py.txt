@@ -1,0 +1,623 @@
+SOURCE_PATH: archive_forge/src/archive_forge/cfg.py
+KIND: code
+
+# Copyright 2012 Red Hat, Inc.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
+
+"""Primary module in oslo_config.
+"""
+
+import argparse
+import collections
+from collections import abc
+import copy
+import enum
+import errno
+import functools
+import glob
+import inspect
+import itertools
+import logging
+import os
+import string
+import sys
+
+# NOTE(bnemec): oslo.log depends on oslo.config, so we can't
+# have a hard dependency on oslo.log.  However, in most cases
+# oslo.log will be installed so we can use it.
+try:
+    import oslo_log
+except ImportError:
+    oslo_log = None
+
+from oslo_config import iniparser
+from oslo_config import sources
+# Absolute import to avoid circular import in Python 2.7
+import oslo_config.sources._environment as _environment
+from oslo_config import types
+
+import stevedore
+
+LOG = logging.getLogger(__name__)
+
+_SOURCE_DRIVER_OPTION_HELP = (
+    'The name of the driver that can load this '
+    'configuration source.'
+)
+
+
+class Locations(enum.Enum):
+    opt_default = (1, False)
+    set_default = (2, False)
+    set_override = (3, False)
+    user = (4, True)
+    command_line = (5, True)
+    environment = (6, True)
+
+    def __init__(self, num, is_user_controlled):
+        self.num = num
+        self.is_user_controlled = is_user_controlled
+
+
+LocationInfo = collections.namedtuple('LocationInfo', ['location', 'detail'])
+
+
+class Error(Exception):
+    """Base class for cfg exceptions."""
+
+    def __init__(self, msg=None):
+        self.msg = msg
+
+    def __str__(self):
+        return self.msg
+
+
+class NotInitializedError(Error):
+    """Raised if parser is not initialized yet."""
+
+    def __str__(self):
+        return "call expression on parser has not been invoked"
+
+
+class ArgsAlreadyParsedError(Error):
+    """Raised if a CLI opt is registered after parsing."""
+
+    def __str__(self):
+        ret = "arguments already parsed"
+        if self.msg:
+            ret += ": " + self.msg
+        return ret
+
+
+class NoSuchOptError(Error, AttributeError):
+    """Raised if an opt which doesn't exist is referenced."""
+
+    def __init__(self, opt_name, group=None):
+        self.opt_name = opt_name
+        self.group = group
+
+    def __str__(self):
+        group_name = 'DEFAULT' if self.group is None else self.group.name
+        return "no such option %s in group [%s]" % (self.opt_name, group_name)
+
+
+class NoSuchGroupError(Error):
+    """Raised if a group which doesn't exist is referenced."""
+
+    def __init__(self, group_name):
+        self.group_name = group_name
+
+    def __str__(self):
+        return "no such group [%s]" % self.group_name
+
+
+class DuplicateOptError(Error):
+    """Raised if multiple opts with the same name are registered."""
+
+    def __init__(self, opt_name):
+        self.opt_name = opt_name
+
+    def __str__(self):
+        return "duplicate option: %s" % self.opt_name
+
+
+class RequiredOptError(Error):
+    """Raised if an option is required but no value is supplied by the user."""
+
+    def __init__(self, opt_name, group=None):
+        self.opt_name = opt_name
+        self.group = group
+
+    def __str__(self):
+        group_name = 'DEFAULT' if self.group is None else self.group.name
+        return "value required for option %s in group [%s]" % (self.opt_name,
+                                                               group_name)
+
+
+class TemplateSubstitutionError(Error):
+    """Raised if an error occurs substituting a variable in an opt value."""
+
+    def __str__(self):
+        return "template substitution error: %s" % self.msg
+
+
+class ConfigFilesNotFoundError(Error):
+    """Raised if one or more config files are not found."""
+
+    def __init__(self, config_files):
+        self.config_files = config_files
+
+    def __str__(self):
+        return ('Failed to find some config files: %s' %
+                ",".join(self.config_files))
+
+
+class ConfigFilesPermissionDeniedError(Error):
+    """Raised if one or more config files are not readable."""
+
+    def __init__(self, config_files):
+        self.config_files = config_files
+
+    def __str__(self):
+        return ('Failed to open some config files: %s' %
+                ",".join(self.config_files))
+
+
+class ConfigDirNotFoundError(Error):
+    """Raised if the requested config-dir is not found."""
+
+    def __init__(self, config_dir):
+        self.config_dir = config_dir
+
+    def __str__(self):
+        return ('Failed to read config file directory: %s' % self.config_dir)
+
+
+class ConfigFileParseError(Error):
+    """Raised if there is an error parsing a config file."""
+
+    def __init__(self, config_file, msg):
+        self.config_file = config_file
+        self.msg = msg
+
+    def __str__(self):
+        return 'Failed to parse %s: %s' % (self.config_file, self.msg)
+
+
+class ConfigSourceValueError(Error, ValueError):
+    """Raised if a config source value does not match its opt type."""
+    pass
+
+
+class ConfigFileValueError(ConfigSourceValueError):
+    """Raised if a config file value does not match its opt type."""
+    pass
+
+
+class DefaultValueError(Error, ValueError):
+    """Raised if a default config type does not fit the opt type."""
+
+
+def _fixpath(p):
+    """Apply tilde expansion and absolutization to a path."""
+    return os.path.abspath(os.path.expanduser(p))
+
+
+def _get_config_dirs(project=None):
+    """Return a list of directories where config files may be located.
+
+    :param project: an optional project name
+
+    If a project is specified, following directories are returned::
+
+      ~/.${project}/
+      ~/
+      /etc/${project}/
+      /etc/
+
+    If a project is specified and installed from a snap package, following
+    directories are also returned:
+
+      ${SNAP_COMMON}/etc/${project}
+      ${SNAP}/etc/${project}
+
+    Otherwise, if project is not specified, these directories are returned:
+
+      ~/
+      /etc/
+    """
+    snap = os.environ.get('SNAP')
+    snap_c = os.environ.get('SNAP_COMMON')
+
+    cfg_dirs = [
+        _fixpath(os.path.join('~', '.' + project)) if project else None,
+        _fixpath('~'),
+        os.path.join('/etc', project) if project else None,
+        '/etc',
+        os.path.join(snap_c, "etc", project) if snap_c and project else None,
+        os.path.join(snap, "etc", project) if snap and project else None,
+    ]
+    return [x for x in cfg_dirs if x]
+
+
+def _search_dirs(dirs, basename, extension=""):
+    """Search a list of directories for a given filename or directory name.
+
+    Iterator over the supplied directories, returning the first file
+    found with the supplied name and extension.
+
+    :param dirs: a list of directories
+    :param basename: the filename or directory name, for example 'glance-api'
+    :param extension: the file extension, for example '.conf'
+    :returns: the path to a matching file or directory, or None
+    """
+    for d in dirs:
+        path = os.path.join(d, '%s%s' % (basename, extension))
+        if os.path.exists(path):
+            return path
+
+
+def _find_config_files(project, prog, extension):
+    if prog is None:
+        prog = os.path.basename(sys.argv[0])
+        if prog.endswith(".py"):
+            prog = prog[:-3]
+
+    cfg_dirs = _get_config_dirs(project)
+    config_files = (_search_dirs(cfg_dirs, p, extension)
+                    for p in [project, prog] if p)
+
+    return [x for x in config_files if x]
+
+
+def find_config_files(project=None, prog=None, extension='.conf'):
+    """Return a list of default configuration files.
+
+    :param project: an optional project name
+    :param prog: the program name, defaulting to the basename of
+        sys.argv[0], without extension .py
+    :param extension: the type of the config file
+
+    We default to two config files: [${project}.conf, ${prog}.conf]
+
+    And we look for those config files in the following directories::
+
+      ~/.${project}/
+      ~/
+      /etc/${project}/
+      /etc/
+      ${SNAP_COMMON}/etc/${project}
+      ${SNAP}/etc/${project}
+
+    We return an absolute path for (at most) one of each the default config
+    files, for the topmost directory it exists in.
+
+    For example, if project=foo, prog=bar and /etc/foo/foo.conf, /etc/bar.conf
+    and ~/.foo/bar.conf all exist, then we return ['/etc/foo/foo.conf',
+    '~/.foo/bar.conf']
+
+    If no project name is supplied, we only look for ${prog}.conf.
+    """
+    return _find_config_files(project, prog, extension)
+
+
+def find_config_dirs(project=None, prog=None, extension='.conf.d'):
+    """Return a list of default configuration dirs.
+
+    :param project: an optional project name
+    :param prog: the program name, defaulting to the basename of
+        sys.argv[0], without extension .py
+    :param extension: the type of the config directory. Defaults to '.conf.d'
+
+    We default to two config dirs: [${project}.conf.d/, ${prog}.conf.d/].
+    If no project name is supplied, we only look for ${prog.conf.d/}.
+
+    And we look for those config dirs in the following directories::
+
+      ~/.${project}/
+      ~/
+      /etc/${project}/
+      /etc/
+      ${SNAP_COMMON}/etc/${project}
+      ${SNAP}/etc/${project}
+
+    We return an absolute path for each of the two config dirs,
+    in the first place we find it (iff we find it).
+
+    For example, if project=foo, prog=bar and /etc/foo/foo.conf.d/,
+    /etc/bar.conf.d/ and ~/.foo/bar.conf.d/ all exist, then we return
+    ['/etc/foo/foo.conf.d/', '~/.foo/bar.conf.d/']
+    """
+    return _find_config_files(project, prog, extension)
+
+
+def _is_opt_registered(opts, opt):
+    """Check whether an opt with the same name is already registered.
+
+    The same opt may be registered multiple times, with only the first
+    registration having any effect. However, it is an error to attempt
+    to register a different opt with the same name.
+
+    :param opts: the set of opts already registered
+    :param opt: the opt to be registered
+    :returns: True if the opt was previously registered, False otherwise
+    :raises: DuplicateOptError if a naming conflict is detected
+    """
+    if opt.dest in opts:
+        if opts[opt.dest]['opt'] != opt:
+            raise DuplicateOptError(opt.name)
+        return True
+    else:
+        return False
+
+
+_show_caller_details = bool(os.environ.get(
+    'OSLO_CONFIG_SHOW_CODE_LOCATIONS'))
+
+
+def _get_caller_detail(n=2):
+    """Return a string describing where this is being called from.
+
+    :param n: Number of steps up the stack to look. Defaults to ``2``.
+    :type n: int
+    :returns: str
+    """
+    if not _show_caller_details:
+        return None
+    s = inspect.stack()[:n + 1]
+    try:
+        frame = s[n]
+        try:
+            return frame[1]
+            # WARNING(dhellmann): Using frame.lineno to include the
+            # line number in the return value causes some sort of
+            # memory or stack corruption that manifests in values not
+            # being cleaned up in the cfgfilter tests.
+            # return '%s:%s' % (frame[1], frame[2])
+        finally:
+            del frame
+    finally:
+        del s
+
+
+def set_defaults(opts, **kwargs):
+    for opt in opts:
+        if opt.dest in kwargs:
+            opt.default = kwargs[opt.dest]
+            opt._set_location = LocationInfo(Locations.set_default,
+                                             _get_caller_detail())
+
+
+def _normalize_group_name(group_name):
+    if group_name == 'DEFAULT':
+        return group_name
+    return group_name.lower()
+
+
+def _report_deprecation(format_str, format_dict):
+    """Report use of a deprecated option
+
+    Uses versionutils from oslo.log if it is available.  If not, logs
+    a simple warning message.
+
+    :param format_str: The message to use for the report
+    :param format_dict: A dict containing keys for any parameters in format_str
+    """
+    if oslo_log:
+        # We can't import versionutils at the module level because of circular
+        # imports.  Importing just oslo_log at the module level and
+        # versionutils locally allows us to unit test this and still avoid the
+        # circular problem.
+        from oslo_log import versionutils
+        versionutils.report_deprecated_feature(LOG, format_str,
+                                               format_dict)
+    else:
+        LOG.warning(format_str, format_dict)
+
+
+@functools.total_ordering
+class Opt:
+
+    """Base class for all configuration options.
+
+    The only required parameter is the option's name. However, it is
+    common to also supply a default and help string for all options.
+
+    :param name: the option's name
+    :param type: the option's type. Must be a callable object that takes string
+                 and returns converted and validated value
+    :param dest: the name of the corresponding :class:`.ConfigOpts` property
+    :param short: a single character CLI option name
+    :param default: the default value of the option
+    :param positional: True if the option is a positional CLI argument
+    :param metavar: the option argument to show in --help
+    :param help: an explanation of how the option is used
+    :param secret: true if the value should be obfuscated in log output
+    :param required: true if a value must be supplied for this option
+    :param deprecated_name: deprecated name option.  Acts like an alias
+    :param deprecated_group: the group containing a deprecated alias
+    :param deprecated_opts: list of :class:`.DeprecatedOpt`
+    :param sample_default: a default string for sample config files
+    :param deprecated_for_removal: indicates whether this opt is planned for
+                                   removal in a future release
+    :param deprecated_reason: indicates why this opt is planned for removal in
+                              a future release. Silently ignored if
+                              deprecated_for_removal is False
+    :param deprecated_since: indicates which release this opt was deprecated
+                             in. Accepts any string, though valid version
+                             strings are encouraged. Silently ignored if
+                             deprecated_for_removal is False
+    :param mutable: True if this option may be reloaded
+    :param advanced: a bool True/False value if this option has advanced usage
+                             and is not normally used by the majority of users
+
+    An Opt object has no public methods, but has a number of public properties:
+
+    .. py:attribute:: name
+
+        the name of the option, which may include hyphens
+
+    .. py:attribute:: type
+
+        a callable object that takes string and returns converted and
+        validated value.  Default types are available from
+        :class:`oslo_config.types`
+
+    .. py:attribute:: dest
+
+        the (hyphen-less) :class:`.ConfigOpts` property which contains the
+        option value
+
+    .. py:attribute:: short
+
+        a single character CLI option name
+
+    .. py:attribute:: default
+
+        the default value of the option
+
+    .. py:attribute:: sample_default
+
+        a sample default value string to include in sample config files
+
+    .. py:attribute:: positional
+
+        True if the option is a positional CLI argument
+
+    .. py:attribute:: metavar
+
+        the name shown as the argument to a CLI option in --help output
+
+    .. py:attribute:: help
+
+        a string explaining how the option's value is used
+
+    .. py:attribute:: advanced
+
+        in sample files, a bool value indicating the option is advanced
+
+    .. versionchanged:: 1.2
+       Added *deprecated_opts* parameter.
+
+    .. versionchanged:: 1.4
+       Added *sample_default* parameter.
+
+    .. versionchanged:: 1.9
+       Added *deprecated_for_removal* parameter.
+
+    .. versionchanged:: 2.7
+       An exception is now raised if the default value has the wrong type.
+
+    .. versionchanged:: 3.2
+       Added *deprecated_reason* parameter.
+
+    .. versionchanged:: 3.5
+       Added *mutable* parameter.
+
+    .. versionchanged:: 3.12
+       Added *deprecated_since* parameter.
+
+    .. versionchanged:: 3.15
+       Added *advanced* parameter and attribute.
+    """
+    multi = False
+
+    def __init__(self, name, type=None, dest=None, short=None,
+                 default=None, positional=False, metavar=None, help=None,
+                 secret=False, required=None,
+                 deprecated_name=None, deprecated_group=None,
+                 deprecated_opts=None, sample_default=None,
+                 deprecated_for_removal=False, deprecated_reason=None,
+                 deprecated_since=None, mutable=False, advanced=False):
+        if name.startswith('_'):
+            raise ValueError('illegal name %s with prefix _' % (name,))
+        self.name = name
+
+        if type is None:
+            type = types.String()
+
+        if not callable(type):
+            raise TypeError('type must be callable')
+        self.type = type
+
+        # By default, non-positional options are *optional*, and positional
+        # options are *required*.
+        if required is None:
+            required = True if positional else False
+
+        if dest is None:
+            self.dest = self.name.replace('-', '_')
+        else:
+            self.dest = dest
+        self.short = short
+        self.default = default
+        self.sample_default = sample_default
+        self.positional = positional
+        self.metavar = metavar
+        self.help = help
+        self.secret = secret
+        self.required = required
+        self.deprecated_for_removal = deprecated_for_removal
+        self.deprecated_reason = deprecated_reason
+        self.deprecated_since = deprecated_since
+        self._logged_deprecation = False
+
+        if self.__class__ is Opt:
+            stack_depth = 2  # someone instantiated Opt directly
+        else:
+            stack_depth = 3  # skip the call to the child class constructor
+        self._set_location = LocationInfo(
+            Locations.opt_default,
+            _get_caller_detail(stack_depth),
+        )
+
+        self.deprecated_opts = copy.deepcopy(deprecated_opts) or []
+        for o in self.deprecated_opts:
+            if '-' in o.name:
+                self.deprecated_opts.append(DeprecatedOpt(
+                    o.name.replace('-', '_'),
+                    group=o.group))
+        if deprecated_name is not None or deprecated_group is not None:
+            self.deprecated_opts.append(DeprecatedOpt(deprecated_name,
+                                                      group=deprecated_group))
+            if deprecated_name and '-' in deprecated_name:
+                self.deprecated_opts.append(DeprecatedOpt(
+                    deprecated_name.replace('-', '_'),
+                    group=deprecated_group))
+        self._check_default()
+
+        self.mutable = mutable
+        self.advanced = advanced
+
+    def _default_is_ref(self):
+        """Check if default is a reference to another var."""
+        if isinstance(self.default, str):
+            tmpl = self.default.replace(r'\$', '').replace('$$', '')
+            return '$' in tmpl
+        return False
+
+    def _check_default(self):
+        if (self.default is not None
+                and not self._default_is_ref()):
+            try:
+                self.type(self.default)
+            except Exception:
+                raise DefaultValueError("Error processing default value "
+                                        "%(default)s for Opt type of %(opt)s."
+                                        % {'default': self.default,
+                                           'opt': self.type})
+
+    def _vars_for_cmp(self):
+        # NOTE(dhellmann): Get the instance variables of this Opt and
+        # then make a new dictionary so we can modify the conte

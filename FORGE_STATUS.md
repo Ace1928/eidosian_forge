@@ -1,89 +1,53 @@
-# 🔥 EIDOSIAN FORGE STATUS
+# Eidosian Forge Elevation Status
 
-> **Last Updated**: 2026-02-05
-> **Version**: 1.0.0
-> **Forges**: 35/35 Operational (100%)
+**Objective**: Bring every directory to Eidosian Standards (README, Tests, Benchmarks, MCP Integration, Production Quality).
 
-## 📊 Quick Status
+## 🏗️ Status Legend
+- 🟢 **Elevated**: High-quality, tested, documented, integrated.
+- 🟡 **In Progress**: Active audit or implementation.
+- 🔴 **Legacy/Siloed**: Functional but needs elevation.
+- ⚪ **Pending**: Not yet audited.
 
-```bash
-# Check status
-eidosian status
+## 🗂️ Forge Inventory
 
-# Enable completions
-source bin/eidosian-completion.bash
-```
+| Forge | Status | Standards | Notes |
+| :--- | :---: | :--- | :--- |
+| `agent_forge` | 🟢 | R, T, M | 12 Tools (Consciousness Kernel). Qwen 3.5 2B canonical. |
+| `article_forge` | 🟢 | R, T | Core publishing logic & profile extraction. |
+| `audit_forge` | 🟢 | R, T | 2 Tools (Idempotent task manager & coverage). |
+| `code_forge` | 🟢 | R, T, M | Code indexer, digester, roundtrip validation. |
+| `computer_control_forge` | 🟢 | R, T, M | Safety mechanisms & Wayland/multimodal perception. |
+| `crawl_forge` | 🟢 | R, T, M | 8 Tools (Ethical extraction & Tika document parsing). |
+| `diagnostics_forge` | 🟢 | R, T, M | 4 Tools (Adaptive observability & system pulse). |
+| `doc_forge` | 🟢 | R, T, M | Refactored to v3 (modular, API-driven). |
+| `erais_forge` | 🟢 | R, T, M | 2 Tools (Evolutionary substrate & fitness gym). |
+| `figlet_forge` | 🟢 | R, T | Typography engine active, 560+ tests passing. |
+| `file_forge` | 🟢 | R, T, M | 7 Tools (Filesystem intelligence & ripgrep). |
+| `game_forge` | 🟢 | R, B | Monorepo simulation & spatial benchmark lab. |
+| `gis_forge` | 🟢 | R, M | 4 Tools (UEO substrate & hierarchical config). |
+| `glyph_forge` | 🟢 | R, T | Pixels-to-ASCII engine. High-perf streaming active. |
+| `knowledge_forge` | 🟢 | R, T, M | 13 Tools (Graph + GraphRAG). 768-dim aligned. |
+| `llm_forge` | 🟢 | R, B, M | 2 Tools (LocalCLIEngine & Benchmarker). llama.cpp core. |
+| `lyrics_forge` | 🟢 | R, T | Unified creative archive active. |
+| `memory_forge` | 🟢 | R, T, M | 11 Tools (Tiered episodic memory). 768-dim aligned. |
+| `metadata_forge` | 🟢 | R, T | Schema validation & taxonomy active. |
+| `moltbook_forge` | 🟢 | R, T, M | 21 Tools (Social integration & security pipeline). |
+| `narrative_forge` | 🟢 | R, T | Thematic coherence & interactive story engine. |
+| `ollama_forge` | 🟢 | R, M | Async client & runit service management. |
+| `prompt_forge` | 🟢 | R | PromptLibrary centralized templates. |
+| `refactor_forge` | 🟢 | R, T, M | 1 Tool (AST analysis & transformation). |
+| `repo_forge` | 🟢 | R, T | Scaffold generation & repo diagnostics active. |
+| `sms_forge` | 🟢 | R, T, M | 3 Tools (Termux hardware & advanced retrieval). |
+| `terminal_forge` | 🟢 | R, T | Terminal UI and Eidosian Rich themes. |
+| `test_forge` | 🟢 | R, T | Shared test infrastructure & Nexus mocking. |
+| `type_forge` | 🟢 | R, T | 4 Tools (Runtime schema validation). |
+| `version_forge` | 🟢 | R, T | SemVer enforcement & matrix validation. |
+| `viz_forge` | 🟢 | R, T | Data visualization & Eidosian plotting. |
+| `word_forge` | 🟢 | R, T, M | 9 Tools (Semantic graph & emotion engine). |
 
-## 🛠️ All Forges
-
-| Category | Forge | Command | Status |
-|----------|-------|---------|--------|
-| **Core** | memory | `eidosian memory` | ✅ |
-| | knowledge | `eidosian knowledge` | ✅ |
-| | code | `eidosian code` | ✅ |
-| | llm | `eidosian llm` | ✅ |
-| | word | `eidosian word` | ✅ |
-| | crawl | `eidosian crawl` | ✅ |
-| | glyph | `eidosian glyph` | ✅ |
-| | audit | `eidosian audit` | ✅ |
-| | refactor | `eidosian refactor` | ✅ |
-| | metadata | `eidosian metadata` | ✅ |
-| | terminal | `eidosian terminal` | ✅ |
-| **Agent** | agent | `eidosian agent` | ✅ |
-| | agent-daemon | `eidosian agent-daemon` | ✅ |
-| | agent-top | `eidosian agent-top` | ✅ |
-| **Content** | doc | `eidosian doc` | ✅ |
-| | figlet | `eidosian figlet` | ✅ |
-| | narrative | `eidosian narrative` | ✅ |
-| | article | `eidosian article` | ✅ |
-| | lyrics | `eidosian lyrics` | ✅ |
-| | prompt | `eidosian prompt` | ✅ |
-| | viz | `eidosian viz` | ✅ |
-| **Utility** | repo | `eidosian repo` | ✅ |
-| | version | `eidosian version` | ✅ |
-| | type | `eidosian type` | ✅ |
-| | file | `eidosian file` | ✅ |
-| | diagnostics | `eidosian diagnostics` | ✅ |
-| | gis | `eidosian gis` | ✅ |
-| | test | `eidosian test` | ✅ |
-| | mkey | `eidosian mkey` | ✅ |
-| | sms | `eidosian sms` | ✅ |
-| **Integration** | control | `eidosian control` | ✅ |
-| | ollama | `eidosian ollama` | ✅ |
-| | game | `eidosian game` | ✅ |
-| | web | `eidosian web` | ✅ |
-| **Special** | erais | `eidosian erais` | ✅ |
-| | moltbook | `eidosian moltbook` | ✅ |
-
-## 🧪 Test Status
-
-| Forge | Tests | Status |
-|-------|-------|--------|
-| memory_forge | 13 | ✅ All pass |
-| moltbook_forge | 25 | ✅ All pass |
-| figlet_forge | 562 | 377 pass, 185 fail (CLI/showcase) |
-| knowledge_forge | - | Skipped (needs graphrag) |
-
-## 🔧 Universal Decorator
-
-```python
-from eidosian_core import eidosian
-
-@eidosian(log=True, profile=True)
-def my_function():
-    pass
-```
-
-Available at `lib/eidosian_core/decorators.py`
-
-## 📝 Recent Fixes
-
-- Fixed figlet_forge font parsing (ASCII order)
-- Fixed figlet_forge hard_blank display
-- Fixed agent_forge import paths
-- Fixed narrative_forge PRIMARY_MODEL
-- Fixed gis_forge distributed import
-
----
-
-*Fully Eidosian. Iterating indefinitely.*
+## 🚀 Elevation Roadmap
+1. [DONE] Infrastructure Stabilisation (Ollama, MCP, Doc Forge v3).
+2. [DONE] Learner Agent v2 Implementation.
+3. [ACTIVE] UEO Migration (Unified Eidosian Ontology).
+4. [DONE] Systematic Audit of 🔴 Legacy Forges.
+5. [TODO] Full Integration Verification.

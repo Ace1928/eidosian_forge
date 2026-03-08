@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/checkpoint_management_documentation.py
+KIND: code
+
+from tensorflow.python.checkpoint import checkpoint_management
+from tensorflow.python.util import deprecation
+Save and restore variables.

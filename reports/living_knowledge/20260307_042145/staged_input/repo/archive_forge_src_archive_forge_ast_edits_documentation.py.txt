@@ -1,0 +1,13 @@
+SOURCE_PATH: archive_forge/src/archive_forge/ast_edits_documentation.py
+KIND: code
+
+import ast
+import collections
+import os
+import re
+import shutil
+import sys
+import tempfile
+import traceback
+import pasta
+Process a directory of python files in place.

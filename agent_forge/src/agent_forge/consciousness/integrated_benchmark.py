@@ -321,7 +321,7 @@ class IntegratedStackBenchmark:
         red_team_max_scenarios: int = 1,
         red_team_seed: int = 910_000,
         persist: bool = True,
-        llm_model: str = "qwen2.5:1.5b",
+        llm_model: str = "qwen3.5:2b",
         ollama_endpoint: str = DEFAULT_OLLAMA_ENDPOINT,
         timeout_sec: float = 45.0,
     ) -> IntegratedBenchmarkResult:

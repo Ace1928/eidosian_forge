@@ -1,0 +1,444 @@
+SOURCE_PATH: .eidos_chrome_profile/Default/Bookmarks
+KIND: config
+
+{
+   "checksum": "a99eaa4f813a21a37e2ca6563162b74a",
+   "roots": {
+      "bookmark_bar": {
+         "children": [ {
+            "date_added": "13019565190127310",
+            "date_last_used": "0",
+            "guid": "86e37196-50e2-f45d-bc95-351b05066df9",
+            "id": "196",
+            "meta_info": {
+               "last_visited": "13183768001861871",
+               "last_visited_desktop": "13190981747928759"
+            },
+            "name": "Wiltronics",
+            "type": "url",
+            "url": "http://www.wiltronics.com.au/"
+         }, {
+            "date_added": "13020267547721000",
+            "date_last_used": "0",
+            "guid": "ad07bd57-60ef-fd93-978e-e860b4d3cc8f",
+            "id": "197",
+            "meta_info": {
+               "last_visited_desktop": "13184227415978459"
+            },
+            "name": "Acrylic sheets, rods, tubes and panels manufacturer and supplier, Brisbane",
+            "type": "url",
+            "url": "http://www.acrylicsonline.com.au/"
+         }, {
+            "children": [ {
+               "date_added": "13080784762614870",
+               "date_last_used": "0",
+               "guid": "16d0e9ba-93c1-f418-9897-8d70c9a8488e",
+               "id": "199",
+               "meta_info": {
+                  "last_visited": "13199320132698319",
+                  "last_visited_desktop": "13201373331501457"
+               },
+               "name": " n",
+               "type": "url",
+               "url": "https://www.facebook.com/"
+            }, {
+               "date_added": "13124894367549366",
+               "date_last_used": "0",
+               "guid": "1543a8f5-3e8e-4855-acd6-066c4aefe92c",
+               "id": "200",
+               "name": "Online regex tester and debugger: PHP, PCRE, Python, Golang and JavaScript",
+               "type": "url",
+               "url": "https://regex101.com/"
+            } ],
+            "date_added": "13234513387484228",
+            "date_last_used": "0",
+            "date_modified": "13234513387484228",
+            "guid": "4385dfb0-35c6-4d0c-be5f-2d2d5bfa63e3",
+            "id": "198",
+            "name": "",
+            "type": "folder"
+         }, {
+            "date_added": "13055861243657000",
+            "date_last_used": "13402144541226777",
+            "guid": "2cf12cb2-ccb9-f32f-9238-eb9835df1fb9",
+            "id": "201",
+            "meta_info": {
+               "last_visited_desktop": "13196063724302535"
+            },
+            "name": "Introduction to Vectors and Scalars - YouTube",
+            "type": "url",
+            "url": "https://www.youtube.com/watch?v=ihNZlp7iUHE&list=PLAD5B880806EBE0A4"
+         }, {
+            "date_added": "13055868966498532",
+            "date_last_used": "0",
+            "guid": "24e6964f-2fa8-f5a9-88ca-e102fdc847d0",
+            "id": "202",
+            "meta_info": {
+               "last_visited_desktop": "13196334947480478"
+            },
+            "name": "NCMA (Formerly the CCMP) - The National Center for Marine Algae and Microbiota | NCMA - Culturing Diversity",
+            "type": "url",
+            "url": "https://ncma.bigelow.org/"
+         }, {
+            "date_added": "13055933387269977",
+            "date_last_used": "0",
+            "guid": "89c7972f-5cc9-fab9-923d-f10f7ad4c88d",
+            "id": "203",
+            "meta_info": {
+               "last_visited_desktop": "13201660477821874"
+            },
+            "name": "Organic Vegetable Herb Flower Covercrop Seeds Online",
+            "type": "url",
+            "url": "http://greenharvest.com.au/SeedOrganic/OrganicSeedIndex.html"
+         }, {
+            "date_added": "13055936838360853",
+            "date_last_used": "0",
+            "guid": "67d04b76-ae6d-fe9e-9807-0f24c6148ea3",
+            "id": "204",
+            "meta_info": {
+               "last_visited_desktop": "13177070301036333"
+            },
+            "name": "Mycology - Growth and Development - Axenic Culture - Recipes",
+            "type": "url",
+            "url": "http://bugs.bio.usyd.edu.au/learning/resources/Mycology/Growth_Dev/recipes.shtml"
+         }, {
+            "date_added": "13056046600097000",
+            "date_last_used": "0",
+            "guid": "08eee7d1-19b9-f3d5-8e7d-0b62e4408c6d",
+            "id": "205",
+            "name": "Basic Electronics Tutorials and Revision",
+            "type": "url",
+            "url": "http://www.electronics-tutorials.ws/"
+         }, {
+            "date_added": "13056175904230903",
+            "date_last_used": "0",
+            "guid": "1237a620-e897-fddb-8846-7e4720bfe772",
+            "id": "206",
+            "meta_info": {
+               "last_visited_desktop": "13184596282873926"
+            },
+            "name": "chipstein",
+            "type": "url",
+            "url": "https://sites.google.com/site/chipstein/"
+         }, {
+            "date_added": "13056610209886082",
+            "date_last_used": "0",
+            "guid": "1f172e93-7e9e-f33a-9a7a-7221cd64bb2e",
+            "id": "207",
+            "meta_info": {
+               "last_visited_desktop": "13190787409556332"
+            },
+            "name": "ECG Circuit - Projects Collection",
+            "type": "url",
+            "url": "https://sites.google.com/site/fionaproj/home/beng-401/ecg-circuit"
+         }, {
+            "date_added": "13057895711536895",
+            "date_last_used": "0",
+            "guid": "456ff6ff-2b58-f876-8569-5df9dfcba0f2",
+            "id": "208",
+            "meta_info": {
+               "last_visited_desktop": "13165715348138066"
+            },
+            "name": "Chemical Reactivity",
+            "type": "url",
+            "url": "http://www2.chemistry.msu.edu/faculty/reusch/VirtTxtJml/functbl.htm"
+         }, {
+            "date_added": "13134121860597019",
+            "date_last_used": "0",
+            "guid": "7250e543-3de3-4b2f-bbe8-f14d1240271c",
+            "id": "209",
+            "meta_info": {
+               "last_visited_desktop": "13193087504200063"
+            },
+            "name": "1 Notifications",
+            "type": "url",
+            "url": "https://www.facebook.com/#"
+         }, {
+            "date_added": "13058145109634923",
+            "date_last_used": "0",
+            "guid": "707b4930-6d9b-fbda-b754-314780c5dbcb",
+            "id": "210",
+            "meta_info": {
+               "last_visited_desktop": "13164070943720121"
+            },
+            "name": "Google URL Shortener",
+            "type": "url",
+            "url": "https://goo.gl/"
+         }, {
+            "date_added": "13058419011709530",
+            "date_last_used": "0",
+            "guid": "8a4043bb-6d2b-f5e2-813d-362cea40b450",
+            "id": "211",
+            "name": "The Virtual Molecular Model Kit",
+            "type": "url",
+            "url": "http://chemagic.com/JSmolVMK2.htm?rid=&echo="
+         }, {
+            "date_added": "13059282798339036",
+            "date_last_used": "0",
+            "guid": "63243959-cc98-f5bd-bbe3-593ab3740270",
+            "id": "212",
+            "name": "NEW 2X 20pk 70gr Mothballs Moth Moths Clothes Protection Cupboards Balls Odour | eBay",
+            "type": "url",
+            "url": "http://www.ebay.com.au/itm/NEW-2x-20pk-70gr-Mothballs-Moth-Moths-Clothes-Protection-Cupboards-Balls-Odour-/291203577460?pt=AU_ClothingShoeCare&hash=item43cd15f674"
+         }, {
+            "date_added": "13059587336785851",
+            "date_last_used": "0",
+            "guid": "d50bf354-8b12-fa2a-9a9a-40290639f39d",
+            "id": "213",
+            "name": "IT SOLUTION POKHARA: Crack a Wpa2-Psk Password with Windows",
+            "type": "url",
+            "url": "http://itsolutionpokhara.blogspot.com.au/2014/03/crack-wpa2-psk-password-with-windows.html"
+         }, {
+            "date_added": "13059658888763792",
+            "date_last_used": "0",
+            "guid": "8898ebd4-6500-ff30-af14-0b34ebb67f69",
+            "id": "214",
+            "name": "Cactus seed germination: a review | Mariana Rojas-Aréchiga - Academia.edu",
+            "type": "url",
+            "url": "http://www.academia.edu/5086785/Cactus_seed_germination_a_review"
+         }, {
+            "date_added": "13059742570927344",
+            "date_last_used": "0",
+            "guid": "9af0a254-331d-faa3-be42-ab482931893b",
+            "id": "215",
+            "name": "Indoleacetic acid 1 Gram",
+            "type": "url",
+            "url": "http://www.plantculture.com.au/Indoleacetic_acid_1_Gram/p3017392_13128490.aspx"
+         }, {
+            "date_added": "13059782050760625",
+            "date_last_used": "0",
+            "guid": "04bc8984-bebd-fd1f-9c41-b3222d7f3354",
+            "id": "216",
+            "name": "Simple cubic: Interactive 3D Structure is loaded",
+            "type": "url",
+            "url": "http://www.chemtube3d.com/solidstate/_simplecubic(final).htm"
+         }, {
+            "date_added": "13061554135833406",
+            "date_last_used": "0",
+            "guid": "429b2f08-f9c6-f9d2-827a-3a07bdaf8636",
+            "id": "217",
+            "name": "Replacing the fuel filter on an Alfa Romeo 156, 147 or GT",
+            "type": "url",
+            "url": "http://www.alfaworkshop.co.uk/alfa_156_147_gt_fuel_filter_change.shtml"
+         }, {
+            "date_added": "13061554372670454",
+            "date_last_used": "0",
+            "guid": "0b1a9a61-23c1-f92f-9de7-479279176fb8",
+            "id": "218",
+            "name": "How To.. replace a cam belt on an Alfa Romeo 2l engine",
+            "type": "url",
+            "url": "http://www.alfaworkshop.co.uk/alfa_cam_belt_change.shtml"
+         }, {
+            "date_added": "13061554376772413",
+            "date_last_used": "0",
+            "guid": "1147005c-7064-f03b-970a-55e62f811c17",
+            "id": "219",
+            "name": "Alfa Romeo Cam Lock Tool",
+            "type": "url",
+            "url": "http://www.alfaworkshop.co.uk/parts/Alfa_Cam_Lock_Tool.shtml#"
+         }, {
+            "date_added": "13061554847872852",
+            "date_last_used": "0",
+            "guid": "b69e76dc-82a5-f4ee-bf1e-adc2823d0906",
+            "id": "220",
+            "name": "ALFA ROMEO 147 & 156 -GTV & SPIDER (2.0)LITRE AIR COND.COMPRESSOR | Other Parts & Accessories | Gumtree Australia Blacktown Area - Doonside | 1024510847",
+            "type": "url",
+            "url": "http://www.gumtree.com.au/s-ad/doonside/other-parts-accessories/alfa-romeo-147-156-gtv-spider-2-0-litre-air-cond-compressor/1024510847"
+         }, {
+            "date_added": "13061554873637307",
+            "date_last_used": "0",
+            "guid": "0b8ffe7a-cff6-f046-b8c5-e4f09861963f",
+            "id": "221",
+            "meta_info": {
+               "last_visited_desktop": "13202875146050080"
+            },
+            "name": "ALFA ROMEO-147 & 156-FUEL PUMP COMPLETE UNIT.- EXCELENT CONDITION | Other Parts & Accessories | Gumtree Australia Blacktown Area - Doonside | 1029921785",
+            "type": "url",
+            "url": "http://www.gumtree.com.au/s-ad/doonside/other-parts-accessories/alfa-romeo-147-156-fuel-pump-complete-unit-excelent-condition/1029921785"
+         }, {
+            "date_added": "13061618616965668",
+            "date_last_used": "0",
+            "guid": "84f0c2fd-27b9-f264-81f3-9851c4649821",
+            "id": "222",
+            "name": "MOD 102 Guitar Amp Kit | MOD Kits DIY",
+            "type": "url",
+            "url": "http://www.modkitsdiy.com/kit/mod_102_guitar_amp_kit"
+         }, {
+            "date_added": "13061683060839659",
+            "date_last_used": "0",
+            "guid": "8c306192-4b89-fea1-b3ff-543b44c61afd",
+            "id": "223",
+            "name": "The Merck Manual of Diagnosis and Therapy: Merck Editor: 9780911910193: wordery.com",
+            "type": "url",
+            "url": "https://wordery.com/the-merck-manual-of-diagnosis-and-therapy-merck-editor-9780911910193"
+         }, {
+            "date_added": "13061683063177582",
+            "date_last_used": "0",
+            "guid": "8c76fbf4-9070-fee5-bd90-c9768ce2ee2c",
+            "id": "224",
+            "name": "The Merck Veterinary Manual: Merck Editor: 9780911910933: wordery.com",
+            "type": "url",
+            "url": "https://wordery.com/the-merck-veterinary-manual-merck-editor-9780911910933"
+         }, {
+            "date_added": "13061683065559718",
+            "date_last_used": "0",
+            "guid": "e5b2f81b-7e5b-fc04-9251-cdf9e7538968",
+            "id": "225",
+            "name": "Diagnostic and Statistical Manual of Mental Disorders: American Psychiatric Association: 9780890425558: wordery.com",
+            "type": "url",
+            "url": "https://wordery.com/diagnostic-and-statistical-manual-of-mental-disorders-american-psychiatric-association-9780890425558"
+         }, {
+            "date_added": "13062218379224450",
+            "date_last_used": "0",
+            "guid": "b5a6284c-7999-ffdf-bd88-d135a855922b",
+            "id": "226",
+            "name": "Student Opportunities / Plant Science / Institutes and centres / Research and Innovation / The University of Newcastle, Australia",
+            "type": "url",
+            "url": "http://www.newcastle.edu.au/research-and-innovation/centre/cps/student-opportunities"
+         }, {
+            "date_added": "13062218382049577",
+            "date_last_used": "0",
+            "guid": "cbb51bd5-8944-f1b2-898d-362a9fe07c70",
+            "id": "227",
+            "name": "Discovery Early Career Researcher Award Funding Rules",
+            "type": "url",
+            "url": "http://www.arc.gov.au/ncgp/decra/fundingrules.htm"
+         }, {
+            "date_added": "13062494604634835",
+            "date_last_used": "0",
+            "guid": "75f5cb6e-85c3-f214-ab1a-341a8318a8d0",
+            "id": "228",
+            "meta_info": {
+               "last_visited_desktop": "13179468155548723"
+            },
+            "name": "Deepcool Gamer Storm Maelstrom 120K [CFAN-MAEL120K] - $59.00 : PC Case Gear",
+            "type": "url",
+            "url": "http://www.pccasegear.com/index.php?main_page=product_info&cPath=207_160_1694&products_id=29277"
+         }, {
+            "date_added": "13062494607476949",
+            "date_last_used": "0",
+            "guid": "9f4a3fc4-988e-fdd7-a346-ab7dcd3ec555",
+            "id": "229",
+            "name": "Thermaltake Black Extreme Speed 3.0 Plus Card Reader [TT-AC0031] - $45.00 : PC Case Gear",
+            "type": "url",
+            "url": "http://www.pccasegear.com/index.php?main_page=product_info&cPath=105&products_id=21985"
+         }, {
+            "date_added": "13062494609655011",
+            "date_last_used": "0",
+            "guid": "fa6f26bd-d16f-f5e4-9db1-7f066d8fdf97",
+            "id": "230",
+            "name": "Aerocool Cool Touch-R Fan Controller Black [AERO-EN51554] - $59.00 : PC Case Gear",
+            "type": "url",
+            "url": "http://www.pccasegear.com/index.php?main_page=product_info&cPath=408&products_id=29463"
+         }, {
+            "date_added": "13062494611797012",
+            "date_last_used": "0",
+            "guid": "0a1cc5a5-0251-fdc8-9117-9f93b84c9b2a",
+            "id": "231",
+            "name": "LG CH12NS30 12X BD-R Blu-Ray DVD Combo Drive [CH12NS30] - $65.00 : PC Case Gear",
+            "type": "url",
+            "url": "http://www.pccasegear.com/index.php?main_page=product_info&cPath=658_667&products_id=24983"
+         }, {
+            "date_added": "13062495063122437",
+            "date_last_used": "0",
+            "guid": "9aa07a78-a462-fb01-abe3-858d75f65dd5",
+            "id": "232",
+            "name": "Logitech Z506 5.1 Surround Sound Speakers [980-000433] - $89.00 : PC Case Gear",
+            "type": "url",
+            "url": "http://www.pccasegear.com/index.php?main_page=product_info&cPath=567_569&products_id=27142"
+         }, {
+            "date_added": "13062722346298380",
+            "date_last_used": "0",
+            "guid": "9f77c64e-2874-f004-8e1b-313eb1bc12b5",
+            "id": "233",
+            "name": "Welcome - Learn Python - Free Interactive Python Tutorial",
+            "type": "url",
+            "url": "http://www.learnpython.org/"
+         }, {
+            "date_added": "13062722351064662",
+            "date_last_used": "0",
+            "guid": "5cef6369-cffb-fad9-8829-b43029537036",
+            "id": "234",
+            "name": "Ruby | Codecademy",
+            "type": "url",
+            "url": "http://www.codecademy.com/en/tracks/ruby"
+         }, {
+            "date_added": "13062722356507152",
+            "date_last_used": "0",
+            "guid": "fb6c7ca0-1089-fcbc-995b-bcea7a75844e",
+            "id": "235",
+            "name": "Welcome - Learn Java - Free Interactive Java Tutorial",
+            "type": "url",
+            "url": "http://www.learnjavaonline.org/"
+         }, {
+            "date_added": "13062722543251219",
+            "date_last_used": "0",
+            "guid": "accce953-d220-f792-8b44-f53c3d777802",
+            "id": "236",
+            "name": "Welcome - Learn C# - Free Interactive C# Tutorial",
+            "type": "url",
+            "url": "http://www.learncs.org/"
+         }, {
+            "date_added": "13064125455093130",
+            "date_last_used": "0",
+            "guid": "6c0e81b2-935b-fc85-bab0-cabda54939c6",
+            "id": "237",
+            "meta_info": {
+               "last_visited_desktop": "13174895914714852"
+            },
+            "name": "David Healy - Time to abandon evidence based medicine? - Pharmacology, Chemistry & Medicine - The Corroboree",
+            "type": "url",
+            "url": "http://www.shaman-australis.com/forum/index.php?showtopic=40431&hl="
+         }, {
+            "date_added": "13064876970044610",
+            "date_last_used": "0",
+            "guid": "d6a775c6-2cdf-f59a-bc31-6ad896c5600a",
+            "id": "238",
+            "name": "Vanillin - Wikipedia, the free encyclopedia",
+            "type": "url",
+            "url": "http://en.wikipedia.org/wiki/Vanillin"
+         }, {
+            "date_added": "13064884333137986",
+            "date_last_used": "0",
+            "guid": "84b06c15-7ad3-ff46-87f9-60c546d1befa",
+            "id": "239",
+            "name": "bangbangaudioaus on eBay",
+            "type": "url",
+            "url": "http://www.ebay.com.au/usr/bangbangaudioaus?_trksid=p2047675.l2559"
+         }, {
+            "date_added": "13064904710517000",
+            "date_last_used": "0",
+            "guid": "cceae556-8d2b-fda7-a71e-3cd3d6d26ddb",
+            "id": "240",
+            "name": "MICROSOFT OFFICE 2010 PRODUCT KEYS - Serial Key and Cracks, Make Money Online, Hacking Tips",
+            "type": "url",
+            "url": "http://ourknowledgehub.blogspot.com.au/2013/01/microsoft-office-2010-product-keys.html"
+         }, {
+            "date_added": "13064908318588009",
+            "date_last_used": "0",
+            "guid": "67d2dfd4-9b26-fb3e-9177-787e3c8fc6bb",
+            "id": "241",
+            "name": "Integrative Biology 425 - Class Handouts",
+            "type": "url",
+            "url": "http://www.life.illinois.edu/ib/425/handouts.htm"
+         }, {
+            "date_added": "13064908592998560",
+            "date_last_used": "0",
+            "guid": "b9001ccd-e0eb-f4d6-a8ff-d3d9a09f855e",
+            "id": "242",
+            "name": "Home : Nature a - z index",
+            "type": "url",
+            "url": "http://www.nature.com.ezproxy.newcastle.edu.au/siteindex/index.html"
+         }, {
+            "date_added": "13065344956925895",
+            "date_last_used": "0",
+            "guid": "12eee118-0a2a-f2cf-8aa1-41b6a43a3abd",
+            "id": "243",
+            "name": "Free games: Download over 600 DOS games. Shareware and freeware, reviews, help getting games working!",
+            "type": "url",
+            "url": "http://dosgames.com/"
+         }, {
+            "date_added": "13065477920147644",
+            "date_last_used": "0",
+            "guid": "29a47530-d948-ff25-a51c-a54886f3944a",
+            "

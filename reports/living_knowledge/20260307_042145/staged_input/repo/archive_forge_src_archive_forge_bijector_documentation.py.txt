@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/bijector_documentation.py
+KIND: code
+
+from tensorflow.python.ops.distributions.bijector_impl import Bijector
+Bijector base.

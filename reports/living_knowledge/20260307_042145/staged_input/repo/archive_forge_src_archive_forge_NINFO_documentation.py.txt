@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/NINFO_documentation.py
+KIND: code
+
+import dns.immutable
+import dns.rdtypes.txtbase
+NINFO record

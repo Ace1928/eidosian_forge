@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_mathtext_data_documentation.py
+KIND: code
+
+from __future__ import annotations
+
+font data tables for truetype and afm computer modern fonts

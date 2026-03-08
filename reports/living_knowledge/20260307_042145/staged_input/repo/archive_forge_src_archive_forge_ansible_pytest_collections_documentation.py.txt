@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/ansible_pytest_collections_documentation.py
+KIND: code
+
+from __future__ import (absolute_import, division, print_function)
+import os
+Configure this pytest plugin.

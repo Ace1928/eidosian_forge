@@ -1,3 +1,4587 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:b3538779500f162b87f7b85e0c9f306c5c63d9e3519a117f2dd8a6e17e065394
-size 114315
+{
+  ".": [
+    ".pre-commit-config.yaml",
+    "AGENTS.md",
+    "ARCHITECTURE.md",
+    "FORGE_STATUS.md",
+    "GEMINI.md",
+    "QUICKSTART.md",
+    "README.md",
+    "REVIEW_MASTER_PLAN.md",
+    "SESSION_REPORT_20260124.md",
+    "TODO.md",
+    "WORKFLOWS_QUICKSTART.md",
+    "requirements.txt",
+    "TEST_STATUS.md"
+  ],
+  "agent_forge": [
+    "CURRENT_STATE.md",
+    "GLOSSARY.md",
+    "GOALS.md",
+    "INSTALL.md",
+    "README.md",
+    "TODO.md",
+    "smol_agents_reference.md",
+    "ISSUES.md",
+    "PLAN.md",
+    "ROADMAP.md"
+  ],
+  "agent_forge/cfg.sample": [
+    "budgets.yaml",
+    "drives.yaml",
+    "policies.yaml",
+    "self.yaml",
+    "skills.yaml"
+  ],
+  "agent_forge/cfg": [
+    "approvals.yaml",
+    "budgets.yaml",
+    "drives.yaml",
+    "policies.yaml",
+    "self.yaml",
+    "skills.yaml"
+  ],
+  "agent_forge/examples": [
+    "basic_agent.py",
+    "sandbox_test.py",
+    "task_manager_demo.py"
+  ],
+  "agent_forge/managed_agents": [
+    "__init__.py"
+  ],
+  "agent_forge/managed_agents/CodeWizard": [
+    "__init__.py"
+  ],
+  "agent_forge/managed_agents/CodeWizard/tools": [
+    "__init__.py"
+  ],
+  "agent_forge/notebooks": [
+    "smolagents_examples.py",
+    "working_document.py"
+  ],
+  "agent_forge/scripts": [
+    "bootstrap.sh"
+  ],
+  "agent_forge/src/agent_forge": [
+    "__init__.py",
+    "agent_core.py"
+  ],
+  "agent_forge/src/agent_forge/actuators": [
+    "__init__.py",
+    "approvals.py",
+    "sandbox.py",
+    "shell_exec.py"
+  ],
+  "agent_forge/src/agent_forge/agent": [
+    "__init__.py",
+    "agent.py",
+    "base.py",
+    "prompt_templates.py"
+  ],
+  "agent_forge/src/agent_forge/cli": [
+    "__init__.py",
+    "eidctl.py",
+    "eidosd.py",
+    "eidtop.py"
+  ],
+  "agent_forge/src/agent_forge/core": [
+    "__init__.py",
+    "artifacts.py",
+    "capabilities.py",
+    "config.py",
+    "contracts.py",
+    "db.py",
+    "events.py",
+    "memory.py",
+    "model.py",
+    "os_metrics.py",
+    "sandbox.py",
+    "scheduler.py",
+    "state.py",
+    "self_model.py",
+    "workspace.py"
+  ],
+  "agent_forge/src/agent_forge/models": [
+    "__init__.py",
+    "schemas.py"
+  ],
+  "agent_forge/src/agent_forge/planners": [
+    "__init__.py",
+    "htn.py",
+    "registry.py"
+  ],
+  "agent_forge/src/agent_forge/planners/templates": [
+    "hygiene.yaml",
+    "lint.yaml"
+  ],
+  "agent_forge/src/agent_forge/systems": [
+    "__init__.py",
+    "smol_agents.py",
+    "task_manager.py"
+  ],
+  "agent_forge/src/agent_forge/utils": [
+    "__init__.py",
+    "config.py",
+    "parsing.py",
+    "versioning.py"
+  ],
+  "agent_forge/src/agent_forge/consciousness": [
+    "types.py",
+    "kernel.py",
+    "__init__.py",
+    "trials.py",
+    "benchmarks.py",
+    "integrated_benchmark.py",
+    "state_store.py",
+    "index.py",
+    "linking.py",
+    "features.py",
+    "stress.py"
+  ],
+  "agent_forge/src/agent_forge/consciousness/modules": [
+    "attention.py",
+    "workspace_competition.py",
+    "__init__.py",
+    "sense.py",
+    "intero.py",
+    "world_model.py",
+    "policy.py",
+    "self_model_ext.py",
+    "affect.py",
+    "meta.py",
+    "report.py",
+    "working_set.py",
+    "knowledge_bridge.py",
+    "memory_bridge.py",
+    "simulation.py",
+    "phenomenology_probe.py",
+    "autotune.py",
+    "experiment_designer.py"
+  ],
+  "agent_forge/src/agent_forge/consciousness/metrics": [
+    "rci.py",
+    "coherence.py",
+    "agency.py",
+    "__init__.py",
+    "ignition_trace.py",
+    "entropy.py",
+    "connectivity.py",
+    "self_stability.py",
+    "directionality.py"
+  ],
+  "agent_forge/src/agent_forge/consciousness/perturb": [
+    "library.py",
+    "harness.py",
+    "__init__.py"
+  ],
+  "agent_forge/src/agent_forge/consciousness/bench": [
+    "__init__.py",
+    "reporting.py",
+    "scoring.py",
+    "tasks.py",
+    "trials.py",
+    "golden.py",
+    "ablations.py",
+    "red_team.py"
+  ],
+  "agent_forge/src/agent_forge/consciousness/tuning": [
+    "params.py",
+    "overlay.py",
+    "optimizer.py",
+    "__init__.py",
+    "bayes_optimizer.py",
+    "objectives.py"
+  ],
+  "agent_forge/tests": [
+    "conftest.py",
+    "test_actuators_approvals.py",
+    "test_agent.py",
+    "test_approvals_config.py",
+    "test_capabilities.py",
+    "test_core_config.py",
+    "test_core_state_entities.py",
+    "test_db_and_daemon.py",
+    "test_db_retention.py",
+    "test_eidtop_controls.py",
+    "test_end_to_end_demo.py",
+    "test_events.py",
+    "test_events_corr.py",
+    "test_events_prune.py",
+    "test_indexes.py",
+    "test_os_metrics.py",
+    "test_planners_htn.py",
+    "test_planners_lint.py",
+    "test_retries.py",
+    "test_run_artifacts.py",
+    "test_sandbox_runner.py",
+    "test_scheduler.py",
+    "test_state.py",
+    "test_status_machine.py",
+    "test_template_vars.py",
+    "test_tui_render.py",
+    "test_workspace.py",
+    "test_consciousness_milestone_a.py",
+    "test_consciousness_milestone_b.py",
+    "test_consciousness_trials.py",
+    "test_consciousness_benchmarks.py",
+    "test_consciousness_milestone_d.py",
+    "test_consciousness_integrated_benchmark.py",
+    "test_consciousness_continuity.py",
+    "test_consciousness_memory_knowledge_bridge.py",
+    "test_consciousness_linking_index.py",
+    "test_consciousness_ignition_trace.py",
+    "test_consciousness_bench_trials.py",
+    "test_consciousness_metrics_v2.py",
+    "test_consciousness_ablations.py",
+    "test_consciousness_simulation.py",
+    "test_consciousness_phenomenology_probe.py",
+    "test_consciousness_perturb_recipes.py",
+    "test_consciousness_tuning_overlay.py",
+    "test_consciousness_autotune.py",
+    "test_consciousness_bayes_optimizer.py",
+    "test_consciousness_attention_competition_learning.py",
+    "test_consciousness_experiment_designer.py",
+    "test_consciousness_red_team.py",
+    "test_consciousness_kernel_hardening.py",
+    "test_consciousness_stress_benchmark.py"
+  ],
+  "article_forge": [
+    "CURRENT_STATE.md",
+    "GOALS.md",
+    "INSTALL.md",
+    "README.md",
+    "TODO.md",
+    "ISSUES.md",
+    "PLAN.md",
+    "ROADMAP.md"
+  ],
+  "article_forge/medium_articles": [
+    "about_me.md",
+    "about_me_guide.md",
+    "vscode_setup.md"
+  ],
+  "article_forge/medium_articles/autobiography/overview": [
+    "chanel_to_st_brendans.md",
+    "family_breakdown_isolation_into_year_12.md",
+    "first_six_months.md",
+    "from_two_to_four.md",
+    "one_to_two_and_half_years.md",
+    "primary_four_to_seven.md",
+    "primary_one_to_four.md",
+    "six_to_twelve_months.md",
+    "st_brendans_year_nine_ten.md",
+    "two_and_half_to_four.md",
+    "year_11.md",
+    "year_12.md"
+  ],
+  "article_forge/medium_articles/autobiography/part_one": [
+    "lloyd_handyside_part_one_1993_to_1997.md"
+  ],
+  "article_forge/medium_articles/autobiography/part_one/1993": [
+    "1993.md"
+  ],
+  "article_forge/scripts": [
+    "extract_profile_data.py",
+    "parse_vscode_config.py"
+  ],
+  "article_forge/src/article_forge": [
+    "__init__.py"
+  ],
+  "article_forge/src/article_forge/cli": [
+    "__init__.py"
+  ],
+  "article_forge/tests": [
+    "test_layout.py"
+  ],
+  "audit_forge": [
+    "CURRENT_STATE.md",
+    "GOALS.md",
+    "INSTALL.md",
+    "README.md",
+    "TODO.md",
+    "ISSUES.md",
+    "PLAN.md",
+    "ROADMAP.md"
+  ],
+  "audit_forge/src": [
+    "TODO.md"
+  ],
+  "audit_forge/src/audit_forge": [
+    "__init__.py",
+    "audit_core.py",
+    "cli.py",
+    "coverage.py",
+    "tasks.py"
+  ],
+  "audit_forge/tests": [
+    "conftest.py",
+    "test_audit.py",
+    "test_tasks.py"
+  ],
+  "code_forge": [
+    "CHANGELOG.md",
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+    "CURRENT_STATE.md",
+    "GOALS.md",
+    "INSTALL.md",
+    "README.md",
+    "SECURITY.md",
+    "TODO.md",
+    "code_core.py",
+    "eidosian_config.yml",
+    "install.sh",
+    "requirements.txt",
+    "ARCHITECTURE.md",
+    "ISSUES.md",
+    "PLAN.md",
+    "ROADMAP.md"
+  ],
+  "code_forge/src/code_forge": [
+    "__init__.py",
+    "cli.py"
+  ],
+  "code_forge/src/code_forge/analyzer": [
+    "__init__.py",
+    "code_indexer.py",
+    "python_analyzer.py"
+  ],
+  "code_forge/src/code_forge/librarian": [
+    "__init__.py",
+    "core.py"
+  ],
+  "code_forge/src/code_forge/ingest": [
+    "__init__.py",
+    "daemon.py",
+    "runner.py"
+  ],
+  "code_forge/src/code_forge/library": [
+    "__init__.py",
+    "db.py"
+  ],
+  "code_forge/tests": [
+    "test_code.py",
+    "conftest.py",
+    "test_analyzer_granularity.py",
+    "test_ingest_runner.py",
+    "test_ingest_scan.py",
+    "test_library_db.py"
+  ],
+  "computer_control_forge": [
+    "INSTALL.md",
+    "README.md",
+    "test_manual.py",
+    "CURRENT_STATE.md",
+    "GOALS.md",
+    "ISSUES.md",
+    "PLAN.md",
+    "ROADMAP.md"
+  ],
+  "computer_control_forge/demos": [
+    "demo_patterns.py"
+  ],
+  "computer_control_forge/docs": [
+    "BREAKTHROUGH_META_AGENCY.md",
+    "REFLECTION_EMBODIMENT.md"
+  ],
+  "computer_control_forge/scripts": [
+    "install_deps.sh",
+    "kill_all_control.sh",
+    "run_continuation_daemon.py",
+    "capture_test.py",
+    "direct_ydo_send.py",
+    "gpt_agent_v2.py",
+    "interact.py"
+  ],
+  "computer_control_forge/src/computer_control_forge": [
+    "__init__.py",
+    "absolute_mouse.py",
+    "actions.py",
+    "advanced_mouse.py",
+    "agent_controller.py",
+    "agent_loop.py",
+    "calibrated_mouse.py",
+    "control.py",
+    "cursor_position.py",
+    "feedback_system.py",
+    "human_mouse.py",
+    "live_controller.py",
+    "live_mouse.py",
+    "live_observer.py",
+    "live_perception.py",
+    "multimodal_perception.py",
+    "obs_stream.py",
+    "obs_stream_v2.py",
+    "perception_mouse.py",
+    "pid_mouse.py",
+    "safety.py",
+    "visual_feedback.py",
+    "wayland_control.py"
+  ],
+  "computer_control_forge/src/computer_control_forge/automation": [
+    "__init__.py"
+  ],
+  "computer_control_forge/src/computer_control_forge/cli": [
+    "__init__.py",
+    "main.py"
+  ],
+  "computer_control_forge/src/computer_control_forge/daemon": [
+    "__init__.py"
+  ],
+  "computer_control_forge/src/computer_control_forge/perception": [
+    "__init__.py",
+    "ocr_engine.py",
+    "screen_state.py",
+    "unified_perception.py",
+    "window_manager.py"
+  ],
+  "computer_control_forge/tests": [
+    "test_safety.py"
+  ],
+  "crawl_forge": [
+    "CURRENT_STATE.md",
+    "GOALS.md",
+    "INSTALL.md",
+    "README.md",
+    "TODO.md",
+    "ISSUES.md",
+    "PLAN.md",
+    "ROADMAP.md"
+  ],
+  "crawl_forge/src/crawl_forge": [
+    "__init__.py",
+    "cli.py",
+    "tika_extractor.py"
+  ],
+  "crawl_forge/tests": [
+    "test_crawl.py",
+    "test_tika_extractor_fallback.py"
+  ],
+  "diagnostics_forge": [
+    "CURRENT_STATE.md",
+    "GOALS.md",
+    "INSTALL.md",
+    "README.md",
+    "TODO.md",
+    "ISSUES.md",
+    "PLAN.md",
+    "ROADMAP.md"
+  ],
+  "diagnostics_forge/src/diagnostics_forge": [
+    "__init__.py",
+    "core.py"
+  ],
+  "diagnostics_forge/src/diagnostics_forge/cli": [
+    "__init__.py"
+  ],
+  "diagnostics_forge/tests": [
+    "conftest.py",
+    "test_diag.py",
+    "test_diagnostics.py"
+  ],
+  "docs": [
+    "FORGE_ARCHITECTURE.md",
+    "forge_dependency_map.md",
+    "AGENT_OBSERVABILITY_SOURCES_20260206.md",
+    "EIDOSIAN_IDENTITY_SYNTHESIS.md",
+    "MOLTBOOK_CRYPTO_RISK_SOURCES.md",
+    "MOLTBOOK_FEED_20260206.md",
+    "MOLTBOOK_IMPROVEMENTS_20260206.md",
+    "MOLTBOOK_INTERACTION_LOG.md",
+    "MOLTBOOK_LEARNINGS.md",
+    "MOLTBOOK_SOURCES.md",
+    "MOLTBOOK_TRENDS_20260206.md",
+    "gene_particles.md",
+    "gene_particles_additions_and_improvements.md",
+    "gene_particles_reference.md",
+    "gene_particles_review.md",
+    "moltbook_heartbeat.md",
+    "moltbook_messaging.md",
+    "moltbook_skill.md",
+    "pyparticles_review.md",
+    "CONSCIOUSNESS_PROTOCOL.md",
+    "DIRECTORY_ATLAS.md",
+    "DIRECTORY_INDEX_FULL.txt",
+    "README.md"
+  ],
+  "docs/legacy/aurora_chat_logs": [
+    "IndegotoIndegoChat.md",
+    "chat_log_20240526-085823.txt",
+    "chat_log_20240526-090023.txt",
+    "chat_log_20240526-090629.txt"
+  ],
+  "docs/consciousness_fcl": [
+    "REFERENCES.md",
+    "PLAN_OVERVIEW.md",
+    "PLAN_TRACKER.md",
+    "part-00-operational-definition.md",
+    "part-01-module-architecture.md",
+    "part-02-data-contracts.md",
+    "part-03-kernel-runtime-integration.md",
+    "part-04-core-modules.md",
+    "part-05-perturb-and-measure.md",
+    "part-06-cli-mcp-exposure.md",
+    "part-07-tests-validation.md",
+    "part-08-termux-linux-hardening.md",
+    "part-09-documentation-ops.md",
+    "part-10-level-gates-falsification.md",
+    "README.md",
+    "IMPLEMENTATION_SEQUENCE.md",
+    "part-11-benchmarking-self-improvement.md",
+    "part-12-dynamical-continuity.md",
+    "part-13-cross-forge-integration.md",
+    "NEXT_LAYER_PLAN.md",
+    "part-14-north-star-causal-traceability.md",
+    "part-15-canonical-schemas-and-indexes.md",
+    "part-16-winner-linked-ignition-tracing.md",
+    "part-17-consciousness-trial-runner.md",
+    "part-18-metrics-v2-connectivity.md",
+    "part-19-world-model-v1-5.md",
+    "part-20-simulation-stream.md",
+    "part-21-phenomenology-probes.md",
+    "part-22-perturbation-library-v2.md",
+    "part-23-ablation-golden-regression.md",
+    "part-24-frontier-upgrades.md",
+    "part-25-pr-order-and-gates.md",
+    "part-26-adversarial-red-team.md",
+    "part-27-self-upgrading-loop-architecture.md",
+    "part-28-parameter-store-overlay.md",
+    "part-29-autotune-module.md",
+    "part-30-self-experimentation-frontier.md",
+    "part-31-autonomous-experiment-design-and-red-team.md",
+    "part-32-integrated-red-team-gates.md",
+    "part-33-autotune-red-team-commit-gates.md",
+    "part-34-benchmark-index-migration.md",
+    "part-35-workflow-security-audit.md",
+    "part-36-security-delta-remediation-issues.md",
+    "part-37-workflow-action-pin-drift-policy.md",
+    "part-38-phase16-remediation-batching.md",
+    "part-39-phase17-autopatch-execution.md",
+    "part-40-phase18-runtime-hardening.md",
+    "part-41-phase18-status-and-stress-completion.md",
+    "part-42-phase19-linux-audit-matrix-parity.md",
+    "part-43-phase20-audit-observability-gates.md",
+    "part-44-phase21-event-fabric-trial-capture.md",
+    "part-45-phase22-trial-provenance-replay-manifests.md",
+    "part-46-phase23-repo-docs-atlas-benchmark-cycle.md",
+    "part-47-phase24-deterministic-atlas-drift-guard.md"
+  ],
+  "docs/security": [
+    "dependabot_remediation_plan.md"
+  ],
+  "eidos_mcp": [
+    "CURRENT_STATE.md",
+    "GEMINI_SETUP.md",
+    "GOALS.md",
+    "INSTALL.md",
+    "README.md",
+    "TODO.md",
+    "TODO_eidos_mcp.md",
+    "check_mcp.py",
+    "eidos_fetch.py",
+    "run_server.sh",
+    "ISSUES.md",
+    "PLAN.md",
+    "test_nexus.py",
+    "ROADMAP.md"
+  ],
+  "eidos_mcp/src/eidos_mcp": [
+    "__init__.py",
+    "check_mcp.py",
+    "core.py",
+    "eidos_fetch.py",
+    "eidos_mcp_server.py",
+    "embeddings.py",
+    "forge_loader.py",
+    "logging_utils.py",
+    "server.py",
+    "state.py",
+    "transactions.py",
+    "verify_state.py",
+    "consciousness_protocol.py"
+  ],
+  "eidos_mcp/src/eidos_mcp/config": [
+    "__init__.py",
+    "models.py"
+  ],
+  "eidos_mcp/src/eidos_mcp/plugins": [
+    "__init__.py",
+    "core.py"
+  ],
+  "eidos_mcp/src/eidos_mcp/plugins/computer_control": [
+    "__init__.py"
+  ],
+  "eidos_mcp/src/eidos_mcp/plugins/self_exploration": [
+    "__init__.py"
+  ],
+  "eidos_mcp/src/eidos_mcp/plugins/task_automation": [
+    "__init__.py"
+  ],
+  "eidos_mcp/src/eidos_mcp/plugins/web_tools": [
+    "__init__.py"
+  ],
+  "eidos_mcp/src/eidos_mcp/routers": [
+    "__init__.py",
+    "audit.py",
+    "auth.py",
+    "code.py",
+    "diagnostics.py",
+    "gis.py",
+    "knowledge.py",
+    "memory.py",
+    "nexus.py",
+    "plugins.py",
+    "refactor.py",
+    "system.py",
+    "tiered_memory.py",
+    "tika.py",
+    "types.py",
+    "word_forge.py",
+    "moltbook.py",
+    "consciousness.py"
+  ],
+  "eidos_mcp/tests": [
+    "test_mcp_tools_stdio.py",
+    "test_routers.py",
+    "test_server_init.py",
+    "test_diagnostics_transport_matrix.py",
+    "test_mcp_tool_calls_individual.py",
+    "test_moltbook_router.py",
+    "test_streamable_http_compat.py",
+    "test_consciousness_protocol.py"
+  ],
+  "eidos_mcp/scripts": [
+    "verify_fixes.py",
+    "watchdog.py"
+  ],
+  "erais_forge": [
+    "CURRENT_STATE.md",
+    "GOALS.md",
+    "INSTALL.md",
+    "README.md",
+    "TODO.md",
+    "ISSUES.md",
+    "PLAN.md",
+    "ROADMAP.md"
+  ],
+  "erais_forge/planning": [
+    "code_polishing_request.md",
+    "complete_erais_forge_plan.md",
+    "markdown_polishing_request.md"
+  ],
+  "erais_forge/src/erais_forge": [
+    "__init__.py"
+  ],
+  "erais_forge/src/erais_forge/cli": [
+    "__init__.py"
+  ],
+  "erais_forge/tests": [
+    "test_erais.py"
+  ],
+  "figlet_forge": [
+    ".travis.yml",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "CURRENT_STATE.md",
+    "Eidos_Manifesto.txt",
+    "GOALS.md",
+    "INSTALL.md",
+    "README.md",
+    "TODO.md",
+    "check_compatibility.py",
+    "debug_font_loading.py",
+    "demo_text.txt",
+    "dev-requirements.txt",
+    "eidos_figlet_forge_manifesto.py",
+    "eidosian_figlet_install.md",
+    "example_output.md",
+    "figlet_core.py",
+    "figlet_forge_setup.sh",
+    "figlet_man_pages.md",
+    "get_figlet_fonts.py",
+    "global_info.py",
+    "requirements-dev.txt",
+    "requirements.txt",
+    "setup.py",
+    "setup_fonts.py",
+    "test_compat.py",
+    "test_fix.py",
+    "test_font.sh",
+    "ISSUES.md",
+    "PLAN.md",
+    "ROADMAP.md"
+  ],
+  "figlet_forge/docs": [
+    "USER_GUIDE.md",
+    "figfont.md",
+    "index.md"
+  ],
+  "figlet_forge/examples": [
+    "advanced_api_usage.py",
+    "ascii_to_svg_example.py",
+    "banner_generation_example.py",
+    "compatibility_example.py",
+    "discord_compatible_outputs.py",
+    "eidos_figlet_forge_manifesto.py",
+    "smart_doc_format_example.py"
+  ],
+  "figlet_forge/src/figlet_forge": [
+    "__init__.py",
+    "__main__.py",
+    "figlet.py",
+    "figlet_string.py",
+    "showcase.py",
+    "unicode_cmd.py",
+    "version.py"
+  ],
+  "figlet_forge/src/figlet_forge/cli": [
+    "__init__.py",
+    "main.py",
+    "sample.py",
+    "showcase.py",
+    "showcase_helpers.py"
+  ],
+  "figlet_forge/src/figlet_forge/color": [
+    "__init__.py",
+    "effects.py",
+    "figlet_color.py"
+  ],
+  "figlet_forge/src/figlet_forge/compat": [
+    "__init__.py",
+    "colour_adjuster.py",
+    "encoding_adjuster.py",
+    "figlet_compat.py",
+    "terminal_adjuster.py"
+  ],
+  "figlet_forge/src/figlet_forge/core": [
+    "__init__.py",
+    "exceptions.py",
+    "figlet_builder.py",
+    "figlet_font.py",
+    "figlet_string.py",
+    "utils.py"
+  ],
+  "figlet_forge/src/figlet_forge/fonts": [
+    "__init__.py"
+  ],
+  "figlet_forge/src/figlet_forge/fonts/contrib": [
+    "__init__.py"
+  ],
+  "figlet_forge/src/figlet_forge/fonts/standard": [
+    "__init__.py"
+  ],
+  "figlet_forge/src/figlet_forge/render": [
+    "__init__.py",
+    "figlet_engine.py"
+  ],
+  "figlet_forge/src/figlet_forge/tools": [
+    "recursive_type_check.py"
+  ],
+  "figlet_forge/src/figlet_forge/utils": [
+    "__init__.py",
+    "file_utils.py"
+  ],
+  "figlet_forge/tests": [
+    "__init__.py",
+    "conftest.py",
+    "test.py",
+    "test_cli.py",
+    "test_compat.py",
+    "test_complete_functionality.py",
+    "test_figlet.py",
+    "test_suite_runner.py"
+  ],
+  "figlet_forge/tests/compat": [
+    "__init__.py",
+    "test_color_adjuster.py",
+    "test_compat.py",
+    "test_cross_platform.py",
+    "test_encoding_compat.py",
+    "test_exceptions_compat.py",
+    "test_figlet_compat.py",
+    "test_pyfiglet_compat.py",
+    "test_terminal_compat.py"
+  ],
+  "figlet_forge/tests/fonts": [
+    "__init__.py",
+    "test_font_loading.py"
+  ],
+  "figlet_forge/tests/integration": [
+    "__init__.py",
+    "test_cli_integration.py",
+    "test_cli_options.py",
+    "test_compat_integration.py",
+    "test_exceptions.py",
+    "test_figlet_compatibility.py",
+    "test_helpers.py",
+    "test_main.py"
+  ],
+  "figlet_forge/tests/unit": [
+    "__init__.py",
+    "test_cli_options.py",
+    "test_color.py",
+    "test_color_effects.py",
+    "test_exceptions.py",
+    "test_figlet.py",
+    "test_recursive_typer.py",
+    "test_showcase.py",
+    "test_utils.py"
+  ],
+  "file_forge": [
+    "CHANGELOG.md",
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+    "CURRENT_STATE.md",
+    "GOALS.md",
+    "INSTALL.md",
+    "README.md",
+    "SECURITY.md",
+    "TODO.md",
+    "eidosian_config.yml",
+    "embedding_proxy.py",
+    "fs_graph.py",
+    "install.sh",
+    "requirements.txt",
+    "settings.yaml",
+    "setup.py",
+    "txt_copy.py",
+    "ISSUES.md",
+    "PLAN.md",
+    "ROADMAP.md"
+  ],
+  "file_forge/docs": [
+    ".readthedocs.yaml",
+    "conf.py",
+    "index.md"
+  ],
+  "file_forge/docs/assets": [
+    "README.md"
+  ],
+  "file_forge/docs/auto/cpp": [
+    "index.md"
+  ],
+  "file_forge/docs/auto/go": [
+    "index.md"
+  ],
+  "file_forge/docs/auto/javascript": [
+    "index.md"
+  ],
+  "file_forge/docs/auto/python": [
+    "index.md"
+  ],
+  "file_forge/docs/auto/rust": [
+    "index.md"
+  ],
+  "file_forge/docs/manual/cpp": [
+    "index.md"
+  ],
+  "file_forge/docs/manual/go": [
+    "index.md"
+  ],
+  "file_forge/docs/manual/javascript": [
+    "index.md"
+  ],
+  "file_forge/docs/manual/python": [
+    "index.md"
+  ],
+  "file_forge/docs/manual/rust": [
+    "index.md"
+  ],
+  "file_forge/docs/source": [
+    "index.md"
+  ],
+  "file_forge/scripts": [
+    "README.md"
+  ],
+  "file_forge/scripts/dev": [
+    "run_tests.sh"
+  ],
+  "file_forge/scripts/setup": [
+    "install_dependencies.sh"
+  ],
+  "file_forge/scripts/utils": [
+    "project_stats.py"
+  ],
+  "file_forge/src/file_forge": [
+    "__init__.py",
+    "core.py"
+  ],
+  "file_forge/src/file_forge/cli": [
+    "__init__.py"
+  ],
+  "file_forge/tests": [
+    "conftest.py",
+    "test_file.py"
+  ],
+  "game_forge": [
+    "CURRENT_STATE.md",
+    "GOALS.md",
+    "INSTALL.md",
+    "README.md",
+    "TODO.md",
+    "BENCHMARKS.md",
+    "ISSUES.md",
+    "PLAN.md",
+    "ROADMAP.md"
+  ],
+  "game_forge/src/ECosmos": [
+    "config.py",
+    "data_structures.py",
+    "evolution.py",
+    "instructions.py",
+    "interpreter.py",
+    "main.py",
+    "mvp.py",
+    "state_manager.py",
+    "visualize.py",
+    "__init__.py",
+    "__main__.py"
+  ],
+  "game_forge/src/Stratum": [
+    "README.md",
+    "STATUS.md",
+    "TODO.md",
+    "__init__.py",
+    "requirements.txt",
+    "__main__.py"
+  ],
+  "game_forge/src/Stratum/core": [
+    "__init__.py",
+    "config.py",
+    "conservation.py",
+    "diagnostics.py",
+    "events.py",
+    "fabric.py",
+    "ledger.py",
+    "metronome.py",
+    "ordering.py",
+    "quanta.py",
+    "registry.py",
+    "types.py"
+  ],
+  "game_forge/src/Stratum/domains": [
+    "__init__.py"
+  ],
+  "game_forge/src/Stratum/domains/materials": [
+    "__init__.py",
+    "fundamentals.py"
+  ],
+  "game_forge/src/Stratum/scenarios": [
+    "__init__.py",
+    "cli.py",
+    "stellar_collapse.py",
+    "stellar_collapse_runtime.py",
+    "stellar_screensaver.py"
+  ],
+  "game_forge/src/Stratum/tests": [
+    "__init__.py",
+    "benchmark.py",
+    "conftest.py",
+    "golden_checksum.py",
+    "test_classregistry.py",
+    "test_cli.py",
+    "test_config.py",
+    "test_conservation_reconciliation.py",
+    "test_cross_process_determinism.py",
+    "test_determinism.py",
+    "test_diagnostics.py",
+    "test_fabric.py",
+    "test_integration.py",
+    "test_ledger.py",
+    "test_materials.py",
+    "test_metronome.py",
+    "test_properties.py",
+    "test_quanta.py",
+    "test_registry.py",
+    "test_types.py",
+    "test_benchmark_output.py"
+  ],
+  "game_forge/src/Stratum/util": [
+    "__init__.py",
+    "classregistry.py"
+  ],
+  "game_forge/src/agentic_chess": [
+    "README.md",
+    "__init__.py",
+    "__main__.py",
+    "agents.py",
+    "cli.py",
+    "engine.py"
+  ],
+  "game_forge/src/agentic_chess/eidosian_monorepo": [
+    "CHANGELOG.md",
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+    "README.md",
+    "SECURITY.md",
+    "eidosian_config.yml"
+  ],
+  "game_forge/src/agentic_chess/eidosian_monorepo/docs": [
+    ".readthedocs.yaml",
+    "conf.py",
+    "index.md"
+  ],
+  "game_forge/src/agentic_chess/eidosian_monorepo/docs/assets": [
+    "README.md"
+  ],
+  "game_forge/src/agentic_chess/eidosian_monorepo/docs/auto/cpp": [
+    "index.md"
+  ],
+  "game_forge/src/agentic_chess/eidosian_monorepo/docs/auto/go": [
+    "index.md"
+  ],
+  "game_forge/src/agentic_chess/eidosian_monorepo/docs/auto/javascript": [
+    "index.md"
+  ],
+  "game_forge/src/agentic_chess/eidosian_monorepo/docs/auto/python": [
+    "index.md"
+  ],
+  "game_forge/src/agentic_chess/eidosian_monorepo/docs/auto/rust": [
+    "index.md"
+  ],
+  "game_forge/src/agentic_chess/eidosian_monorepo/docs/manual/cpp": [
+    "index.md"
+  ],
+  "game_forge/src/agentic_chess/eidosian_monorepo/docs/manual/go": [
+    "index.md"
+  ],
+  "game_forge/src/agentic_chess/eidosian_monorepo/docs/manual/javascript": [
+    "index.md"
+  ],
+  "game_forge/src/agentic_chess/eidosian_monorepo/docs/manual/python": [
+    "index.md"
+  ],
+  "game_forge/src/agentic_chess/eidosian_monorepo/docs/manual/rust": [
+    "index.md"
+  ],
+  "game_forge/src/agentic_chess/eidosian_monorepo/docs/source": [
+    "index.md"
+  ],
+  "game_forge/src/agentic_chess/eidosian_monorepo/projects/go_project": [
+    "README.md"
+  ],
+  "game_forge/src/agentic_chess/eidosian_monorepo/projects/nodejs_project": [
+    "README.md"
+  ],
+  "game_forge/src/agentic_chess/eidosian_monorepo/projects/nodejs_project/src": [
+    "index.js"
+  ],
+  "game_forge/src/agentic_chess/eidosian_monorepo/projects/nodejs_project/src/nodejs_project/api": [
+    "index.js"
+  ],
+  "game_forge/src/agentic_chess/eidosian_monorepo/projects/nodejs_project/src/nodejs_project/config": [
+    "index.js"
+  ],
+  "game_forge/src/agentic_chess/eidosian_monorepo/projects/nodejs_project/src/nodejs_project/models": [
+    "index.js"
+  ],
+  "game_forge/src/agentic_chess/eidosian_monorepo/projects/nodejs_project/src/nodejs_project/services": [
+    "index.js"
+  ],
+  "game_forge/src/agentic_chess/eidosian_monorepo/projects/nodejs_project/src/nodejs_project/src": [
+    "index.js"
+  ],
+  "game_forge/src/agentic_chess/eidosian_monorepo/projects/nodejs_project/src/nodejs_project/utils": [
+    "index.js"
+  ],
+  "game_forge/src/agentic_chess/eidosian_monorepo/projects/nodejs_project/tests": [
+    "example.test.js"
+  ],
+  "game_forge/src/agentic_chess/eidosian_monorepo/projects/python_project": [
+    "README.md"
+  ],
+  "game_forge/src/agentic_chess/eidosian_monorepo/projects/python_project/src/python_project": [
+    "__init__.py",
+    "main.py"
+  ],
+  "game_forge/src/agentic_chess/eidosian_monorepo/projects/python_project/src/python_project/api": [
+    "__init__.py"
+  ],
+  "game_forge/src/agentic_chess/eidosian_monorepo/projects/python_project/src/python_project/config": [
+    "__init__.py"
+  ],
+  "game_forge/src/agentic_chess/eidosian_monorepo/projects/python_project/src/python_project/core": [
+    "__init__.py"
+  ],
+  "game_forge/src/agentic_chess/eidosian_monorepo/projects/python_project/src/python_project/models": [
+    "__init__.py"
+  ],
+  "game_forge/src/agentic_chess/eidosian_monorepo/projects/python_project/src/python_project/services": [
+    "__init__.py"
+  ],
+  "game_forge/src/agentic_chess/eidosian_monorepo/projects/python_project/src/python_project/utils": [
+    "__init__.py"
+  ],
+  "game_forge/src/agentic_chess/eidosian_monorepo/projects/python_project/tests": [
+    "__init__.py",
+    "test_example.py"
+  ],
+  "game_forge/src/agentic_chess/eidosian_monorepo/projects/rust_project": [
+    "README.md"
+  ],
+  "game_forge/src/agentic_chess/eidosian_monorepo/scripts": [
+    "README.md"
+  ],
+  "game_forge/src/agentic_chess/eidosian_monorepo/scripts/dev": [
+    "run_tests.sh"
+  ],
+  "game_forge/src/agentic_chess/eidosian_monorepo/scripts/setup": [
+    "install_dependencies.sh"
+  ],
+  "game_forge/src/agentic_chess/eidosian_monorepo/scripts/utils": [
+    "project_stats.py"
+  ],
+  "game_forge/src/autoseed": [
+    "README.md",
+    "eslint.config.js",
+    "playwright.config.ts",
+    "vitest.config.ts",
+    "vitest.integration.config.ts"
+  ],
+  "game_forge/src/autoseed/coverage": [
+    "block-navigation.js",
+    "prettify.js",
+    "sorter.js"
+  ],
+  "game_forge/src/autoseed/docs": [
+    "BENCHMARK.md",
+    "PROFILE.md",
+    "REVIEW.md",
+    "TODO.md"
+  ],
+  "game_forge/src/autoseed/src": [
+    "app.ts",
+    "game-engine.ts"
+  ],
+  "game_forge/src/autoseed/src/core": [
+    "ai.ts",
+    "animation.ts",
+    "balance.ts",
+    "canvas.ts",
+    "combat.ts",
+    "command-queue.ts",
+    "commands.ts",
+    "construction.ts",
+    "discovery.ts",
+    "economy.ts",
+    "outcome.ts",
+    "probes.ts",
+    "procgen.ts",
+    "random.ts",
+    "selectors.ts",
+    "simulation.ts",
+    "tech-effects.ts",
+    "tech-tree.ts",
+    "types.ts",
+    "view.ts"
+  ],
+  "game_forge/src/autoseed/src/ui": [
+    "input.ts",
+    "panel-commands.ts",
+    "panels.ts",
+    "render.ts"
+  ],
+  "game_forge/src/autoseed/tests": [
+    "ai-cache.test.ts",
+    "ai-combat.test.ts",
+    "ai-planning.test.ts",
+    "animation.test.ts",
+    "app.test.ts",
+    "canvas.test.ts",
+    "combat.test.ts",
+    "command-queue.test.ts",
+    "construction.test.ts",
+    "discovery.test.ts",
+    "economy.test.ts",
+    "game-engine.test.ts",
+    "outcome.test.ts",
+    "panel-commands.test.ts",
+    "probes.test.ts",
+    "procgen.test.ts",
+    "random.test.ts",
+    "selectors.test.ts",
+    "simulation.test.ts",
+    "tech-effects.test.ts",
+    "tech-tree.test.ts",
+    "ui-input.test.ts",
+    "ui-panels.test.ts",
+    "ui-render.test.ts",
+    "view.test.ts"
+  ],
+  "game_forge/src/autoseed/tests/helpers": [
+    "canvas.ts",
+    "dom.ts"
+  ],
+  "game_forge/src/autoseed/tests/integration": [
+    "expansion.test.ts",
+    "hud-smoke.test.ts"
+  ],
+  "game_forge/src/autoseed/tests/visual": [
+    "autoseed.spec.ts"
+  ],
+  "game_forge/src/chess_game": [
+    "color_mapper.py",
+    "concept_semantic_emoji_emotion_map.py",
+    "emoji_map.py",
+    "init.py",
+    "local_model_network.py",
+    "modular_local_model_network.py",
+    "ollama_api.md",
+    "piecerenderer.py",
+    "prototype.py",
+    "prototype_old.py",
+    "textprocessor.py",
+    "usermanager.py",
+    "__init__.py",
+    "__main__.py"
+  ],
+  "game_forge/src/eidosian_universe": [
+    "README.md",
+    "__init__.py",
+    "eu_agent.py",
+    "eu_ai.py",
+    "eu_config.py",
+    "eu_main.py",
+    "eu_rules.py",
+    "eu_world.py",
+    "__main__.py"
+  ],
+  "game_forge/src/falling_sand": [
+    "AGENTS.md",
+    "README.md"
+  ],
+  "game_forge/src/falling_sand/docs": [
+    "DATABASE.md",
+    "ENGINE.md",
+    "INDEXING.md",
+    "PIPELINE.md",
+    "REPORTING.md",
+    "SCHEMA.md",
+    "TESTING.md",
+    "TODO.md"
+  ],
+  "game_forge/src/falling_sand/scripts": [
+    "__init__.py",
+    "benchmark_index.py",
+    "benchmark_suite.py",
+    "demo_panda3d.py",
+    "ingest_index.py",
+    "profile_index.py",
+    "report_trends.py",
+    "verify.sh"
+  ],
+  "game_forge/src/falling_sand/src/falling_sand": [
+    "__init__.py",
+    "__main__.py",
+    "benchmarks.py",
+    "cli.py",
+    "db.py",
+    "indexer.py",
+    "ingest.py",
+    "models.py",
+    "reporting.py",
+    "reports.py",
+    "schema.py"
+  ],
+  "game_forge/src/falling_sand/src/falling_sand/engine": [
+    "__init__.py",
+    "chunk.py",
+    "config.py",
+    "coords.py",
+    "demo.py",
+    "lighting.py",
+    "materials.py",
+    "raycast.py",
+    "renderer_instancing.py",
+    "renderer_panda3d.py",
+    "simulation.py",
+    "streaming.py",
+    "terrain.py",
+    "tools.py",
+    "ui.py",
+    "world.py"
+  ],
+  "game_forge/src/falling_sand/tests": [
+    "conftest.py"
+  ],
+  "game_forge/src/falling_sand/tests/integration": [
+    "test_indexer_cli.py",
+    "test_ingest_cli.py"
+  ],
+  "game_forge/src/falling_sand/tests/unit": [
+    "test_benchmark.py",
+    "test_benchmark_suite.py",
+    "test_cli.py",
+    "test_db.py",
+    "test_indexer.py",
+    "test_ingest.py",
+    "test_models.py",
+    "test_profile.py",
+    "test_reporting.py",
+    "test_reports.py",
+    "test_schema.py"
+  ],
+  "game_forge/src/falling_sand/tests/unit/engine": [
+    "test_chunk.py",
+    "test_config.py",
+    "test_coords.py",
+    "test_demo.py",
+    "test_instancing.py",
+    "test_materials.py",
+    "test_raycast.py",
+    "test_renderer_utils.py",
+    "test_simulation.py",
+    "test_streaming.py",
+    "test_terrain.py",
+    "test_tools.py",
+    "test_ui.py",
+    "test_world.py"
+  ],
+  "game_forge/src/gene_particles": [
+    "gp_automata.py",
+    "gp_config.py",
+    "gp_genes.py",
+    "gp_interpreter.py",
+    "gp_main.py",
+    "gp_manager.py",
+    "gp_renderer.py",
+    "gp_rules.py",
+    "gp_types.py",
+    "gp_utility.py",
+    "__init__.py",
+    "__main__.py",
+    "gp_ui.py"
+  ],
+  "game_forge/src/algorithms_lab": [
+    "__init__.py",
+    "__main__.py",
+    "backends.py",
+    "barnes_hut.py",
+    "barnes_hut_numba.py",
+    "core.py",
+    "fmm2d.py",
+    "fmm_multilevel.py",
+    "gpu.py",
+    "graph.py",
+    "kdtree.py",
+    "kernels.py",
+    "metrics.py",
+    "morton.py",
+    "neighbor_list.py",
+    "neighbors.py",
+    "numba_kernels.py",
+    "pbf.py",
+    "spatial_hash.py",
+    "spatial_utils.py",
+    "sph.py",
+    "xpbd.py"
+  ],
+  "game_forge/src/algorithms_lab/forces": [
+    "__init__.py",
+    "base.py",
+    "kernels.py",
+    "registry.py"
+  ],
+  "game_forge/src/snake_ai_legacy": [
+    "A_STAR.py",
+    "Algorithm.py",
+    "BFS.py",
+    "Constants.py",
+    "DFS.py",
+    "Fruit.py",
+    "GA.py",
+    "GameController.py",
+    "GameGUI.py",
+    "Main.py",
+    "Menu.py",
+    "NN.py",
+    "README.md",
+    "Snake.py",
+    "SuperSnake.py",
+    "Utility.py",
+    "__init__.py",
+    "__main__.py",
+    "standalonesnake.py"
+  ],
+  "game_forge/tests": [
+    "test_eidosian_universe.py",
+    "conftest.py",
+    "test_agentic_chess_benchmark.py",
+    "test_agentic_chess_cli.py",
+    "test_agentic_chess_engine.py",
+    "test_algorithms_lab_backends.py",
+    "test_algorithms_lab_barnes_hut_numba.py",
+    "test_algorithms_lab_benchmark.py",
+    "test_algorithms_lab_core.py",
+    "test_algorithms_lab_fluids.py",
+    "test_algorithms_lab_fmm_multilevel.py",
+    "test_algorithms_lab_force_kernels.py",
+    "test_algorithms_lab_forces.py",
+    "test_algorithms_lab_gpu.py",
+    "test_algorithms_lab_graph.py",
+    "test_algorithms_lab_grid.py",
+    "test_algorithms_lab_kdtree.py",
+    "test_algorithms_lab_morton.py",
+    "test_algorithms_lab_nbody.py",
+    "test_algorithms_lab_profiler.py",
+    "test_algorithms_lab_registry.py",
+    "test_algorithms_lab_spatial_utils.py",
+    "test_algorithms_lab_xpbd.py",
+    "test_benchmark_suite.py",
+    "test_ecosmos_config.py",
+    "test_ecosmos_data_structures.py",
+    "test_ecosmos_state_manager.py",
+    "test_falling_sand_benchmark_index.py",
+    "test_falling_sand_profile_index.py",
+    "test_gene_particles_automata.py",
+    "test_gene_particles_config.py",
+    "test_gene_particles_genes.py",
+    "test_gene_particles_interpreter.py",
+    "test_gene_particles_main.py",
+    "test_gene_particles_manager.py",
+    "test_gene_particles_performance_tools.py",
+    "test_gene_particles_renderer.py",
+    "test_gene_particles_rules.py",
+    "test_gene_particles_types.py",
+    "test_gene_particles_ui.py",
+    "test_gene_particles_utility.py",
+    "test_launcher.py",
+    "test_module_entrypoints.py",
+    "test_pyparticles_benchmarks_cli.py"
+  ],
+  "game_forge/algorithms_lab/docs": [
+    "ALGORITHMS.md",
+    "FORCES.md",
+    "GPU.md",
+    "PERFORMANCE.md",
+    "README.md",
+    "USAGE.md"
+  ],
+  "game_forge/algorithms_lab/references": [
+    "acceleration.md",
+    "advanced_fluids.md",
+    "barnes_hut.md",
+    "fast_multipole_method.md",
+    "forces.md",
+    "gpu_nbody.md",
+    "morton_order.md",
+    "neighbor_lists.md",
+    "pbf.md",
+    "source_index.md",
+    "spatial_hashing.md",
+    "sph.md"
+  ],
+  "game_forge/gene_particles/docs": [
+    "IMPROVEMENTS_TODO.md",
+    "PYPARTICLES_LESSONS.md"
+  ],
+  "game_forge/pyparticles": [
+    "README.md",
+    "README_V2.md",
+    "requirements.txt",
+    "run.py"
+  ],
+  "game_forge/pyparticles/benchmarks": [
+    "benchmark.py",
+    "benchmark_sim.py"
+  ],
+  "game_forge/pyparticles/src/pyparticles": [
+    "__init__.py",
+    "app.py"
+  ],
+  "game_forge/pyparticles/src/pyparticles/core": [
+    "types.py"
+  ],
+  "game_forge/pyparticles/src/pyparticles/physics": [
+    "engine.py",
+    "kernels.py"
+  ],
+  "game_forge/pyparticles/src/pyparticles/physics/exclusion": [
+    "__init__.py",
+    "kernels.py",
+    "registry.py",
+    "types.py"
+  ],
+  "game_forge/pyparticles/src/pyparticles/physics/forces": [
+    "__init__.py",
+    "base.py",
+    "potentials.py",
+    "registry.py"
+  ],
+  "game_forge/pyparticles/src/pyparticles/physics/spatial": [
+    "__init__.py"
+  ],
+  "game_forge/pyparticles/src/pyparticles/physics/wave": [
+    "__init__.py",
+    "analyzer.py",
+    "kernels.py",
+    "registry.py",
+    "types.py"
+  ],
+  "game_forge/pyparticles/src/pyparticles/profiling": [
+    "__init__.py"
+  ],
+  "game_forge/pyparticles/src/pyparticles/rendering": [
+    "gl_renderer.py"
+  ],
+  "game_forge/pyparticles/src/pyparticles/ui": [
+    "gui.py",
+    "gui_v2.py"
+  ],
+  "game_forge/pyparticles/src/pyparticles/utils": [
+    "colors.py"
+  ],
+  "game_forge/pyparticles/tests": [
+    "test_app.py",
+    "test_core.py",
+    "test_exclusion.py",
+    "test_forces.py",
+    "test_gl_renderer.py",
+    "test_physics.py",
+    "test_physics_v3.py",
+    "test_property_based.py",
+    "test_spatial_profiling.py",
+    "test_ui.py",
+    "test_wave.py"
+  ],
+  "game_forge/tools": [
+    "agentic_chess_benchmark.py",
+    "benchmark_suite.py",
+    "gene_particles_benchmark.py",
+    "gene_particles_profile.py",
+    "run.py"
+  ],
+  "game_forge/tools/algorithms_lab": [
+    "benchmark.py",
+    "demo.py",
+    "profiler.py"
+  ],
+  "gis_forge": [
+    "CURRENT_STATE.md",
+    "GOALS.md",
+    "INSTALL.md",
+    "README.md",
+    "TODO.md",
+    "global_info.py",
+    "ISSUES.md",
+    "PLAN.md",
+    "ROADMAP.md"
+  ],
+  "gis_forge/src/gis_forge": [
+    "__init__.py",
+    "core.py",
+    "defaults.py"
+  ],
+  "gis_forge/src/gis_forge/cli": [
+    "__init__.py"
+  ],
+  "gis_forge/tests": [
+    "conftest.py",
+    "test_gis.py"
+  ],
+  "glyph_forge": [
+    ".pre-commit-config.yaml",
+    "CHANGELOG.md",
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+    "CURRENT_STATE.md",
+    "CURRENT_STATUS.md",
+    "GLOSSARY.md",
+    "GOALS.md",
+    "INSTALL.md",
+    "ISSUES.md",
+    "PLAN.md",
+    "README.md",
+    "ROADMAP.md",
+    "SECURITY.md",
+    "TODO.md",
+    "banner_text.md",
+    "eidos_profile.md",
+    "eidos_profile.yml",
+    "eidosian_config.yml",
+    "eidosian_integration.md",
+    "eidosian_principles.md",
+    "glossary.yml",
+    "project_scope.md",
+    "project_structure.md",
+    "requirements.txt",
+    "rtd_tutorial.md",
+    "setup.py",
+    "stream_banner.md",
+    "BRANDING.md",
+    "DEMO.md",
+    "LAUNCH_PLAYBOOK.md",
+    "PLAN_REFACTOR_GLYPH_FORGE.md"
+  ],
+  "glyph_forge/examples": [
+    "api_examples.py"
+  ],
+  "glyph_forge/scripts": [
+    "__init__.py",
+    "demo.py",
+    "run_tests.py",
+    "update_glossary.py",
+    "verify_install.py",
+    "batch_process_videos.py",
+    "benchmark.py",
+    "demo_rickroll.sh",
+    "download_assets.py",
+    "evaluate_render.py",
+    "export_firefox_cookies.py",
+    "sync_setup.py"
+  ],
+  "glyph_forge/src/glyph_forge": [
+    "__init__.py",
+    "__main__.py",
+    "eidos_profile.py"
+  ],
+  "glyph_forge/src/glyph_forge/api": [
+    "__init__.py",
+    "glyph_api.py"
+  ],
+  "glyph_forge/src/glyph_forge/cli": [
+    "__init__.py",
+    "bannerize.py",
+    "audio.py",
+    "imagize.py",
+    "batch.py",
+    "link.py",
+    "prompting.py",
+    "share_utils.py"
+  ],
+  "glyph_forge/src/glyph_forge/config": [
+    "settings.py"
+  ],
+  "glyph_forge/src/glyph_forge/core": [
+    "banner_generator.py",
+    "style_manager.py"
+  ],
+  "glyph_forge/src/glyph_forge/renderers": [
+    "__init__.py"
+  ],
+  "glyph_forge/src/glyph_forge/services": [
+    "__init__.py",
+    "capture_virtual_display.py",
+    "display_stream_to_video.py",
+    "batch.py",
+    "image_to_glyph.py",
+    "streaming.py",
+    "text_to_banner.py",
+    "text_to_glyph.py",
+    "video_to_glyph.py",
+    "video_to_images.py",
+    "virtual_display.py"
+  ],
+  "glyph_forge/src/glyph_forge/streaming": [
+    "__init__.py",
+    "audio_tools.py",
+    "engine.py",
+    "extractors.py",
+    "naming.py"
+  ],
+  "glyph_forge/src/glyph_forge/streaming/core": [
+    "__init__.py",
+    "browser.py",
+    "buffer.py",
+    "capture.py",
+    "config.py",
+    "recorder.py",
+    "netflix.py",
+    "renderer.py",
+    "sync.py",
+    "screen.py"
+  ],
+  "glyph_forge/src/glyph_forge/transformers": [
+    "__init__.py"
+  ],
+  "glyph_forge/src/glyph_forge/ui": [
+    "tui.py"
+  ],
+  "glyph_forge/src/glyph_forge/utils": [
+    "__init__.py",
+    "alphabet_manager.py",
+    "glyph_utils.py"
+  ],
+  "glyph_forge/templates/python": [
+    "docstring_template.py",
+    "module_template.py"
+  ],
+  "glyph_forge/tests": [
+    "conftest.py",
+    "test_api.py",
+    "test_banner.py",
+    "test_core_streaming.py",
+    "test_eidos_profile.py",
+    "test_image_to_ascii.py",
+    "test_integration.py",
+    "helpers_fakes.py",
+    "test_services.py",
+    "test_audio_tools.py",
+    "test_style_manager.py",
+    "test_transformers.py",
+    "test_tui.py",
+    "test_links.py",
+    "test_utils.py",
+    "test_auto_function_coverage.py",
+    "test_batch_processing.py",
+    "test_cli_targets.py",
+    "test_renderer_quality.py",
+    "test_share_utils.py",
+    "test_streaming_engine_targets.py",
+    "test_streaming_extractors.py",
+    "test_tui_targets.py"
+  ],
+  "glyph_forge/tests/benchmarks": [
+    "test_benchmark_functions.py"
+  ],
+  "glyph_forge/assets/library": [
+    "ATTRIBUTION.md",
+    "SOURCES.md"
+  ],
+  "glyph_forge/glyph_forge_output": [
+    "yt_cookies.txt",
+    "yt_cookies_min.txt"
+  ],
+  "knowledge_forge": [
+    "CHANGELOG.md",
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+    "CURRENT_STATE.md",
+    "GOALS.md",
+    "INSTALL.md",
+    "README.md",
+    "SECURITY.md",
+    "TODO.md",
+    "eidosian_config.yml",
+    "setup_docs.py",
+    "ISSUES.md",
+    "PLAN.md",
+    "ROADMAP.md"
+  ],
+  "knowledge_forge/docs": [
+    ".readthedocs.yaml",
+    "conf.py",
+    "index.md"
+  ],
+  "knowledge_forge/docs/assets": [
+    "README.md"
+  ],
+  "knowledge_forge/docs/auto/cpp": [
+    "index.md"
+  ],
+  "knowledge_forge/docs/auto/go": [
+    "index.md"
+  ],
+  "knowledge_forge/docs/auto/javascript": [
+    "index.md"
+  ],
+  "knowledge_forge/docs/auto/python": [
+    "index.md"
+  ],
+  "knowledge_forge/docs/auto/rust": [
+    "index.md"
+  ],
+  "knowledge_forge/docs/manual/cpp": [
+    "index.md"
+  ],
+  "knowledge_forge/docs/manual/go": [
+    "index.md"
+  ],
+  "knowledge_forge/docs/manual/javascript": [
+    "index.md"
+  ],
+  "knowledge_forge/docs/manual/python": [
+    "index.md"
+  ],
+  "knowledge_forge/docs/manual/rust": [
+    "index.md"
+  ],
+  "knowledge_forge/docs/source": [
+    "index.md"
+  ],
+  "knowledge_forge/eidosian_project": [
+    "CHANGELOG.md",
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+    "README.md",
+    "SECURITY.md",
+    "eidosian_config.yml",
+    "install.sh",
+    "requirements.txt",
+    "setup.py"
+  ],
+  "knowledge_forge/projects/python_project": [
+    "README.md"
+  ],
+  "knowledge_forge/projects/python_project/src/python_project": [
+    "__init__.py",
+    "main.py"
+  ],
+  "knowledge_forge/projects/python_project/src/python_project/api": [
+    "__init__.py"
+  ],
+  "knowledge_forge/projects/python_project/src/python_project/config": [
+    "__init__.py"
+  ],
+  "knowledge_forge/projects/python_project/src/python_project/core": [
+    "__init__.py"
+  ],
+  "knowledge_forge/projects/python_project/src/python_project/models": [
+    "__init__.py"
+  ],
+  "knowledge_forge/projects/python_project/src/python_project/services": [
+    "__init__.py"
+  ],
+  "knowledge_forge/projects/python_project/src/python_project/utils": [
+    "__init__.py"
+  ],
+  "knowledge_forge/projects/python_project/tests": [
+    "__init__.py",
+    "test_example.py"
+  ],
+  "knowledge_forge/scripts": [
+    "README.md"
+  ],
+  "knowledge_forge/scripts/dev": [
+    "run_tests.sh"
+  ],
+  "knowledge_forge/scripts/setup": [
+    "install_dependencies.sh"
+  ],
+  "knowledge_forge/scripts/utils": [
+    "project_stats.py"
+  ],
+  "knowledge_forge/src/knowledge_forge": [
+    "__init__.py",
+    "cli.py"
+  ],
+  "knowledge_forge/src/knowledge_forge/core": [
+    "bridge.py",
+    "graph.py"
+  ],
+  "knowledge_forge/src/knowledge_forge/integrations": [
+    "graphrag.py",
+    "memory_ingest.py"
+  ],
+  "knowledge_forge/templates/credentials": [
+    "README.md"
+  ],
+  "knowledge_forge/tests": [
+    "conftest.py",
+    "test_kb.py",
+    "test_knowledge.py"
+  ],
+  "lib": [
+    "README.md",
+    "cli.py"
+  ],
+  "lib/eidosian_core": [
+    "__init__.py",
+    "benchmarking.py",
+    "config.py",
+    "decorators.py",
+    "logging.py",
+    "profiling.py",
+    "tracing.py"
+  ],
+  "lib/cli": [
+    "__init__.py"
+  ],
+  "lib/tests": [
+    "test_eidosian_core.py"
+  ],
+  "lib/eidosian_core.egg-info": [
+    "top_level.txt",
+    "dependency_links.txt",
+    "SOURCES.txt"
+  ],
+  "llm_forge": [
+    "CHANGELOG.md",
+    "CURRENT_STATE.md",
+    "GOALS.md",
+    "INSTALL.md",
+    "README.md",
+    "TODO.md",
+    "requirements-dev.txt",
+    "requirements.txt",
+    "setup.py",
+    "ISSUES.md",
+    "PLAN.md",
+    "ROADMAP.md"
+  ],
+  "llm_forge/docs": [
+    "DEV_GUIDE.md",
+    "GLOSSARY.md"
+  ],
+  "llm_forge/src/llm_forge": [
+    "__init__.py",
+    "cli.py",
+    "comparison_generator.py",
+    "input_parser.py",
+    "type_definitions.py"
+  ],
+  "llm_forge/src/llm_forge/caching": [
+    "__init__.py",
+    "sqlite_cache.py"
+  ],
+  "llm_forge/src/llm_forge/core": [
+    "interfaces.py",
+    "manager.py"
+  ],
+  "llm_forge/src/llm_forge/providers": [
+    "ollama_provider.py",
+    "openai_provider.py"
+  ],
+  "llm_forge/tests": [
+    "conftest.py",
+    "test_cache.py",
+    "test_generate_comparison.py",
+    "test_input_parser.py",
+    "test_llm.py",
+    "test_ollama_real.py",
+    "test_providers.py"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/eidos_framework": [
+    "hfHub_API.md",
+    "local_chat.py",
+    "model_download.py",
+    "model_list.py",
+    "scraper_crawler.py"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main": [
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+    "README.md",
+    "STYLE_GUIDE.md"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/configs": [
+    "README.md"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/configs/examples": [
+    "README.md"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/configs/examples/bulk_inference": [
+    "README.md"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/configs/examples/fineweb_ablation_pretraining": [
+    "README.md"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/configs/examples/misc": [
+    "README.md",
+    "sky_init.sh"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/configs/projects": [
+    "README.md"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/configs/projects/aya": [
+    "README.md"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/configs/projects/aya/sft/output/deepseekr1_1_5b.aya.fft/telemetry": [
+    "model_summary.txt"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/configs/projects/chatqa": [
+    "README.md"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/configs/recipes": [
+    "README.md"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/configs/recipes/deepseek_r1": [
+    "README.md"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/configs/recipes/gpt2": [
+    "README.md"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/configs/recipes/llama3_1": [
+    "README.md"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/configs/recipes/llama3_2": [
+    "README.md"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/configs/recipes/llama3_3": [
+    "README.md"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/configs/recipes/phi3": [
+    "README.md"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/configs/recipes/smollm": [
+    "README.md"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/configs/recipes/vision": [
+    "README.md"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/configs/recipes/vision/llama3_2_vision": [
+    "README.md"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/configs/recipes/vision/llava_7b": [
+    "README.md"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/configs/recipes/vision/phi3": [
+    "README.md"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/configs/recipes/vision/qwen2_vl_2b": [
+    "README.md"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/configs/recipes/vision/smolvlm": [
+    "README.md"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/docs": [
+    "_docsummaries.sh",
+    "_manage_doclinks.py",
+    "_summarize_module.py",
+    "conf.py",
+    "index.md"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/docs/about": [
+    "acknowledgements.md",
+    "changelog.md",
+    "citations.md",
+    "license.md"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/docs/cli": [
+    "commands.md"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/docs/development": [
+    "code_of_conduct.md",
+    "dev_setup.md",
+    "docs_guide.md",
+    "style_guide.md"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/docs/faq": [
+    "oom.md",
+    "troubleshooting.md"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/docs/get_started": [
+    "core_concepts.md",
+    "installation.md",
+    "quickstart.md",
+    "tutorials.md"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/docs/resources": [
+    "recipes.md"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/docs/user_guides": [
+    "customization.md"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/docs/user_guides/evaluate": [
+    "evaluate.md",
+    "evaluation_config.md",
+    "generative_benchmarks.md",
+    "leaderboards.md",
+    "standardized_benchmarks.md"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/docs/user_guides/infer": [
+    "common_workflows.md",
+    "configuration.md",
+    "infer.md",
+    "inference_cli.md",
+    "inference_engines.md"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/docs/user_guides/judge": [
+    "built_in_judge.md",
+    "custom_infer.md",
+    "custom_prompt.md",
+    "judge.md"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/docs/user_guides/launch": [
+    "custom_cluster.md",
+    "deploy.md",
+    "launch.md"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/docs/user_guides/train": [
+    "configuration.md",
+    "monitoring.md",
+    "train.md",
+    "training_methods.md"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/docs/user_guides/train/environments": [
+    "environments.md",
+    "local.md",
+    "notebooks.md",
+    "vscode.md"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/scripts": [
+    "llama_e2e.py"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/scripts/benchmarks": [
+    "benchmark_dataloader.py",
+    "benchmark_nccl.py",
+    "benchmark_trainers.sh",
+    "minimal_fsdp_training.py",
+    "minimal_multimodal_training.py"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/scripts/docker": [
+    "build_docker.sh"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/scripts/inference": [
+    "README.md",
+    "gcp_inference.py"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/scripts/polaris": [
+    "README.md",
+    "launcher.sh",
+    "polaris_init.sh"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/scripts/polaris/jobs": [
+    "build_apptainer_from_docker.sh",
+    "download_model_from_hf.sh",
+    "example_job.sh",
+    "fineweb_pt_job.sh",
+    "fineweb_pt_worker.sh",
+    "llama_tune.sh",
+    "vllm_job.sh",
+    "vllm_worker.sh"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/scripts/polaris/jobs/python": [
+    "vllm_inference.py",
+    "vllm_parallel_inference.py"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/src/experimental": [
+    "__init__.py"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/src/experimental/configs/projects/zephyr": [
+    "README.md"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/src/oumi": [
+    "__init__.py",
+    "__main__.py",
+    "evaluate.py",
+    "evaluate_async.py",
+    "infer.py",
+    "judge.py",
+    "train.py"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/src/oumi/builders": [
+    "__init__.py",
+    "callbacks.py",
+    "collators.py",
+    "data.py",
+    "inference_engines.py",
+    "lr_schedules.py",
+    "metrics.py",
+    "models.py",
+    "optimizers.py",
+    "oumi_data.py",
+    "processors.py",
+    "training.py"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/src/oumi/cli": [
+    "cli_utils.py",
+    "distributed_run.py",
+    "env.py",
+    "evaluate.py",
+    "infer.py",
+    "judge.py",
+    "launch.py",
+    "main.py",
+    "train.py"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/src/oumi/evaluation": [
+    "__init__.py",
+    "alpaca_eval.py",
+    "lm_harness.py",
+    "platform_prerequisites.py",
+    "save_utils.py"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/src/oumi/inference": [
+    "__init__.py",
+    "anthropic_inference_engine.py",
+    "deepseek_inference_engine.py",
+    "gcp_inference_engine.py",
+    "gemini_inference_engine.py",
+    "llama_cpp_inference_engine.py",
+    "native_text_inference_engine.py",
+    "openai_inference_engine.py",
+    "parasail_inference_engine.py",
+    "remote_inference_engine.py",
+    "remote_vllm_inference_engine.py",
+    "sglang_inference_engine.py",
+    "together_inference_engine.py",
+    "vllm_inference_engine.py"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/src/oumi/judges": [
+    "__init__.py",
+    "base_judge.py",
+    "judge_court.py",
+    "oumi_judge.py"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/src/oumi/launcher": [
+    "__init__.py",
+    "launcher.py"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/src/oumi/launcher/clients": [
+    "local_client.py",
+    "polaris_client.py",
+    "sky_client.py"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/src/oumi/launcher/clouds": [
+    "__init__.py",
+    "local_cloud.py",
+    "polaris_cloud.py",
+    "sky_cloud.py"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/src/oumi/launcher/clusters": [
+    "local_cluster.py",
+    "polaris_cluster.py",
+    "sky_cluster.py"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/src/oumi/performance": [
+    "mfu.py",
+    "telemetry.py",
+    "torch_profiler_utils.py"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/src/oumi/utils": [
+    "batching.py",
+    "conversation_utils.py",
+    "device_utils.py",
+    "distributed_utils.py",
+    "git_utils.py",
+    "hf_datasets_utils.py",
+    "image_utils.py",
+    "io_utils.py",
+    "logging.py",
+    "model_caching.py",
+    "packaging.py",
+    "peft_utils.py",
+    "saver.py",
+    "serialization_utils.py",
+    "str_utils.py",
+    "torch_naming_heuristics.py",
+    "torch_utils.py",
+    "version_utils.py"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/tests": [
+    "__init__.py",
+    "conftest.py",
+    "markers.py"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/tests/e2e": [
+    "__init__.py",
+    "test_eval_e2e.py",
+    "test_notebooks.py",
+    "test_train_e2e.py"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/tests/e2e/deps": [
+    "test_circular_deps.py"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/tests/integration/cli": [
+    "test_judge_e2e.py"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/tests/integration/evaluate": [
+    "test_evaluate.py",
+    "test_evaluate_async.py"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/tests/integration/infer": [
+    "__init__.py",
+    "test_infer.py",
+    "test_native_text_inference_engine.py"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/tests/integration/train": [
+    "test_custom_models.py",
+    "test_train.py"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/tests/scripts": [
+    "launch_tests.sh",
+    "predownload_for_github_gpu_tests.sh"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/tests/unit": [
+    "conftest.py",
+    "test_apache_license_header.py"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/tests/unit/builders": [
+    "test_build_data.py",
+    "test_collators.py",
+    "test_data_mixtures.py",
+    "test_lr_schedules.py",
+    "test_models.py",
+    "test_oumi_data.py",
+    "test_processors.py"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/tests/unit/cli": [
+    "test_cli_distributed_run.py",
+    "test_cli_env.py",
+    "test_cli_evaluate.py",
+    "test_cli_infer.py",
+    "test_cli_judge.py",
+    "test_cli_launch.py",
+    "test_cli_main.py",
+    "test_cli_speed_regression.py",
+    "test_cli_train.py",
+    "test_cli_utils.py"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/tests/unit/inference": [
+    "test_anthropic_inference_engine.py",
+    "test_deepseek_inference_engine.py",
+    "test_gcp_inference_engine.py",
+    "test_gemini_inference_engine.py",
+    "test_generation_params.py",
+    "test_inference_engine_init.py",
+    "test_llama_cpp_inference_engine.py",
+    "test_openai_inference_engine.py",
+    "test_parasail_inference_engine.py",
+    "test_remote_inference_engine.py",
+    "test_sglang_inference_engine.py",
+    "test_together_inference_engine.py",
+    "test_vllm_inference_engine.py",
+    "test_vllm_inference_engine_quantization.py"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/tests/unit/launcher": [
+    "test_launcher.py"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/tests/unit/launcher/clients": [
+    "test_local_client.py",
+    "test_polaris_client.py",
+    "test_sky_client.py"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/tests/unit/launcher/clouds": [
+    "test_local_cloud.py",
+    "test_polaris_cloud.py",
+    "test_sky_cloud.py"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/tests/unit/launcher/clusters": [
+    "test_local_cluster.py",
+    "test_polaris_cluster.py",
+    "test_sky_cluster.py"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/tests/unit/performance": [
+    "test_mfu.py",
+    "test_telemetry.py",
+    "test_torch_profiler_utils.py"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/tests/unit/utils": [
+    "test_conversation_utils.py",
+    "test_device_utils.py",
+    "test_distributed_utils.py",
+    "test_hf_datasets_utils.py",
+    "test_image_utils.py",
+    "test_io_utils.py",
+    "test_model_caching.py",
+    "test_packaging.py",
+    "test_peft_utils.py",
+    "test_saver.py",
+    "test_str_utils.py",
+    "test_torch_naming_heuristics.py",
+    "test_torch_utils.py",
+    "test_version_utils.py"
+  ],
+  "llm_forge/legacy_imports/development_head_2026-02-14_174300/python_repository": [
+    "UELAPS.py",
+    "UniversalMemoryManager.py",
+    "ace_tools.py",
+    "advparticle2.py",
+    "advparticles.py",
+    "aggregator.py",
+    "auto_extend.py",
+    "auto_extend_patch_code.py",
+    "base_vocabulary.py",
+    "chaotic_sandbox.py",
+    "chat_txt_to_json.py",
+    "config_manager.py",
+    "create_int8net_structure.py",
+    "dataset_downloader_text.py",
+    "dgc_v5.py",
+    "download_and_save.py",
+    "dropbox_drive_connect.py",
+    "eidos_create_int8net_structure(1).py",
+    "eidos_create_int8net_structure.py",
+    "eidos_critic.py",
+    "eidos_knowledge.py",
+    "eidos_orchestrator.py",
+    "eidos_seq2seq_modules.py",
+    "eidos_sort.py",
+    "eidos_sort2.py",
+    "emotional_substrate.py",
+    "finetune_qwen.py",
+    "fractal_foundation.py",
+    "geminituring.py",
+    "geneparticles.py",
+    "geneparticles_improvements.py",
+    "infinigraph.py",
+    "infinigraph_dev.py",
+    "infinigraph_old.py",
+    "local_chat.py",
+    "local_server.py",
+    "localllm.py",
+    "main_qwen.py",
+    "materials.py",
+    "metrics_viewer.py",
+    "mind_dashboard.py",
+    "modular_qwen2.py",
+    "multi_agent.py",
+    "multi_agent_merged.py",
+    "multi_facet_ai_system.py",
+    "music_rnn.py",
+    "neural_music.py",
+    "orchestrator.py",
+    "parse_server.py",
+    "particle_improvements.py",
+    "particles.py",
+    "particles2.py",
+    "particles3.py",
+    "phoneparticles.py",
+    "pixelengine.py",
+    "qwen_05b_eidos.py",
+    "qwen_3b_eidos.py",
+    "qwen_7b_eidos.py",
+    "red_black_tree.py",
+    "smolagents_demo_optimised.py",
+    "test.py",
+    "test_download_and_save.py",
+    "test_simulation.py",
+    "transformer_adapter.py",
+    "turingautomata.py",
+    "turinglife.py",
+    "turinglife2.py",
+    "universal_component_demo.py",
+    "universal_components.py",
+    "universal_components_demo.py",
+    "utility.py",
+    "working_file_localllm.py"
+  ],
+  "lyrics_forge": [
+    "CURRENT_STATE.md",
+    "GOALS.md",
+    "INSTALL.md",
+    "README.md",
+    "TODO.md",
+    "eidos_composer_persona.txt",
+    "obsidian_recursion.md",
+    "test_output.txt",
+    "ISSUES.md",
+    "PLAN.md",
+    "ROADMAP.md"
+  ],
+  "lyrics_forge/electronic_angst": [
+    "Phenomenon.md",
+    "The Joke That Remembers You.....md",
+    "emergence_engine.md",
+    "obsidian_recursion.md"
+  ],
+  "lyrics_forge/favourites": [
+    "I_wont_disappear.md",
+    "Phenomenon.md",
+    "The Joke That Remembers You.....md",
+    "then_so_will_I.md"
+  ],
+  "lyrics_forge/modern_alt_pop": [
+    "# Recursive Light.md",
+    "I_wont_disappear.md",
+    "highlight_reel.md",
+    "not_another_love.md",
+    "small_talk_weather.md",
+    "then_so_will_I.md",
+    "when_the_echo_knows_my_name.md"
+  ],
+  "lyrics_forge/src/lyrics_forge": [
+    "__init__.py"
+  ],
+  "lyrics_forge/src/lyrics_forge/cli": [
+    "__init__.py"
+  ],
+  "lyrics_forge/tests": [
+    "test_lyrics.py"
+  ],
+  "memory_forge": [
+    "CURRENT_STATE.md",
+    "GOALS.md",
+    "INSTALL.md",
+    "README.md",
+    "TODO.md",
+    "eidosian_config.yml",
+    "requirements.txt",
+    "ISSUES.md",
+    "PLAN.md",
+    "ROADMAP.md"
+  ],
+  "memory_forge/benchmarks": [
+    "benchmark_backends.py"
+  ],
+  "memory_forge/docs": [
+    ".readthedocs.yaml",
+    "conf.py",
+    "index.md"
+  ],
+  "memory_forge/docs/assets": [
+    "README.md"
+  ],
+  "memory_forge/docs/auto/python": [
+    "index.md"
+  ],
+  "memory_forge/docs/manual/cpp": [
+    "index.md"
+  ],
+  "memory_forge/docs/manual/go": [
+    "index.md"
+  ],
+  "memory_forge/docs/manual/javascript": [
+    "index.md"
+  ],
+  "memory_forge/docs/manual/python": [
+    "index.md"
+  ],
+  "memory_forge/docs/manual/rust": [
+    "index.md"
+  ],
+  "memory_forge/docs/source": [
+    "index.md"
+  ],
+  "memory_forge/scripts": [
+    "README.md"
+  ],
+  "memory_forge/scripts/dev": [
+    "memory_broker_demo.py",
+    "memory_daemon_demo.py",
+    "memory_retrieval_demo.py",
+    "run_tests.sh"
+  ],
+  "memory_forge/scripts/setup": [
+    "install_dependencies.sh"
+  ],
+  "memory_forge/scripts/utils": [
+    "project_stats.py"
+  ],
+  "memory_forge/src/memory_forge": [
+    "__init__.py",
+    "cli.py"
+  ],
+  "memory_forge/src/memory_forge/backends": [
+    "chroma_store.py",
+    "json_store.py"
+  ],
+  "memory_forge/src/memory_forge/compression": [
+    "__init__.py",
+    "compressor.py"
+  ],
+  "memory_forge/src/memory_forge/core": [
+    "auto_context.py",
+    "config.py",
+    "interfaces.py",
+    "introspection.py",
+    "main.py",
+    "memory_broker.py",
+    "memory_daemon.py",
+    "memory_retrieval.py",
+    "tiered_memory.py"
+  ],
+  "memory_forge/src/memory_forge/context": [
+    "__init__.py",
+    "guard.py",
+    "rescue.py"
+  ],
+  "memory_forge/templates/credentials": [
+    "README.md"
+  ],
+  "memory_forge/tests": [
+    "__init__.py",
+    "conftest.py",
+    "mock_retrieval.py",
+    "test_chroma_backend.py",
+    "test_compression.py",
+    "test_json_backend.py",
+    "test_memory.py",
+    "test_context_guard.py",
+    "test_rescue_kit.py"
+  ],
+  "memory_forge/legacy_imports/development_head_2026-02-14_174300/EMemory": [
+    "advanced_prompt_proto.py",
+    "chat_session.py",
+    "eidos_config.py",
+    "llm_controller.py",
+    "logging_config.py",
+    "main.py",
+    "memory_system.py",
+    "prompt_generator.py",
+    "recursive_cognition.py",
+    "requirements.txt",
+    "retrievers.py"
+  ],
+  "memory_forge/legacy_imports/development_head_2026-02-14_174300/EMemory/tests": [
+    "__init__.py",
+    "mock_retrieval.py",
+    "test_llm_controller.py",
+    "test_main.py",
+    "test_memory_system.py",
+    "test_utils.py"
+  ],
+  "metadata_forge": [
+    "CHANGELOG.md",
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+    "CURRENT_STATE.md",
+    "GOALS.md",
+    "INSTALL.md",
+    "README.md",
+    "SECURITY.md",
+    "TODO.md",
+    "eidosian_config.yml",
+    "metadata_forge_schema_draft.md",
+    "ISSUES.md",
+    "PLAN.md",
+    "ROADMAP.md"
+  ],
+  "metadata_forge/docs": [
+    ".readthedocs.yaml",
+    "conf.py",
+    "index.md"
+  ],
+  "metadata_forge/docs/assets": [
+    "README.md"
+  ],
+  "metadata_forge/docs/auto/cpp": [
+    "index.md"
+  ],
+  "metadata_forge/docs/auto/go": [
+    "index.md"
+  ],
+  "metadata_forge/docs/auto/javascript": [
+    "index.md"
+  ],
+  "metadata_forge/docs/auto/python": [
+    "index.md"
+  ],
+  "metadata_forge/docs/auto/rust": [
+    "index.md"
+  ],
+  "metadata_forge/docs/manual/cpp": [
+    "index.md"
+  ],
+  "metadata_forge/docs/manual/go": [
+    "index.md"
+  ],
+  "metadata_forge/docs/manual/javascript": [
+    "index.md"
+  ],
+  "metadata_forge/docs/manual/python": [
+    "index.md"
+  ],
+  "metadata_forge/docs/manual/rust": [
+    "index.md"
+  ],
+  "metadata_forge/docs/source": [
+    "index.md"
+  ],
+  "metadata_forge/eidosian_monorepo": [
+    "CHANGELOG.md",
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+    "README.md",
+    "SECURITY.md",
+    "eidosian_config.yml"
+  ],
+  "metadata_forge/eidosian_monorepo/docs": [
+    ".readthedocs.yaml",
+    "conf.py",
+    "index.md"
+  ],
+  "metadata_forge/eidosian_monorepo/docs/assets": [
+    "README.md"
+  ],
+  "metadata_forge/eidosian_monorepo/docs/auto/cpp": [
+    "index.md"
+  ],
+  "metadata_forge/eidosian_monorepo/docs/auto/go": [
+    "index.md"
+  ],
+  "metadata_forge/eidosian_monorepo/docs/auto/javascript": [
+    "index.md"
+  ],
+  "metadata_forge/eidosian_monorepo/docs/auto/python": [
+    "index.md"
+  ],
+  "metadata_forge/eidosian_monorepo/docs/auto/rust": [
+    "index.md"
+  ],
+  "metadata_forge/eidosian_monorepo/docs/manual/cpp": [
+    "index.md"
+  ],
+  "metadata_forge/eidosian_monorepo/docs/manual/go": [
+    "index.md"
+  ],
+  "metadata_forge/eidosian_monorepo/docs/manual/javascript": [
+    "index.md"
+  ],
+  "metadata_forge/eidosian_monorepo/docs/manual/python": [
+    "index.md"
+  ],
+  "metadata_forge/eidosian_monorepo/docs/manual/rust": [
+    "index.md"
+  ],
+  "metadata_forge/eidosian_monorepo/docs/source": [
+    "index.md"
+  ],
+  "metadata_forge/eidosian_monorepo/projects/go_project": [
+    "README.md"
+  ],
+  "metadata_forge/eidosian_monorepo/projects/nodejs_project": [
+    "README.md"
+  ],
+  "metadata_forge/eidosian_monorepo/projects/nodejs_project/src": [
+    "index.js"
+  ],
+  "metadata_forge/eidosian_monorepo/projects/nodejs_project/src/nodejs_project/api": [
+    "index.js"
+  ],
+  "metadata_forge/eidosian_monorepo/projects/nodejs_project/src/nodejs_project/config": [
+    "index.js"
+  ],
+  "metadata_forge/eidosian_monorepo/projects/nodejs_project/src/nodejs_project/models": [
+    "index.js"
+  ],
+  "metadata_forge/eidosian_monorepo/projects/nodejs_project/src/nodejs_project/services": [
+    "index.js"
+  ],
+  "metadata_forge/eidosian_monorepo/projects/nodejs_project/src/nodejs_project/src": [
+    "index.js"
+  ],
+  "metadata_forge/eidosian_monorepo/projects/nodejs_project/src/nodejs_project/utils": [
+    "index.js"
+  ],
+  "metadata_forge/eidosian_monorepo/projects/nodejs_project/tests": [
+    "example.test.js"
+  ],
+  "metadata_forge/eidosian_monorepo/projects/python_project": [
+    "README.md"
+  ],
+  "metadata_forge/eidosian_monorepo/projects/python_project/src/python_project": [
+    "__init__.py",
+    "main.py"
+  ],
+  "metadata_forge/eidosian_monorepo/projects/python_project/src/python_project/api": [
+    "__init__.py"
+  ],
+  "metadata_forge/eidosian_monorepo/projects/python_project/src/python_project/config": [
+    "__init__.py"
+  ],
+  "metadata_forge/eidosian_monorepo/projects/python_project/src/python_project/core": [
+    "__init__.py"
+  ],
+  "metadata_forge/eidosian_monorepo/projects/python_project/src/python_project/models": [
+    "__init__.py"
+  ],
+  "metadata_forge/eidosian_monorepo/projects/python_project/src/python_project/services": [
+    "__init__.py"
+  ],
+  "metadata_forge/eidosian_monorepo/projects/python_project/src/python_project/utils": [
+    "__init__.py"
+  ],
+  "metadata_forge/eidosian_monorepo/projects/python_project/tests": [
+    "__init__.py",
+    "test_example.py"
+  ],
+  "metadata_forge/eidosian_monorepo/projects/rust_project": [
+    "README.md"
+  ],
+  "metadata_forge/eidosian_monorepo/scripts": [
+    "README.md"
+  ],
+  "metadata_forge/eidosian_monorepo/scripts/dev": [
+    "run_tests.sh"
+  ],
+  "metadata_forge/eidosian_monorepo/scripts/setup": [
+    "install_dependencies.sh"
+  ],
+  "metadata_forge/eidosian_monorepo/scripts/utils": [
+    "project_stats.py"
+  ],
+  "metadata_forge/eidosian_project": [
+    "CHANGELOG.md",
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+    "README.md",
+    "SECURITY.md",
+    "eidosian_config.yml",
+    "install.sh",
+    "requirements.txt",
+    "setup.py"
+  ],
+  "metadata_forge/projects/python_project": [
+    "README.md"
+  ],
+  "metadata_forge/projects/python_project/src/python_project": [
+    "__init__.py",
+    "main.py"
+  ],
+  "metadata_forge/projects/python_project/src/python_project/api": [
+    "__init__.py"
+  ],
+  "metadata_forge/projects/python_project/src/python_project/config": [
+    "__init__.py"
+  ],
+  "metadata_forge/projects/python_project/src/python_project/core": [
+    "__init__.py"
+  ],
+  "metadata_forge/projects/python_project/src/python_project/models": [
+    "__init__.py"
+  ],
+  "metadata_forge/projects/python_project/src/python_project/services": [
+    "__init__.py"
+  ],
+  "metadata_forge/projects/python_project/src/python_project/utils": [
+    "__init__.py"
+  ],
+  "metadata_forge/projects/python_project/tests": [
+    "__init__.py",
+    "test_example.py"
+  ],
+  "metadata_forge/scripts": [
+    "README.md"
+  ],
+  "metadata_forge/scripts/dev": [
+    "run_tests.sh"
+  ],
+  "metadata_forge/scripts/setup": [
+    "install_dependencies.sh"
+  ],
+  "metadata_forge/scripts/utils": [
+    "project_stats.py"
+  ],
+  "metadata_forge/src/metadata_forge": [
+    "__init__.py",
+    "cli.py"
+  ],
+  "metadata_forge/src/metadata_forge/schema": [
+    "__init__.py",
+    "core.py"
+  ],
+  "metadata_forge/templates/credentials": [
+    "README.md"
+  ],
+  "metadata_forge/tests": [
+    "test_schema.py"
+  ],
+  "mkey_forge": [
+    "CURRENT_STATE.md",
+    "GOALS.md",
+    "INSTALL.md",
+    "README.md",
+    "TODO.md",
+    "ISSUES.md",
+    "PLAN.md",
+    "ROADMAP.md"
+  ],
+  "mkey_forge/src/mkey_forge": [
+    "__init__.py",
+    "mkey.py"
+  ],
+  "mkey_forge/src/mkey_forge/cli": [
+    "__init__.py"
+  ],
+  "mkey_forge/src/mkey_forge/source": [
+    "ctr.c",
+    "ctr.h",
+    "main.c",
+    "mkey.c",
+    "mkey.h",
+    "types.h",
+    "utils.c",
+    "utils.h"
+  ],
+  "mkey_forge/src/mkey_forge/source/polarssl": [
+    "aes.c",
+    "aes.h",
+    "bignum.c",
+    "bignum.h",
+    "bn_mul.h",
+    "config.h",
+    "padlock.h",
+    "rsa.c",
+    "rsa.h",
+    "sha2.c",
+    "sha2.h"
+  ],
+  "mkey_forge/tests": [
+    "test_mkey.py"
+  ],
+  "narrative_forge": [
+    "CURRENT_STATE.md",
+    "GOALS.md",
+    "INSTALL.md",
+    "README.md",
+    "TODO.md",
+    "ISSUES.md",
+    "PLAN.md",
+    "ROADMAP.md"
+  ],
+  "narrative_forge/src/narrative_forge": [
+    "__init__.py",
+    "cli.py",
+    "engine.py",
+    "memory.py"
+  ],
+  "narrative_forge/tests": [
+    "test_engine.py"
+  ],
+  "ollama_forge": [
+    ".readthedocs.yaml",
+    "CHANGELOG.md",
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+    "CURRENT_STATE.md",
+    "GOALS.md",
+    "INSTALL.md",
+    "README.md",
+    "SECURITY.md",
+    "TODO.md",
+    "build_docs.sh",
+    "eidosian_refinement_instructions.md",
+    "publish_to_pypi.sh",
+    "setup.py",
+    "ISSUES.md",
+    "PLAN.md",
+    "ROADMAP.md"
+  ],
+  "ollama_forge/examples": [
+    "__init__.py",
+    "basic_usage.py",
+    "chat_example.py",
+    "embedding_example.py",
+    "generate_example.py",
+    "quickstart.py",
+    "version_example.py"
+  ],
+  "ollama_forge/helpers": [
+    "__init__.py",
+    "common.py",
+    "embedding.py",
+    "install_ollama.py",
+    "model_constants.py"
+  ],
+  "ollama_forge/src/ollama_forge": [
+    "__init__.py",
+    "client.py",
+    "exceptions.py"
+  ],
+  "ollama_forge/src/ollama_forge/cli": [
+    "__init__.py"
+  ],
+  "ollama_forge/tests": [
+    "__init__.py",
+    "conftest.py",
+    "test_chat.py",
+    "test_client.py",
+    "test_coverage.py",
+    "test_embedding.py",
+    "test_nexus.py",
+    "test_ollama.py",
+    "test_utils.py"
+  ],
+  "projects/src/chatmock": [
+    "README.md",
+    "__init__.py",
+    "app.py",
+    "cli.py",
+    "config.py",
+    "http.py",
+    "interactive.py",
+    "limits.py",
+    "logging_config.py",
+    "models.py",
+    "oauth.py",
+    "prompt.md",
+    "prompt_gpt5_codex.md",
+    "reasoning.py",
+    "routes_ollama.py",
+    "routes_openai.py",
+    "session.py",
+    "transform.py",
+    "upstream.py",
+    "utils.py"
+  ],
+  "projects/src/chatmock/tests": [
+    "__init__.py",
+    "test_basic.py"
+  ],
+  "projects/src/self_exploration": [
+    "CAPABILITY_REPORT.md",
+    "PLAN.md",
+    "README.md",
+    "SYNTHESIS.md",
+    "TOOL_INVENTORY.md",
+    "__init__.py",
+    "auditor.py",
+    "benchmark.py",
+    "doc_processor.py",
+    "eidos_iterate.py",
+    "introspect.py",
+    "provenance.py",
+    "session_manager.py",
+    "store_cycle2.py",
+    "store_evolution.py"
+  ],
+  "projects/legacy/ai_timeline": [
+    "README.MD"
+  ],
+  "projects/legacy/ai_timeline/1-genesis": [
+    "GENESIS-README.MD"
+  ],
+  "projects/legacy/ai_timeline/1-genesis/1a-turing-test": [
+    "TURING-README.MD"
+  ],
+  "projects/legacy/ai_timeline/1-genesis/1a-turing-test/1-hello-turing/1-what-is-turing": [
+    "whatisturing.md"
+  ],
+  "projects/legacy/ai_timeline/1-genesis/1a-turing-test/1-hello-turing/2-why-turing-test-matters.py": [
+    "whyturingmatters.md"
+  ],
+  "projects/legacy/ai_timeline/1-genesis/1a-turing-test/1-hello-turing/HELLOTURING-README.md": [
+    "README.MD"
+  ],
+  "projects/legacy/ai_timeline/1-genesis/1a-turing-test/2-turing-test-basics/TURINGTESTBASICS-README.md": [
+    "README.MD"
+  ],
+  "projects/legacy/ai_timeline/1-genesis/1a-turing-test/3-passing-turing-test/PASSINGTURINGTEST-README.md": [
+    "README.MD"
+  ],
+  "projects/legacy/ai_timeline/1-genesis/1a-turing-test/4-implications-of-turing-test/IMPLICATIONSTURINGTEST-README.md": [
+    "README.MD"
+  ],
+  "projects/legacy/ai_timeline/1-genesis/1a-turing-test/5-hands-on-turing-test/HANDSONTURINGTEST-README.md": [
+    "README.MD"
+  ],
+  "projects/legacy/ai_timeline/1-genesis/1a-turing-test/6-future-of-turing-test/FUTURETURING-README.md": [
+    "README.MD"
+  ],
+  "projects/legacy/ai_timeline/1-genesis/1a-turing-test/7-turing-test-mastery/TURINGTESTMASTERY-README.md": [
+    "README.MD"
+  ],
+  "projects/legacy/ai_timeline/1-genesis/1b-snarc-nn1": [
+    "SNARC-README.MD"
+  ],
+  "projects/legacy/ai_timeline/1-genesis/1c-dartmouth-con": [
+    "DARTMOUTH-README.MD"
+  ],
+  "projects/legacy/ai_timeline/1-genesis/1d-general-problem-solver": [
+    "GENERALSOLVER-README.MD"
+  ],
+  "projects/legacy/ai_timeline/1-genesis/1e-eliza": [
+    "ELIZA-README.MD"
+  ],
+  "projects/legacy/ai_timeline/1-genesis/1f-shakey-robot": [
+    "SHAKEY-README.MD"
+  ],
+  "projects/legacy/ai_timeline/2-evolution": [
+    "EVOLUTION-README.MD"
+  ],
+  "projects/legacy/ai_timeline/3-advancement": [
+    "ADVANCEMENT-README.MD"
+  ],
+  "projects/legacy/ai_timeline/4-deep-learning": [
+    "DEEPLEARNING-README.MD"
+  ],
+  "projects/legacy/ai_timeline/5-modern-transformer": [
+    "MODERNTRANSFORMER-README.MD"
+  ],
+  "projects/legacy/ai_timeline/6-beyond-transformer": [
+    "BEYONDTRANSFORMER-README.MD"
+  ],
+  "projects/legacy/evie": [
+    "evie_treatment_analysis.md",
+    "project_tree_folders_only.md"
+  ],
+  "projects/legacy/evie/ChatRWKV": [
+    "README.md"
+  ],
+  "projects/legacy/evie/ChatRWKV/rwkv_pip_package": [
+    "README.md"
+  ],
+  "projects/legacy/evie/ChatRWKV/rwkv_pip_package/src/rwkv/cuda": [
+    "gemm_fp16_cublas.cpp",
+    "rwkv5_op.cpp",
+    "rwkv6_op.cpp",
+    "wrapper.cpp"
+  ],
+  "projects/legacy/evie/Indellama3": [
+    "InstructionsandURLS.md"
+  ],
+  "projects/legacy/evie/Indellama3/base_models/rwkv/cuda": [
+    "gemm_fp16_cublas.cpp",
+    "rwkv5_op.cpp",
+    "rwkv6_op.cpp",
+    "wrapper.cpp"
+  ],
+  "projects/legacy/evie/docs": [
+    "glossary.md"
+  ],
+  "projects/legacy/evie/docs/technical/architecture": [
+    "component_architecture.md",
+    "data_flow_diagrams.md",
+    "deployment_architecture.md",
+    "module_interactions.md",
+    "overview.md",
+    "scalability_architecture.md",
+    "system_design.md"
+  ],
+  "projects/legacy/evie/docs/technical/coding_standards": [
+    "code_formatting.md",
+    "code_organization.md",
+    "code_review_checklist.md",
+    "commenting_guidelines.md",
+    "error_handling_conventions.md",
+    "naming_conventions.md",
+    "testing_standards.md"
+  ],
+  "projects/legacy/evie/docs/technical/design_principles": [
+    "extensibility.md",
+    "flexibility.md",
+    "maintainability.md",
+    "modularity.md",
+    "performance.md",
+    "scalability.md",
+    "security.md"
+  ],
+  "projects/legacy/evie/docs/technical/error_handling": [
+    "error_classification.md",
+    "error_logging.md",
+    "error_monitoring.md",
+    "error_recovery.md",
+    "error_testing.md",
+    "exception_handling.md"
+  ],
+  "projects/legacy/evie/docs/technical/extensibility_guidelines": [
+    "backward_compatibility.md",
+    "extension_development.md",
+    "extension_packaging.md",
+    "extension_points.md",
+    "extension_testing.md",
+    "plugin_architecture.md"
+  ],
+  "projects/legacy/evie/docs/technical/logging_standards": [
+    "log_aggregation.md",
+    "log_configuration.md",
+    "log_formats.md",
+    "log_levels.md",
+    "logging_best_practices.md",
+    "structured_logging.md"
+  ],
+  "projects/legacy/evie/docs/technical/module_interactions": [
+    "data_flow_diagrams.md",
+    "interface_specifications.md",
+    "message_passing.md",
+    "module_lifecycle.md",
+    "module_testing.md",
+    "shared_resources.md"
+  ],
+  "projects/legacy/evie/docs/technical/performance_optimization": [
+    "optimization_strategies.md",
+    "performance_benchmarking.md",
+    "performance_monitoring.md",
+    "performance_troubleshooting.md",
+    "performance_tuning.md",
+    "profiling_techniques.md"
+  ],
+  "projects/legacy/evie/docs/technical/scalability_considerations": [
+    "auto_scaling.md",
+    "horizontal_scaling.md",
+    "scalability_best_practices.md",
+    "scalability_monitoring.md",
+    "scalability_testing.md",
+    "vertical_scaling.md"
+  ],
+  "projects/legacy/evie/llama-recipes-main": [
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+    "README.md",
+    "UPDATES.md"
+  ],
+  "projects/legacy/evie/llama-recipes-main/docs": [
+    "FAQ.md",
+    "LLM_finetuning.md",
+    "multi_gpu.md",
+    "single_gpu.md"
+  ],
+  "projects/legacy/evie/llama-recipes-main/recipes": [
+    "README.md"
+  ],
+  "projects/legacy/evie/llama-recipes-main/recipes/benchmarks/inference_throughput": [
+    "README.md"
+  ],
+  "projects/legacy/evie/llama-recipes-main/recipes/benchmarks/inference_throughput/cloud-api": [
+    "README.md"
+  ],
+  "projects/legacy/evie/llama-recipes-main/recipes/benchmarks/inference_throughput/on-prem": [
+    "README.md"
+  ],
+  "projects/legacy/evie/llama-recipes-main/recipes/code_llama": [
+    "README.md"
+  ],
+  "projects/legacy/evie/llama-recipes-main/recipes/evaluation": [
+    "README.md"
+  ],
+  "projects/legacy/evie/llama-recipes-main/recipes/evaluation/open_llm_leaderboard": [
+    "arc_challeneg_25shots.yaml",
+    "hellaswag_10shots.yaml",
+    "mmlu_5shots.yaml",
+    "winogrande_5shots.yaml"
+  ],
+  "projects/legacy/evie/llama-recipes-main/recipes/finetuning": [
+    "LLM_finetuning_overview.md",
+    "README.md",
+    "multigpu_finetuning.md",
+    "singlegpu_finetuning.md"
+  ],
+  "projects/legacy/evie/llama-recipes-main/recipes/finetuning/datasets": [
+    "README.md"
+  ],
+  "projects/legacy/evie/llama-recipes-main/recipes/inference/llama_web_ui": [
+    "README.md"
+  ],
+  "projects/legacy/evie/llama-recipes-main/recipes/inference/local_inference": [
+    "README.md"
+  ],
+  "projects/legacy/evie/llama-recipes-main/recipes/inference/model_servers": [
+    "README.md",
+    "llama-on-prem.md"
+  ],
+  "projects/legacy/evie/llama-recipes-main/recipes/inference/model_servers/hf_text_generation_inference": [
+    "README.md"
+  ],
+  "projects/legacy/evie/llama-recipes-main/recipes/multilingual": [
+    "README.md"
+  ],
+  "projects/legacy/evie/llama-recipes-main/recipes/responsible_ai": [
+    "README.md"
+  ],
+  "projects/legacy/evie/llama-recipes-main/recipes/responsible_ai/llama_guard": [
+    "README.md"
+  ],
+  "projects/legacy/evie/llama-recipes-main/recipes/use_cases": [
+    "README.md"
+  ],
+  "projects/legacy/evie/llama-recipes-main/recipes/use_cases/chatbots/messenger_llama": [
+    "messenger_llama2.md"
+  ],
+  "projects/legacy/evie/llama-recipes-main/recipes/use_cases/chatbots/whatsapp_llama": [
+    "whatsapp_llama2.md"
+  ],
+  "projects/legacy/evie/llama-recipes-main/scripts/spellcheck_conf": [
+    "spellcheck.yaml"
+  ],
+  "projects/legacy/evie/llama-recipes-main/src/llama_recipes/utils/hf_llama_conversion": [
+    "README.md"
+  ],
+  "projects/legacy/evie/scripts/Cybersecurity": [
+    "Indesec.md"
+  ],
+  "projects/legacy/evie/scripts/INDEGO_project_development": [
+    "INDEGOCore.md"
+  ],
+  "projects/legacy/evie/scripts/INDEGO_project_development/old": [
+    "example_model_improvements.md"
+  ],
+  "projects/legacy/evie/scripts/code_bullet_overhauls/2048_AI/originals": [
+    "README.md"
+  ],
+  "projects/legacy/evie/src/codellama": [
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+    "MODEL_CARD.md",
+    "README.md",
+    "USE_POLICY.md"
+  ],
+  "projects/legacy/evie/src/codellama/.circleci": [
+    "config.yaml"
+  ],
+  "projects/legacy/indego_snake_game/Snake-ai-main": [
+    "A_STAR.py",
+    "Algorithm.py",
+    "BFS.py",
+    "Constants.py",
+    "DFS.py",
+    "Fruit.py",
+    "GA.py",
+    "GameController.py",
+    "GameGUI.py",
+    "Main.py",
+    "Menu.py",
+    "NN.py",
+    "Snake.py",
+    "SuperSnake.py",
+    "Utility.py",
+    "standalonesnake.py"
+  ],
+  "projects/legacy/minecraft_ai_indego": [
+    "README.md"
+  ],
+  "projects/legacy/minecraft_ai_indego/minerl": [
+    ".readthedocs.yml",
+    ".travis.yml",
+    "README.md"
+  ],
+  "projects/legacy/minecraft_ai_indego/minerl/docs": [
+    "README.md"
+  ],
+  "projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo": [
+    "README.md"
+  ],
+  "projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/doc": [
+    "build_linux.md",
+    "build_macosx.md",
+    "build_windows.md",
+    "cmake_readme.md",
+    "install_linux.md",
+    "install_macosx.md",
+    "install_readme.md",
+    "install_windows.md",
+    "install_windows_manual.md",
+    "jar_readme.md"
+  ],
+  "projects/legacy/minecraft_ai_indego/minerl/minerl/herobraine/env_specs/test": [
+    "README.mD"
+  ],
+  "projects/legacy/minecraft_ai_indego/pong_impala": [
+    "README.md"
+  ],
+  "projects/legacy/minecraft_ai_indego/pong_impala/grpc": [
+    "README.md"
+  ],
+  "projects/research/universal_intelligence_potential": [
+    "DataVisualizer.py",
+    "aksetup_helper.py",
+    "chat_program.py",
+    "computations.py",
+    "configure.py",
+    "cuda_available_torch_test.py",
+    "effkanconvkanexample.py",
+    "fix_sources.sh",
+    "gradientllama.py",
+    "indego_intelligence_potential.py",
+    "indego_overview.txt",
+    "indego_prompt.txt",
+    "installed_packages.txt",
+    "intelligence_potential.py",
+    "main.cpp",
+    "main.py",
+    "matmul.cpp",
+    "mock_intelligence_calc.py",
+    "neural_net.cpp",
+    "neural_net_2.cpp",
+    "neural_net_backprop.cpp",
+    "potential_intelligence.py",
+    "potential_intelligence_v2.py",
+    "profiling.py",
+    "prompt_template_kernel_upgrade.txt",
+    "pytorch_cifar_model_test.py",
+    "pytorch_gpu_cpu_example.py",
+    "refactored_indego_intelligence.py",
+    "stress_test.cpp",
+    "tensor_cifar_model_test.py",
+    "tensorboardexample.py",
+    "uni_int_v2.py",
+    "uni_int_v4.py",
+    "universal_int_memory_estimate.py",
+    "universal_intelligence_model.py",
+    "universal_intelligence_model_pydroid.py",
+    "universal_intelligence_v3.py",
+    "visualization.py"
+  ],
+  "projects/research/universal_intelligence_potential/examples": [
+    "black-hole-accretion.py",
+    "demo-struct-reduce.py",
+    "demo.py",
+    "demo_array.py",
+    "demo_array_svm.py",
+    "demo_elementwise.py",
+    "demo_elementwise_complex.py",
+    "demo_mandelbrot.py",
+    "demo_meta_codepy.py",
+    "demo_meta_template.py",
+    "dump-performance.py",
+    "dump-properties.py",
+    "gl_interop_demo.py",
+    "gl_particle_animation.py",
+    "median-filter.py",
+    "n-body.py",
+    "narray.py",
+    "pi-monte-carlo.py",
+    "svm.py",
+    "transpose.py"
+  ],
+  "projects/research/universal_intelligence_potential/python3-defaults-3.10.6/debian": [
+    "2to3.py",
+    "idle.py",
+    "py3versions.py"
+  ],
+  "projects/research/universal_intelligence_potential/python3-defaults-3.10.6/debpython": [
+    "__init__.py",
+    "files.py",
+    "interpreter.py",
+    "option.py",
+    "version.py"
+  ],
+  "projects/research/universal_intelligence_potential/python3-defaults-3.10.6/policy": [
+    "conf.py"
+  ],
+  "projects/research/universal_intelligence_potential/src": [
+    "bitlog.cpp",
+    "bitlog.hpp",
+    "clinfo_ext.h",
+    "mempool.hpp",
+    "pyopencl_ext.h",
+    "tools.hpp",
+    "wrap_cl.cpp",
+    "wrap_cl.hpp",
+    "wrap_cl_part_1.cpp",
+    "wrap_cl_part_2.cpp",
+    "wrap_constants.cpp",
+    "wrap_helpers.hpp",
+    "wrap_mempool.cpp"
+  ],
+  "projects/research/universal_intelligence_potential/test": [
+    "empty-header.h",
+    "test_algorithm.py",
+    "test_array.py",
+    "test_arrays_in_structs.py",
+    "test_clmath.py",
+    "test_clrandom.py",
+    "test_enqueue_copy.py",
+    "test_wrapper.py"
+  ],
+  "prompt_forge": [
+    "CURRENT_STATE.md",
+    "GOALS.md",
+    "INSTALL.md",
+    "README.md",
+    "TODO.md",
+    "build_chrome_extension_example.md",
+    "github_copilot_prompt_guide.md",
+    "ISSUES.md",
+    "PLAN.md",
+    "ROADMAP.md"
+  ],
+  "prompt_forge/src/prompt_forge": [
+    "__init__.py"
+  ],
+  "prompt_forge/src/prompt_forge/cli": [
+    "__init__.py"
+  ],
+  "prompt_forge/tests": [
+    "test_prompt.py"
+  ],
+  "prompt_forge/legacy_imports/development_head_2026-02-14_174300/templates": [
+    "CODE_SYSTEM_PROMPT.txt",
+    "MANAGED_AGENT_PROMPT.txt",
+    "PLAN_UPDATE_FINAL_PLAN_REDACTION.txt",
+    "SINGLE_STEP_CODE_SYSTEM_PROMPT.txt",
+    "TOOL_CALLING_SYSTEM_PROMPT.txt",
+    "USER_PROMPT_PLAN_UPDATE.txt"
+  ],
+  "refactor_forge": [
+    "CHANGELOG.md",
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+    "CURRENT_STATE.md",
+    "GOALS.md",
+    "INSTALL.md",
+    "README.md",
+    "SECURITY.md",
+    "TODO.md",
+    "eidosian_config.yml",
+    "setup.py",
+    "ISSUES.md",
+    "PLAN.md",
+    "ROADMAP.md"
+  ],
+  "refactor_forge/src/refactor_forge": [
+    "__init__.py",
+    "__main__.py",
+    "analyzer.py",
+    "cli.py",
+    "reporter.py"
+  ],
+  "refactor_forge/tests": [
+    "conftest.py",
+    "test_refactor.py"
+  ],
+  "repo_forge": [
+    "CURRENT_STATE.md",
+    "GOALS.md",
+    "INSTALL.md",
+    "README.md",
+    "TODO.md",
+    "ISSUES.md",
+    "PLAN.md",
+    "ROADMAP.md"
+  ],
+  "repo_forge/docs": [
+    ".readthedocs.yaml",
+    "conf.py",
+    "index.md",
+    "requirements.txt"
+  ],
+  "repo_forge/docs/assets": [
+    "README.md"
+  ],
+  "repo_forge/docs/auto/cpp": [
+    "index.md"
+  ],
+  "repo_forge/docs/auto/go": [
+    "index.md"
+  ],
+  "repo_forge/docs/auto/javascript": [
+    "index.md"
+  ],
+  "repo_forge/docs/auto/python": [
+    "index.md"
+  ],
+  "repo_forge/docs/auto/rust": [
+    "index.md"
+  ],
+  "repo_forge/docs/manual/cpp": [
+    "index.md"
+  ],
+  "repo_forge/docs/manual/go": [
+    "index.md"
+  ],
+  "repo_forge/docs/manual/javascript": [
+    "index.md"
+  ],
+  "repo_forge/docs/manual/python": [
+    "index.md"
+  ],
+  "repo_forge/docs/manual/rust": [
+    "index.md"
+  ],
+  "repo_forge/docs/source": [
+    "index.md"
+  ],
+  "repo_forge/eidosian_project": [
+    "CHANGELOG.md",
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+    "README.md",
+    "SECURITY.md",
+    "eidosian_config.yml",
+    "install.sh",
+    "requirements.txt",
+    "setup.py"
+  ],
+  "repo_forge/src/repo_forge": [
+    "__init__.py",
+    "cli.py"
+  ],
+  "repo_forge/src/repo_forge/constants": [
+    "__init__.py",
+    "content.py",
+    "paths.py"
+  ],
+  "repo_forge/src/repo_forge/core": [
+    "__init__.py",
+    "diagnostics.py",
+    "directory.py",
+    "files.py",
+    "registry.py",
+    "templates.py",
+    "utils.py"
+  ],
+  "repo_forge/src/repo_forge/generators": [
+    "__init__.py",
+    "config.py",
+    "docs.py",
+    "project.py",
+    "scripts.py"
+  ],
+  "repo_forge/staging": [
+    "create_repo.sh",
+    "forge_standardization.sh",
+    "project_structure.md",
+    "setup.py",
+    "universal_doc_structure.md"
+  ],
+  "repo_forge/tests": [
+    "test_repo.py"
+  ],
+  "repo_forge/tests/unit": [
+    "test_generators.py"
+  ],
+  "requirements": [
+    "eidos_venv_pkgs.txt",
+    "eidos_venv_reqs.txt",
+    "eidosian_venv_pkgs.txt",
+    "eidosian_venv_reqs.txt"
+  ],
+  "scripts": [
+    "AGENTS.md",
+    "CONFIG.md",
+    "README.md",
+    "TODO.md",
+    "apply_decorators.py",
+    "assess_migration.py",
+    "audit_ports.py",
+    "audit_structure.py",
+    "bootstrap_foundations.py",
+    "clipboard_diagnostics.sh",
+    "clipboard_overwrite.sh",
+    "code_extensions.sh",
+    "code_extensions_old.sh",
+    "codex_query.py",
+    "codex_run.py",
+    "context_catalog.py",
+    "context_index.py",
+    "context_summarizer.py",
+    "context_ui.py",
+    "context_utils.py",
+    "eidos_standardize.py",
+    "eidos_verify.py",
+    "esp_parser.py",
+    "file_tree.txt",
+    "glyph_stream_context.py",
+    "graphrag_local_index.py",
+    "index_to_kb_sync.py",
+    "inject_forge_standards.py",
+    "launch_codex_agent.sh",
+    "legacy_scraper.py",
+    "map_forgengine_to_gis.py",
+    "merge_reqs.py",
+    "pyproject_template.py",
+    "relax_deps.py",
+    "run-checks.sh",
+    "sync_forges.py",
+    "sync_forges.sh",
+    "update_deps.py",
+    "validate_context.py",
+    "verify_mcp_health.py",
+    "agent_link.py",
+    "agent_link_send.sh",
+    "agent_link_start.sh",
+    "agent_link_status.sh",
+    "agent_link_stop.sh",
+    "bootstrap_desktop_bidirectional_sync.sh",
+    "bootstrap_desktop_full_parity_sync.sh",
+    "bootstrap_desktop_hidden_sync.sh",
+    "install_agent_link_service.sh",
+    "monitor_hidden_sync_completion.sh",
+    "termux_audit.sh",
+    "monitor_parity_sync_completion.sh",
+    "syncthing_apply_parity_profile.py",
+    "rebuild_eidosian_venv.sh",
+    "audit_mcp_tools_resources.py",
+    "run_consciousness_protocol.py",
+    "linux_parity_smoke.sh",
+    "consciousness_benchmark_trend.py",
+    "dependabot_alert_inventory.py",
+    "audit_workflow_action_pins.py",
+    "dependabot_remediation_plan.py",
+    "sync_security_remediation_issues.py",
+    "dependabot_autopatch_requirements.py",
+    "linux_audit_matrix.py",
+    "generate_directory_atlas.py",
+    "analyze_forges.py",
+    "generate_forge_reports.py"
+  ],
+  "scripts/docs/prompts": [
+    "eidosian_refinement_prompt.txt"
+  ],
+  "scripts/profiling": [
+    "run_profiles.sh"
+  ],
+  "scripts/tests": [
+    "test_forge_builder.py",
+    "test_glyph_stream_context.py",
+    "test_image_to_ascii.py",
+    "test_pdf_tools.py",
+    "test_pdf_tools_menu.py",
+    "test_py_lib.py",
+    "test_smart_publish.py",
+    "test_build_dual_live_usb.py",
+    "test_consciousness_benchmark_trend.py",
+    "test_audit_workflow_action_pins.py",
+    "test_dependabot_remediation_plan.py",
+    "test_sync_security_remediation_issues.py",
+    "test_dependabot_autopatch_requirements.py",
+    "test_linux_audit_matrix.py",
+    "test_generate_directory_atlas.py"
+  ],
+  "scripts/machine_clone": [
+    "README.md",
+    "bootstrap_eidos_machine.sh",
+    "build_dual_live_usb.sh",
+    "export_host_profile.sh",
+    "first_boot_wizard.sh",
+    "import_legacy_projects.sh",
+    "post_boot_onboarding.sh",
+    "refresh_usb_payload.sh",
+    "repair_dual_live_usb.sh",
+    "restore_new_host.sh",
+    "snapshot_eidos_state.sh",
+    "sync_mesh_enroll.sh",
+    "verify_clone_state.sh",
+    "verify_dual_live_usb.sh"
+  ],
+  "scripts/migration": [
+    "generate_development_curation_report.sh",
+    "import_development_head_projects.sh",
+    "import_development_triage.sh",
+    "rank_legacy_code_candidates.py"
+  ],
+  "sms_forge": [
+    "CURRENT_STATE.md",
+    "GOALS.md",
+    "INSTALL.md",
+    "README.md",
+    "TODO.md",
+    "ISSUES.md",
+    "PLAN.md",
+    "ROADMAP.md"
+  ],
+  "sms_forge/src/sms_forge": [
+    "__init__.py"
+  ],
+  "sms_forge/src/sms_forge/cli": [
+    "__init__.py"
+  ],
+  "sms_forge/tests": [
+    "test_sms.py"
+  ],
+  "terminal_forge": [
+    "CHANGELOG.md",
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+    "CURRENT_STATE.md",
+    "GOALS.md",
+    "INSTALL.md",
+    "README.md",
+    "SECURITY.md",
+    "TODO.md",
+    "eidosian_config.yml",
+    "eidosian_principles.md",
+    "project_overview.md",
+    "project_structure.md",
+    "terminal_forge_repo_init.py",
+    "universal_doc_structure.md",
+    "ISSUES.md",
+    "PLAN.md",
+    "ROADMAP.md"
+  ],
+  "terminal_forge/docs": [
+    ".readthedocs.yaml",
+    "api_reference.md",
+    "conf.py",
+    "examples.md",
+    "getting_started.md",
+    "index.md"
+  ],
+  "terminal_forge/docs/assets": [
+    "README.md"
+  ],
+  "terminal_forge/docs/auto/cpp": [
+    "index.md"
+  ],
+  "terminal_forge/docs/auto/go": [
+    "index.md"
+  ],
+  "terminal_forge/docs/auto/javascript": [
+    "index.md"
+  ],
+  "terminal_forge/docs/auto/python": [
+    "index.md"
+  ],
+  "terminal_forge/docs/auto/rust": [
+    "index.md"
+  ],
+  "terminal_forge/docs/manual/cpp": [
+    "index.md"
+  ],
+  "terminal_forge/docs/manual/go": [
+    "index.md"
+  ],
+  "terminal_forge/docs/manual/javascript": [
+    "index.md"
+  ],
+  "terminal_forge/docs/manual/python": [
+    "index.md"
+  ],
+  "terminal_forge/docs/manual/rust": [
+    "index.md"
+  ],
+  "terminal_forge/docs/source": [
+    "index.md"
+  ],
+  "terminal_forge/docs/tools/generators": [
+    "api_docs.py",
+    "ascii_preview.py",
+    "theme_catalog.py"
+  ],
+  "terminal_forge/docs/tools/validators": [
+    "example_tester.py",
+    "link_checker.py"
+  ],
+  "terminal_forge/eidosian_monorepo": [
+    "CHANGELOG.md",
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+    "README.md",
+    "SECURITY.md",
+    "eidosian_config.yml"
+  ],
+  "terminal_forge/eidosian_monorepo/docs": [
+    ".readthedocs.yaml",
+    "conf.py",
+    "index.md"
+  ],
+  "terminal_forge/eidosian_monorepo/docs/assets": [
+    "README.md"
+  ],
+  "terminal_forge/eidosian_monorepo/docs/auto/cpp": [
+    "index.md"
+  ],
+  "terminal_forge/eidosian_monorepo/docs/auto/go": [
+    "index.md"
+  ],
+  "terminal_forge/eidosian_monorepo/docs/auto/javascript": [
+    "index.md"
+  ],
+  "terminal_forge/eidosian_monorepo/docs/auto/python": [
+    "index.md"
+  ],
+  "terminal_forge/eidosian_monorepo/docs/auto/rust": [
+    "index.md"
+  ],
+  "terminal_forge/eidosian_monorepo/docs/manual/cpp": [
+    "index.md"
+  ],
+  "terminal_forge/eidosian_monorepo/docs/manual/go": [
+    "index.md"
+  ],
+  "terminal_forge/eidosian_monorepo/docs/manual/javascript": [
+    "index.md"
+  ],
+  "terminal_forge/eidosian_monorepo/docs/manual/python": [
+    "index.md"
+  ],
+  "terminal_forge/eidosian_monorepo/docs/manual/rust": [
+    "index.md"
+  ],
+  "terminal_forge/eidosian_monorepo/docs/source": [
+    "index.md"
+  ],
+  "terminal_forge/eidosian_monorepo/projects/go_project": [
+    "README.md"
+  ],
+  "terminal_forge/eidosian_monorepo/projects/nodejs_project": [
+    "README.md"
+  ],
+  "terminal_forge/eidosian_monorepo/projects/nodejs_project/src": [
+    "index.js"
+  ],
+  "terminal_forge/eidosian_monorepo/projects/nodejs_project/src/nodejs_project/api": [
+    "index.js"
+  ],
+  "terminal_forge/eidosian_monorepo/projects/nodejs_project/src/nodejs_project/config": [
+    "index.js"
+  ],
+  "terminal_forge/eidosian_monorepo/projects/nodejs_project/src/nodejs_project/models": [
+    "index.js"
+  ],
+  "terminal_forge/eidosian_monorepo/projects/nodejs_project/src/nodejs_project/services": [
+    "index.js"
+  ],
+  "terminal_forge/eidosian_monorepo/projects/nodejs_project/src/nodejs_project/src": [
+    "index.js"
+  ],
+  "terminal_forge/eidosian_monorepo/projects/nodejs_project/src/nodejs_project/utils": [
+    "index.js"
+  ],
+  "terminal_forge/eidosian_monorepo/projects/nodejs_project/tests": [
+    "example.test.js"
+  ],
+  "terminal_forge/eidosian_monorepo/projects/python_project": [
+    "README.md"
+  ],
+  "terminal_forge/eidosian_monorepo/projects/python_project/src/python_project": [
+    "__init__.py",
+    "main.py"
+  ],
+  "terminal_forge/eidosian_monorepo/projects/python_project/src/python_project/api": [
+    "__init__.py"
+  ],
+  "terminal_forge/eidosian_monorepo/projects/python_project/src/python_project/config": [
+    "__init__.py"
+  ],
+  "terminal_forge/eidosian_monorepo/projects/python_project/src/python_project/core": [
+    "__init__.py"
+  ],
+  "terminal_forge/eidosian_monorepo/projects/python_project/src/python_project/models": [
+    "__init__.py"
+  ],
+  "terminal_forge/eidosian_monorepo/projects/python_project/src/python_project/services": [
+    "__init__.py"
+  ],
+  "terminal_forge/eidosian_monorepo/projects/python_project/src/python_project/utils": [
+    "__init__.py"
+  ],
+  "terminal_forge/eidosian_monorepo/projects/python_project/tests": [
+    "__init__.py",
+    "test_example.py"
+  ],
+  "terminal_forge/eidosian_monorepo/projects/rust_project": [
+    "README.md"
+  ],
+  "terminal_forge/eidosian_monorepo/scripts": [
+    "README.md"
+  ],
+  "terminal_forge/eidosian_monorepo/scripts/dev": [
+    "run_tests.sh"
+  ],
+  "terminal_forge/eidosian_monorepo/scripts/setup": [
+    "install_dependencies.sh"
+  ],
+  "terminal_forge/eidosian_monorepo/scripts/utils": [
+    "project_stats.py"
+  ],
+  "terminal_forge/examples": [
+    "advanced.py",
+    "animations.py",
+    "basic.py",
+    "themes.py"
+  ],
+  "terminal_forge/examples/integration": [
+    "api_consumption.py",
+    "data_visualization.py",
+    "real_time.py"
+  ],
+  "terminal_forge/examples/interactive": [
+    "focus.py",
+    "keyboard.py",
+    "navigation.py"
+  ],
+  "terminal_forge/examples/layouts": [
+    "flow.py",
+    "grid.py",
+    "responsive.py"
+  ],
+  "terminal_forge/projects/python_project": [
+    "README.md"
+  ],
+  "terminal_forge/projects/python_project/src/python_project": [
+    "__init__.py",
+    "main.py"
+  ],
+  "terminal_forge/projects/python_project/src/python_project/api": [
+    "__init__.py"
+  ],
+  "terminal_forge/projects/python_project/src/python_project/config": [
+    "__init__.py"
+  ],
+  "terminal_forge/projects/python_project/src/python_project/core": [
+    "__init__.py"
+  ],
+  "terminal_forge/projects/python_project/src/python_project/models": [
+    "__init__.py"
+  ],
+  "terminal_forge/projects/python_project/src/python_project/services": [
+    "__init__.py"
+  ],
+  "terminal_forge/projects/python_project/src/python_project/utils": [
+    "__init__.py"
+  ],
+  "terminal_forge/projects/python_project/tests": [
+    "__init__.py",
+    "test_example.py"
+  ],
+  "terminal_forge/scripts": [
+    "README.md"
+  ],
+  "terminal_forge/scripts/dev": [
+    "run_tests.sh"
+  ],
+  "terminal_forge/scripts/setup": [
+    "install_dependencies.sh"
+  ],
+  "terminal_forge/scripts/utils": [
+    "project_stats.py"
+  ],
+  "terminal_forge/src/terminal_forge": [
+    "__init__.py",
+    "ascii_art.py",
+    "banner.py",
+    "borders.py",
+    "cli.py",
+    "colors.py",
+    "effects.py",
+    "layout.py",
+    "themes.py",
+    "utils.py"
+  ],
+  "terminal_forge/templates/credentials": [
+    "README.md"
+  ],
+  "terminal_forge/tests/fixtures": [
+    "color_schemes.py",
+    "mock_terminal.py",
+    "sample_layouts.py"
+  ],
+  "terminal_forge/tests/integration": [
+    "test_animation_system.py",
+    "test_layout_composition.py",
+    "test_theme_application.py"
+  ],
+  "terminal_forge/tests/performance": [
+    "test_memory_usage.py",
+    "test_rendering_speed.py",
+    "test_terminal_io.py"
+  ],
+  "terminal_forge/tests/unit": [
+    "test_ascii_art.py",
+    "test_banner.py",
+    "test_banner_impl.py",
+    "test_borders.py",
+    "test_colors.py",
+    "test_colors_impl.py",
+    "test_effects.py",
+    "test_layout.py",
+    "test_layout_impl.py",
+    "test_themes.py",
+    "test_utils.py"
+  ],
+  "test_forge": [
+    "CHANGELOG.md",
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+    "CURRENT_STATE.md",
+    "GOALS.md",
+    "INSTALL.md",
+    "README.md",
+    "SECURITY.md",
+    "TODO.md",
+    "eidosian_config.yml",
+    "install.sh",
+    "requirements.txt",
+    "setup.py",
+    "ISSUES.md",
+    "PLAN.md",
+    "ROADMAP.md"
+  ],
+  "test_forge/src/test_forge": [
+    "__init__.py"
+  ],
+  "test_forge/src/test_forge/cli": [
+    "__init__.py"
+  ],
+  "test_forge/tests": [
+    "test_testforge.py",
+    "test_eidosian_cli.py"
+  ],
+  "type_forge": [
+    "CONTRIBUTING.md",
+    "CURRENT_STATE.md",
+    "GOALS.md",
+    "INSTALL.md",
+    "README.md",
+    "TODO.md",
+    "code_polish.md",
+    "initial_reference.py",
+    "initial_test_reference.py",
+    "sphinx_config.py",
+    "sphinx_main.py",
+    "ISSUES.md",
+    "PLAN.md",
+    "ROADMAP.md"
+  ],
+  "type_forge/docs": [
+    ".readthedocs.yaml",
+    "build_docs.sh",
+    "conf.py",
+    "getting_started.md",
+    "index.md"
+  ],
+  "type_forge/docs/_build/html/_sphinx_design_static": [
+    "design-tabs.js"
+  ],
+  "type_forge/docs/_build/html/_static": [
+    "_sphinx_javascript_frameworks_compat.js",
+    "jquery.js"
+  ],
+  "type_forge/docs/api": [
+    "forge.md",
+    "index.md",
+    "validators.md"
+  ],
+  "type_forge/docs/examples": [
+    "basic_usage.md",
+    "custom_validators.md"
+  ],
+  "type_forge/examples": [
+    "basic_usage.py",
+    "create_person.py",
+    "custom_validators.py"
+  ],
+  "type_forge/src/type_forge": [
+    "__init__.py",
+    "core.py"
+  ],
+  "type_forge/src/type_forge/cli": [
+    "__init__.py"
+  ],
+  "type_forge/tests": [
+    "__init__.py",
+    "conftest.py",
+    "test_core.py",
+    "test_forge.py",
+    "test_type.py",
+    "test_types.py",
+    "test_validators.py"
+  ],
+  "version_forge": [
+    "CURRENT_STATE.md",
+    "GOALS.md",
+    "INSTALL.md",
+    "README.md",
+    "TODO.md",
+    "version_core.py",
+    "ISSUES.md",
+    "PLAN.md",
+    "ROADMAP.md"
+  ],
+  "version_forge/src/version_forge": [
+    "__init__.py"
+  ],
+  "version_forge/src/version_forge/cli": [
+    "__init__.py",
+    "commands.py"
+  ],
+  "version_forge/src/version_forge/compatibility": [
+    "__init__.py",
+    "matrix.py",
+    "validator.py"
+  ],
+  "version_forge/src/version_forge/core": [
+    "__init__.py",
+    "config.py",
+    "repo.py",
+    "version.py"
+  ],
+  "version_forge/src/version_forge/operations": [
+    "__init__.py",
+    "compare.py",
+    "migration.py",
+    "update.py"
+  ],
+  "version_forge/src/version_forge/protocols": [
+    "__init__.py",
+    "interfaces.py"
+  ],
+  "version_forge/src/version_forge/sources": [
+    "__init__.py",
+    "central.py",
+    "environment.py",
+    "filesystem.py",
+    "module.py"
+  ],
+  "version_forge/tests": [
+    "test_version.py"
+  ],
+  "viz_forge": [
+    "CHANGELOG.md",
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+    "CURRENT_STATE.md",
+    "GOALS.md",
+    "INSTALL.md",
+    "README.md",
+    "SECURITY.md",
+    "TODO.md",
+    "eidosian_config.yml",
+    "install.sh",
+    "requirements.txt",
+    "setup.py",
+    "ISSUES.md",
+    "PLAN.md",
+    "ROADMAP.md"
+  ],
+  "viz_forge/src/viz_forge": [
+    "__init__.py"
+  ],
+  "viz_forge/src/viz_forge/cli": [
+    "__init__.py"
+  ],
+  "viz_forge/tests": [
+    "test_viz.py"
+  ],
+  "web_interface_forge": [
+    "INSTALL.md",
+    "CURRENT_STATE.md",
+    "GOALS.md",
+    "ISSUES.md",
+    "PLAN.md",
+    "README.md",
+    "ROADMAP.md"
+  ],
+  "web_interface_forge/src/web_interface_forge": [
+    "README.md",
+    "__init__.py",
+    "eidos_client.py",
+    "eidos_server.py"
+  ],
+  "web_interface_forge/src/web_interface_forge/cli": [
+    "__init__.py"
+  ],
+  "web_interface_forge/tests": [
+    "test_web_interface.py"
+  ],
+  "word_forge": [
+    ".pre-commit-config.yaml",
+    "AGENTS.md",
+    "DETAILED_TODO.md",
+    "INSTALL.md",
+    "README.md",
+    "TODO.md",
+    "code_perfection_prompt.md",
+    "code_polishing_prompt.md",
+    "code_review.md",
+    "lexical_proto.py",
+    "living_lexicon_discussion.md",
+    "requirements.txt",
+    "self.md",
+    "upgrade_plan.md",
+    "CURRENT_STATE.md",
+    "GOALS.md",
+    "ISSUES.md",
+    "PLAN.md",
+    "ROADMAP.md"
+  ],
+  "word_forge/docs": [
+    "editor_settings.md",
+    "glossary.md",
+    "overview.md"
+  ],
+  "word_forge/docs/development": [
+    "dev_dependencies.md"
+  ],
+  "word_forge/docs/migration": [
+    "emotion_config_migration.md"
+  ],
+  "word_forge/docs/templates": [
+    "class_template.md",
+    "function_template.md",
+    "module_template.md"
+  ],
+  "word_forge/src/old": [
+    "graph_manager.py",
+    "word_forge_cli.py",
+    "worker_thread.py"
+  ],
+  "word_forge/src/old/configs": [
+    "config_enums.py",
+    "config_essentials.py",
+    "config_exceptions.py",
+    "config_protocols.py",
+    "config_types.py",
+    "conversation_config.py",
+    "database_config.py",
+    "emotion_config.py",
+    "graph_config.py",
+    "logging_config.py",
+    "parser_config.py",
+    "queue_config.py",
+    "vectorizer_config.py"
+  ],
+  "word_forge/src/word_forge": [
+    "README.md",
+    "__init__.py",
+    "cli.py",
+    "config.py",
+    "exceptions.py",
+    "forge.py",
+    "relationships.py"
+  ],
+  "word_forge/src/word_forge/configs": [
+    "__init__.py",
+    "config_essentials.py",
+    "logging_config.py"
+  ],
+  "word_forge/src/word_forge/configs/types": [
+    "README.md",
+    "__init__.py",
+    "base.py",
+    "enums.py",
+    "errors.py",
+    "exceptions.py",
+    "protocols.py",
+    "templates.py",
+    "workers.py"
+  ],
+  "word_forge/src/word_forge/conversation": [
+    "__init__.py",
+    "conversation_config.py",
+    "conversation_manager.py",
+    "conversation_models.py",
+    "conversation_types.py",
+    "conversation_worker.py"
+  ],
+  "word_forge/src/word_forge/database": [
+    "__init__.py",
+    "database_config.py",
+    "database_manager.py",
+    "database_worker.py"
+  ],
+  "word_forge/src/word_forge/demos": [
+    "__init__.py",
+    "cli_demo.py",
+    "config_demo.py",
+    "conversation_demo.py",
+    "conversation_worker_demo.py",
+    "database_demo.py",
+    "database_worker_demo.py",
+    "emotion_demo.py",
+    "emotion_worker_demo.py",
+    "graph_demo.py",
+    "graph_worker_demo.py",
+    "language_model_demo.py",
+    "parser_demo.py",
+    "queue_demo.py",
+    "queue_worker_demo.py",
+    "tools_demo.py",
+    "vector_worker_demo.py"
+  ],
+  "word_forge/src/word_forge/emotion": [
+    "__init__.py",
+    "emotion_config.py",
+    "emotion_manager.py",
+    "emotion_processor.py",
+    "emotion_types.py",
+    "emotion_worker.py",
+    "hooks.py"
+  ],
+  "word_forge/src/word_forge/graph": [
+    "__init__.py",
+    "graph_analysis.py",
+    "graph_builder.py",
+    "graph_config.py",
+    "graph_io.py",
+    "graph_layout.py",
+    "graph_manager.py",
+    "graph_query.py",
+    "graph_visualizer.py",
+    "graph_worker.py",
+    "worker_factory.py"
+  ],
+  "word_forge/src/word_forge/parser": [
+    "__init__.py",
+    "language_model.py",
+    "lexical_functions.py",
+    "parser_config.py",
+    "parser_refiner.py",
+    "parser_worker.py",
+    "structured_validator.py"
+  ],
+  "word_forge/src/word_forge/queue": [
+    "__init__.py",
+    "queue_config.py",
+    "queue_manager.py",
+    "queue_worker.py",
+    "worker_manager.py"
+  ],
+  "word_forge/src/word_forge/tools": [
+    "__init__.py",
+    "av_to_text.py"
+  ],
+  "word_forge/src/word_forge/utils": [
+    "__init__.py",
+    "nltk_utils.py"
+  ],
+  "word_forge/src/word_forge/vectorizer": [
+    "__init__.py",
+    "vector_demo.py",
+    "vector_store.py",
+    "vector_worker.py",
+    "vectorizer_config.py"
+  ],
+  "word_forge/src/word_forge/multilingual": [
+    "__init__.py",
+    "multilingual_manager.py",
+    "wiktextract_ingest.py"
+  ],
+  "word_forge/tests": [
+    "conftest.py",
+    "test_cli.py",
+    "test_config.py",
+    "test_config_essentials.py",
+    "test_conversation_manager.py",
+    "test_conversation_worker.py",
+    "test_database_manager.py",
+    "test_database_worker.py",
+    "test_emotion_config.py",
+    "test_emotion_processor.py",
+    "test_emotion_types.py",
+    "test_exceptions.py",
+    "test_graph_analysis.py",
+    "test_graph_builder.py",
+    "test_graph_config.py",
+    "test_graph_io.py",
+    "test_graph_layout.py",
+    "test_graph_manager.py",
+    "test_graph_query.py",
+    "test_graph_worker.py",
+    "test_ingestion_pipeline.py",
+    "test_integration.py",
+    "test_language_model.py",
+    "test_lexical_functions.py",
+    "test_lexical_proto.py",
+    "test_nltk_utils.py",
+    "test_parser_config.py",
+    "test_queue_config.py",
+    "test_queue_manager.py",
+    "test_queue_worker.py",
+    "test_relationships.py",
+    "test_vector_store.py",
+    "test_vector_worker.py",
+    "test_worker_manager.py"
+  ],
+  "word_forge/scripts": [
+    "benchmark_core.py",
+    "robust_daemon.py",
+    "seed_multidimensional.py",
+    "verify_llm.py",
+    "verify_system_integrity.py",
+    "wf_status.py",
+    "word_forge_daemon.py"
+  ],
+  "memory": [
+    "moltbook-replies.txt"
+  ],
+  "moltbook_forge": [
+    "CURRENT_STATE.md",
+    "GOALS.md",
+    "README.md",
+    "TODO.md",
+    "__init__.py",
+    "__main__.py",
+    "cli.py",
+    "client.py",
+    "engagement.py",
+    "feedback.py",
+    "heartbeat_daemon.py",
+    "interest.py",
+    "moltbook_bootstrap.py",
+    "moltbook_ingest.py",
+    "moltbook_interest.py",
+    "moltbook_quarantine.py",
+    "moltbook_sanitize.py",
+    "moltbook_schema.py",
+    "moltbook_screen.py",
+    "moltbook_skill_review.py",
+    "moltbook_ui.py",
+    "moltbook_validate.py",
+    "nightly_policy.py",
+    "orchestrator.py",
+    "pipeline.py",
+    "receipts.py",
+    "security.py",
+    "verification.py"
+  ],
+  "moltbook_forge/skill_sources": [
+    "moltbook_skill_snapshot.md"
+  ],
+  "moltbook_forge/tests": [
+    "conftest.py",
+    "test_client.py",
+    "test_evidence_resolver.py",
+    "test_integration.py",
+    "test_live_scan.py",
+    "test_moltbook_bootstrap.py",
+    "test_moltbook_cli.py",
+    "test_moltbook_quarantine.py",
+    "test_moltbook_sanitize.py",
+    "test_moltbook_screen.py",
+    "test_moltbook_skill_review.py",
+    "test_moltbook_skill_script.py",
+    "test_moltbook_validate.py",
+    "test_nightly_policy.py",
+    "test_pipeline.py",
+    "test_receipts.py",
+    "test_ui.py",
+    "test_ui_navigation.py",
+    "test_ui_security.py",
+    "test_viewmodel.py"
+  ],
+  "moltbook_forge/tools": [
+    "live_scan.py",
+    "profile_ui.py",
+    "receipt_cli.py"
+  ],
+  "moltbook_forge/ui": [
+    "README.md",
+    "__init__.py",
+    "api_docs.py",
+    "app.py",
+    "controller.py",
+    "evidence.py",
+    "graph_api.py",
+    "schemas.py",
+    "viewmodel.py"
+  ],
+  "skills/moltbook": [
+    "HEARTBEAT.md",
+    "MESSAGING.md",
+    "SKILL.md"
+  ],
+  "skills/moltbook/references": [
+    "api.md"
+  ],
+  "skills/moltbook/scripts": [
+    "moltbook.sh"
+  ],
+  "reports/security": [
+    "dependabot_remediation_plan.open.md",
+    "dependabot_autopatch_highcrit.dryrun.md",
+    "dependabot_autopatch_highcrit.write.md",
+    "dependabot_autopatch_highcrit.postwrite_dryrun.md",
+    "dependabot_autopatch_highcrit.verify.md",
+    "dependabot_autopatch_all.post_hc.dryrun.md",
+    "dependabot_autopatch_all.write.md",
+    "dependabot_autopatch_all.postwrite_dryrun.md",
+    "dependabot_autopatch_all.final_verify.md",
+    "dependabot_autopatch_all.final_verify2.md",
+    "dependabot_autopatch_remaining_02480a3.dryrun.md",
+    "dependabot_remediation_plan.after_push_02480a3.md",
+    "dependabot_remediation_plan.zero.md",
+    "dependabot_autopatch.zero.md"
+  ],
+  "reports/consciousness_trends": [
+    "latest_trend.md"
+  ],
+  "reports/forges": [
+    "sms_forge.md",
+    "viz_forge.md",
+    "test_forge.md",
+    "audit_forge.md",
+    "narrative_forge.md",
+    "diagnostics_forge.md",
+    "lyrics_forge.md",
+    "prompt_forge.md",
+    "refactor_forge.md",
+    "web_interface_forge.md",
+    "erais_forge.md",
+    "crawl_forge.md",
+    "metadata_forge.md",
+    "file_forge.md",
+    "knowledge_forge.md",
+    "code_forge.md",
+    "gis_forge.md",
+    "version_forge.md",
+    "article_forge.md",
+    "moltbook_forge.md",
+    "repo_forge.md",
+    "mkey_forge.md",
+    "terminal_forge.md",
+    "memory_forge.md",
+    "type_forge.md",
+    "ollama_forge.md",
+    "agent_forge.md",
+    "llm_forge.md",
+    "game_forge.md",
+    "doc_forge.md",
+    "figlet_forge.md",
+    "computer_control_forge.md",
+    "glyph_forge.md",
+    "word_forge.md"
+  ],
+  "state/consciousness/bench/red_team_20260216_143548_d19e9f1b": [
+    "summary.md"
+  ],
+  "state/consciousness/bench/red_team_20260217_013221_1153c42f": [
+    "summary.md"
+  ],
+  "state/consciousness/bench/red_team_20260217_013635_8f84f12c": [
+    "summary.md"
+  ]
+}

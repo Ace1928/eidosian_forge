@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/algsupport_documentation.py
+KIND: code
+
+import saml2
+from saml2 import SamlBase
+The urn:oasis:names:tc:SAML:metadata:algsupport:SigningMethod element

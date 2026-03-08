@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/__pkginfo___documentation.py
+KIND: code
+
+Package information for docformatter.

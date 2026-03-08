@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_constants.py
+KIND: code
+
+import numpy as np
+
+e = np.e
+inf = np.inf
+nan = np.nan
+pi = np.pi
+newaxis = np.newaxis

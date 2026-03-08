@@ -1,0 +1,12 @@
+SOURCE_PATH: archive_forge/src/archive_forge/bedrock.py
+KIND: code
+
+from langchain_community.llms.bedrock import (
+    Bedrock,
+    BedrockBase,
+)
+
+__all__ = [
+    "BedrockBase",
+    "Bedrock",
+]

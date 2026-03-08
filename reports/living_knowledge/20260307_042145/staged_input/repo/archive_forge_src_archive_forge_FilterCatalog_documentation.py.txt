@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/FilterCatalog_documentation.py
+KIND: code
+
+import sys
+from rdkit import Chem
+from rdkit.Chem.rdfiltercatalog import *
+Must override this function

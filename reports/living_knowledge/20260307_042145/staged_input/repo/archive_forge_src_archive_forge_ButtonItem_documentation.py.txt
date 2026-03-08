@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/ButtonItem_documentation.py
+KIND: code
+
+from ..Qt import QtCore, QtGui
+from .GraphicsObject import GraphicsObject
+Button graphicsItem displaying an image.

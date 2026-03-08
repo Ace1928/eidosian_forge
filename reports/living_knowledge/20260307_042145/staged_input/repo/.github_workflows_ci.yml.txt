@@ -1,0 +1,568 @@
+SOURCE_PATH: .github/workflows/ci.yml
+KIND: config
+
+# 🚀 Eidosian CI Pipeline v4.0.1
+# Comprehensive CI/CD with formatting, linting, testing, and deployment
+# Format → Lint → Test → Build → Deploy workflow
+# Fixed: Removed pip caching to avoid "Maximum call stack size exceeded" in large monorepos
+
+name: Eidosian Universal CI
+
+on:
+  push:
+    branches: [main, master, develop]
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+      - ".github/ISSUE_TEMPLATE/**"
+  pull_request:
+    branches: [main, master, develop]
+  workflow_dispatch:
+    inputs:
+      debug:
+        description: "Enable runner debugging mode"
+        required: false
+        default: false
+        type: boolean
+
+# ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+# ┃ Environment variables for all jobs    ┃
+# ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+env:
+  PYTHONUNBUFFERED: 1
+  FORCE_COLOR: 1
+  POETRY_VIRTUALENVS_CREATE: false
+  POETRY_VERSION: "1.8.3"
+
+# Default permissions for all jobs
+permissions:
+  contents: read
+
+# Prevent duplicate workflow runs
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: ⚙️ Validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read  # Only reading repository contents
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+      has_python: ${{ steps.check.outputs.has_python }}
+      has_typescript: ${{ steps.check.outputs.has_typescript }}
+      python_test_matrix: ${{ steps.check.outputs.python_test_matrix }}
+      changed_manifest: ${{ steps.check.outputs.changed_manifest }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: check
+        name: 🔍 Check what to run
+        run: |
+          echo "should_run=true" >> $GITHUB_OUTPUT
+
+          # Resolve a reliable diff base for both push and pull_request events.
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          elif [ -n "${{ github.event.before }}" ] && [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
+            BASE_SHA="${{ github.event.before }}"
+          else
+            BASE_SHA=""
+          fi
+
+          if [ -n "$BASE_SHA" ]; then
+            CHANGED_FILES="$(git diff --name-only "$BASE_SHA" "${{ github.sha }}" || true)"
+          else
+            # Fallback for workflow_dispatch/initial commits where diff-base is unavailable.
+            CHANGED_FILES="$(git ls-files)"
+          fi
+
+          printf "%s\n" "$CHANGED_FILES" > changed_files.txt
+
+          PYTHON_TRIGGERED=false
+          # Check if Python files changed
+          if grep -qE '(\.py$|^pytest\.ini$|^pyproject\.toml$|^ruff\.toml$|^mypy\.ini$|^setup\.(py|cfg)$|^\.github/workflows/|^scripts/ci/)' changed_files.txt || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "has_python=true" >> $GITHUB_OUTPUT
+            echo "::notice::Python files detected"
+            PYTHON_TRIGGERED=true
+          else
+            echo "has_python=false" >> $GITHUB_OUTPUT
+          fi
+
+          if [ "$PYTHON_TRIGGERED" = "true" ]; then
+            MATRIX_JSON="$(python scripts/ci/python_test_matrix.py --changed-files changed_files.txt)"
+            echo "python_test_matrix=${MATRIX_JSON}" >> $GITHUB_OUTPUT
+            echo "::notice::Python test matrix: ${MATRIX_JSON}"
+          else
+            echo 'python_test_matrix={"include":[]}' >> $GITHUB_OUTPUT
+          fi
+
+          MANIFEST_JSON="$(python scripts/ci/changed_manifest.py --changed-files changed_files.txt)"
+          echo "changed_manifest=${MANIFEST_JSON}" >> $GITHUB_OUTPUT
+          echo "::notice::Changed manifest resolved"
+
+          # Check if TypeScript/JavaScript files changed
+          if grep -qE '\.(ts|tsx|js|jsx)$' changed_files.txt || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "has_typescript=true" >> $GITHUB_OUTPUT
+            echo "::notice::TypeScript/JavaScript files detected"
+          else
+            echo "has_typescript=false" >> $GITHUB_OUTPUT
+          fi
+
+  format-check:
+    name: 🎨 Format Check
+    needs: validate
+    if: needs.validate.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read  # Only reading and checking format
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python
+        if: needs.validate.outputs.has_python == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 📦 Install Python formatters
+        if: needs.validate.outputs.has_python == 'true'
+        run: |
+          python -m pip install --upgrade pip
+          pip install black isort
+
+      - name: 🎨 Check Python formatting
+        if: needs.validate.outputs.has_python == 'true'
+        id: python_format
+        env:
+          MANIFEST_JSON: ${{ needs.validate.outputs.changed_manifest }}
+        run: |
+          python - <<'PY' > python_targets.txt
+          import json
+          import os
+          payload = json.loads(os.environ["MANIFEST_JSON"])
+          for path in payload.get("python_files", []):
+              print(path)
+          PY
+          mapfile -t TARGETS < python_targets.txt
+          if [ ${#TARGETS[@]} -eq 0 ]; then
+            echo "::notice::No Python formatting targets found; skipping."
+            exit 0
+          fi
+
+          echo "::group::Black format check"
+          black "${TARGETS[@]}" --check --diff --line-length=120 || FORMAT_FAIL=1
+          echo "::endgroup::"
+          
+          echo "::group::isort import check"
+          isort "${TARGETS[@]}" --check --diff --profile=black --line-length=120 --skip-gitignore || FORMAT_FAIL=1
+          echo "::endgroup::"
+          
+          if [ -n "$FORMAT_FAIL" ]; then
+            echo "::warning::Python formatting drift detected. Continuing (non-blocking) for monorepo stability."
+            echo "::notice::Run Auto Format workflow to reconcile global formatting debt."
+          fi
+
+      - name: 📦 Set up Node.js
+        if: needs.validate.outputs.has_typescript == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: 📥 Install Prettier
+        if: needs.validate.outputs.has_typescript == 'true'
+        run: npm install -g prettier@3.4.2
+
+      - name: 🎨 Check TypeScript formatting
+        if: needs.validate.outputs.has_typescript == 'true'
+        env:
+          MANIFEST_JSON: ${{ needs.validate.outputs.changed_manifest }}
+        run: |
+          python - <<'PY' > prettier_targets.txt
+          import json
+          import os
+          payload = json.loads(os.environ["MANIFEST_JSON"])
+          for path in payload.get("prettier_files", []):
+              print(path)
+          PY
+          mapfile -t TARGETS < prettier_targets.txt
+          if [ ${#TARGETS[@]} -eq 0 ]; then
+            echo "::notice::No TypeScript/JS formatting targets found; skipping."
+            exit 0
+          fi
+          echo "::group::Prettier format check"
+          prettier "${TARGETS[@]}" --check --ignore-path .gitignore --ignore-unknown --log-level warn
+          echo "::endgroup::"
+
+  lint:
+    name: 🧹 Lint
+    needs: [validate, format-check]
+    if: needs.validate.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read  # Only reading repository contents
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 📦 Install dependencies
+        id: deps
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          # Install linting and formatting tools directly
+          pip install black isort flake8 mypy pylint ruff
+
+      - name: 🔍 Check code formatting
+        env:
+          MANIFEST_JSON: ${{ needs.validate.outputs.changed_manifest }}
+        run: |
+          python - <<'PY' > python_targets.txt
+          import json
+          import os
+          payload = json.loads(os.environ["MANIFEST_JSON"])
+          for path in payload.get("python_files", []):
+              print(path)
+          PY
+          mapfile -t TARGETS < python_targets.txt
+          if [ ${#TARGETS[@]} -eq 0 ]; then
+            echo "::notice::No Python lint targets found; skipping."
+            exit 0
+          fi
+
+          if command -v black >/dev/null 2>&1; then
+            echo "::group::Black format check"
+            black "${TARGETS[@]}" --check --diff --line-length=120 || echo "::warning::Code formatting issues detected"
+            echo "::endgroup::"
+          else
+            echo "::warning::black not installed, skipping format check"
+          fi
+
+          if command -v isort >/dev/null 2>&1; then
+            echo "::group::isort import check"
+            isort "${TARGETS[@]}" --check --diff --profile=black --line-length=120 --skip-gitignore || echo "::warning::Import sorting issues detected"
+            echo "::endgroup::"
+          else
+            echo "::warning::isort not installed, skipping import check"
+          fi
+
+      - name: 🔬 Lint with flake8
+        env:
+          MANIFEST_JSON: ${{ needs.validate.outputs.changed_manifest }}
+        run: |
+          python - <<'PY' > python_targets.txt
+          import json
+          import os
+          payload = json.loads(os.environ["MANIFEST_JSON"])
+          for path in payload.get("python_files", []):
+              print(path)
+          PY
+          mapfile -t TARGETS < python_targets.txt
+          if [ ${#TARGETS[@]} -eq 0 ]; then
+            echo "::notice::No Python lint targets found; skipping."
+            exit 0
+          fi
+          if command -v flake8 >/dev/null 2>&1; then
+            flake8 "${TARGETS[@]}" --count --statistics --show-source --exit-zero
+          else
+            echo "::warning::flake8 not installed, skipping lint check"
+          fi
+
+      - name: 🧬 Deep analysis with pylint
+        run: |
+          echo "::notice::Skipping pylint in universal CI; component lint workflow is authoritative."
+
+      - name: 📐 Type check with mypy
+        run: |
+          echo "::notice::Skipping mypy in universal CI; targeted type checks belong in forge-specific workflows."
+
+  test:
+    name: 🧪 Test · ${{ matrix.component }}
+    needs: [validate, lint]
+    if: needs.validate.outputs.should_run == 'true' && needs.lint.result == 'success' && needs.validate.outputs.has_python == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read  # Only reading repository contents
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.validate.outputs.python_test_matrix).include }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 📦 Install dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          # Install testing tools directly
+          pip install \
+            pytest \
+            pytest-cov \
+            pytest-xdist \
+            hypothesis \
+            pytest-asyncio \
+            pytest-benchmark \
+            numpy \
+            pydantic \
+            httpx \
+            requests \
+            mcp \
+            openai \
+            fastapi \
+            jinja2 \
+            Markdown \
+            pandas \
+            pyarrow \
+            psutil \
+            pyyaml \
+            beautifulsoup4 \
+            hnswlib \
+            huggingface_hub \
+            chromadb \
+            nltk \
+            pyfiglet \
+            colorama \
+            tika \
+            networkx \
+            websockets \
+            pillow \
+            opencv-python-headless \
+            pygame
+
+      - name: 🔍 Run tests
+        run: |
+          ROOT="$PWD"
+          PY_PATH="$ROOT/lib"
+          while IFS= read -r src_dir; do
+            PY_PATH="${PY_PATH}:${ROOT}/${src_dir}"
+          done < <(find . -maxdepth 2 -type d -name src | sed 's#^\./##' | sort)
+          export PYTHONPATH="$PY_PATH"
+
+          TEST_TIMEOUT_SEC="${EIDOS_TEST_TIMEOUT_SEC:-900}"
+          TARGET="${{ matrix.test_path }}"
+          COMPONENT="${{ matrix.component }}"
+          echo "::notice::Per-component pytest timeout: ${TEST_TIMEOUT_SEC}s"
+          echo "::group::pytest ${TARGET}"
+          mkdir -p reports/ci
+          timeout "${TEST_TIMEOUT_SEC}" python -m pytest -q "${TARGET}" --maxfail=1 --disable-warnings --junitxml "reports/ci/${COMPONENT}.xml"
+          echo "::notice::${COMPONENT} tests passed"
+          echo "::endgroup::"
+
+      - name: 📊 Coverage placeholder
+        run: |
+          # Per-forge test execution does not produce one root coverage.xml yet.
+          # Keep this job deterministic; coverage aggregation is handled by forge-level tooling.
+          cat > coverage.xml <<'XML'
+          <?xml version="1.0" ?>
+          <coverage version="0.0" timestamp="0" lines-valid="0" lines-covered="0" line-rate="0.0" branches-covered="0" branches-valid="0" branch-rate="0.0" complexity="0">
+            <sources><source>.</source></sources>
+            <packages/>
+          </coverage>
+          XML
+
+      - name: 📤 Upload component test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-test-${{ matrix.component }}-${{ github.run_number }}
+          if-no-files-found: warn
+          path: |
+            reports/ci/${{ matrix.component }}.xml
+          retention-days: 7
+
+      - name: 📊 Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  test-typescript:
+    name: 🧪 Test TypeScript
+    needs: [validate, lint]
+    if: needs.validate.outputs.should_run == 'true' && needs.validate.outputs.has_typescript == 'true' && needs.lint.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read  # Only reading repository contents
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 📦 Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: 🧪 Test autoseed project
+        run: |
+          if [ -d "game_forge/src/autoseed" ]; then
+            echo "::group::Testing autoseed"
+            cd game_forge/src/autoseed
+            npm install
+            npm run typecheck
+            npm run test:coverage
+            echo "::endgroup::"
+            
+            # Upload coverage if exists
+            if [ -f "coverage/coverage-summary.json" ]; then
+              echo "### 📊 TypeScript Coverage" >> $GITHUB_STEP_SUMMARY
+              cat coverage/coverage-summary.json | python3 -c "import json,sys; data=json.load(sys.stdin); total=data.get('total',{}); print(f\"Lines: {total.get('lines',{}).get('pct',0):.2f}%\")" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "::notice::autoseed directory not found, skipping TypeScript tests"
+          fi
+
+      - name: 📁 Upload TypeScript coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: typescript-coverage
+          path: game_forge/src/autoseed/coverage/
+          retention-days: 7
+
+  docs:
+    name: 📚 Documentation
+    needs: [validate, lint]
+    if: needs.validate.outputs.should_run == 'true' && needs.lint.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read  # Only reading repository contents
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 📦 Install dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          # Install documentation tools directly
+          pip install sphinx sphinx-rtd-theme myst-parser
+
+      - name: 📝 Build docs
+        run: |
+          if [ -d "docs" ]; then
+              cd docs
+              if [ -f "Makefile" ]; then
+                  make html
+              elif [ -f "conf.py" ]; then
+                  sphinx-build -b html . _build/html || {
+                      echo "::warning::Sphinx build failed; emitting placeholder docs"
+                      mkdir -p _build/html
+                      printf '<html><body><h1>Docs build unavailable</h1></body></html>\n' > _build/html/index.html
+                  }
+              else
+                  echo "::notice::No Sphinx config found in docs directory; emitting placeholder docs"
+                  mkdir -p _build/html
+                  printf '<html><body><h1>Docs not configured</h1></body></html>\n' > _build/html/index.html
+              fi
+          else
+              echo "::warning::No docs directory found, skipping documentation build"
+              mkdir -p _build/html
+              echo "No documentation found" > _build/html/index.html
+          fi
+
+      - name: 📤 Upload docs
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs-${{ github.sha }}
+          path: |
+            docs/_build/html
+            _build/html
+          if-no-files-found: warn
+          retention-days: 7
+
+  build:
+    name: 📦 Build
+    needs: [validate, test]
+    if: needs.validate.outputs.should_run == 'true' && needs.test.result == 'success'
+    runs-on: ubuntu-latest
+    outputs:
+      has_wheel: ${{ steps.package_meta.outputs.has_wheel }}
+    permissions:
+      contents: read  # Only reading repository contents
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 📦 Install dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install build twine setuptools wheel
+
+      - name: 🏗️ Build package
+        run: |
+          if [ -f pyproject.toml ]; then
+              echo "::group::Building package with python -m build"
+              python -m build
+              echo "::endgroup::"
+          elif [ -f setup.py ]; then
+              echo "::group::Building package with setup.py"
+              python setup.py sdist bdist_wheel
+              echo "::endgroup::"
+          else
+              echo "::notice::No pyproject.toml or setup.py found in root - this is a monorepo"
+              echo "::notice::Skipping package build as this repository contains multiple independent packages"
+              mkdir -p dist
+              echo "Monorepo - no root package to build" > dist/README.txt
+          fi
+
+      - name: ✅ Check package
+        run: |
+          if [ -d "dist" ] && [ "$(ls -A dist)" ]; then
+            # Check if we have actual packages (not just the README)
+            if ls dist/*.{whl,tar.gz} 2>/dev/null | grep -q .; then
+              echo "::group::Checking package with twine"
+              twine check dist/*.{whl,tar.gz} 2>/dev/null || echo "::warning::Package validation issues detected"
+              echo "::endgroup::"
+            else
+              echo "::notice::No packages to validate (monorepo with no root package)"
+            fi
+          else
+            echo "::warning::No dist directory found"
+          fi
+
+      - name: 🔎 Detect built wheel
+        id: package_meta
+        run: |
+          if find dist -maxdepth 1 -type f -name '*.whl' | grep -q .; then
+            echo "has_wheel=true" >> $GITHUB_OUTPUT
+            echo "::notice::Wheel artifact detected"
+          else
+            echo "has_wheel=false" >> $GITHUB_OUTPUT
+            echo "::notice::No wheel artifact detected; integration install test will be skipped"
+          fi
+
+      - name: 📤 Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-${{ github.sha }}
+          path: dist/
+          retention-days: 7
+
+  integration:
+    name: 🧩 Integration

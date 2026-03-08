@@ -1,0 +1,744 @@
+SOURCE_PATH: archive_forge/src/archive_forge/ce_is_is_view.py
+KIND: code
+
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+# Copyright 2019 Red Hat
+# GNU General Public License v3.0+
+# (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+
+from __future__ import (absolute_import, division, print_function)
+__metaclass__ = type
+
+DOCUMENTATION = '''
+---
+module: ce_is_is_view
+version_added: '0.2.0'
+author: xuxiaowei0512 (@CloudEngine-Ansible)
+short_description: Manages isis view configuration on HUAWEI CloudEngine devices.
+description:
+    - Manages isis process id, creates a isis instance id or deletes a process id
+      on HUAWEI CloudEngine devices.
+options:
+  coststyle:
+    description:
+      - Specifies the cost style.
+    type: str
+    choices: ['narrow', 'wide', 'transition', 'ntransition', 'wtransition']
+  cost_type:
+    description:
+      - Specifies the cost type.
+    type: str
+    choices: ['external', 'internal']
+  defaultmode:
+    description:
+      - Specifies the default mode.
+    type: str
+    choices: ['always', 'matchDefault', 'matchAny']
+  export_policytype:
+    description:
+      - Specifies the default mode.
+    type: str
+    choices: ['aclNumOrName', 'ipPrefix', 'routePolicy']
+  export_protocol:
+    description:
+      - Specifies the export router protocol.
+    type: str
+    choices: ['direct', 'ospf', 'isis', 'static', 'rip', 'bgp', 'ospfv3', 'all']
+  impotr_leveltype:
+    description:
+      - Specifies the export router protocol.
+    type: str
+    choices: ['level_1', 'level_2', 'level_1_2']
+  islevel:
+    description:
+      - Specifies the isis level.
+    type: str
+    choices: ['level_1', 'level_2', 'level_1_2']
+  level_type:
+    description:
+      - Specifies the isis level type.
+    type: str
+    choices: ['level_1', 'level_2', 'level_1_2']
+  penetration_direct:
+    description:
+      - Specifies the penetration direct.
+    type: str
+    choices: ['level2-level1', 'level1-level2']
+  protocol:
+    description:
+      - Specifies the protocol.
+    type: str
+    choices: ['direct', 'ospf', 'isis', 'static', 'rip', 'bgp', 'ospfv3', 'all']
+  aclnum_or_name:
+    description:
+      - Specifies the acl number or name for isis.
+    type: str
+  allow_filter:
+    description:
+      - Specifies the alow filter or not.
+    type: bool
+  allow_up_down:
+    description:
+      - Specifies the alow up or down.
+    type: bool
+  autocostenable:
+    description:
+      - Specifies the alow auto cost enable.
+    type: bool
+  autocostenablecompatible:
+    description:
+      - Specifies the alow auto cost enable compatible.
+    type: bool
+  avoid_learning:
+    description:
+      - Specifies the alow avoid learning.
+    type: bool
+  bfd_min_tx:
+    description:
+      - Specifies the bfd min sent package.
+    type: int
+  bfd_min_rx:
+    description:
+      - Specifies the bfd min received package.
+    type: int
+  bfd_multiplier_num:
+    description:
+      - Specifies the bfd multiplier number.
+    type: int
+  cost:
+    description:
+      - Specifies the bfd cost.
+    type: int
+  description:
+    description:
+      - Specifies description of isis.
+    type: str
+  enablelevel1tolevel2:
+    description:
+      - Enable level1 to level2.
+    type: bool
+  export_aclnumorname:
+    description:
+      - Specifies export acl number or name.
+    type: str
+  export_ipprefix:
+    description:
+      - Specifies export ip prefix.
+    type: str
+  export_processid:
+    description:
+      - Specifies export process id.
+    type: int
+  export_routepolicyname:
+    description:
+      - Specifies export route policy name.
+    type: str
+  import_aclnumorname:
+    description:
+      - Specifies import acl number or name.
+    type: str
+  import_cost:
+    description:
+      - Specifies import cost.
+    type: int
+  import_ipprefix:
+    description:
+      - Specifies import ip prefix.
+    type: str
+  import_route_policy:
+    description:
+      - Specifies import route policy.
+    type: str
+  import_routepolicy_name:
+    description:
+      - Specifies import route policy name.
+    type: str
+  import_routepolicyname:
+    description:
+      - Specifies import route policy name.
+    type: str
+  import_tag:
+    description:
+      - Specifies import tag.
+    type: int
+  inheritcost:
+    description:
+      - Enable inherit cost.
+    type: bool
+  instance_id:
+    description:
+      - Specifies instance id.
+    type: int
+  ip_address:
+    description:
+      - Specifies ip address.
+    type: str
+  ip_prefix_name:
+    description:
+      - Specifies ip prefix name.
+    type: str
+  max_load:
+    description:
+      - Specifies route max load.
+    type: int
+  mode_routepolicyname:
+    description:
+      - Specifies the mode of route polic yname.
+    type: str
+  mode_tag:
+    description:
+      - Specifies the tag of mode.
+    type: int
+  netentity:
+    description:
+      - Specifies the netentity.
+    type: str
+  permitibgp:
+    description:
+      - Specifies the permitibgp.
+    type: bool
+  processid:
+    description:
+      - Specifies the process id.
+    type: int
+  relaxspfLimit:
+    description:
+      - Specifies enable the relax spf limit.
+    type: bool
+  route_policy_name:
+    description:
+      - Specifies the route policy name.
+    type: str
+  stdbandwidth:
+    description:
+      - Specifies the std band width.
+    type: int
+  stdlevel1cost:
+    description:
+      - Specifies the std level1 cost.
+    type: int
+  stdlevel2cost:
+    description:
+      - Specifies the std level2 cost.
+    type: int
+  tag:
+    description:
+      - Specifies the isis tag.
+    type: int
+  weight:
+    description:
+      - Specifies the isis weight.
+    type: int
+  preference_value:
+    description:
+      - Specifies the preference value.
+    type: int
+  state:
+    description:
+      - Determines whether the config should be present or not on the device.
+    default: present
+    type: str
+    choices: ['present', 'absent']
+notes:
+  - This module requires the netconf system service be enabled on the remote device being managed.
+  - This module works with connection C(netconf).
+'''
+
+EXAMPLES = '''
+  - name: Set isis description
+    community.network.ce_is_is_view:
+      instance_id: 3
+      description: abcdeggfs
+      state: present
+
+  - name: Set isis islevel
+    community.network.ce_is_is_view:
+      instance_id: 3
+      islevel: level_1
+      state: present
+  - name: Set isis coststyle
+    community.network.ce_is_is_view:
+      instance_id: 3
+      coststyle: narrow
+      state: present
+
+  - name: Set isis stdlevel1cost
+    community.network.ce_is_is_view:
+      instance_id: 3
+      stdlevel1cost: 63
+      state: present
+
+  - name: Set isis stdlevel2cost
+    community.network.ce_is_is_view:
+      instance_id: 3
+      stdlevel2cost: 63
+      state: present
+
+  - name: Set isis stdbandwidth
+    community.network.ce_is_is_view:
+      instance_id: 3
+      stdbandwidth: 1
+      state: present
+'''
+
+RETURN = '''
+proposed:
+    description: k/v pairs of parameters passed into module
+    returned: always
+    type: dict
+    sample: {
+        "state": "present"
+    }
+existing:
+    description: k/v pairs of existing configuration
+    returned: always
+    type: dict
+    sample: {
+        "session": {}
+    }
+end_state:
+    description: k/v pairs of configuration after module execution
+    returned: always
+    type: dict
+    sample: {
+        "session": {
+            "addrType": "IPV4",
+            "createType": "SESS_STATIC",
+            "destAddr": null,
+            "outIfName": "10GE1/0/1",
+            "sessName": "bfd_l2link",
+            "srcAddr": null,
+            "useDefaultIp": "true",
+            "vrfName": null
+        }
+    }
+updates:
+    description: commands sent to the device
+    returned: always
+    type: list
+    sample: [
+        "bfd bfd_l2link bind peer-ip default-ip interface 10ge1/0/1"
+    ]
+changed:
+    description: check to see if a change was made on the device
+    returned: always
+    type: bool
+    sample: true
+'''
+
+import sys
+import socket
+from xml.etree import ElementTree
+from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.community.network.plugins.module_utils.network.cloudengine.ce import get_nc_config, set_nc_config
+
+CE_NC_GET_ISIS = """
+    <filter type="subtree">
+      <isiscomm xmlns="http://www.huawei.com/netconf/vrp" content-version="1.0" format-version="1.0">
+      %s
+      </isiscomm>
+    </filter>
+"""
+
+CE_NC_GET_ISIS_INSTANCE = """
+        <isSites>
+          <isSite>
+            <instanceId>%s</instanceId>
+            <description></description>
+            <isLevel></isLevel>
+            <costStyle></costStyle>
+            <relaxSpfLimit></relaxSpfLimit>
+            <stdLevel1Cost></stdLevel1Cost>
+            <stdLevel2Cost></stdLevel2Cost>
+            <stdbandwidth></stdbandwidth>
+            <stdAutoCostEnable></stdAutoCostEnable>
+            <stdAutoCostEnableCompatible></stdAutoCostEnableCompatible>
+          </isSite>
+        </isSites>
+"""
+
+CE_NC_GET_ISIS_ENTITY = """
+        <isSites>
+          <isSite>
+            <instanceId>%s</instanceId>
+            <isNetEntitys>
+              <isNetEntity>
+                <netEntity></netEntity>
+              </isNetEntity>
+            </isNetEntitys>
+          </isSite>
+        </isSites>
+"""
+
+CE_NC_CREAT_ISIS_ENTITY = """
+        <isSites>
+          <isSite>
+            <instanceId>%s</instanceId>
+            <isNetEntitys>
+              <isNetEntity operation="merge">
+                <netEntity>%s</netEntity>
+              </isNetEntity>
+            </isNetEntitys>
+          </isSite>
+        </isSites>
+"""
+
+CE_NC_DELATE_ISIS_ENTITY = """
+        <isSites>
+          <isSite>
+            <instanceId>%s</instanceId>
+            <isNetEntitys>
+              <isNetEntity operation="delete">
+                <netEntity>%s</netEntity>
+              </isNetEntity>
+            </isNetEntitys>
+          </isSite>
+        </isSites>
+"""
+
+CE_NC_GET_ISIS_PREFERENCE = """
+        <isSites>
+          <isSite>
+            <instanceId>%s</instanceId>
+            <isSiteMTs>
+              <isSiteMT>
+                <isPreferences>
+                  <isPreference>
+                    <preferenceValue></preferenceValue>
+                    <routePolicyName></routePolicyName>
+                  </isPreference>
+                </isPreferences>
+              </isSiteMT>
+            </isSiteMTs>
+          </isSite>
+        </isSites>
+"""
+
+CE_NC_MREGE_ISIS_PREFERENCE = """
+        <isSites>
+          <isSite>
+            <instanceId>%s</instanceId>
+            <isSiteMTs>
+              <isSiteMT>
+                <addressFamily>afIpv4</addressFamily>
+                <mtId>0</mtId>
+                <isPreferences>
+                  <isPreference operation="merge">
+                  %s
+                  </isPreference>
+                </isPreferences>
+              </isSiteMT>
+            </isSiteMTs>
+          </isSite>
+        </isSites>
+"""
+
+CE_NC_DELETE_ISIS_PREFERENCE = """
+        <isSites>
+          <isSite>
+            <instanceId>%s</instanceId>
+            <isSiteMTs>
+              <isSiteMT>
+                <addressFamily>afIpv4</addressFamily>
+                <mtId>0</mtId>
+                <isPreferences>
+                  <isPreference operation="delete">
+                  %s
+                  </isPreference>
+                </isPreferences>
+              </isSiteMT>
+            </isSiteMTs>
+          </isSite>
+        </isSites>
+"""
+
+CE_NC_GET_ISIS_MAXLOAD = """
+        <isSites>
+          <isSite>
+            <instanceId>%s</instanceId>
+            <isSiteMTs>
+              <isSiteMT>
+                <addressFamily>afIpv4</addressFamily>
+                <mtId>0</mtId>
+                <maxLoadBalancing></maxLoadBalancing>
+              </isSiteMT>
+            </isSiteMTs>
+          </isSite>
+        </isSites>
+"""
+
+CE_NC_MERGE_ISIS_MAXLOAD = """
+        <isSites>
+          <isSite>
+            <instanceId>%s</instanceId>
+            <isSiteMTs>
+              <isSiteMT operation="merge">
+                <addressFamily>afIpv4</addressFamily>
+                <mtId>0</mtId>
+                <maxLoadBalancing>%s</maxLoadBalancing>
+              </isSiteMT>
+            </isSiteMTs>
+          </isSite>
+        </isSites>
+"""
+
+CE_NC_DELETE_ISIS_MAXLOAD = """
+        <isSites>
+          <isSite>
+            <instanceId>%s</instanceId>
+            <isSiteMTs>
+              <isSiteMT operation="delete">
+                <addressFamily>afIpv4</addressFamily>
+                <mtId>0</mtId>
+                <maxLoadBalancing>32</maxLoadBalancing>
+              </isSiteMT>
+            </isSiteMTs>
+          </isSite>
+        </isSites>
+"""
+
+CE_NC_GET_ISIS_NEXTHOP = """
+        <isSites>
+          <isSite>
+            <instanceId>%s</instanceId>
+            <isSiteMTs>
+              <isSiteMT>
+                <addressFamily>afIpv4</addressFamily>
+                <mtId>0</mtId>
+                <isNextHopWeights>
+                  <isNextHopWeight>
+                    <ipAddress></ipAddress>
+                    <weight></weight>
+                  </isNextHopWeight>
+                </isNextHopWeights>
+              </isSiteMT>
+            </isSiteMTs>
+          </isSite>
+        </isSites>
+"""
+
+CE_NC_MERGE_ISIS_NEXTHOP = """
+        <isSites>
+          <isSite>
+            <instanceId>%s</instanceId>
+            <isSiteMTs>
+              <isSiteMT>
+                <addressFamily>afIpv4</addressFamily>
+                <mtId>0</mtId>
+                <isNextHopWeights>
+                  <isNextHopWeight operation="merge">
+                    <ipAddress>%s</ipAddress>
+                    <weight>%s</weight>
+                  </isNextHopWeight>
+                </isNextHopWeights>
+              </isSiteMT>
+            </isSiteMTs>
+          </isSite>
+        </isSites>
+"""
+
+CE_NC_DELETE_ISIS_NEXTHOP = """
+        <isSites>
+          <isSite>
+            <instanceId>%s</instanceId>
+            <isSiteMTs>
+              <isSiteMT>
+                <addressFamily>afIpv4</addressFamily>
+                <mtId>0</mtId>
+                <isNextHopWeights>
+                  <isNextHopWeight operation="delete">
+                    <ipAddress>%s</ipAddress>
+                    <weight>1</weight>
+                  </isNextHopWeight>
+                </isNextHopWeights>
+              </isSiteMT>
+            </isSiteMTs>
+          </isSite>
+        </isSites>
+"""
+
+CE_NC_GET_ISIS_LEAKROUTELEVEL2 = """
+        <isSites>
+          <isSite>
+            <instanceId>%s</instanceId>
+            <isSiteMTs>
+              <isSiteMT>
+                <addressFamily>afIpv4</addressFamily>
+                <mtId>0</mtId>
+                <isLeakRouteLevel2ToLevel1s>
+                  <isLeakRouteLevel2ToLevel1>
+                    <tag></tag>
+                    <routePolicyName></routePolicyName>
+                    <aclNumOrName></aclNumOrName>
+                    <ipPrefix></ipPrefix>
+                    <allowFilter></allowFilter>
+                    <allowUpdown></allowUpdown>
+                  </isLeakRouteLevel2ToLevel1>
+                </isLeakRouteLevel2ToLevel1s>
+              </isSiteMT>
+            </isSiteMTs>
+          </isSite>
+        </isSites>
+"""
+
+CE_NC_MERGE_ISIS_LEAKROUTELEVEL2 = """
+        <isSites>
+          <isSite>
+            <instanceId>%s</instanceId>
+            <isSiteMTs>
+              <isSiteMT>
+                <addressFamily>afIpv4</addressFamily>
+                <mtId>0</mtId>
+                <isLeakRouteLevel2ToLevel1s>
+                  <isLeakRouteLevel2ToLevel1 operation="merge">
+                   %s
+                  </isLeakRouteLevel2ToLevel1>
+                </isLeakRouteLevel2ToLevel1s>
+              </isSiteMT>
+            </isSiteMTs>
+          </isSite>
+        </isSites>
+"""
+
+CE_NC_DELETE_ISIS_LEAKROUTELEVEL2 = """
+        <isSites>
+          <isSite>
+            <instanceId>%s</instanceId>
+            <isSiteMTs>
+              <isSiteMT>
+                <addressFamily>afIpv4</addressFamily>
+                <mtId>0</mtId>
+                <isLeakRouteLevel2ToLevel1s>
+                  <isLeakRouteLevel2ToLevel1 operation="delete">
+                    <tag>0</tag>
+                    <routePolicyName/>
+                    <aclNumOrName/>
+                    <ipPrefix/>
+                    <allowFilter>false</allowFilter>
+                  </isLeakRouteLevel2ToLevel1>
+                </isLeakRouteLevel2ToLevel1s>
+              </isSiteMT>
+            </isSiteMTs>
+          </isSite>
+        </isSites>
+"""
+
+CE_NC_GET_ISIS_LEAKROUTELEVEL1 = """
+        <isSites>
+          <isSite>
+            <instanceId>%s</instanceId>
+            <isSiteMTs>
+              <isSiteMT>
+                <addressFamily>afIpv4</addressFamily>
+                <mtId>0</mtId>
+                <isLeakRouteLevel1ToLevel2s>
+                  <isLeakRouteLevel1ToLevel2>
+                    <tag></tag>
+                    <routePolicyName></routePolicyName>
+                    <aclNumOrName></aclNumOrName>
+                    <ipPrefix></ipPrefix>
+                    <leakEnableFlag></leakEnableFlag>
+                    <allowFilter></allowFilter>
+                  </isLeakRouteLevel1ToLevel2>
+                </isLeakRouteLevel1ToLevel2s>
+              </isSiteMT>
+            </isSiteMTs>
+          </isSite>
+        </isSites>
+"""
+
+CE_NC_MERGE_ISIS_LEAKROUTELEVEL1 = """
+        <isSites>
+          <isSite>
+            <instanceId>%s</instanceId>
+            <isSiteMTs>
+              <isSiteMT>
+                <addressFamily>afIpv4</addressFamily>
+                <mtId>0</mtId>
+                <isLeakRouteLevel1ToLevel2s>
+                  <isLeakRouteLevel1ToLevel2 operation="merge">
+                  %s
+                  </isLeakRouteLevel1ToLevel2>
+                </isLeakRouteLevel1ToLevel2s>
+              </isSiteMT>
+            </isSiteMTs>
+          </isSite>
+        </isSites>
+"""
+
+CE_NC_DELETE_ISIS_LEAKROUTELEVEL1 = """
+        <isSites>
+          <isSite>
+            <instanceId>%s</instanceId>
+            <isSiteMTs>
+              <isSiteMT>
+                <addressFamily>afIpv4</addressFamily>
+                <mtId>0</mtId>
+                <isLeakRouteLevel1ToLevel2s>
+                  <isLeakRouteLevel1ToLevel2 operation="delete">
+                    <tag>0</tag>
+                    <routePolicyName/>
+                    <aclNumOrName/>
+                    <ipPrefix/>
+                    <leakEnableFlag>false</leakEnableFlag>
+                    <allowFilter>false</allowFilter>
+                  </isLeakRouteLevel1ToLevel2>
+                </isLeakRouteLevel1ToLevel2s>
+              </isSiteMT>
+            </isSiteMTs>
+          </isSite>
+        </isSites>
+"""
+
+CE_NC_GET_ISIS_DEFAULTROUTE = """
+        <isSites>
+          <isSite>
+            <instanceId>%s</instanceId>
+            <isSiteMTs>
+              <isSiteMT>
+                <addressFamily>afIpv4</addressFamily>
+                <mtId>0</mtId>
+                <isDefaultRoutes>
+                  <isDefaultRoute>
+                    <defaultMode></defaultMode>
+                    <routePolicyName></routePolicyName>
+                    <cost></cost>
+                    <tag></tag>
+                    <levelType></levelType>
+                    <avoidLearning></avoidLearning>
+                  </isDefaultRoute>
+                </isDefaultRoutes>
+              </isSiteMT>
+            </isSiteMTs>
+          </isSite>
+        </isSites>
+"""
+
+CE_NC_MERGE_ISIS_DEFAULTROUTE = """
+        <isSites>
+          <isSite>
+            <instanceId>%s</instanceId>
+            <isSiteMTs>
+              <isSiteMT>
+                <addressFamily>afIpv4</addressFamily>
+                <mtId>0</mtId>
+                <isDefaultRoutes>
+                  <isDefaultRoute operation="merge">
+                   %s
+                  </isDefaultRoute>
+                </isDefaultRoutes>
+              </isSiteMT>
+            </isSiteMTs>
+          </isSite>
+        </isSites>
+"""
+
+CE_NC_DELETE_ISIS_DEFAULTROUTE = """
+        <isSites>
+          <isSite>
+            <instanceId>%s</instanceId>
+            <isSiteMTs>
+              <isSiteMT>
+                <addressFamily>

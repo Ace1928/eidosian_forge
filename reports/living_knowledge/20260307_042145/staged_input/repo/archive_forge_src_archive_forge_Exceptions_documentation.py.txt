@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/Exceptions_documentation.py
+KIND: code
+
+Raised when trying to access a nonexistant icon theme.
+    
+    The name of the theme is the .theme attribute.

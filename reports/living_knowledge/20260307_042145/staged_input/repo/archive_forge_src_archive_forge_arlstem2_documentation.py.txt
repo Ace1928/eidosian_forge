@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/arlstem2_documentation.py
+KIND: code
+
+import re
+from nltk.stem.api import StemmerI
+
+        stem the imperative tense prefixes

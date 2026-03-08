@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/TestStringEncoding_documentation.py
+KIND: code
+
+import sys
+import unittest
+import Cython.Compiler.StringEncoding as StringEncoding
+
+    Test the StringEncoding module.

@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/manifests/context_snapshots/eidos_state_2026-02-14_153419/status/tailscale_status.txt
+KIND: docs
+
+100.87.208.90  eidos-laptop  ace1928@  linux  -

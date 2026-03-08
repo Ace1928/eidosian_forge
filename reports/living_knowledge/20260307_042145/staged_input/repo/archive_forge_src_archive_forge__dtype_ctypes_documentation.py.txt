@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_dtype_ctypes_documentation.py
+KIND: code
+
+import numpy as np
+
+    Construct a dtype object from a ctypes type

@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/bader_documentation.py
+KIND: code
+
+import numpy as np
+from ase.units import Bohr
+from ase.data import atomic_numbers
+Attach the charges from the fileobj to the Atoms.

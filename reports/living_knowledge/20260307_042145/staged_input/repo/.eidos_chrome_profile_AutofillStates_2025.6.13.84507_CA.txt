@@ -1,0 +1,17 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/CA
+KIND: config
+
+CA
+albertaab
+british columbiabc
+manitobamanmb%
+new brunswicknbnouveaubrunswick7
+labradornlnewfoundlandnewfoundland and labrador
+nova scotians
+northwest territoriesnt
+nunavutnu
+ontonontario
+peipeprince edward island
+québecqcquebec
+saskatchewansk
+yukonytyukon territory

@@ -1,0 +1,511 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_backend_tk.py
+KIND: code
+
+import uuid
+import weakref
+from contextlib import contextmanager
+import logging
+import math
+import os.path
+import pathlib
+import sys
+import tkinter as tk
+import tkinter.filedialog
+import tkinter.font
+import tkinter.messagebox
+from tkinter.simpledialog import SimpleDialog
+
+import numpy as np
+from PIL import Image, ImageTk
+
+import matplotlib as mpl
+from matplotlib import _api, backend_tools, cbook, _c_internal_utils
+from matplotlib.backend_bases import (
+    _Backend, FigureCanvasBase, FigureManagerBase, NavigationToolbar2,
+    TimerBase, ToolContainerBase, cursors, _Mode,
+    CloseEvent, KeyEvent, LocationEvent, MouseEvent, ResizeEvent)
+from matplotlib._pylab_helpers import Gcf
+from . import _tkagg
+
+
+_log = logging.getLogger(__name__)
+cursord = {
+    cursors.MOVE: "fleur",
+    cursors.HAND: "hand2",
+    cursors.POINTER: "arrow",
+    cursors.SELECT_REGION: "crosshair",
+    cursors.WAIT: "watch",
+    cursors.RESIZE_HORIZONTAL: "sb_h_double_arrow",
+    cursors.RESIZE_VERTICAL: "sb_v_double_arrow",
+}
+
+
+@contextmanager
+def _restore_foreground_window_at_end():
+    foreground = _c_internal_utils.Win32_GetForegroundWindow()
+    try:
+        yield
+    finally:
+        if mpl.rcParams['tk.window_focus']:
+            _c_internal_utils.Win32_SetForegroundWindow(foreground)
+
+
+_blit_args = {}
+# Initialize to a non-empty string that is not a Tcl command
+_blit_tcl_name = "mpl_blit_" + uuid.uuid4().hex
+
+TK_PHOTO_COMPOSITE_OVERLAY = 0  # apply transparency rules pixel-wise
+TK_PHOTO_COMPOSITE_SET = 1  # set image buffer directly
+
+
+def _blit(argsid):
+    """
+    Thin wrapper to blit called via tkapp.call.
+
+    *argsid* is a unique string identifier to fetch the correct arguments from
+    the ``_blit_args`` dict, since arguments cannot be passed directly.
+    """
+    photoimage, dataptr, offsets, bboxptr, comp_rule = _blit_args.pop(argsid)
+    if not photoimage.tk.call("info", "commands", photoimage):
+        return
+    _tkagg.blit(photoimage.tk.interpaddr(), str(photoimage), dataptr,
+                comp_rule, offsets, bboxptr)
+
+
+def blit(photoimage, aggimage, offsets, bbox=None):
+    """
+    Blit *aggimage* to *photoimage*.
+
+    *offsets* is a tuple describing how to fill the ``offset`` field of the
+    ``Tk_PhotoImageBlock`` struct: it should be (0, 1, 2, 3) for RGBA8888 data,
+    (2, 1, 0, 3) for little-endian ARBG32 (i.e. GBRA8888) data and (1, 2, 3, 0)
+    for big-endian ARGB32 (i.e. ARGB8888) data.
+
+    If *bbox* is passed, it defines the region that gets blitted. That region
+    will be composed with the previous data according to the alpha channel.
+    Blitting will be clipped to pixels inside the canvas, including silently
+    doing nothing if the *bbox* region is entirely outside the canvas.
+
+    Tcl events must be dispatched to trigger a blit from a non-Tcl thread.
+    """
+    data = np.asarray(aggimage)
+    height, width = data.shape[:2]
+    dataptr = (height, width, data.ctypes.data)
+    if bbox is not None:
+        (x1, y1), (x2, y2) = bbox.__array__()
+        x1 = max(math.floor(x1), 0)
+        x2 = min(math.ceil(x2), width)
+        y1 = max(math.floor(y1), 0)
+        y2 = min(math.ceil(y2), height)
+        if (x1 > x2) or (y1 > y2):
+            return
+        bboxptr = (x1, x2, y1, y2)
+        comp_rule = TK_PHOTO_COMPOSITE_OVERLAY
+    else:
+        bboxptr = (0, width, 0, height)
+        comp_rule = TK_PHOTO_COMPOSITE_SET
+
+    # NOTE: _tkagg.blit is thread unsafe and will crash the process if called
+    # from a thread (GH#13293). Instead of blanking and blitting here,
+    # use tkapp.call to post a cross-thread event if this function is called
+    # from a non-Tcl thread.
+
+    # tkapp.call coerces all arguments to strings, so to avoid string parsing
+    # within _blit, pack up the arguments into a global data structure.
+    args = photoimage, dataptr, offsets, bboxptr, comp_rule
+    # Need a unique key to avoid thread races.
+    # Again, make the key a string to avoid string parsing in _blit.
+    argsid = str(id(args))
+    _blit_args[argsid] = args
+
+    try:
+        photoimage.tk.call(_blit_tcl_name, argsid)
+    except tk.TclError as e:
+        if "invalid command name" not in str(e):
+            raise
+        photoimage.tk.createcommand(_blit_tcl_name, _blit)
+        photoimage.tk.call(_blit_tcl_name, argsid)
+
+
+class TimerTk(TimerBase):
+    """Subclass of `backend_bases.TimerBase` using Tk timer events."""
+
+    def __init__(self, parent, *args, **kwargs):
+        self._timer = None
+        super().__init__(*args, **kwargs)
+        self.parent = parent
+
+    def _timer_start(self):
+        self._timer_stop()
+        self._timer = self.parent.after(self._interval, self._on_timer)
+
+    def _timer_stop(self):
+        if self._timer is not None:
+            self.parent.after_cancel(self._timer)
+        self._timer = None
+
+    def _on_timer(self):
+        super()._on_timer()
+        # Tk after() is only a single shot, so we need to add code here to
+        # reset the timer if we're not operating in single shot mode.  However,
+        # if _timer is None, this means that _timer_stop has been called; so
+        # don't recreate the timer in that case.
+        if not self._single and self._timer:
+            if self._interval > 0:
+                self._timer = self.parent.after(self._interval, self._on_timer)
+            else:
+                # Edge case: Tcl after 0 *prepends* events to the queue
+                # so a 0 interval does not allow any other events to run.
+                # This incantation is cancellable and runs as fast as possible
+                # while also allowing events and drawing every frame. GH#18236
+                self._timer = self.parent.after_idle(
+                    lambda: self.parent.after(self._interval, self._on_timer)
+                )
+        else:
+            self._timer = None
+
+
+class FigureCanvasTk(FigureCanvasBase):
+    required_interactive_framework = "tk"
+    manager_class = _api.classproperty(lambda cls: FigureManagerTk)
+
+    def __init__(self, figure=None, master=None):
+        super().__init__(figure)
+        self._idle_draw_id = None
+        self._event_loop_id = None
+        w, h = self.get_width_height(physical=True)
+        self._tkcanvas = tk.Canvas(
+            master=master, background="white",
+            width=w, height=h, borderwidth=0, highlightthickness=0)
+        self._tkphoto = tk.PhotoImage(
+            master=self._tkcanvas, width=w, height=h)
+        self._tkcanvas_image_region = self._tkcanvas.create_image(
+            w//2, h//2, image=self._tkphoto)
+        self._tkcanvas.bind("<Configure>", self.resize)
+        if sys.platform == 'win32':
+            self._tkcanvas.bind("<Map>", self._update_device_pixel_ratio)
+        self._tkcanvas.bind("<Key>", self.key_press)
+        self._tkcanvas.bind("<Motion>", self.motion_notify_event)
+        self._tkcanvas.bind("<Enter>", self.enter_notify_event)
+        self._tkcanvas.bind("<Leave>", self.leave_notify_event)
+        self._tkcanvas.bind("<KeyRelease>", self.key_release)
+        for name in ["<Button-1>", "<Button-2>", "<Button-3>"]:
+            self._tkcanvas.bind(name, self.button_press_event)
+        for name in [
+                "<Double-Button-1>", "<Double-Button-2>", "<Double-Button-3>"]:
+            self._tkcanvas.bind(name, self.button_dblclick_event)
+        for name in [
+                "<ButtonRelease-1>", "<ButtonRelease-2>", "<ButtonRelease-3>"]:
+            self._tkcanvas.bind(name, self.button_release_event)
+
+        # Mouse wheel on Linux generates button 4/5 events
+        for name in "<Button-4>", "<Button-5>":
+            self._tkcanvas.bind(name, self.scroll_event)
+        # Mouse wheel for windows goes to the window with the focus.
+        # Since the canvas won't usually have the focus, bind the
+        # event to the window containing the canvas instead.
+        # See https://wiki.tcl-lang.org/3893 (mousewheel) for details
+        root = self._tkcanvas.winfo_toplevel()
+
+        # Prevent long-lived references via tkinter callback structure GH-24820
+        weakself = weakref.ref(self)
+        weakroot = weakref.ref(root)
+
+        def scroll_event_windows(event):
+            self = weakself()
+            if self is None:
+                root = weakroot()
+                if root is not None:
+                    root.unbind("<MouseWheel>", scroll_event_windows_id)
+                return
+            return self.scroll_event_windows(event)
+        scroll_event_windows_id = root.bind("<MouseWheel>", scroll_event_windows, "+")
+
+        # Can't get destroy events by binding to _tkcanvas. Therefore, bind
+        # to the window and filter.
+        def filter_destroy(event):
+            self = weakself()
+            if self is None:
+                root = weakroot()
+                if root is not None:
+                    root.unbind("<Destroy>", filter_destroy_id)
+                return
+            if event.widget is self._tkcanvas:
+                CloseEvent("close_event", self)._process()
+        filter_destroy_id = root.bind("<Destroy>", filter_destroy, "+")
+
+        self._tkcanvas.focus_set()
+
+        self._rubberband_rect_black = None
+        self._rubberband_rect_white = None
+
+    def _update_device_pixel_ratio(self, event=None):
+        # Tk gives scaling with respect to 72 DPI, but Windows screens are
+        # scaled vs 96 dpi, and pixel ratio settings are given in whole
+        # percentages, so round to 2 digits.
+        ratio = round(self._tkcanvas.tk.call('tk', 'scaling') / (96 / 72), 2)
+        if self._set_device_pixel_ratio(ratio):
+            # The easiest way to resize the canvas is to resize the canvas
+            # widget itself, since we implement all the logic for resizing the
+            # canvas backing store on that event.
+            w, h = self.get_width_height(physical=True)
+            self._tkcanvas.configure(width=w, height=h)
+
+    def resize(self, event):
+        width, height = event.width, event.height
+
+        # compute desired figure size in inches
+        dpival = self.figure.dpi
+        winch = width / dpival
+        hinch = height / dpival
+        self.figure.set_size_inches(winch, hinch, forward=False)
+
+        self._tkcanvas.delete(self._tkcanvas_image_region)
+        self._tkphoto.configure(width=int(width), height=int(height))
+        self._tkcanvas_image_region = self._tkcanvas.create_image(
+            int(width / 2), int(height / 2), image=self._tkphoto)
+        ResizeEvent("resize_event", self)._process()
+        self.draw_idle()
+
+    def draw_idle(self):
+        # docstring inherited
+        if self._idle_draw_id:
+            return
+
+        def idle_draw(*args):
+            try:
+                self.draw()
+            finally:
+                self._idle_draw_id = None
+
+        self._idle_draw_id = self._tkcanvas.after_idle(idle_draw)
+
+    def get_tk_widget(self):
+        """
+        Return the Tk widget used to implement FigureCanvasTkAgg.
+
+        Although the initial implementation uses a Tk canvas,  this routine
+        is intended to hide that fact.
+        """
+        return self._tkcanvas
+
+    def _event_mpl_coords(self, event):
+        # calling canvasx/canvasy allows taking scrollbars into account (i.e.
+        # the top of the widget may have been scrolled out of view).
+        return (self._tkcanvas.canvasx(event.x),
+                # flipy so y=0 is bottom of canvas
+                self.figure.bbox.height - self._tkcanvas.canvasy(event.y))
+
+    def motion_notify_event(self, event):
+        MouseEvent("motion_notify_event", self,
+                   *self._event_mpl_coords(event),
+                   modifiers=self._mpl_modifiers(event),
+                   guiEvent=event)._process()
+
+    def enter_notify_event(self, event):
+        LocationEvent("figure_enter_event", self,
+                      *self._event_mpl_coords(event),
+                      modifiers=self._mpl_modifiers(event),
+                      guiEvent=event)._process()
+
+    def leave_notify_event(self, event):
+        LocationEvent("figure_leave_event", self,
+                      *self._event_mpl_coords(event),
+                      modifiers=self._mpl_modifiers(event),
+                      guiEvent=event)._process()
+
+    def button_press_event(self, event, dblclick=False):
+        # set focus to the canvas so that it can receive keyboard events
+        self._tkcanvas.focus_set()
+
+        num = getattr(event, 'num', None)
+        if sys.platform == 'darwin':  # 2 and 3 are reversed.
+            num = {2: 3, 3: 2}.get(num, num)
+        MouseEvent("button_press_event", self,
+                   *self._event_mpl_coords(event), num, dblclick=dblclick,
+                   modifiers=self._mpl_modifiers(event),
+                   guiEvent=event)._process()
+
+    def button_dblclick_event(self, event):
+        self.button_press_event(event, dblclick=True)
+
+    def button_release_event(self, event):
+        num = getattr(event, 'num', None)
+        if sys.platform == 'darwin':  # 2 and 3 are reversed.
+            num = {2: 3, 3: 2}.get(num, num)
+        MouseEvent("button_release_event", self,
+                   *self._event_mpl_coords(event), num,
+                   modifiers=self._mpl_modifiers(event),
+                   guiEvent=event)._process()
+
+    def scroll_event(self, event):
+        num = getattr(event, 'num', None)
+        step = 1 if num == 4 else -1 if num == 5 else 0
+        MouseEvent("scroll_event", self,
+                   *self._event_mpl_coords(event), step=step,
+                   modifiers=self._mpl_modifiers(event),
+                   guiEvent=event)._process()
+
+    def scroll_event_windows(self, event):
+        """MouseWheel event processor"""
+        # need to find the window that contains the mouse
+        w = event.widget.winfo_containing(event.x_root, event.y_root)
+        if w != self._tkcanvas:
+            return
+        x = self._tkcanvas.canvasx(event.x_root - w.winfo_rootx())
+        y = (self.figure.bbox.height
+             - self._tkcanvas.canvasy(event.y_root - w.winfo_rooty()))
+        step = event.delta / 120
+        MouseEvent("scroll_event", self,
+                   x, y, step=step, modifiers=self._mpl_modifiers(event),
+                   guiEvent=event)._process()
+
+    @staticmethod
+    def _mpl_modifiers(event, *, exclude=None):
+        # add modifier keys to the key string. Bit details originate from
+        # http://effbot.org/tkinterbook/tkinter-events-and-bindings.htm
+        # BIT_SHIFT = 0x001; BIT_CAPSLOCK = 0x002; BIT_CONTROL = 0x004;
+        # BIT_LEFT_ALT = 0x008; BIT_NUMLOCK = 0x010; BIT_RIGHT_ALT = 0x080;
+        # BIT_MB_1 = 0x100; BIT_MB_2 = 0x200; BIT_MB_3 = 0x400;
+        # In general, the modifier key is excluded from the modifier flag,
+        # however this is not the case on "darwin", so double check that
+        # we aren't adding repeat modifier flags to a modifier key.
+        modifiers = [
+            ("ctrl", 1 << 2, "control"),
+            ("alt", 1 << 17, "alt"),
+            ("shift", 1 << 0, "shift"),
+        ] if sys.platform == "win32" else [
+            ("ctrl", 1 << 2, "control"),
+            ("alt", 1 << 4, "alt"),
+            ("shift", 1 << 0, "shift"),
+            ("cmd", 1 << 3, "cmd"),
+        ] if sys.platform == "darwin" else [
+            ("ctrl", 1 << 2, "control"),
+            ("alt", 1 << 3, "alt"),
+            ("shift", 1 << 0, "shift"),
+            ("super", 1 << 6, "super"),
+        ]
+        return [name for name, mask, key in modifiers
+                if event.state & mask and exclude != key]
+
+    def _get_key(self, event):
+        unikey = event.char
+        key = cbook._unikey_or_keysym_to_mplkey(unikey, event.keysym)
+        if key is not None:
+            mods = self._mpl_modifiers(event, exclude=key)
+            # shift is not added to the keys as this is already accounted for.
+            if "shift" in mods and unikey:
+                mods.remove("shift")
+            return "+".join([*mods, key])
+
+    def key_press(self, event):
+        KeyEvent("key_press_event", self,
+                 self._get_key(event), *self._event_mpl_coords(event),
+                 guiEvent=event)._process()
+
+    def key_release(self, event):
+        KeyEvent("key_release_event", self,
+                 self._get_key(event), *self._event_mpl_coords(event),
+                 guiEvent=event)._process()
+
+    def new_timer(self, *args, **kwargs):
+        # docstring inherited
+        return TimerTk(self._tkcanvas, *args, **kwargs)
+
+    def flush_events(self):
+        # docstring inherited
+        self._tkcanvas.update()
+
+    def start_event_loop(self, timeout=0):
+        # docstring inherited
+        if timeout > 0:
+            milliseconds = int(1000 * timeout)
+            if milliseconds > 0:
+                self._event_loop_id = self._tkcanvas.after(
+                    milliseconds, self.stop_event_loop)
+            else:
+                self._event_loop_id = self._tkcanvas.after_idle(
+                    self.stop_event_loop)
+        self._tkcanvas.mainloop()
+
+    def stop_event_loop(self):
+        # docstring inherited
+        if self._event_loop_id:
+            self._tkcanvas.after_cancel(self._event_loop_id)
+            self._event_loop_id = None
+        self._tkcanvas.quit()
+
+    def set_cursor(self, cursor):
+        try:
+            self._tkcanvas.configure(cursor=cursord[cursor])
+        except tkinter.TclError:
+            pass
+
+
+class FigureManagerTk(FigureManagerBase):
+    """
+    Attributes
+    ----------
+    canvas : `FigureCanvas`
+        The FigureCanvas instance
+    num : int or str
+        The Figure number
+    toolbar : tk.Toolbar
+        The tk.Toolbar
+    window : tk.Window
+        The tk.Window
+    """
+
+    _owns_mainloop = False
+
+    def __init__(self, canvas, num, window):
+        self.window = window
+        super().__init__(canvas, num)
+        self.window.withdraw()
+        # packing toolbar first, because if space is getting low, last packed
+        # widget is getting shrunk first (-> the canvas)
+        self.canvas._tkcanvas.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+
+        # If the window has per-monitor DPI awareness, then setup a Tk variable
+        # to store the DPI, which will be updated by the C code, and the trace
+        # will handle it on the Python side.
+        window_frame = int(window.wm_frame(), 16)
+        self._window_dpi = tk.IntVar(master=window, value=96,
+                                     name=f'window_dpi{window_frame}')
+        self._window_dpi_cbname = ''
+        if _tkagg.enable_dpi_awareness(window_frame, window.tk.interpaddr()):
+            self._window_dpi_cbname = self._window_dpi.trace_add(
+                'write', self._update_window_dpi)
+
+        self._shown = False
+
+    @classmethod
+    def create_with_canvas(cls, canvas_class, figure, num):
+        # docstring inherited
+        with _restore_foreground_window_at_end():
+            if cbook._get_running_interactive_framework() is None:
+                cbook._setup_new_guiapp()
+                _c_internal_utils.Win32_SetProcessDpiAwareness_max()
+            window = tk.Tk(className="matplotlib")
+            window.withdraw()
+
+            # Put a Matplotlib icon on the window rather than the default tk
+            # icon. See https://www.tcl.tk/man/tcl/TkCmd/wm.html#M50
+            #
+            # `ImageTk` can be replaced with `tk` whenever the minimum
+            # supported Tk version is increased to 8.6, as Tk 8.6+ natively
+            # supports PNG images.
+            icon_fname = str(cbook._get_data_path(
+                'images/matplotlib.png'))
+            icon_img = ImageTk.PhotoImage(file=icon_fname, master=window)
+
+            icon_fname_large = str(cbook._get_data_path(
+                'images/matplotlib_large.png'))
+            icon_img_large = ImageTk.PhotoImage(
+                file=icon_fname_large, master=window)
+
+            window.iconphoto(False, icon_img_large, icon_img)
+
+            canvas = canvas_class(figure, master=window)
+            manager = cls(canvas, num, window)
+            if m

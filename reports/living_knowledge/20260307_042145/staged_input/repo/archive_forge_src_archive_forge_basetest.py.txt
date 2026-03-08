@@ -1,0 +1,508 @@
+SOURCE_PATH: archive_forge/src/archive_forge/basetest.py
+KIND: code
+
+#!/usr/bin/env python
+# Copyright 2010 Google Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS-IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Base functionality for google tests.
+
+This module contains base classes and high-level functions for Google-style
+tests.
+"""
+
+__author__ = 'dborowitz@google.com (Dave Borowitz)'
+
+import commands
+import difflib
+import getpass
+import itertools
+import os
+import re
+import subprocess
+import sys
+import tempfile
+import types
+
+
+# unittest2 is a backport of Python 2.7's unittest for Python 2.6, so
+# we don't need it if we are running 2.7 or newer.
+
+if sys.version_info < (2, 7):
+  import unittest2 as unittest
+else:
+  import unittest
+
+from google.apputils import app
+import gflags as flags
+from google.apputils import shellutil
+
+FLAGS = flags.FLAGS
+
+# ----------------------------------------------------------------------
+# Internal functions to extract default flag values from environment.
+# ----------------------------------------------------------------------
+def _GetDefaultTestRandomSeed():
+  random_seed = 301
+  value = os.environ.get('TEST_RANDOM_SEED', '')
+  try:
+    random_seed = int(value)
+  except ValueError:
+    pass
+  return random_seed
+
+
+def _GetDefaultTestTmpdir():
+  tmpdir = os.environ.get('TEST_TMPDIR', '')
+  if not tmpdir:
+    tmpdir = os.path.join(tempfile.gettempdir(), 'google_apputils_basetest')
+
+  return tmpdir
+
+
+flags.DEFINE_integer('test_random_seed', _GetDefaultTestRandomSeed(),
+                     'Random seed for testing. Some test frameworks may '
+                     'change the default value of this flag between runs, so '
+                     'it is not appropriate for seeding probabilistic tests.',
+                     allow_override=1)
+flags.DEFINE_string('test_srcdir',
+                    os.environ.get('TEST_SRCDIR', ''),
+                    'Root of directory tree where source files live',
+                    allow_override=1)
+flags.DEFINE_string('test_tmpdir', _GetDefaultTestTmpdir(),
+                    'Directory for temporary testing files',
+                    allow_override=1)
+
+
+class BeforeAfterTestCaseMeta(type):
+
+  """Adds setUpTestCase() and tearDownTestCase() methods.
+
+  These may be needed for setup and teardown of shared fixtures usually because
+  such fixtures are expensive to setup and teardown (eg Perforce clients).  When
+  using such fixtures, care should be taken to keep each test as independent as
+  possible (eg via the use of sandboxes).
+
+  Example:
+
+    class MyTestCase(basetest.TestCase):
+
+      __metaclass__ = basetest.BeforeAfterTestCaseMeta
+
+      @classmethod
+      def setUpTestCase(cls):
+        cls._resource = foo.ReallyExpensiveResource()
+
+      @classmethod
+      def tearDownTestCase(cls):
+        cls._resource.Destroy()
+
+      def testSomething(self):
+        self._resource.Something()
+        ...
+  """
+
+  _test_loader = unittest.defaultTestLoader
+
+  def __init__(cls, name, bases, dict):
+    super(BeforeAfterTestCaseMeta, cls).__init__(name, bases, dict)
+
+    # Notes from mtklein
+
+    # This code can be tricky to think about.  Here are a few things to remember
+    # as you read through it.
+
+    # When inheritance is involved, this __init__ is called once on each class
+    # in the inheritance chain when that class is defined.  In a typical
+    # scenario where a BaseClass inheriting from TestCase declares the
+    # __metaclass__ and SubClass inherits from BaseClass, __init__ will be first
+    # called with cls=BaseClass when BaseClass is defined, and then called later
+    # with cls=SubClass when SubClass is defined.
+
+    # To know when to call setUpTestCase and tearDownTestCase, this class wraps
+    # the setUp, tearDown, and test* methods in a TestClass.  We'd like to only
+    # wrap those methods in the leaves of the inheritance tree, but we can't
+    # know when we're a leaf at wrapping time.  So instead we wrap all the
+    # setUp, tearDown, and test* methods, but code them so that we only do the
+    # counting we want at the leaves, which we *can* detect when we've got an
+    # actual instance to look at --- i.e. self, when a method is running.
+
+    # Because we're wrapping at every level of inheritance, some methods get
+    # wrapped multiple times down the inheritance chain; if SubClass were to
+    # inherit, say, setUp or testFoo from BaseClass, that method would be
+    # wrapped twice, first by BaseClass then by SubClass.  That's OK, because we
+    # ensure that the extra code we inject with these wrappers is idempotent.
+
+    # test_names are the test methods this class can see.
+    test_names = set(cls._test_loader.getTestCaseNames(cls))
+
+    # Each class keeps a set of the tests it still has to run.  When it's empty,
+    # we know we should call tearDownTestCase.  For now, it holds the sentinel
+    # value of None, acting as a indication that we need to call setUpTestCase,
+    # which fills in the actual tests to run.
+    cls.__tests_to_run = None
+
+    # These calls go through and monkeypatch various methods, in no particular
+    # order.
+    BeforeAfterTestCaseMeta.SetSetUpAttr(cls, test_names)
+    BeforeAfterTestCaseMeta.SetTearDownAttr(cls)
+    BeforeAfterTestCaseMeta.SetTestMethodAttrs(cls, test_names)
+    BeforeAfterTestCaseMeta.SetBeforeAfterTestCaseAttr()
+
+  # Just a little utility function to help with monkey-patching.
+  @staticmethod
+  def SetMethod(cls, method_name, replacement):
+    """Like setattr, but also preserves name, doc, and module metadata."""
+    original = getattr(cls, method_name)
+    replacement.__name__ = original.__name__
+    replacement.__doc__ = original.__doc__
+    replacement.__module__ = original.__module__
+    setattr(cls, method_name, replacement)
+
+  @staticmethod
+  def SetSetUpAttr(cls, test_names):
+    """Wraps setUp() with per-class setUp() functionality."""
+    # Remember that SetSetUpAttr is eventually called on each class in the
+    # inheritance chain.  This line can be subtle because of inheritance.  Say
+    # we've got BaseClass that defines setUp, and SubClass inheriting from it
+    # that doesn't define setUp.  This method will run twice, and both times
+    # cls_setUp will be BaseClass.setUp.  This is one of the tricky cases where
+    # setUp will be wrapped multiple times.
+    cls_setUp = cls.setUp
+
+    # We create a new setUp method that first checks to see if we need to run
+    # setUpTestCase (looking for the __tests_to_run==None flag), and then runs
+    # the original setUp method.
+    def setUp(self):
+      """Function that will encapsulate and replace cls.setUp()."""
+      # This line is unassuming but crucial to making this whole system work.
+      # It sets leaf to the class of the instance we're currently testing.  That
+      # is, leaf is going to be a leaf class.  It's not necessarily the same
+      # class as the parameter cls that's being passed in.  For example, in the
+      # case above where setUp is in BaseClass, when we instantiate a SubClass
+      # and call setUp, we need leaf to be pointing at the class SubClass.
+      leaf = self.__class__
+
+      # The reason we want to do this is that it makes sure setUpTestCase is
+      # only run once, not once for each class down the inheritance chain.  When
+      # multiply-wrapped, this extra code is called multiple times.  In the
+      # running example:
+      #
+      #  1) cls=BaseClass: replace BaseClass' setUp with a wrapped setUp
+      #  2) cls=SubClass: set SubClass.setUp to what it thinks was its original
+      #     setUp --- the wrapped setUp from 1)
+      #
+      # So it's double-wrapped, but that's OK.  When we actually call setUp from
+      # an instance, we're calling the double-wrapped method.  It sees
+      # __tests_to_run is None and fills that in.  Then it calls what it thinks
+      # was its original setUp, the singly-wrapped setUp from BaseClass.  The
+      # singly-wrapped setUp *skips* the if-statement, as it sees
+      # leaf.__tests_to_run is not None now.  It just runs the real, original
+      # setUp().
+
+      # test_names is passed in from __init__, and holds all the test cases that
+      # cls can see.  In the BaseClass call, that's probably the empty set, and
+      # for SubClass it'd have your test methods.
+
+      if leaf.__tests_to_run is None:
+        leaf.__tests_to_run = set(test_names)
+        self.setUpTestCase()
+      cls_setUp(self)
+
+    # Monkeypatch our new setUp method into the place of the original.
+    BeforeAfterTestCaseMeta.SetMethod(cls, 'setUp', setUp)
+
+  @staticmethod
+  def SetTearDownAttr(cls):
+    """Wraps tearDown() with per-class tearDown() functionality."""
+
+    # This is analagous to SetSetUpAttr, except of course it's patching tearDown
+    # to run tearDownTestCase when there are no more tests to run.  All the same
+    # hairy logic applies.
+    cls_tearDown = cls.tearDown
+
+    def tearDown(self):
+      """Function that will encapsulate and replace cls.tearDown()."""
+      cls_tearDown(self)
+
+      leaf = self.__class__
+      # We need to make sure that tearDownTestCase is only run when
+      # we're executing this in the leaf class, so we need the
+      # explicit leaf == cls check below.
+      if (leaf.__tests_to_run is not None
+          and not leaf.__tests_to_run
+          and leaf == cls):
+        leaf.__tests_to_run = None
+        self.tearDownTestCase()
+
+    BeforeAfterTestCaseMeta.SetMethod(cls, 'tearDown', tearDown)
+
+  @staticmethod
+  def SetTestMethodAttrs(cls, test_names):
+    """Makes each test method first remove itself from the remaining set."""
+    # This makes each test case remove itself from the set of remaining tests.
+    # You might think that this belongs more logically in tearDown, and I'd
+    # agree except that tearDown doesn't know what test case it's tearing down!
+    # Instead we have the test method itself remove itself before attempting the
+    # test.
+
+    # Note that having the test remove itself after running doesn't work, as we
+    # never get to 'after running' for tests that fail.
+
+    # Like setUp and tearDown, the test case could conceivably be wrapped
+    # twice... but as noted it's an implausible situation to have an actual test
+    # defined in a base class.  Just in case, we take the same precaution by
+    # looking in only the leaf class' set of __tests_to_run, and using discard()
+    # instead of remove() to make the operation idempotent.
+
+    for test_name in test_names:
+      cls_test = getattr(cls, test_name)
+
+      # The default parameters here make sure that each new test() function
+      # remembers its own values of cls_test and test_name.  Without these
+      # default parameters, they'd all point to the values from the last
+      # iteration of the loop, causing some arbitrary test method to run
+      # multiple times and the others never. :(
+      def test(self, cls_test=cls_test, test_name=test_name):
+        leaf = self.__class__
+        leaf.__tests_to_run.discard(test_name)
+        return cls_test(self)
+
+      BeforeAfterTestCaseMeta.SetMethod(cls, test_name, test)
+
+  @staticmethod
+  def SetBeforeAfterTestCaseAttr():
+    # This just makes sure every TestCase has a setUpTestCase or
+    # tearDownTestCase, so that you can safely define only one or neither of
+    # them if you want.
+    TestCase.setUpTestCase = lambda self: None
+    TestCase.tearDownTestCase = lambda self: None
+
+
+class TestCase(unittest.TestCase):
+  """Extension of unittest.TestCase providing more powerful assertions."""
+
+  maxDiff = 80 * 20
+
+  def __init__(self, methodName='runTest'):
+    super(TestCase, self).__init__(methodName)
+    self.__recorded_properties = {}
+
+  def shortDescription(self):
+    """Format both the test method name and the first line of its docstring.
+
+    If no docstring is given, only returns the method name.
+
+    This method overrides unittest.TestCase.shortDescription(), which
+    only returns the first line of the docstring, obscuring the name
+    of the test upon failure.
+
+    Returns:
+      desc: A short description of a test method.
+    """
+    desc = str(self)
+    # NOTE: super() is used here instead of directly invoking
+    # unittest.TestCase.shortDescription(self), because of the
+    # following line that occurs later on:
+    #       unittest.TestCase = TestCase
+    # Because of this, direct invocation of what we think is the
+    # superclass will actually cause infinite recursion.
+    doc_first_line = super(TestCase, self).shortDescription()
+    if doc_first_line is not None:
+      desc = '\n'.join((desc, doc_first_line))
+    return desc
+
+  def assertSequenceStartsWith(self, prefix, whole, msg=None):
+    """An equality assertion for the beginning of ordered sequences.
+
+    If prefix is an empty sequence, it will raise an error unless whole is also
+    an empty sequence.
+
+    If prefix is not a sequence, it will raise an error if the first element of
+    whole does not match.
+
+    Args:
+      prefix: A sequence expected at the beginning of the whole parameter.
+      whole: The sequence in which to look for prefix.
+      msg: Optional message to append on failure.
+    """
+    try:
+      prefix_len = len(prefix)
+    except (TypeError, NotImplementedError):
+      prefix = [prefix]
+      prefix_len = 1
+
+    try:
+      whole_len = len(whole)
+    except (TypeError, NotImplementedError):
+      self.fail('For whole: len(%s) is not supported, it appears to be type: '
+                '%s' % (whole, type(whole)))
+
+    assert prefix_len <= whole_len, (
+        'Prefix length (%d) is longer than whole length (%d).' %
+        (prefix_len, whole_len))
+
+    if not prefix_len and whole_len:
+      self.fail('Prefix length is 0 but whole length is %d: %s' %
+                (len(whole), whole))
+
+    try:
+      self.assertSequenceEqual(prefix, whole[:prefix_len], msg)
+    except AssertionError:
+      self.fail(msg or 'prefix: %s not found at start of whole: %s.' %
+                (prefix, whole))
+
+  def assertContainsSubset(self, expected_subset, actual_set, msg=None):
+    """Checks whether actual iterable is a superset of expected iterable."""
+    missing = set(expected_subset) - set(actual_set)
+    if not missing:
+      return
+
+    missing_msg = 'Missing elements %s\nExpected: %s\nActual: %s' % (
+        missing, expected_subset, actual_set)
+    if msg:
+      msg += ': %s' % missing_msg
+    else:
+      msg = missing_msg
+    self.fail(msg)
+
+  def assertSameElements(self, expected_seq, actual_seq, msg=None):
+    """Assert that two sequences have the same elements (in any order).
+
+    This method, unlike assertItemsEqual, doesn't care about any
+    duplicates in the expected and actual sequences.
+
+      >> assertSameElements([1, 1, 1, 0, 0, 0], [0, 1])
+      # Doesn't raise an AssertionError
+
+    If possible, you should use assertItemsEqual instead of
+    assertSameElements.
+
+    Args:
+      expected_seq: A sequence containing elements we are expecting.
+      actual_seq: The sequence that we are testing.
+      msg: The message to be printed if the test fails.
+    """
+    # `unittest2.TestCase` used to have assertSameElements, but it was
+    # removed in favor of assertItemsEqual. As there's a unit test
+    # that explicitly checks this behavior, I am leaving this method
+    # alone.
+    try:
+      expected = dict([(element, None) for element in expected_seq])
+      actual = dict([(element, None) for element in actual_seq])
+      missing = [element for element in expected if element not in actual]
+      unexpected = [element for element in actual if element not in expected]
+      missing.sort()
+      unexpected.sort()
+    except TypeError:
+      # Fall back to slower list-compare if any of the objects are
+      # not hashable.
+      expected = list(expected_seq)
+      actual = list(actual_seq)
+      expected.sort()
+      actual.sort()
+      missing, unexpected = _SortedListDifference(expected, actual)
+    errors = []
+    if missing:
+      errors.append('Expected, but missing:\n  %r\n' % missing)
+    if unexpected:
+      errors.append('Unexpected, but present:\n  %r\n' % unexpected)
+    if errors:
+      self.fail(msg or ''.join(errors))
+
+  # unittest2.TestCase.assertMulitilineEqual works very similarly, but it
+  # has a different error format. However, I find this slightly more readable.
+  def assertMultiLineEqual(self, first, second, msg=None):
+    """Assert that two multi-line strings are equal."""
+    assert isinstance(first, types.StringTypes), (
+        'First argument is not a string: %r' % (first,))
+    assert isinstance(second, types.StringTypes), (
+        'Second argument is not a string: %r' % (second,))
+
+    if first == second:
+      return
+    if msg:
+      raise self.failureException(msg)
+
+    failure_message = ['\n']
+    for line in difflib.ndiff(first.splitlines(True), second.splitlines(True)):
+      failure_message.append(line)
+      if not line.endswith('\n'):
+        failure_message.append('\n')
+    raise self.failureException(''.join(failure_message))
+
+  def assertBetween(self, value, minv, maxv, msg=None):
+    """Asserts that value is between minv and maxv (inclusive)."""
+    if msg is None:
+      msg = '"%r" unexpectedly not between "%r" and "%r"' % (value, minv, maxv)
+    self.assert_(minv <= value, msg)
+    self.assert_(maxv >= value, msg)
+
+  def assertRegexMatch(self, actual_str, regexes, message=None):
+    """Asserts that at least one regex in regexes matches str.
+
+    If possible you should use assertRegexpMatches, which is a simpler
+    version of this method. assertRegexpMatches takes a single regular
+    expression (a string or re compiled object) instead of a list.
+
+    Notes:
+    1. This function uses substring matching, i.e. the matching
+       succeeds if *any* substring of the error message matches *any*
+       regex in the list.  This is more convenient for the user than
+       full-string matching.
+
+    2. If regexes is the empty list, the matching will always fail.
+
+    3. Use regexes=[''] for a regex that will always pass.
+
+    4. '.' matches any single character *except* the newline.  To
+       match any character, use '(.|\n)'.
+
+    5. '^' matches the beginning of each line, not just the beginning
+       of the string.  Similarly, '$' matches the end of each line.
+
+    6. An exception will be thrown if regexes contains an invalid
+       regex.
+
+    Args:
+      actual_str:  The string we try to match with the items in regexes.
+      regexes:  The regular expressions we want to match against str.
+        See "Notes" above for detailed notes on how this is interpreted.
+      message:  The message to be printed if the test fails.
+    """
+    if isinstance(regexes, basestring):
+      self.fail('regexes is a string; it needs to be a list of strings.')
+    if not regexes:
+      self.fail('No regexes specified.')
+
+    regex = '(?:%s)' % ')|(?:'.join(regexes)
+
+    if not re.search(regex, actual_str, re.MULTILINE):
+      self.fail(message or ('String "%s" does not contain any of these '
+                            'regexes: %s.' % (actual_str, regexes)))
+
+  def assertCommandSucceeds(self, command, regexes=[''], env=None,
+                            close_fds=True):
+    """Asserts that a shell command succeeds (i.e. exits with code 0).
+
+    Args:
+      command: List or string representing the command to run.
+      regexes: List of regular expression strings.
+      env: Dictionary of environment variable settings.
+      close_fds: Whether or not to close all open fd's in the child after
+        forking.
+    """
+    (ret_code, err) = GetCommandStderr(command, env, close_fds)
+
+    command_string = GetCommandString(comman

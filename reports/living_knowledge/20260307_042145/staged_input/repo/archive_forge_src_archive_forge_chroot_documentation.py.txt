@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/chroot_documentation.py
+KIND: code
+
+from . import pathfilter, register_transport
+Return the permutations to be used in testing.

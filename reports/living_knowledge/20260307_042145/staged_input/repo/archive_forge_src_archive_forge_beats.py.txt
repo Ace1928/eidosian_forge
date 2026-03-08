@@ -1,0 +1,500 @@
+SOURCE_PATH: archive_forge/src/archive_forge/beats.py
+KIND: code
+
+# encoding: utf-8
+# pylint: disable=no-member
+# pylint: disable=invalid-name
+# pylint: disable=too-many-arguments
+"""
+This module contains beat tracking related functionality.
+
+"""
+
+from __future__ import absolute_import, division, print_function
+
+import sys
+
+import numpy as np
+
+from ..audio.signal import signal_frame, smooth as smooth_signal
+from ..ml.nn import average_predictions
+from ..processors import (OnlineProcessor, ParallelProcessor, Processor,
+                          SequentialProcessor)
+
+
+# classes for tracking (down-)beats with RNNs
+class RNNBeatProcessor(SequentialProcessor):
+    """
+    Processor to get a beat activation function from multiple RNNs.
+
+    Parameters
+    ----------
+    post_processor : Processor, optional
+        Post-processor, default is to average the predictions.
+    online : bool, optional
+        Use signal processing parameters and RNN models suitable for online
+        mode.
+    nn_files : list, optional
+        List with trained RNN model files. Per default ('None'), an ensemble
+        of networks will be used.
+
+    References
+    ----------
+    .. [1] Sebastian Böck and Markus Schedl,
+           "Enhanced Beat Tracking with Context-Aware Neural Networks",
+           Proceedings of the 14th International Conference on Digital Audio
+           Effects (DAFx), 2011.
+
+    Examples
+    --------
+    Create a RNNBeatProcessor and pass a file through the processor.
+    The returned 1d array represents the probability of a beat at each frame,
+    sampled at 100 frames per second.
+
+    >>> proc = RNNBeatProcessor()
+    >>> proc  # doctest: +ELLIPSIS
+    <madmom.features.beats.RNNBeatProcessor object at 0x...>
+    >>> proc('tests/data/audio/sample.wav')  # doctest: +ELLIPSIS
+    array([0.00479, 0.00603, 0.00927, 0.01419, ... 0.02725], dtype=float32)
+
+    For online processing, `online` must be set to 'True'. If processing power
+    is limited, fewer number of RNN models can be defined via `nn_files`. The
+    audio signal is then processed frame by frame.
+
+    >>> from madmom.models import BEATS_LSTM
+    >>> proc = RNNBeatProcessor(online=True, nn_files=[BEATS_LSTM[0]])
+    >>> proc  # doctest: +ELLIPSIS
+    <madmom.features.beats.RNNBeatProcessor object at 0x...>
+    >>> proc('tests/data/audio/sample.wav')  # doctest: +ELLIPSIS
+    array([0.03887, 0.02619, 0.00747, 0.00218, ... 0.04825], dtype=float32)
+
+    """
+
+    def __init__(self, post_processor=average_predictions, online=False,
+                 nn_files=None, **kwargs):
+        # pylint: disable=unused-argument
+        from ..audio.signal import SignalProcessor, FramedSignalProcessor
+        from ..audio.stft import ShortTimeFourierTransformProcessor
+        from ..audio.spectrogram import (
+            FilteredSpectrogramProcessor, LogarithmicSpectrogramProcessor,
+            SpectrogramDifferenceProcessor)
+        from ..ml.nn import NeuralNetworkEnsemble
+        from ..models import BEATS_LSTM, BEATS_BLSTM
+        # choose the appropriate models and set frame sizes accordingly
+        if online:
+            if nn_files is None:
+                nn_files = BEATS_LSTM
+            frame_sizes = [2048]
+            num_bands = 12
+        else:
+            if nn_files is None:
+                nn_files = BEATS_BLSTM
+            frame_sizes = [1024, 2048, 4096]
+            num_bands = 6
+        # define pre-processing chain
+        sig = SignalProcessor(num_channels=1, sample_rate=44100)
+        # process the multi-resolution spec & diff in parallel
+        multi = ParallelProcessor([])
+        for frame_size in frame_sizes:
+            frames = FramedSignalProcessor(frame_size=frame_size, **kwargs)
+            stft = ShortTimeFourierTransformProcessor()  # caching FFT window
+            filt = FilteredSpectrogramProcessor(num_bands=num_bands, fmin=30,
+                                                fmax=17000, norm_filters=True)
+            spec = LogarithmicSpectrogramProcessor(mul=1, add=1)
+            diff = SpectrogramDifferenceProcessor(
+                diff_ratio=0.5, positive_diffs=True, stack_diffs=np.hstack)
+            # process each frame size with spec and diff sequentially
+            multi.append(SequentialProcessor((frames, stft, filt, spec, diff)))
+        # stack the features and processes everything sequentially
+        pre_processor = SequentialProcessor((sig, multi, np.hstack))
+        # process the pre-processed signal with a NN ensemble and the given
+        # post_processor
+        nn = NeuralNetworkEnsemble.load(nn_files,
+                                        ensemble_fn=post_processor, **kwargs)
+        # instantiate a SequentialProcessor
+        super(RNNBeatProcessor, self).__init__((pre_processor, nn))
+
+
+# class for selecting a certain beat activation functions from (multiple) NNs
+class MultiModelSelectionProcessor(Processor):
+    """
+    Processor for selecting the most suitable model (i.e. the predictions
+    thereof) from a multiple models/predictions.
+
+    Parameters
+    ----------
+    num_ref_predictions : int
+        Number of reference predictions (see below).
+
+    Notes
+    -----
+    This processor selects the most suitable prediction from multiple models by
+    comparing them to the predictions of a reference model. The one with the
+    smallest mean squared error is chosen.
+
+    If `num_ref_predictions` is 0 or None, an averaged prediction is computed
+    from the given predictions and used as reference.
+
+    References
+    ----------
+    .. [1] Sebastian Böck, Florian Krebs and Gerhard Widmer,
+           "A Multi-Model Approach to Beat Tracking Considering Heterogeneous
+           Music Styles",
+           Proceedings of the 15th International Society for Music Information
+           Retrieval Conference (ISMIR), 2014.
+
+    Examples
+    --------
+    The MultiModelSelectionProcessor takes a list of model predictions as it's
+    call argument. Thus, `ppost_processor` of `RNNBeatProcessor` hast to be set
+    to 'None' in order to get the predictions of all models.
+
+    >>> proc = RNNBeatProcessor(post_processor=None)
+    >>> proc  # doctest: +ELLIPSIS
+    <madmom.features.beats.RNNBeatProcessor object at 0x...>
+
+    When passing a file through the processor, a list with predictions, one for
+    each model tested, is returned.
+
+    >>> predictions = proc('tests/data/audio/sample.wav')
+    >>> predictions  # doctest: +NORMALIZE_WHITESPACE +ELLIPSIS
+    [array([0.00535, 0.00774, ..., 0.02343, 0.04931], dtype=float32),
+     array([0.0022 , 0.00282, ..., 0.00825, 0.0152 ], dtype=float32),
+     ...,
+     array([0.005  , 0.0052 , ..., 0.00472, 0.01524], dtype=float32),
+     array([0.00319, 0.0044 , ..., 0.0081 , 0.01498], dtype=float32)]
+
+    We can feed these predictions to the MultiModelSelectionProcessor.
+    Since we do not have a dedicated reference prediction (which had to be the
+    first element of the list and `num_ref_predictions` set to 1), we simply
+    set `num_ref_predictions` to 'None'. MultiModelSelectionProcessor averages
+    all predictions to obtain a reference prediction it compares all others to.
+
+    >>> mm_proc = MultiModelSelectionProcessor(num_ref_predictions=None)
+    >>> mm_proc(predictions)  # doctest: +NORMALIZE_WHITESPACE +ELLIPSIS
+    array([0.00759, 0.00901, ..., 0.00843, 0.01834], dtype=float32)
+
+    """
+
+    def __init__(self, num_ref_predictions, **kwargs):
+        # pylint: disable=unused-argument
+
+        self.num_ref_predictions = num_ref_predictions
+
+    def process(self, predictions, **kwargs):
+        """
+        Selects the most appropriate predictions form the list of predictions.
+
+        Parameters
+        ----------
+        predictions : list
+            Predictions (beat activation functions) of multiple models.
+
+        Returns
+        -------
+        numpy array
+            Most suitable prediction.
+
+        Notes
+        -----
+        The reference beat activation function must be the first one in the
+        list of given predictions.
+
+        """
+        # TODO: right now we only have 1D predictions, what to do with
+        #       multi-dim?
+        num_refs = self.num_ref_predictions
+        # determine the reference prediction
+        if num_refs in (None, 0):
+            # just average all predictions to simulate a reference network
+            reference = average_predictions(predictions)
+        elif num_refs > 0:
+            # average the reference predictions
+            reference = average_predictions(predictions[:num_refs])
+        else:
+            raise ValueError('`num_ref_predictions` must be positive or None, '
+                             '%s given' % num_refs)
+        # init the error with the max. possible value (i.e. prediction length)
+        best_error = len(reference)
+        # init the best_prediction with an empty array
+        best_prediction = np.empty(0)
+        # compare the (remaining) predictions with the reference prediction
+        for prediction in predictions[num_refs:]:
+            # calculate the squared error w.r.t. the reference prediction
+            error = np.sum((prediction - reference) ** 2.)
+            # chose the best activation
+            if error < best_error:
+                best_prediction = prediction
+                best_error = error
+        # return the best prediction
+        return best_prediction.ravel()
+
+
+# function for detecting the beats based on the given dominant interval
+def detect_beats(activations, interval, look_aside=0.2):
+    """
+    Detects the beats in the given activation function as in [1]_.
+
+    Parameters
+    ----------
+    activations : numpy array
+        Beat activations.
+    interval : int
+        Look for the next beat each `interval` frames.
+    look_aside : float
+        Look this fraction of the `interval` to each side to detect the beats.
+
+    Returns
+    -------
+    numpy array
+        Beat positions [frames].
+
+    Notes
+    -----
+    A Hamming window of 2 * `look_aside` * `interval` is applied around the
+    position where the beat is expected to prefer beats closer to the centre.
+
+    References
+    ----------
+    .. [1] Sebastian Böck and Markus Schedl,
+           "Enhanced Beat Tracking with Context-Aware Neural Networks",
+           Proceedings of the 14th International Conference on Digital Audio
+           Effects (DAFx), 2011.
+
+    """
+    # TODO: make this faster!
+    sys.setrecursionlimit(len(activations))
+    # always look at least 1 frame to each side
+    frames_look_aside = max(1, int(interval * look_aside))
+    win = np.hamming(2 * frames_look_aside)
+
+    # list to be filled with beat positions from inside the recursive function
+    positions = []
+
+    def recursive(position):
+        """
+        Recursively detect the next beat.
+
+        Parameters
+        ----------
+        position : int
+            Start at this position.
+
+        """
+        # detect the nearest beat around the actual position
+        act = signal_frame(activations, position, frames_look_aside * 2, 1)
+        # apply a filtering window to prefer beats closer to the centre
+        act = np.multiply(act, win)
+        # search max
+        if np.argmax(act) > 0:
+            # maximum found, take that position
+            position = np.argmax(act) + position - frames_look_aside
+        # add the found position
+        positions.append(position)
+        # go to the next beat, until end is reached
+        if position + interval < len(activations):
+            recursive(position + interval)
+        else:
+            return
+
+    # calculate the beats for each start position (up to the interval length)
+    sums = np.zeros(interval)
+    for i in range(interval):
+        positions = []
+        # detect the beats for this start position
+        recursive(i)
+        # calculate the sum of the activations at the beat positions
+        sums[i] = np.sum(activations[positions])
+    # take the winning start position
+    start_position = np.argmax(sums)
+    # and calc the beats for this start position
+    positions = []
+    recursive(start_position)
+    # return indices
+    return np.array(positions)
+
+
+# classes for detecting/tracking of beat inside a beat activation function
+class BeatTrackingProcessor(Processor):
+    """
+    Track the beats according to previously determined (local) tempo by
+    iteratively aligning them around the estimated position [1]_.
+
+    Parameters
+    ----------
+    look_aside : float, optional
+        Look this fraction of the estimated beat interval to each side of the
+        assumed next beat position to look for the most likely position of the
+        next beat.
+    look_ahead : float, optional
+        Look `look_ahead` seconds in both directions to determine the local
+        tempo and align the beats accordingly.
+    tempo_estimator : :class:`TempoEstimationProcessor`, optional
+        Use this processor to estimate the (local) tempo. If 'None' a default
+        tempo estimator will be created and used.
+    fps : float, optional
+        Frames per second.
+    kwargs : dict, optional
+        Keyword arguments passed to
+        :class:`madmom.features.tempo.TempoEstimationProcessor` if no
+        `tempo_estimator` was given.
+
+    Notes
+    -----
+    If `look_ahead` is not set, a constant tempo throughout the whole piece
+    is assumed. If `look_ahead` is set, the local tempo (in a range +/-
+    `look_ahead` seconds around the actual position) is estimated and then
+    the next beat is tracked accordingly. This procedure is repeated from
+    the new position to the end of the piece.
+
+    Instead of the auto-correlation based method for tempo estimation proposed
+    in [1]_, it uses a comb filter based method [2]_ per default. The behaviour
+    can be controlled with the `tempo_method` parameter.
+
+    References
+    ----------
+    .. [1] Sebastian Böck and Markus Schedl,
+           "Enhanced Beat Tracking with Context-Aware Neural Networks",
+           Proceedings of the 14th International Conference on Digital Audio
+           Effects (DAFx), 2011.
+    .. [2] Sebastian Böck, Florian Krebs and Gerhard Widmer,
+           "Accurate Tempo Estimation based on Recurrent Neural Networks and
+           Resonating Comb Filters",
+           Proceedings of the 16th International Society for Music Information
+           Retrieval Conference (ISMIR), 2015.
+
+    Examples
+    --------
+    Create a BeatTrackingProcessor. The returned array represents the positions
+    of the beats in seconds, thus the expected sampling rate has to be given.
+
+    >>> proc = BeatTrackingProcessor(fps=100)
+    >>> proc  # doctest: +ELLIPSIS
+    <madmom.features.beats.BeatTrackingProcessor object at 0x...>
+
+    Call this BeatTrackingProcessor with the beat activation function returned
+    by RNNBeatProcessor to obtain the beat positions.
+
+    >>> act = RNNBeatProcessor()('tests/data/audio/sample.wav')
+    >>> proc(act)
+    array([0.11, 0.45, 0.79, 1.13, 1.47, 1.81, 2.15, 2.49])
+
+    """
+    LOOK_ASIDE = 0.2
+    LOOK_AHEAD = 10.
+
+    def __init__(self, look_aside=LOOK_ASIDE, look_ahead=LOOK_AHEAD, fps=None,
+                 tempo_estimator=None, **kwargs):
+        # save variables
+        self.look_aside = look_aside
+        self.look_ahead = look_ahead
+        self.fps = fps
+        # tempo estimator
+        if tempo_estimator is None:
+            # import the TempoEstimation here otherwise we have a loop
+            from .tempo import TempoEstimationProcessor
+            # create default tempo estimator
+            tempo_estimator = TempoEstimationProcessor(fps=fps, **kwargs)
+        self.tempo_estimator = tempo_estimator
+
+    def process(self, activations, **kwargs):
+        """
+        Detect the beats in the given activation function.
+
+        Parameters
+        ----------
+        activations : numpy array
+            Beat activation function.
+
+        Returns
+        -------
+        beats : numpy array
+            Detected beat positions [seconds].
+
+        """
+        # smooth activations
+        act_smooth = int(self.fps * self.tempo_estimator.act_smooth)
+        activations = smooth_signal(activations, act_smooth)
+        # TODO: refactor interval stuff to use TempoEstimation
+        # if look_ahead is not defined, assume a global tempo
+        if self.look_ahead is None:
+            # create a interval histogram
+            histogram = self.tempo_estimator.interval_histogram(activations)
+            # get the dominant interval
+            interval = self.tempo_estimator.dominant_interval(histogram)
+            # detect beats based on this interval
+            detections = detect_beats(activations, interval, self.look_aside)
+        else:
+            # allow varying tempo
+            look_ahead_frames = int(self.look_ahead * self.fps)
+            # detect the beats
+            detections = []
+            pos = 0
+            # TODO: make this _much_ faster!
+            while pos < len(activations):
+                # look N frames around the actual position
+                act = signal_frame(activations, pos, look_ahead_frames * 2, 1)
+                # create a interval histogram
+                histogram = self.tempo_estimator.interval_histogram(act)
+                # get the dominant interval
+                interval = self.tempo_estimator.dominant_interval(histogram)
+                # add the offset (i.e. the new detected start position)
+                positions = detect_beats(act, interval, self.look_aside)
+                # correct the beat positions
+                positions += pos - look_ahead_frames
+                # remove all positions < already detected beats + min_interval
+                next_pos = (detections[-1] + self.tempo_estimator.min_interval
+                            if detections else 0)
+                positions = positions[positions >= next_pos]
+                # search the closest beat to the predicted beat position
+                pos = positions[(np.abs(positions - pos)).argmin()]
+                # append to the beats
+                detections.append(pos)
+                pos += interval
+
+        # convert detected beats to a list of timestamps
+        detections = np.array(detections) / float(self.fps)
+        # remove beats with negative times and return them
+        return detections[np.searchsorted(detections, 0):]
+
+    @staticmethod
+    def add_arguments(parser, look_aside=LOOK_ASIDE,
+                      look_ahead=LOOK_AHEAD):
+        """
+        Add beat tracking related arguments to an existing parser.
+
+        Parameters
+        ----------
+        parser : argparse parser instance
+            Existing argparse parser object.
+        look_aside : float, optional
+            Look this fraction of the estimated beat interval to each side of
+            the assumed next beat position to look for the most likely position
+            of the next beat.
+        look_ahead : float, optional
+            Look `look_ahead` seconds in both directions to determine the local
+            tempo and align the beats accordingly.
+
+        Returns
+        -------
+        parser_group : argparse argument group
+            Beat tracking argument parser group.
+
+        Notes
+        -----
+        Parameters are included in the group only if they are not 'None'.
+
+        """
+        # add beat detection related options to the existing parser
+        g = parser.add_argument_group('beat detection arguments')
+        # TODO: unify look_aside with CRFBeatDetection's interval_sigma
+        if look_aside is not None:
+            g.add_argument('--look_aside', action='store', type=float,
+                           default=look_aside,
+                           help='look this fraction of a beat interval to '
+                                'each side of the assumed next beat position '
+                                'to look for the most likely position of the '
+                                'next beat [default=%(default).2f]')
+        if look_ahead is not None:
+            g.add_argument('--look_ahead', action='store', type=float,
+                           default=look_ahead,

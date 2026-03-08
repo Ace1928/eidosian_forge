@@ -1,0 +1,1122 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_tensor_docs.py
+KIND: code
+
+"""Adds docstrings to Tensor functions"""
+
+import torch._C
+from torch._C import _add_docstr as add_docstr
+from torch._torch_docs import parse_kwargs, reproducibility_notes
+
+
+def add_docstr_all(method, docstr):
+    add_docstr(getattr(torch._C.TensorBase, method), docstr)
+
+
+common_args = parse_kwargs(
+    """
+    memory_format (:class:`torch.memory_format`, optional): the desired memory format of
+        returned Tensor. Default: ``torch.preserve_format``.
+"""
+)
+
+new_common_args = parse_kwargs(
+    """
+    size (int...): a list, tuple, or :class:`torch.Size` of integers defining the
+        shape of the output tensor.
+    dtype (:class:`torch.dtype`, optional): the desired type of returned tensor.
+        Default: if None, same :class:`torch.dtype` as this tensor.
+    device (:class:`torch.device`, optional): the desired device of returned tensor.
+        Default: if None, same :class:`torch.device` as this tensor.
+    requires_grad (bool, optional): If autograd should record operations on the
+        returned tensor. Default: ``False``.
+    pin_memory (bool, optional): If set, returned tensor would be allocated in
+        the pinned memory. Works only for CPU tensors. Default: ``False``.
+    layout (:class:`torch.layout`, optional): the desired layout of returned Tensor.
+        Default: ``torch.strided``.
+"""
+)
+
+add_docstr_all(
+    "new_tensor",
+    """
+new_tensor(data, *, dtype=None, device=None, requires_grad=False, layout=torch.strided, \
+pin_memory=False) -> Tensor
+"""
+    + r"""
+
+Returns a new Tensor with :attr:`data` as the tensor data.
+By default, the returned Tensor has the same :class:`torch.dtype` and
+:class:`torch.device` as this tensor.
+
+.. warning::
+
+    :func:`new_tensor` always copies :attr:`data`. If you have a Tensor
+    ``data`` and want to avoid a copy, use :func:`torch.Tensor.requires_grad_`
+    or :func:`torch.Tensor.detach`.
+    If you have a numpy array and want to avoid a copy, use
+    :func:`torch.from_numpy`.
+
+.. warning::
+
+    When data is a tensor `x`, :func:`new_tensor()` reads out 'the data' from whatever it is passed,
+    and constructs a leaf variable. Therefore ``tensor.new_tensor(x)`` is equivalent to ``x.clone().detach()``
+    and ``tensor.new_tensor(x, requires_grad=True)`` is equivalent to ``x.clone().detach().requires_grad_(True)``.
+    The equivalents using ``clone()`` and ``detach()`` are recommended.
+
+Args:
+    data (array_like): The returned Tensor copies :attr:`data`.
+
+Keyword args:
+    {dtype}
+    {device}
+    {requires_grad}
+    {layout}
+    {pin_memory}
+
+Example::
+
+    >>> tensor = torch.ones((2,), dtype=torch.int8)
+    >>> data = [[0, 1], [2, 3]]
+    >>> tensor.new_tensor(data)
+    tensor([[ 0,  1],
+            [ 2,  3]], dtype=torch.int8)
+
+""".format(
+        **new_common_args
+    ),
+)
+
+add_docstr_all(
+    "new_full",
+    """
+new_full(size, fill_value, *, dtype=None, device=None, requires_grad=False, layout=torch.strided, \
+pin_memory=False) -> Tensor
+"""
+    + r"""
+
+Returns a Tensor of size :attr:`size` filled with :attr:`fill_value`.
+By default, the returned Tensor has the same :class:`torch.dtype` and
+:class:`torch.device` as this tensor.
+
+Args:
+    fill_value (scalar): the number to fill the output tensor with.
+
+Keyword args:
+    {dtype}
+    {device}
+    {requires_grad}
+    {layout}
+    {pin_memory}
+
+Example::
+
+    >>> tensor = torch.ones((2,), dtype=torch.float64)
+    >>> tensor.new_full((3, 4), 3.141592)
+    tensor([[ 3.1416,  3.1416,  3.1416,  3.1416],
+            [ 3.1416,  3.1416,  3.1416,  3.1416],
+            [ 3.1416,  3.1416,  3.1416,  3.1416]], dtype=torch.float64)
+
+""".format(
+        **new_common_args
+    ),
+)
+
+add_docstr_all(
+    "new_empty",
+    """
+new_empty(size, *, dtype=None, device=None, requires_grad=False, layout=torch.strided, \
+pin_memory=False) -> Tensor
+"""
+    + r"""
+
+Returns a Tensor of size :attr:`size` filled with uninitialized data.
+By default, the returned Tensor has the same :class:`torch.dtype` and
+:class:`torch.device` as this tensor.
+
+Args:
+    size (int...): a list, tuple, or :class:`torch.Size` of integers defining the
+        shape of the output tensor.
+
+Keyword args:
+    {dtype}
+    {device}
+    {requires_grad}
+    {layout}
+    {pin_memory}
+
+Example::
+
+    >>> tensor = torch.ones(())
+    >>> tensor.new_empty((2, 3))
+    tensor([[ 5.8182e-18,  4.5765e-41, -1.0545e+30],
+            [ 3.0949e-41,  4.4842e-44,  0.0000e+00]])
+
+""".format(
+        **new_common_args
+    ),
+)
+
+add_docstr_all(
+    "new_empty_strided",
+    """
+new_empty_strided(size, stride, dtype=None, device=None, requires_grad=False, layout=torch.strided, \
+pin_memory=False) -> Tensor
+"""
+    + r"""
+
+Returns a Tensor of size :attr:`size` and strides :attr:`stride` filled with
+uninitialized data. By default, the returned Tensor has the same
+:class:`torch.dtype` and :class:`torch.device` as this tensor.
+
+Args:
+    size (int...): a list, tuple, or :class:`torch.Size` of integers defining the
+        shape of the output tensor.
+
+Keyword args:
+    {dtype}
+    {device}
+    {requires_grad}
+    {layout}
+    {pin_memory}
+
+Example::
+
+    >>> tensor = torch.ones(())
+    >>> tensor.new_empty_strided((2, 3), (3, 1))
+    tensor([[ 5.8182e-18,  4.5765e-41, -1.0545e+30],
+            [ 3.0949e-41,  4.4842e-44,  0.0000e+00]])
+
+""".format(
+        **new_common_args
+    ),
+)
+
+add_docstr_all(
+    "new_ones",
+    """
+new_ones(size, *, dtype=None, device=None, requires_grad=False, layout=torch.strided, \
+pin_memory=False) -> Tensor
+"""
+    + r"""
+
+Returns a Tensor of size :attr:`size` filled with ``1``.
+By default, the returned Tensor has the same :class:`torch.dtype` and
+:class:`torch.device` as this tensor.
+
+Args:
+    size (int...): a list, tuple, or :class:`torch.Size` of integers defining the
+        shape of the output tensor.
+
+Keyword args:
+    {dtype}
+    {device}
+    {requires_grad}
+    {layout}
+    {pin_memory}
+
+Example::
+
+    >>> tensor = torch.tensor((), dtype=torch.int32)
+    >>> tensor.new_ones((2, 3))
+    tensor([[ 1,  1,  1],
+            [ 1,  1,  1]], dtype=torch.int32)
+
+""".format(
+        **new_common_args
+    ),
+)
+
+add_docstr_all(
+    "new_zeros",
+    """
+new_zeros(size, *, dtype=None, device=None, requires_grad=False, layout=torch.strided, \
+pin_memory=False) -> Tensor
+"""
+    + r"""
+
+Returns a Tensor of size :attr:`size` filled with ``0``.
+By default, the returned Tensor has the same :class:`torch.dtype` and
+:class:`torch.device` as this tensor.
+
+Args:
+    size (int...): a list, tuple, or :class:`torch.Size` of integers defining the
+        shape of the output tensor.
+
+Keyword args:
+    {dtype}
+    {device}
+    {requires_grad}
+    {layout}
+    {pin_memory}
+
+Example::
+
+    >>> tensor = torch.tensor((), dtype=torch.float64)
+    >>> tensor.new_zeros((2, 3))
+    tensor([[ 0.,  0.,  0.],
+            [ 0.,  0.,  0.]], dtype=torch.float64)
+
+""".format(
+        **new_common_args
+    ),
+)
+
+add_docstr_all(
+    "abs",
+    r"""
+abs() -> Tensor
+
+See :func:`torch.abs`
+""",
+)
+
+add_docstr_all(
+    "abs_",
+    r"""
+abs_() -> Tensor
+
+In-place version of :meth:`~Tensor.abs`
+""",
+)
+
+add_docstr_all(
+    "absolute",
+    r"""
+absolute() -> Tensor
+
+Alias for :func:`abs`
+""",
+)
+
+add_docstr_all(
+    "absolute_",
+    r"""
+absolute_() -> Tensor
+
+In-place version of :meth:`~Tensor.absolute`
+Alias for :func:`abs_`
+""",
+)
+
+add_docstr_all(
+    "acos",
+    r"""
+acos() -> Tensor
+
+See :func:`torch.acos`
+""",
+)
+
+add_docstr_all(
+    "acos_",
+    r"""
+acos_() -> Tensor
+
+In-place version of :meth:`~Tensor.acos`
+""",
+)
+
+add_docstr_all(
+    "arccos",
+    r"""
+arccos() -> Tensor
+
+See :func:`torch.arccos`
+""",
+)
+
+add_docstr_all(
+    "arccos_",
+    r"""
+arccos_() -> Tensor
+
+In-place version of :meth:`~Tensor.arccos`
+""",
+)
+
+add_docstr_all(
+    "acosh",
+    r"""
+acosh() -> Tensor
+
+See :func:`torch.acosh`
+""",
+)
+
+add_docstr_all(
+    "acosh_",
+    r"""
+acosh_() -> Tensor
+
+In-place version of :meth:`~Tensor.acosh`
+""",
+)
+
+add_docstr_all(
+    "arccosh",
+    r"""
+acosh() -> Tensor
+
+See :func:`torch.arccosh`
+""",
+)
+
+add_docstr_all(
+    "arccosh_",
+    r"""
+acosh_() -> Tensor
+
+In-place version of :meth:`~Tensor.arccosh`
+""",
+)
+
+add_docstr_all(
+    "add",
+    r"""
+add(other, *, alpha=1) -> Tensor
+
+Add a scalar or tensor to :attr:`self` tensor. If both :attr:`alpha`
+and :attr:`other` are specified, each element of :attr:`other` is scaled by
+:attr:`alpha` before being used.
+
+When :attr:`other` is a tensor, the shape of :attr:`other` must be
+:ref:`broadcastable <broadcasting-semantics>` with the shape of the underlying
+tensor
+
+See :func:`torch.add`
+""",
+)
+
+add_docstr_all(
+    "add_",
+    r"""
+add_(other, *, alpha=1) -> Tensor
+
+In-place version of :meth:`~Tensor.add`
+""",
+)
+
+add_docstr_all(
+    "addbmm",
+    r"""
+addbmm(batch1, batch2, *, beta=1, alpha=1) -> Tensor
+
+See :func:`torch.addbmm`
+""",
+)
+
+add_docstr_all(
+    "addbmm_",
+    r"""
+addbmm_(batch1, batch2, *, beta=1, alpha=1) -> Tensor
+
+In-place version of :meth:`~Tensor.addbmm`
+""",
+)
+
+add_docstr_all(
+    "addcdiv",
+    r"""
+addcdiv(tensor1, tensor2, *, value=1) -> Tensor
+
+See :func:`torch.addcdiv`
+""",
+)
+
+add_docstr_all(
+    "addcdiv_",
+    r"""
+addcdiv_(tensor1, tensor2, *, value=1) -> Tensor
+
+In-place version of :meth:`~Tensor.addcdiv`
+""",
+)
+
+add_docstr_all(
+    "addcmul",
+    r"""
+addcmul(tensor1, tensor2, *, value=1) -> Tensor
+
+See :func:`torch.addcmul`
+""",
+)
+
+add_docstr_all(
+    "addcmul_",
+    r"""
+addcmul_(tensor1, tensor2, *, value=1) -> Tensor
+
+In-place version of :meth:`~Tensor.addcmul`
+""",
+)
+
+add_docstr_all(
+    "addmm",
+    r"""
+addmm(mat1, mat2, *, beta=1, alpha=1) -> Tensor
+
+See :func:`torch.addmm`
+""",
+)
+
+add_docstr_all(
+    "addmm_",
+    r"""
+addmm_(mat1, mat2, *, beta=1, alpha=1) -> Tensor
+
+In-place version of :meth:`~Tensor.addmm`
+""",
+)
+
+add_docstr_all(
+    "addmv",
+    r"""
+addmv(mat, vec, *, beta=1, alpha=1) -> Tensor
+
+See :func:`torch.addmv`
+""",
+)
+
+add_docstr_all(
+    "addmv_",
+    r"""
+addmv_(mat, vec, *, beta=1, alpha=1) -> Tensor
+
+In-place version of :meth:`~Tensor.addmv`
+""",
+)
+
+add_docstr_all(
+    "sspaddmm",
+    r"""
+sspaddmm(mat1, mat2, *, beta=1, alpha=1) -> Tensor
+
+See :func:`torch.sspaddmm`
+""",
+)
+
+add_docstr_all(
+    "smm",
+    r"""
+smm(mat) -> Tensor
+
+See :func:`torch.smm`
+""",
+)
+
+add_docstr_all(
+    "addr",
+    r"""
+addr(vec1, vec2, *, beta=1, alpha=1) -> Tensor
+
+See :func:`torch.addr`
+""",
+)
+
+add_docstr_all(
+    "addr_",
+    r"""
+addr_(vec1, vec2, *, beta=1, alpha=1) -> Tensor
+
+In-place version of :meth:`~Tensor.addr`
+""",
+)
+
+add_docstr_all(
+    "align_as",
+    r"""
+align_as(other) -> Tensor
+
+Permutes the dimensions of the :attr:`self` tensor to match the dimension order
+in the :attr:`other` tensor, adding size-one dims for any new names.
+
+This operation is useful for explicit broadcasting by names (see examples).
+
+All of the dims of :attr:`self` must be named in order to use this method.
+The resulting tensor is a view on the original tensor.
+
+All dimension names of :attr:`self` must be present in ``other.names``.
+:attr:`other` may contain named dimensions that are not in ``self.names``;
+the output tensor has a size-one dimension for each of those new names.
+
+To align a tensor to a specific order, use :meth:`~Tensor.align_to`.
+
+Examples::
+
+    # Example 1: Applying a mask
+    >>> mask = torch.randint(2, [127, 128], dtype=torch.bool).refine_names('W', 'H')
+    >>> imgs = torch.randn(32, 128, 127, 3, names=('N', 'H', 'W', 'C'))
+    >>> imgs.masked_fill_(mask.align_as(imgs), 0)
+
+
+    # Example 2: Applying a per-channel-scale
+    >>> def scale_channels(input, scale):
+    >>>    scale = scale.refine_names('C')
+    >>>    return input * scale.align_as(input)
+
+    >>> num_channels = 3
+    >>> scale = torch.randn(num_channels, names=('C',))
+    >>> imgs = torch.rand(32, 128, 128, num_channels, names=('N', 'H', 'W', 'C'))
+    >>> more_imgs = torch.rand(32, num_channels, 128, 128, names=('N', 'C', 'H', 'W'))
+    >>> videos = torch.randn(3, num_channels, 128, 128, 128, names=('N', 'C', 'H', 'W', 'D'))
+
+    # scale_channels is agnostic to the dimension order of the input
+    >>> scale_channels(imgs, scale)
+    >>> scale_channels(more_imgs, scale)
+    >>> scale_channels(videos, scale)
+
+.. warning::
+    The named tensor API is experimental and subject to change.
+
+""",
+)
+
+add_docstr_all(
+    "all",
+    r"""
+all(dim=None, keepdim=False) -> Tensor
+
+See :func:`torch.all`
+""",
+)
+
+add_docstr_all(
+    "allclose",
+    r"""
+allclose(other, rtol=1e-05, atol=1e-08, equal_nan=False) -> Tensor
+
+See :func:`torch.allclose`
+""",
+)
+
+add_docstr_all(
+    "angle",
+    r"""
+angle() -> Tensor
+
+See :func:`torch.angle`
+""",
+)
+
+add_docstr_all(
+    "any",
+    r"""
+any(dim=None, keepdim=False) -> Tensor
+
+See :func:`torch.any`
+""",
+)
+
+add_docstr_all(
+    "apply_",
+    r"""
+apply_(callable) -> Tensor
+
+Applies the function :attr:`callable` to each element in the tensor, replacing
+each element with the value returned by :attr:`callable`.
+
+.. note::
+
+    This function only works with CPU tensors and should not be used in code
+    sections that require high performance.
+""",
+)
+
+add_docstr_all(
+    "asin",
+    r"""
+asin() -> Tensor
+
+See :func:`torch.asin`
+""",
+)
+
+add_docstr_all(
+    "asin_",
+    r"""
+asin_() -> Tensor
+
+In-place version of :meth:`~Tensor.asin`
+""",
+)
+
+add_docstr_all(
+    "arcsin",
+    r"""
+arcsin() -> Tensor
+
+See :func:`torch.arcsin`
+""",
+)
+
+add_docstr_all(
+    "arcsin_",
+    r"""
+arcsin_() -> Tensor
+
+In-place version of :meth:`~Tensor.arcsin`
+""",
+)
+
+add_docstr_all(
+    "asinh",
+    r"""
+asinh() -> Tensor
+
+See :func:`torch.asinh`
+""",
+)
+
+add_docstr_all(
+    "asinh_",
+    r"""
+asinh_() -> Tensor
+
+In-place version of :meth:`~Tensor.asinh`
+""",
+)
+
+add_docstr_all(
+    "arcsinh",
+    r"""
+arcsinh() -> Tensor
+
+See :func:`torch.arcsinh`
+""",
+)
+
+add_docstr_all(
+    "arcsinh_",
+    r"""
+arcsinh_() -> Tensor
+
+In-place version of :meth:`~Tensor.arcsinh`
+""",
+)
+
+add_docstr_all(
+    "as_strided",
+    r"""
+as_strided(size, stride, storage_offset=None) -> Tensor
+
+See :func:`torch.as_strided`
+""",
+)
+
+add_docstr_all(
+    "as_strided_",
+    r"""
+as_strided_(size, stride, storage_offset=None) -> Tensor
+
+In-place version of :meth:`~Tensor.as_strided`
+""",
+)
+
+add_docstr_all(
+    "atan",
+    r"""
+atan() -> Tensor
+
+See :func:`torch.atan`
+""",
+)
+
+add_docstr_all(
+    "atan_",
+    r"""
+atan_() -> Tensor
+
+In-place version of :meth:`~Tensor.atan`
+""",
+)
+
+add_docstr_all(
+    "arctan",
+    r"""
+arctan() -> Tensor
+
+See :func:`torch.arctan`
+""",
+)
+
+add_docstr_all(
+    "arctan_",
+    r"""
+arctan_() -> Tensor
+
+In-place version of :meth:`~Tensor.arctan`
+""",
+)
+
+add_docstr_all(
+    "atan2",
+    r"""
+atan2(other) -> Tensor
+
+See :func:`torch.atan2`
+""",
+)
+
+add_docstr_all(
+    "atan2_",
+    r"""
+atan2_(other) -> Tensor
+
+In-place version of :meth:`~Tensor.atan2`
+""",
+)
+
+add_docstr_all(
+    "arctan2",
+    r"""
+arctan2(other) -> Tensor
+
+See :func:`torch.arctan2`
+""",
+)
+
+add_docstr_all(
+    "arctan2_",
+    r"""
+atan2_(other) -> Tensor
+
+In-place version of :meth:`~Tensor.arctan2`
+""",
+)
+
+add_docstr_all(
+    "atanh",
+    r"""
+atanh() -> Tensor
+
+See :func:`torch.atanh`
+""",
+)
+
+add_docstr_all(
+    "atanh_",
+    r"""
+atanh_(other) -> Tensor
+
+In-place version of :meth:`~Tensor.atanh`
+""",
+)
+
+add_docstr_all(
+    "arctanh",
+    r"""
+arctanh() -> Tensor
+
+See :func:`torch.arctanh`
+""",
+)
+
+add_docstr_all(
+    "arctanh_",
+    r"""
+arctanh_(other) -> Tensor
+
+In-place version of :meth:`~Tensor.arctanh`
+""",
+)
+
+add_docstr_all(
+    "baddbmm",
+    r"""
+baddbmm(batch1, batch2, *, beta=1, alpha=1) -> Tensor
+
+See :func:`torch.baddbmm`
+""",
+)
+
+add_docstr_all(
+    "baddbmm_",
+    r"""
+baddbmm_(batch1, batch2, *, beta=1, alpha=1) -> Tensor
+
+In-place version of :meth:`~Tensor.baddbmm`
+""",
+)
+
+add_docstr_all(
+    "bernoulli",
+    r"""
+bernoulli(*, generator=None) -> Tensor
+
+Returns a result tensor where each :math:`\texttt{result[i]}` is independently
+sampled from :math:`\text{Bernoulli}(\texttt{self[i]})`. :attr:`self` must have
+floating point ``dtype``, and the result will have the same ``dtype``.
+
+See :func:`torch.bernoulli`
+""",
+)
+
+add_docstr_all(
+    "bernoulli_",
+    r"""
+bernoulli_(p=0.5, *, generator=None) -> Tensor
+
+Fills each location of :attr:`self` with an independent sample from
+:math:`\text{Bernoulli}(\texttt{p})`. :attr:`self` can have integral
+``dtype``.
+
+:attr:`p` should either be a scalar or tensor containing probabilities to be
+used for drawing the binary random number.
+
+If it is a tensor, the :math:`\text{i}^{th}` element of :attr:`self` tensor
+will be set to a value sampled from
+:math:`\text{Bernoulli}(\texttt{p\_tensor[i]})`. In this case `p` must have
+floating point ``dtype``.
+
+See also :meth:`~Tensor.bernoulli` and :func:`torch.bernoulli`
+""",
+)
+
+add_docstr_all(
+    "bincount",
+    r"""
+bincount(weights=None, minlength=0) -> Tensor
+
+See :func:`torch.bincount`
+""",
+)
+
+add_docstr_all(
+    "bitwise_not",
+    r"""
+bitwise_not() -> Tensor
+
+See :func:`torch.bitwise_not`
+""",
+)
+
+add_docstr_all(
+    "bitwise_not_",
+    r"""
+bitwise_not_() -> Tensor
+
+In-place version of :meth:`~Tensor.bitwise_not`
+""",
+)
+
+add_docstr_all(
+    "bitwise_and",
+    r"""
+bitwise_and() -> Tensor
+
+See :func:`torch.bitwise_and`
+""",
+)
+
+add_docstr_all(
+    "bitwise_and_",
+    r"""
+bitwise_and_() -> Tensor
+
+In-place version of :meth:`~Tensor.bitwise_and`
+""",
+)
+
+add_docstr_all(
+    "bitwise_or",
+    r"""
+bitwise_or() -> Tensor
+
+See :func:`torch.bitwise_or`
+""",
+)
+
+add_docstr_all(
+    "bitwise_or_",
+    r"""
+bitwise_or_() -> Tensor
+
+In-place version of :meth:`~Tensor.bitwise_or`
+""",
+)
+
+add_docstr_all(
+    "bitwise_xor",
+    r"""
+bitwise_xor() -> Tensor
+
+See :func:`torch.bitwise_xor`
+""",
+)
+
+add_docstr_all(
+    "bitwise_xor_",
+    r"""
+bitwise_xor_() -> Tensor
+
+In-place version of :meth:`~Tensor.bitwise_xor`
+""",
+)
+
+add_docstr_all(
+    "bitwise_left_shift",
+    r"""
+bitwise_left_shift(other) -> Tensor
+
+See :func:`torch.bitwise_left_shift`
+""",
+)
+
+add_docstr_all(
+    "bitwise_left_shift_",
+    r"""
+bitwise_left_shift_(other) -> Tensor
+
+In-place version of :meth:`~Tensor.bitwise_left_shift`
+""",
+)
+
+add_docstr_all(
+    "bitwise_right_shift",
+    r"""
+bitwise_right_shift(other) -> Tensor
+
+See :func:`torch.bitwise_right_shift`
+""",
+)
+
+add_docstr_all(
+    "bitwise_right_shift_",
+    r"""
+bitwise_right_shift_(other) -> Tensor
+
+In-place version of :meth:`~Tensor.bitwise_right_shift`
+""",
+)
+
+add_docstr_all(
+    "broadcast_to",
+    r"""
+broadcast_to(shape) -> Tensor
+
+See :func:`torch.broadcast_to`.
+""",
+)
+
+add_docstr_all(
+    "logical_and",
+    r"""
+logical_and() -> Tensor
+
+See :func:`torch.logical_and`
+""",
+)
+
+add_docstr_all(
+    "logical_and_",
+    r"""
+logical_and_() -> Tensor
+
+In-place version of :meth:`~Tensor.logical_and`
+""",
+)
+
+add_docstr_all(
+    "logical_not",
+    r"""
+logical_not() -> Tensor
+
+See :func:`torch.logical_not`
+""",
+)
+
+add_docstr_all(
+    "logical_not_",
+    r"""
+logical_not_() -> Tensor
+
+In-place version of :meth:`~Tensor.logical_not`
+""",
+)
+
+add_docstr_all(
+    "logical_or",
+    r"""
+logical_or() -> Tensor
+
+See :func:`torch.logical_or`
+""",
+)
+
+add_docstr_all(
+    "logical_or_",
+    r"""
+logical_or_() -> Tensor
+
+In-place version of :meth:`~Tensor.logical_or`
+""",
+)
+
+add_docstr_all(
+    "logical_xor",
+    r"""
+logical_xor() -> Tensor
+
+See :func:`torch.logical_xor`
+""",
+)
+
+add_docstr_all(
+    "logical_xor_",
+    r"""
+logical_xor_() -> Tensor
+
+In-place version of :meth:`~Tensor.logical_xor`
+""",
+)
+
+add_docstr_all(
+    "bmm",
+    r"""
+bmm(batch2) -> Tensor
+
+See :func:`torch.bmm`
+""",
+)
+
+add_docstr_all(
+    "cauchy_",
+    r"""
+cauchy_(median=0, sigma=1, *, generator=None) -> Tensor
+
+Fills the tensor with numbers drawn from the Cauchy distribution:
+
+.. math::
+
+    f(x) = \dfrac{1}{\pi} \dfrac{\sigma}{(x - \text{median})^2 + \sigma^2}
+
+.. note::
+  Sigma (:math:`\sigma`) is used to denote the scale parameter in Cauchy distribution.
+""",
+)
+
+add_docstr_all(
+    "ceil",
+    r"""
+ceil() -> Tensor
+
+See :func:`torch.ceil`
+""",
+)
+
+add_docstr_all(
+    "ceil_",
+    r"""
+ceil_() -> Tensor
+
+In-place version of :meth:`~Tensor.ceil`
+""",
+)
+
+add_docstr_all(
+    "cholesky",
+    r"""
+cholesky(upper=False) -> Tensor
+
+See :func:`torch.cholesky`
+""",

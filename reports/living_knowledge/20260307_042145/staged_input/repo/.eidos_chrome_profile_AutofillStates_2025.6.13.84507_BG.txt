@@ -1,0 +1,39 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/BG
+KIND: config
+
+BGS
+благоевградblagoevgrad province#област благоевград1
+бургасburgasобласт бургас,
+
+варнаvarnaобласт варна`
+велико търновоveliko tarnovo province(област велико търново,
+
+видинvidinобласт видин-
+
+врацаvratsaобласт враца6
+габровоgabrovoобласт габрово;
+добричdobrich provinceобласт добричE
+кърджалиkardzhali provinceобласт кърджалиJ
+кюстендилkyustendil provinceобласт кюстендил-
+
+ловечlovechобласт ловеч?
+монтанаmontana provinceобласт монтанаA
+област пазарджик
+pazardzhikпазарджик1
+област перникpernikперник:
+област плевенpleven provinceплевен?
+област пловдивplovdiv provinceпловдив6
+област разградrazgradразград'
+област русеruseрусе;
+област силистраsilistraсилистра
+сливенsliven province2
+област смолянsmoljanсмолянB
+област софияsofia city provinceсофияградH
+софийска областsofia provinceсофия областM
+$област стара загораstara zagoraстара загораK
+област търговищеtargovishte provinceтърговище?
+област хасковоhaskovo provinceхасково%
+област шумен
+шумен-
+област ямболjambol
+ямбол

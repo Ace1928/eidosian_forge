@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/celleditor_documentation.py
+KIND: code
+
+from ase.cell import Cell
+from ase.gui.i18n import _
+import ase.gui.ui as ui
+import numpy as np
+Window for editing the cell of an atoms object.

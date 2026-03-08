@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_groupcompress_py_documentation.py
+KIND: code
+
+from .. import osutils
+Compute the delta for this content versus the original content.

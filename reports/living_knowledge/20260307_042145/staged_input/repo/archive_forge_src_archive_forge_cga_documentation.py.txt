@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/cga_documentation.py
+KIND: code
+
+import numpy as np
+import shapely
+Predicate implementation

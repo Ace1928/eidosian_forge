@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/cache_size_documentation.py
+KIND: code
+
+import logging
+import types
+import weakref
+from dataclasses import dataclass
+from . import config
+
+    Checks if we are exceeding the cache size limit.

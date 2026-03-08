@@ -1,30 +1,35 @@
-# 📱 SMS Forge
+# 📱 SMS Forge ⚡
 
-[![Python: 3.12](https://img.shields.io/badge/Python-3.12-blue.svg)](../global_info.py)
-[![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Status: Operational](https://img.shields.io/badge/Status-Operational-green.svg)](README.md)
+> _"The Telecommunications Bridge of Eidos. Silicon intent, cellular reach."_
 
-**The Telecommunications Bridge of Eidos.**
+## 🧠 Overview
 
-> _"Connectivity beyond the digital fabric. Local hardware, global reach."_
+`sms_forge` provides the bridge between the Eidosian digital environment and the physical cellular network. It allows agents to send and receive out-of-band messages, resolve 2FA challenges automatically, and maintain a persistent communication loop via Android hardware (Termux) or cloud-based providers (Twilio).
 
-## 📱 Overview
+```ascii
+      ╭───────────────────────────────────────────╮
+      │                SMS FORGE                  │
+      │    < Send | Receive | 2FA Extraction >    │
+      ╰──────────┬─────────────────────┬──────────╯
+                 │                     │
+      ╭──────────┴──────────╮   ╭──────┴──────────╮
+      │   TERMUX PROVIDER   │   │ TWILIO PROVIDER │
+      │ (Local Hardware)    │   │ (Cloud Fallback)│
+      ╰─────────────────────╯   ╰─────────────────╯
+```
 
-`sms_forge` is a multi-backend telecommunications bridge. It allows Eidosian agents to interact with the cellular network, enabling out-of-band messaging, 2FA challenge resolution, and asynchronous alerting.
+## ⚡ Current State & Metrics
 
-## 🏗️ Architecture
+- **Status**: 🟢 Elevated & Operational
+- **Type**: Telecommunications Interface
+- **Test Coverage**: Provider auto-detection and parsing verified.
+- **MCP Integration**: 3 Tools (`sms_add_contact`, `sms_list`, `sms_send`).
+- **Core Components**:
+  - `core.py`: Main orchestration and provider selection.
+  - `advanced_retrieval.py`: High-fidelity search over historical message logs.
+  - `utils/parser.py`: Regex-driven logic for automated verification code extraction.
 
-- **Provider Pattern**: Supports multiple backends through a unified interface.
-- **Termux Backend (`providers/termux.py`)**: Uses `termux-api` to leverage physical device hardware.
-- **Twilio Backend (`providers/twilio.py`)**: Cloud-based fallback for Linux/Non-Termux environments.
-- **Intelligent Parser (`utils/parser.py`)**: Regex-based extraction of 2FA and verification codes.
-
-## 🔗 System Integration
-
-- **Eidos MCP**: Exposes `sms_send`, `sms_list`, and `sms_get_codes` tools.
-- **Agent Forge**: Agents use these tools for identity verification and notification.
-
-## 🚀 Usage
+## 🚀 Usage & Workflows
 
 ### Python API
 
@@ -33,22 +38,39 @@ from sms_forge.core import SmsForge
 
 sms = SmsForge()
 
-# Send a message
-await sms.send_message("+123456789", "Hello from Eidos")
+# Send a message through the detected provider (Termux/Twilio)
+await sms.send_message("+123456789", "Eidosian status: All systems operational.")
 
-# Extract 2FA code from recent messages
-code = await sms.get_2fa_code(sender_pattern="Google")
-print(f"Your code: {code}")
+# Retrieve latest messages
+messages = await sms.list_messages(limit=5)
+for msg in messages:
+    print(f"{msg.sender}: {msg.body}")
 ```
 
-## 🛠️ Configuration
-
-- **Termux**: Requires `termux-api` package installed on the Android host.
-- **Twilio**: Requires `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and `TWILIO_PHONE_NUMBER` in GIS or Environment.
-
-## 🧪 Testing
+### CLI Interface
 
 ```bash
-# Run the test suite
-pytest sms_forge/tests/
+# List latest 5 messages
+python -m sms_forge.cli list --limit 5
+
+# Send a message to a specific contact
+python -m sms_forge.cli send "Lloyd" "System audit complete."
 ```
+
+## 🔗 System Integration
+
+- **Eidos MCP**: Exposes cellular capabilities to the cognitive layer.
+- **Agent Forge**: Used by agents for external alerting and verification.
+- **Auth Systems**: Critical for automated handling of login challenges.
+
+## 🎯 Master Plan & Evolution
+
+### Immediate Goals
+- [x] Consolidate legacy docs into unified Eidosian standard.
+- [x] Stabilize multi-modal retrieval logic.
+
+### Future Vector (Phase 3+)
+- Implement "Agent-to-SMS" bridge where specific cellular triggers can wake the `eidosd` daemon to handle urgent requests.
+
+---
+*Generated and maintained by Eidos.*

@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/chat_completion_tool_message_param_documentation.py
+KIND: code
+
+from __future__ import annotations
+from typing_extensions import Literal, Required, TypedDict
+Tool call that this message is responding to.

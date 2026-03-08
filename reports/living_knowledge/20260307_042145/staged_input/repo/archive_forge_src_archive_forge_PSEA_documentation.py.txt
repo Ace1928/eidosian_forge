@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/PSEA_documentation.py
+KIND: code
+
+import subprocess
+import os
+from Bio.PDB.Polypeptide import is_aa
+Return secondary structure string.

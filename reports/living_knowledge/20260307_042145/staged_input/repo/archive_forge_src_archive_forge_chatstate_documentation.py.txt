@@ -1,0 +1,16 @@
+SOURCE_PATH: archive_forge/src/archive_forge/chatstate_documentation.py
+KIND: code
+
+from yowsup.structs import ProtocolEntity, ProtocolTreeNode
+
+    INCOMING
+
+    <chatstate from="xxxxxxxxxxx@s.whatsapp.net">
+    <{{composing|paused}}></{{composing|paused}}>
+    </chatstate>
+
+    OUTGOING
+
+    <chatstate to="xxxxxxxxxxx@s.whatsapp.net">
+    <{{composing|paused}}></{{composing|paused}}>
+    </chatstate>

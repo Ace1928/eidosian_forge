@@ -1,0 +1,18 @@
+SOURCE_PATH: .gitleaks.toml
+KIND: config
+
+title = "Eidosian Forge Gitleaks Config"
+
+[allowlist]
+description = "Allow obvious placeholder test strings"
+regexes = [
+  '''(?i)example(_|-)?(token|key|secret)''',
+  '''(?i)dummy(_|-)?(token|key|secret)''',
+  '''(?i)test(_|-)?(token|key|secret)''',
+  '''(?i)fake(_|-)?(token|key|secret)'''
+]
+paths = [
+  '''docs/external_references/''',
+  '''memory_forge/legacy_imports/''',
+  '''.git/'''
+]

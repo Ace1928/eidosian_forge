@@ -1,0 +1,7 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/HK
+KIND: config
+
+HK
+new territories新界B
+	hong konghong kong islandhongkong港島香港	香港島
+kowloon九龍

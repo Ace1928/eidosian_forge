@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/alignace_documentation.py
+KIND: code
+
+from Bio.motifs import Motif
+from Bio.Align import Alignment
+from Bio.Seq import Seq
+Initialize the class.

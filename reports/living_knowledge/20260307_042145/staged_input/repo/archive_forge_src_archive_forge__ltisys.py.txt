@@ -1,0 +1,652 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_ltisys.py
+KIND: code
+
+"""
+ltisys -- a collection of classes and functions for modeling linear
+time invariant systems.
+"""
+#
+# Author: Travis Oliphant 2001
+#
+# Feb 2010: Warren Weckesser
+#   Rewrote lsim2 and added impulse2.
+# Apr 2011: Jeffrey Armstrong <jeff@approximatrix.com>
+#   Added dlsim, dstep, dimpulse, cont2discrete
+# Aug 2013: Juan Luis Cano
+#   Rewrote abcd_normalize.
+# Jan 2015: Irvin Probst irvin DOT probst AT ensta-bretagne DOT fr
+#   Added pole placement
+# Mar 2015: Clancy Rowley
+#   Rewrote lsim
+# May 2015: Felix Berkenkamp
+#   Split lti class into subclasses
+#   Merged discrete systems and added dlti
+
+import warnings
+
+# np.linalg.qr fails on some tests with LinAlgError: zgeqrf returns -7
+# use scipy's qr until this is solved
+
+from scipy.linalg import qr as s_qr
+from scipy import linalg
+from scipy.interpolate import make_interp_spline
+from ._filter_design import (tf2zpk, zpk2tf, normalize, freqs, freqz, freqs_zpk,
+                            freqz_zpk)
+from ._lti_conversion import (tf2ss, abcd_normalize, ss2tf, zpk2ss, ss2zpk,
+                             cont2discrete, _atleast_2d_or_none)
+
+import numpy
+import numpy as np
+from numpy import (real, atleast_1d, squeeze, asarray, zeros,
+                   dot, transpose, ones, linspace)
+import copy
+
+__all__ = ['lti', 'dlti', 'TransferFunction', 'ZerosPolesGain', 'StateSpace',
+           'lsim', 'impulse', 'step', 'bode',
+           'freqresp', 'place_poles', 'dlsim', 'dstep', 'dimpulse',
+           'dfreqresp', 'dbode']
+
+
+class LinearTimeInvariant:
+    def __new__(cls, *system, **kwargs):
+        """Create a new object, don't allow direct instances."""
+        if cls is LinearTimeInvariant:
+            raise NotImplementedError('The LinearTimeInvariant class is not '
+                                      'meant to be used directly, use `lti` '
+                                      'or `dlti` instead.')
+        return super().__new__(cls)
+
+    def __init__(self):
+        """
+        Initialize the `lti` baseclass.
+
+        The heavy lifting is done by the subclasses.
+        """
+        super().__init__()
+
+        self.inputs = None
+        self.outputs = None
+        self._dt = None
+
+    @property
+    def dt(self):
+        """Return the sampling time of the system, `None` for `lti` systems."""
+        return self._dt
+
+    @property
+    def _dt_dict(self):
+        if self.dt is None:
+            return {}
+        else:
+            return {'dt': self.dt}
+
+    @property
+    def zeros(self):
+        """Zeros of the system."""
+        return self.to_zpk().zeros
+
+    @property
+    def poles(self):
+        """Poles of the system."""
+        return self.to_zpk().poles
+
+    def _as_ss(self):
+        """Convert to `StateSpace` system, without copying.
+
+        Returns
+        -------
+        sys: StateSpace
+            The `StateSpace` system. If the class is already an instance of
+            `StateSpace` then this instance is returned.
+        """
+        if isinstance(self, StateSpace):
+            return self
+        else:
+            return self.to_ss()
+
+    def _as_zpk(self):
+        """Convert to `ZerosPolesGain` system, without copying.
+
+        Returns
+        -------
+        sys: ZerosPolesGain
+            The `ZerosPolesGain` system. If the class is already an instance of
+            `ZerosPolesGain` then this instance is returned.
+        """
+        if isinstance(self, ZerosPolesGain):
+            return self
+        else:
+            return self.to_zpk()
+
+    def _as_tf(self):
+        """Convert to `TransferFunction` system, without copying.
+
+        Returns
+        -------
+        sys: ZerosPolesGain
+            The `TransferFunction` system. If the class is already an instance of
+            `TransferFunction` then this instance is returned.
+        """
+        if isinstance(self, TransferFunction):
+            return self
+        else:
+            return self.to_tf()
+
+
+class lti(LinearTimeInvariant):
+    r"""
+    Continuous-time linear time invariant system base class.
+
+    Parameters
+    ----------
+    *system : arguments
+        The `lti` class can be instantiated with either 2, 3 or 4 arguments.
+        The following gives the number of arguments and the corresponding
+        continuous-time subclass that is created:
+
+            * 2: `TransferFunction`:  (numerator, denominator)
+            * 3: `ZerosPolesGain`: (zeros, poles, gain)
+            * 4: `StateSpace`:  (A, B, C, D)
+
+        Each argument can be an array or a sequence.
+
+    See Also
+    --------
+    ZerosPolesGain, StateSpace, TransferFunction, dlti
+
+    Notes
+    -----
+    `lti` instances do not exist directly. Instead, `lti` creates an instance
+    of one of its subclasses: `StateSpace`, `TransferFunction` or
+    `ZerosPolesGain`.
+
+    If (numerator, denominator) is passed in for ``*system``, coefficients for
+    both the numerator and denominator should be specified in descending
+    exponent order (e.g., ``s^2 + 3s + 5`` would be represented as ``[1, 3,
+    5]``).
+
+    Changing the value of properties that are not directly part of the current
+    system representation (such as the `zeros` of a `StateSpace` system) is
+    very inefficient and may lead to numerical inaccuracies. It is better to
+    convert to the specific system representation first. For example, call
+    ``sys = sys.to_zpk()`` before accessing/changing the zeros, poles or gain.
+
+    Examples
+    --------
+    >>> from scipy import signal
+
+    >>> signal.lti(1, 2, 3, 4)
+    StateSpaceContinuous(
+    array([[1]]),
+    array([[2]]),
+    array([[3]]),
+    array([[4]]),
+    dt: None
+    )
+
+    Construct the transfer function
+    :math:`H(s) = \frac{5(s - 1)(s - 2)}{(s - 3)(s - 4)}`:
+
+    >>> signal.lti([1, 2], [3, 4], 5)
+    ZerosPolesGainContinuous(
+    array([1, 2]),
+    array([3, 4]),
+    5,
+    dt: None
+    )
+
+    Construct the transfer function :math:`H(s) = \frac{3s + 4}{1s + 2}`:
+
+    >>> signal.lti([3, 4], [1, 2])
+    TransferFunctionContinuous(
+    array([3., 4.]),
+    array([1., 2.]),
+    dt: None
+    )
+
+    """
+    def __new__(cls, *system):
+        """Create an instance of the appropriate subclass."""
+        if cls is lti:
+            N = len(system)
+            if N == 2:
+                return TransferFunctionContinuous.__new__(
+                    TransferFunctionContinuous, *system)
+            elif N == 3:
+                return ZerosPolesGainContinuous.__new__(
+                    ZerosPolesGainContinuous, *system)
+            elif N == 4:
+                return StateSpaceContinuous.__new__(StateSpaceContinuous,
+                                                    *system)
+            else:
+                raise ValueError("`system` needs to be an instance of `lti` "
+                                 "or have 2, 3 or 4 arguments.")
+        # __new__ was called from a subclass, let it call its own functions
+        return super().__new__(cls)
+
+    def __init__(self, *system):
+        """
+        Initialize the `lti` baseclass.
+
+        The heavy lifting is done by the subclasses.
+        """
+        super().__init__(*system)
+
+    def impulse(self, X0=None, T=None, N=None):
+        """
+        Return the impulse response of a continuous-time system.
+        See `impulse` for details.
+        """
+        return impulse(self, X0=X0, T=T, N=N)
+
+    def step(self, X0=None, T=None, N=None):
+        """
+        Return the step response of a continuous-time system.
+        See `step` for details.
+        """
+        return step(self, X0=X0, T=T, N=N)
+
+    def output(self, U, T, X0=None):
+        """
+        Return the response of a continuous-time system to input `U`.
+        See `lsim` for details.
+        """
+        return lsim(self, U, T, X0=X0)
+
+    def bode(self, w=None, n=100):
+        """
+        Calculate Bode magnitude and phase data of a continuous-time system.
+
+        Returns a 3-tuple containing arrays of frequencies [rad/s], magnitude
+        [dB] and phase [deg]. See `bode` for details.
+
+        Examples
+        --------
+        >>> from scipy import signal
+        >>> import matplotlib.pyplot as plt
+
+        >>> sys = signal.TransferFunction([1], [1, 1])
+        >>> w, mag, phase = sys.bode()
+
+        >>> plt.figure()
+        >>> plt.semilogx(w, mag)    # Bode magnitude plot
+        >>> plt.figure()
+        >>> plt.semilogx(w, phase)  # Bode phase plot
+        >>> plt.show()
+
+        """
+        return bode(self, w=w, n=n)
+
+    def freqresp(self, w=None, n=10000):
+        """
+        Calculate the frequency response of a continuous-time system.
+
+        Returns a 2-tuple containing arrays of frequencies [rad/s] and
+        complex magnitude.
+        See `freqresp` for details.
+        """
+        return freqresp(self, w=w, n=n)
+
+    def to_discrete(self, dt, method='zoh', alpha=None):
+        """Return a discretized version of the current system.
+
+        Parameters: See `cont2discrete` for details.
+
+        Returns
+        -------
+        sys: instance of `dlti`
+        """
+        raise NotImplementedError('to_discrete is not implemented for this '
+                                  'system class.')
+
+
+class dlti(LinearTimeInvariant):
+    r"""
+    Discrete-time linear time invariant system base class.
+
+    Parameters
+    ----------
+    *system: arguments
+        The `dlti` class can be instantiated with either 2, 3 or 4 arguments.
+        The following gives the number of arguments and the corresponding
+        discrete-time subclass that is created:
+
+            * 2: `TransferFunction`:  (numerator, denominator)
+            * 3: `ZerosPolesGain`: (zeros, poles, gain)
+            * 4: `StateSpace`:  (A, B, C, D)
+
+        Each argument can be an array or a sequence.
+    dt: float, optional
+        Sampling time [s] of the discrete-time systems. Defaults to ``True``
+        (unspecified sampling time). Must be specified as a keyword argument,
+        for example, ``dt=0.1``.
+
+    See Also
+    --------
+    ZerosPolesGain, StateSpace, TransferFunction, lti
+
+    Notes
+    -----
+    `dlti` instances do not exist directly. Instead, `dlti` creates an instance
+    of one of its subclasses: `StateSpace`, `TransferFunction` or
+    `ZerosPolesGain`.
+
+    Changing the value of properties that are not directly part of the current
+    system representation (such as the `zeros` of a `StateSpace` system) is
+    very inefficient and may lead to numerical inaccuracies.  It is better to
+    convert to the specific system representation first. For example, call
+    ``sys = sys.to_zpk()`` before accessing/changing the zeros, poles or gain.
+
+    If (numerator, denominator) is passed in for ``*system``, coefficients for
+    both the numerator and denominator should be specified in descending
+    exponent order (e.g., ``z^2 + 3z + 5`` would be represented as ``[1, 3,
+    5]``).
+
+    .. versionadded:: 0.18.0
+
+    Examples
+    --------
+    >>> from scipy import signal
+
+    >>> signal.dlti(1, 2, 3, 4)
+    StateSpaceDiscrete(
+    array([[1]]),
+    array([[2]]),
+    array([[3]]),
+    array([[4]]),
+    dt: True
+    )
+
+    >>> signal.dlti(1, 2, 3, 4, dt=0.1)
+    StateSpaceDiscrete(
+    array([[1]]),
+    array([[2]]),
+    array([[3]]),
+    array([[4]]),
+    dt: 0.1
+    )
+
+    Construct the transfer function
+    :math:`H(z) = \frac{5(z - 1)(z - 2)}{(z - 3)(z - 4)}` with a sampling time
+    of 0.1 seconds:
+
+    >>> signal.dlti([1, 2], [3, 4], 5, dt=0.1)
+    ZerosPolesGainDiscrete(
+    array([1, 2]),
+    array([3, 4]),
+    5,
+    dt: 0.1
+    )
+
+    Construct the transfer function :math:`H(z) = \frac{3z + 4}{1z + 2}` with
+    a sampling time of 0.1 seconds:
+
+    >>> signal.dlti([3, 4], [1, 2], dt=0.1)
+    TransferFunctionDiscrete(
+    array([3., 4.]),
+    array([1., 2.]),
+    dt: 0.1
+    )
+
+    """
+    def __new__(cls, *system, **kwargs):
+        """Create an instance of the appropriate subclass."""
+        if cls is dlti:
+            N = len(system)
+            if N == 2:
+                return TransferFunctionDiscrete.__new__(
+                    TransferFunctionDiscrete, *system, **kwargs)
+            elif N == 3:
+                return ZerosPolesGainDiscrete.__new__(ZerosPolesGainDiscrete,
+                                                      *system, **kwargs)
+            elif N == 4:
+                return StateSpaceDiscrete.__new__(StateSpaceDiscrete, *system,
+                                                  **kwargs)
+            else:
+                raise ValueError("`system` needs to be an instance of `dlti` "
+                                 "or have 2, 3 or 4 arguments.")
+        # __new__ was called from a subclass, let it call its own functions
+        return super().__new__(cls)
+
+    def __init__(self, *system, **kwargs):
+        """
+        Initialize the `lti` baseclass.
+
+        The heavy lifting is done by the subclasses.
+        """
+        dt = kwargs.pop('dt', True)
+        super().__init__(*system, **kwargs)
+
+        self.dt = dt
+
+    @property
+    def dt(self):
+        """Return the sampling time of the system."""
+        return self._dt
+
+    @dt.setter
+    def dt(self, dt):
+        self._dt = dt
+
+    def impulse(self, x0=None, t=None, n=None):
+        """
+        Return the impulse response of the discrete-time `dlti` system.
+        See `dimpulse` for details.
+        """
+        return dimpulse(self, x0=x0, t=t, n=n)
+
+    def step(self, x0=None, t=None, n=None):
+        """
+        Return the step response of the discrete-time `dlti` system.
+        See `dstep` for details.
+        """
+        return dstep(self, x0=x0, t=t, n=n)
+
+    def output(self, u, t, x0=None):
+        """
+        Return the response of the discrete-time system to input `u`.
+        See `dlsim` for details.
+        """
+        return dlsim(self, u, t, x0=x0)
+
+    def bode(self, w=None, n=100):
+        r"""
+        Calculate Bode magnitude and phase data of a discrete-time system.
+
+        Returns a 3-tuple containing arrays of frequencies [rad/s], magnitude
+        [dB] and phase [deg]. See `dbode` for details.
+
+        Examples
+        --------
+        >>> from scipy import signal
+        >>> import matplotlib.pyplot as plt
+
+        Construct the transfer function :math:`H(z) = \frac{1}{z^2 + 2z + 3}`
+        with sampling time 0.5s:
+
+        >>> sys = signal.TransferFunction([1], [1, 2, 3], dt=0.5)
+
+        Equivalent: signal.dbode(sys)
+
+        >>> w, mag, phase = sys.bode()
+
+        >>> plt.figure()
+        >>> plt.semilogx(w, mag)    # Bode magnitude plot
+        >>> plt.figure()
+        >>> plt.semilogx(w, phase)  # Bode phase plot
+        >>> plt.show()
+
+        """
+        return dbode(self, w=w, n=n)
+
+    def freqresp(self, w=None, n=10000, whole=False):
+        """
+        Calculate the frequency response of a discrete-time system.
+
+        Returns a 2-tuple containing arrays of frequencies [rad/s] and
+        complex magnitude.
+        See `dfreqresp` for details.
+
+        """
+        return dfreqresp(self, w=w, n=n, whole=whole)
+
+
+class TransferFunction(LinearTimeInvariant):
+    r"""Linear Time Invariant system class in transfer function form.
+
+    Represents the system as the continuous-time transfer function
+    :math:`H(s)=\sum_{i=0}^N b[N-i] s^i / \sum_{j=0}^M a[M-j] s^j` or the
+    discrete-time transfer function
+    :math:`H(z)=\sum_{i=0}^N b[N-i] z^i / \sum_{j=0}^M a[M-j] z^j`, where
+    :math:`b` are elements of the numerator `num`, :math:`a` are elements of
+    the denominator `den`, and ``N == len(b) - 1``, ``M == len(a) - 1``.
+    `TransferFunction` systems inherit additional
+    functionality from the `lti`, respectively the `dlti` classes, depending on
+    which system representation is used.
+
+    Parameters
+    ----------
+    *system: arguments
+        The `TransferFunction` class can be instantiated with 1 or 2
+        arguments. The following gives the number of input arguments and their
+        interpretation:
+
+            * 1: `lti` or `dlti` system: (`StateSpace`, `TransferFunction` or
+              `ZerosPolesGain`)
+            * 2: array_like: (numerator, denominator)
+    dt: float, optional
+        Sampling time [s] of the discrete-time systems. Defaults to `None`
+        (continuous-time). Must be specified as a keyword argument, for
+        example, ``dt=0.1``.
+
+    See Also
+    --------
+    ZerosPolesGain, StateSpace, lti, dlti
+    tf2ss, tf2zpk, tf2sos
+
+    Notes
+    -----
+    Changing the value of properties that are not part of the
+    `TransferFunction` system representation (such as the `A`, `B`, `C`, `D`
+    state-space matrices) is very inefficient and may lead to numerical
+    inaccuracies.  It is better to convert to the specific system
+    representation first. For example, call ``sys = sys.to_ss()`` before
+    accessing/changing the A, B, C, D system matrices.
+
+    If (numerator, denominator) is passed in for ``*system``, coefficients
+    for both the numerator and denominator should be specified in descending
+    exponent order (e.g. ``s^2 + 3s + 5`` or ``z^2 + 3z + 5`` would be
+    represented as ``[1, 3, 5]``)
+
+    Examples
+    --------
+    Construct the transfer function
+    :math:`H(s) = \frac{s^2 + 3s + 3}{s^2 + 2s + 1}`:
+
+    >>> from scipy import signal
+
+    >>> num = [1, 3, 3]
+    >>> den = [1, 2, 1]
+
+    >>> signal.TransferFunction(num, den)
+    TransferFunctionContinuous(
+    array([1., 3., 3.]),
+    array([1., 2., 1.]),
+    dt: None
+    )
+
+    Construct the transfer function
+    :math:`H(z) = \frac{z^2 + 3z + 3}{z^2 + 2z + 1}` with a sampling time of
+    0.1 seconds:
+
+    >>> signal.TransferFunction(num, den, dt=0.1)
+    TransferFunctionDiscrete(
+    array([1., 3., 3.]),
+    array([1., 2., 1.]),
+    dt: 0.1
+    )
+
+    """
+    def __new__(cls, *system, **kwargs):
+        """Handle object conversion if input is an instance of lti."""
+        if len(system) == 1 and isinstance(system[0], LinearTimeInvariant):
+            return system[0].to_tf()
+
+        # Choose whether to inherit from `lti` or from `dlti`
+        if cls is TransferFunction:
+            if kwargs.get('dt') is None:
+                return TransferFunctionContinuous.__new__(
+                    TransferFunctionContinuous,
+                    *system,
+                    **kwargs)
+            else:
+                return TransferFunctionDiscrete.__new__(
+                    TransferFunctionDiscrete,
+                    *system,
+                    **kwargs)
+
+        # No special conversion needed
+        return super().__new__(cls)
+
+    def __init__(self, *system, **kwargs):
+        """Initialize the state space LTI system."""
+        # Conversion of lti instances is handled in __new__
+        if isinstance(system[0], LinearTimeInvariant):
+            return
+
+        # Remove system arguments, not needed by parents anymore
+        super().__init__(**kwargs)
+
+        self._num = None
+        self._den = None
+
+        self.num, self.den = normalize(*system)
+
+    def __repr__(self):
+        """Return representation of the system's transfer function"""
+        return '{}(\n{},\n{},\ndt: {}\n)'.format(
+            self.__class__.__name__,
+            repr(self.num),
+            repr(self.den),
+            repr(self.dt),
+            )
+
+    @property
+    def num(self):
+        """Numerator of the `TransferFunction` system."""
+        return self._num
+
+    @num.setter
+    def num(self, num):
+        self._num = atleast_1d(num)
+
+        # Update dimensions
+        if len(self.num.shape) > 1:
+            self.outputs, self.inputs = self.num.shape
+        else:
+            self.outputs = 1
+            self.inputs = 1
+
+    @property
+    def den(self):
+        """Denominator of the `TransferFunction` system."""
+        return self._den
+
+    @den.setter
+    def den(self, den):
+        self._den = atleast_1d(den)
+
+    def _copy(self, system):
+        """
+        Copy the parameters of another `TransferFunction` object
+
+        Parameters
+        ----------
+        system : `TransferFunction`
+            The `StateSpace` system that is to be copied
+
+        """
+        self.num = system.num
+        self.den = system.den
+
+    def to_tf(self):

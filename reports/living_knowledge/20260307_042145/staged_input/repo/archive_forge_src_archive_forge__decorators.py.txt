@@ -1,0 +1,496 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_decorators.py
+KIND: code
+
+"""Logic related to validators applied to models etc. via the `@field_validator` and `@model_validator` decorators."""
+from __future__ import annotations as _annotations
+
+from collections import deque
+from dataclasses import dataclass, field
+from functools import cached_property, partial, partialmethod
+from inspect import Parameter, Signature, isdatadescriptor, ismethoddescriptor, signature
+from itertools import islice
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, Iterable, TypeVar, Union
+
+from pydantic_core import PydanticUndefined, core_schema
+from typing_extensions import Literal, TypeAlias, is_typeddict
+
+from ..errors import PydanticUserError
+from ._core_utils import get_type_ref
+from ._internal_dataclass import slots_true
+from ._typing_extra import get_function_type_hints
+
+if TYPE_CHECKING:
+    from ..fields import ComputedFieldInfo
+    from ..functional_validators import FieldValidatorModes
+
+
+@dataclass(**slots_true)
+class ValidatorDecoratorInfo:
+    """A container for data from `@validator` so that we can access it
+    while building the pydantic-core schema.
+
+    Attributes:
+        decorator_repr: A class variable representing the decorator string, '@validator'.
+        fields: A tuple of field names the validator should be called on.
+        mode: The proposed validator mode.
+        each_item: For complex objects (sets, lists etc.) whether to validate individual
+            elements rather than the whole object.
+        always: Whether this method and other validators should be called even if the value is missing.
+        check_fields: Whether to check that the fields actually exist on the model.
+    """
+
+    decorator_repr: ClassVar[str] = '@validator'
+
+    fields: tuple[str, ...]
+    mode: Literal['before', 'after']
+    each_item: bool
+    always: bool
+    check_fields: bool | None
+
+
+@dataclass(**slots_true)
+class FieldValidatorDecoratorInfo:
+    """A container for data from `@field_validator` so that we can access it
+    while building the pydantic-core schema.
+
+    Attributes:
+        decorator_repr: A class variable representing the decorator string, '@field_validator'.
+        fields: A tuple of field names the validator should be called on.
+        mode: The proposed validator mode.
+        check_fields: Whether to check that the fields actually exist on the model.
+    """
+
+    decorator_repr: ClassVar[str] = '@field_validator'
+
+    fields: tuple[str, ...]
+    mode: FieldValidatorModes
+    check_fields: bool | None
+
+
+@dataclass(**slots_true)
+class RootValidatorDecoratorInfo:
+    """A container for data from `@root_validator` so that we can access it
+    while building the pydantic-core schema.
+
+    Attributes:
+        decorator_repr: A class variable representing the decorator string, '@root_validator'.
+        mode: The proposed validator mode.
+    """
+
+    decorator_repr: ClassVar[str] = '@root_validator'
+    mode: Literal['before', 'after']
+
+
+@dataclass(**slots_true)
+class FieldSerializerDecoratorInfo:
+    """A container for data from `@field_serializer` so that we can access it
+    while building the pydantic-core schema.
+
+    Attributes:
+        decorator_repr: A class variable representing the decorator string, '@field_serializer'.
+        fields: A tuple of field names the serializer should be called on.
+        mode: The proposed serializer mode.
+        return_type: The type of the serializer's return value.
+        when_used: The serialization condition. Accepts a string with values `'always'`, `'unless-none'`, `'json'`,
+            and `'json-unless-none'`.
+        check_fields: Whether to check that the fields actually exist on the model.
+    """
+
+    decorator_repr: ClassVar[str] = '@field_serializer'
+    fields: tuple[str, ...]
+    mode: Literal['plain', 'wrap']
+    return_type: Any
+    when_used: core_schema.WhenUsed
+    check_fields: bool | None
+
+
+@dataclass(**slots_true)
+class ModelSerializerDecoratorInfo:
+    """A container for data from `@model_serializer` so that we can access it
+    while building the pydantic-core schema.
+
+    Attributes:
+        decorator_repr: A class variable representing the decorator string, '@model_serializer'.
+        mode: The proposed serializer mode.
+        return_type: The type of the serializer's return value.
+        when_used: The serialization condition. Accepts a string with values `'always'`, `'unless-none'`, `'json'`,
+            and `'json-unless-none'`.
+    """
+
+    decorator_repr: ClassVar[str] = '@model_serializer'
+    mode: Literal['plain', 'wrap']
+    return_type: Any
+    when_used: core_schema.WhenUsed
+
+
+@dataclass(**slots_true)
+class ModelValidatorDecoratorInfo:
+    """A container for data from `@model_validator` so that we can access it
+    while building the pydantic-core schema.
+
+    Attributes:
+        decorator_repr: A class variable representing the decorator string, '@model_serializer'.
+        mode: The proposed serializer mode.
+    """
+
+    decorator_repr: ClassVar[str] = '@model_validator'
+    mode: Literal['wrap', 'before', 'after']
+
+
+DecoratorInfo: TypeAlias = """Union[
+    ValidatorDecoratorInfo,
+    FieldValidatorDecoratorInfo,
+    RootValidatorDecoratorInfo,
+    FieldSerializerDecoratorInfo,
+    ModelSerializerDecoratorInfo,
+    ModelValidatorDecoratorInfo,
+    ComputedFieldInfo,
+]"""
+
+ReturnType = TypeVar('ReturnType')
+DecoratedType: TypeAlias = (
+    'Union[classmethod[Any, Any, ReturnType], staticmethod[Any, ReturnType], Callable[..., ReturnType], property]'
+)
+
+
+@dataclass  # can't use slots here since we set attributes on `__post_init__`
+class PydanticDescriptorProxy(Generic[ReturnType]):
+    """Wrap a classmethod, staticmethod, property or unbound function
+    and act as a descriptor that allows us to detect decorated items
+    from the class' attributes.
+
+    This class' __get__ returns the wrapped item's __get__ result,
+    which makes it transparent for classmethods and staticmethods.
+
+    Attributes:
+        wrapped: The decorator that has to be wrapped.
+        decorator_info: The decorator info.
+        shim: A wrapper function to wrap V1 style function.
+    """
+
+    wrapped: DecoratedType[ReturnType]
+    decorator_info: DecoratorInfo
+    shim: Callable[[Callable[..., Any]], Callable[..., Any]] | None = None
+
+    def __post_init__(self):
+        for attr in 'setter', 'deleter':
+            if hasattr(self.wrapped, attr):
+                f = partial(self._call_wrapped_attr, name=attr)
+                setattr(self, attr, f)
+
+    def _call_wrapped_attr(self, func: Callable[[Any], None], *, name: str) -> PydanticDescriptorProxy[ReturnType]:
+        self.wrapped = getattr(self.wrapped, name)(func)
+        return self
+
+    def __get__(self, obj: object | None, obj_type: type[object] | None = None) -> PydanticDescriptorProxy[ReturnType]:
+        try:
+            return self.wrapped.__get__(obj, obj_type)
+        except AttributeError:
+            # not a descriptor, e.g. a partial object
+            return self.wrapped  # type: ignore[return-value]
+
+    def __set_name__(self, instance: Any, name: str) -> None:
+        if hasattr(self.wrapped, '__set_name__'):
+            self.wrapped.__set_name__(instance, name)  # pyright: ignore[reportFunctionMemberAccess]
+
+    def __getattr__(self, __name: str) -> Any:
+        """Forward checks for __isabstractmethod__ and such."""
+        return getattr(self.wrapped, __name)
+
+
+DecoratorInfoType = TypeVar('DecoratorInfoType', bound=DecoratorInfo)
+
+
+@dataclass(**slots_true)
+class Decorator(Generic[DecoratorInfoType]):
+    """A generic container class to join together the decorator metadata
+    (metadata from decorator itself, which we have when the
+    decorator is called but not when we are building the core-schema)
+    and the bound function (which we have after the class itself is created).
+
+    Attributes:
+        cls_ref: The class ref.
+        cls_var_name: The decorated function name.
+        func: The decorated function.
+        shim: A wrapper function to wrap V1 style function.
+        info: The decorator info.
+    """
+
+    cls_ref: str
+    cls_var_name: str
+    func: Callable[..., Any]
+    shim: Callable[[Any], Any] | None
+    info: DecoratorInfoType
+
+    @staticmethod
+    def build(
+        cls_: Any,
+        *,
+        cls_var_name: str,
+        shim: Callable[[Any], Any] | None,
+        info: DecoratorInfoType,
+    ) -> Decorator[DecoratorInfoType]:
+        """Build a new decorator.
+
+        Args:
+            cls_: The class.
+            cls_var_name: The decorated function name.
+            shim: A wrapper function to wrap V1 style function.
+            info: The decorator info.
+
+        Returns:
+            The new decorator instance.
+        """
+        func = get_attribute_from_bases(cls_, cls_var_name)
+        if shim is not None:
+            func = shim(func)
+        func = unwrap_wrapped_function(func, unwrap_partial=False)
+        if not callable(func):
+            # This branch will get hit for classmethod properties
+            attribute = get_attribute_from_base_dicts(cls_, cls_var_name)  # prevents the binding call to `__get__`
+            if isinstance(attribute, PydanticDescriptorProxy):
+                func = unwrap_wrapped_function(attribute.wrapped)
+        return Decorator(
+            cls_ref=get_type_ref(cls_),
+            cls_var_name=cls_var_name,
+            func=func,
+            shim=shim,
+            info=info,
+        )
+
+    def bind_to_cls(self, cls: Any) -> Decorator[DecoratorInfoType]:
+        """Bind the decorator to a class.
+
+        Args:
+            cls: the class.
+
+        Returns:
+            The new decorator instance.
+        """
+        return self.build(
+            cls,
+            cls_var_name=self.cls_var_name,
+            shim=self.shim,
+            info=self.info,
+        )
+
+
+def get_bases(tp: type[Any]) -> tuple[type[Any], ...]:
+    """Get the base classes of a class or typeddict.
+
+    Args:
+        tp: The type or class to get the bases.
+
+    Returns:
+        The base classes.
+    """
+    if is_typeddict(tp):
+        return tp.__orig_bases__  # type: ignore
+    try:
+        return tp.__bases__
+    except AttributeError:
+        return ()
+
+
+def mro(tp: type[Any]) -> tuple[type[Any], ...]:
+    """Calculate the Method Resolution Order of bases using the C3 algorithm.
+
+    See https://www.python.org/download/releases/2.3/mro/
+    """
+    # try to use the existing mro, for performance mainly
+    # but also because it helps verify the implementation below
+    if not is_typeddict(tp):
+        try:
+            return tp.__mro__
+        except AttributeError:
+            # GenericAlias and some other cases
+            pass
+
+    bases = get_bases(tp)
+    return (tp,) + mro_for_bases(bases)
+
+
+def mro_for_bases(bases: tuple[type[Any], ...]) -> tuple[type[Any], ...]:
+    def merge_seqs(seqs: list[deque[type[Any]]]) -> Iterable[type[Any]]:
+        while True:
+            non_empty = [seq for seq in seqs if seq]
+            if not non_empty:
+                # Nothing left to process, we're done.
+                return
+            candidate: type[Any] | None = None
+            for seq in non_empty:  # Find merge candidates among seq heads.
+                candidate = seq[0]
+                not_head = [s for s in non_empty if candidate in islice(s, 1, None)]
+                if not_head:
+                    # Reject the candidate.
+                    candidate = None
+                else:
+                    break
+            if not candidate:
+                raise TypeError('Inconsistent hierarchy, no C3 MRO is possible')
+            yield candidate
+            for seq in non_empty:
+                # Remove candidate.
+                if seq[0] == candidate:
+                    seq.popleft()
+
+    seqs = [deque(mro(base)) for base in bases] + [deque(bases)]
+    return tuple(merge_seqs(seqs))
+
+
+_sentinel = object()
+
+
+def get_attribute_from_bases(tp: type[Any] | tuple[type[Any], ...], name: str) -> Any:
+    """Get the attribute from the next class in the MRO that has it,
+    aiming to simulate calling the method on the actual class.
+
+    The reason for iterating over the mro instead of just getting
+    the attribute (which would do that for us) is to support TypedDict,
+    which lacks a real __mro__, but can have a virtual one constructed
+    from its bases (as done here).
+
+    Args:
+        tp: The type or class to search for the attribute. If a tuple, this is treated as a set of base classes.
+        name: The name of the attribute to retrieve.
+
+    Returns:
+        Any: The attribute value, if found.
+
+    Raises:
+        AttributeError: If the attribute is not found in any class in the MRO.
+    """
+    if isinstance(tp, tuple):
+        for base in mro_for_bases(tp):
+            attribute = base.__dict__.get(name, _sentinel)
+            if attribute is not _sentinel:
+                attribute_get = getattr(attribute, '__get__', None)
+                if attribute_get is not None:
+                    return attribute_get(None, tp)
+                return attribute
+        raise AttributeError(f'{name} not found in {tp}')
+    else:
+        try:
+            return getattr(tp, name)
+        except AttributeError:
+            return get_attribute_from_bases(mro(tp), name)
+
+
+def get_attribute_from_base_dicts(tp: type[Any], name: str) -> Any:
+    """Get an attribute out of the `__dict__` following the MRO.
+    This prevents the call to `__get__` on the descriptor, and allows
+    us to get the original function for classmethod properties.
+
+    Args:
+        tp: The type or class to search for the attribute.
+        name: The name of the attribute to retrieve.
+
+    Returns:
+        Any: The attribute value, if found.
+
+    Raises:
+        KeyError: If the attribute is not found in any class's `__dict__` in the MRO.
+    """
+    for base in reversed(mro(tp)):
+        if name in base.__dict__:
+            return base.__dict__[name]
+    return tp.__dict__[name]  # raise the error
+
+
+@dataclass(**slots_true)
+class DecoratorInfos:
+    """Mapping of name in the class namespace to decorator info.
+
+    note that the name in the class namespace is the function or attribute name
+    not the field name!
+    """
+
+    validators: dict[str, Decorator[ValidatorDecoratorInfo]] = field(default_factory=dict)
+    field_validators: dict[str, Decorator[FieldValidatorDecoratorInfo]] = field(default_factory=dict)
+    root_validators: dict[str, Decorator[RootValidatorDecoratorInfo]] = field(default_factory=dict)
+    field_serializers: dict[str, Decorator[FieldSerializerDecoratorInfo]] = field(default_factory=dict)
+    model_serializers: dict[str, Decorator[ModelSerializerDecoratorInfo]] = field(default_factory=dict)
+    model_validators: dict[str, Decorator[ModelValidatorDecoratorInfo]] = field(default_factory=dict)
+    computed_fields: dict[str, Decorator[ComputedFieldInfo]] = field(default_factory=dict)
+
+    @staticmethod
+    def build(model_dc: type[Any]) -> DecoratorInfos:  # noqa: C901 (ignore complexity)
+        """We want to collect all DecFunc instances that exist as
+        attributes in the namespace of the class (a BaseModel or dataclass)
+        that called us
+        But we want to collect these in the order of the bases
+        So instead of getting them all from the leaf class (the class that called us),
+        we traverse the bases from root (the oldest ancestor class) to leaf
+        and collect all of the instances as we go, taking care to replace
+        any duplicate ones with the last one we see to mimic how function overriding
+        works with inheritance.
+        If we do replace any functions we put the replacement into the position
+        the replaced function was in; that is, we maintain the order.
+        """
+        # reminder: dicts are ordered and replacement does not alter the order
+        res = DecoratorInfos()
+        for base in reversed(mro(model_dc)[1:]):
+            existing: DecoratorInfos | None = base.__dict__.get('__pydantic_decorators__')
+            if existing is None:
+                existing = DecoratorInfos.build(base)
+            res.validators.update({k: v.bind_to_cls(model_dc) for k, v in existing.validators.items()})
+            res.field_validators.update({k: v.bind_to_cls(model_dc) for k, v in existing.field_validators.items()})
+            res.root_validators.update({k: v.bind_to_cls(model_dc) for k, v in existing.root_validators.items()})
+            res.field_serializers.update({k: v.bind_to_cls(model_dc) for k, v in existing.field_serializers.items()})
+            res.model_serializers.update({k: v.bind_to_cls(model_dc) for k, v in existing.model_serializers.items()})
+            res.model_validators.update({k: v.bind_to_cls(model_dc) for k, v in existing.model_validators.items()})
+            res.computed_fields.update({k: v.bind_to_cls(model_dc) for k, v in existing.computed_fields.items()})
+
+        to_replace: list[tuple[str, Any]] = []
+
+        for var_name, var_value in vars(model_dc).items():
+            if isinstance(var_value, PydanticDescriptorProxy):
+                info = var_value.decorator_info
+                if isinstance(info, ValidatorDecoratorInfo):
+                    res.validators[var_name] = Decorator.build(
+                        model_dc, cls_var_name=var_name, shim=var_value.shim, info=info
+                    )
+                elif isinstance(info, FieldValidatorDecoratorInfo):
+                    res.field_validators[var_name] = Decorator.build(
+                        model_dc, cls_var_name=var_name, shim=var_value.shim, info=info
+                    )
+                elif isinstance(info, RootValidatorDecoratorInfo):
+                    res.root_validators[var_name] = Decorator.build(
+                        model_dc, cls_var_name=var_name, shim=var_value.shim, info=info
+                    )
+                elif isinstance(info, FieldSerializerDecoratorInfo):
+                    # check whether a serializer function is already registered for fields
+                    for field_serializer_decorator in res.field_serializers.values():
+                        # check that each field has at most one serializer function.
+                        # serializer functions for the same field in subclasses are allowed,
+                        # and are treated as overrides
+                        if field_serializer_decorator.cls_var_name == var_name:
+                            continue
+                        for f in info.fields:
+                            if f in field_serializer_decorator.info.fields:
+                                raise PydanticUserError(
+                                    'Multiple field serializer functions were defined '
+                                    f'for field {f!r}, this is not allowed.',
+                                    code='multiple-field-serializers',
+                                )
+                    res.field_serializers[var_name] = Decorator.build(
+                        model_dc, cls_var_name=var_name, shim=var_value.shim, info=info
+                    )
+                elif isinstance(info, ModelValidatorDecoratorInfo):
+                    res.model_validators[var_name] = Decorator.build(
+                        model_dc, cls_var_name=var_name, shim=var_value.shim, info=info
+                    )
+                elif isinstance(info, ModelSerializerDecoratorInfo):
+                    res.model_serializers[var_name] = Decorator.build(
+                        model_dc, cls_var_name=var_name, shim=var_value.shim, info=info
+                    )
+                else:
+                    from ..fields import ComputedFieldInfo
+
+                    isinstance(var_value, ComputedFieldInfo)
+                    res.computed_fields[var_name] = Decorator.build(
+                        model_dc, cls_var_name=var_name, shim=None, info=info
+                    )
+                to_replace.append((var_name, var_value.wrapped))
+        if to_replace:
+            # If we can save `__pydantic_decorators__` on the class we'll be able to

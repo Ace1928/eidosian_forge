@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/annotation_usecases_documentation.py
+KIND: code
+
+A class with annotated methods.

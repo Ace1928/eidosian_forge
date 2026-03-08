@@ -1,0 +1,17 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_trait_event_notifier_documentation.py
+KIND: code
+
+from functools import partial
+import types
+import weakref
+from traits.observation.exception_handling import handle_exception
+from traits.observation.exceptions import NotifierNotFound
+ Return true if the other notifier is equivalent to this one.
+
+        Parameters
+        ----------
+        other : any
+
+        Returns
+        -------
+        boolean

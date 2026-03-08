@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/DNSKEY_documentation.py
+KIND: code
+
+import dns.rdtypes.dnskeybase
+from dns.rdtypes.dnskeybase import flags_to_text_set, flags_from_text_set
+DNSKEY record

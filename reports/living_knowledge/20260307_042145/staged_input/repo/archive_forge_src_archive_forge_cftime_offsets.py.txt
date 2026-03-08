@@ -1,0 +1,620 @@
+SOURCE_PATH: archive_forge/src/archive_forge/cftime_offsets.py
+KIND: code
+
+"""Time offset classes for use with cftime.datetime objects"""
+
+# The offset classes and mechanisms for generating time ranges defined in
+# this module were copied/adapted from those defined in pandas.  See in
+# particular the objects and methods defined in pandas.tseries.offsets
+# and pandas.core.indexes.datetimes.
+
+# For reference, here is a copy of the pandas copyright notice:
+
+# (c) 2011-2012, Lambda Foundry, Inc. and PyData Development Team
+# All rights reserved.
+
+# Copyright (c) 2008-2011 AQR Capital Management, LLC
+# All rights reserved.
+
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+
+#     * Redistributions of source code must retain the above copyright
+#        notice, this list of conditions and the following disclaimer.
+
+#     * Redistributions in binary form must reproduce the above
+#        copyright notice, this list of conditions and the following
+#        disclaimer in the documentation and/or other materials provided
+#        with the distribution.
+
+#     * Neither the name of the copyright holder nor the names of any
+#        contributors may be used to endorse or promote products derived
+#        from this software without specific prior written permission.
+
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDER AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+from __future__ import annotations
+
+import re
+from datetime import datetime, timedelta
+from functools import partial
+from typing import TYPE_CHECKING, ClassVar
+
+import numpy as np
+import pandas as pd
+from packaging.version import Version
+
+from xarray.coding.cftimeindex import CFTimeIndex, _parse_iso8601_with_reso
+from xarray.coding.times import (
+    _is_standard_calendar,
+    _should_cftime_be_used,
+    convert_time_or_go_back,
+    format_cftime_datetime,
+)
+from xarray.core.common import _contains_datetime_like_objects, is_np_datetime_like
+from xarray.core.pdcompat import (
+    NoDefault,
+    count_not_none,
+    nanosecond_precision_timestamp,
+    no_default,
+)
+from xarray.core.utils import emit_user_level_warning
+
+try:
+    import cftime
+except ImportError:
+    cftime = None
+
+
+if TYPE_CHECKING:
+    from xarray.core.types import InclusiveOptions, SideOptions
+
+
+def get_date_type(calendar, use_cftime=True):
+    """Return the cftime date type for a given calendar name."""
+    if cftime is None:
+        raise ImportError("cftime is required for dates with non-standard calendars")
+    else:
+        if _is_standard_calendar(calendar) and not use_cftime:
+            return pd.Timestamp
+
+        calendars = {
+            "noleap": cftime.DatetimeNoLeap,
+            "360_day": cftime.Datetime360Day,
+            "365_day": cftime.DatetimeNoLeap,
+            "366_day": cftime.DatetimeAllLeap,
+            "gregorian": cftime.DatetimeGregorian,
+            "proleptic_gregorian": cftime.DatetimeProlepticGregorian,
+            "julian": cftime.DatetimeJulian,
+            "all_leap": cftime.DatetimeAllLeap,
+            "standard": cftime.DatetimeGregorian,
+        }
+        return calendars[calendar]
+
+
+class BaseCFTimeOffset:
+    _freq: ClassVar[str | None] = None
+    _day_option: ClassVar[str | None] = None
+
+    def __init__(self, n: int = 1):
+        if not isinstance(n, int):
+            raise TypeError(
+                "The provided multiple 'n' must be an integer. "
+                f"Instead a value of type {type(n)!r} was provided."
+            )
+        self.n = n
+
+    def rule_code(self):
+        return self._freq
+
+    def __eq__(self, other):
+        return self.n == other.n and self.rule_code() == other.rule_code()
+
+    def __ne__(self, other):
+        return not self == other
+
+    def __add__(self, other):
+        return self.__apply__(other)
+
+    def __sub__(self, other):
+        if cftime is None:
+            raise ModuleNotFoundError("No module named 'cftime'")
+
+        if isinstance(other, cftime.datetime):
+            raise TypeError("Cannot subtract a cftime.datetime from a time offset.")
+        elif type(other) == type(self):
+            return type(self)(self.n - other.n)
+        else:
+            return NotImplemented
+
+    def __mul__(self, other):
+        if not isinstance(other, int):
+            return NotImplemented
+        return type(self)(n=other * self.n)
+
+    def __neg__(self):
+        return self * -1
+
+    def __rmul__(self, other):
+        return self.__mul__(other)
+
+    def __radd__(self, other):
+        return self.__add__(other)
+
+    def __rsub__(self, other):
+        if isinstance(other, BaseCFTimeOffset) and type(self) != type(other):
+            raise TypeError("Cannot subtract cftime offsets of differing types")
+        return -self + other
+
+    def __apply__(self):
+        return NotImplemented
+
+    def onOffset(self, date):
+        """Check if the given date is in the set of possible dates created
+        using a length-one version of this offset class."""
+        test_date = (self + date) - self
+        return date == test_date
+
+    def rollforward(self, date):
+        if self.onOffset(date):
+            return date
+        else:
+            return date + type(self)()
+
+    def rollback(self, date):
+        if self.onOffset(date):
+            return date
+        else:
+            return date - type(self)()
+
+    def __str__(self):
+        return f"<{type(self).__name__}: n={self.n}>"
+
+    def __repr__(self):
+        return str(self)
+
+    def _get_offset_day(self, other):
+        # subclass must implement `_day_option`; calling from the base class
+        # will raise NotImplementedError.
+        return _get_day_of_month(other, self._day_option)
+
+
+class Tick(BaseCFTimeOffset):
+    # analogous https://github.com/pandas-dev/pandas/blob/ccb25ab1d24c4fb9691270706a59c8d319750870/pandas/_libs/tslibs/offsets.pyx#L806
+
+    def _next_higher_resolution(self):
+        self_type = type(self)
+        if self_type not in [Day, Hour, Minute, Second, Millisecond]:
+            raise ValueError("Could not convert to integer offset at any resolution")
+        if type(self) is Day:
+            return Hour(self.n * 24)
+        if type(self) is Hour:
+            return Minute(self.n * 60)
+        if type(self) is Minute:
+            return Second(self.n * 60)
+        if type(self) is Second:
+            return Millisecond(self.n * 1000)
+        if type(self) is Millisecond:
+            return Microsecond(self.n * 1000)
+
+    def __mul__(self, other):
+        if not isinstance(other, (int, float)):
+            return NotImplemented
+        if isinstance(other, float):
+            n = other * self.n
+            # If the new `n` is an integer, we can represent it using the
+            #  same BaseCFTimeOffset subclass as self, otherwise we need to move up
+            #  to a higher-resolution subclass
+            if np.isclose(n % 1, 0):
+                return type(self)(int(n))
+
+            new_self = self._next_higher_resolution()
+            return new_self * other
+        return type(self)(n=other * self.n)
+
+    def as_timedelta(self):
+        """All Tick subclasses must implement an as_timedelta method."""
+        raise NotImplementedError
+
+
+def _get_day_of_month(other, day_option):
+    """Find the day in `other`'s month that satisfies a BaseCFTimeOffset's
+    onOffset policy, as described by the `day_option` argument.
+
+    Parameters
+    ----------
+    other : cftime.datetime
+    day_option : 'start', 'end'
+        'start': returns 1
+        'end': returns last day of the month
+
+    Returns
+    -------
+    day_of_month : int
+
+    """
+
+    if day_option == "start":
+        return 1
+    elif day_option == "end":
+        return _days_in_month(other)
+    elif day_option is None:
+        # Note: unlike `_shift_month`, _get_day_of_month does not
+        # allow day_option = None
+        raise NotImplementedError()
+    else:
+        raise ValueError(day_option)
+
+
+def _days_in_month(date):
+    """The number of days in the month of the given date"""
+    if date.month == 12:
+        reference = type(date)(date.year + 1, 1, 1)
+    else:
+        reference = type(date)(date.year, date.month + 1, 1)
+    return (reference - timedelta(days=1)).day
+
+
+def _adjust_n_months(other_day, n, reference_day):
+    """Adjust the number of times a monthly offset is applied based
+    on the day of a given date, and the reference day provided.
+    """
+    if n > 0 and other_day < reference_day:
+        n = n - 1
+    elif n <= 0 and other_day > reference_day:
+        n = n + 1
+    return n
+
+
+def _adjust_n_years(other, n, month, reference_day):
+    """Adjust the number of times an annual offset is applied based on
+    another date, and the reference day provided"""
+    if n > 0:
+        if other.month < month or (other.month == month and other.day < reference_day):
+            n -= 1
+    else:
+        if other.month > month or (other.month == month and other.day > reference_day):
+            n += 1
+    return n
+
+
+def _shift_month(date, months, day_option="start"):
+    """Shift the date to a month start or end a given number of months away."""
+    if cftime is None:
+        raise ModuleNotFoundError("No module named 'cftime'")
+
+    delta_year = (date.month + months) // 12
+    month = (date.month + months) % 12
+
+    if month == 0:
+        month = 12
+        delta_year = delta_year - 1
+    year = date.year + delta_year
+
+    if day_option == "start":
+        day = 1
+    elif day_option == "end":
+        reference = type(date)(year, month, 1)
+        day = _days_in_month(reference)
+    else:
+        raise ValueError(day_option)
+    return date.replace(year=year, month=month, day=day)
+
+
+def roll_qtrday(other, n, month, day_option, modby=3):
+    """Possibly increment or decrement the number of periods to shift
+    based on rollforward/rollbackward conventions.
+
+    Parameters
+    ----------
+    other : cftime.datetime
+    n : number of periods to increment, before adjusting for rolling
+    month : int reference month giving the first month of the year
+    day_option : 'start', 'end'
+        The convention to use in finding the day in a given month against
+        which to compare for rollforward/rollbackward decisions.
+    modby : int 3 for quarters, 12 for years
+
+    Returns
+    -------
+    n : int number of periods to increment
+
+    See Also
+    --------
+    _get_day_of_month : Find the day in a month provided an offset.
+    """
+
+    months_since = other.month % modby - month % modby
+
+    if n > 0:
+        if months_since < 0 or (
+            months_since == 0 and other.day < _get_day_of_month(other, day_option)
+        ):
+            # pretend to roll back if on same month but
+            # before compare_day
+            n -= 1
+    else:
+        if months_since > 0 or (
+            months_since == 0 and other.day > _get_day_of_month(other, day_option)
+        ):
+            # make sure to roll forward, so negate
+            n += 1
+    return n
+
+
+def _validate_month(month, default_month):
+    result_month = default_month if month is None else month
+    if not isinstance(result_month, int):
+        raise TypeError(
+            "'self.month' must be an integer value between 1 "
+            "and 12.  Instead, it was set to a value of "
+            f"{result_month!r}"
+        )
+    elif not (1 <= result_month <= 12):
+        raise ValueError(
+            "'self.month' must be an integer value between 1 "
+            "and 12.  Instead, it was set to a value of "
+            f"{result_month!r}"
+        )
+    return result_month
+
+
+class MonthBegin(BaseCFTimeOffset):
+    _freq = "MS"
+
+    def __apply__(self, other):
+        n = _adjust_n_months(other.day, self.n, 1)
+        return _shift_month(other, n, "start")
+
+    def onOffset(self, date):
+        """Check if the given date is in the set of possible dates created
+        using a length-one version of this offset class."""
+        return date.day == 1
+
+
+class MonthEnd(BaseCFTimeOffset):
+    _freq = "ME"
+
+    def __apply__(self, other):
+        n = _adjust_n_months(other.day, self.n, _days_in_month(other))
+        return _shift_month(other, n, "end")
+
+    def onOffset(self, date):
+        """Check if the given date is in the set of possible dates created
+        using a length-one version of this offset class."""
+        return date.day == _days_in_month(date)
+
+
+_MONTH_ABBREVIATIONS = {
+    1: "JAN",
+    2: "FEB",
+    3: "MAR",
+    4: "APR",
+    5: "MAY",
+    6: "JUN",
+    7: "JUL",
+    8: "AUG",
+    9: "SEP",
+    10: "OCT",
+    11: "NOV",
+    12: "DEC",
+}
+
+
+class QuarterOffset(BaseCFTimeOffset):
+    """Quarter representation copied off of pandas/tseries/offsets.py"""
+
+    _freq: ClassVar[str]
+    _default_month: ClassVar[int]
+
+    def __init__(self, n=1, month=None):
+        BaseCFTimeOffset.__init__(self, n)
+        self.month = _validate_month(month, self._default_month)
+
+    def __apply__(self, other):
+        # months_since: find the calendar quarter containing other.month,
+        # e.g. if other.month == 8, the calendar quarter is [Jul, Aug, Sep].
+        # Then find the month in that quarter containing an onOffset date for
+        # self.  `months_since` is the number of months to shift other.month
+        # to get to this on-offset month.
+        months_since = other.month % 3 - self.month % 3
+        qtrs = roll_qtrday(
+            other, self.n, self.month, day_option=self._day_option, modby=3
+        )
+        months = qtrs * 3 - months_since
+        return _shift_month(other, months, self._day_option)
+
+    def onOffset(self, date):
+        """Check if the given date is in the set of possible dates created
+        using a length-one version of this offset class."""
+        mod_month = (date.month - self.month) % 3
+        return mod_month == 0 and date.day == self._get_offset_day(date)
+
+    def __sub__(self, other):
+        if cftime is None:
+            raise ModuleNotFoundError("No module named 'cftime'")
+
+        if isinstance(other, cftime.datetime):
+            raise TypeError("Cannot subtract cftime.datetime from offset.")
+        elif type(other) == type(self) and other.month == self.month:
+            return type(self)(self.n - other.n, month=self.month)
+        else:
+            return NotImplemented
+
+    def __mul__(self, other):
+        if isinstance(other, float):
+            return NotImplemented
+        return type(self)(n=other * self.n, month=self.month)
+
+    def rule_code(self):
+        return f"{self._freq}-{_MONTH_ABBREVIATIONS[self.month]}"
+
+    def __str__(self):
+        return f"<{type(self).__name__}: n={self.n}, month={self.month}>"
+
+
+class QuarterBegin(QuarterOffset):
+    # When converting a string to an offset, pandas converts
+    # 'QS' to a QuarterBegin offset starting in the month of
+    # January.  When creating a QuarterBegin offset directly
+    # from the constructor, however, the default month is March.
+    # We follow that behavior here.
+    _default_month = 3
+    _freq = "QS"
+    _day_option = "start"
+
+    def rollforward(self, date):
+        """Roll date forward to nearest start of quarter"""
+        if self.onOffset(date):
+            return date
+        else:
+            return date + QuarterBegin(month=self.month)
+
+    def rollback(self, date):
+        """Roll date backward to nearest start of quarter"""
+        if self.onOffset(date):
+            return date
+        else:
+            return date - QuarterBegin(month=self.month)
+
+
+class QuarterEnd(QuarterOffset):
+    # When converting a string to an offset, pandas converts
+    # 'Q' to a QuarterEnd offset starting in the month of
+    # December.  When creating a QuarterEnd offset directly
+    # from the constructor, however, the default month is March.
+    # We follow that behavior here.
+    _default_month = 3
+    _freq = "QE"
+    _day_option = "end"
+
+    def rollforward(self, date):
+        """Roll date forward to nearest end of quarter"""
+        if self.onOffset(date):
+            return date
+        else:
+            return date + QuarterEnd(month=self.month)
+
+    def rollback(self, date):
+        """Roll date backward to nearest end of quarter"""
+        if self.onOffset(date):
+            return date
+        else:
+            return date - QuarterEnd(month=self.month)
+
+
+class YearOffset(BaseCFTimeOffset):
+    _freq: ClassVar[str]
+    _day_option: ClassVar[str]
+    _default_month: ClassVar[int]
+
+    def __init__(self, n=1, month=None):
+        BaseCFTimeOffset.__init__(self, n)
+        self.month = _validate_month(month, self._default_month)
+
+    def __apply__(self, other):
+        reference_day = _get_day_of_month(other, self._day_option)
+        years = _adjust_n_years(other, self.n, self.month, reference_day)
+        months = years * 12 + (self.month - other.month)
+        return _shift_month(other, months, self._day_option)
+
+    def __sub__(self, other):
+        if cftime is None:
+            raise ModuleNotFoundError("No module named 'cftime'")
+
+        if isinstance(other, cftime.datetime):
+            raise TypeError("Cannot subtract cftime.datetime from offset.")
+        elif type(other) == type(self) and other.month == self.month:
+            return type(self)(self.n - other.n, month=self.month)
+        else:
+            return NotImplemented
+
+    def __mul__(self, other):
+        if isinstance(other, float):
+            return NotImplemented
+        return type(self)(n=other * self.n, month=self.month)
+
+    def rule_code(self):
+        return f"{self._freq}-{_MONTH_ABBREVIATIONS[self.month]}"
+
+    def __str__(self):
+        return f"<{type(self).__name__}: n={self.n}, month={self.month}>"
+
+
+class YearBegin(YearOffset):
+    _freq = "YS"
+    _day_option = "start"
+    _default_month = 1
+
+    def onOffset(self, date):
+        """Check if the given date is in the set of possible dates created
+        using a length-one version of this offset class."""
+        return date.day == 1 and date.month == self.month
+
+    def rollforward(self, date):
+        """Roll date forward to nearest start of year"""
+        if self.onOffset(date):
+            return date
+        else:
+            return date + YearBegin(month=self.month)
+
+    def rollback(self, date):
+        """Roll date backward to nearest start of year"""
+        if self.onOffset(date):
+            return date
+        else:
+            return date - YearBegin(month=self.month)
+
+
+class YearEnd(YearOffset):
+    _freq = "YE"
+    _day_option = "end"
+    _default_month = 12
+
+    def onOffset(self, date):
+        """Check if the given date is in the set of possible dates created
+        using a length-one version of this offset class."""
+        return date.day == _days_in_month(date) and date.month == self.month
+
+    def rollforward(self, date):
+        """Roll date forward to nearest end of year"""
+        if self.onOffset(date):
+            return date
+        else:
+            return date + YearEnd(month=self.month)
+
+    def rollback(self, date):
+        """Roll date backward to nearest end of year"""
+        if self.onOffset(date):
+            return date
+        else:
+            return date - YearEnd(month=self.month)
+
+
+class Day(Tick):
+    _freq = "D"
+
+    def as_timedelta(self):
+        return timedelta(days=self.n)
+
+    def __apply__(self, other):
+        return other + self.as_timedelta()
+
+
+class Hour(Tick):
+    _freq = "h"
+
+    def as_timedelta(self):
+        return timedelta(hours=self.n)
+
+    def __ap

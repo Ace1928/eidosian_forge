@@ -1,0 +1,10 @@
+SOURCE_PATH: agent_forge/src/agent_forge/planners/templates/hygiene.yaml
+KIND: config
+
+steps:
+  - name: format
+    cmd: ["ruff","--fix","."]
+    budget_s: 30
+  - name: test
+    cmd: ["pytest","${pytest_args}"]
+    budget_s: 300

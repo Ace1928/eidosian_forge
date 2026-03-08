@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/basic_provider_job_documentation.py
+KIND: code
+
+import warnings
+from qiskit.providers import JobStatus
+from qiskit.providers.job import JobV1
+Return the instance of the backend used for this job.

@@ -1,0 +1,13 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/KY
+KIND: config
+
+KY
+bodden town
+sister islands
+
+east end
+
+north side
+
+west bay
+george town

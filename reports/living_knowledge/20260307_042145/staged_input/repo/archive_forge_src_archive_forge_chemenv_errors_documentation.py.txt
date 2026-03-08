@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/chemenv_errors_documentation.py
+KIND: code
+
+from __future__ import annotations
+
+        Args:
+            cls:
+            method:
+            msg:

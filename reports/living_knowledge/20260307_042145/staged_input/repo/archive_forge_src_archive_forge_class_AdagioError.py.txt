@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AdagioError.py
+KIND: code
+
+from typing import Iterable
+class AdagioError(Exception):
+    pass

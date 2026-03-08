@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AccessControl.py
+KIND: code
+
+import xcffib
+import struct
+import io
+class AccessControl:
+    Disable = 0
+    Enable = 1

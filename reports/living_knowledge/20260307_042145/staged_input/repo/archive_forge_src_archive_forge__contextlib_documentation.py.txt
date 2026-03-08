@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_contextlib_documentation.py
+KIND: code
+
+import functools
+import inspect
+import warnings
+import sys
+from typing import Any, Callable, TypeVar, cast
+Allow a context manager to be used as a decorator without parentheses.

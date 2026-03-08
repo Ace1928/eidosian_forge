@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_trifinder_documentation.py
+KIND: code
+
+import numpy as np
+from matplotlib import _api
+from matplotlib.tri import Triangulation
+
+        Print a text representation of the node tree, which is useful for
+        debugging purposes.

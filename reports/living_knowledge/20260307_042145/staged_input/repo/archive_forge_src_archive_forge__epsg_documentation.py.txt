@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_epsg_documentation.py
+KIND: code
+
+from pyproj.crs import CRS as _CRS
+import cartopy.crs as ccrs
+
+Provide support for converting EPSG codes to Projection instances.

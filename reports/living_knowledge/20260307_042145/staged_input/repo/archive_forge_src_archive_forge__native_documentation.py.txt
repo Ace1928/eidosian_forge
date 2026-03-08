@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_native_documentation.py
+KIND: code
+
+from collections import OrderedDict
+from .. import Substance
+
+Non-public API (expect changes without notice).
+
+Helper functions for using native code generation together with pyodesys.

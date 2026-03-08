@@ -21,21 +21,45 @@ class DocGenerator:
         self.cfg = cfg
 
     def _call_model(self, prompt: str, temperature: float = 0.2, stop: list[str] | None = None) -> str:
-        payload = {
-            "prompt": prompt,
-            "n_predict": self.cfg.llm_n_predict,
-            "temperature": temperature,
-            "stop": stop or ["<|im_end|>", "</s>"],
-            "stream": False,
-        }
+        # Check if we are using Ollama or llama-server
+        is_ollama = "/api/generate" in self.cfg.completion_url
+        
+        if is_ollama:
+            payload = {
+                "model": "qwen3.5:2b",
+                "prompt": prompt,
+                "stream": False,
+                "options": {
+                    "temperature": temperature,
+                    "num_predict": self.cfg.llm_n_predict
+                }
+            }
+        else:
+            payload = {
+                "prompt": prompt,
+                "n_predict": self.cfg.llm_n_predict,
+                "temperature": temperature,
+                "stop": stop or ["<|im_end|>", "</s>"],
+                "stream": False,
+            }
 
         # Simple file lock to ensure single model usage
         with open(self.cfg.model_lock_path, "w") as lockfile:
             fcntl.flock(lockfile, fcntl.LOCK_EX)
             try:
-                resp = requests.post(self.cfg.completion_url, json=payload, timeout=240)
+                resp = requests.post(self.cfg.completion_url, json=payload, timeout=3600)
                 resp.raise_for_status()
-                return (resp.json().get("content") or "").strip()
+                data = resp.json()
+                
+                if is_ollama:
+                    output = (data.get("response") or "").strip()
+                else:
+                    output = (data.get("content") or "").strip()
+                
+                # Strip thinking blocks for production quality
+                import re
+                output = re.sub(r"<think>.*?</think>", "", output, flags=re.DOTALL).strip()
+                return output
             finally:
                 fcntl.flock(lockfile, fcntl.LOCK_UN)
 

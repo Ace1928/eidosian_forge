@@ -1,0 +1,15 @@
+SOURCE_PATH: archive_forge/src/archive_forge/0SWT.py
+KIND: code
+
+import logging
+
+
+def configure_logging():
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)s - %(levelname)s - %(message)s",
+        handlers=[
+            logging.FileHandler("image_interconversion_gui.log", mode="a"),
+            logging.StreamHandler(),  # Console logging
+        ],
+    )

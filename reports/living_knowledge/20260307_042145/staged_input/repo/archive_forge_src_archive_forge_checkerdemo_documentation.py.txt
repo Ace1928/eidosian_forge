@@ -1,0 +1,10 @@
+SOURCE_PATH: archive_forge/src/archive_forge/checkerdemo_documentation.py
+KIND: code
+
+import os
+import cherrypy
+Demonstration app for cherrypy.checker.
+
+This application is intentionally broken and badly designed.
+To demonstrate the output of the CherryPy Checker, simply execute
+this module.

@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/cadftype_documentation.py
+KIND: code
+
+import abc
+from oslo_serialization import jsonutils
+import six
+Check to see if attribute is defined.

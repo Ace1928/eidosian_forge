@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/async_compat_documentation.py
+KIND: code
+
+import asyncio
+import inspect
+Convert a blocking function to async function

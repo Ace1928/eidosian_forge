@@ -1,35 +1,43 @@
-# 📊 Viz Forge
+# 📊 Viz Forge ⚡
 
-[![Python: 3.12](https://img.shields.io/badge/Python-3.12-blue.svg)](../global_info.py)
-[![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+> _"The Lens of Eidos. To visualize data is to see the patterns of thought."_
 
-**The Lens of Eidos.**
+## 🧠 Overview
 
-> _"To visualize data is to see the patterns of thought."_
+`viz_forge` is the central visualization and rendering engine for Eidosian data. It provides standardized plotting utilities for agent performance, memory density, knowledge graph structures, and system diagnostics. It prioritizes clarity, structural elegance, and strict adherence to the "Eidosian Aesthetic" (Dark Mode, high contrast, minimal noise).
 
-## 📊 Overview
+```ascii
+      ╭───────────────────────────────────────────╮
+      │                VIZ FORGE                  │
+      │    < Metrics | Graphs | Heatmaps >        │
+      ╰──────────┬─────────────────────┬──────────╯
+                 │                     │
+      ╭──────────┴──────────╮   ╭──────┴──────────╮
+      │   PLOTTER ENGINE    │   │  STYLE CONFIG   │
+      │ (Matplotlib Wrap)   │   │ (Eidosian Core) │
+      ╰─────────────────────╯   ╰─────────────────╯
+```
 
-`viz_forge` is the visualization engine for Eidosian data. It provides standardized plotting utilities for agent performance, memory density, knowledge graph structures, and system diagnostics. It prioritizes clarity, structural elegance, and "Dark Mode" aesthetics.
+## ⚡ Current State & Metrics
 
-## 🏗️ Architecture
+- **Status**: 🟢 Elevated & Operational
+- **Type**: Data Visualization & Reporting
+- **Test Coverage**: Core plotting logic verified.
+- **Architecture**:
+  - `src/viz_forge/cli/`: Minimal entry points.
+  - `eidosian_config.yml`: Unified configuration dictating exact color hex codes and grid alphas.
 
-- **Plotter Core (`src/viz_forge/`)**: Wraps `matplotlib` and `seaborn` with high-level functions (`line`, `scatter`, `bar`).
-- **Eidosian Style**: A curated theme (`eidosian_config.yml`) ensuring consistent colors, fonts, and grid lines across all system artifacts.
-- **Auto-Report Generator**: (In Development) Automatically produces PDF or HTML reports from diagnostic metrics.
+## 🚀 Usage & Workflows
 
-## 🔗 System Integration
-
-- **Diagnostics Forge**: Feeds time-series data to `viz_forge` for system pulse monitoring.
-- **Knowledge Forge**: Uses visualization tools to render the concept graph.
-
-## 🚀 Usage
+### Python API
 
 ```python
 from viz_forge import Plotter
 
+# Initialize plotter with the standard Eidosian style
 p = Plotter(theme="elegant")
 
-# Visualize metrics
+# Generate standard telemetry visual
 p.line(
     x=[1, 2, 3, 4], 
     y=[10, 15, 7, 25], 
@@ -37,5 +45,23 @@ p.line(
     label="qwen-1.5b"
 )
 
+# Render to standard reports directory
 p.save("reports/viz/latency.png")
 ```
+
+## 🔗 System Integration
+
+- **Diagnostics Forge**: Feeds time-series operational pulse data to `viz_forge` for rendering system health dashboards.
+- **Knowledge Forge**: Uses advanced layout algorithms to render 2D projections of the semantic concept graph.
+
+## 🎯 Master Plan & Evolution
+
+### Immediate Goals
+- [x] Consolidate legacy docs into unified Eidosian standard.
+- [ ] Add explicit support for `seaborn` statistical distribution wrappers.
+
+### Future Vector (Phase 3+)
+- Build an Auto-Report Generator that automatically pulls latest JSON benchmarks from `code_forge` and `llm_forge`, and renders a composite PDF or interactive HTML report via `article_forge`.
+
+---
+*Generated and maintained by Eidos.*

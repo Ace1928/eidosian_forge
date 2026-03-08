@@ -1,0 +1,714 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_data.py
+KIND: code
+
+from plotly.basedatatypes import BaseLayoutHierarchyType as _BaseLayoutHierarchyType
+import copy as _copy
+
+
+class Data(_BaseLayoutHierarchyType):
+
+    # class properties
+    # --------------------
+    _parent_path_str = "layout.template"
+    _path_str = "layout.template.data"
+    _valid_props = {
+        "bar",
+        "barpolar",
+        "box",
+        "candlestick",
+        "carpet",
+        "choropleth",
+        "choroplethmapbox",
+        "cone",
+        "contour",
+        "contourcarpet",
+        "densitymapbox",
+        "funnel",
+        "funnelarea",
+        "heatmap",
+        "heatmapgl",
+        "histogram",
+        "histogram2d",
+        "histogram2dcontour",
+        "icicle",
+        "image",
+        "indicator",
+        "isosurface",
+        "mesh3d",
+        "ohlc",
+        "parcats",
+        "parcoords",
+        "pie",
+        "pointcloud",
+        "sankey",
+        "scatter",
+        "scatter3d",
+        "scattercarpet",
+        "scattergeo",
+        "scattergl",
+        "scattermapbox",
+        "scatterpolar",
+        "scatterpolargl",
+        "scattersmith",
+        "scatterternary",
+        "splom",
+        "streamtube",
+        "sunburst",
+        "surface",
+        "table",
+        "treemap",
+        "violin",
+        "volume",
+        "waterfall",
+    }
+
+    # barpolar
+    # --------
+    @property
+    def barpolar(self):
+        """
+        The 'barpolar' property is a tuple of instances of
+        Barpolar that may be specified as:
+          - A list or tuple of instances of plotly.graph_objs.layout.template.data.Barpolar
+          - A list or tuple of dicts of string/value properties that
+            will be passed to the Barpolar constructor
+
+            Supported dict properties:
+
+        Returns
+        -------
+        tuple[plotly.graph_objs.layout.template.data.Barpolar]
+        """
+        return self["barpolar"]
+
+    @barpolar.setter
+    def barpolar(self, val):
+        self["barpolar"] = val
+
+    # bar
+    # ---
+    @property
+    def bar(self):
+        """
+        The 'bar' property is a tuple of instances of
+        Bar that may be specified as:
+          - A list or tuple of instances of plotly.graph_objs.layout.template.data.Bar
+          - A list or tuple of dicts of string/value properties that
+            will be passed to the Bar constructor
+
+            Supported dict properties:
+
+        Returns
+        -------
+        tuple[plotly.graph_objs.layout.template.data.Bar]
+        """
+        return self["bar"]
+
+    @bar.setter
+    def bar(self, val):
+        self["bar"] = val
+
+    # box
+    # ---
+    @property
+    def box(self):
+        """
+        The 'box' property is a tuple of instances of
+        Box that may be specified as:
+          - A list or tuple of instances of plotly.graph_objs.layout.template.data.Box
+          - A list or tuple of dicts of string/value properties that
+            will be passed to the Box constructor
+
+            Supported dict properties:
+
+        Returns
+        -------
+        tuple[plotly.graph_objs.layout.template.data.Box]
+        """
+        return self["box"]
+
+    @box.setter
+    def box(self, val):
+        self["box"] = val
+
+    # candlestick
+    # -----------
+    @property
+    def candlestick(self):
+        """
+        The 'candlestick' property is a tuple of instances of
+        Candlestick that may be specified as:
+          - A list or tuple of instances of plotly.graph_objs.layout.template.data.Candlestick
+          - A list or tuple of dicts of string/value properties that
+            will be passed to the Candlestick constructor
+
+            Supported dict properties:
+
+        Returns
+        -------
+        tuple[plotly.graph_objs.layout.template.data.Candlestick]
+        """
+        return self["candlestick"]
+
+    @candlestick.setter
+    def candlestick(self, val):
+        self["candlestick"] = val
+
+    # carpet
+    # ------
+    @property
+    def carpet(self):
+        """
+        The 'carpet' property is a tuple of instances of
+        Carpet that may be specified as:
+          - A list or tuple of instances of plotly.graph_objs.layout.template.data.Carpet
+          - A list or tuple of dicts of string/value properties that
+            will be passed to the Carpet constructor
+
+            Supported dict properties:
+
+        Returns
+        -------
+        tuple[plotly.graph_objs.layout.template.data.Carpet]
+        """
+        return self["carpet"]
+
+    @carpet.setter
+    def carpet(self, val):
+        self["carpet"] = val
+
+    # choroplethmapbox
+    # ----------------
+    @property
+    def choroplethmapbox(self):
+        """
+        The 'choroplethmapbox' property is a tuple of instances of
+        Choroplethmapbox that may be specified as:
+          - A list or tuple of instances of plotly.graph_objs.layout.template.data.Choroplethmapbox
+          - A list or tuple of dicts of string/value properties that
+            will be passed to the Choroplethmapbox constructor
+
+            Supported dict properties:
+
+        Returns
+        -------
+        tuple[plotly.graph_objs.layout.template.data.Choroplethmapbox]
+        """
+        return self["choroplethmapbox"]
+
+    @choroplethmapbox.setter
+    def choroplethmapbox(self, val):
+        self["choroplethmapbox"] = val
+
+    # choropleth
+    # ----------
+    @property
+    def choropleth(self):
+        """
+        The 'choropleth' property is a tuple of instances of
+        Choropleth that may be specified as:
+          - A list or tuple of instances of plotly.graph_objs.layout.template.data.Choropleth
+          - A list or tuple of dicts of string/value properties that
+            will be passed to the Choropleth constructor
+
+            Supported dict properties:
+
+        Returns
+        -------
+        tuple[plotly.graph_objs.layout.template.data.Choropleth]
+        """
+        return self["choropleth"]
+
+    @choropleth.setter
+    def choropleth(self, val):
+        self["choropleth"] = val
+
+    # cone
+    # ----
+    @property
+    def cone(self):
+        """
+        The 'cone' property is a tuple of instances of
+        Cone that may be specified as:
+          - A list or tuple of instances of plotly.graph_objs.layout.template.data.Cone
+          - A list or tuple of dicts of string/value properties that
+            will be passed to the Cone constructor
+
+            Supported dict properties:
+
+        Returns
+        -------
+        tuple[plotly.graph_objs.layout.template.data.Cone]
+        """
+        return self["cone"]
+
+    @cone.setter
+    def cone(self, val):
+        self["cone"] = val
+
+    # contourcarpet
+    # -------------
+    @property
+    def contourcarpet(self):
+        """
+        The 'contourcarpet' property is a tuple of instances of
+        Contourcarpet that may be specified as:
+          - A list or tuple of instances of plotly.graph_objs.layout.template.data.Contourcarpet
+          - A list or tuple of dicts of string/value properties that
+            will be passed to the Contourcarpet constructor
+
+            Supported dict properties:
+
+        Returns
+        -------
+        tuple[plotly.graph_objs.layout.template.data.Contourcarpet]
+        """
+        return self["contourcarpet"]
+
+    @contourcarpet.setter
+    def contourcarpet(self, val):
+        self["contourcarpet"] = val
+
+    # contour
+    # -------
+    @property
+    def contour(self):
+        """
+        The 'contour' property is a tuple of instances of
+        Contour that may be specified as:
+          - A list or tuple of instances of plotly.graph_objs.layout.template.data.Contour
+          - A list or tuple of dicts of string/value properties that
+            will be passed to the Contour constructor
+
+            Supported dict properties:
+
+        Returns
+        -------
+        tuple[plotly.graph_objs.layout.template.data.Contour]
+        """
+        return self["contour"]
+
+    @contour.setter
+    def contour(self, val):
+        self["contour"] = val
+
+    # densitymapbox
+    # -------------
+    @property
+    def densitymapbox(self):
+        """
+        The 'densitymapbox' property is a tuple of instances of
+        Densitymapbox that may be specified as:
+          - A list or tuple of instances of plotly.graph_objs.layout.template.data.Densitymapbox
+          - A list or tuple of dicts of string/value properties that
+            will be passed to the Densitymapbox constructor
+
+            Supported dict properties:
+
+        Returns
+        -------
+        tuple[plotly.graph_objs.layout.template.data.Densitymapbox]
+        """
+        return self["densitymapbox"]
+
+    @densitymapbox.setter
+    def densitymapbox(self, val):
+        self["densitymapbox"] = val
+
+    # funnelarea
+    # ----------
+    @property
+    def funnelarea(self):
+        """
+        The 'funnelarea' property is a tuple of instances of
+        Funnelarea that may be specified as:
+          - A list or tuple of instances of plotly.graph_objs.layout.template.data.Funnelarea
+          - A list or tuple of dicts of string/value properties that
+            will be passed to the Funnelarea constructor
+
+            Supported dict properties:
+
+        Returns
+        -------
+        tuple[plotly.graph_objs.layout.template.data.Funnelarea]
+        """
+        return self["funnelarea"]
+
+    @funnelarea.setter
+    def funnelarea(self, val):
+        self["funnelarea"] = val
+
+    # funnel
+    # ------
+    @property
+    def funnel(self):
+        """
+        The 'funnel' property is a tuple of instances of
+        Funnel that may be specified as:
+          - A list or tuple of instances of plotly.graph_objs.layout.template.data.Funnel
+          - A list or tuple of dicts of string/value properties that
+            will be passed to the Funnel constructor
+
+            Supported dict properties:
+
+        Returns
+        -------
+        tuple[plotly.graph_objs.layout.template.data.Funnel]
+        """
+        return self["funnel"]
+
+    @funnel.setter
+    def funnel(self, val):
+        self["funnel"] = val
+
+    # heatmapgl
+    # ---------
+    @property
+    def heatmapgl(self):
+        """
+        The 'heatmapgl' property is a tuple of instances of
+        Heatmapgl that may be specified as:
+          - A list or tuple of instances of plotly.graph_objs.layout.template.data.Heatmapgl
+          - A list or tuple of dicts of string/value properties that
+            will be passed to the Heatmapgl constructor
+
+            Supported dict properties:
+
+        Returns
+        -------
+        tuple[plotly.graph_objs.layout.template.data.Heatmapgl]
+        """
+        return self["heatmapgl"]
+
+    @heatmapgl.setter
+    def heatmapgl(self, val):
+        self["heatmapgl"] = val
+
+    # heatmap
+    # -------
+    @property
+    def heatmap(self):
+        """
+        The 'heatmap' property is a tuple of instances of
+        Heatmap that may be specified as:
+          - A list or tuple of instances of plotly.graph_objs.layout.template.data.Heatmap
+          - A list or tuple of dicts of string/value properties that
+            will be passed to the Heatmap constructor
+
+            Supported dict properties:
+
+        Returns
+        -------
+        tuple[plotly.graph_objs.layout.template.data.Heatmap]
+        """
+        return self["heatmap"]
+
+    @heatmap.setter
+    def heatmap(self, val):
+        self["heatmap"] = val
+
+    # histogram2dcontour
+    # ------------------
+    @property
+    def histogram2dcontour(self):
+        """
+        The 'histogram2dcontour' property is a tuple of instances of
+        Histogram2dContour that may be specified as:
+          - A list or tuple of instances of plotly.graph_objs.layout.template.data.Histogram2dContour
+          - A list or tuple of dicts of string/value properties that
+            will be passed to the Histogram2dContour constructor
+
+            Supported dict properties:
+
+        Returns
+        -------
+        tuple[plotly.graph_objs.layout.template.data.Histogram2dContour]
+        """
+        return self["histogram2dcontour"]
+
+    @histogram2dcontour.setter
+    def histogram2dcontour(self, val):
+        self["histogram2dcontour"] = val
+
+    # histogram2d
+    # -----------
+    @property
+    def histogram2d(self):
+        """
+        The 'histogram2d' property is a tuple of instances of
+        Histogram2d that may be specified as:
+          - A list or tuple of instances of plotly.graph_objs.layout.template.data.Histogram2d
+          - A list or tuple of dicts of string/value properties that
+            will be passed to the Histogram2d constructor
+
+            Supported dict properties:
+
+        Returns
+        -------
+        tuple[plotly.graph_objs.layout.template.data.Histogram2d]
+        """
+        return self["histogram2d"]
+
+    @histogram2d.setter
+    def histogram2d(self, val):
+        self["histogram2d"] = val
+
+    # histogram
+    # ---------
+    @property
+    def histogram(self):
+        """
+        The 'histogram' property is a tuple of instances of
+        Histogram that may be specified as:
+          - A list or tuple of instances of plotly.graph_objs.layout.template.data.Histogram
+          - A list or tuple of dicts of string/value properties that
+            will be passed to the Histogram constructor
+
+            Supported dict properties:
+
+        Returns
+        -------
+        tuple[plotly.graph_objs.layout.template.data.Histogram]
+        """
+        return self["histogram"]
+
+    @histogram.setter
+    def histogram(self, val):
+        self["histogram"] = val
+
+    # icicle
+    # ------
+    @property
+    def icicle(self):
+        """
+        The 'icicle' property is a tuple of instances of
+        Icicle that may be specified as:
+          - A list or tuple of instances of plotly.graph_objs.layout.template.data.Icicle
+          - A list or tuple of dicts of string/value properties that
+            will be passed to the Icicle constructor
+
+            Supported dict properties:
+
+        Returns
+        -------
+        tuple[plotly.graph_objs.layout.template.data.Icicle]
+        """
+        return self["icicle"]
+
+    @icicle.setter
+    def icicle(self, val):
+        self["icicle"] = val
+
+    # image
+    # -----
+    @property
+    def image(self):
+        """
+        The 'image' property is a tuple of instances of
+        Image that may be specified as:
+          - A list or tuple of instances of plotly.graph_objs.layout.template.data.Image
+          - A list or tuple of dicts of string/value properties that
+            will be passed to the Image constructor
+
+            Supported dict properties:
+
+        Returns
+        -------
+        tuple[plotly.graph_objs.layout.template.data.Image]
+        """
+        return self["image"]
+
+    @image.setter
+    def image(self, val):
+        self["image"] = val
+
+    # indicator
+    # ---------
+    @property
+    def indicator(self):
+        """
+        The 'indicator' property is a tuple of instances of
+        Indicator that may be specified as:
+          - A list or tuple of instances of plotly.graph_objs.layout.template.data.Indicator
+          - A list or tuple of dicts of string/value properties that
+            will be passed to the Indicator constructor
+
+            Supported dict properties:
+
+        Returns
+        -------
+        tuple[plotly.graph_objs.layout.template.data.Indicator]
+        """
+        return self["indicator"]
+
+    @indicator.setter
+    def indicator(self, val):
+        self["indicator"] = val
+
+    # isosurface
+    # ----------
+    @property
+    def isosurface(self):
+        """
+        The 'isosurface' property is a tuple of instances of
+        Isosurface that may be specified as:
+          - A list or tuple of instances of plotly.graph_objs.layout.template.data.Isosurface
+          - A list or tuple of dicts of string/value properties that
+            will be passed to the Isosurface constructor
+
+            Supported dict properties:
+
+        Returns
+        -------
+        tuple[plotly.graph_objs.layout.template.data.Isosurface]
+        """
+        return self["isosurface"]
+
+    @isosurface.setter
+    def isosurface(self, val):
+        self["isosurface"] = val
+
+    # mesh3d
+    # ------
+    @property
+    def mesh3d(self):
+        """
+        The 'mesh3d' property is a tuple of instances of
+        Mesh3d that may be specified as:
+          - A list or tuple of instances of plotly.graph_objs.layout.template.data.Mesh3d
+          - A list or tuple of dicts of string/value properties that
+            will be passed to the Mesh3d constructor
+
+            Supported dict properties:
+
+        Returns
+        -------
+        tuple[plotly.graph_objs.layout.template.data.Mesh3d]
+        """
+        return self["mesh3d"]
+
+    @mesh3d.setter
+    def mesh3d(self, val):
+        self["mesh3d"] = val
+
+    # ohlc
+    # ----
+    @property
+    def ohlc(self):
+        """
+        The 'ohlc' property is a tuple of instances of
+        Ohlc that may be specified as:
+          - A list or tuple of instances of plotly.graph_objs.layout.template.data.Ohlc
+          - A list or tuple of dicts of string/value properties that
+            will be passed to the Ohlc constructor
+
+            Supported dict properties:
+
+        Returns
+        -------
+        tuple[plotly.graph_objs.layout.template.data.Ohlc]
+        """
+        return self["ohlc"]
+
+    @ohlc.setter
+    def ohlc(self, val):
+        self["ohlc"] = val
+
+    # parcats
+    # -------
+    @property
+    def parcats(self):
+        """
+        The 'parcats' property is a tuple of instances of
+        Parcats that may be specified as:
+          - A list or tuple of instances of plotly.graph_objs.layout.template.data.Parcats
+          - A list or tuple of dicts of string/value properties that
+            will be passed to the Parcats constructor
+
+            Supported dict properties:
+
+        Returns
+        -------
+        tuple[plotly.graph_objs.layout.template.data.Parcats]
+        """
+        return self["parcats"]
+
+    @parcats.setter
+    def parcats(self, val):
+        self["parcats"] = val
+
+    # parcoords
+    # ---------
+    @property
+    def parcoords(self):
+        """
+        The 'parcoords' property is a tuple of instances of
+        Parcoords that may be specified as:
+          - A list or tuple of instances of plotly.graph_objs.layout.template.data.Parcoords
+          - A list or tuple of dicts of string/value properties that
+            will be passed to the Parcoords constructor
+
+            Supported dict properties:
+
+        Returns
+        -------
+        tuple[plotly.graph_objs.layout.template.data.Parcoords]
+        """
+        return self["parcoords"]
+
+    @parcoords.setter
+    def parcoords(self, val):
+        self["parcoords"] = val
+
+    # pie
+    # ---
+    @property
+    def pie(self):
+        """
+        The 'pie' property is a tuple of instances of
+        Pie that may be specified as:
+          - A list or tuple of instances of plotly.graph_objs.layout.template.data.Pie
+          - A list or tuple of dicts of string/value properties that
+            will be passed to the Pie constructor
+
+            Supported dict properties:
+
+        Returns
+        -------
+        tuple[plotly.graph_objs.layout.template.data.Pie]
+        """
+        return self["pie"]
+
+    @pie.setter
+    def pie(self, val):
+        self["pie"] = val
+
+    # pointcloud
+    # ----------
+    @property
+    def pointcloud(self):
+        """
+        The 'pointcloud' property is a tuple of instances of
+        Pointcloud that may be specified as:
+          - A list or tuple of instances of plotly.graph_objs.layout.template.data.Pointcloud
+          - A list or tuple of dicts of string/value properties that
+            will be passed to the Pointcloud constructor
+
+            Supported dict properties:
+
+        Returns
+        -------
+        tuple[plotly.graph_objs.layout.template.data.Pointcloud]
+        """
+        return self["pointcloud"]
+
+    @pointcloud.setter
+    def pointcloud(self, val):
+        self["pointcloud"] = val
+
+    # sankey
+    # ------
+    @property
+    def sankey(self):
+        """
+        The 's

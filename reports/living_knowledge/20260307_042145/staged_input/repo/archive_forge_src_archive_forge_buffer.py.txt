@@ -1,0 +1,519 @@
+SOURCE_PATH: archive_forge/src/archive_forge/buffer.py
+KIND: code
+
+"""
+Data structures for the Buffer.
+It holds the text, cursor position, history, etc...
+"""
+from __future__ import annotations
+
+import asyncio
+import logging
+import os
+import re
+import shlex
+import shutil
+import subprocess
+import tempfile
+from collections import deque
+from enum import Enum
+from functools import wraps
+from typing import Any, Callable, Coroutine, Iterable, TypeVar, cast
+
+from .application.current import get_app
+from .application.run_in_terminal import run_in_terminal
+from .auto_suggest import AutoSuggest, Suggestion
+from .cache import FastDictCache
+from .clipboard import ClipboardData
+from .completion import (
+    CompleteEvent,
+    Completer,
+    Completion,
+    DummyCompleter,
+    get_common_complete_suffix,
+)
+from .document import Document
+from .eventloop import aclosing
+from .filters import FilterOrBool, to_filter
+from .history import History, InMemoryHistory
+from .search import SearchDirection, SearchState
+from .selection import PasteMode, SelectionState, SelectionType
+from .utils import Event, to_str
+from .validation import ValidationError, Validator
+
+__all__ = [
+    "EditReadOnlyBuffer",
+    "Buffer",
+    "CompletionState",
+    "indent",
+    "unindent",
+    "reshape_text",
+]
+
+logger = logging.getLogger(__name__)
+
+
+class EditReadOnlyBuffer(Exception):
+    "Attempt editing of read-only :class:`.Buffer`."
+
+
+class ValidationState(Enum):
+    "The validation state of a buffer. This is set after the validation."
+
+    VALID = "VALID"
+    INVALID = "INVALID"
+    UNKNOWN = "UNKNOWN"
+
+
+class CompletionState:
+    """
+    Immutable class that contains a completion state.
+    """
+
+    def __init__(
+        self,
+        original_document: Document,
+        completions: list[Completion] | None = None,
+        complete_index: int | None = None,
+    ) -> None:
+        #: Document as it was when the completion started.
+        self.original_document = original_document
+
+        #: List of all the current Completion instances which are possible at
+        #: this point.
+        self.completions = completions or []
+
+        #: Position in the `completions` array.
+        #: This can be `None` to indicate "no completion", the original text.
+        self.complete_index = complete_index  # Position in the `_completions` array.
+
+    def __repr__(self) -> str:
+        return "{}({!r}, <{!r}> completions, index={!r})".format(
+            self.__class__.__name__,
+            self.original_document,
+            len(self.completions),
+            self.complete_index,
+        )
+
+    def go_to_index(self, index: int | None) -> None:
+        """
+        Create a new :class:`.CompletionState` object with the new index.
+
+        When `index` is `None` deselect the completion.
+        """
+        if self.completions:
+            assert index is None or 0 <= index < len(self.completions)
+            self.complete_index = index
+
+    def new_text_and_position(self) -> tuple[str, int]:
+        """
+        Return (new_text, new_cursor_position) for this completion.
+        """
+        if self.complete_index is None:
+            return self.original_document.text, self.original_document.cursor_position
+        else:
+            original_text_before_cursor = self.original_document.text_before_cursor
+            original_text_after_cursor = self.original_document.text_after_cursor
+
+            c = self.completions[self.complete_index]
+            if c.start_position == 0:
+                before = original_text_before_cursor
+            else:
+                before = original_text_before_cursor[: c.start_position]
+
+            new_text = before + c.text + original_text_after_cursor
+            new_cursor_position = len(before) + len(c.text)
+            return new_text, new_cursor_position
+
+    @property
+    def current_completion(self) -> Completion | None:
+        """
+        Return the current completion, or return `None` when no completion is
+        selected.
+        """
+        if self.complete_index is not None:
+            return self.completions[self.complete_index]
+        return None
+
+
+_QUOTED_WORDS_RE = re.compile(r"""(\s+|".*?"|'.*?')""")
+
+
+class YankNthArgState:
+    """
+    For yank-last-arg/yank-nth-arg: Keep track of where we are in the history.
+    """
+
+    def __init__(
+        self, history_position: int = 0, n: int = -1, previous_inserted_word: str = ""
+    ) -> None:
+        self.history_position = history_position
+        self.previous_inserted_word = previous_inserted_word
+        self.n = n
+
+    def __repr__(self) -> str:
+        return "{}(history_position={!r}, n={!r}, previous_inserted_word={!r})".format(
+            self.__class__.__name__,
+            self.history_position,
+            self.n,
+            self.previous_inserted_word,
+        )
+
+
+BufferEventHandler = Callable[["Buffer"], None]
+BufferAcceptHandler = Callable[["Buffer"], bool]
+
+
+class Buffer:
+    """
+    The core data structure that holds the text and cursor position of the
+    current input line and implements all text manipulations on top of it. It
+    also implements the history, undo stack and the completion state.
+
+    :param completer: :class:`~prompt_toolkit.completion.Completer` instance.
+    :param history: :class:`~prompt_toolkit.history.History` instance.
+    :param tempfile_suffix: The tempfile suffix (extension) to be used for the
+        "open in editor" function. For a Python REPL, this would be ".py", so
+        that the editor knows the syntax highlighting to use. This can also be
+        a callable that returns a string.
+    :param tempfile: For more advanced tempfile situations where you need
+        control over the subdirectories and filename. For a Git Commit Message,
+        this would be ".git/COMMIT_EDITMSG", so that the editor knows the syntax
+        highlighting to use. This can also be a callable that returns a string.
+    :param name: Name for this buffer. E.g. DEFAULT_BUFFER. This is mostly
+        useful for key bindings where we sometimes prefer to refer to a buffer
+        by their name instead of by reference.
+    :param accept_handler: Called when the buffer input is accepted. (Usually
+        when the user presses `enter`.) The accept handler receives this
+        `Buffer` as input and should return True when the buffer text should be
+        kept instead of calling reset.
+
+        In case of a `PromptSession` for instance, we want to keep the text,
+        because we will exit the application, and only reset it during the next
+        run.
+
+    Events:
+
+    :param on_text_changed: When the buffer text changes. (Callable or None.)
+    :param on_text_insert: When new text is inserted. (Callable or None.)
+    :param on_cursor_position_changed: When the cursor moves. (Callable or None.)
+    :param on_completions_changed: When the completions were changed. (Callable or None.)
+    :param on_suggestion_set: When an auto-suggestion text has been set. (Callable or None.)
+
+    Filters:
+
+    :param complete_while_typing: :class:`~prompt_toolkit.filters.Filter`
+        or `bool`. Decide whether or not to do asynchronous autocompleting while
+        typing.
+    :param validate_while_typing: :class:`~prompt_toolkit.filters.Filter`
+        or `bool`. Decide whether or not to do asynchronous validation while
+        typing.
+    :param enable_history_search: :class:`~prompt_toolkit.filters.Filter` or
+        `bool` to indicate when up-arrow partial string matching is enabled. It
+        is advised to not enable this at the same time as
+        `complete_while_typing`, because when there is an autocompletion found,
+        the up arrows usually browse through the completions, rather than
+        through the history.
+    :param read_only: :class:`~prompt_toolkit.filters.Filter`. When True,
+        changes will not be allowed.
+    :param multiline: :class:`~prompt_toolkit.filters.Filter` or `bool`. When
+        not set, pressing `Enter` will call the `accept_handler`.  Otherwise,
+        pressing `Esc-Enter` is required.
+    """
+
+    def __init__(
+        self,
+        completer: Completer | None = None,
+        auto_suggest: AutoSuggest | None = None,
+        history: History | None = None,
+        validator: Validator | None = None,
+        tempfile_suffix: str | Callable[[], str] = "",
+        tempfile: str | Callable[[], str] = "",
+        name: str = "",
+        complete_while_typing: FilterOrBool = False,
+        validate_while_typing: FilterOrBool = False,
+        enable_history_search: FilterOrBool = False,
+        document: Document | None = None,
+        accept_handler: BufferAcceptHandler | None = None,
+        read_only: FilterOrBool = False,
+        multiline: FilterOrBool = True,
+        on_text_changed: BufferEventHandler | None = None,
+        on_text_insert: BufferEventHandler | None = None,
+        on_cursor_position_changed: BufferEventHandler | None = None,
+        on_completions_changed: BufferEventHandler | None = None,
+        on_suggestion_set: BufferEventHandler | None = None,
+    ):
+        # Accept both filters and booleans as input.
+        enable_history_search = to_filter(enable_history_search)
+        complete_while_typing = to_filter(complete_while_typing)
+        validate_while_typing = to_filter(validate_while_typing)
+        read_only = to_filter(read_only)
+        multiline = to_filter(multiline)
+
+        self.completer = completer or DummyCompleter()
+        self.auto_suggest = auto_suggest
+        self.validator = validator
+        self.tempfile_suffix = tempfile_suffix
+        self.tempfile = tempfile
+        self.name = name
+        self.accept_handler = accept_handler
+
+        # Filters. (Usually, used by the key bindings to drive the buffer.)
+        self.complete_while_typing = complete_while_typing
+        self.validate_while_typing = validate_while_typing
+        self.enable_history_search = enable_history_search
+        self.read_only = read_only
+        self.multiline = multiline
+
+        # Text width. (For wrapping, used by the Vi 'gq' operator.)
+        self.text_width = 0
+
+        #: The command buffer history.
+        # Note that we shouldn't use a lazy 'or' here. bool(history) could be
+        # False when empty.
+        self.history = InMemoryHistory() if history is None else history
+
+        self.__cursor_position = 0
+
+        # Events
+        self.on_text_changed: Event[Buffer] = Event(self, on_text_changed)
+        self.on_text_insert: Event[Buffer] = Event(self, on_text_insert)
+        self.on_cursor_position_changed: Event[Buffer] = Event(
+            self, on_cursor_position_changed
+        )
+        self.on_completions_changed: Event[Buffer] = Event(self, on_completions_changed)
+        self.on_suggestion_set: Event[Buffer] = Event(self, on_suggestion_set)
+
+        # Document cache. (Avoid creating new Document instances.)
+        self._document_cache: FastDictCache[
+            tuple[str, int, SelectionState | None], Document
+        ] = FastDictCache(Document, size=10)
+
+        # Create completer / auto suggestion / validation coroutines.
+        self._async_suggester = self._create_auto_suggest_coroutine()
+        self._async_completer = self._create_completer_coroutine()
+        self._async_validator = self._create_auto_validate_coroutine()
+
+        # Asyncio task for populating the history.
+        self._load_history_task: asyncio.Future[None] | None = None
+
+        # Reset other attributes.
+        self.reset(document=document)
+
+    def __repr__(self) -> str:
+        if len(self.text) < 15:
+            text = self.text
+        else:
+            text = self.text[:12] + "..."
+
+        return f"<Buffer(name={self.name!r}, text={text!r}) at {id(self)!r}>"
+
+    def reset(
+        self, document: Document | None = None, append_to_history: bool = False
+    ) -> None:
+        """
+        :param append_to_history: Append current input to history first.
+        """
+        if append_to_history:
+            self.append_to_history()
+
+        document = document or Document()
+
+        self.__cursor_position = document.cursor_position
+
+        # `ValidationError` instance. (Will be set when the input is wrong.)
+        self.validation_error: ValidationError | None = None
+        self.validation_state: ValidationState | None = ValidationState.UNKNOWN
+
+        # State of the selection.
+        self.selection_state: SelectionState | None = None
+
+        # Multiple cursor mode. (When we press 'I' or 'A' in visual-block mode,
+        # we can insert text on multiple lines at once. This is implemented by
+        # using multiple cursors.)
+        self.multiple_cursor_positions: list[int] = []
+
+        # When doing consecutive up/down movements, prefer to stay at this column.
+        self.preferred_column: int | None = None
+
+        # State of complete browser
+        # For interactive completion through Ctrl-N/Ctrl-P.
+        self.complete_state: CompletionState | None = None
+
+        # State of Emacs yank-nth-arg completion.
+        self.yank_nth_arg_state: YankNthArgState | None = None  # for yank-nth-arg.
+
+        # Remember the document that we had *right before* the last paste
+        # operation. This is used for rotating through the kill ring.
+        self.document_before_paste: Document | None = None
+
+        # Current suggestion.
+        self.suggestion: Suggestion | None = None
+
+        # The history search text. (Used for filtering the history when we
+        # browse through it.)
+        self.history_search_text: str | None = None
+
+        # Undo/redo stacks (stack of `(text, cursor_position)`).
+        self._undo_stack: list[tuple[str, int]] = []
+        self._redo_stack: list[tuple[str, int]] = []
+
+        # Cancel history loader. If history loading was still ongoing.
+        # Cancel the `_load_history_task`, so that next repaint of the
+        # `BufferControl` we will repopulate it.
+        if self._load_history_task is not None:
+            self._load_history_task.cancel()
+        self._load_history_task = None
+
+        #: The working lines. Similar to history, except that this can be
+        #: modified. The user can press arrow_up and edit previous entries.
+        #: Ctrl-C should reset this, and copy the whole history back in here.
+        #: Enter should process the current command and append to the real
+        #: history.
+        self._working_lines: deque[str] = deque([document.text])
+        self.__working_index = 0
+
+    def load_history_if_not_yet_loaded(self) -> None:
+        """
+        Create task for populating the buffer history (if not yet done).
+
+        Note::
+
+            This needs to be called from within the event loop of the
+            application, because history loading is async, and we need to be
+            sure the right event loop is active. Therefor, we call this method
+            in the `BufferControl.create_content`.
+
+            There are situations where prompt_toolkit applications are created
+            in one thread, but will later run in a different thread (Ptpython
+            is one example. The REPL runs in a separate thread, in order to
+            prevent interfering with a potential different event loop in the
+            main thread. The REPL UI however is still created in the main
+            thread.) We could decide to not support creating prompt_toolkit
+            objects in one thread and running the application in a different
+            thread, but history loading is the only place where it matters, and
+            this solves it.
+        """
+        if self._load_history_task is None:
+
+            async def load_history() -> None:
+                async for item in self.history.load():
+                    self._working_lines.appendleft(item)
+                    self.__working_index += 1
+
+            self._load_history_task = get_app().create_background_task(load_history())
+
+            def load_history_done(f: asyncio.Future[None]) -> None:
+                """
+                Handle `load_history` result when either done, cancelled, or
+                when an exception was raised.
+                """
+                try:
+                    f.result()
+                except asyncio.CancelledError:
+                    # Ignore cancellation. But handle it, so that we don't get
+                    # this traceback.
+                    pass
+                except GeneratorExit:
+                    # Probably not needed, but we had situations where
+                    # `GeneratorExit` was raised in `load_history` during
+                    # cancellation.
+                    pass
+                except BaseException:
+                    # Log error if something goes wrong. (We don't have a
+                    # caller to which we can propagate this exception.)
+                    logger.exception("Loading history failed")
+
+            self._load_history_task.add_done_callback(load_history_done)
+
+    # <getters/setters>
+
+    def _set_text(self, value: str) -> bool:
+        """set text at current working_index. Return whether it changed."""
+        working_index = self.working_index
+        working_lines = self._working_lines
+
+        original_value = working_lines[working_index]
+        working_lines[working_index] = value
+
+        # Return True when this text has been changed.
+        if len(value) != len(original_value):
+            # For Python 2, it seems that when two strings have a different
+            # length and one is a prefix of the other, Python still scans
+            # character by character to see whether the strings are different.
+            # (Some benchmarking showed significant differences for big
+            # documents. >100,000 of lines.)
+            return True
+        elif value != original_value:
+            return True
+        return False
+
+    def _set_cursor_position(self, value: int) -> bool:
+        """Set cursor position. Return whether it changed."""
+        original_position = self.__cursor_position
+        self.__cursor_position = max(0, value)
+
+        return self.__cursor_position != original_position
+
+    @property
+    def text(self) -> str:
+        return self._working_lines[self.working_index]
+
+    @text.setter
+    def text(self, value: str) -> None:
+        """
+        Setting text. (When doing this, make sure that the cursor_position is
+        valid for this text. text/cursor_position should be consistent at any time,
+        otherwise set a Document instead.)
+        """
+        # Ensure cursor position remains within the size of the text.
+        if self.cursor_position > len(value):
+            self.cursor_position = len(value)
+
+        # Don't allow editing of read-only buffers.
+        if self.read_only():
+            raise EditReadOnlyBuffer()
+
+        changed = self._set_text(value)
+
+        if changed:
+            self._text_changed()
+
+            # Reset history search text.
+            # (Note that this doesn't need to happen when working_index
+            #  changes, which is when we traverse the history. That's why we
+            #  don't do this in `self._text_changed`.)
+            self.history_search_text = None
+
+    @property
+    def cursor_position(self) -> int:
+        return self.__cursor_position
+
+    @cursor_position.setter
+    def cursor_position(self, value: int) -> None:
+        """
+        Setting cursor position.
+        """
+        assert isinstance(value, int)
+
+        # Ensure cursor position is within the size of the text.
+        if value > len(self.text):
+            value = len(self.text)
+        if value < 0:
+            value = 0
+
+        changed = self._set_cursor_position(value)
+
+        if changed:
+            self._cursor_position_changed()
+
+    @property
+    def working_index(self) -> int:
+        return self.__working_index
+
+    @working_index.setter
+    def working_index(self, value: int) -> None:
+        if self.__working_index != value:
+            self.__working_index = value
+            # Make sure to reset the cursor position, otherwise we end up in
+            # situations where the cursor position is out of the bounds of th

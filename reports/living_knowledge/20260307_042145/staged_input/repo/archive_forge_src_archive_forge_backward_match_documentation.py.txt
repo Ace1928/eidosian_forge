@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/backward_match_documentation.py
+KIND: code
+
+import heapq
+from qiskit.circuit.controlledgate import ControlledGate
+
+        Apply the forward match algorithm and returns the list of matches given an initial match
+        and a circuit qubits configuration.

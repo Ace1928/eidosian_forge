@@ -1,0 +1,16 @@
+SOURCE_PATH: agent_forge/bin/eidctl
+KIND: config
+
+#!/usr/bin/env python3
+"""CLI wrapper for eidctl - delegates to agent_forge.cli.eidctl"""
+import sys
+from pathlib import Path
+
+# Add src to path
+src = Path(__file__).resolve().parents[1] / "src"
+sys.path.insert(0, str(src))
+
+from agent_forge.cli.eidctl import main
+
+if __name__ == "__main__":
+    raise SystemExit(main())

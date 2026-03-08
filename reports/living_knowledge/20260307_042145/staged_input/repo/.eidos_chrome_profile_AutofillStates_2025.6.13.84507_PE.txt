@@ -1,0 +1,32 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/PE
+KIND: config
+
+PE$
+amazonasdepartamento de amazonas*
+departamento de áncashancasháncash0
+	apurímacapurimacdepartamento de apurímac$
+arequipadepartamento de arequipa$
+ayacuchodepartamento de ayacucho&
+	cajamarcadepartamento de cajamarcaj
+callaocallao regiongobierno regional del callao#provincia constitucional del callaoregión callao-
+cuscocuzcodepartamento del cuzcoqosqo-
+departamento de huánucohuanucohuánuco,
+departamento de huancavelicahuancavelica
+departamento de icaica'
+departamento de junínjuninjunín*
+departamento de la libertadla libertad(
+departamento de lambayeque
+lambayequeD
+departamento de limagobierno regional de limalimalima regionM
+limalima province#municipalidad metropolitana de limaprovincia de lima 
+departamento de loretoloreto.
+departamento de madre de diosmadre de dios$
+departamento de moqueguamoquegua
+departamento de pascopasco
+departamento de piurapiura
+departamento de punopuno6
+departamento de san martín
+san martinsan martín
+departamento de tacnatacna 
+departamento de tumbestumbes"
+departamento de ucayaliucayali

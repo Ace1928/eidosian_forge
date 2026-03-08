@@ -1,0 +1,411 @@
+SOURCE_PATH: archive_forge/src/archive_forge/MainClass.py
+KIND: code
+
+############################ Copyrights and license ############################
+#                                                                              #
+# Copyright 2012 Dima Kukushkin <dima@kukushkin.me>                            #
+# Copyright 2012 Luke Cawood <luke.cawood@99designs.com>                       #
+# Copyright 2012 Michael Woodworth <mwoodworth@upverter.com>                   #
+# Copyright 2012 Steve English <steve.english@navetas.com>                     #
+# Copyright 2012 Vincent Jacques <vincent@vincent-jacques.net>                 #
+# Copyright 2012 Zearin <zearin@gonk.net>                                      #
+# Copyright 2013 AKFish <akfish@gmail.com>                                     #
+# Copyright 2013 Ed Jackson <ed.jackson@gmail.com>                             #
+# Copyright 2013 Jonathan J Hunt <hunt@braincorporation.com>                   #
+# Copyright 2013 Steve Brown <steve@evolvedlight.co.uk>                        #
+# Copyright 2013 Vincent Jacques <vincent@vincent-jacques.net>                 #
+# Copyright 2014 C. R. Oldham <cro@ncbt.org>                                   #
+# Copyright 2014 Thialfihar <thi@thialfihar.org>                               #
+# Copyright 2014 Tyler Treat <ttreat31@gmail.com>                              #
+# Copyright 2014 Vincent Jacques <vincent@vincent-jacques.net>                 #
+# Copyright 2015 Daniel Pocock <daniel@pocock.pro>                             #
+# Copyright 2015 Joseph Rawson <joseph.rawson.works@littledebian.org>          #
+# Copyright 2015 Uriel Corfa <uriel@corfa.fr>                                  #
+# Copyright 2016 Jannis Gebauer <ja.geb@me.com>                                #
+# Copyright 2016 Peter Buckley <dx-pbuckley@users.noreply.github.com>          #
+# Copyright 2017 Colin Hoglund <colinhoglund@users.noreply.github.com>         #
+# Copyright 2017 Jannis Gebauer <ja.geb@me.com>                                #
+# Copyright 2018 Agor Maxime <maxime.agor23@gmail.com>                         #
+# Copyright 2018 Arda Kuyumcu <kuyumcuarda@gmail.com>                          #
+# Copyright 2018 Benoit Latinier <benoit@latinier.fr>                          #
+# Copyright 2018 Bruce Richardson <itsbruce@workshy.org>                       #
+# Copyright 2018 Joshua Hoblitt <josh@hoblitt.com>                             #
+# Copyright 2018 Maarten Fonville <mfonville@users.noreply.github.com>         #
+# Copyright 2018 Mike Miller <github@mikeage.net>                              #
+# Copyright 2018 Shubham Singh <41840111+singh811@users.noreply.github.com>    #
+# Copyright 2018 Steve Kowalik <steven@wedontsleep.org>                        #
+# Copyright 2018 Svend Sorensen <svend@svends.net>                             #
+# Copyright 2018 Wan Liuyang <tsfdye@gmail.com>                                #
+# Copyright 2018 Yossarian King <yggy@blackbirdinteractive.com>                #
+# Copyright 2018 h.shi <10385628+AnYeMoWang@users.noreply.github.com>          #
+# Copyright 2018 sfdye <tsfdye@gmail.com>                                      #
+# Copyright 2019 Adam Baratz <adam.baratz@gmail.com>                           #
+# Copyright 2019 Caleb Sweeney <caleb.w.sweeney@gmail.com>                     #
+# Copyright 2019 Hamel Husain <hamelsmu@github.com>                            #
+# Copyright 2019 Isac Souza <isouza@daitan.com>                                #
+# Copyright 2019 Jake Klingensmith <jklingen92@users.noreply.github.com>       #
+# Copyright 2019 Jake Wilkins <jakewilkins@github.com>                         #
+# Copyright 2019 Rigas Papathanasopoulos <rigaspapas@gmail.com>                #
+# Copyright 2019 Steve Kowalik <steven@wedontsleep.org>                        #
+# Copyright 2019 Tomas Tomecek <nereone@gmail.com>                             #
+# Copyright 2019 Wan Liuyang <tsfdye@gmail.com>                                #
+# Copyright 2019 chillipeper <miguel.tpy@gmail.com>                            #
+# Copyright 2019 秋葉 <ambiguous404@gmail.com>                                   #
+# Copyright 2020 Alice GIRARD <bouhahah@gmail.com>                             #
+# Copyright 2020 Denis Blanchette <dblanchette@coveo.com>                      #
+# Copyright 2020 Florent Clarret <florent.clarret@gmail.com>                   #
+# Copyright 2020 Mahesh Raju <coder@mahesh.net>                                #
+# Copyright 2020 Nikolay Edigaryev <edigaryev@gmail.com>                       #
+# Copyright 2020 Omar Brikaa <brikaaomar@gmail.com>                            #
+# Copyright 2020 Steve Kowalik <steven@wedontsleep.org>                        #
+# Copyright 2021 Amador Pahim <apahim@redhat.com>                              #
+# Copyright 2021 Mark Walker <mark.walker@realbuzz.com>                        #
+# Copyright 2021 Sachi King <nakato@nakato.io>                                 #
+# Copyright 2021 Steve Kowalik <steven@wedontsleep.org>                        #
+# Copyright 2023 Denis Blanchette <dblanchette@coveo.com>                      #
+# Copyright 2023 Enrico Minack <github@enrico.minack.dev>                      #
+# Copyright 2023 Hemslo Wang <hemslo.wang@gmail.com>                           #
+# Copyright 2023 Jirka Borovec <6035284+Borda@users.noreply.github.com>        #
+# Copyright 2023 Jonathan Greg <31892308+jmgreg31@users.noreply.github.com>    #
+# Copyright 2023 Joseph Henrich <crimsonknave@gmail.com>                       #
+# Copyright 2023 Mark Amery <markamery@btinternet.com>                         #
+# Copyright 2023 Trim21 <trim21.me@gmail.com>                                  #
+# Copyright 2023 YugoHino <henom06@gmail.com>                                  #
+# Copyright 2023 chantra <chantra@users.noreply.github.com>                    #
+#                                                                              #
+# This file is part of PyGithub.                                               #
+# http://pygithub.readthedocs.io/                                              #
+#                                                                              #
+# PyGithub is free software: you can redistribute it and/or modify it under    #
+# the terms of the GNU Lesser General Public License as published by the Free  #
+# Software Foundation, either version 3 of the License, or (at your option)    #
+# any later version.                                                           #
+#                                                                              #
+# PyGithub is distributed in the hope that it will be useful, but WITHOUT ANY  #
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS    #
+# FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more #
+# details.                                                                     #
+#                                                                              #
+# You should have received a copy of the GNU Lesser General Public License     #
+# along with PyGithub. If not, see <http://www.gnu.org/licenses/>.             #
+#                                                                              #
+################################################################################
+
+from __future__ import annotations
+
+import pickle
+import urllib.parse
+import warnings
+from datetime import datetime
+from typing import TYPE_CHECKING, Any, BinaryIO, TypeVar
+
+import urllib3
+from urllib3.util import Retry
+
+import github.ApplicationOAuth
+import github.Auth
+import github.AuthenticatedUser
+import github.Enterprise
+import github.Event
+import github.Gist
+import github.GithubApp
+import github.GithubIntegration
+import github.GithubRetry
+import github.GitignoreTemplate
+import github.GlobalAdvisory
+import github.License
+import github.NamedUser
+import github.Topic
+from github import Consts
+from github.GithubIntegration import GithubIntegration
+from github.GithubObject import GithubObject, NotSet, Opt, is_defined
+from github.GithubRetry import GithubRetry
+from github.HookDelivery import HookDelivery, HookDeliverySummary
+from github.HookDescription import HookDescription
+from github.PaginatedList import PaginatedList
+from github.RateLimit import RateLimit
+from github.Requester import Requester
+
+if TYPE_CHECKING:
+    from github.AppAuthentication import AppAuthentication
+    from github.ApplicationOAuth import ApplicationOAuth
+    from github.AuthenticatedUser import AuthenticatedUser
+    from github.Commit import Commit
+    from github.ContentFile import ContentFile
+    from github.Event import Event
+    from github.Gist import Gist
+    from github.GithubApp import GithubApp
+    from github.GitignoreTemplate import GitignoreTemplate
+    from github.GlobalAdvisory import GlobalAdvisory
+    from github.Issue import Issue
+    from github.License import License
+    from github.NamedUser import NamedUser
+    from github.Organization import Organization
+    from github.Project import Project
+    from github.ProjectColumn import ProjectColumn
+    from github.Repository import Repository
+    from github.Topic import Topic
+
+TGithubObject = TypeVar("TGithubObject", bound=GithubObject)
+
+
+class Github:
+    """
+    This is the main class you instantiate to access the Github API v3. Optional parameters allow different authentication methods.
+    """
+
+    __requester: Requester
+
+    default_retry = GithubRetry()
+
+    # keep non-deprecated arguments in-sync with Requester
+    # v3: remove login_or_token, password, jwt and app_auth
+    # v3: move auth to the front of arguments
+    # v3: add * before first argument so all arguments must be named,
+    #     allows to reorder / add new arguments / remove deprecated arguments without breaking user code
+    def __init__(
+        self,
+        login_or_token: str | None = None,
+        password: str | None = None,
+        jwt: str | None = None,
+        app_auth: AppAuthentication | None = None,
+        base_url: str = Consts.DEFAULT_BASE_URL,
+        timeout: int = Consts.DEFAULT_TIMEOUT,
+        user_agent: str = Consts.DEFAULT_USER_AGENT,
+        per_page: int = Consts.DEFAULT_PER_PAGE,
+        verify: bool | str = True,
+        retry: int | Retry | None = default_retry,
+        pool_size: int | None = None,
+        seconds_between_requests: float | None = Consts.DEFAULT_SECONDS_BETWEEN_REQUESTS,
+        seconds_between_writes: float | None = Consts.DEFAULT_SECONDS_BETWEEN_WRITES,
+        auth: github.Auth.Auth | None = None,
+    ) -> None:
+        """
+        :param login_or_token: string deprecated, use auth=github.Auth.Login(...) or auth=github.Auth.Token(...) instead
+        :param password: string deprecated, use auth=github.Auth.Login(...) instead
+        :param jwt: string deprecated, use auth=github.Auth.AppAuth(...) or auth=github.Auth.AppAuthToken(...) instead
+        :param app_auth: github.AppAuthentication deprecated, use auth=github.Auth.AppInstallationAuth(...) instead
+        :param base_url: string
+        :param timeout: integer
+        :param user_agent: string
+        :param per_page: int
+        :param verify: boolean or string
+        :param retry: int or urllib3.util.retry.Retry object,
+                      defaults to github.Github.default_retry,
+                      set to None to disable retries
+        :param pool_size: int
+        :param seconds_between_requests: float
+        :param seconds_between_writes: float
+        :param auth: authentication method
+        """
+
+        assert login_or_token is None or isinstance(login_or_token, str), login_or_token
+        assert password is None or isinstance(password, str), password
+        assert jwt is None or isinstance(jwt, str), jwt
+        assert isinstance(base_url, str), base_url
+        assert isinstance(timeout, int), timeout
+        assert user_agent is None or isinstance(user_agent, str), user_agent
+        assert isinstance(per_page, int), per_page
+        assert isinstance(verify, (bool, str)), verify
+        assert retry is None or isinstance(retry, int) or isinstance(retry, urllib3.util.Retry), retry
+        assert pool_size is None or isinstance(pool_size, int), pool_size
+        assert seconds_between_requests is None or seconds_between_requests >= 0
+        assert seconds_between_writes is None or seconds_between_writes >= 0
+        assert auth is None or isinstance(auth, github.Auth.Auth), auth
+
+        if password is not None:
+            warnings.warn(
+                "Arguments login_or_token and password are deprecated, please use "
+                "auth=github.Auth.Login(...) instead",
+                category=DeprecationWarning,
+            )
+            auth = github.Auth.Login(login_or_token, password)  # type: ignore
+        elif login_or_token is not None:
+            warnings.warn(
+                "Argument login_or_token is deprecated, please use " "auth=github.Auth.Token(...) instead",
+                category=DeprecationWarning,
+            )
+            auth = github.Auth.Token(login_or_token)
+        elif jwt is not None:
+            warnings.warn(
+                "Argument jwt is deprecated, please use "
+                "auth=github.Auth.AppAuth(...) or "
+                "auth=github.Auth.AppAuthToken(...) instead",
+                category=DeprecationWarning,
+            )
+            auth = github.Auth.AppAuthToken(jwt)
+        elif app_auth is not None:
+            warnings.warn(
+                "Argument app_auth is deprecated, please use " "auth=github.Auth.AppInstallationAuth(...) instead",
+                category=DeprecationWarning,
+            )
+            auth = app_auth
+
+        self.__requester = Requester(
+            auth,
+            base_url,
+            timeout,
+            user_agent,
+            per_page,
+            verify,
+            retry,
+            pool_size,
+            seconds_between_requests,
+            seconds_between_writes,
+        )
+
+    def close(self) -> None:
+        """
+        Close connections to the server. Alternatively, use the Github object as a context manager:
+
+        .. code-block:: python
+
+          with github.Github(...) as gh:
+            # do something
+        """
+        self.__requester.close()
+
+    def __enter__(self) -> Github:
+        return self
+
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        self.close()
+
+    @property
+    def FIX_REPO_GET_GIT_REF(self) -> bool:
+        return self.__requester.FIX_REPO_GET_GIT_REF
+
+    @FIX_REPO_GET_GIT_REF.setter
+    def FIX_REPO_GET_GIT_REF(self, value: bool) -> None:
+        self.__requester.FIX_REPO_GET_GIT_REF = value
+
+    # v3: Remove this property? Why should it be necessary to read/modify it after construction
+    @property
+    def per_page(self) -> int:
+        return self.__requester.per_page
+
+    @per_page.setter
+    def per_page(self, value: int) -> None:
+        self.__requester.per_page = value
+
+    # v3: Provide a unified way to access values of headers of last response
+    # v3: (and add/keep ad hoc properties for specific useful headers like rate limiting, oauth scopes, etc.)
+    # v3: Return an instance of a class: using a tuple did not allow to add a field "resettime"
+    @property
+    def rate_limiting(self) -> tuple[int, int]:
+        """
+        First value is requests remaining, second value is request limit.
+        """
+        remaining, limit = self.__requester.rate_limiting
+        if limit < 0:
+            self.get_rate_limit()
+        return self.__requester.rate_limiting
+
+    @property
+    def rate_limiting_resettime(self) -> int:
+        """
+        Unix timestamp indicating when rate limiting will reset.
+        """
+        if self.__requester.rate_limiting_resettime == 0:
+            self.get_rate_limit()
+        return self.__requester.rate_limiting_resettime
+
+    def get_rate_limit(self) -> RateLimit:
+        """
+        Rate limit status for different resources (core/search/graphql).
+
+        :calls: `GET /rate_limit <https://docs.github.com/en/rest/reference/rate-limit>`_
+        """
+        headers, data = self.__requester.requestJsonAndCheck("GET", "/rate_limit")
+        return RateLimit(self.__requester, headers, data["resources"], True)
+
+    @property
+    def oauth_scopes(self) -> list[str] | None:
+        """
+        :type: list of string
+        """
+        return self.__requester.oauth_scopes
+
+    def get_license(self, key: Opt[str] = NotSet) -> License:
+        """
+        :calls: `GET /license/{license} <https://docs.github.com/en/rest/reference/licenses#get-a-license>`_
+        """
+
+        assert isinstance(key, str), key
+        key = urllib.parse.quote(key)
+        headers, data = self.__requester.requestJsonAndCheck("GET", f"/licenses/{key}")
+        return github.License.License(self.__requester, headers, data, completed=True)
+
+    def get_licenses(self) -> PaginatedList[License]:
+        """
+        :calls: `GET /licenses <https://docs.github.com/en/rest/reference/licenses#get-all-commonly-used-licenses>`_
+        """
+
+        url_parameters: dict[str, Any] = {}
+
+        return PaginatedList(github.License.License, self.__requester, "/licenses", url_parameters)
+
+    def get_events(self) -> PaginatedList[Event]:
+        """
+        :calls: `GET /events <https://docs.github.com/en/rest/reference/activity#list-public-events>`_
+        """
+
+        return PaginatedList(github.Event.Event, self.__requester, "/events", None)
+
+    def get_user(self, login: Opt[str] = NotSet) -> NamedUser | AuthenticatedUser:
+        """
+        :calls: `GET /users/{user} <https://docs.github.com/en/rest/reference/users>`_ or `GET /user <https://docs.github.com/en/rest/reference/users>`_
+        """
+        if login is NotSet:
+            return github.AuthenticatedUser.AuthenticatedUser(self.__requester, {}, {"url": "/user"}, completed=False)
+        else:
+            assert isinstance(login, str), login
+            login = urllib.parse.quote(login)
+            headers, data = self.__requester.requestJsonAndCheck("GET", f"/users/{login}")
+            return github.NamedUser.NamedUser(self.__requester, headers, data, completed=True)
+
+    def get_user_by_id(self, user_id: int) -> NamedUser:
+        """
+        :calls: `GET /user/{id} <https://docs.github.com/en/rest/reference/users>`_
+        :param user_id: int
+        :rtype: :class:`github.NamedUser.NamedUser`
+        """
+        assert isinstance(user_id, int), user_id
+        headers, data = self.__requester.requestJsonAndCheck("GET", f"/user/{user_id}")
+        return github.NamedUser.NamedUser(self.__requester, headers, data, completed=True)
+
+    def get_users(self, since: Opt[int] = NotSet) -> PaginatedList[NamedUser]:
+        """
+        :calls: `GET /users <https://docs.github.com/en/rest/reference/users>`_
+        """
+        assert since is NotSet or isinstance(since, int), since
+        url_parameters = dict()
+        if since is not NotSet:
+            url_parameters["since"] = since
+        return PaginatedList(github.NamedUser.NamedUser, self.__requester, "/users", url_parameters)
+
+    def get_organization(self, login: str) -> Organization:
+        """
+        :calls: `GET /orgs/{org} <https://docs.github.com/en/rest/reference/orgs>`_
+        """
+        assert isinstance(login, str), login
+        login = urllib.parse.quote(login)
+        headers, data = self.__requester.requestJsonAndCheck("GET", f"/orgs/{login}")
+        return github.Organization.Organization(self.__requester, headers, data, completed=True)
+
+    def get_organizations(self, since: Opt[int] = NotSet) -> PaginatedList[Organization]:
+        """
+        :calls: `GET /organizations <https://docs.github.com/en/rest/reference/orgs#list-organizations>`_
+        """
+        assert since is NotSet or isinstance(since, int), since
+        url_parameters = dict()
+        if since is not NotSet:
+            url_parameters["since"] = since
+        return PaginatedList(
+            github.Organization.Organization,
+            self.__requester,
+            "/organizations",
+            url_parameters,
+        )
+
+    def get_en

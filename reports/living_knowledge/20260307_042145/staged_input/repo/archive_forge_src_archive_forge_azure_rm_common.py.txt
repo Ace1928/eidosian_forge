@@ -1,0 +1,509 @@
+SOURCE_PATH: archive_forge/src/archive_forge/azure_rm_common.py
+KIND: code
+
+# Copyright (c) 2016 Matt Davis, <mdavis@ansible.com>
+#                    Chris Houseknecht, <house@redhat.com>
+#
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+from __future__ import absolute_import, division, print_function
+__metaclass__ = type
+
+
+import os
+import re
+import types
+import copy
+import inspect
+import traceback
+import json
+
+try:
+    from azure.graphrbac import GraphRbacManagementClient
+except Exception:
+    pass
+from os.path import expanduser
+
+from ansible.module_utils.basic import \
+    AnsibleModule, missing_required_lib, env_fallback
+
+try:
+    from ansible.module_utils.ansible_release import __version__ as ANSIBLE_VERSION
+except Exception:
+    ANSIBLE_VERSION = 'unknown'
+from ansible.module_utils.six.moves import configparser
+import ansible.module_utils.six.moves.urllib.parse as urlparse
+
+AZURE_COMMON_ARGS = dict(
+    auth_source=dict(
+        type='str',
+        choices=['auto', 'cli', 'env', 'credential_file', 'msi'],
+        fallback=(env_fallback, ['ANSIBLE_AZURE_AUTH_SOURCE']),
+        default="auto"
+    ),
+    profile=dict(type='str'),
+    subscription_id=dict(type='str'),
+    client_id=dict(type='str', no_log=True),
+    secret=dict(type='str', no_log=True),
+    tenant=dict(type='str', no_log=True),
+    ad_user=dict(type='str', no_log=True),
+    password=dict(type='str', no_log=True),
+    cloud_environment=dict(type='str', default='AzureCloud'),
+    cert_validation_mode=dict(type='str', choices=['validate', 'ignore']),
+    api_profile=dict(type='str', default='latest'),
+    adfs_authority_url=dict(type='str', default=None),
+    log_mode=dict(type='str', no_log=True),
+    log_path=dict(type='str', no_log=True),
+    x509_certificate_path=dict(type='path', no_log=True),
+    thumbprint=dict(type='str', no_log=True),
+)
+
+AZURE_CREDENTIAL_ENV_MAPPING = dict(
+    profile='AZURE_PROFILE',
+    subscription_id='AZURE_SUBSCRIPTION_ID',
+    client_id='AZURE_CLIENT_ID',
+    secret='AZURE_SECRET',
+    tenant='AZURE_TENANT',
+    ad_user='AZURE_AD_USER',
+    password='AZURE_PASSWORD',
+    cloud_environment='AZURE_CLOUD_ENVIRONMENT',
+    cert_validation_mode='AZURE_CERT_VALIDATION_MODE',
+    adfs_authority_url='AZURE_ADFS_AUTHORITY_URL',
+    x509_certificate_path='AZURE_X509_CERTIFICATE_PATH',
+    thumbprint='AZURE_THUMBPRINT'
+)
+
+
+class SDKProfile(object):  # pylint: disable=too-few-public-methods
+
+    def __init__(self, default_api_version, profile=None):
+        """Constructor.
+
+        :param str default_api_version: Default API version if not overridden by a profile. Nullable.
+        :param profile: A dict operation group name to API version.
+        :type profile: dict[str, str]
+        """
+        self.profile = profile if profile is not None else {}
+        self.profile[None] = default_api_version
+
+    @property
+    def default_api_version(self):
+        return self.profile[None]
+
+
+# FUTURE: this should come from the SDK or an external location.
+# For now, we have to copy from azure-cli
+AZURE_API_PROFILES = {
+    'latest': {
+        'AuthorizationManagementClient': '2020-04-01-preview',
+        'ContainerInstanceManagementClient': '2018-02-01-preview',
+        'ComputeManagementClient': dict(
+            default_api_version='2018-10-01',
+            resource_skus='2018-10-01',
+            disks='2018-06-01',
+            snapshots='2018-10-01',
+            virtual_machine_run_commands='2018-10-01'
+        ),
+        'ManagementGroupsClient': '2020-05-01',
+        'NetworkManagementClient': '2019-11-01',
+        'ResourceManagementClient': '2019-10-01',
+        'SearchManagementClient': '2020-08-01',
+        'StorageManagementClient': '2021-06-01',
+        'SubscriptionClient': '2019-11-01',
+        'WebSiteManagementClient': '2021-03-01',
+        'PostgreSQLManagementClient': '2017-12-01',
+        'MySQLManagementClient': '2017-12-01',
+        'MariaDBManagementClient': '2019-03-01',
+        'ManagementLockClient': '2016-09-01',
+        'DataLakeStoreAccountManagementClient': '2016-11-01',
+        'NotificationHubsManagementClient': '2016-03-01',
+        'EventHubManagementClient': '2018-05-04'
+    },
+    '2019-03-01-hybrid': {
+        'StorageManagementClient': '2017-10-01',
+        'NetworkManagementClient': '2017-10-01',
+        'ComputeManagementClient': SDKProfile('2017-12-01', {
+            'resource_skus': '2017-09-01',
+            'disks': '2017-03-30',
+            'snapshots': '2017-03-30'
+        }),
+        'ManagementLinkClient': '2016-09-01',
+        'ManagementLockClient': '2016-09-01',
+        'PolicyClient': '2016-12-01',
+        'ResourceManagementClient': '2018-05-01',
+        'EventHubManagementClient': '2018-05-04',
+        'SubscriptionClient': '2016-06-01',
+        'DnsManagementClient': '2016-04-01',
+        'KeyVaultManagementClient': '2016-10-01',
+        'AuthorizationManagementClient': SDKProfile('2015-07-01', {
+            'classic_administrators': '2015-06-01',
+            'policy_assignments': '2016-12-01',
+            'policy_definitions': '2016-12-01'
+        }),
+        'KeyVaultClient': '2016-10-01',
+        'azure.multiapi.storage': '2017-11-09',
+        'azure.multiapi.cosmosdb': '2017-04-17'
+    },
+    '2018-03-01-hybrid': {
+        'StorageManagementClient': '2016-01-01',
+        'NetworkManagementClient': '2017-10-01',
+        'ComputeManagementClient': SDKProfile('2017-03-30'),
+        'ManagementLinkClient': '2016-09-01',
+        'ManagementLockClient': '2016-09-01',
+        'PolicyClient': '2016-12-01',
+        'ResourceManagementClient': '2018-02-01',
+        'SubscriptionClient': '2016-06-01',
+        'DnsManagementClient': '2016-04-01',
+        'KeyVaultManagementClient': '2016-10-01',
+        'AuthorizationManagementClient': SDKProfile('2015-07-01', {
+            'classic_administrators': '2015-06-01'
+        }),
+        'KeyVaultClient': '2016-10-01',
+        'azure.multiapi.storage': '2017-04-17',
+        'azure.multiapi.cosmosdb': '2017-04-17'
+    },
+    '2017-03-09-profile': {
+        'StorageManagementClient': '2016-01-01',
+        'NetworkManagementClient': '2015-06-15',
+        'ComputeManagementClient': SDKProfile('2016-03-30'),
+        'ManagementLinkClient': '2016-09-01',
+        'ManagementLockClient': '2015-01-01',
+        'PolicyClient': '2015-10-01-preview',
+        'ResourceManagementClient': '2016-02-01',
+        'SubscriptionClient': '2016-06-01',
+        'DnsManagementClient': '2016-04-01',
+        'KeyVaultManagementClient': '2016-10-01',
+        'AuthorizationManagementClient': SDKProfile('2015-07-01', {
+            'classic_administrators': '2015-06-01'
+        }),
+        'KeyVaultClient': '2016-10-01',
+        'azure.multiapi.storage': '2015-04-05'
+    }
+}
+
+AZURE_TAG_ARGS = dict(
+    tags=dict(type='dict'),
+    append_tags=dict(type='bool', default=True),
+)
+
+AZURE_COMMON_REQUIRED_IF = [
+    ('log_mode', 'file', ['log_path'])
+]
+
+ANSIBLE_USER_AGENT = 'Ansible/{0}'.format(ANSIBLE_VERSION)
+CLOUDSHELL_USER_AGENT_KEY = 'AZURE_HTTP_USER_AGENT'
+VSCODEEXT_USER_AGENT_KEY = 'VSCODEEXT_USER_AGENT'
+
+CIDR_PATTERN = re.compile(r"(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1"
+                          r"[0-9]{2}|2[0-4][0-9]|25[0-5])(/([0-9]|[1-2][0-9]|3[0-2]))")
+
+AZURE_SUCCESS_STATE = "Succeeded"
+AZURE_FAILED_STATE = "Failed"
+
+HAS_AZURE = True
+HAS_AZURE_EXC = None
+HAS_AZURE_CLI_CORE = True
+HAS_AZURE_CLI_CORE_EXC = None
+
+try:
+    import importlib
+except ImportError:
+    # This passes the sanity import test, but does not provide a user friendly error message.
+    # Doing so would require catching Exception for all imports of Azure dependencies in modules and module_utils.
+    importlib = None
+
+try:
+    from packaging.version import Version
+    HAS_PACKAGING_VERSION = True
+    HAS_PACKAGING_VERSION_EXC = None
+except ImportError:
+    Version = None
+    HAS_PACKAGING_VERSION = False
+    HAS_PACKAGING_VERSION_EXC = traceback.format_exc()
+
+try:
+    from enum import Enum
+    from msrestazure.azure_active_directory import AADTokenCredentials
+    from msrestazure.azure_active_directory import MSIAuthentication
+    from azure.mgmt.core.tools import parse_resource_id, resource_id, is_valid_resource_id
+    from azure.cli.core import cloud as azure_cloud
+    from azure.common.credentials import ServicePrincipalCredentials, UserPassCredentials
+    from azure.mgmt.network import NetworkManagementClient
+    from azure.mgmt.resource.resources import ResourceManagementClient
+    from azure.mgmt.managementgroups import ManagementGroupsAPI as ManagementGroupsClient
+    from azure.mgmt.resource.subscriptions import SubscriptionClient
+    from azure.mgmt.storage import StorageManagementClient
+    from azure.mgmt.compute import ComputeManagementClient
+    from azure.mgmt.dns import DnsManagementClient
+    from azure.mgmt.privatedns import PrivateDnsManagementClient
+    import azure.mgmt.privatedns.models as PrivateDnsModels
+    from azure.mgmt.monitor import MonitorManagementClient
+    from azure.mgmt.web import WebSiteManagementClient
+    from azure.mgmt.containerservice import ContainerServiceClient
+    from azure.mgmt.marketplaceordering import MarketplaceOrderingAgreements
+    from azure.mgmt.trafficmanager import TrafficManagerManagementClient
+    from azure.storage.blob import BlobServiceClient
+    from msal.application import ClientApplication, ConfidentialClientApplication
+    from azure.mgmt.authorization import AuthorizationManagementClient
+    from azure.mgmt.sql import SqlManagementClient
+    from azure.mgmt.servicebus import ServiceBusManagementClient
+    from azure.mgmt.rdbms.postgresql import PostgreSQLManagementClient
+    from azure.mgmt.rdbms.mysql import MySQLManagementClient
+    from azure.mgmt.rdbms.mariadb import MariaDBManagementClient
+    from azure.mgmt.containerregistry import ContainerRegistryManagementClient
+    from azure.mgmt.containerinstance import ContainerInstanceManagementClient
+    from azure.mgmt.loganalytics import LogAnalyticsManagementClient
+    import azure.mgmt.loganalytics.models as LogAnalyticsModels
+    from azure.mgmt.automation import AutomationClient
+    import azure.mgmt.automation.models as AutomationModel
+    from azure.mgmt.iothub import IotHubClient
+    from azure.mgmt.iothub import models as IoTHubModels
+    from azure.mgmt.resource.locks import ManagementLockClient
+    from azure.mgmt.recoveryservicesbackup import RecoveryServicesBackupClient
+    import azure.mgmt.recoveryservicesbackup.models as RecoveryServicesBackupModels
+    from azure.mgmt.search import SearchManagementClient
+    from azure.mgmt.datalake.store import DataLakeStoreAccountManagementClient
+    import azure.mgmt.datalake.store.models as DataLakeStoreAccountModel
+    from azure.mgmt.notificationhubs import NotificationHubsManagementClient
+    from azure.mgmt.eventhub import EventHubManagementClient
+    from azure.mgmt.datafactory import DataFactoryManagementClient
+    import azure.mgmt.datafactory.models as DataFactoryModel
+    from azure.identity._credentials import client_secret, user_password, certificate, managed_identity
+
+except ImportError as exc:
+    Authentication = object
+    HAS_AZURE_EXC = traceback.format_exc()
+    HAS_AZURE = False
+
+from base64 import b64encode, b64decode
+from hashlib import sha256
+from hmac import HMAC
+from time import time
+
+try:
+    from urllib import (urlencode, quote_plus)
+except ImportError:
+    from urllib.parse import (urlencode, quote_plus)
+
+try:
+    from azure.cli.core.util import CLIError
+    from azure.common.credentials import get_cli_profile
+    from azure.common.cloud import get_cli_active_cloud
+except ImportError:
+    HAS_AZURE_CLI_CORE = False
+    HAS_AZURE_CLI_CORE_EXC = None
+    CLIError = Exception
+
+
+def azure_id_to_dict(id):
+    pieces = re.sub(r'^\/', '', id).split('/')
+    result = {}
+    index = 0
+    while index < len(pieces) - 1:
+        result[pieces[index]] = pieces[index + 1]
+        index += 1
+    return result
+
+
+def format_resource_id(val, subscription_id, namespace, types, resource_group):
+    return resource_id(name=val,
+                       resource_group=resource_group,
+                       namespace=namespace,
+                       type=types,
+                       subscription=subscription_id) if not is_valid_resource_id(val) else val
+
+
+def normalize_location_name(name):
+    return name.replace(' ', '').lower()
+
+
+# FUTURE: either get this from the requirements file (if we can be sure it's always available at runtime)
+# or generate the requirements files from this so we only have one source of truth to maintain...
+AZURE_PKG_VERSIONS = {
+    'StorageManagementClient': {
+        'package_name': 'storage',
+        'expected_version': '19.0.0'
+    },
+    'ComputeManagementClient': {
+        'package_name': 'compute',
+        'expected_version': '4.4.0'
+    },
+    'ContainerInstanceManagementClient': {
+        'package_name': 'containerinstance',
+        'expected_version': '9.0.0'
+    },
+    'NetworkManagementClient': {
+        'package_name': 'network',
+        'expected_version': '2.3.0'
+    },
+    'ResourceManagementClient': {
+        'package_name': 'resource',
+        'expected_version': '2.1.0'
+    },
+    'DnsManagementClient': {
+        'package_name': 'dns',
+        'expected_version': '8.0.0'
+    },
+    'PrivateDnsManagementClient': {
+        'package_name': 'privatedns',
+        'expected_version': '1.0.0'
+    },
+    'WebSiteManagementClient': {
+        'package_name': 'web',
+        'expected_version': '6.1.0'
+    },
+    'TrafficManagerManagementClient': {
+        'package_name': 'trafficmanager',
+        'expected_version': '1.0.0'
+    },
+    'EventHubManagementClient': {
+        'package_name': 'azure-mgmt-eventhub',
+        'expected_version': '2.0.0'
+    },
+} if HAS_AZURE else {}
+
+
+AZURE_MIN_RELEASE = '2.0.0'
+
+
+class AzureRMModuleBase(object):
+    def __init__(self, derived_arg_spec, bypass_checks=False, no_log=False,
+                 check_invalid_arguments=None, mutually_exclusive=None, required_together=None,
+                 required_one_of=None, add_file_common_args=False, supports_check_mode=False,
+                 required_if=None, supports_tags=True, facts_module=False, skip_exec=False, is_ad_resource=False):
+
+        merged_arg_spec = dict()
+        merged_arg_spec.update(AZURE_COMMON_ARGS)
+        if supports_tags:
+            merged_arg_spec.update(AZURE_TAG_ARGS)
+
+        if derived_arg_spec:
+            merged_arg_spec.update(derived_arg_spec)
+
+        merged_required_if = list(AZURE_COMMON_REQUIRED_IF)
+        if required_if:
+            merged_required_if += required_if
+
+        self.module = AnsibleModule(argument_spec=merged_arg_spec,
+                                    bypass_checks=bypass_checks,
+                                    no_log=no_log,
+                                    mutually_exclusive=mutually_exclusive,
+                                    required_together=required_together,
+                                    required_one_of=required_one_of,
+                                    add_file_common_args=add_file_common_args,
+                                    supports_check_mode=supports_check_mode,
+                                    required_if=merged_required_if)
+
+        if not HAS_PACKAGING_VERSION:
+            self.fail(msg=missing_required_lib('packaging'),
+                      exception=HAS_PACKAGING_VERSION_EXC)
+
+        if not HAS_AZURE:
+            self.fail(msg=missing_required_lib('ansible[azure] (azure >= {0})'.format(AZURE_MIN_RELEASE)),
+                      exception=HAS_AZURE_EXC)
+
+        self._authorization_client = None
+        self._network_client = None
+        self._storage_client = None
+        self._subscription_client = None
+        self._management_group_client = None
+        self._resource_client = None
+        self._compute_client = None
+        self._image_client = None
+        self._dns_client = None
+        self._private_dns_client = None
+        self._web_client = None
+        self._marketplace_client = None
+        self._sql_client = None
+        self._mysql_client = None
+        self._mariadb_client = None
+        self._postgresql_client = None
+        self._containerregistry_client = None
+        self._containerinstance_client = None
+        self._containerservice_client = None
+        self._managedcluster_client = None
+        self._traffic_manager_management_client = None
+        self._monitor_autoscale_settings_client = None
+        self._monitor_log_profiles_client = None
+        self._monitor_diagnostic_settings_client = None
+        self._resource = None
+        self._log_analytics_client = None
+        self._servicebus_client = None
+        self._automation_client = None
+        self._IoThub_client = None
+        self._lock_client = None
+        self._recovery_services_backup_client = None
+        self._search_client = None
+        self._datalake_store_client = None
+        self._datafactory_client = None
+        self._notification_hub_client = None
+        self._event_hub_client = None
+
+        self.check_mode = self.module.check_mode
+        self.api_profile = self.module.params.get('api_profile')
+        self.facts_module = facts_module
+        # self.debug = self.module.params.get('debug')
+
+        # delegate auth to AzureRMAuth class (shared with all plugin types)
+        self.azure_auth = AzureRMAuth(fail_impl=self.fail, is_ad_resource=is_ad_resource, **self.module.params)
+
+        # common parameter validation
+        if self.module.params.get('tags'):
+            self.validate_tags(self.module.params['tags'])
+
+        if not skip_exec:
+            res = self.exec_module(**self.module.params)
+            self.module.exit_json(**res)
+
+    def check_client_version(self, client_type):
+        # Ensure Azure modules are at least 2.0.0rc5.
+        package_version = AZURE_PKG_VERSIONS.get(client_type.__name__, None)
+        if package_version is not None:
+            client_name = package_version.get('package_name')
+            try:
+                client_module = importlib.import_module(client_type.__module__)
+                client_version = client_module.VERSION
+            except (RuntimeError, AttributeError):
+                # can't get at the module version for some reason, just fail silently...
+                return
+            expected_version = package_version.get('expected_version')
+            if Version(client_version) < Version(expected_version):
+                self.fail("Installed azure-mgmt-{0} client version is {1}. The minimum supported version is {2}. Try "
+                          "`pip install ansible[azure]`".format(client_name, client_version, expected_version))
+            if Version(client_version) != Version(expected_version):
+                self.module.warn("Installed azure-mgmt-{0} client version is {1}. The expected version is {2}. Try "
+                                 "`pip install ansible[azure]`".format(client_name, client_version, expected_version))
+
+    def exec_module(self, **kwargs):
+        self.fail("Error: {0} failed to implement exec_module method.".format(self.__class__.__name__))
+
+    def fail(self, msg, **kwargs):
+        '''
+        Shortcut for calling module.fail()
+
+        :param msg: Error message text.
+        :param kwargs: Any key=value pairs
+        :return: None
+        '''
+        self.module.fail_json(msg=msg, **kwargs)
+
+    def deprecate(self, msg, version=None):
+        self.module.deprecate(msg, version)
+
+    def log(self, msg, pretty_print=False):
+        if pretty_print:
+            self.module.debug(json.dumps(msg, indent=4, sort_keys=True))
+        else:
+            self.module.debug(msg)
+
+    def validate_tags(self, tags):
+        '''
+        Check if tags dictionary contains string:string pairs.
+
+        :param tags: dictionary of string:string pairs
+        :return: None
+        '''
+        if not self.facts_module:
+            if not isinstance(tags, dict):
+                self.fail("Tags must be a dictionary of string:string values.")
+            for

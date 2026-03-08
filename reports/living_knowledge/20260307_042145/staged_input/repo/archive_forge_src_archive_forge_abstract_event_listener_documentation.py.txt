@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/abstract_event_listener_documentation.py
+KIND: code
+
+Event listener must subclass and implement this fully or partially.

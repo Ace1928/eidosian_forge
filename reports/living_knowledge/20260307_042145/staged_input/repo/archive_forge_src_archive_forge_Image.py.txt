@@ -1,0 +1,761 @@
+SOURCE_PATH: archive_forge/src/archive_forge/Image.py
+KIND: code
+
+#
+# The Python Imaging Library.
+# $Id$
+#
+# the Image class wrapper
+#
+# partial release history:
+# 1995-09-09 fl   Created
+# 1996-03-11 fl   PIL release 0.0 (proof of concept)
+# 1996-04-30 fl   PIL release 0.1b1
+# 1999-07-28 fl   PIL release 1.0 final
+# 2000-06-07 fl   PIL release 1.1
+# 2000-10-20 fl   PIL release 1.1.1
+# 2001-05-07 fl   PIL release 1.1.2
+# 2002-03-15 fl   PIL release 1.1.3
+# 2003-05-10 fl   PIL release 1.1.4
+# 2005-03-28 fl   PIL release 1.1.5
+# 2006-12-02 fl   PIL release 1.1.6
+# 2009-11-15 fl   PIL release 1.1.7
+#
+# Copyright (c) 1997-2009 by Secret Labs AB.  All rights reserved.
+# Copyright (c) 1995-2009 by Fredrik Lundh.
+#
+# See the README file for information on usage and redistribution.
+#
+
+from __future__ import annotations
+
+import atexit
+import builtins
+import io
+import logging
+import math
+import os
+import re
+import struct
+import sys
+import tempfile
+import warnings
+from collections.abc import Callable, MutableMapping
+from enum import IntEnum
+from pathlib import Path
+
+try:
+    from defusedxml import ElementTree
+except ImportError:
+    ElementTree = None
+
+# VERSION was removed in Pillow 6.0.0.
+# PILLOW_VERSION was removed in Pillow 9.0.0.
+# Use __version__ instead.
+from . import (
+    ExifTags,
+    ImageMode,
+    TiffTags,
+    UnidentifiedImageError,
+    __version__,
+    _plugins,
+)
+from ._binary import i32le, o32be, o32le
+from ._util import DeferredError, is_path
+
+logger = logging.getLogger(__name__)
+
+
+class DecompressionBombWarning(RuntimeWarning):
+    pass
+
+
+class DecompressionBombError(Exception):
+    pass
+
+
+# Limit to around a quarter gigabyte for a 24-bit (3 bpp) image
+MAX_IMAGE_PIXELS = int(1024 * 1024 * 1024 // 4 // 3)
+
+
+try:
+    # If the _imaging C module is not present, Pillow will not load.
+    # Note that other modules should not refer to _imaging directly;
+    # import Image and use the Image.core variable instead.
+    # Also note that Image.core is not a publicly documented interface,
+    # and should be considered private and subject to change.
+    from . import _imaging as core
+
+    if __version__ != getattr(core, "PILLOW_VERSION", None):
+        msg = (
+            "The _imaging extension was built for another version of Pillow or PIL:\n"
+            f"Core version: {getattr(core, 'PILLOW_VERSION', None)}\n"
+            f"Pillow version: {__version__}"
+        )
+        raise ImportError(msg)
+
+except ImportError as v:
+    core = DeferredError.new(ImportError("The _imaging C module is not installed."))
+    # Explanations for ways that we know we might have an import error
+    if str(v).startswith("Module use of python"):
+        # The _imaging C module is present, but not compiled for
+        # the right version (windows only).  Print a warning, if
+        # possible.
+        warnings.warn(
+            "The _imaging extension was built for another version of Python.",
+            RuntimeWarning,
+        )
+    elif str(v).startswith("The _imaging extension"):
+        warnings.warn(str(v), RuntimeWarning)
+    # Fail here anyway. Don't let people run with a mostly broken Pillow.
+    # see docs/porting.rst
+    raise
+
+
+USE_CFFI_ACCESS = False
+try:
+    import cffi
+except ImportError:
+    cffi = None
+
+
+def isImageType(t):
+    """
+    Checks if an object is an image object.
+
+    .. warning::
+
+       This function is for internal use only.
+
+    :param t: object to check if it's an image
+    :returns: True if the object is an image
+    """
+    return hasattr(t, "im")
+
+
+#
+# Constants
+
+
+# transpose
+class Transpose(IntEnum):
+    FLIP_LEFT_RIGHT = 0
+    FLIP_TOP_BOTTOM = 1
+    ROTATE_90 = 2
+    ROTATE_180 = 3
+    ROTATE_270 = 4
+    TRANSPOSE = 5
+    TRANSVERSE = 6
+
+
+# transforms (also defined in Imaging.h)
+class Transform(IntEnum):
+    AFFINE = 0
+    EXTENT = 1
+    PERSPECTIVE = 2
+    QUAD = 3
+    MESH = 4
+
+
+# resampling filters (also defined in Imaging.h)
+class Resampling(IntEnum):
+    NEAREST = 0
+    BOX = 4
+    BILINEAR = 2
+    HAMMING = 5
+    BICUBIC = 3
+    LANCZOS = 1
+
+
+_filters_support = {
+    Resampling.BOX: 0.5,
+    Resampling.BILINEAR: 1.0,
+    Resampling.HAMMING: 1.0,
+    Resampling.BICUBIC: 2.0,
+    Resampling.LANCZOS: 3.0,
+}
+
+
+# dithers
+class Dither(IntEnum):
+    NONE = 0
+    ORDERED = 1  # Not yet implemented
+    RASTERIZE = 2  # Not yet implemented
+    FLOYDSTEINBERG = 3  # default
+
+
+# palettes/quantizers
+class Palette(IntEnum):
+    WEB = 0
+    ADAPTIVE = 1
+
+
+class Quantize(IntEnum):
+    MEDIANCUT = 0
+    MAXCOVERAGE = 1
+    FASTOCTREE = 2
+    LIBIMAGEQUANT = 3
+
+
+module = sys.modules[__name__]
+for enum in (Transpose, Transform, Resampling, Dither, Palette, Quantize):
+    for item in enum:
+        setattr(module, item.name, item.value)
+
+
+if hasattr(core, "DEFAULT_STRATEGY"):
+    DEFAULT_STRATEGY = core.DEFAULT_STRATEGY
+    FILTERED = core.FILTERED
+    HUFFMAN_ONLY = core.HUFFMAN_ONLY
+    RLE = core.RLE
+    FIXED = core.FIXED
+
+
+# --------------------------------------------------------------------
+# Registries
+
+ID = []
+OPEN = {}
+MIME = {}
+SAVE = {}
+SAVE_ALL = {}
+EXTENSION = {}
+DECODERS = {}
+ENCODERS = {}
+
+# --------------------------------------------------------------------
+# Modes
+
+_ENDIAN = "<" if sys.byteorder == "little" else ">"
+
+
+def _conv_type_shape(im):
+    m = ImageMode.getmode(im.mode)
+    shape = (im.height, im.width)
+    extra = len(m.bands)
+    if extra != 1:
+        shape += (extra,)
+    return shape, m.typestr
+
+
+MODES = ["1", "CMYK", "F", "HSV", "I", "L", "LAB", "P", "RGB", "RGBA", "RGBX", "YCbCr"]
+
+# raw modes that may be memory mapped.  NOTE: if you change this, you
+# may have to modify the stride calculation in map.c too!
+_MAPMODES = ("L", "P", "RGBX", "RGBA", "CMYK", "I;16", "I;16L", "I;16B")
+
+
+def getmodebase(mode):
+    """
+    Gets the "base" mode for given mode.  This function returns "L" for
+    images that contain grayscale data, and "RGB" for images that
+    contain color data.
+
+    :param mode: Input mode.
+    :returns: "L" or "RGB".
+    :exception KeyError: If the input mode was not a standard mode.
+    """
+    return ImageMode.getmode(mode).basemode
+
+
+def getmodetype(mode):
+    """
+    Gets the storage type mode.  Given a mode, this function returns a
+    single-layer mode suitable for storing individual bands.
+
+    :param mode: Input mode.
+    :returns: "L", "I", or "F".
+    :exception KeyError: If the input mode was not a standard mode.
+    """
+    return ImageMode.getmode(mode).basetype
+
+
+def getmodebandnames(mode):
+    """
+    Gets a list of individual band names.  Given a mode, this function returns
+    a tuple containing the names of individual bands (use
+    :py:method:`~PIL.Image.getmodetype` to get the mode used to store each
+    individual band.
+
+    :param mode: Input mode.
+    :returns: A tuple containing band names.  The length of the tuple
+        gives the number of bands in an image of the given mode.
+    :exception KeyError: If the input mode was not a standard mode.
+    """
+    return ImageMode.getmode(mode).bands
+
+
+def getmodebands(mode):
+    """
+    Gets the number of individual bands for this mode.
+
+    :param mode: Input mode.
+    :returns: The number of bands in this mode.
+    :exception KeyError: If the input mode was not a standard mode.
+    """
+    return len(ImageMode.getmode(mode).bands)
+
+
+# --------------------------------------------------------------------
+# Helpers
+
+_initialized = 0
+
+
+def preinit():
+    """
+    Explicitly loads BMP, GIF, JPEG, PPM and PPM file format drivers.
+
+    It is called when opening or saving images.
+    """
+
+    global _initialized
+    if _initialized >= 1:
+        return
+
+    try:
+        from . import BmpImagePlugin
+
+        assert BmpImagePlugin
+    except ImportError:
+        pass
+    try:
+        from . import GifImagePlugin
+
+        assert GifImagePlugin
+    except ImportError:
+        pass
+    try:
+        from . import JpegImagePlugin
+
+        assert JpegImagePlugin
+    except ImportError:
+        pass
+    try:
+        from . import PpmImagePlugin
+
+        assert PpmImagePlugin
+    except ImportError:
+        pass
+    try:
+        from . import PngImagePlugin
+
+        assert PngImagePlugin
+    except ImportError:
+        pass
+
+    _initialized = 1
+
+
+def init():
+    """
+    Explicitly initializes the Python Imaging Library. This function
+    loads all available file format drivers.
+
+    It is called when opening or saving images if :py:meth:`~preinit()` is
+    insufficient, and by :py:meth:`~PIL.features.pilinfo`.
+    """
+
+    global _initialized
+    if _initialized >= 2:
+        return 0
+
+    parent_name = __name__.rpartition(".")[0]
+    for plugin in _plugins:
+        try:
+            logger.debug("Importing %s", plugin)
+            __import__(f"{parent_name}.{plugin}", globals(), locals(), [])
+        except ImportError as e:
+            logger.debug("Image: failed to import %s: %s", plugin, e)
+
+    if OPEN or SAVE:
+        _initialized = 2
+        return 1
+
+
+# --------------------------------------------------------------------
+# Codec factories (used by tobytes/frombytes and ImageFile.load)
+
+
+def _getdecoder(mode, decoder_name, args, extra=()):
+    # tweak arguments
+    if args is None:
+        args = ()
+    elif not isinstance(args, tuple):
+        args = (args,)
+
+    try:
+        decoder = DECODERS[decoder_name]
+    except KeyError:
+        pass
+    else:
+        return decoder(mode, *args + extra)
+
+    try:
+        # get decoder
+        decoder = getattr(core, decoder_name + "_decoder")
+    except AttributeError as e:
+        msg = f"decoder {decoder_name} not available"
+        raise OSError(msg) from e
+    return decoder(mode, *args + extra)
+
+
+def _getencoder(mode, encoder_name, args, extra=()):
+    # tweak arguments
+    if args is None:
+        args = ()
+    elif not isinstance(args, tuple):
+        args = (args,)
+
+    try:
+        encoder = ENCODERS[encoder_name]
+    except KeyError:
+        pass
+    else:
+        return encoder(mode, *args + extra)
+
+    try:
+        # get encoder
+        encoder = getattr(core, encoder_name + "_encoder")
+    except AttributeError as e:
+        msg = f"encoder {encoder_name} not available"
+        raise OSError(msg) from e
+    return encoder(mode, *args + extra)
+
+
+# --------------------------------------------------------------------
+# Simple expression analyzer
+
+
+class _E:
+    def __init__(self, scale, offset):
+        self.scale = scale
+        self.offset = offset
+
+    def __neg__(self):
+        return _E(-self.scale, -self.offset)
+
+    def __add__(self, other):
+        if isinstance(other, _E):
+            return _E(self.scale + other.scale, self.offset + other.offset)
+        return _E(self.scale, self.offset + other)
+
+    __radd__ = __add__
+
+    def __sub__(self, other):
+        return self + -other
+
+    def __rsub__(self, other):
+        return other + -self
+
+    def __mul__(self, other):
+        if isinstance(other, _E):
+            return NotImplemented
+        return _E(self.scale * other, self.offset * other)
+
+    __rmul__ = __mul__
+
+    def __truediv__(self, other):
+        if isinstance(other, _E):
+            return NotImplemented
+        return _E(self.scale / other, self.offset / other)
+
+
+def _getscaleoffset(expr):
+    a = expr(_E(1, 0))
+    return (a.scale, a.offset) if isinstance(a, _E) else (0, a)
+
+
+# --------------------------------------------------------------------
+# Implementation wrapper
+
+
+class Image:
+    """
+    This class represents an image object.  To create
+    :py:class:`~PIL.Image.Image` objects, use the appropriate factory
+    functions.  There's hardly ever any reason to call the Image constructor
+    directly.
+
+    * :py:func:`~PIL.Image.open`
+    * :py:func:`~PIL.Image.new`
+    * :py:func:`~PIL.Image.frombytes`
+    """
+
+    format: str | None = None
+    format_description: str | None = None
+    _close_exclusive_fp_after_loading = True
+
+    def __init__(self):
+        # FIXME: take "new" parameters / other image?
+        # FIXME: turn mode and size into delegating properties?
+        self.im = None
+        self._mode = ""
+        self._size = (0, 0)
+        self.palette = None
+        self.info = {}
+        self.readonly = 0
+        self.pyaccess = None
+        self._exif = None
+
+    @property
+    def width(self):
+        return self.size[0]
+
+    @property
+    def height(self):
+        return self.size[1]
+
+    @property
+    def size(self):
+        return self._size
+
+    @property
+    def mode(self):
+        return self._mode
+
+    def _new(self, im):
+        new = Image()
+        new.im = im
+        new._mode = im.mode
+        new._size = im.size
+        if im.mode in ("P", "PA"):
+            if self.palette:
+                new.palette = self.palette.copy()
+            else:
+                from . import ImagePalette
+
+                new.palette = ImagePalette.ImagePalette()
+        new.info = self.info.copy()
+        return new
+
+    # Context manager support
+    def __enter__(self):
+        return self
+
+    def _close_fp(self):
+        if getattr(self, "_fp", False):
+            if self._fp != self.fp:
+                self._fp.close()
+            self._fp = DeferredError(ValueError("Operation on closed image"))
+        if self.fp:
+            self.fp.close()
+
+    def __exit__(self, *args):
+        if hasattr(self, "fp"):
+            if getattr(self, "_exclusive_fp", False):
+                self._close_fp()
+            self.fp = None
+
+    def close(self):
+        """
+        Closes the file pointer, if possible.
+
+        This operation will destroy the image core and release its memory.
+        The image data will be unusable afterward.
+
+        This function is required to close images that have multiple frames or
+        have not had their file read and closed by the
+        :py:meth:`~PIL.Image.Image.load` method. See :ref:`file-handling` for
+        more information.
+        """
+        if hasattr(self, "fp"):
+            try:
+                self._close_fp()
+                self.fp = None
+            except Exception as msg:
+                logger.debug("Error closing: %s", msg)
+
+        if getattr(self, "map", None):
+            self.map = None
+
+        # Instead of simply setting to None, we're setting up a
+        # deferred error that will better explain that the core image
+        # object is gone.
+        self.im = DeferredError(ValueError("Operation on closed image"))
+
+    def _copy(self):
+        self.load()
+        self.im = self.im.copy()
+        self.pyaccess = None
+        self.readonly = 0
+
+    def _ensure_mutable(self):
+        if self.readonly:
+            self._copy()
+        else:
+            self.load()
+
+    def _dump(self, file=None, format=None, **options):
+        suffix = ""
+        if format:
+            suffix = "." + format
+
+        if not file:
+            f, filename = tempfile.mkstemp(suffix)
+            os.close(f)
+        else:
+            filename = file
+            if not filename.endswith(suffix):
+                filename = filename + suffix
+
+        self.load()
+
+        if not format or format == "PPM":
+            self.im.save_ppm(filename)
+        else:
+            self.save(filename, format, **options)
+
+        return filename
+
+    def __eq__(self, other):
+        return (
+            self.__class__ is other.__class__
+            and self.mode == other.mode
+            and self.size == other.size
+            and self.info == other.info
+            and self.getpalette() == other.getpalette()
+            and self.tobytes() == other.tobytes()
+        )
+
+    def __repr__(self):
+        return "<%s.%s image mode=%s size=%dx%d at 0x%X>" % (
+            self.__class__.__module__,
+            self.__class__.__name__,
+            self.mode,
+            self.size[0],
+            self.size[1],
+            id(self),
+        )
+
+    def _repr_pretty_(self, p, cycle):
+        """IPython plain text display support"""
+
+        # Same as __repr__ but without unpredictable id(self),
+        # to keep Jupyter notebook `text/plain` output stable.
+        p.text(
+            "<%s.%s image mode=%s size=%dx%d>"
+            % (
+                self.__class__.__module__,
+                self.__class__.__name__,
+                self.mode,
+                self.size[0],
+                self.size[1],
+            )
+        )
+
+    def _repr_image(self, image_format, **kwargs):
+        """Helper function for iPython display hook.
+
+        :param image_format: Image format.
+        :returns: image as bytes, saved into the given format.
+        """
+        b = io.BytesIO()
+        try:
+            self.save(b, image_format, **kwargs)
+        except Exception:
+            return None
+        return b.getvalue()
+
+    def _repr_png_(self):
+        """iPython display hook support for PNG format.
+
+        :returns: PNG version of the image as bytes
+        """
+        return self._repr_image("PNG", compress_level=1)
+
+    def _repr_jpeg_(self):
+        """iPython display hook support for JPEG format.
+
+        :returns: JPEG version of the image as bytes
+        """
+        return self._repr_image("JPEG")
+
+    @property
+    def __array_interface__(self):
+        # numpy array interface support
+        new = {"version": 3}
+        try:
+            if self.mode == "1":
+                # Binary images need to be extended from bits to bytes
+                # See: https://github.com/python-pillow/Pillow/issues/350
+                new["data"] = self.tobytes("raw", "L")
+            else:
+                new["data"] = self.tobytes()
+        except Exception as e:
+            if not isinstance(e, (MemoryError, RecursionError)):
+                try:
+                    import numpy
+                    from packaging.version import parse as parse_version
+                except ImportError:
+                    pass
+                else:
+                    if parse_version(numpy.__version__) < parse_version("1.23"):
+                        warnings.warn(e)
+            raise
+        new["shape"], new["typestr"] = _conv_type_shape(self)
+        return new
+
+    def __getstate__(self):
+        im_data = self.tobytes()  # load image first
+        return [self.info, self.mode, self.size, self.getpalette(), im_data]
+
+    def __setstate__(self, state):
+        Image.__init__(self)
+        info, mode, size, palette, data = state
+        self.info = info
+        self._mode = mode
+        self._size = size
+        self.im = core.new(mode, size)
+        if mode in ("L", "LA", "P", "PA") and palette:
+            self.putpalette(palette)
+        self.frombytes(data)
+
+    def tobytes(self, encoder_name="raw", *args):
+        """
+        Return image as a bytes object.
+
+        .. warning::
+
+            This method returns the raw image data from the internal
+            storage.  For compressed image data (e.g. PNG, JPEG) use
+            :meth:`~.save`, with a BytesIO parameter for in-memory
+            data.
+
+        :param encoder_name: What encoder to use.  The default is to
+                             use the standard "raw" encoder.
+
+                             A list of C encoders can be seen under
+                             codecs section of the function array in
+                             :file:`_imaging.c`. Python encoders are
+                             registered within the relevant plugins.
+        :param args: Extra arguments to the encoder.
+        :returns: A :py:class:`bytes` object.
+        """
+
+        # may pass tuple instead of argument list
+        if len(args) == 1 and isinstance(args[0], tuple):
+            args = args[0]
+
+        if encoder_name == "raw" and args == ():
+            args = self.mode
+
+        self.load()
+
+        if self.width == 0 or self.height == 0:
+            return b""
+
+        # unpack data
+        e = _getencoder(self.mode, encoder_name, args)
+        e.setimage(self.im)
+
+        bufsize = max(65536, self.size[0] * 4)  # see RawEncode.c
+
+        output = []
+        while True:
+            bytes_consumed, errcode, data = e.encode(bufsize)
+            output.append(data)
+            if errcode:
+                break
+        if errcode < 0:
+            msg = f"encoder error {errcode

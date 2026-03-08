@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/abc_alt_test_documentation.py
+KIND: code
+
+import abc
+from typing import NoReturn, Optional
+import pytest
+from cirq import ABCMetaImplementAnyOneOf, alternative
+my_method doc.

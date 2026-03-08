@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/MINLP_simple_documentation.py
+KIND: code
+
+from pyomo.environ import (
+from pyomo.common.collections import ComponentMap
+from pyomo.contrib.mindtpy.tests.MINLP_simple_grey_box import (
+Bound definitions

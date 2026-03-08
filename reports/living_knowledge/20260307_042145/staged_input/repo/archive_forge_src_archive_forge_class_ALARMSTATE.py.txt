@@ -1,0 +1,11 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_ALARMSTATE.py
+KIND: code
+
+import xcffib
+import struct
+import io
+from . import xproto
+class ALARMSTATE:
+    Active = 0
+    Inactive = 1
+    Destroyed = 2

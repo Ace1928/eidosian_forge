@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/Fingerprinter_documentation.py
+KIND: code
+
+import numpy
+from rdkit.Chem.EState import AtomTypes, EStateIndices
+ Example code for calculating E-state fingerprints

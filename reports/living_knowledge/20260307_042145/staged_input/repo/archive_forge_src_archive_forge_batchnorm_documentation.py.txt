@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/batchnorm_documentation.py
+KIND: code
+
+import torch
+import torch.ao.nn.intrinsic as nni
+This is the quantized version of :class:`~torch.nn.BatchNorm3d`.

@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/antibiotics_documentation.py
+KIND: code
+
+from __future__ import annotations
+import logging # isort:skip
+from io import StringIO
+from typing import TYPE_CHECKING

@@ -1,0 +1,12 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_debugger_case_scoped_stepping_target2.py
+KIND: code
+
+a = 1
+
+
+def method():
+    b = 2
+
+
+method()  # break here
+c = 3

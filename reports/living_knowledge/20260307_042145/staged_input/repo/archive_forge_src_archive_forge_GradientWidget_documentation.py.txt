@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/GradientWidget_documentation.py
+KIND: code
+
+from ..graphicsItems.GradientEditorItem import GradientEditorItem
+from ..Qt import QtCore, QtGui, QtWidgets
+from .GraphicsView import GraphicsView
+Set the orientation of the widget. May be one of 'bottom', 'top', 
+        'left', or 'right'.

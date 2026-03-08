@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/GitAuthor_documentation.py
+KIND: code
+
+from datetime import datetime
+from typing import Any, Dict
+from github.GithubObject import Attribute, NonCompletableGithubObject, NotSet
+
+    This class represents GitAuthors

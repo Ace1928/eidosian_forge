@@ -1,0 +1,8 @@
+SOURCE_PATH: .eidos_chrome_profile/SafetyTips/3091/manifest.json
+KIND: config
+
+{
+  "manifest_version": 2,
+  "name": "safetyTips",
+  "version": "3091"
+}

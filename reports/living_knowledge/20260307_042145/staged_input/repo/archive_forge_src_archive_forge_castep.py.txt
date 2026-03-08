@@ -1,0 +1,451 @@
+SOURCE_PATH: archive_forge/src/archive_forge/castep.py
+KIND: code
+
+"""This module defines an interface to CASTEP for
+    use by the ASE (Webpage: http://wiki.fysik.dtu.dk/ase)
+
+Authors:
+    Max Hoffmann, max.hoffmann@ch.tum.de
+    Joerg Meyer, joerg.meyer@ch.tum.de
+    Simon P. Rittmeyer, simon.rittmeyer@tum.de
+
+Contributors:
+    Juan M. Lorenzi, juan.lorenzi@tum.de
+    Georg S. Michelitsch, georg.michelitsch@tch.tum.de
+    Reinhard J. Maurer, reinhard.maurer@yale.edu
+    Simone Sturniolo, simone.sturniolo@stfc.ac.uk
+"""
+
+import difflib
+import numpy as np
+import os
+import re
+import glob
+import shutil
+import sys
+import json
+import time
+import tempfile
+import warnings
+import subprocess
+from copy import deepcopy
+from collections import namedtuple
+from itertools import product
+from typing import List, Set
+
+import ase
+import ase.units as units
+from ase.calculators.general import Calculator
+from ase.calculators.calculator import compare_atoms
+from ase.calculators.calculator import PropertyNotImplementedError
+from ase.calculators.calculator import kpts2sizeandoffsets
+from ase.dft.kpoints import BandPath
+from ase.parallel import paropen
+from ase.io.castep import read_param
+from ase.io.castep import read_bands
+from ase.constraints import FixCartesian
+
+__all__ = [
+    'Castep',
+    'CastepCell',
+    'CastepParam',
+    'create_castep_keywords']
+
+contact_email = 'simon.rittmeyer@tum.de'
+
+# A convenient table to avoid the previously used "eval"
+_tf_table = {
+    '': True,  # Just the keyword is equivalent to True
+    'True': True,
+    'False': False}
+
+
+def _self_getter(getf):
+    # A decorator that makes it so that if no 'atoms' argument is passed to a
+    # getter function, self.atoms is used instead
+
+    def decor_getf(self, atoms=None, *args, **kwargs):
+
+        if atoms is None:
+            atoms = self.atoms
+
+        return getf(self, atoms, *args, **kwargs)
+
+    return decor_getf
+
+
+def _parse_tss_block(value, scaled=False):
+    # Parse the assigned value for a Transition State Search structure block
+    is_atoms = isinstance(value, ase.atoms.Atoms)
+    try:
+        is_strlist = all(map(lambda x: isinstance(x, str), value))
+    except TypeError:
+        is_strlist = False
+
+    if not is_atoms:
+        if not is_strlist:
+            # Invalid!
+            raise TypeError('castep.cell.positions_abs/frac_intermediate/'
+                            'product expects Atoms object or list of strings')
+
+        # First line must be Angstroms!
+        if (not scaled) and value[0].strip() != 'ang':
+            raise RuntimeError('Only ang units currently supported in castep.'
+                               'cell.positions_abs_intermediate/product')
+        return '\n'.join(map(str.strip, value))
+    else:
+        text_block = '' if scaled else 'ang\n'
+        positions = (value.get_scaled_positions() if scaled else
+                     value.get_positions())
+        symbols = value.get_chemical_symbols()
+        for s, p in zip(symbols, positions):
+            text_block += '    {0} {1:.3f} {2:.3f} {3:.3f}\n'.format(s, *p)
+
+        return text_block
+
+
+class Castep(Calculator):
+    r"""
+CASTEP Interface Documentation
+
+
+Introduction
+============
+
+CASTEP_ [1]_ W_ is a software package which uses density functional theory to
+provide a good atomic-level description of all manner of materials and
+molecules. CASTEP can give information about total energies, forces and
+stresses on an atomic system, as well as calculating optimum geometries, band
+structures, optical spectra, phonon spectra and much more. It can also perform
+molecular dynamics simulations.
+
+The CASTEP calculator interface class offers intuitive access to all CASTEP
+settings and most results. All CASTEP specific settings are accessible via
+attribute access (*i.e*. ``calc.param.keyword = ...`` or
+``calc.cell.keyword = ...``)
+
+
+Getting Started:
+================
+
+Set the environment variables appropriately for your system.
+
+>>> export CASTEP_COMMAND=' ... '
+>>> export CASTEP_PP_PATH=' ... '
+
+Note: alternatively to CASTEP_PP_PATH one can set PSPOT_DIR
+as CASTEP consults this by default, i.e.
+
+>>> export PSPOT_DIR=' ... '
+
+
+Running the Calculator
+======================
+
+The default initialization command for the CASTEP calculator is
+
+.. class:: Castep(directory='CASTEP', label='castep')
+
+To do a minimal run one only needs to set atoms, this will use all
+default settings of CASTEP, meaning LDA, singlepoint, etc..
+
+With a generated *castep_keywords.json* in place all options are accessible
+by inspection, *i.e.* tab-completion. This works best when using ``ipython``.
+All options can be accessed via ``calc.param.<TAB>`` or ``calc.cell.<TAB>``
+and documentation is printed with ``calc.param.<keyword> ?`` or
+``calc.cell.<keyword> ?``. All options can also be set directly
+using ``calc.keyword = ...`` or ``calc.KEYWORD = ...`` or even
+``ialc.KeYwOrD`` or directly as named arguments in the call to the constructor
+(*e.g.* ``Castep(task='GeometryOptimization')``).
+If using this calculator on a machine without CASTEP, one might choose to copy
+a *castep_keywords.json* file generated elsewhere in order to access this
+feature: the file will be used if located in the working directory,
+*$HOME/.ase/* or *ase/ase/calculators/* within the ASE library. The file should
+be generated the first time it is needed, but you can generate a new keywords
+file in the currect directory with ``python -m ase.calculators.castep``.
+
+All options that go into the ``.param`` file are held in an ``CastepParam``
+instance, while all options that go into the ``.cell`` file and don't belong
+to the atoms object are held in an ``CastepCell`` instance. Each instance can
+be created individually and can be added to calculators by attribute
+assignment, *i.e.* ``calc.param = param`` or ``calc.cell = cell``.
+
+All internal variables of the calculator start with an underscore (_).
+All cell attributes that clearly belong into the atoms object are blocked.
+Setting ``calc.atoms_attribute`` (*e.g.* ``= positions``) is sent directly to
+the atoms object.
+
+
+Arguments:
+==========
+
+=========================  ====================================================
+Keyword                    Description
+=========================  ====================================================
+``directory``              The relative path where all input and output files
+                           will be placed. If this does not exist, it will be
+                           created.  Existing directories will be moved to
+                           directory-TIMESTAMP unless self._rename_existing_dir
+                           is set to false.
+
+``label``                  The prefix of .param, .cell, .castep, etc. files.
+
+``castep_command``         Command to run castep. Can also be set via the bash
+                           environment variable ``CASTEP_COMMAND``. If none is
+                           given or found, will default to ``castep``
+
+``check_castep_version``   Boolean whether to check if the installed castep
+                           version matches the version from which the available
+                           options were deduced. Defaults to ``False``.
+
+``castep_pp_path``         The path where the pseudopotentials are stored. Can
+                           also be set via the bash environment variables
+                           ``PSPOT_DIR`` (preferred) and ``CASTEP_PP_PATH``.
+                           Will default to the current working directory if
+                           none is given or found. Note that pseudopotentials
+                           may be generated on-the-fly if they are not found.
+
+``find_pspots``            Boolean whether to search for pseudopotentials in
+                           ``<castep_pp_path>`` or not. If activated, files in
+                           this directory will be checked for typical names. If
+                           files are not found, they will be generated on the
+                           fly, depending on the ``_build_missing_pspots``
+                           value.  A RuntimeError will be raised in case
+                           multiple files per element are found. Defaults to
+                           ``False``.
+``keyword_tolerance``      Integer to indicate the level of tolerance to apply
+                           validation of any parameters set in the CastepCell
+                           or CastepParam objects against the ones found in
+                           castep_keywords. Levels are as following:
+
+                           0 = no tolerance, keywords not found in
+                           castep_keywords will raise an exception
+
+                           1 = keywords not found will be accepted but produce
+                           a warning (default)
+
+                           2 = keywords not found will be accepted silently
+
+                           3 = no attempt is made to look for
+                           castep_keywords.json at all
+``castep_keywords``        Can be used to pass a CastepKeywords object that is
+                           then used with no attempt to actually load a 
+                           castep_keywords.json file. Most useful for debugging
+                           and testing purposes.
+
+=========================  ====================================================
+
+
+Additional Settings
+===================
+
+=========================  ====================================================
+Internal Setting           Description
+=========================  ====================================================
+``_castep_command``        (``=castep``): the actual shell command used to
+                           call CASTEP.
+
+``_check_checkfile``       (``=True``): this makes write_param() only
+                           write a continue or reuse statement if the
+                           addressed .check or .castep_bin file exists in the
+                           directory.
+
+``_copy_pspots``           (``=False``): if set to True the calculator will
+                           actually copy the needed pseudo-potential (\*.usp)
+                           file, usually it will only create symlinks.
+
+``_link_pspots``           (``=True``): if set to True the calculator will
+                           actually will create symlinks to the needed pseudo
+                           potentials. Set this option (and ``_copy_pspots``)
+                           to False if you rather want to access your pseudo
+                           potentials using the PSPOT_DIR environment variable
+                           that is read by CASTEP.
+                           *Note:* This option has no effect if ``copy_pspots``
+                           is True..
+
+``_build_missing_pspots``  (``=True``): if set to True, castep will generate
+                           missing pseudopotentials on the fly. If not, a
+                           RuntimeError will be raised if not all files were
+                           found.
+
+``_export_settings``       (``=True``): if this is set to
+                           True, all calculator internal settings shown here
+                           will be included in the .param in a comment line (#)
+                           and can be read again by merge_param. merge_param
+                           can be forced to ignore this directive using the
+                           optional argument ``ignore_internal_keys=True``.
+
+``_force_write``           (``=True``): this controls wether the \*cell and
+                           \*param will be overwritten.
+
+``_prepare_input_only``    (``=False``): If set to True, the calculator will
+                           create \*cell und \*param file but not
+                           start the calculation itself.
+                           If this is used to prepare jobs locally
+                           and run on a remote cluster it is recommended
+                           to set ``_copy_pspots = True``.
+
+``_castep_pp_path``        (``='.'``) : the place where the calculator
+                           will look for pseudo-potential files.
+
+``_find_pspots``           (``=False``): if set to True, the calculator will
+                           try to find the respective pseudopotentials from
+                           <_castep_pp_path>. As long as there are no multiple
+                           files per element in this directory, the auto-detect
+                           feature should be very robust. Raises a RuntimeError
+                           if required files are not unique (multiple files per
+                           element). Non existing pseudopotentials will be
+                           generated, though this could be dangerous.
+
+``_rename_existing_dir``   (``=True``) : when using a new instance
+                           of the calculator, this will move directories out of
+                           the way that would be overwritten otherwise,
+                           appending a date string.
+
+``_set_atoms``             (``=False``) : setting this to True will overwrite
+                           any atoms object previously attached to the
+                           calculator when reading a \.castep file.  By de-
+                           fault, the read() function will only create a new
+                           atoms object if none has been attached and other-
+                           wise try to assign forces etc. based on the atom's
+                           positions.  ``_set_atoms=True`` could be necessary
+                           if one uses CASTEP's internal geometry optimization
+                           (``calc.param.task='GeometryOptimization'``)
+                           because then the positions get out of sync.
+                           *Warning*: this option is generally not recommended
+                           unless one knows one really needs it. There should
+                           never be any need, if CASTEP is used as a
+                           single-point calculator.
+
+``_track_output``          (``=False``) : if set to true, the interface
+                           will append a number to the label on all input
+                           and output files, where n is the number of calls
+                           to this instance. *Warning*: this setting may con-
+                           sume a lot more disk space because of the additio-
+                           nal \*check files.
+
+``_try_reuse``             (``=_track_output``) : when setting this, the in-
+                           terface will try to fetch the reuse file from the
+                           previous run even if _track_output is True. By de-
+                           fault it is equal to _track_output, but may be
+                           overridden.
+
+                           Since this behavior may not always be desirable for
+                           single-point calculations. Regular reuse for *e.g.*
+                           a geometry-optimization can be achieved by setting
+                           ``calc.param.reuse = True``.
+
+``_pedantic``              (``=False``) if set to true, the calculator will
+                           inform about settings probably wasting a lot of CPU
+                           time or causing numerical inconsistencies.
+
+=========================  ====================================================
+
+Special features:
+=================
+
+
+``.dryrun_ok()``
+  Runs ``castep_command seed -dryrun`` in a temporary directory return True if
+  all variables initialized ok. This is a fast way to catch errors in the
+  input. Afterwards _kpoints_used is set.
+
+``.merge_param()``
+  Takes a filename or filehandler of a .param file or CastepParam instance and
+  merges it into the current calculator instance, overwriting current settings
+
+``.keyword.clear()``
+  Can be used on any option like ``calc.param.keyword.clear()`` or
+  ``calc.cell.keyword.clear()`` to return to the CASTEP default.
+
+``.initialize()``
+  Creates all needed input in the ``_directory``. This can then copied to and
+  run in a place without ASE or even python.
+
+``.set_pspot('<library>')``
+  This automatically sets the pseudo-potential for all present species to
+  ``<Species>_<library>.usp``. Make sure that ``_castep_pp_path`` is set
+  correctly. Note that there is no check, if the file actually exists. If it
+  doesn't castep will crash! You may want to use ``find_pspots()`` instead.
+
+``.find_pspots(pspot=<library>, suffix=<suffix>)``
+  This automatically searches for pseudopotentials of type
+  ``<Species>_<library>.<suffix>`` or ``<Species>-<library>.<suffix>`` in
+  ``castep_pp_path` (make sure this is set correctly). Note that ``<Species>``
+  will be searched for case insensitive.  Regular expressions are accepted, and
+  arguments ``'*'`` will be regarded as bash-like wildcards. Defaults are any
+  ``<library>`` and any ``<suffix>`` from ``['usp', 'UPF', 'recpot']``. If you
+  have well-organized folders with pseudopotentials of one kind, this should
+  work with the defaults.
+
+``print(calc)``
+  Prints a short summary of the calculator settings and atoms.
+
+``ase.io.castep.read_seed('path-to/seed')``
+  Given you have a combination of seed.{param,cell,castep} this will return an
+  atoms object with the last ionic positions in the .castep file and all other
+  settings parsed from the .cell and .param file. If no .castep file is found
+  the positions are taken from the .cell file. The output directory will be
+  set to the same directory, only the label is preceded by 'copy_of\_'  to
+  avoid overwriting.
+
+``.set_kpts(kpoints)``
+  This is equivalent to initialising the calculator with
+  ``calc = Castep(kpts=kpoints)``. ``kpoints`` can be specified in many
+  convenient forms: simple Monkhorst-Pack grids can be specified e.g.
+  ``(2, 2, 3)`` or ``'2 2 3'``; lists of specific weighted k-points can be
+  given in reciprocal lattice coordinates e.g.
+  ``[[0, 0, 0, 0.25], [0.25, 0.25, 0.25, 0.75]]``; a dictionary syntax is
+  available for more complex requirements e.g.
+  ``{'size': (2, 2, 2), 'gamma': True}`` will give a Gamma-centered 2x2x2 M-P
+  grid, ``{'density': 10, 'gamma': False, 'even': False}`` will give a mesh
+  with density of at least 10 Ang (based on the unit cell of currently-attached
+  atoms) with an odd number of points in each direction and avoiding the Gamma
+  point.
+
+``.set_bandpath(bandpath)``
+  This is equivalent to initialialising the calculator with
+  ``calc=Castep(bandpath=bandpath)`` and may be set simultaneously with *kpts*.
+  It allows an electronic band structure path to be set up using ASE BandPath
+  objects. This enables a band structure calculation to be set up conveniently
+  using e.g. calc.set_bandpath(atoms.cell.bandpath().interpolate(npoints=200))
+
+``.band_structure(bandfile=None)``
+  Read a band structure from _seedname.bands_ file. This returns an ase
+  BandStructure object which may be plotted with e.g.
+  ``calc.band_structure().plot()``
+
+Notes/Issues:
+==============
+
+* Currently *only* the FixAtoms *constraint* is fully supported for reading and
+  writing. There is some experimental support for the FixCartesian constraint.
+
+* There is no support for the CASTEP *unit system*. Units of eV and Angstrom
+  are used throughout. In particular when converting total energies from
+  different calculators, one should check that the same CODATA_ version is
+  used for constants and conversion factors, respectively.
+
+.. _CASTEP: http://www.castep.org/
+
+.. _W: https://en.wikipedia.org/wiki/CASTEP
+
+.. _CODATA: https://physics.nist.gov/cuu/Constants/index.html
+
+.. [1] S. J. Clark, M. D. Segall, C. J. Pickard, P. J. Hasnip, M. J. Probert,
+       K. Refson, M. C. Payne Zeitschrift für Kristallographie 220(5-6)
+       pp.567- 570 (2005) PDF_.
+
+.. _PDF: http://www.tcm.phy.cam.ac.uk/castep/papers/ZKristallogr_2005.pdf
+
+
+End CASTEP Interface Documentation
+    """
+
+    # Class attributes !
+    # keys set through atoms object
+    atoms_keys = [
+        'charges',
+        'ionic_constraints',
+        'lattice_abs',
+        'lattice_cart',

@@ -1,0 +1,11 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/NP
+KIND: config
+
+NP}
+ प्रदेश नं० २madhesh province&प्रदेश नम्बर २मधेश प्रदेशq
+!सुदुरपश्चिमsudurpashchim province4सुदूरपश्चिम प्रदेश{
+कोशी प्रदेशkoshi province प्रदेश नं० १&प्रदेश नम्बर १M
+बागमतीbagmati province%बागमती प्रदेशM
+गण्डकीgandaki province%गण्डकी प्रदेशS
+कर्णालीkarnali province(कर्णाली प्रदेशY
+लुम्बिनीlumbini province+लुम्बिनी प्रदेश

@@ -1,0 +1,378 @@
+SOURCE_PATH: archive_forge/src/archive_forge/FractalNeuralNetwork.py
+KIND: code
+
+import numpy as np
+import matplotlib
+matplotlib.use("TkAgg")
+import matplotlib.pyplot as plt
+import random
+from collections import deque
+from matplotlib.widgets import Button, CheckButtons, RadioButtons, Slider, TextBox
+from matplotlib.animation import FuncAnimation
+import logging
+import datetime
+import sys
+import cProfile
+
+# Configure logging
+timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+log_file_path = "C:/Users/ace19/Documents/log_{}.txt".format(timestamp)
+# Configure logging at the start of your script
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+
+def log_exception(exc_type, exc_value, exc_traceback):
+    logging.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
+
+# Set the logging for uncaught exceptions
+sys.excepthook = log_exception
+
+class SimulationParameters:
+    def __init__(self):
+        self.signal_processing_mode = 'complex'
+        self.signal_amplification = 1.0
+        self.pattern_detection_sensitivity = 1.0
+        self.filter_params = {'filter_type': 'low_pass', 'cutoff_frequency': 100}
+        self.wavelet_params = {'wavelet_type': 'db1', 'level': 2}
+        self.pattern_params = {'max_score': 50}
+        self.mapping_params = {'steepness': 1.0, 'skew_factor': 1.0}
+        self.output_params = {'expansion_factor': 1.0}
+        self.input_layer_neuron_count = 7  # Example value, set as per your network design
+        self.neuron_signal_size = 6  # Example value, representing the size of the signal for each neuron
+
+    def update_params(self, **kwargs):
+        # Update parameters dynamically. Validate new values to ensure consistency and correctness.
+        for key, value in kwargs.items():
+            if key in self.__dict__:
+                # Add validation for each parameter based on its expected type and range
+                setattr(self, key, value)
+            
+class DynamicRingBuffer:
+    def __init__(self, initial_size=1000):
+        # Initialize a deque with a maximum length
+        self.data = deque(maxlen=initial_size)
+    def append(self, item):
+        # Append an item to the deque; older items are automatically removed if max length is exceeded
+        self.data.append(item)
+
+    def get(self):
+        # Return the contents of the deque as a list
+        return list(self.data)
+            
+class SimplifiedNeuronWithDelay:
+    @staticmethod
+    def generate_random_param(mean, sigma):
+        # Generate a random parameter clipped within a specific range (-128 to 127).
+        # This function is used for initializing some neuron parameters.
+        return np.clip(np.random.normal(mean, sigma), -128, 127)
+
+    def __init__(self, threshold, over_threshold, base_signal_strength, refractory_period, spike_threshold, scaling_factor, neuron_state, damping_factor, num_sub_windows, amplification_factor, temporal_window_size, pattern_params, mapping_params, output_params, simulation_params):
+        # Initialize neuron with various parameters. Input validation is performed to ensure data integrity.
+
+        # Validate and assign neuron properties
+        self.threshold = self._validate_param(threshold, 'Threshold', int, float, min_val=0, max_val=127)
+        self.over_threshold = self._validate_param(over_threshold, 'Over Threshold', int, float, min_val=0, max_val=127)
+        self.base_signal_strength = self._validate_param(base_signal_strength, 'Base Signal Strength', int, float, min_val=1, max_val=128)
+        self.refractory_period = self._validate_param(refractory_period, 'Refractory Period', int, float, min_val=1, max_val=5)
+        self.spike_threshold = self._validate_param(spike_threshold, 'Spike Threshold', int, float, min_val=1, max_val=127)
+        self.scaling_factor = self._validate_param(scaling_factor, 'Scaling Factor', int, float)
+        self.neuron_state = self._validate_choice(neuron_state, 'Neuron State', ['excitatory', 'inhibitory', 'neutral'])
+        self.damping_factor = self._validate_param(damping_factor, 'Damping Factor', int, float, min_val=1)
+        self.num_sub_windows = self._validate_param(num_sub_windows, 'Number of Sub-windows', int, min_val=1)
+        self.amplification_factor = self._validate_param(amplification_factor, 'Amplification Factor', int, float, min_val=1)
+        self.temporal_window_size = self._validate_param(temporal_window_size, 'Temporal Window Size', int, min_val=1)
+
+        # Initialize deque for input history with a fixed size
+        self.input_history = deque(maxlen=temporal_window_size)
+
+        # Additional parameters related to neuron behavior
+        self.last_spike_time = -1
+        self.signal_processing_mode = simulation_params.signal_processing_mode
+        self.pattern_params = pattern_params
+        self.mapping_params = mapping_params
+        self.output_params = output_params
+
+        # Generate random parameters
+        self.spike_magnitude = self.generate_random_param(30, 5)
+        self.pattern_detection_threshold = self.generate_random_param(0.5, 0.1)
+        self.mapping_steepness = self.generate_random_param(0.1, 0.02)
+        self.mapping_skew_factor = self.generate_random_param(0.1, 0.02)
+
+        # Validate the types of pattern_params, mapping_params, and output_params
+        self.pattern_params = self._validate_param(pattern_params, 'Pattern Params', dict)
+        self.mapping_params = self._validate_param(mapping_params, 'Mapping Params', dict)
+        self.output_params = self._validate_param(output_params, 'Output Params', dict)
+
+    def _validate_param(self, param, name, *types, min_val=None, max_val=None):
+        # Validate parameter with type checking and range validation if applicable
+        if not isinstance(param, types):
+            raise TypeError(f"{name} must be of type {types}")
+        if min_val is not None and param < min_val:
+            raise ValueError(f"{name} must be at least {min_val}")
+        if max_val is not None and param > max_val:
+            raise ValueError(f"{name} must not exceed {max_val}")
+        return param
+
+    def _validate_choice(self, choice, name, valid_choices):
+        # Validate if the choice is among the valid options
+        if choice not in valid_choices:
+            raise ValueError(f"{name} must be one of {valid_choices}")
+        return choice
+       
+    def advanced_signal_processing(self, signals, simulation_params):
+        # Advanced signal processing logic based on simulation parameters.
+        # This function should be implemented based on specific signal processing requirements.
+        # Currently, it's a placeholder that simply doubles the signals.
+        # Ensure 'signals' is a NumPy array and validate its dimensions and types.
+        self._validate_signals(signals)
+        # Here you can implement the actual advanced signal processing logic.
+        return signals * 2
+
+    def basic_signal_processing(self, signals, simulation_params):
+        # Basic signal processing, such as a simple linear transformation.
+        # Validate the signals before processing.
+        self._validate_signals(signals)
+        return signals * simulation_params.signal_amplification
+
+    def spike_response(self):
+        # Generate a response when the neuron spikes.
+        # This could be a fixed value or computed based on neuron's state.
+        return self.spike_magnitude
+
+    def detect_pattern(self, input_history, processing_params):
+        # Validate processing_params type.
+        if not isinstance(processing_params, dict):
+            raise TypeError("Processing parameters must be a dictionary")
+        pattern_strength = self.calculate_pattern_strength(input_history, processing_params)
+        return pattern_strength > self.pattern_detection_threshold * processing_params["pattern_detection_sensitivity"]
+
+    def calculate_pattern_strength(self, input_history, processing_params):
+        if len(input_history) == 0:
+            return 0
+        input_history_array = np.array(input_history)
+        fft_result = np.fft.fft(input_history_array, axis=0)
+        dominant_frequencies = np.abs(fft_result).mean(axis=0)
+        entropy = -np.sum(dominant_frequencies * np.log(dominant_frequencies + 1e-9), axis=0)
+        combined_score = np.sum(dominant_frequencies) + entropy
+        normalized_score = np.clip(combined_score / processing_params["pattern_params"]["max_score"], 0, 1)
+
+        # If normalized_score is an array, take the mean (or another aggregation method)
+        # and then convert to an integer
+        if isinstance(normalized_score, np.ndarray):
+            normalized_score = int(np.mean(normalized_score))
+        else:
+            normalized_score = int(normalized_score)
+
+        return normalized_score
+
+    def state_mapping_function(self, input_signal_sum, mapping_params):
+        # Default values for steepness and skew_factor
+        default_steepness = 1.0
+        default_skew_factor = 1.0
+
+        steepness = self.mapping_steepness * mapping_params.get("steepness", default_steepness)
+        skew_factor = self.mapping_skew_factor * mapping_params.get("skew_factor", default_skew_factor)
+
+        sigmoid = 1 / (1 + np.exp(-steepness * (input_signal_sum - self.threshold)))
+        skewed_value = np.log1p(abs(input_signal_sum)) ** skew_factor
+        combined_value = sigmoid * skewed_value
+        mapped_state = np.clip(int(combined_value * 6), -6, 6)
+
+        return mapped_state
+
+    def granular_output(self, state, output_params):
+        # Generate a granular output based on the neuron's state.
+        # This function scales the state based on an expansion factor.
+        expanded_output = state * output_params["expansion_factor"]
+        return expanded_output
+
+    def process_input(self, input_signals, current_time, simulation_params):
+        # Process input signals based on the current time and simulation parameters.
+        # Extensive validation is performed to ensure data integrity.
+        self._validate_process_input_params(input_signals, current_time, simulation_params)
+
+        # Process signals based on the selected mode
+        processed_signals = self._select_signal_processing_mode(input_signals, simulation_params)
+
+        # Spike response logic
+        if current_time - self.last_spike_time < self.refractory_period:
+            return 0
+        total_signal = np.sum(processed_signals) * simulation_params.signal_amplification
+        if total_signal > self.spike_threshold:
+            self.last_spike_time = current_time
+            return self.spike_response()
+
+        # Remaining processing logic
+        scaled_signal = total_signal * self.scaling_factor
+        damped_signal = scaled_signal // self.damping_factor
+        self.input_history.append(input_signals)
+        # Ensure correct processing parameters are passed to detect_pattern
+        processing_params = {
+            "pattern_detection_sensitivity": simulation_params.pattern_detection_sensitivity,
+            "pattern_params": self.pattern_params
+        }
+        if self.detect_pattern(self.input_history, processing_params):
+            damped_signal *= 1.2
+        mapped_state = self.state_mapping_function(damped_signal, self.mapping_params)
+        output = mapped_state * np.sign(total_signal) * self.amplification_factor
+        return self.granular_output(output, self.output_params)
+
+    # Helper methods for validation
+    def _validate_signals(self, signals):
+        # Validate that 'signals' is a NumPy array with appropriate dimensions.
+        if not isinstance(signals, np.ndarray):
+            raise TypeError("Signals must be a NumPy array")
+        if signals.ndim != 2:
+            raise ValueError("Signals array must be 2-dimensional")
+
+    def _validate_process_input_params(self, input_signals, current_time, simulation_params):
+        # Validate input parameters for the process_input method.
+        self._validate_signals(input_signals)
+        if not isinstance(current_time, (int, float)):
+            raise TypeError("Current time must be a number")
+        if not isinstance(simulation_params, SimulationParameters):
+            raise TypeError("Simulation parameters must be an instance of SimulationParameters")
+
+    def _select_signal_processing_mode(self, signals, simulation_params):
+        # Select the appropriate signal processing mode based on simulation parameters.
+        if simulation_params.signal_processing_mode in ['advanced', 'complex']:
+            return self.advanced_signal_processing(signals, simulation_params)
+        else:
+            return self.basic_signal_processing(signals, simulation_params)
+    
+class ConnectionWithDelay:
+    def __init__(self, strength, repeat_factor, invert_signal):
+        # Initialize connection with delay parameters.
+        # Validate each parameter for appropriate types and ranges.
+        self.strength = self._validate_param(strength, 'Strength', float, int, min_val=0, max_val=127)
+        self.repeat_factor = self._validate_param(repeat_factor, 'Repeat Factor', int, min_val=1, max_val=5)
+        self.invert_signal = self._validate_param(invert_signal, 'Invert Signal', bool)
+
+        # Create a deque to store delayed signals
+        self.delayed_signals = deque([0] * self.repeat_factor, maxlen=self.repeat_factor)
+
+    def transmit(self, signal, simulation_params):
+        # Transmit a signal through the connection, applying delay and inversion if needed.
+        # Validate signal and simulation_params.
+        if not isinstance(signal, (int, float)):
+            raise TypeError("Signal must be a number")
+        if not isinstance(simulation_params, SimulationParameters):
+            raise TypeError("Simulation parameters must be an instance of SimulationParameters")
+
+        if self.invert_signal:
+            signal = -signal
+        repeated_signal = signal * self.strength
+        self.delayed_signals.append(repeated_signal)
+        return self.delayed_signals.popleft()
+
+    def _validate_param(self, param, name, *types, min_val=None, max_val=None):
+        # Validate parameter with type checking and range validation if applicable.
+        if not isinstance(param, types):
+            raise TypeError(f"{name} must be of type {types}")
+        if min_val is not None and param < min_val:
+            raise ValueError(f"{name} must be at least {min_val}")
+        if max_val is not None and param > max_val:
+            raise ValueError(f"{name} must not exceed {max_val}")
+        return param
+    
+class MiniNetworkWithDelays:
+    def __init__(self, neurons, connections):
+        # Initialize mini network with neurons and connections.
+        # Validate neurons and connections.
+        if not all(isinstance(neuron, SimplifiedNeuronWithDelay) for neuron in neurons):
+            raise TypeError("All neurons must be instances of SimplifiedNeuronWithDelay")
+        if not isinstance(connections, dict):
+            raise TypeError("Connections must be a dictionary")
+
+        self.neurons = neurons
+        self.connections = connections
+
+    def simulate(self, external_input, current_time, simulation_params):
+        # Simulate network activity based on external input, current time, and simulation parameters.
+        # Validate inputs.
+        if not isinstance(external_input, np.ndarray):
+            raise TypeError("External input must be a NumPy array")
+        if not isinstance(current_time, (int, float)):
+            raise TypeError("Current time must be a number")
+        if not isinstance(simulation_params, SimulationParameters):
+            raise TypeError("Simulation parameters must be an instance of SimulationParameters")
+
+        neuron_outputs = [0] * len(self.neurons)
+
+        # Process external input for the first six neurons
+        for i in range(6):
+            neuron_input = external_input[i] if i < len(external_input) else np.zeros((simulation_params.neuron_signal_size,))
+            neuron_outputs[i] = self.neurons[i].process_input(neuron_input.reshape(1, -1), current_time, simulation_params)
+
+        # Process internal connections and time window for all neurons
+        for i in range(len(self.neurons)):
+            aggregated_input = np.zeros((simulation_params.neuron_signal_size,))
+            for j in range(len(self.neurons)):
+                if (j, i) in self.connections:
+                    connection = self.connections[(j, i)]
+                    transmitted_signal = connection.transmit(neuron_outputs[j], simulation_params)
+                    transmitted_signal = np.array([transmitted_signal])  # Ensure transmitted_signal is a NumPy array
+                    aggregated_input += transmitted_signal.reshape(-1)
+
+            # Combine external and internal inputs for the first six neurons
+            if i < 6:
+                neuron_output_array = np.array([neuron_outputs[i]])
+                aggregated_input += neuron_output_array.reshape(-1)
+
+            # Process input for each neuron
+            neuron_outputs[i] = self.neurons[i].process_input(aggregated_input.reshape(1, -1), current_time, simulation_params)
+
+        return neuron_outputs
+    
+def calculate_total_neurons(N, W):
+    """
+    Calculates the total number of neurons in a layered neural network.
+
+    Parameters:
+    N (int): Number of layers in the network.
+    W (int): Width of each layer.
+
+    Returns:
+    int: Total number of neurons in the network.
+    """
+    if not isinstance(N, int) or N <= 0:
+        raise ValueError("N must be a positive integer")
+    if not isinstance(W, int) or W <= 0:
+        raise ValueError("W must be a positive integer")
+
+    neurons_base_layer = W * 7 * (6 ** (N - 1))
+    neurons_above_base = W * sum(6 ** (N - i) for i in range(2, N + 1))
+    total_neurons = neurons_base_layer + neurons_above_base
+    return total_neurons
+
+def random_neuron_params(simulation_params):
+    # Generate random parameters for neuron based on simulation_params.
+    # Validate that simulation_params is an instance of SimulationParameters.
+    if not isinstance(simulation_params, SimulationParameters):
+        raise TypeError("simulation_params must be an instance of SimulationParameters")
+
+    # Retrieve 'max_score_range' from simulation_params, with a default value if not present.
+    max_score_range = simulation_params.pattern_params.get('max_score_range', (10, 100))
+
+    # Generate and return random parameters for a neuron.
+    return {
+        'threshold': np.clip(np.random.lognormal(mean=np.log(35), sigma=0.5), 0, 127),
+        'over_threshold': np.clip(np.random.lognormal(mean=np.log(70), sigma=0.5), 0, 127),
+        'base_signal_strength': np.clip(np.random.lognormal(mean=np.log(64), sigma=0.5), 1, 128),
+        'refractory_period': np.clip(np.random.lognormal(mean=np.log(3), sigma=0.5), 1, 5),
+        'spike_threshold': np.clip(np.random.lognormal(mean=np.log(50), sigma=0.5), 1, 127),
+        'scaling_factor': np.random.uniform(0.1, 2.0),
+        'neuron_state': random.choice(['excitatory', 'inhibitory', 'neutral']),
+        'damping_factor': np.clip(np.random.lognormal(mean=np.log(2), sigma=0.3), 1, 5),
+        'num_sub_windows': np.random.randint(1, 10),
+        'amplification_factor': np.random.uniform(1, 5),
+        'temporal_window_size': np.random.randint(5, 20),
+        'pattern_params': {'max_score': np.random.uniform(*max_score_range)},
+        'mapping_params': {
+            'layer1_factor': np.random.uniform(0.1, 1.0),
+            'layer2_exponent': np.random.uniform(1, 3),
+            'steepness': np.random.uniform(0.1, 1.0)
+        },
+        'output_params': {'expansion_factor': np.random.uniform(1, 5)}
+    }
+
+def random_connection_params(simulati

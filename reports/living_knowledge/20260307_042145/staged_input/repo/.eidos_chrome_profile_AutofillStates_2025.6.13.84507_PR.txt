@@ -1,0 +1,97 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/PR
+KIND: config
+
+PR	
+yabucoa	
+corozal
+ceiba	
+florida
+aguada
+cidra
+quebradillas
+sabana grande
+	cabo rojo
+
+guayanilla
+
+toa baja	
+salinas
+coamo
+juncos
+	vega baja
+barceloneta
+trujillo alto
+naguabonagüabo
+
+luquillo	
+vieques
+
+toa alta
+gurabo
+yauco
+arroyo	
+culebra
+dorado
+ciales
+juana díaz
+las piedras
+santa isabel	
+arecibo
+camuy
+moca
+
+canóvanas
+
+guaynabo
+san germán
+	aguadilla
+	vega alta	
+cataño
+loíza	
+fajardo
+caguas
+mayaguez	mayagüez
+utuado	
+isabela
+	naranjito
+lajas
+
+carolina	
+morovis
+ponce	
+guayama	
+añasco
+
+guánica	
+maunabo
+cayey
+
+aibonito
+lares	
+maricao
+san sebastián
+san lorenzo
+
+villalba
+río grande
+jayuya
+rinconrincón
+aguas buenas	
+humacao5
+san juansan juan municipalitysan juan municipio	
+hatillo
+hormigueros	
+manatí
+
+orocovis
+
+adjuntas
+las marías
+barranquitas
+
+patillas
+
+bayamón
+
+comerío
+	peñuelas

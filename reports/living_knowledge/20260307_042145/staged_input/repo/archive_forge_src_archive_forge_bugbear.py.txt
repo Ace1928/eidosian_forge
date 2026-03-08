@@ -1,0 +1,574 @@
+SOURCE_PATH: archive_forge/src/archive_forge/bugbear.py
+KIND: code
+
+from __future__ import annotations
+
+import ast
+import builtins
+import itertools
+import logging
+import math
+import re
+import sys
+import warnings
+from collections import namedtuple
+from contextlib import suppress
+from functools import lru_cache, partial
+from keyword import iskeyword
+from typing import Dict, List, Set, Union
+
+import attr
+import pycodestyle
+
+__version__ = "24.2.6"
+
+LOG = logging.getLogger("flake8.bugbear")
+CONTEXTFUL_NODES = (
+    ast.Module,
+    ast.ClassDef,
+    ast.AsyncFunctionDef,
+    ast.FunctionDef,
+    ast.Lambda,
+    ast.ListComp,
+    ast.SetComp,
+    ast.DictComp,
+    ast.GeneratorExp,
+)
+FUNCTION_NODES = (ast.AsyncFunctionDef, ast.FunctionDef, ast.Lambda)
+B908_pytest_functions = {"raises", "warns"}
+B908_unittest_methods = {
+    "assertRaises",
+    "assertRaisesRegex",
+    "assertRaisesRegexp",
+    "assertWarns",
+    "assertWarnsRegex",
+}
+
+B902_default_decorators = {"classmethod"}
+
+Context = namedtuple("Context", ["node", "stack"])
+
+
+@attr.s(hash=False)
+class BugBearChecker:
+    name = "flake8-bugbear"
+    version = __version__
+
+    tree = attr.ib(default=None)
+    filename = attr.ib(default="(none)")
+    lines = attr.ib(default=None)
+    max_line_length = attr.ib(default=79)
+    visitor = attr.ib(init=False, default=attr.Factory(lambda: BugBearVisitor))
+    options = attr.ib(default=None)
+
+    def run(self):
+        if not self.tree or not self.lines:
+            self.load_file()
+
+        if self.options and hasattr(self.options, "extend_immutable_calls"):
+            b008_extend_immutable_calls = set(self.options.extend_immutable_calls)
+        else:
+            b008_extend_immutable_calls = set()
+
+        b902_classmethod_decorators: set[str] = B902_default_decorators
+        if self.options and hasattr(self.options, "classmethod_decorators"):
+            b902_classmethod_decorators = set(self.options.classmethod_decorators)
+
+        visitor = self.visitor(
+            filename=self.filename,
+            lines=self.lines,
+            b008_extend_immutable_calls=b008_extend_immutable_calls,
+            b902_classmethod_decorators=b902_classmethod_decorators,
+        )
+        visitor.visit(self.tree)
+        for e in itertools.chain(visitor.errors, self.gen_line_based_checks()):
+            if self.should_warn(e.message[:4]):
+                yield self.adapt_error(e)
+
+    def gen_line_based_checks(self):
+        """gen_line_based_checks() -> (error, error, error, ...)
+
+        The following simple checks are based on the raw lines, not the AST.
+        """
+        noqa_type_ignore_regex = re.compile(r"#\s*(noqa|type:\s*ignore)[^#\r\n]*$")
+        for lineno, line in enumerate(self.lines, start=1):
+            # Special case: ignore long shebang (following pycodestyle).
+            if lineno == 1 and line.startswith("#!"):
+                continue
+
+            # At first, removing noqa and type: ignore trailing comments"
+            no_comment_line = noqa_type_ignore_regex.sub("", line)
+            if no_comment_line != line:
+                no_comment_line = noqa_type_ignore_regex.sub("", no_comment_line)
+
+            length = len(no_comment_line) - 1
+            if length > 1.1 * self.max_line_length and no_comment_line.strip():
+                # Special case long URLS and paths to follow pycodestyle.
+                # Would use the `pycodestyle.maximum_line_length` directly but
+                # need to supply it arguments that are not available so chose
+                # to replicate instead.
+                chunks = no_comment_line.split()
+
+                is_line_comment_url_path = len(chunks) == 2 and chunks[0] == "#"
+
+                just_long_url_path = len(chunks) == 1
+
+                num_leading_whitespaces = len(no_comment_line) - len(chunks[-1])
+                too_many_leading_white_spaces = (
+                    num_leading_whitespaces >= self.max_line_length - 7
+                )
+
+                skip = is_line_comment_url_path or just_long_url_path
+                if skip and not too_many_leading_white_spaces:
+                    continue
+
+                yield B950(lineno, length, vars=(length, self.max_line_length))
+
+    @classmethod
+    def adapt_error(cls, e):
+        """Adapts the extended error namedtuple to be compatible with Flake8."""
+        return e._replace(message=e.message.format(*e.vars))[:4]
+
+    def load_file(self):
+        """Loads the file in a way that auto-detects source encoding and deals
+        with broken terminal encodings for stdin.
+
+        Stolen from flake8_import_order because it's good.
+        """
+
+        if self.filename in ("stdin", "-", None):
+            self.filename = "stdin"
+            self.lines = pycodestyle.stdin_get_value().splitlines(True)
+        else:
+            self.lines = pycodestyle.readlines(self.filename)
+
+        if not self.tree:
+            self.tree = ast.parse("".join(self.lines))
+
+    @staticmethod
+    def add_options(optmanager):
+        """Informs flake8 to ignore B9xx by default."""
+        optmanager.extend_default_ignore(disabled_by_default)
+        optmanager.add_option(
+            "--extend-immutable-calls",
+            comma_separated_list=True,
+            parse_from_config=True,
+            default=[],
+            help="Skip B008 test for additional immutable calls.",
+        )
+        # you cannot register the same option in two different plugins, so we
+        # only register --classmethod-decorators if pep8-naming is not installed
+        if "pep8ext_naming" not in sys.modules.keys():
+            optmanager.add_option(
+                "--classmethod-decorators",
+                comma_separated_list=True,
+                parse_from_config=True,
+                default=B902_default_decorators,
+                help=(
+                    "List of method decorators that should be treated as classmethods"
+                    " by B902"
+                ),
+            )
+
+    @lru_cache  # noqa: B019
+    def should_warn(self, code):
+        """Returns `True` if Bugbear should emit a particular warning.
+
+        flake8 overrides default ignores when the user specifies
+        `ignore = ` in configuration.  This is problematic because it means
+        specifying anything in `ignore = ` implicitly enables all optional
+        warnings.  This function is a workaround for this behavior.
+
+        As documented in the README, the user is expected to explicitly select
+        the warnings.
+
+        NOTE: This method is deprecated and will be removed in a future release. It is
+        recommended to use `extend-ignore` and `extend-select` in your flake8
+        configuration to avoid implicitly altering selected and ignored codes.
+        """
+        if code[:2] != "B9":
+            # Normal warnings are safe for emission.
+            return True
+
+        if self.options is None:
+            # Without options configured, Bugbear will emit B9 but flake8 will ignore
+            LOG.info(
+                "Options not provided to Bugbear, optional warning %s selected.", code
+            )
+            return True
+
+        for i in range(2, len(code) + 1):
+            if self.options.select and code[:i] in self.options.select:
+                return True
+
+            # flake8 >=4.0: Also check for codes in extend_select
+            if (
+                hasattr(self.options, "extend_select")
+                and self.options.extend_select
+                and code[:i] in self.options.extend_select
+            ):
+                return True
+
+        LOG.info(
+            "Optional warning %s not present in selected warnings: %r. Not "
+            "firing it at all.",
+            code,
+            self.options.select,
+        )
+        return False
+
+
+def _is_identifier(arg):
+    # Return True if arg is a valid identifier, per
+    # https://docs.python.org/2/reference/lexical_analysis.html#identifiers
+
+    if not isinstance(arg, ast.Constant) or not isinstance(arg.value, str):
+        return False
+
+    return re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", arg.value) is not None
+
+
+def _flatten_excepthandler(node):
+    if not isinstance(node, ast.Tuple):
+        yield node
+        return
+    expr_list = node.elts.copy()
+    while len(expr_list):
+        expr = expr_list.pop(0)
+        if isinstance(expr, ast.Starred) and isinstance(
+            expr.value, (ast.List, ast.Tuple)
+        ):
+            expr_list.extend(expr.value.elts)
+            continue
+
+        yield expr
+
+
+def _check_redundant_excepthandlers(names, node):
+    # See if any of the given exception names could be removed, e.g. from:
+    #    (MyError, MyError)  # duplicate names
+    #    (MyError, BaseException)  # everything derives from the Base
+    #    (Exception, TypeError)  # builtins where one subclasses another
+    #    (IOError, OSError)  # IOError is an alias of OSError since Python3.3
+    # but note that other cases are impractical to handle from the AST.
+    # We expect this is mostly useful for users who do not have the
+    # builtin exception hierarchy memorised, and include a 'shadowed'
+    # subtype without realising that it's redundant.
+    good = sorted(set(names), key=names.index)
+    if "BaseException" in good:
+        good = ["BaseException"]
+    # Remove redundant exceptions that the automatic system either handles
+    # poorly (usually aliases) or can't be checked (e.g. it's not an
+    # built-in exception).
+    for primary, equivalents in B014.redundant_exceptions.items():
+        if primary in good:
+            good = [g for g in good if g not in equivalents]
+
+    for name, other in itertools.permutations(tuple(good), 2):
+        if _typesafe_issubclass(
+            getattr(builtins, name, type), getattr(builtins, other, ())
+        ):
+            if name in good:
+                good.remove(name)
+    if good != names:
+        desc = good[0] if len(good) == 1 else "({})".format(", ".join(good))
+        as_ = " as " + node.name if node.name is not None else ""
+        return B014(
+            node.lineno,
+            node.col_offset,
+            vars=(", ".join(names), as_, desc),
+        )
+    return None
+
+
+def _to_name_str(node):
+    # Turn Name and Attribute nodes to strings, e.g "ValueError" or
+    # "pkg.mod.error", handling any depth of attribute accesses.
+    # Return None for unrecognized nodes.
+    if isinstance(node, ast.Name):
+        return node.id
+    if isinstance(node, ast.Call):
+        return _to_name_str(node.func)
+    elif isinstance(node, ast.Attribute):
+        inner = _to_name_str(node.value)
+        if inner is None:
+            return None
+        return f"{inner}.{node.attr}"
+    else:
+        return None
+
+
+def names_from_assignments(assign_target):
+    if isinstance(assign_target, ast.Name):
+        yield assign_target.id
+    elif isinstance(assign_target, ast.Starred):
+        yield from names_from_assignments(assign_target.value)
+    elif isinstance(assign_target, (ast.List, ast.Tuple)):
+        for child in assign_target.elts:
+            yield from names_from_assignments(child)
+
+
+def children_in_scope(node):
+    yield node
+    if not isinstance(node, FUNCTION_NODES):
+        for child in ast.iter_child_nodes(node):
+            yield from children_in_scope(child)
+
+
+def walk_list(nodes):
+    for node in nodes:
+        yield from ast.walk(node)
+
+
+def _typesafe_issubclass(cls, class_or_tuple):
+    try:
+        return issubclass(cls, class_or_tuple)
+    except TypeError:
+        # User code specifies a type that is not a type in our current run. Might be
+        # their error, might be a difference in our environments. We don't know so we
+        # ignore this
+        return False
+
+
+class ExceptBaseExceptionVisitor(ast.NodeVisitor):
+    def __init__(self, except_node: ast.ExceptHandler) -> None:
+        super().__init__()
+        self.root = except_node
+        self._re_raised = False
+
+    def re_raised(self) -> bool:
+        self.visit(self.root)
+        return self._re_raised
+
+    def visit_Raise(self, node: ast.Raise):
+        """If we find a corresponding `raise` or `raise e` where e was from
+        `except BaseException as e:` then we mark re_raised as True and can
+        stop scanning."""
+        if node.exc is None or (
+            isinstance(node.exc, ast.Name) and node.exc.id == self.root.name
+        ):
+            self._re_raised = True
+            return
+        return super().generic_visit(node)
+
+    def visit_ExceptHandler(self, node: ast.ExceptHandler):
+        if node is not self.root:
+            return  # entered a nested except - stop searching
+        return super().generic_visit(node)
+
+
+@attr.s
+class BugBearVisitor(ast.NodeVisitor):
+    filename = attr.ib()
+    lines = attr.ib()
+    b008_extend_immutable_calls = attr.ib(default=attr.Factory(set))
+    b902_classmethod_decorators = attr.ib(default=attr.Factory(set))
+    node_window = attr.ib(default=attr.Factory(list))
+    errors = attr.ib(default=attr.Factory(list))
+    futures = attr.ib(default=attr.Factory(set))
+    contexts = attr.ib(default=attr.Factory(list))
+
+    NODE_WINDOW_SIZE = 4
+    _b023_seen = attr.ib(factory=set, init=False)
+    _b005_imports = attr.ib(factory=set, init=False)
+
+    if False:
+        # Useful for tracing what the hell is going on.
+
+        def __getattr__(self, name):
+            print(name)
+            return self.__getattribute__(name)
+
+    @property
+    def node_stack(self):
+        if len(self.contexts) == 0:
+            return []
+
+        context, stack = self.contexts[-1]
+        return stack
+
+    def in_class_init(self) -> bool:
+        return (
+            len(self.contexts) >= 2
+            and isinstance(self.contexts[-2].node, ast.ClassDef)
+            and isinstance(self.contexts[-1].node, ast.FunctionDef)
+            and self.contexts[-1].node.name == "__init__"
+        )
+
+    def visit_Return(self, node: ast.Return) -> None:
+        if self.in_class_init():
+            if node.value is not None:
+                self.errors.append(B037(node.lineno, node.col_offset))
+        self.generic_visit(node)
+
+    def visit_Yield(self, node: ast.Yield) -> None:
+        if self.in_class_init():
+            self.errors.append(B037(node.lineno, node.col_offset))
+        self.generic_visit(node)
+
+    def visit_YieldFrom(self, node: ast.YieldFrom) -> None:
+        if self.in_class_init():
+            self.errors.append(B037(node.lineno, node.col_offset))
+        self.generic_visit(node)
+
+    def visit(self, node):
+        is_contextful = isinstance(node, CONTEXTFUL_NODES)
+
+        if is_contextful:
+            context = Context(node, [])
+            self.contexts.append(context)
+
+        self.node_stack.append(node)
+        self.node_window.append(node)
+        self.node_window = self.node_window[-self.NODE_WINDOW_SIZE :]
+        super().visit(node)
+        self.node_stack.pop()
+
+        if is_contextful:
+            self.contexts.pop()
+
+        self.check_for_b018(node)
+
+    def visit_ExceptHandler(self, node):
+        if node.type is None:
+            self.errors.append(B001(node.lineno, node.col_offset))
+            self.generic_visit(node)
+            return
+        handlers = _flatten_excepthandler(node.type)
+        names = []
+        bad_handlers = []
+        ignored_handlers = []
+        for handler in handlers:
+            if isinstance(handler, (ast.Name, ast.Attribute)):
+                name = _to_name_str(handler)
+                if name is None:
+                    ignored_handlers.append(handler)
+                else:
+                    names.append(name)
+            elif isinstance(handler, (ast.Call, ast.Starred)):
+                ignored_handlers.append(handler)
+            else:
+                bad_handlers.append(handler)
+        if bad_handlers:
+            self.errors.append(B030(node.lineno, node.col_offset))
+        if len(names) == 0 and not bad_handlers and not ignored_handlers:
+            self.errors.append(B029(node.lineno, node.col_offset))
+        elif (
+            len(names) == 1
+            and not bad_handlers
+            and not ignored_handlers
+            and isinstance(node.type, ast.Tuple)
+        ):
+            self.errors.append(B013(node.lineno, node.col_offset, vars=names))
+        else:
+            maybe_error = _check_redundant_excepthandlers(names, node)
+            if maybe_error is not None:
+                self.errors.append(maybe_error)
+        if (
+            "BaseException" in names
+            and not ExceptBaseExceptionVisitor(node).re_raised()
+        ):
+            self.errors.append(B036(node.lineno, node.col_offset))
+
+        self.generic_visit(node)
+
+    def visit_UAdd(self, node):
+        trailing_nodes = list(map(type, self.node_window[-4:]))
+        if trailing_nodes == [ast.UnaryOp, ast.UAdd, ast.UnaryOp, ast.UAdd]:
+            originator = self.node_window[-4]
+            self.errors.append(B002(originator.lineno, originator.col_offset))
+        self.generic_visit(node)
+
+    def visit_Call(self, node):
+        if isinstance(node.func, ast.Attribute):
+            self.check_for_b005(node)
+        else:
+            with suppress(AttributeError, IndexError):
+                if (
+                    node.func.id in ("getattr", "hasattr")
+                    and node.args[1].value == "__call__"
+                ):
+                    self.errors.append(B004(node.lineno, node.col_offset))
+                if (
+                    node.func.id == "getattr"
+                    and len(node.args) == 2
+                    and _is_identifier(node.args[1])
+                    and not iskeyword(node.args[1].value)
+                ):
+                    self.errors.append(B009(node.lineno, node.col_offset))
+                elif (
+                    not any(isinstance(n, ast.Lambda) for n in self.node_stack)
+                    and node.func.id == "setattr"
+                    and len(node.args) == 3
+                    and _is_identifier(node.args[1])
+                    and not iskeyword(node.args[1].value)
+                ):
+                    self.errors.append(B010(node.lineno, node.col_offset))
+
+        self.check_for_b026(node)
+        self.check_for_b028(node)
+        self.check_for_b034(node)
+        self.check_for_b905(node)
+        self.generic_visit(node)
+
+    def visit_Module(self, node):
+        self.generic_visit(node)
+
+    def visit_Assign(self, node):
+        if len(node.targets) == 1:
+            t = node.targets[0]
+            if isinstance(t, ast.Attribute) and isinstance(t.value, ast.Name):
+                if (t.value.id, t.attr) == ("os", "environ"):
+                    self.errors.append(B003(node.lineno, node.col_offset))
+        self.generic_visit(node)
+
+    def visit_For(self, node):
+        self.check_for_b007(node)
+        self.check_for_b020(node)
+        self.check_for_b023(node)
+        self.check_for_b031(node)
+        self.check_for_b909(node)
+        self.generic_visit(node)
+
+    def visit_AsyncFor(self, node):
+        self.check_for_b023(node)
+        self.generic_visit(node)
+
+    def visit_While(self, node):
+        self.check_for_b023(node)
+        self.generic_visit(node)
+
+    def visit_ListComp(self, node):
+        self.check_for_b023(node)
+        self.generic_visit(node)
+
+    def visit_SetComp(self, node):
+        self.check_for_b023(node)
+        self.generic_visit(node)
+
+    def visit_DictComp(self, node):
+        self.check_for_b023(node)
+        self.check_for_b035(node)
+        self.generic_visit(node)
+
+    def visit_GeneratorExp(self, node):
+        self.check_for_b023(node)
+        self.generic_visit(node)
+
+    def visit_Assert(self, node):
+        self.check_for_b011(node)
+        self.generic_visit(node)
+
+    def visit_AsyncFunctionDef(self, node):
+        self.check_for_b902(node)
+        self.check_for_b006_and_b008(node)
+        self.generic_visit(node)
+
+    def visit_FunctionDef(self, node):
+        self.check_for_b901(node)
+        self.check_for_b902(node)
+        self.check_for_b006_and_b008(node)
+        self.check_for_b019(node)
+        self.check_for_b021(node)
+        self.check_for_b906(node)
+        self.generic_vi

@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_document_manager_documentation.py
+KIND: code
+
+from typing import Any, Dict, List, Optional, Sequence
+from langchain_community.indexes.base import RecordManager
+Asynchronously delete documents from the MongoDB collection.

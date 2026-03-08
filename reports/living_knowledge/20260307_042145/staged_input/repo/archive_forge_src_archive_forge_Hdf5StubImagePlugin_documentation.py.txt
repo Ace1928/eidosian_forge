@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/Hdf5StubImagePlugin_documentation.py
+KIND: code
+
+from __future__ import annotations
+from . import Image, ImageFile
+
+    Install application-specific HDF5 image handler.
+
+    :param handler: Handler object.

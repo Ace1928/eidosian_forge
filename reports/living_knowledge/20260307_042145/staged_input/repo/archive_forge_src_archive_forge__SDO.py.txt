@@ -1,0 +1,162 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_SDO.py
+KIND: code
+
+from rdflib.namespace import DefinedNamespace, Namespace
+from rdflib.term import URIRef
+
+
+class SDO(DefinedNamespace):
+    """
+    schema.org namespace elements
+
+    3DModel, True, False & yield are not available as they collde with Python terms
+
+    Generated from: https://schema.org/version/latest/schemaorg-current-https.jsonld
+    Date: 2021-12-01
+    By: Nicholas J. Car
+    """
+
+    _NS = Namespace("https://schema.org/")
+
+    # 3DModel: URIRef  # A 3D model represents some kind of 3D content, which may have [[encoding]]s in one or more [[MediaObject]]s. Many 3D formats are available (e.g. see [Wikipedia](https://en.wikipedia.org/wiki/Category:3D_graphics_file_formats)); specific encoding formats can be represented using the [[encodingFormat]] property applied to the relevant [[MediaObject]]. For the case of a single file published after Zip compression, the convention of appending '+zip' to the [[encodingFormat]] can be used. Geospatial, AR/VR, artistic/animation, gaming, engineering and scientific content can all be represented using [[3DModel]].
+    AMRadioChannel: URIRef  # A radio channel that uses AM.
+    APIReference: URIRef  # Reference documentation for application programming interfaces (APIs).
+    Abdomen: URIRef  # Abdomen clinical examination.
+    AboutPage: URIRef  # Web page type: About page.
+    AcceptAction: URIRef  # The act of committing to/adopting an object.\n\nRelated actions:\n\n* [[RejectAction]]: The antonym of AcceptAction.
+    Accommodation: URIRef  # An accommodation is a place that can accommodate human beings, e.g. a hotel room, a camping pitch, or a meeting room. Many accommodations are for overnight stays, but this is not a mandatory requirement. For more specific types of accommodations not defined in schema.org, one can use additionalType with external vocabularies. <br /><br /> See also the <a href="/docs/hotels.html">dedicated document on the use of schema.org for marking up hotels and other forms of accommodations</a>.
+    AccountingService: URIRef  # Accountancy business.\n\nAs a [[LocalBusiness]] it can be described as a [[provider]] of one or more [[Service]]\(s).
+    AchieveAction: URIRef  # The act of accomplishing something via previous efforts. It is an instantaneous action rather than an ongoing process.
+    Action: URIRef  # An action performed by a direct agent and indirect participants upon a direct object. Optionally happens at a location with the help of an inanimate instrument. The execution of the action may produce a result. Specific action sub-type documentation specifies the exact expectation of each argument/role.\n\nSee also [blog post](http://blog.schema.org/2014/04/announcing-schemaorg-actions.html) and [Actions overview document](https://schema.org/docs/actions.html).
+    ActionAccessSpecification: URIRef  # A set of requirements that a must be fulfilled in order to perform an Action.
+    ActionStatusType: URIRef  # The status of an Action.
+    ActivateAction: URIRef  # The act of starting or activating a device or application (e.g. starting a timer or turning on a flashlight).
+    ActivationFee: URIRef  # Represents the activation fee part of the total price for an offered product, for example a cellphone contract.
+    ActiveActionStatus: URIRef  # An in-progress action (e.g, while watching the movie, or driving to a location).
+    ActiveNotRecruiting: URIRef  # Active, but not recruiting new participants.
+    AddAction: URIRef  # The act of editing by adding an object to a collection.
+    AdministrativeArea: URIRef  # A geographical region, typically under the jurisdiction of a particular government.
+    AdultEntertainment: URIRef  # An adult entertainment establishment.
+    AdvertiserContentArticle: URIRef  # An [[Article]] that an external entity has paid to place or to produce to its specifications. Includes [advertorials](https://en.wikipedia.org/wiki/Advertorial), sponsored content, native advertising and other paid content.
+    AerobicActivity: URIRef  # Physical activity of relatively low intensity that depends primarily on the aerobic energy-generating process; during activity, the aerobic metabolism uses oxygen to adequately meet energy demands during exercise.
+    AggregateOffer: URIRef  # When a single product is associated with multiple offers (for example, the same pair of shoes is offered by different merchants), then AggregateOffer can be used.\n\nNote: AggregateOffers are normally expected to associate multiple offers that all share the same defined [[businessFunction]] value, or default to http://purl.org/goodrelations/v1#Sell if businessFunction is not explicitly defined.
+    AggregateRating: URIRef  # The average rating based on multiple ratings or reviews.
+    AgreeAction: URIRef  # The act of expressing a consistency of opinion with the object. An agent agrees to/about an object (a proposition, topic or theme) with participants.
+    Airline: URIRef  # An organization that provides flights for passengers.
+    Airport: URIRef  # An airport.
+    AlbumRelease: URIRef  # AlbumRelease.
+    AlignmentObject: URIRef  # An intangible item that describes an alignment between a learning resource and a node in an educational framework.  Should not be used where the nature of the alignment can be described using a simple property, for example to express that a resource [[teaches]] or [[assesses]] a competency.
+    AllWheelDriveConfiguration: URIRef  # All-wheel Drive is a transmission layout where the engine drives all four wheels.
+    AllergiesHealthAspect: URIRef  # Content about the allergy-related aspects of a health topic.
+    AllocateAction: URIRef  # The act of organizing tasks/objects/events by associating resources to it.
+    AmpStory: URIRef  # A creative work with a visual storytelling format intended to be viewed online, particularly on mobile devices.
+    AmusementPark: URIRef  # An amusement park.
+    AnaerobicActivity: URIRef  # Physical activity that is of high-intensity which utilizes the anaerobic metabolism of the body.
+    AnalysisNewsArticle: URIRef  # An AnalysisNewsArticle is a [[NewsArticle]] that, while based on factual reporting, incorporates the expertise of the author/producer, offering interpretations and conclusions.
+    AnatomicalStructure: URIRef  # Any part of the human body, typically a component of an anatomical system. Organs, tissues, and cells are all anatomical structures.
+    AnatomicalSystem: URIRef  # An anatomical system is a group of anatomical structures that work together to perform a certain task. Anatomical systems, such as organ systems, are one organizing principle of anatomy, and can includes circulatory, digestive, endocrine, integumentary, immune, lymphatic, muscular, nervous, reproductive, respiratory, skeletal, urinary, vestibular, and other systems.
+    Anesthesia: URIRef  # A specific branch of medical science that pertains to study of anesthetics and their application.
+    AnimalShelter: URIRef  # Animal shelter.
+    Answer: URIRef  # An answer offered to a question; perhaps correct, perhaps opinionated or wrong.
+    Apartment: URIRef  # An apartment (in American English) or flat (in British English) is a self-contained housing unit (a type of residential real estate) that occupies only part of a building (Source: Wikipedia, the free encyclopedia, see <a href="http://en.wikipedia.org/wiki/Apartment">http://en.wikipedia.org/wiki/Apartment</a>).
+    ApartmentComplex: URIRef  # Residence type: Apartment complex.
+    Appearance: URIRef  # Appearance assessment with clinical examination.
+    AppendAction: URIRef  # The act of inserting at the end if an ordered collection.
+    ApplyAction: URIRef  # The act of registering to an organization/service without the guarantee to receive it.\n\nRelated actions:\n\n* [[RegisterAction]]: Unlike RegisterAction, ApplyAction has no guarantees that the application will be accepted.
+    ApprovedIndication: URIRef  # An indication for a medical therapy that has been formally specified or approved by a regulatory body that regulates use of the therapy; for example, the US FDA approves indications for most drugs in the US.
+    Aquarium: URIRef  # Aquarium.
+    ArchiveComponent: URIRef  # An intangible type to be applied to any archive content, carrying with it a set of properties required to describe archival items and collections.
+    ArchiveOrganization: URIRef  # An organization with archival holdings. An organization which keeps and preserves archival material and typically makes it accessible to the public.
+    ArriveAction: URIRef  # The act of arriving at a place. An agent arrives at a destination from a fromLocation, optionally with participants.
+    ArtGallery: URIRef  # An art gallery.
+    Artery: URIRef  # A type of blood vessel that specifically carries blood away from the heart.
+    Article: URIRef  # An article, such as a news article or piece of investigative report. Newspapers and magazines have articles of many different types and this is intended to cover them all.\n\nSee also [blog post](http://blog.schema.org/2014/09/schemaorg-support-for-bibliographic_2.html).
+    AskAction: URIRef  # The act of posing a question / favor to someone.\n\nRelated actions:\n\n* [[ReplyAction]]: Appears generally as a response to AskAction.
+    AskPublicNewsArticle: URIRef  # A [[NewsArticle]] expressing an open call by a [[NewsMediaOrganization]] asking the public for input, insights, clarifications, anecdotes, documentation, etc., on an issue, for reporting purposes.
+    AssessAction: URIRef  # The act of forming one's opinion, reaction or sentiment.
+    AssignAction: URIRef  # The act of allocating an action/event/task to some destination (someone or something).
+    Atlas: URIRef  # A collection or bound volume of maps, charts, plates or tables, physical or in media form illustrating any subject.
+    Attorney: URIRef  # Professional service: Attorney. \n\nThis type is deprecated - [[LegalService]] is more inclusive and less ambiguous.
+    Audience: URIRef  # Intended audience for an item, i.e. the group for whom the item was created.
+    AudioObject: URIRef  # An audio file.
+    AudioObjectSnapshot: URIRef  # A specific and exact (byte-for-byte) version of an [[AudioObject]]. Two byte-for-byte identical files, for the purposes of this type, considered identical. If they have different embedded metadata the files will differ. Different external facts about the files, e.g. creator or dateCreated that aren't represented in their actual content, do not affect this notion of identity.
+    Audiobook: URIRef  # An audiobook.
+    AudiobookFormat: URIRef  # Book format: Audiobook. This is an enumerated value for use with the bookFormat property. There is also a type 'Audiobook' in the bib extension which includes Audiobook specific properties.
+    AuthoritativeLegalValue: URIRef  # Indicates that the publisher gives some special status to the publication of the document. ("The Queens Printer" version of a UK Act of Parliament, or the PDF version of a Directive published by the EU Office of Publications). Something "Authoritative" is considered to be also [[OfficialLegalValue]]".
+    AuthorizeAction: URIRef  # The act of granting permission to an object.
+    AutoBodyShop: URIRef  # Auto body shop.
+    AutoDealer: URIRef  # An car dealership.
+    AutoPartsStore: URIRef  # An auto parts store.
+    AutoRental: URIRef  # A car rental business.
+    AutoRepair: URIRef  # Car repair business.
+    AutoWash: URIRef  # A car wash business.
+    AutomatedTeller: URIRef  # ATM/cash machine.
+    AutomotiveBusiness: URIRef  # Car repair, sales, or parts.
+    Ayurvedic: URIRef  # A system of medicine that originated in India over thousands of years and that focuses on integrating and balancing the body, mind, and spirit.
+    BackOrder: URIRef  # Indicates that the item is available on back order.
+    BackgroundNewsArticle: URIRef  # A [[NewsArticle]] providing historical context, definition and detail on a specific topic (aka "explainer" or "backgrounder"). For example, an in-depth article or frequently-asked-questions ([FAQ](https://en.wikipedia.org/wiki/FAQ)) document on topics such as Climate Change or the European Union. Other kinds of background material from a non-news setting are often described using [[Book]] or [[Article]], in particular [[ScholarlyArticle]]. See also [[NewsArticle]] for related vocabulary from a learning/education perspective.
+    Bacteria: URIRef  # Pathogenic bacteria that cause bacterial infection.
+    Bakery: URIRef  # A bakery.
+    Balance: URIRef  # Physical activity that is engaged to help maintain posture and balance.
+    BankAccount: URIRef  # A product or service offered by a bank whereby one may deposit, withdraw or transfer money and in some cases be paid interest.
+    BankOrCreditUnion: URIRef  # Bank or credit union.
+    BarOrPub: URIRef  # A bar or pub.
+    Barcode: URIRef  # An image of a visual machine-readable code such as a barcode or QR code.
+    BasicIncome: URIRef  # BasicIncome: this is a benefit for basic income.
+    Beach: URIRef  # Beach.
+    BeautySalon: URIRef  # Beauty salon.
+    BedAndBreakfast: URIRef  # Bed and breakfast. <br /><br /> See also the <a href="/docs/hotels.html">dedicated document on the use of schema.org for marking up hotels and other forms of accommodations</a>.
+    BedDetails: URIRef  # An entity holding detailed information about the available bed types, e.g. the quantity of twin beds for a hotel room. For the single case of just one bed of a certain type, you can use bed directly with a text. See also [[BedType]] (under development).
+    BedType: URIRef  # A type of bed. This is used for indicating the bed or beds available in an accommodation.
+    BefriendAction: URIRef  # The act of forming a personal connection with someone (object) mutually/bidirectionally/symmetrically.\n\nRelated actions:\n\n* [[FollowAction]]: Unlike FollowAction, BefriendAction implies that the connection is reciprocal.
+    BenefitsHealthAspect: URIRef  # Content about the benefits and advantages of usage or utilization of topic.
+    BikeStore: URIRef  # A bike store.
+    BioChemEntity: URIRef  # Any biological, chemical, or biochemical thing. For example: a protein; a gene; a chemical; a synthetic chemical.
+    Blog: URIRef  # A [blog](https://en.wikipedia.org/wiki/Blog), sometimes known as a "weblog". Note that the individual posts ([[BlogPosting]]s) in a [[Blog]] are often colloqually referred to by the same term.
+    BlogPosting: URIRef  # A blog post.
+    BloodTest: URIRef  # A medical test performed on a sample of a patient's blood.
+    BoardingPolicyType: URIRef  # A type of boarding policy used by an airline.
+    BoatReservation: URIRef  # A reservation for boat travel.  Note: This type is for information about actual reservations, e.g. in confirmation emails or HTML pages with individual confirmations of reservations. For offers of tickets, use [[Offer]].
+    BoatTerminal: URIRef  # A terminal for boats, ships, and other water vessels.
+    BoatTrip: URIRef  # A trip on a commercial ferry line.
+    BodyMeasurementArm: URIRef  # Arm length (measured between arms/shoulder line intersection and the prominent wrist bone). Used, for example, to fit shirts.
+    BodyMeasurementBust: URIRef  # Maximum girth of bust. Used, for example, to fit women's suits.
+    BodyMeasurementChest: URIRef  # Maximum girth of chest. Used, for example, to fit men's suits.
+    BodyMeasurementFoot: URIRef  # Foot length (measured between end of the most prominent toe and the most prominent part of the heel). Used, for example, to measure socks.
+    BodyMeasurementHand: URIRef  # Maximum hand girth (measured over the knuckles of the open right hand excluding thumb, fingers together). Used, for example, to fit gloves.
+    BodyMeasurementHead: URIRef  # Maximum girth of head above the ears. Used, for example, to fit hats.
+    BodyMeasurementHeight: URIRef  # Body height (measured between crown of head and soles of feet). Used, for example, to fit jackets.
+    BodyMeasurementHips: URIRef  # Girth of hips (measured around the buttocks). Used, for example, to fit skirts.
+    BodyMeasurementInsideLeg: URIRef  # Inside leg (measured between crotch and soles of feet). Used, for example, to fit pants.
+    BodyMeasurementNeck: URIRef  # Girth of neck. Used, for example, to fit shirts.
+    BodyMeasurementTypeEnumeration: URIRef  # Enumerates types (or dimensions) of a person's body measurements, for example for fitting of clothes.
+    BodyMeasurementUnderbust: URIRef  # Girth of body just below the bust. Used, for example, to fit women's swimwear.
+    BodyMeasurementWaist: URIRef  # Girth of natural waistline (between hip bones and lower ribs). Used, for example, to fit pants.
+    BodyMeasurementWeight: URIRef  # Body weight. Used, for example, to measure pantyhose.
+    BodyOfWater: URIRef  # A body of water, such as a sea, ocean, or lake.
+    Bone: URIRef  # Rigid connective tissue that comprises up the skeletal structure of the human body.
+    Book: URIRef  # A book.
+    BookFormatType: URIRef  # The publication format of the book.
+    BookSeries: URIRef  # A series of books. Included books can be indicated with the hasPart property.
+    BookStore: URIRef  # A bookstore.
+    BookmarkAction: URIRef  # An agent bookmarks/flags/labels/tags/marks an object.
+    Boolean: URIRef  # Boolean: True or False.
+    BorrowAction: URIRef  # The act of obtaining an object under an agreement to return it at a later date. Reciprocal of LendAction.\n\nRelated actions:\n\n* [[LendAction]]: Reciprocal of BorrowAction.
+    BowlingAlley: URIRef  # A bowling alley.
+    BrainStructure: URIRef  # Any anatomical structure which pertains to the soft nervous tissue functioning as the coordinating center of sensation and intellectual and nervous activity.
+    Brand: URIRef  # A brand is a name used by an organization or business person for labeling a product, product group, or similar.
+    BreadcrumbList: URIRef  # A BreadcrumbList is an ItemList consisting of a chain of linked Web pages, typically described using at least their URL and their name, and typically ending with the current page.\n\nThe [[position]] property is used to reconstruct the order of the items in a BreadcrumbList The convention is that a breadcrumb list has an [[itemListOrder]] of [[ItemListOrderAscending]] (lower values listed first), and that the first items in this list correspond to the "top" or beginning of the breadcrumb trail, e.g. with a site or section homepage. The specific values of 'position' are not assigned meaning for a BreadcrumbList, but they should be integers, e.g. beginning with '1' for the first item in the list.
+    Brewery: URIRef  # Brewery.
+    Bridge: URIRef  # A bridge.
+    BroadcastChannel: URIRef  # A unique instance of a BroadcastService on a CableOrSatelliteService lineup.
+    BroadcastEvent: URIRef  # An over the air or online broadcast event.
+    BroadcastFrequencySpecification: URIRef  # The frequency in MHz and the modulation used for a particular BroadcastService.
+    BroadcastRelease: URIRef  # BroadcastRelease.
+    BroadcastService: URIRef  # A delivery service through which content is provided via broadcast over the air or online.
+    BrokerageAccount: URIRef  # An account that allows an investor to deposit funds and place investment orders with a licensed broker or brokerage firm.
+    BuddhistTemple: URIRef  # A Buddhist temple.
+    BusOrCoach: URIRef  # A bus (also omnibus or autobus) is a road vehicle designed to carry passengers. Coaches are luxury busses, usually in service for long distance travel.
+    BusReservation: URIRef  # A reservation for bus travel. \n\nNote: This type is for information about actual reservations, e.g. in confirmation emails or HTML pages with individual confirmations of reservations. For offers of tickets, use [[Offer]].
+    BusStation: URIRef  # A bus station.
+    BusStop: URIRef  # A bus stop.
+    BusTrip: URIRef  # A trip on a commercial bus lin

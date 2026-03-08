@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_flinalg_py_documentation.py
+KIND: code
+
+Return optimal available _flinalg function objects with
+    names. Arrays are used to determine optimal prefix.

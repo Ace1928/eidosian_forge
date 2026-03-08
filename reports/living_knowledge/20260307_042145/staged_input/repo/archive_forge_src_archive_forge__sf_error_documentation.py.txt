@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_sf_error_documentation.py
+KIND: code
+
+import warnings
+Exception that can be raised by special functions.

@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/ActFuncs_documentation.py
+KIND: code
+
+import math
+ the standard hyperbolic tangent function

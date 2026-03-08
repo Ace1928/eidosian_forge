@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_debugger_case15_execfile.py
+KIND: code
+
+f=lambda x: 'val=%s' % x

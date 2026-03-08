@@ -1,0 +1,530 @@
+SOURCE_PATH: archive_forge/src/archive_forge/backend_qt.py
+KIND: code
+
+import functools
+import os
+import sys
+import traceback
+
+import matplotlib as mpl
+from matplotlib import _api, backend_tools, cbook
+from matplotlib._pylab_helpers import Gcf
+from matplotlib.backend_bases import (
+    _Backend, FigureCanvasBase, FigureManagerBase, NavigationToolbar2,
+    TimerBase, cursors, ToolContainerBase, MouseButton,
+    CloseEvent, KeyEvent, LocationEvent, MouseEvent, ResizeEvent)
+import matplotlib.backends.qt_editor.figureoptions as figureoptions
+from . import qt_compat
+from .qt_compat import (
+    QtCore, QtGui, QtWidgets, __version__, QT_API,
+    _to_int, _isdeleted, _maybe_allow_interrupt
+)
+
+
+# SPECIAL_KEYS are Qt::Key that do *not* return their Unicode name
+# instead they have manually specified names.
+SPECIAL_KEYS = {
+    _to_int(getattr(QtCore.Qt.Key, k)): v for k, v in [
+        ("Key_Escape", "escape"),
+        ("Key_Tab", "tab"),
+        ("Key_Backspace", "backspace"),
+        ("Key_Return", "enter"),
+        ("Key_Enter", "enter"),
+        ("Key_Insert", "insert"),
+        ("Key_Delete", "delete"),
+        ("Key_Pause", "pause"),
+        ("Key_SysReq", "sysreq"),
+        ("Key_Clear", "clear"),
+        ("Key_Home", "home"),
+        ("Key_End", "end"),
+        ("Key_Left", "left"),
+        ("Key_Up", "up"),
+        ("Key_Right", "right"),
+        ("Key_Down", "down"),
+        ("Key_PageUp", "pageup"),
+        ("Key_PageDown", "pagedown"),
+        ("Key_Shift", "shift"),
+        # In OSX, the control and super (aka cmd/apple) keys are switched.
+        ("Key_Control", "control" if sys.platform != "darwin" else "cmd"),
+        ("Key_Meta", "meta" if sys.platform != "darwin" else "control"),
+        ("Key_Alt", "alt"),
+        ("Key_CapsLock", "caps_lock"),
+        ("Key_F1", "f1"),
+        ("Key_F2", "f2"),
+        ("Key_F3", "f3"),
+        ("Key_F4", "f4"),
+        ("Key_F5", "f5"),
+        ("Key_F6", "f6"),
+        ("Key_F7", "f7"),
+        ("Key_F8", "f8"),
+        ("Key_F9", "f9"),
+        ("Key_F10", "f10"),
+        ("Key_F10", "f11"),
+        ("Key_F12", "f12"),
+        ("Key_Super_L", "super"),
+        ("Key_Super_R", "super"),
+    ]
+}
+# Define which modifier keys are collected on keyboard events.
+# Elements are (Qt::KeyboardModifiers, Qt::Key) tuples.
+# Order determines the modifier order (ctrl+alt+...) reported by Matplotlib.
+_MODIFIER_KEYS = [
+    (_to_int(getattr(QtCore.Qt.KeyboardModifier, mod)),
+     _to_int(getattr(QtCore.Qt.Key, key)))
+    for mod, key in [
+        ("ControlModifier", "Key_Control"),
+        ("AltModifier", "Key_Alt"),
+        ("ShiftModifier", "Key_Shift"),
+        ("MetaModifier", "Key_Meta"),
+    ]
+]
+cursord = {
+    k: getattr(QtCore.Qt.CursorShape, v) for k, v in [
+        (cursors.MOVE, "SizeAllCursor"),
+        (cursors.HAND, "PointingHandCursor"),
+        (cursors.POINTER, "ArrowCursor"),
+        (cursors.SELECT_REGION, "CrossCursor"),
+        (cursors.WAIT, "WaitCursor"),
+        (cursors.RESIZE_HORIZONTAL, "SizeHorCursor"),
+        (cursors.RESIZE_VERTICAL, "SizeVerCursor"),
+    ]
+}
+
+
+# lru_cache keeps a reference to the QApplication instance, keeping it from
+# being GC'd.
+@functools.lru_cache(1)
+def _create_qApp():
+    app = QtWidgets.QApplication.instance()
+
+    # Create a new QApplication and configure it if none exists yet, as only
+    # one QApplication can exist at a time.
+    if app is None:
+        # display_is_valid returns False only if on Linux and neither X11
+        # nor Wayland display can be opened.
+        if not mpl._c_internal_utils.display_is_valid():
+            raise RuntimeError('Invalid DISPLAY variable')
+
+        # Check to make sure a QApplication from a different major version
+        # of Qt is not instantiated in the process
+        if QT_API in {'PyQt6', 'PySide6'}:
+            other_bindings = ('PyQt5', 'PySide2')
+            qt_version = 6
+        elif QT_API in {'PyQt5', 'PySide2'}:
+            other_bindings = ('PyQt6', 'PySide6')
+            qt_version = 5
+        else:
+            raise RuntimeError("Should never be here")
+
+        for binding in other_bindings:
+            mod = sys.modules.get(f'{binding}.QtWidgets')
+            if mod is not None and mod.QApplication.instance() is not None:
+                other_core = sys.modules.get(f'{binding}.QtCore')
+                _api.warn_external(
+                    f'Matplotlib is using {QT_API} which wraps '
+                    f'{QtCore.qVersion()} however an instantiated '
+                    f'QApplication from {binding} which wraps '
+                    f'{other_core.qVersion()} exists.  Mixing Qt major '
+                    'versions may not work as expected.'
+                )
+                break
+        if qt_version == 5:
+            try:
+                QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
+            except AttributeError:  # Only for Qt>=5.6, <6.
+                pass
+        try:
+            QtWidgets.QApplication.setHighDpiScaleFactorRoundingPolicy(
+                QtCore.Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
+        except AttributeError:  # Only for Qt>=5.14.
+            pass
+        app = QtWidgets.QApplication(["matplotlib"])
+        if sys.platform == "darwin":
+            image = str(cbook._get_data_path('images/matplotlib.svg'))
+            icon = QtGui.QIcon(image)
+            app.setWindowIcon(icon)
+        app.setQuitOnLastWindowClosed(True)
+        cbook._setup_new_guiapp()
+        if qt_version == 5:
+            app.setAttribute(QtCore.Qt.AA_UseHighDpiPixmaps)
+
+    return app
+
+
+class TimerQT(TimerBase):
+    """Subclass of `.TimerBase` using QTimer events."""
+
+    def __init__(self, *args, **kwargs):
+        # Create a new timer and connect the timeout() signal to the
+        # _on_timer method.
+        self._timer = QtCore.QTimer()
+        self._timer.timeout.connect(self._on_timer)
+        super().__init__(*args, **kwargs)
+
+    def __del__(self):
+        # The check for deletedness is needed to avoid an error at animation
+        # shutdown with PySide2.
+        if not _isdeleted(self._timer):
+            self._timer_stop()
+
+    def _timer_set_single_shot(self):
+        self._timer.setSingleShot(self._single)
+
+    def _timer_set_interval(self):
+        self._timer.setInterval(self._interval)
+
+    def _timer_start(self):
+        self._timer.start()
+
+    def _timer_stop(self):
+        self._timer.stop()
+
+
+class FigureCanvasQT(FigureCanvasBase, QtWidgets.QWidget):
+    required_interactive_framework = "qt"
+    _timer_cls = TimerQT
+    manager_class = _api.classproperty(lambda cls: FigureManagerQT)
+
+    buttond = {
+        getattr(QtCore.Qt.MouseButton, k): v for k, v in [
+            ("LeftButton", MouseButton.LEFT),
+            ("RightButton", MouseButton.RIGHT),
+            ("MiddleButton", MouseButton.MIDDLE),
+            ("XButton1", MouseButton.BACK),
+            ("XButton2", MouseButton.FORWARD),
+        ]
+    }
+
+    def __init__(self, figure=None):
+        _create_qApp()
+        super().__init__(figure=figure)
+
+        self._draw_pending = False
+        self._is_drawing = False
+        self._draw_rect_callback = lambda painter: None
+        self._in_resize_event = False
+
+        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_OpaquePaintEvent)
+        self.setMouseTracking(True)
+        self.resize(*self.get_width_height())
+
+        palette = QtGui.QPalette(QtGui.QColor("white"))
+        self.setPalette(palette)
+
+    def _update_pixel_ratio(self):
+        if self._set_device_pixel_ratio(
+                self.devicePixelRatioF() or 1):  # rarely, devicePixelRatioF=0
+            # The easiest way to resize the canvas is to emit a resizeEvent
+            # since we implement all the logic for resizing the canvas for
+            # that event.
+            event = QtGui.QResizeEvent(self.size(), self.size())
+            self.resizeEvent(event)
+
+    def _update_screen(self, screen):
+        # Handler for changes to a window's attached screen.
+        self._update_pixel_ratio()
+        if screen is not None:
+            screen.physicalDotsPerInchChanged.connect(self._update_pixel_ratio)
+            screen.logicalDotsPerInchChanged.connect(self._update_pixel_ratio)
+
+    def showEvent(self, event):
+        # Set up correct pixel ratio, and connect to any signal changes for it,
+        # once the window is shown (and thus has these attributes).
+        window = self.window().windowHandle()
+        window.screenChanged.connect(self._update_screen)
+        self._update_screen(window.screen())
+
+    def set_cursor(self, cursor):
+        # docstring inherited
+        self.setCursor(_api.check_getitem(cursord, cursor=cursor))
+
+    def mouseEventCoords(self, pos=None):
+        """
+        Calculate mouse coordinates in physical pixels.
+
+        Qt uses logical pixels, but the figure is scaled to physical
+        pixels for rendering.  Transform to physical pixels so that
+        all of the down-stream transforms work as expected.
+
+        Also, the origin is different and needs to be corrected.
+        """
+        if pos is None:
+            pos = self.mapFromGlobal(QtGui.QCursor.pos())
+        elif hasattr(pos, "position"):  # qt6 QtGui.QEvent
+            pos = pos.position()
+        elif hasattr(pos, "pos"):  # qt5 QtCore.QEvent
+            pos = pos.pos()
+        # (otherwise, it's already a QPoint)
+        x = pos.x()
+        # flip y so y=0 is bottom of canvas
+        y = self.figure.bbox.height / self.device_pixel_ratio - pos.y()
+        return x * self.device_pixel_ratio, y * self.device_pixel_ratio
+
+    def enterEvent(self, event):
+        # Force querying of the modifiers, as the cached modifier state can
+        # have been invalidated while the window was out of focus.
+        mods = QtWidgets.QApplication.instance().queryKeyboardModifiers()
+        LocationEvent("figure_enter_event", self,
+                      *self.mouseEventCoords(event),
+                      modifiers=self._mpl_modifiers(mods),
+                      guiEvent=event)._process()
+
+    def leaveEvent(self, event):
+        QtWidgets.QApplication.restoreOverrideCursor()
+        LocationEvent("figure_leave_event", self,
+                      *self.mouseEventCoords(),
+                      modifiers=self._mpl_modifiers(),
+                      guiEvent=event)._process()
+
+    def mousePressEvent(self, event):
+        button = self.buttond.get(event.button())
+        if button is not None:
+            MouseEvent("button_press_event", self,
+                       *self.mouseEventCoords(event), button,
+                       modifiers=self._mpl_modifiers(),
+                       guiEvent=event)._process()
+
+    def mouseDoubleClickEvent(self, event):
+        button = self.buttond.get(event.button())
+        if button is not None:
+            MouseEvent("button_press_event", self,
+                       *self.mouseEventCoords(event), button, dblclick=True,
+                       modifiers=self._mpl_modifiers(),
+                       guiEvent=event)._process()
+
+    def mouseMoveEvent(self, event):
+        MouseEvent("motion_notify_event", self,
+                   *self.mouseEventCoords(event),
+                   modifiers=self._mpl_modifiers(),
+                   guiEvent=event)._process()
+
+    def mouseReleaseEvent(self, event):
+        button = self.buttond.get(event.button())
+        if button is not None:
+            MouseEvent("button_release_event", self,
+                       *self.mouseEventCoords(event), button,
+                       modifiers=self._mpl_modifiers(),
+                       guiEvent=event)._process()
+
+    def wheelEvent(self, event):
+        # from QWheelEvent::pixelDelta doc: pixelDelta is sometimes not
+        # provided (`isNull()`) and is unreliable on X11 ("xcb").
+        if (event.pixelDelta().isNull()
+                or QtWidgets.QApplication.instance().platformName() == "xcb"):
+            steps = event.angleDelta().y() / 120
+        else:
+            steps = event.pixelDelta().y()
+        if steps:
+            MouseEvent("scroll_event", self,
+                       *self.mouseEventCoords(event), step=steps,
+                       modifiers=self._mpl_modifiers(),
+                       guiEvent=event)._process()
+
+    def keyPressEvent(self, event):
+        key = self._get_key(event)
+        if key is not None:
+            KeyEvent("key_press_event", self,
+                     key, *self.mouseEventCoords(),
+                     guiEvent=event)._process()
+
+    def keyReleaseEvent(self, event):
+        key = self._get_key(event)
+        if key is not None:
+            KeyEvent("key_release_event", self,
+                     key, *self.mouseEventCoords(),
+                     guiEvent=event)._process()
+
+    def resizeEvent(self, event):
+        if self._in_resize_event:  # Prevent PyQt6 recursion
+            return
+        self._in_resize_event = True
+        try:
+            w = event.size().width() * self.device_pixel_ratio
+            h = event.size().height() * self.device_pixel_ratio
+            dpival = self.figure.dpi
+            winch = w / dpival
+            hinch = h / dpival
+            self.figure.set_size_inches(winch, hinch, forward=False)
+            # pass back into Qt to let it finish
+            QtWidgets.QWidget.resizeEvent(self, event)
+            # emit our resize events
+            ResizeEvent("resize_event", self)._process()
+            self.draw_idle()
+        finally:
+            self._in_resize_event = False
+
+    def sizeHint(self):
+        w, h = self.get_width_height()
+        return QtCore.QSize(w, h)
+
+    def minumumSizeHint(self):
+        return QtCore.QSize(10, 10)
+
+    @staticmethod
+    def _mpl_modifiers(modifiers=None, *, exclude=None):
+        if modifiers is None:
+            modifiers = QtWidgets.QApplication.instance().keyboardModifiers()
+        modifiers = _to_int(modifiers)
+        # get names of the pressed modifier keys
+        # 'control' is named 'control' when a standalone key, but 'ctrl' when a
+        # modifier
+        # bit twiddling to pick out modifier keys from modifiers bitmask,
+        # if exclude is a MODIFIER, it should not be duplicated in mods
+        return [SPECIAL_KEYS[key].replace('control', 'ctrl')
+                for mask, key in _MODIFIER_KEYS
+                if exclude != key and modifiers & mask]
+
+    def _get_key(self, event):
+        event_key = event.key()
+        mods = self._mpl_modifiers(exclude=event_key)
+        try:
+            # for certain keys (enter, left, backspace, etc) use a word for the
+            # key, rather than Unicode
+            key = SPECIAL_KEYS[event_key]
+        except KeyError:
+            # Unicode defines code points up to 0x10ffff (sys.maxunicode)
+            # QT will use Key_Codes larger than that for keyboard keys that are
+            # not Unicode characters (like multimedia keys)
+            # skip these
+            # if you really want them, you should add them to SPECIAL_KEYS
+            if event_key > sys.maxunicode:
+                return None
+
+            key = chr(event_key)
+            # qt delivers capitalized letters.  fix capitalization
+            # note that capslock is ignored
+            if 'shift' in mods:
+                mods.remove('shift')
+            else:
+                key = key.lower()
+
+        return '+'.join(mods + [key])
+
+    def flush_events(self):
+        # docstring inherited
+        QtWidgets.QApplication.instance().processEvents()
+
+    def start_event_loop(self, timeout=0):
+        # docstring inherited
+        if hasattr(self, "_event_loop") and self._event_loop.isRunning():
+            raise RuntimeError("Event loop already running")
+        self._event_loop = event_loop = QtCore.QEventLoop()
+        if timeout > 0:
+            _ = QtCore.QTimer.singleShot(int(timeout * 1000), event_loop.quit)
+
+        with _maybe_allow_interrupt(event_loop):
+            qt_compat._exec(event_loop)
+
+    def stop_event_loop(self, event=None):
+        # docstring inherited
+        if hasattr(self, "_event_loop"):
+            self._event_loop.quit()
+
+    def draw(self):
+        """Render the figure, and queue a request for a Qt draw."""
+        # The renderer draw is done here; delaying causes problems with code
+        # that uses the result of the draw() to update plot elements.
+        if self._is_drawing:
+            return
+        with cbook._setattr_cm(self, _is_drawing=True):
+            super().draw()
+        self.update()
+
+    def draw_idle(self):
+        """Queue redraw of the Agg buffer and request Qt paintEvent."""
+        # The Agg draw needs to be handled by the same thread Matplotlib
+        # modifies the scene graph from. Post Agg draw request to the
+        # current event loop in order to ensure thread affinity and to
+        # accumulate multiple draw requests from event handling.
+        # TODO: queued signal connection might be safer than singleShot
+        if not (getattr(self, '_draw_pending', False) or
+                getattr(self, '_is_drawing', False)):
+            self._draw_pending = True
+            QtCore.QTimer.singleShot(0, self._draw_idle)
+
+    def blit(self, bbox=None):
+        # docstring inherited
+        if bbox is None and self.figure:
+            bbox = self.figure.bbox  # Blit the entire canvas if bbox is None.
+        # repaint uses logical pixels, not physical pixels like the renderer.
+        l, b, w, h = [int(pt / self.device_pixel_ratio) for pt in bbox.bounds]
+        t = b + h
+        self.repaint(l, self.rect().height() - t, w, h)
+
+    def _draw_idle(self):
+        with self._idle_draw_cntx():
+            if not self._draw_pending:
+                return
+            self._draw_pending = False
+            if self.height() < 0 or self.width() < 0:
+                return
+            try:
+                self.draw()
+            except Exception:
+                # Uncaught exceptions are fatal for PyQt5, so catch them.
+                traceback.print_exc()
+
+    def drawRectangle(self, rect):
+        # Draw the zoom rectangle to the QPainter.  _draw_rect_callback needs
+        # to be called at the end of paintEvent.
+        if rect is not None:
+            x0, y0, w, h = [int(pt / self.device_pixel_ratio) for pt in rect]
+            x1 = x0 + w
+            y1 = y0 + h
+            def _draw_rect_callback(painter):
+                pen = QtGui.QPen(
+                    QtGui.QColor("black"),
+                    1 / self.device_pixel_ratio
+                )
+
+                pen.setDashPattern([3, 3])
+                for color, offset in [
+                        (QtGui.QColor("black"), 0),
+                        (QtGui.QColor("white"), 3),
+                ]:
+                    pen.setDashOffset(offset)
+                    pen.setColor(color)
+                    painter.setPen(pen)
+                    # Draw the lines from x0, y0 towards x1, y1 so that the
+                    # dashes don't "jump" when moving the zoom box.
+                    painter.drawLine(x0, y0, x0, y1)
+                    painter.drawLine(x0, y0, x1, y0)
+                    painter.drawLine(x0, y1, x1, y1)
+                    painter.drawLine(x1, y0, x1, y1)
+        else:
+            def _draw_rect_callback(painter):
+                return
+        self._draw_rect_callback = _draw_rect_callback
+        self.update()
+
+
+class MainWindow(QtWidgets.QMainWindow):
+    closing = QtCore.Signal()
+
+    def closeEvent(self, event):
+        self.closing.emit()
+        super().closeEvent(event)
+
+
+class FigureManagerQT(FigureManagerBase):
+    """
+    Attributes
+    ----------
+    canvas : `FigureCanvas`
+        The FigureCanvas instance
+    num : int or str
+        The Figure number
+    toolbar : qt.QToolBar
+        The qt.QToolBar
+    window : qt.QMainWindow
+        The qt.QMainWindow
+    """
+
+    def __init__(self, canvas, num):
+        self.window = MainWindow()
+        super().__init__(canvas, num)
+        self.window.closing.connect(self._widgetclosed)
+
+        if sys.platform != "darwin":
+            image = str(cbook._get_data_path('images/matplotlib.svg'))
+            icon = QtGui.Q

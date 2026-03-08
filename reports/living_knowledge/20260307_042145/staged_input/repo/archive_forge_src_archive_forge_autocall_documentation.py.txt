@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/autocall_documentation.py
+KIND: code
+
+Will be used to set _ip point to current ipython instance b/f call
+
+        Override this method if you don't want this to happen.

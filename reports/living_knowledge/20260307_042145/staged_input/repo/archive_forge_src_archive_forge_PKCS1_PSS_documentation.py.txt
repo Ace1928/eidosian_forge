@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/PKCS1_PSS_documentation.py
+KIND: code
+
+import types
+from Cryptodome.Signature import pss
+
+Legacy module for PKCS#1 PSS signatures.
+
+:undocumented: __package__

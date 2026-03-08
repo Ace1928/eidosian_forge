@@ -1,0 +1,487 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_CircularDrawer.py
+KIND: code
+
+# Copyright 2003-2008 by Leighton Pritchard.  All rights reserved.
+# Revisions copyright 2008-2017 by Peter Cock.
+#
+# This file is part of the Biopython distribution and governed by your
+# choice of the "Biopython License Agreement" or the "BSD 3-Clause License".
+# Please see the LICENSE file that should have been included as part of this
+# package.
+#
+# Contact:       Leighton Pritchard, The James Hutton Institute,
+#                Invergowrie, Dundee, Scotland, DD2 5DA, UK
+#                Leighton.Pritchard@hutton.ac.uk
+################################################################################
+
+"""CircularDrawer module for GenomeDiagram."""
+
+# ReportLab imports
+
+from reportlab.graphics.shapes import Drawing, String, Group, Line, Circle, Polygon
+from reportlab.lib import colors
+from reportlab.graphics.shapes import ArcPath
+
+# GenomeDiagram imports
+from ._AbstractDrawer import AbstractDrawer, draw_polygon, intermediate_points
+from ._AbstractDrawer import _stroke_and_fill_colors
+from ._FeatureSet import FeatureSet
+from ._GraphSet import GraphSet
+
+from math import pi, cos, sin
+
+
+class CircularDrawer(AbstractDrawer):
+    """Object for drawing circular diagrams.
+
+    Attributes:
+     - tracklines    Boolean for whether to draw lines dilineating tracks
+     - pagesize      Tuple describing the size of the page in pixels
+     - x0            Float X co-ord for leftmost point of drawable area
+     - xlim          Float X co-ord for rightmost point of drawable area
+     - y0            Float Y co-ord for lowest point of drawable area
+     - ylim          Float Y co-ord for topmost point of drawable area
+     - pagewidth     Float pixel width of drawable area
+     - pageheight    Float pixel height of drawable area
+     - xcenter       Float X co-ord of center of drawable area
+     - ycenter       Float Y co-ord of center of drawable area
+     - start         Int, base to start drawing from
+     - end           Int, base to stop drawing at
+     - length        Size of sequence to be drawn
+     - track_size    Float (0->1) the proportion of the track height to draw in
+     - drawing       Drawing canvas
+     - drawn_tracks  List of ints denoting which tracks are to be drawn
+     - current_track_level   Int denoting which track is currently being drawn
+     - track_offsets     Dictionary of number of pixels that each track top,
+       center and bottom is offset from the base of a fragment, keyed by track
+     - sweep     Float (0->1) the proportion of the circle circumference to
+       use for the diagram
+     - cross_track_links List of tuples each with four entries (track A,
+       feature A, track B, feature B) to be linked.
+
+    """
+
+    def __init__(
+        self,
+        parent=None,
+        pagesize="A3",
+        orientation="landscape",
+        x=0.05,
+        y=0.05,
+        xl=None,
+        xr=None,
+        yt=None,
+        yb=None,
+        start=None,
+        end=None,
+        tracklines=0,
+        track_size=0.75,
+        circular=1,
+        circle_core=0.0,
+        cross_track_links=None,
+    ):
+        """Create CircularDrawer object.
+
+        Arguments:
+         - parent    Diagram object containing the data that the drawer
+           draws
+         - pagesize  String describing the ISO size of the image, or a tuple
+           of pixels
+         - orientation   String describing the required orientation of the
+           final drawing ('landscape' or 'portrait')
+         - x         Float (0->1) describing the relative size of the X
+           margins to the page
+         - y         Float (0->1) describing the relative size of the Y
+           margins to the page
+         - xl        Float (0->1) describing the relative size of the left X
+           margin to the page (overrides x)
+         - xl        Float (0->1) describing the relative size of the left X
+           margin to the page (overrides x)
+         - xr        Float (0->1) describing the relative size of the right X
+           margin to the page (overrides x)
+         - yt        Float (0->1) describing the relative size of the top Y
+           margin to the page (overrides y)
+         - yb        Float (0->1) describing the relative size of the lower Y
+           margin to the page (overrides y)
+         - start     Int, the position to begin drawing the diagram at
+         - end       Int, the position to stop drawing the diagram at
+         - tracklines    Boolean flag to show (or not) lines delineating tracks
+           on the diagram
+         - track_size    The proportion of the available track height that
+           should be taken up in drawing
+         - circular      Boolean flaw to show whether the passed sequence is
+           circular or not
+         - circle_core   The proportion of the available radius to leave
+           empty at the center of a circular diagram (0 to 1).
+         - cross_track_links List of tuples each with four entries (track A,
+           feature A, track B, feature B) to be linked.
+
+        """
+        # Use the superclass' instantiation method
+        AbstractDrawer.__init__(
+            self,
+            parent,
+            pagesize,
+            orientation,
+            x,
+            y,
+            xl,
+            xr,
+            yt,
+            yb,
+            start,
+            end,
+            tracklines,
+            cross_track_links,
+        )
+
+        # Useful measurements on the page
+        self.track_size = track_size
+        self.circle_core = circle_core
+        # Determine proportion of circumference around which information will be drawn
+        if not circular:
+            self.sweep = 0.9
+        else:
+            self.sweep = 1.0
+
+    def set_track_heights(self):
+        """Initialize track heights.
+
+        Since tracks may not be of identical heights, the bottom and top
+        radius for each track is stored in a dictionary - self.track_radii,
+        keyed by track number
+        """
+        bot_track = min(min(self.drawn_tracks), 1)
+        top_track = max(self.drawn_tracks)  # The 'highest' track to draw
+
+        trackunit_sum = 0  # Total number of 'units' taken up by all tracks
+        trackunits = {}  # Start and & units for each track keyed by track number
+        heightholder = 0  # placeholder variable
+        for track in range(bot_track, top_track + 1):  # track numbers to 'draw'
+            try:
+                trackheight = self._parent[track].height  # Get track height
+            except Exception:  # TODO: ValueError? IndexError?
+                trackheight = 1
+            trackunit_sum += trackheight  # increment total track unit height
+            trackunits[track] = (heightholder, heightholder + trackheight)
+            heightholder += trackheight  # move to next height
+
+        max_radius = 0.5 * min(self.pagewidth, self.pageheight)
+        trackunit_height = max_radius * (1 - self.circle_core) / trackunit_sum
+        track_core = max_radius * self.circle_core
+
+        # Calculate top and bottom radii for each track
+        self.track_radii = {}  # The inner, outer and center radii for each track
+        track_crop = (
+            trackunit_height * (1 - self.track_size) / 2.0
+        )  # 'step back' in pixels
+        for track in trackunits:
+            top = trackunits[track][1] * trackunit_height - track_crop + track_core
+            btm = trackunits[track][0] * trackunit_height + track_crop + track_core
+            ctr = btm + (top - btm) / 2.0
+            self.track_radii[track] = (btm, ctr, top)
+
+    def draw(self):
+        """Draw a circular diagram of the stored data."""
+        # Instantiate the drawing canvas
+        self.drawing = Drawing(self.pagesize[0], self.pagesize[1])
+
+        feature_elements = []  # holds feature elements
+        feature_labels = []  # holds feature labels
+        greytrack_bgs = []  # holds track background
+        greytrack_labels = []  # holds track foreground labels
+        scale_axes = []  # holds scale axes
+        scale_labels = []  # holds scale axis labels
+
+        # Get tracks to be drawn and set track sizes
+        self.drawn_tracks = self._parent.get_drawn_levels()
+        self.set_track_heights()
+
+        # Go through each track in the parent (if it is to be drawn) one by
+        # one and collate the data as drawing elements
+        for track_level in self._parent.get_drawn_levels():
+            self.current_track_level = track_level
+            track = self._parent[track_level]
+            gbgs, glabels = self.draw_greytrack(track)  # Greytracks
+            greytrack_bgs.append(gbgs)
+            greytrack_labels.append(glabels)
+            features, flabels = self.draw_track(track)  # Features and graphs
+            feature_elements.append(features)
+            feature_labels.append(flabels)
+            if track.scale:
+                axes, slabels = self.draw_scale(track)  # Scale axes
+                scale_axes.append(axes)
+                scale_labels.append(slabels)
+
+        feature_cross_links = []
+        for cross_link_obj in self.cross_track_links:
+            cross_link_elements = self.draw_cross_link(cross_link_obj)
+            if cross_link_elements:
+                feature_cross_links.append(cross_link_elements)
+
+        # Groups listed in order of addition to page (from back to front)
+        # Draw track backgrounds
+        # Draw feature cross track links
+        # Draw features and graphs
+        # Draw scale axes
+        # Draw scale labels
+        # Draw feature labels
+        # Draw track labels
+        element_groups = [
+            greytrack_bgs,
+            feature_cross_links,
+            feature_elements,
+            scale_axes,
+            scale_labels,
+            feature_labels,
+            greytrack_labels,
+        ]
+        for element_group in element_groups:
+            for element_list in element_group:
+                [self.drawing.add(element) for element in element_list]
+
+        if self.tracklines:
+            # Draw test tracks over top of diagram
+            self.draw_test_tracks()
+
+    def draw_track(self, track):
+        """Return list of track elements and list of track labels."""
+        track_elements = []  # Holds elements for features and graphs
+        track_labels = []  # Holds labels for features and graphs
+
+        # Distribution dictionary for dealing with different set types
+        set_methods = {FeatureSet: self.draw_feature_set, GraphSet: self.draw_graph_set}
+
+        for set in track.get_sets():  # Draw the feature or graph sets
+            elements, labels = set_methods[set.__class__](set)
+            track_elements += elements
+            track_labels += labels
+        return track_elements, track_labels
+
+    def draw_feature_set(self, set):
+        """Return list of feature elements and list of labels for them."""
+        # print('draw feature set')
+        feature_elements = []  # Holds diagram elements belonging to the features
+        label_elements = []  # Holds diagram elements belonging to feature labels
+
+        # Collect all the elements for the feature set
+        for feature in set.get_features():
+            if self.is_in_bounds(feature.start) or self.is_in_bounds(feature.end):
+                features, labels = self.draw_feature(feature)
+                feature_elements += features
+                label_elements += labels
+
+        return feature_elements, label_elements
+
+    def draw_feature(self, feature):
+        """Return list of feature elements and list of labels for them."""
+        feature_elements = []  # Holds drawable elements for a single feature
+        label_elements = []  # Holds labels for a single feature
+
+        if feature.hide:  # Don't show feature: return early
+            return feature_elements, label_elements
+
+        start, end = self._current_track_start_end()
+        # A single feature may be split into subfeatures, so loop over them
+        for locstart, locend in feature.locations:
+            if locend < start:
+                continue
+            locstart = max(locstart, start)
+            if end < locstart:
+                continue
+            locend = min(locend, end)
+            # Get sigil for the feature/ each subfeature
+            feature_sigil, label = self.get_feature_sigil(feature, locstart, locend)
+            feature_elements.append(feature_sigil)
+            if label is not None:  # If there's a label
+                label_elements.append(label)
+
+        return feature_elements, label_elements
+
+    def get_feature_sigil(self, feature, locstart, locend, **kwargs):
+        """Return graphics for feature, and any required label for it.
+
+        Arguments:
+         - feature       Feature object
+         - locstart      The start position of the feature
+         - locend        The end position of the feature
+
+        """
+        # Establish the coordinates for the sigil
+        btm, ctr, top = self.track_radii[self.current_track_level]
+
+        startangle, startcos, startsin = self.canvas_angle(locstart)
+        endangle, endcos, endsin = self.canvas_angle(locend)
+        midangle, midcos, midsin = self.canvas_angle((locend + locstart) / 2)
+
+        # Distribution dictionary for various ways of drawing the feature
+        # Each method takes the inner and outer radii, the start and end angle
+        # subtended at the diagram center, and the color as arguments
+        draw_methods = {
+            "BOX": self._draw_sigil_box,
+            "OCTO": self._draw_sigil_cut_corner_box,
+            "JAGGY": self._draw_sigil_jaggy,
+            "ARROW": self._draw_sigil_arrow,
+            "BIGARROW": self._draw_sigil_big_arrow,
+        }
+
+        # Get sigil for the feature, location dependent on the feature strand
+        method = draw_methods[feature.sigil]
+        kwargs["head_length_ratio"] = feature.arrowhead_length
+        kwargs["shaft_height_ratio"] = feature.arrowshaft_height
+
+        # Support for clickable links... needs ReportLab 2.4 or later
+        # which added support for links in SVG output.
+        if hasattr(feature, "url"):
+            kwargs["hrefURL"] = feature.url
+            kwargs["hrefTitle"] = feature.name
+
+        sigil = method(
+            btm,
+            ctr,
+            top,
+            startangle,
+            endangle,
+            feature.location.strand,
+            color=feature.color,
+            border=feature.border,
+            **kwargs,
+        )
+
+        if feature.label:  # Feature needs a label
+            # The spaces are a hack to force a little space between the label
+            # and the edge of the feature
+            label = String(
+                0,
+                0,
+                f" {feature.name.strip()} ",
+                fontName=feature.label_font,
+                fontSize=feature.label_size,
+                fillColor=feature.label_color,
+            )
+            labelgroup = Group(label)
+            if feature.label_strand:
+                strand = feature.label_strand
+            else:
+                strand = feature.location.strand
+            if feature.label_position in ("start", "5'", "left"):
+                # Position the label at the feature's start
+                if strand != -1:
+                    label_angle = startangle + 0.5 * pi  # Make text radial
+                    sinval, cosval = startsin, startcos
+                else:
+                    label_angle = endangle + 0.5 * pi  # Make text radial
+                    sinval, cosval = endsin, endcos
+            elif feature.label_position in ("middle", "center", "centre"):
+                # Position the label at the feature's midpoint
+                label_angle = midangle + 0.5 * pi  # Make text radial
+                sinval, cosval = midsin, midcos
+            elif feature.label_position in ("end", "3'", "right"):
+                # Position the label at the feature's end
+                if strand != -1:
+                    label_angle = endangle + 0.5 * pi  # Make text radial
+                    sinval, cosval = endsin, endcos
+                else:
+                    label_angle = startangle + 0.5 * pi  # Make text radial
+                    sinval, cosval = startsin, startcos
+            elif startangle < pi:
+                # Default to placing the label the bottom of the feature
+                # as drawn on the page, meaning feature end on left half
+                label_angle = endangle + 0.5 * pi  # Make text radial
+                sinval, cosval = endsin, endcos
+            else:
+                # Default to placing the label on the bottom of the feature,
+                # which means the feature end when on right hand half
+                label_angle = startangle + 0.5 * pi  # Make text radial
+                sinval, cosval = startsin, startcos
+            if strand != -1:
+                # Feature label on top
+                radius = top
+                if startangle < pi:  # Turn text round
+                    label_angle -= pi
+                else:
+                    labelgroup.contents[0].textAnchor = "end"
+            else:
+                # Feature label on bottom
+                radius = btm
+                if startangle < pi:  # Turn text round and anchor end
+                    label_angle -= pi
+                    labelgroup.contents[0].textAnchor = "end"
+            x_pos = self.xcenter + radius * sinval
+            y_pos = self.ycenter + radius * cosval
+            coslabel = cos(label_angle)
+            sinlabel = sin(label_angle)
+            labelgroup.transform = (
+                coslabel,
+                -sinlabel,
+                sinlabel,
+                coslabel,
+                x_pos,
+                y_pos,
+            )
+        else:
+            # No label required
+            labelgroup = None
+        # if locstart > locend:
+        #    print(locstart, locend, feature.location.strand, sigil, feature.name)
+        # print(locstart, locend, feature.name)
+        return sigil, labelgroup
+
+    def draw_cross_link(self, cross_link):
+        """Draw a cross-link between features."""
+        startA = cross_link.startA
+        startB = cross_link.startB
+        endA = cross_link.endA
+        endB = cross_link.endB
+
+        if not self.is_in_bounds(startA) and not self.is_in_bounds(endA):
+            return None
+        if not self.is_in_bounds(startB) and not self.is_in_bounds(endB):
+            return None
+
+        if startA < self.start:
+            startA = self.start
+        if startB < self.start:
+            startB = self.start
+        if self.end < endA:
+            endA = self.end
+        if self.end < endB:
+            endB = self.end
+
+        trackobjA = cross_link._trackA(list(self._parent.tracks.values()))
+        trackobjB = cross_link._trackB(list(self._parent.tracks.values()))
+        assert trackobjA is not None
+        assert trackobjB is not None
+        if trackobjA == trackobjB:
+            raise NotImplementedError
+
+        if trackobjA.start is not None:
+            if endA < trackobjA.start:
+                return
+            startA = max(startA, trackobjA.start)
+        if trackobjA.end is not None:
+            if trackobjA.end < startA:
+                return
+            endA = min(endA, trackobjA.end)
+        if trackobjB.start is not None:
+            if endB < trackobjB.start:
+                return
+            startB = max(startB, trackobjB.start)
+        if trackobjB.end is not None:
+            if trackobjB.end < startB:
+                return
+            endB = min(endB, trackobjB.end)
+
+        for track_level in self._parent.get_drawn_levels():
+            track = self._parent[track_level]
+            if track == trackobjA:
+                trackA = track_level
+            if track == trackobjB:
+                trackB = track_level
+        if trackA == trackB:
+            raise NotImplementedError
+
+        startangleA, startcosA, startsinA = self.canvas_angle(startA)
+        startangleB, startcosB, startsinB = self.canvas_angle(startB)
+        endangleA, endcosA, endsinA = self.canvas_angle(endA)
+        endangleB, endcosB, ends

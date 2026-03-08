@@ -1,0 +1,467 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_compressed.py
+KIND: code
+
+"""Base class for sparse matrix formats using compressed storage."""
+__all__ = []
+
+from warnings import warn
+import operator
+
+import numpy as np
+from scipy._lib._util import _prune_array, copy_if_needed
+
+from ._base import _spbase, issparse, SparseEfficiencyWarning
+from ._data import _data_matrix, _minmax_mixin
+from . import _sparsetools
+from ._sparsetools import (get_csr_submatrix, csr_sample_offsets, csr_todense,
+                           csr_sample_values, csr_row_index, csr_row_slice,
+                           csr_column_index1, csr_column_index2)
+from ._index import IndexMixin
+from ._sputils import (upcast, upcast_char, to_native, isdense, isshape,
+                       getdtype, isscalarlike, isintlike, downcast_intp_index,
+                       get_sum_dtype, check_shape, is_pydata_spmatrix)
+
+
+class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
+    """
+    base array/matrix class for compressed row- and column-oriented arrays/matrices
+    """
+
+    def __init__(self, arg1, shape=None, dtype=None, copy=False):
+        _data_matrix.__init__(self)
+
+        if issparse(arg1):
+            if arg1.format == self.format and copy:
+                arg1 = arg1.copy()
+            else:
+                arg1 = arg1.asformat(self.format)
+            self.indptr, self.indices, self.data, self._shape = (
+                arg1.indptr, arg1.indices, arg1.data, arg1._shape
+            )
+
+        elif isinstance(arg1, tuple):
+            if isshape(arg1):
+                # It's a tuple of matrix dimensions (M, N)
+                # create empty matrix
+                self._shape = check_shape(arg1)
+                M, N = self.shape
+                # Select index dtype large enough to pass array and
+                # scalar parameters to sparsetools
+                idx_dtype = self._get_index_dtype(maxval=max(M, N))
+                self.data = np.zeros(0, getdtype(dtype, default=float))
+                self.indices = np.zeros(0, idx_dtype)
+                self.indptr = np.zeros(self._swap((M, N))[0] + 1,
+                                       dtype=idx_dtype)
+            else:
+                if len(arg1) == 2:
+                    # (data, ij) format
+                    coo = self._coo_container(arg1, shape=shape, dtype=dtype)
+                    arrays = coo._coo_to_compressed(self._swap)
+                    self.indptr, self.indices, self.data, self._shape = arrays
+                elif len(arg1) == 3:
+                    # (data, indices, indptr) format
+                    (data, indices, indptr) = arg1
+
+                    # Select index dtype large enough to pass array and
+                    # scalar parameters to sparsetools
+                    maxval = None
+                    if shape is not None:
+                        maxval = max(shape)
+                    idx_dtype = self._get_index_dtype((indices, indptr),
+                                                maxval=maxval,
+                                                check_contents=True)
+
+                    if not copy:
+                        copy = copy_if_needed
+                    self.indices = np.array(indices, copy=copy, dtype=idx_dtype)
+                    self.indptr = np.array(indptr, copy=copy, dtype=idx_dtype)
+                    self.data = np.array(data, copy=copy, dtype=dtype)
+                else:
+                    raise ValueError(f"unrecognized {self.format}_matrix "
+                                     "constructor usage")
+
+        else:
+            # must be dense
+            try:
+                arg1 = np.asarray(arg1)
+            except Exception as e:
+                msg = f"unrecognized {self.format}_matrix constructor usage"
+                raise ValueError(msg) from e
+            coo = self._coo_container(arg1, dtype=dtype)
+            arrays = coo._coo_to_compressed(self._swap)
+            self.indptr, self.indices, self.data, self._shape = arrays
+
+        # Read matrix dimensions given, if any
+        if shape is not None:
+            self._shape = check_shape(shape)
+        else:
+            if self.shape is None:
+                # shape not already set, try to infer dimensions
+                try:
+                    major_dim = len(self.indptr) - 1
+                    minor_dim = self.indices.max() + 1
+                except Exception as e:
+                    raise ValueError('unable to infer matrix dimensions') from e
+                else:
+                    self._shape = check_shape(self._swap((major_dim, minor_dim)))
+
+        if dtype is not None:
+            self.data = self.data.astype(dtype, copy=False)
+
+        self.check_format(full_check=False)
+
+    def _getnnz(self, axis=None):
+        if axis is None:
+            return int(self.indptr[-1])
+        else:
+            if axis < 0:
+                axis += 2
+            axis, _ = self._swap((axis, 1 - axis))
+            _, N = self._swap(self.shape)
+            if axis == 0:
+                return np.bincount(downcast_intp_index(self.indices),
+                                   minlength=N)
+            elif axis == 1:
+                return np.diff(self.indptr)
+            raise ValueError('axis out of bounds')
+
+    _getnnz.__doc__ = _spbase._getnnz.__doc__
+
+    def check_format(self, full_check=True):
+        """Check whether the array/matrix respects the CSR or CSC format.
+
+        Parameters
+        ----------
+        full_check : bool, optional
+            If `True`, run rigorous check, scanning arrays for valid values.
+            Note that activating those check might copy arrays for casting,
+            modifying indices and index pointers' inplace.
+            If `False`, run basic checks on attributes. O(1) operations.
+            Default is `True`.
+        """
+        # use _swap to determine proper bounds
+        major_name, minor_name = self._swap(('row', 'column'))
+        major_dim, minor_dim = self._swap(self.shape)
+
+        # index arrays should have integer data types
+        if self.indptr.dtype.kind != 'i':
+            warn(f"indptr array has non-integer dtype ({self.indptr.dtype.name})",
+                 stacklevel=3)
+        if self.indices.dtype.kind != 'i':
+            warn(f"indices array has non-integer dtype ({self.indices.dtype.name})",
+                 stacklevel=3)
+
+        # check array shapes
+        for x in [self.data.ndim, self.indices.ndim, self.indptr.ndim]:
+            if x != 1:
+                raise ValueError('data, indices, and indptr should be 1-D')
+
+        # check index pointer
+        if (len(self.indptr) != major_dim + 1):
+            raise ValueError("index pointer size ({}) should be ({})"
+                             "".format(len(self.indptr), major_dim + 1))
+        if (self.indptr[0] != 0):
+            raise ValueError("index pointer should start with 0")
+
+        # check index and data arrays
+        if (len(self.indices) != len(self.data)):
+            raise ValueError("indices and data should have the same size")
+        if (self.indptr[-1] > len(self.indices)):
+            raise ValueError("Last value of index pointer should be less than "
+                             "the size of index and data arrays")
+
+        self.prune()
+
+        if full_check:
+            # check format validity (more expensive)
+            if self.nnz > 0:
+                if self.indices.max() >= minor_dim:
+                    raise ValueError(f"{minor_name} index values must be < {minor_dim}")
+                if self.indices.min() < 0:
+                    raise ValueError(f"{minor_name} index values must be >= 0")
+                if np.diff(self.indptr).min() < 0:
+                    raise ValueError("index pointer values must form a "
+                                     "non-decreasing sequence")
+
+            idx_dtype = self._get_index_dtype((self.indptr, self.indices))
+            self.indptr = np.asarray(self.indptr, dtype=idx_dtype)
+            self.indices = np.asarray(self.indices, dtype=idx_dtype)
+            self.data = to_native(self.data)
+
+        # if not self.has_sorted_indices():
+        #    warn('Indices were not in sorted order.  Sorting indices.')
+        #    self.sort_indices()
+        #    assert(self.has_sorted_indices())
+        # TODO check for duplicates?
+
+    #######################
+    # Boolean comparisons #
+    #######################
+
+    def _scalar_binopt(self, other, op):
+        """Scalar version of self._binopt, for cases in which no new nonzeros
+        are added. Produces a new sparse array in canonical form.
+        """
+        self.sum_duplicates()
+        res = self._with_data(op(self.data, other), copy=True)
+        res.eliminate_zeros()
+        return res
+
+    def __eq__(self, other):
+        # Scalar other.
+        if isscalarlike(other):
+            if np.isnan(other):
+                return self.__class__(self.shape, dtype=np.bool_)
+
+            if other == 0:
+                warn("Comparing a sparse matrix with 0 using == is inefficient"
+                     ", try using != instead.", SparseEfficiencyWarning,
+                     stacklevel=3)
+                all_true = self.__class__(np.ones(self.shape, dtype=np.bool_))
+                inv = self._scalar_binopt(other, operator.ne)
+                return all_true - inv
+            else:
+                return self._scalar_binopt(other, operator.eq)
+        # Dense other.
+        elif isdense(other):
+            return self.todense() == other
+        # Pydata sparse other.
+        elif is_pydata_spmatrix(other):
+            return NotImplemented
+        # Sparse other.
+        elif issparse(other):
+            warn("Comparing sparse matrices using == is inefficient, try using"
+                 " != instead.", SparseEfficiencyWarning, stacklevel=3)
+            # TODO sparse broadcasting
+            if self.shape != other.shape:
+                return False
+            elif self.format != other.format:
+                other = other.asformat(self.format)
+            res = self._binopt(other, '_ne_')
+            all_true = self.__class__(np.ones(self.shape, dtype=np.bool_))
+            return all_true - res
+        else:
+            return NotImplemented
+
+    def __ne__(self, other):
+        # Scalar other.
+        if isscalarlike(other):
+            if np.isnan(other):
+                warn("Comparing a sparse matrix with nan using != is"
+                     " inefficient", SparseEfficiencyWarning, stacklevel=3)
+                all_true = self.__class__(np.ones(self.shape, dtype=np.bool_))
+                return all_true
+            elif other != 0:
+                warn("Comparing a sparse matrix with a nonzero scalar using !="
+                     " is inefficient, try using == instead.",
+                     SparseEfficiencyWarning, stacklevel=3)
+                all_true = self.__class__(np.ones(self.shape), dtype=np.bool_)
+                inv = self._scalar_binopt(other, operator.eq)
+                return all_true - inv
+            else:
+                return self._scalar_binopt(other, operator.ne)
+        # Dense other.
+        elif isdense(other):
+            return self.todense() != other
+        # Pydata sparse other.
+        elif is_pydata_spmatrix(other):
+            return NotImplemented
+        # Sparse other.
+        elif issparse(other):
+            # TODO sparse broadcasting
+            if self.shape != other.shape:
+                return True
+            elif self.format != other.format:
+                other = other.asformat(self.format)
+            return self._binopt(other, '_ne_')
+        else:
+            return NotImplemented
+
+    def _inequality(self, other, op, op_name, bad_scalar_msg):
+        # Scalar other.
+        if isscalarlike(other):
+            if 0 == other and op_name in ('_le_', '_ge_'):
+                raise NotImplementedError(" >= and <= don't work with 0.")
+            elif op(0, other):
+                warn(bad_scalar_msg, SparseEfficiencyWarning, stacklevel=3)
+                other_arr = np.empty(self.shape, dtype=np.result_type(other))
+                other_arr.fill(other)
+                other_arr = self.__class__(other_arr)
+                return self._binopt(other_arr, op_name)
+            else:
+                return self._scalar_binopt(other, op)
+        # Dense other.
+        elif isdense(other):
+            return op(self.todense(), other)
+        # Sparse other.
+        elif issparse(other):
+            # TODO sparse broadcasting
+            if self.shape != other.shape:
+                raise ValueError("inconsistent shapes")
+            elif self.format != other.format:
+                other = other.asformat(self.format)
+            if op_name not in ('_ge_', '_le_'):
+                return self._binopt(other, op_name)
+
+            warn("Comparing sparse matrices using >= and <= is inefficient, "
+                 "using <, >, or !=, instead.",
+                 SparseEfficiencyWarning, stacklevel=3)
+            all_true = self.__class__(np.ones(self.shape, dtype=np.bool_))
+            res = self._binopt(other, '_gt_' if op_name == '_le_' else '_lt_')
+            return all_true - res
+        else:
+            return NotImplemented
+
+    def __lt__(self, other):
+        return self._inequality(other, operator.lt, '_lt_',
+                                "Comparing a sparse matrix with a scalar "
+                                "greater than zero using < is inefficient, "
+                                "try using >= instead.")
+
+    def __gt__(self, other):
+        return self._inequality(other, operator.gt, '_gt_',
+                                "Comparing a sparse matrix with a scalar "
+                                "less than zero using > is inefficient, "
+                                "try using <= instead.")
+
+    def __le__(self, other):
+        return self._inequality(other, operator.le, '_le_',
+                                "Comparing a sparse matrix with a scalar "
+                                "greater than zero using <= is inefficient, "
+                                "try using > instead.")
+
+    def __ge__(self, other):
+        return self._inequality(other, operator.ge, '_ge_',
+                                "Comparing a sparse matrix with a scalar "
+                                "less than zero using >= is inefficient, "
+                                "try using < instead.")
+
+    #################################
+    # Arithmetic operator overrides #
+    #################################
+
+    def _add_dense(self, other):
+        if other.shape != self.shape:
+            raise ValueError(f'Incompatible shapes ({self.shape} and {other.shape})')
+        dtype = upcast_char(self.dtype.char, other.dtype.char)
+        order = self._swap('CF')[0]
+        result = np.array(other, dtype=dtype, order=order, copy=True)
+        M, N = self._swap(self.shape)
+        y = result if result.flags.c_contiguous else result.T
+        csr_todense(M, N, self.indptr, self.indices, self.data, y)
+        return self._container(result, copy=False)
+
+    def _add_sparse(self, other):
+        return self._binopt(other, '_plus_')
+
+    def _sub_sparse(self, other):
+        return self._binopt(other, '_minus_')
+
+    def multiply(self, other):
+        """Point-wise multiplication by another array/matrix, vector, or
+        scalar.
+        """
+        # Scalar multiplication.
+        if isscalarlike(other):
+            return self._mul_scalar(other)
+        # Sparse matrix or vector.
+        if issparse(other):
+            if self.shape == other.shape:
+                other = self.__class__(other)
+                return self._binopt(other, '_elmul_')
+            if other.ndim == 1:
+                raise TypeError("broadcast from a 1d array not yet supported")
+            # Single element.
+            elif other.shape == (1, 1):
+                return self._mul_scalar(other.toarray()[0, 0])
+            elif self.shape == (1, 1):
+                return other._mul_scalar(self.toarray()[0, 0])
+            # A row times a column.
+            elif self.shape[1] == 1 and other.shape[0] == 1:
+                return self._matmul_sparse(other.tocsc())
+            elif self.shape[0] == 1 and other.shape[1] == 1:
+                return other._matmul_sparse(self.tocsc())
+            # Row vector times matrix. other is a row.
+            elif other.shape[0] == 1 and self.shape[1] == other.shape[1]:
+                other = self._dia_container(
+                    (other.toarray().ravel(), [0]),
+                    shape=(other.shape[1], other.shape[1])
+                )
+                return self._matmul_sparse(other)
+            # self is a row.
+            elif self.shape[0] == 1 and self.shape[1] == other.shape[1]:
+                copy = self._dia_container(
+                    (self.toarray().ravel(), [0]),
+                    shape=(self.shape[1], self.shape[1])
+                )
+                return other._matmul_sparse(copy)
+            # Column vector times matrix. other is a column.
+            elif other.shape[1] == 1 and self.shape[0] == other.shape[0]:
+                other = self._dia_container(
+                    (other.toarray().ravel(), [0]),
+                    shape=(other.shape[0], other.shape[0])
+                )
+                return other._matmul_sparse(self)
+            # self is a column.
+            elif self.shape[1] == 1 and self.shape[0] == other.shape[0]:
+                copy = self._dia_container(
+                    (self.toarray().ravel(), [0]),
+                    shape=(self.shape[0], self.shape[0])
+                )
+                return copy._matmul_sparse(other)
+            else:
+                raise ValueError("inconsistent shapes")
+
+        # Assume other is a dense matrix/array, which produces a single-item
+        # object array if other isn't convertible to ndarray.
+        other = np.atleast_2d(other)
+
+        if other.ndim != 2:
+            return np.multiply(self.toarray(), other)
+        # Single element / wrapped object.
+        if other.size == 1:
+            if other.dtype == np.object_:
+                # 'other' not convertible to ndarray.
+                return NotImplemented
+            return self._mul_scalar(other.flat[0])
+        # Fast case for trivial sparse matrix.
+        elif self.shape == (1, 1):
+            return np.multiply(self.toarray()[0, 0], other)
+
+        ret = self.tocoo()
+        # Matching shapes.
+        if self.shape == other.shape:
+            data = np.multiply(ret.data, other[ret.row, ret.col])
+        # Sparse row vector times...
+        elif self.shape[0] == 1:
+            if other.shape[1] == 1:  # Dense column vector.
+                data = np.multiply(ret.data, other)
+            elif other.shape[1] == self.shape[1]:  # Dense matrix.
+                data = np.multiply(ret.data, other[:, ret.col])
+            else:
+                raise ValueError("inconsistent shapes")
+            row = np.repeat(np.arange(other.shape[0]), len(ret.row))
+            col = np.tile(ret.col, other.shape[0])
+            return self._coo_container(
+                (data.view(np.ndarray).ravel(), (row, col)),
+                shape=(other.shape[0], self.shape[1]),
+                copy=False
+            )
+        # Sparse column vector times...
+        elif self.shape[1] == 1:
+            if other.shape[0] == 1:  # Dense row vector.
+                data = np.multiply(ret.data[:, None], other)
+            elif other.shape[0] == self.shape[0]:  # Dense matrix.
+                data = np.multiply(ret.data[:, None], other[ret.row])
+            else:
+                raise ValueError("inconsistent shapes")
+            row = np.repeat(ret.row, other.shape[1])
+            col = np.tile(np.arange(other.shape[1]), len(ret.col))
+            return self._coo_container(
+                (data.view(np.ndarray).ravel(), (row, col)),
+                shape=(self.shape[0], other.shape[1]),
+                copy=False
+            )
+        # Sparse matrix times dense row vector.
+        elif other.shape[0] == 1 and self.shape[1] == other.shape[1]:
+            data = np.multip

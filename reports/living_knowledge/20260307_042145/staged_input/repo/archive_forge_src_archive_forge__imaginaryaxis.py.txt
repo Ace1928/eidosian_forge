@@ -1,0 +1,559 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_imaginaryaxis.py
+KIND: code
+
+from plotly.basedatatypes import BaseLayoutHierarchyType as _BaseLayoutHierarchyType
+import copy as _copy
+
+
+class Imaginaryaxis(_BaseLayoutHierarchyType):
+
+    # class properties
+    # --------------------
+    _parent_path_str = "layout.smith"
+    _path_str = "layout.smith.imaginaryaxis"
+    _valid_props = {
+        "color",
+        "gridcolor",
+        "griddash",
+        "gridwidth",
+        "hoverformat",
+        "labelalias",
+        "layer",
+        "linecolor",
+        "linewidth",
+        "showgrid",
+        "showline",
+        "showticklabels",
+        "showtickprefix",
+        "showticksuffix",
+        "tickcolor",
+        "tickfont",
+        "tickformat",
+        "ticklen",
+        "tickprefix",
+        "ticks",
+        "ticksuffix",
+        "tickvals",
+        "tickvalssrc",
+        "tickwidth",
+        "visible",
+    }
+
+    # color
+    # -----
+    @property
+    def color(self):
+        """
+        Sets default for all colors associated with this axis all at
+        once: line, font, tick, and grid colors. Grid color is
+        lightened by blending this with the plot background Individual
+        pieces can override this.
+
+        The 'color' property is a color and may be specified as:
+          - A hex string (e.g. '#ff0000')
+          - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+          - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+          - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+          - A named CSS color:
+                aliceblue, antiquewhite, aqua, aquamarine, azure,
+                beige, bisque, black, blanchedalmond, blue,
+                blueviolet, brown, burlywood, cadetblue,
+                chartreuse, chocolate, coral, cornflowerblue,
+                cornsilk, crimson, cyan, darkblue, darkcyan,
+                darkgoldenrod, darkgray, darkgrey, darkgreen,
+                darkkhaki, darkmagenta, darkolivegreen, darkorange,
+                darkorchid, darkred, darksalmon, darkseagreen,
+                darkslateblue, darkslategray, darkslategrey,
+                darkturquoise, darkviolet, deeppink, deepskyblue,
+                dimgray, dimgrey, dodgerblue, firebrick,
+                floralwhite, forestgreen, fuchsia, gainsboro,
+                ghostwhite, gold, goldenrod, gray, grey, green,
+                greenyellow, honeydew, hotpink, indianred, indigo,
+                ivory, khaki, lavender, lavenderblush, lawngreen,
+                lemonchiffon, lightblue, lightcoral, lightcyan,
+                lightgoldenrodyellow, lightgray, lightgrey,
+                lightgreen, lightpink, lightsalmon, lightseagreen,
+                lightskyblue, lightslategray, lightslategrey,
+                lightsteelblue, lightyellow, lime, limegreen,
+                linen, magenta, maroon, mediumaquamarine,
+                mediumblue, mediumorchid, mediumpurple,
+                mediumseagreen, mediumslateblue, mediumspringgreen,
+                mediumturquoise, mediumvioletred, midnightblue,
+                mintcream, mistyrose, moccasin, navajowhite, navy,
+                oldlace, olive, olivedrab, orange, orangered,
+                orchid, palegoldenrod, palegreen, paleturquoise,
+                palevioletred, papayawhip, peachpuff, peru, pink,
+                plum, powderblue, purple, red, rosybrown,
+                royalblue, rebeccapurple, saddlebrown, salmon,
+                sandybrown, seagreen, seashell, sienna, silver,
+                skyblue, slateblue, slategray, slategrey, snow,
+                springgreen, steelblue, tan, teal, thistle, tomato,
+                turquoise, violet, wheat, white, whitesmoke,
+                yellow, yellowgreen
+
+        Returns
+        -------
+        str
+        """
+        return self["color"]
+
+    @color.setter
+    def color(self, val):
+        self["color"] = val
+
+    # gridcolor
+    # ---------
+    @property
+    def gridcolor(self):
+        """
+        Sets the color of the grid lines.
+
+        The 'gridcolor' property is a color and may be specified as:
+          - A hex string (e.g. '#ff0000')
+          - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+          - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+          - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+          - A named CSS color:
+                aliceblue, antiquewhite, aqua, aquamarine, azure,
+                beige, bisque, black, blanchedalmond, blue,
+                blueviolet, brown, burlywood, cadetblue,
+                chartreuse, chocolate, coral, cornflowerblue,
+                cornsilk, crimson, cyan, darkblue, darkcyan,
+                darkgoldenrod, darkgray, darkgrey, darkgreen,
+                darkkhaki, darkmagenta, darkolivegreen, darkorange,
+                darkorchid, darkred, darksalmon, darkseagreen,
+                darkslateblue, darkslategray, darkslategrey,
+                darkturquoise, darkviolet, deeppink, deepskyblue,
+                dimgray, dimgrey, dodgerblue, firebrick,
+                floralwhite, forestgreen, fuchsia, gainsboro,
+                ghostwhite, gold, goldenrod, gray, grey, green,
+                greenyellow, honeydew, hotpink, indianred, indigo,
+                ivory, khaki, lavender, lavenderblush, lawngreen,
+                lemonchiffon, lightblue, lightcoral, lightcyan,
+                lightgoldenrodyellow, lightgray, lightgrey,
+                lightgreen, lightpink, lightsalmon, lightseagreen,
+                lightskyblue, lightslategray, lightslategrey,
+                lightsteelblue, lightyellow, lime, limegreen,
+                linen, magenta, maroon, mediumaquamarine,
+                mediumblue, mediumorchid, mediumpurple,
+                mediumseagreen, mediumslateblue, mediumspringgreen,
+                mediumturquoise, mediumvioletred, midnightblue,
+                mintcream, mistyrose, moccasin, navajowhite, navy,
+                oldlace, olive, olivedrab, orange, orangered,
+                orchid, palegoldenrod, palegreen, paleturquoise,
+                palevioletred, papayawhip, peachpuff, peru, pink,
+                plum, powderblue, purple, red, rosybrown,
+                royalblue, rebeccapurple, saddlebrown, salmon,
+                sandybrown, seagreen, seashell, sienna, silver,
+                skyblue, slateblue, slategray, slategrey, snow,
+                springgreen, steelblue, tan, teal, thistle, tomato,
+                turquoise, violet, wheat, white, whitesmoke,
+                yellow, yellowgreen
+
+        Returns
+        -------
+        str
+        """
+        return self["gridcolor"]
+
+    @gridcolor.setter
+    def gridcolor(self, val):
+        self["gridcolor"] = val
+
+    # griddash
+    # --------
+    @property
+    def griddash(self):
+        """
+        Sets the dash style of lines. Set to a dash type string
+        ("solid", "dot", "dash", "longdash", "dashdot", or
+        "longdashdot") or a dash length list in px (eg
+        "5px,10px,2px,2px").
+
+        The 'griddash' property is an enumeration that may be specified as:
+          - One of the following dash styles:
+                ['solid', 'dot', 'dash', 'longdash', 'dashdot', 'longdashdot']
+          - A string containing a dash length list in pixels or percentages
+                (e.g. '5px 10px 2px 2px', '5, 10, 2, 2', '10% 20% 40%', etc.)
+
+        Returns
+        -------
+        str
+        """
+        return self["griddash"]
+
+    @griddash.setter
+    def griddash(self, val):
+        self["griddash"] = val
+
+    # gridwidth
+    # ---------
+    @property
+    def gridwidth(self):
+        """
+        Sets the width (in px) of the grid lines.
+
+        The 'gridwidth' property is a number and may be specified as:
+          - An int or float in the interval [0, inf]
+
+        Returns
+        -------
+        int|float
+        """
+        return self["gridwidth"]
+
+    @gridwidth.setter
+    def gridwidth(self, val):
+        self["gridwidth"] = val
+
+    # hoverformat
+    # -----------
+    @property
+    def hoverformat(self):
+        """
+        Sets the hover text formatting rule using d3 formatting mini-
+        languages which are very similar to those in Python. For
+        numbers, see:
+        https://github.com/d3/d3-format/tree/v1.4.5#d3-format. And for
+        dates see: https://github.com/d3/d3-time-
+        format/tree/v2.2.3#locale_format. We add two items to d3's date
+        formatter: "%h" for half of the year as a decimal number as
+        well as "%{n}f" for fractional seconds with n digits. For
+        example, *2016-10-13 09:15:23.456* with tickformat
+        "%H~%M~%S.%2f" would display "09~15~23.46"
+
+        The 'hoverformat' property is a string and must be specified as:
+          - A string
+          - A number that will be converted to a string
+
+        Returns
+        -------
+        str
+        """
+        return self["hoverformat"]
+
+    @hoverformat.setter
+    def hoverformat(self, val):
+        self["hoverformat"] = val
+
+    # labelalias
+    # ----------
+    @property
+    def labelalias(self):
+        """
+        Replacement text for specific tick or hover labels. For example
+        using {US: 'USA', CA: 'Canada'} changes US to USA and CA to
+        Canada. The labels we would have shown must match the keys
+        exactly, after adding any tickprefix or ticksuffix. For
+        negative numbers the minus sign symbol used (U+2212) is wider
+        than the regular ascii dash. That means you need to use −1
+        instead of -1. labelalias can be used with any axis type, and
+        both keys (if needed) and values (if desired) can include html-
+        like tags or MathJax.
+
+        The 'labelalias' property accepts values of any type
+
+        Returns
+        -------
+        Any
+        """
+        return self["labelalias"]
+
+    @labelalias.setter
+    def labelalias(self, val):
+        self["labelalias"] = val
+
+    # layer
+    # -----
+    @property
+    def layer(self):
+        """
+        Sets the layer on which this axis is displayed. If *above
+        traces*, this axis is displayed above all the subplot's traces
+        If *below traces*, this axis is displayed below all the
+        subplot's traces, but above the grid lines. Useful when used
+        together with scatter-like traces with `cliponaxis` set to
+        False to show markers and/or text nodes above this axis.
+
+        The 'layer' property is an enumeration that may be specified as:
+          - One of the following enumeration values:
+                ['above traces', 'below traces']
+
+        Returns
+        -------
+        Any
+        """
+        return self["layer"]
+
+    @layer.setter
+    def layer(self, val):
+        self["layer"] = val
+
+    # linecolor
+    # ---------
+    @property
+    def linecolor(self):
+        """
+        Sets the axis line color.
+
+        The 'linecolor' property is a color and may be specified as:
+          - A hex string (e.g. '#ff0000')
+          - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+          - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+          - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+          - A named CSS color:
+                aliceblue, antiquewhite, aqua, aquamarine, azure,
+                beige, bisque, black, blanchedalmond, blue,
+                blueviolet, brown, burlywood, cadetblue,
+                chartreuse, chocolate, coral, cornflowerblue,
+                cornsilk, crimson, cyan, darkblue, darkcyan,
+                darkgoldenrod, darkgray, darkgrey, darkgreen,
+                darkkhaki, darkmagenta, darkolivegreen, darkorange,
+                darkorchid, darkred, darksalmon, darkseagreen,
+                darkslateblue, darkslategray, darkslategrey,
+                darkturquoise, darkviolet, deeppink, deepskyblue,
+                dimgray, dimgrey, dodgerblue, firebrick,
+                floralwhite, forestgreen, fuchsia, gainsboro,
+                ghostwhite, gold, goldenrod, gray, grey, green,
+                greenyellow, honeydew, hotpink, indianred, indigo,
+                ivory, khaki, lavender, lavenderblush, lawngreen,
+                lemonchiffon, lightblue, lightcoral, lightcyan,
+                lightgoldenrodyellow, lightgray, lightgrey,
+                lightgreen, lightpink, lightsalmon, lightseagreen,
+                lightskyblue, lightslategray, lightslategrey,
+                lightsteelblue, lightyellow, lime, limegreen,
+                linen, magenta, maroon, mediumaquamarine,
+                mediumblue, mediumorchid, mediumpurple,
+                mediumseagreen, mediumslateblue, mediumspringgreen,
+                mediumturquoise, mediumvioletred, midnightblue,
+                mintcream, mistyrose, moccasin, navajowhite, navy,
+                oldlace, olive, olivedrab, orange, orangered,
+                orchid, palegoldenrod, palegreen, paleturquoise,
+                palevioletred, papayawhip, peachpuff, peru, pink,
+                plum, powderblue, purple, red, rosybrown,
+                royalblue, rebeccapurple, saddlebrown, salmon,
+                sandybrown, seagreen, seashell, sienna, silver,
+                skyblue, slateblue, slategray, slategrey, snow,
+                springgreen, steelblue, tan, teal, thistle, tomato,
+                turquoise, violet, wheat, white, whitesmoke,
+                yellow, yellowgreen
+
+        Returns
+        -------
+        str
+        """
+        return self["linecolor"]
+
+    @linecolor.setter
+    def linecolor(self, val):
+        self["linecolor"] = val
+
+    # linewidth
+    # ---------
+    @property
+    def linewidth(self):
+        """
+        Sets the width (in px) of the axis line.
+
+        The 'linewidth' property is a number and may be specified as:
+          - An int or float in the interval [0, inf]
+
+        Returns
+        -------
+        int|float
+        """
+        return self["linewidth"]
+
+    @linewidth.setter
+    def linewidth(self, val):
+        self["linewidth"] = val
+
+    # showgrid
+    # --------
+    @property
+    def showgrid(self):
+        """
+        Determines whether or not grid lines are drawn. If True, the
+        grid lines are drawn at every tick mark.
+
+        The 'showgrid' property must be specified as a bool
+        (either True, or False)
+
+        Returns
+        -------
+        bool
+        """
+        return self["showgrid"]
+
+    @showgrid.setter
+    def showgrid(self, val):
+        self["showgrid"] = val
+
+    # showline
+    # --------
+    @property
+    def showline(self):
+        """
+        Determines whether or not a line bounding this axis is drawn.
+
+        The 'showline' property must be specified as a bool
+        (either True, or False)
+
+        Returns
+        -------
+        bool
+        """
+        return self["showline"]
+
+    @showline.setter
+    def showline(self, val):
+        self["showline"] = val
+
+    # showticklabels
+    # --------------
+    @property
+    def showticklabels(self):
+        """
+        Determines whether or not the tick labels are drawn.
+
+        The 'showticklabels' property must be specified as a bool
+        (either True, or False)
+
+        Returns
+        -------
+        bool
+        """
+        return self["showticklabels"]
+
+    @showticklabels.setter
+    def showticklabels(self, val):
+        self["showticklabels"] = val
+
+    # showtickprefix
+    # --------------
+    @property
+    def showtickprefix(self):
+        """
+        If "all", all tick labels are displayed with a prefix. If
+        "first", only the first tick is displayed with a prefix. If
+        "last", only the last tick is displayed with a suffix. If
+        "none", tick prefixes are hidden.
+
+        The 'showtickprefix' property is an enumeration that may be specified as:
+          - One of the following enumeration values:
+                ['all', 'first', 'last', 'none']
+
+        Returns
+        -------
+        Any
+        """
+        return self["showtickprefix"]
+
+    @showtickprefix.setter
+    def showtickprefix(self, val):
+        self["showtickprefix"] = val
+
+    # showticksuffix
+    # --------------
+    @property
+    def showticksuffix(self):
+        """
+        Same as `showtickprefix` but for tick suffixes.
+
+        The 'showticksuffix' property is an enumeration that may be specified as:
+          - One of the following enumeration values:
+                ['all', 'first', 'last', 'none']
+
+        Returns
+        -------
+        Any
+        """
+        return self["showticksuffix"]
+
+    @showticksuffix.setter
+    def showticksuffix(self, val):
+        self["showticksuffix"] = val
+
+    # tickcolor
+    # ---------
+    @property
+    def tickcolor(self):
+        """
+        Sets the tick color.
+
+        The 'tickcolor' property is a color and may be specified as:
+          - A hex string (e.g. '#ff0000')
+          - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+          - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+          - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+          - A named CSS color:
+                aliceblue, antiquewhite, aqua, aquamarine, azure,
+                beige, bisque, black, blanchedalmond, blue,
+                blueviolet, brown, burlywood, cadetblue,
+                chartreuse, chocolate, coral, cornflowerblue,
+                cornsilk, crimson, cyan, darkblue, darkcyan,
+                darkgoldenrod, darkgray, darkgrey, darkgreen,
+                darkkhaki, darkmagenta, darkolivegreen, darkorange,
+                darkorchid, darkred, darksalmon, darkseagreen,
+                darkslateblue, darkslategray, darkslategrey,
+                darkturquoise, darkviolet, deeppink, deepskyblue,
+                dimgray, dimgrey, dodgerblue, firebrick,
+                floralwhite, forestgreen, fuchsia, gainsboro,
+                ghostwhite, gold, goldenrod, gray, grey, green,
+                greenyellow, honeydew, hotpink, indianred, indigo,
+                ivory, khaki, lavender, lavenderblush, lawngreen,
+                lemonchiffon, lightblue, lightcoral, lightcyan,
+                lightgoldenrodyellow, lightgray, lightgrey,
+                lightgreen, lightpink, lightsalmon, lightseagreen,
+                lightskyblue, lightslategray, lightslategrey,
+                lightsteelblue, lightyellow, lime, limegreen,
+                linen, magenta, maroon, mediumaquamarine,
+                mediumblue, mediumorchid, mediumpurple,
+                mediumseagreen, mediumslateblue, mediumspringgreen,
+                mediumturquoise, mediumvioletred, midnightblue,
+                mintcream, mistyrose, moccasin, navajowhite, navy,
+                oldlace, olive, olivedrab, orange, orangered,
+                orchid, palegoldenrod, palegreen, paleturquoise,
+                palevioletred, papayawhip, peachpuff, peru, pink,
+                plum, powderblue, purple, red, rosybrown,
+                royalblue, rebeccapurple, saddlebrown, salmon,
+                sandybrown, seagreen, seashell, sienna, silver,
+                skyblue, slateblue, slategray, slategrey, snow,
+                springgreen, steelblue, tan, teal, thistle, tomato,
+                turquoise, violet, wheat, white, whitesmoke,
+                yellow, yellowgreen
+
+        Returns
+        -------
+        str
+        """
+        return self["tickcolor"]
+
+    @tickcolor.setter
+    def tickcolor(self, val):
+        self["tickcolor"] = val
+
+    # tickfont
+    # --------
+    @property
+    def tickfont(self):
+        """
+        Sets the tick font.
+
+        The 'tickfont' property is an instance of Tickfont
+        that may be specified as:
+          - An instance of :class:`plotly.graph_objs.layout.smith.imaginaryaxis.Tickfont`
+          - A dict of string/value properties that will be passed
+            to the Tickfont constructor
+
+            Supported dict properties:
+
+                color
+
+                family
+                    HTML font family - the typeface that will be
+                    applied by the web browser. The web browser
+                    will only be able to apply a font if it is
+                    available on the system which it operates.
+                    Provide multiple font families, separated by
+                    commas, to indicate the

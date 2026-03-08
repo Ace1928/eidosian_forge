@@ -10,10 +10,10 @@
 - [x] Create a `scripts` directory inside `docs_forge` for the processing scripts.
 
 ## 2. Local LLM Setup (Constraint: < 3B Parameters)
-- [x] Research and select a suitable small (< 3B params), agentic, tool-calling LLM via web search. (Chosen Model: Qwen 2.5 1.5B Instruct GGUF)
+- [x] Research and select a suitable small (< 3B params), agentic, tool-calling LLM via web search. (Chosen Model: Qwen 3.5 2B Instruct GGUF)
 - [x] Research and document the steps to build `llama.cpp` from source. (Build from source using cmake: https://github.com/ggerganov/llama.cpp)
 - [x] Write a script to download and build `llama.cpp`.
-- [x] Write a script to download the selected < 3B LLM model. (Downloaded: qwen2.5-1.5b-instruct-q5_k_m.gguf)
+- [x] Write a script to download the selected < 3B LLM model. (Downloaded: qwen3.5-2b-instruct-q5_k_m.gguf)
 
 ## 3. Documentation Generation Loop
 - [x] Create a script to scan the `eidosian_forge` repository directory-by-directory. (Index saved to file_index.json)

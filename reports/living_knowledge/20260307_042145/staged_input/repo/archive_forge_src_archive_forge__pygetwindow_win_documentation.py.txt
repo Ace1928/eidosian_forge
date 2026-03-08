@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_pygetwindow_win_documentation.py
+KIND: code
+
+import ctypes
+from ctypes import wintypes # We can't use ctypes.wintypes, we must import wintypes this way.
+from pygetwindow import PyGetWindowException, pointInRect, BaseWindow, Rect, Point, Size
+Return ``True`` if the window is currently visible.

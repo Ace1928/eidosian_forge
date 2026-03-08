@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/bigquery.py
+KIND: code
+
+from langchain_community.document_loaders.bigquery import BigQueryLoader
+
+__all__ = ["BigQueryLoader"]

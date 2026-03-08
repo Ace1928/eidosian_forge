@@ -1,0 +1,345 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AdvanceAcl.py
+KIND: code
+
+from __future__ import (absolute_import, division, print_function)
+from xml.etree import ElementTree
+from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.community.network.plugins.module_utils.network.cloudengine.ce import get_nc_config, set_nc_config, ce_argument_spec, check_ip_addr
+class AdvanceAcl(object):
+    """ Manages advance acl configuration """
+
+    def __init__(self, **kwargs):
+        """ Class init """
+        argument_spec = kwargs['argument_spec']
+        self.spec = argument_spec
+        self.module = AnsibleModule(argument_spec=self.spec, supports_check_mode=True)
+        self.state = self.module.params['state']
+        self.acl_name = self.module.params['acl_name'] or None
+        self.acl_num = self.module.params['acl_num'] or None
+        self.acl_type = None
+        self.acl_step = self.module.params['acl_step'] or None
+        self.acl_description = self.module.params['acl_description'] or None
+        self.rule_name = self.module.params['rule_name'] or None
+        self.rule_id = self.module.params['rule_id'] or None
+        self.rule_action = self.module.params['rule_action'] or None
+        self.protocol = self.module.params['protocol'] or None
+        self.protocol_num = None
+        self.source_ip = self.module.params['source_ip'] or None
+        self.src_mask = self.module.params['src_mask'] or None
+        self.src_wild = None
+        self.src_pool_name = self.module.params['src_pool_name'] or None
+        self.dest_ip = self.module.params['dest_ip'] or None
+        self.dest_mask = self.module.params['dest_mask'] or None
+        self.dest_wild = None
+        self.dest_pool_name = self.module.params['dest_pool_name'] or None
+        self.src_port_op = self.module.params['src_port_op'] or None
+        self.src_port_begin = self.module.params['src_port_begin'] or None
+        self.src_port_end = self.module.params['src_port_end'] or None
+        self.src_port_pool_name = self.module.params['src_port_pool_name'] or None
+        self.dest_port_op = self.module.params['dest_port_op'] or None
+        self.dest_port_begin = self.module.params['dest_port_begin'] or None
+        self.dest_port_end = self.module.params['dest_port_end'] or None
+        self.dest_port_pool_name = self.module.params['dest_port_pool_name'] or None
+        self.frag_type = self.module.params['frag_type'] or None
+        self.precedence = self.module.params['precedence'] or None
+        self.tos = self.module.params['tos'] or None
+        self.dscp = self.module.params['dscp'] or None
+        self.icmp_name = self.module.params['icmp_name'] or None
+        self.icmp_type = self.module.params['icmp_type'] or None
+        self.icmp_code = self.module.params['icmp_code'] or None
+        self.ttl_expired = self.module.params['ttl_expired']
+        self.vrf_name = self.module.params['vrf_name'] or None
+        self.syn_flag = self.module.params['syn_flag'] or None
+        self.tcp_flag_mask = self.module.params['tcp_flag_mask'] or None
+        self.established = self.module.params['established']
+        self.time_range = self.module.params['time_range'] or None
+        self.rule_description = self.module.params['rule_description'] or None
+        self.igmp_type = self.module.params['igmp_type'] or None
+        self.igmp_type_num = None
+        self.log_flag = self.module.params['log_flag']
+        self.precedence_name = dict()
+        self.precedence_name['0'] = 'routine'
+        self.precedence_name['1'] = 'priority'
+        self.precedence_name['2'] = 'immediate'
+        self.precedence_name['3'] = 'flash'
+        self.precedence_name['4'] = 'flash-override'
+        self.precedence_name['5'] = 'critical'
+        self.precedence_name['6'] = 'internet'
+        self.precedence_name['7'] = 'network'
+        self.cur_acl_cfg = dict()
+        self.cur_advance_rule_cfg = dict()
+        self.changed = False
+        self.updates_cmd = list()
+        self.results = dict()
+        self.proposed = dict()
+        self.existing = dict()
+        self.end_state = dict()
+
+    def netconf_get_config(self, conf_str):
+        """ Get configure by netconf """
+        xml_str = get_nc_config(self.module, conf_str)
+        return xml_str
+
+    def netconf_set_config(self, conf_str):
+        """ Set configure by netconf """
+        xml_str = set_nc_config(self.module, conf_str)
+        return xml_str
+
+    def get_protocol_num(self):
+        """ Get protocol num by name """
+        if self.protocol:
+            self.protocol_num = PROTOCOL_NUM.get(self.protocol)
+
+    def get_igmp_type_num(self):
+        """ Get igmp type num by type """
+        if self.igmp_type:
+            self.igmp_type_num = IGMP_TYPE_NUM.get(self.igmp_type)
+
+    def check_acl_args(self):
+        """ Check acl invalid args """
+        need_cfg = False
+        find_flag = False
+        self.cur_acl_cfg['acl_info'] = []
+        if self.acl_name:
+            if self.acl_name.isdigit():
+                if int(self.acl_name) < 3000 or int(self.acl_name) > 3999:
+                    self.module.fail_json(msg='Error: The value of acl_name is out of [3000-3999] for advance ACL.')
+                if self.acl_num:
+                    self.module.fail_json(msg='Error: The acl_name is digit, so should not input acl_num at the same time.')
+            else:
+                self.acl_type = 'Advance'
+                if len(self.acl_name) < 1 or len(self.acl_name) > 32:
+                    self.module.fail_json(msg='Error: The len of acl_name is out of [1 - 32].')
+                if self.state == 'present':
+                    if not self.acl_num and (not self.acl_type) and (not self.rule_name):
+                        self.module.fail_json(msg='Error: Please input acl_num or acl_type when config ACL.')
+            if self.acl_num:
+                if self.acl_num.isdigit():
+                    if int(self.acl_num) < 3000 or int(self.acl_num) > 3999:
+                        self.module.fail_json(msg='Error: The value of acl_name is out of [3000-3999] for advance ACL.')
+                else:
+                    self.module.fail_json(msg='Error: The acl_num is not digit.')
+            if self.acl_step:
+                if self.acl_step.isdigit():
+                    if int(self.acl_step) < 1 or int(self.acl_step) > 20:
+                        self.module.fail_json(msg='Error: The value of acl_step is out of [1 - 20].')
+                else:
+                    self.module.fail_json(msg='Error: The acl_step is not digit.')
+            if self.acl_description:
+                if len(self.acl_description) < 1 or len(self.acl_description) > 127:
+                    self.module.fail_json(msg='Error: The len of acl_description is out of [1 - 127].')
+            conf_str = CE_GET_ACL_HEADER
+            if self.acl_type:
+                conf_str += '<aclType></aclType>'
+            if self.acl_num or self.acl_name.isdigit():
+                conf_str += '<aclNumber></aclNumber>'
+            if self.acl_step:
+                conf_str += '<aclStep></aclStep>'
+            if self.acl_description:
+                conf_str += '<aclDescription></aclDescription>'
+            conf_str += CE_GET_ACL_TAIL
+            recv_xml = self.netconf_get_config(conf_str=conf_str)
+            if '<data/>' in recv_xml:
+                find_flag = False
+            else:
+                xml_str = recv_xml.replace('\r', '').replace('\n', '').replace('xmlns="urn:ietf:params:xml:ns:netconf:base:1.0"', '').replace('xmlns="http://www.huawei.com/netconf/vrp"', '')
+                root = ElementTree.fromstring(xml_str)
+                acl_info = root.findall('acl/aclGroups/aclGroup')
+                if acl_info:
+                    for tmp in acl_info:
+                        tmp_dict = dict()
+                        for site in tmp:
+                            if site.tag in ['aclNumOrName', 'aclType', 'aclNumber', 'aclStep', 'aclDescription']:
+                                tmp_dict[site.tag] = site.text
+                        self.cur_acl_cfg['acl_info'].append(tmp_dict)
+                if self.cur_acl_cfg['acl_info']:
+                    find_list = list()
+                    for tmp in self.cur_acl_cfg['acl_info']:
+                        cur_cfg_dict = dict()
+                        exist_cfg_dict = dict()
+                        if self.acl_name:
+                            if self.acl_name.isdigit() and tmp.get('aclNumber'):
+                                cur_cfg_dict['aclNumber'] = self.acl_name
+                                exist_cfg_dict['aclNumber'] = tmp.get('aclNumber')
+                            else:
+                                cur_cfg_dict['aclNumOrName'] = self.acl_name
+                                exist_cfg_dict['aclNumOrName'] = tmp.get('aclNumOrName')
+                        if self.acl_type:
+                            cur_cfg_dict['aclType'] = self.acl_type
+                            exist_cfg_dict['aclType'] = tmp.get('aclType')
+                        if self.acl_num:
+                            cur_cfg_dict['aclNumber'] = self.acl_num
+                            exist_cfg_dict['aclNumber'] = tmp.get('aclNumber')
+                        if self.acl_step:
+                            cur_cfg_dict['aclStep'] = self.acl_step
+                            exist_cfg_dict['aclStep'] = tmp.get('aclStep')
+                        if self.acl_description:
+                            cur_cfg_dict['aclDescription'] = self.acl_description
+                            exist_cfg_dict['aclDescription'] = tmp.get('aclDescription')
+                        if cur_cfg_dict == exist_cfg_dict:
+                            find_bool = True
+                        else:
+                            find_bool = False
+                        find_list.append(find_bool)
+                    for mem in find_list:
+                        if mem:
+                            find_flag = True
+                            break
+                        else:
+                            find_flag = False
+                else:
+                    find_flag = False
+        if self.state == 'present':
+            need_cfg = bool(not find_flag)
+        elif self.state == 'delete_acl':
+            need_cfg = bool(find_flag)
+        else:
+            need_cfg = False
+        self.cur_acl_cfg['need_cfg'] = need_cfg
+
+    def check_advance_rule_args(self):
+        """ Check advance rule invalid args """
+        need_cfg = False
+        find_flag = False
+        self.cur_advance_rule_cfg['adv_rule_info'] = []
+        if self.acl_name:
+            if self.state == 'absent':
+                if not self.rule_name:
+                    self.module.fail_json(msg='Error: Please input rule_name when state is absent.')
+            if self.rule_name:
+                if len(self.rule_name) < 1 or len(self.rule_name) > 32:
+                    self.module.fail_json(msg='Error: The len of rule_name is out of [1 - 32].')
+                if self.state != 'delete_acl' and (not self.rule_id):
+                    self.module.fail_json(msg='Error: Please input rule_id.')
+                if self.rule_id:
+                    if self.rule_id.isdigit():
+                        if int(self.rule_id) < 0 or int(self.rule_id) > 4294967294:
+                            self.module.fail_json(msg='Error: The value of rule_id is out of [0 - 4294967294].')
+                    else:
+                        self.module.fail_json(msg='Error: The rule_id is not digit.')
+                if self.rule_action and (not self.protocol):
+                    self.module.fail_json(msg='Error: The rule_action and the protocol must input at the same time.')
+                if not self.rule_action and self.protocol:
+                    self.module.fail_json(msg='Error: The rule_action and the protocol must input at the same time.')
+                if self.protocol:
+                    self.get_protocol_num()
+                if self.source_ip:
+                    if not check_ip_addr(self.source_ip):
+                        self.module.fail_json(msg='Error: The source_ip %s is invalid.' % self.source_ip)
+                    if not self.src_mask:
+                        self.module.fail_json(msg='Error: Please input src_mask.')
+                if self.src_mask:
+                    if self.src_mask.isdigit():
+                        if int(self.src_mask) < 1 or int(self.src_mask) > 32:
+                            self.module.fail_json(msg='Error: The value of src_mask is out of [1 - 32].')
+                        self.src_wild = get_wildcard_mask(self.src_mask)
+                    else:
+                        self.module.fail_json(msg='Error: The src_mask is not digit.')
+                if self.src_pool_name:
+                    if len(self.src_pool_name) < 1 or len(self.src_pool_name) > 32:
+                        self.module.fail_json(msg='Error: The len of src_pool_name is out of [1 - 32].')
+                if self.dest_ip:
+                    if not check_ip_addr(self.dest_ip):
+                        self.module.fail_json(msg='Error: The dest_ip %s is invalid.' % self.dest_ip)
+                    if not self.dest_mask:
+                        self.module.fail_json(msg='Error: Please input dest_mask.')
+                if self.dest_mask:
+                    if self.dest_mask.isdigit():
+                        if int(self.dest_mask) < 1 or int(self.dest_mask) > 32:
+                            self.module.fail_json(msg='Error: The value of dest_mask is out of [1 - 32].')
+                        self.dest_wild = get_wildcard_mask(self.dest_mask)
+                    else:
+                        self.module.fail_json(msg='Error: The dest_mask is not digit.')
+                if self.dest_pool_name:
+                    if len(self.dest_pool_name) < 1 or len(self.dest_pool_name) > 32:
+                        self.module.fail_json(msg='Error: The len of dest_pool_name is out of [1 - 32].')
+                if self.src_port_op:
+                    if self.src_port_op == 'lt':
+                        if not self.src_port_end:
+                            self.module.fail_json(msg='Error: The src_port_end must input.')
+                        if self.src_port_begin:
+                            self.module.fail_json(msg='Error: The src_port_begin should not input.')
+                    if self.src_port_op == 'eq' or self.src_port_op == 'gt':
+                        if not self.src_port_begin:
+                            self.module.fail_json(msg='Error: The src_port_begin must input.')
+                        if self.src_port_end:
+                            self.module.fail_json(msg='Error: The src_port_end should not input.')
+                    if self.src_port_op == 'range':
+                        if not self.src_port_begin or not self.src_port_end:
+                            self.module.fail_json(msg='Error: The src_port_begin and src_port_end must input.')
+                if self.src_port_begin:
+                    if self.src_port_begin.isdigit():
+                        if int(self.src_port_begin) < 0 or int(self.src_port_begin) > 65535:
+                            self.module.fail_json(msg='Error: The value of src_port_begin is out of [0 - 65535].')
+                    else:
+                        self.module.fail_json(msg='Error: The src_port_begin is not digit.')
+                if self.src_port_end:
+                    if self.src_port_end.isdigit():
+                        if int(self.src_port_end) < 0 or int(self.src_port_end) > 65535:
+                            self.module.fail_json(msg='Error: The value of src_port_end is out of [0 - 65535].')
+                    else:
+                        self.module.fail_json(msg='Error: The src_port_end is not digit.')
+                if self.src_port_pool_name:
+                    if len(self.src_port_pool_name) < 1 or len(self.src_port_pool_name) > 32:
+                        self.module.fail_json(msg='Error: The len of src_port_pool_name is out of [1 - 32].')
+                if self.dest_port_op:
+                    if self.dest_port_op == 'lt':
+                        if not self.dest_port_end:
+                            self.module.fail_json(msg='Error: The dest_port_end must input.')
+                        if self.dest_port_begin:
+                            self.module.fail_json(msg='Error: The dest_port_begin should not input.')
+                    if self.dest_port_op == 'eq' or self.dest_port_op == 'gt':
+                        if not self.dest_port_begin:
+                            self.module.fail_json(msg='Error: The dest_port_begin must input.')
+                        if self.dest_port_end:
+                            self.module.fail_json(msg='Error: The dest_port_end should not input.')
+                    if self.dest_port_op == 'range':
+                        if not self.dest_port_begin or not self.dest_port_end:
+                            self.module.fail_json(msg='Error: The dest_port_begin and dest_port_end must input.')
+                if self.dest_port_begin:
+                    if self.dest_port_begin.isdigit():
+                        if int(self.dest_port_begin) < 0 or int(self.dest_port_begin) > 65535:
+                            self.module.fail_json(msg='Error: The value of dest_port_begin is out of [0 - 65535].')
+                    else:
+                        self.module.fail_json(msg='Error: The dest_port_begin is not digit.')
+                if self.dest_port_end:
+                    if self.dest_port_end.isdigit():
+                        if int(self.dest_port_end) < 0 or int(self.dest_port_end) > 65535:
+                            self.module.fail_json(msg='Error: The value of dest_port_end is out of [0 - 65535].')
+                    else:
+                        self.module.fail_json(msg='Error: The dest_port_end is not digit.')
+                if self.dest_port_pool_name:
+                    if len(self.dest_port_pool_name) < 1 or len(self.dest_port_pool_name) > 32:
+                        self.module.fail_json(msg='Error: The len of dest_port_pool_name is out of [1 - 32].')
+                if self.precedence:
+                    if self.precedence.isdigit():
+                        if int(self.precedence) < 0 or int(self.precedence) > 7:
+                            self.module.fail_json(msg='Error: The value of precedence is out of [0 - 7].')
+                    else:
+                        self.module.fail_json(msg='Error: The precedence is not digit.')
+                if self.tos:
+                    if self.tos.isdigit():
+                        if int(self.tos) < 0 or int(self.tos) > 15:
+                            self.module.fail_json(msg='Error: The value of tos is out of [0 - 15].')
+                    else:
+                        self.module.fail_json(msg='Error: The tos is not digit.')
+                if self.dscp:
+                    if self.dscp.isdigit():
+                        if int(self.dscp) < 0 or int(self.dscp) > 63:
+                            self.module.fail_json(msg='Error: The value of dscp is out of [0 - 63].')
+                    else:
+                        self.module.fail_json(msg='Error: The dscp is not digit.')
+                if self.icmp_type:
+                    if self.icmp_type.isdigit():
+                        if int(self.icmp_type) < 0 or int(self.icmp_type) > 255:
+                            self.module.fail_json(msg='Error: The value of icmp_type is out of [0 - 255].')
+                    else:
+                        self.module.fail_json(msg='Error: The icmp_type is not digit.')
+                if self.icmp_code:
+                    if self.icmp_code.isdigit():
+                        if int(self.icmp_code) < 0 or int(self.icmp_code) > 255:
+                            self.module.fail_json(msg='Error: The value of icmp_code is out of [0 - 255].')
+                    else:
+                        self.module.fail_json(msg='Error: The icmp_code is not digit.')
+                if self.vrf_name:
+                    if len(self.vrf_name) <

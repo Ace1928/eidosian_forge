@@ -1,0 +1,593 @@
+SOURCE_PATH: archive_forge/src/archive_forge/bigip_profile_fastl4.py
+KIND: code
+
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# Copyright: (c) 2018, F5 Networks Inc.
+# GNU General Public License v3.0 (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+from __future__ import absolute_import, division, print_function
+__metaclass__ = type
+
+DOCUMENTATION = r'''
+---
+module: bigip_profile_fastl4
+short_description: Manages Fast L4 profiles
+description:
+  - Manages Fast L4 profiles. Using the FastL4 profile can increase virtual server
+    performance and throughput for supported platforms by using the embedded Packet
+    Velocity Acceleration (ePVA) chip to accelerate traffic.
+version_added: "1.0.0"
+options:
+  name:
+    description:
+      - Specifies the name of the profile.
+    type: str
+    required: True
+  parent:
+    description:
+      - Specifies the profile from which this profile inherits settings.
+      - When creating a new profile, if this parameter is not specified, the default
+        is the system-supplied C(fastL4) profile.
+    type: str
+  idle_timeout:
+    description:
+      - Specifies the length of time a connection is idle (has no traffic) before
+        the connection is eligible for deletion.
+      - When creating a new profile, if this parameter is not specified, the remote
+        device will choose a default value appropriate for the profile, based on its
+        C(parent) profile.
+      - When a number is specified, indicates the number of seconds the TCP
+        connection can remain idle before the system deletes it.
+      - When C(indefinite), specifies the system does not delete TCP connections
+        regardless of how long they remain idle.
+      - When C(0), or C(immediate), specifies the system deletes connections
+        immediately when they become idle.
+    type: str
+  client_timeout:
+    description:
+      - Specifies a timeout for Late Binding.
+      - This is the time limit for the client to provide the application data required to
+        select a back-end server, meaning the maximum time the BIG-IP system
+        waits for information about the sender and the target.
+      - This information typically arrives at the beginning of the FIX logon packet.
+      - When C(0), or C(immediate), allows for no time beyond the moment of the first packet
+        transmission.
+      - When C(indefinite), disables the limit. This allows the client unlimited time
+        to send the sender and target information.
+    type: str
+  description:
+    description:
+      - Description of the profile.
+    type: str
+  explicit_flow_migration:
+    description:
+      - Specifies whether a qualified late-binding connection requires an explicit iRule
+        command to migrate down to ePVA hardware.
+      - When C(false), a late-binding connection migrates down to ePVA immediately after
+        establishing the server-side connection.
+      - When C(true), this parameter stops automatic migration to ePVA, and requires
+        the iRule explicitly trigger ePVA processing by invoking the C(release_flow)
+        iRule command. This allows an iRule author to control when the connection uses the
+        ePVA hardware.
+    type: bool
+  ip_df_mode:
+    description:
+      - Specifies the Don't Fragment (DF) bit setting in the IP Header of the outgoing TCP packet.
+      - When C(pmtu), sets the outgoing IP Header DF bit based on IP pmtu setting.
+      - When C(preserve), sets the outgoing Packet's IP Header DF bit to be same as incoming IP
+        Header DF bit.
+      - When C(set), sets the outgoing packet's IP Header DF bit.
+      - When C(clear), clears the outgoing packet's IP Header DF bit.
+    type: str
+    choices:
+      - pmtu
+      - preserve
+      - set
+      - clear
+  ip_tos_to_client:
+    description:
+      - For IP traffic passing through the system to clients, specifies whether the system
+        modifies the IP type-of-service (ToS) setting in an IP packet header.
+      - May be a number between 0 and 255 (inclusive). When a number, specifies the IP ToS
+        setting that the system inserts in the IP packet header.
+      - When C(pass-through), specifies the IP ToS setting remains unchanged.
+      - When C(mimic), specifies the system sets the ToS level of outgoing packets to
+        the same ToS level of the most-recently received incoming packet.
+    type: str
+  ip_tos_to_server:
+    description:
+      - For IP traffic passing through the system to back-end servers, specifies whether
+        the system modifies the IP type-of-service (ToS) setting in an IP packet header.
+      - May be a number between 0 and 255 (inclusive). When a number, specifies the IP ToS
+        setting that the system inserts in the IP packet header.
+      - When C(pass-through), specifies that IP ToS setting remains unchanged.
+      - When C(mimic), specifies the system sets the ToS level of outgoing packets to
+        the same ToS level of the most-recently received incoming packet.
+    type: str
+  ip_ttl_mode:
+    description:
+      - Specifies the outgoing TCP packet's IP Header TTL mode.
+      - When C(proxy), sets the outgoing IP Header TTL value to 255/64 for IPv4/IPv6 respectively.
+      - When C(preserve), sets the outgoing IP Header TTL value to be same as the incoming
+        IP Header TTL value.
+      - When C(decrement), sets the outgoing IP Header TTL value to be one less than the
+        incoming TTL value.
+      - When C(set), sets the outgoing IP Header TTL value to a specific value(as specified
+        by C(ip_ttl_v4) or C(ip_ttl_v6).
+    type: str
+    choices:
+      - proxy
+      - preserve
+      - decrement
+      - set
+  ip_ttl_v4:
+    description:
+      - Specifies the outgoing packet's IP Header TTL value for IPv4 traffic.
+      - The maximum TTL value is 255.
+    type: int
+  ip_ttl_v6:
+    description:
+      - Specifies the outgoing packet's IP Header TTL value for IPv6 traffic.
+      - The maximum TTL value is 255.
+    type: int
+  keep_alive_interval:
+    description:
+      - Specifies the keep-alive probe interval, in seconds.
+    type: int
+  late_binding:
+    description:
+      - Enables intelligent selection of a back-end server or pool, using an
+        iRule to make the selection.
+      - "Enabling C(late_binding) on BIG-IP running TMOS 12.x branch requires software syn cookie is enabled."
+    type: bool
+  link_qos_to_client:
+    description:
+      - For IP traffic passing through the system to clients, specifies
+        whether the system modifies the link quality-of-service (QoS) setting
+        in an IP packet header.
+      - The link QoS value prioritizes the IP packet relative to other Layer
+        2 traffic.
+      - You can specify a number between 0 (lowest priority) and 7 (highest priority).
+      - When a number, specifies the link QoS setting that the system inserts
+        in the IP packet header.
+      - When C(pass-through), specifies the link QoS setting remains unchanged.
+    type: str
+  link_qos_to_server:
+    description:
+      - For IP traffic passing through the system to back-end servers, specifies
+        whether the system modifies the link quality-of-service (QoS) setting
+        in an IP packet header.
+      - The link QoS value prioritizes the IP packet relative to other Layer
+        2 traffic.
+      - You can specify a number between 0 (lowest priority) and 7 (highest priority).
+      - When a number, specifies the link QoS setting that the system inserts
+        in the IP packet header.
+      - When C(pass-through), specifies the link QoS setting remains unchanged.
+    type: str
+  loose_close:
+    description:
+      - When C(true), specifies the system closes a loosely-initiated connection
+        when the system receives the first FIN packet from either the client or the server.
+    type: bool
+  loose_initialization:
+    description:
+      - When C(true), specifies the system initializes a connection when it
+        receives any TCP packet, rather than requiring a SYN packet for connection
+        initiation.
+    type: bool
+  mss_override:
+    description:
+      - Specifies a maximum segment size (MSS) override for server-side connections.
+      - Valid range is 256 to 9162 or 0 to disable.
+    type: int
+  reassemble_fragments:
+    description:
+      - When C(true), specifies the system reassembles IP fragments.
+    type: bool
+  receive_window_size:
+    description:
+      - Specifies the amount of data the BIG-IP system can accept without acknowledging
+        the server.
+    type: int
+  reset_on_timeout:
+    description:
+      - When C(true), specifies the system sends a reset packet (RST) in addition
+        to deleting the connection, when a connection exceeds the idle timeout value.
+    type: bool
+  rtt_from_client:
+    description:
+      - When C(true), specifies the system uses TCP timestamp options to measure
+        the round-trip time to the client.
+    type: bool
+  rtt_from_server:
+    description:
+      - When C(true), specifies the system uses TCP timestamp options to measure
+        the round-trip time to the server.
+    type: bool
+  server_sack:
+    description:
+      - Specifies whether the BIG-IP system processes Selective ACK (Sack) packets
+        in cookie responses from the server.
+    type: bool
+  server_timestamp:
+    description:
+      - Specifies whether the BIG-IP system processes timestamp request packets in
+        cookie responses from the server.
+    type: bool
+  syn_cookie_mss:
+    description:
+      - Specifies a value that overrides the SYN cookie maximum segment size (MSS)
+        value in the SYN-ACK packet that is returned to the client.
+      - Valid values are 0, and values from 256 through 9162.
+      - Parameter only available on TMOS 13.0.0 and higher.
+    type: int
+  tcp_close_timeout:
+    description:
+      - Specifies the length of time a connection can remain idle before deletion.
+    type: str
+  tcp_generate_isn:
+    description:
+      - When C(true), specifies the system generates initial sequence numbers
+        for SYN packets, according to RFC 1948.
+    type: bool
+  tcp_handshake_timeout:
+    description:
+      - Specifies the acceptable duration for a TCP handshake (the maximum
+        idle time between a client synchronization (SYN) and a client acknowledgment
+        (ACK)). If the TCP handshake takes longer than the timeout, the system
+        automatically closes the connection.
+      - When a number, specifies how long the system can try to establish a TCP
+        handshake before timing out.
+      - When C(disabled), specifies the system does not apply a timeout to a
+        TCP handshake.
+      - When C(indefinite), specifies attempting a TCP handshake never times out.
+    type: str
+  tcp_strip_sack:
+    description:
+      - When C(true), specifies the system blocks a TCP selective ACK SackOK
+        option from passing to the server on an initiating SYN.
+    type: bool
+  tcp_time_wait_timeout:
+    description:
+      - Specifies the number of milliseconds a connection is in the TIME-WAIT
+        state before closing.
+      - This parameter is only available on TMOS 13.0.0 and later.
+    type: int
+  tcp_timestamp_mode:
+    description:
+      - Specifies the action the system should take on TCP timestamps.
+    type: str
+    choices:
+      - preserve
+      - rewrite
+      - strip
+  tcp_wscale_mode:
+    description:
+      - Specifies the action the system should take on TCP windows.
+    type: str
+    choices:
+      - preserve
+      - rewrite
+      - strip
+  timeout_recovery:
+    description:
+      - Specifies how to handle client-timeout errors for Late Binding.
+      - Timeout errors may be caused by a DoS attack or a lossy connection.
+      - When C(disconnect), causes the BIG-IP system to drop the connection.
+      - When C(fallback), reverts the connection to normal FastL4 load-balancing,
+        based on the client's TCP header. This causes the BIG-IP system to choose
+        a back-end server based only on the source address and port.
+    type: str
+    choices:
+      - disconnect
+      - fallback
+  hardware_syn_cookie:
+    description:
+      - Enables or disables hardware SYN cookie support when PVA10 is present on the system.
+    type: bool
+  syn_cookie_enable:
+    description:
+      - Specifies whether or not to use SYN Cookie.
+    type: bool
+    version_added: "1.11.0"
+  pva_acceleration:
+    description:
+      - Specifies the Packet Velocity ASIC acceleration policy.
+    type: str
+    choices:
+      - full
+      - dedicated
+      - partial
+      - none
+    version_added: "1.3.0"
+  partition:
+    description:
+      - Device partition to manage resources on.
+    type: str
+    default: Common
+  state:
+    description:
+      - When C(present), ensures the profile exists.
+      - When C(absent), ensures the profile is removed.
+    type: str
+    choices:
+      - present
+      - absent
+    default: present
+extends_documentation_fragment: f5networks.f5_modules.f5
+author:
+  - Tim Rupp (@caphrim007)
+  - Wojciech Wypior (@wojtek0806)
+'''
+
+EXAMPLES = r'''
+- name: Create a fastL4 profile
+  bigip_profile_fastl4:
+    name: foo
+    provider:
+      password: secret
+      server: lb.mydomain.com
+      user: admin
+  delegate_to: localhost
+'''
+
+RETURN = r'''
+client_timeout:
+  description: The new client timeout value of the resource.
+  returned: changed
+  type: str
+  sample: true
+description:
+  description: The new description.
+  returned: changed
+  type: str
+  sample: My description
+explicit_flow_migration:
+  description: The new flow migration setting.
+  returned: changed
+  type: bool
+  sample: true
+idle_timeout:
+  description: The new idle timeout setting.
+  returned: changed
+  type: str
+  sample: 123
+ip_df_mode:
+  description: The new Don't Fragment Flag (DF) setting.
+  returned: changed
+  type: str
+  sample: clear
+ip_tos_to_client:
+  description: The new IP ToS to Client setting.
+  returned: changed
+  type: str
+  sample: 100
+ip_tos_to_server:
+  description: The new IP ToS to Server setting.
+  returned: changed
+  type: str
+  sample: 100
+ip_ttl_mode:
+  description: The new Time To Live (TTL) setting.
+  returned: changed
+  type: str
+  sample: proxy
+ip_ttl_v4:
+  description: The new Time To Live (TTL) v4 setting.
+  returned: changed
+  type: int
+  sample: 200
+ip_ttl_v6:
+  description: The new Time To Live (TTL) v6 setting.
+  returned: changed
+  type: int
+  sample: 200
+keep_alive_interval:
+  description: The new TCP Keep Alive Interval setting.
+  returned: changed
+  type: int
+  sample: 100
+late_binding:
+  description: The new Late Binding setting.
+  returned: changed
+  type: bool
+  sample: true
+link_qos_to_client:
+  description: The new Link QoS to Client setting.
+  returned: changed
+  type: str
+  sample: pass-through
+link_qos_to_server:
+  description: The new Link QoS to Server setting.
+  returned: changed
+  type: str
+  sample: 123
+loose_close:
+  description: The new Loose Close setting.
+  returned: changed
+  type: bool
+  sample: false
+loose_initialization:
+  description: The new Loose Initiation setting.
+  returned: changed
+  type: bool
+  sample: false
+mss_override:
+  description: The new Maximum Segment Size Override setting.
+  returned: changed
+  type: int
+  sample: 300
+reassemble_fragments:
+  description: The new Reassemble IP Fragments setting.
+  returned: changed
+  type: bool
+  sample: true
+receive_window_size:
+  description: The new Receive Window setting.
+  returned: changed
+  type: int
+  sample: 1024
+reset_on_timeout:
+  description: The new Reset on Timeout setting.
+  returned: changed
+  type: bool
+  sample: false
+rtt_from_client:
+  description: The new RTT from Client setting.
+  returned: changed
+  type: bool
+  sample: false
+rtt_from_server:
+  description: The new RTT from Server setting.
+  returned: changed
+  type: bool
+  sample: false
+server_sack:
+  description: The new Server Sack setting.
+  returned: changed
+  type: bool
+  sample: true
+server_timestamp:
+  description: The new Server Timestamp setting.
+  returned: changed
+  type: bool
+  sample: true
+syn_cookie_mss:
+  description: The new SYN Cookie MSS setting.
+  returned: changed
+  type: int
+  sample: 1024
+tcp_close_timeout:
+  description: The new TCP Close Timeout setting.
+  returned: changed
+  type: str
+  sample: 100
+tcp_generate_isn:
+  description: The new Generate Initial Sequence Number setting.
+  returned: changed
+  type: bool
+  sample: false
+tcp_handshake_timeout:
+  description: The new TCP Handshake Timeout setting.
+  returned: changed
+  type: int
+  sample: 5
+tcp_strip_sack:
+  description: The new Strip Sack OK setting.
+  returned: changed
+  type: bool
+  sample: false
+tcp_time_wait_timeout:
+  description: The new TCP Time Wait Timeout setting.
+  returned: changed
+  type: int
+  sample: 100
+tcp_timestamp_mode:
+  description: The new TCP Timestamp Mode setting.
+  returned: changed
+  type: str
+  sample: rewrite
+tcp_wscale_mode:
+  description: The new TCP Window Scale Mode setting.
+  returned: changed
+  type: str
+  sample: strip
+timeout_recovery:
+  description: The new Timeout Recovery setting.
+  returned: changed
+  type: str
+  sample: fallback
+hardware_syn_cookie:
+  description: Enables or disables hardware SYN cookie support when PVA10 is present on the system.
+  returned: changed
+  type: bool
+  sample: false
+syn_cookie_enable:
+  description: Specifies whether or not to use SYN Cookie.
+  returned: changed
+  type: bool
+  sample: false
+pva_acceleration:
+  description: Specifies the Packet Velocity ASIC acceleration policy.
+  returned: changed
+  type: str
+  sample: full
+'''
+from datetime import datetime
+
+from ansible.module_utils.basic import (
+    AnsibleModule, env_fallback
+)
+
+from ..module_utils.bigip import F5RestClient
+from ..module_utils.common import (
+    F5ModuleError, AnsibleF5Parameters, transform_name, f5_argument_spec, flatten_boolean, fq_name
+)
+from ..module_utils.icontrol import tmos_version
+from ..module_utils.teem import send_teem
+
+
+class Parameters(AnsibleF5Parameters):
+    api_map = {
+        'clientTimeout': 'client_timeout',
+        'defaultsFrom': 'parent',
+        'explicitFlowMigration': 'explicit_flow_migration',
+        'idleTimeout': 'idle_timeout',
+        'ipDfMode': 'ip_df_mode',
+        'ipTosToClient': 'ip_tos_to_client',
+        'ipTosToServer': 'ip_tos_to_server',
+        'ipTtlMode': 'ip_ttl_mode',
+        'ipTtlV4': 'ip_ttl_v4',
+        'ipTtlV6': 'ip_ttl_v6',
+        'keepAliveInterval': 'keep_alive_interval',
+        'lateBinding': 'late_binding',
+        'linkQosToClient': 'link_qos_to_client',
+        'linkQosToServer': 'link_qos_to_server',
+        'looseClose': 'loose_close',
+        'looseInitialization': 'loose_initialization',
+        'mssOverride': 'mss_override',
+        'reassembleFragments': 'reassemble_fragments',
+        'receiveWindowSize': 'receive_window_size',
+        'resetOnTimeout': 'reset_on_timeout',
+        'rttFromClient': 'rtt_from_client',
+        'rttFromServer': 'rtt_from_server',
+        'serverSack': 'server_sack',
+        'serverTimestamp': 'server_timestamp',
+        'synCookieMss': 'syn_cookie_mss',
+        'tcpCloseTimeout': 'tcp_close_timeout',
+        'tcpGenerateIsn': 'tcp_generate_isn',
+        'tcpHandshakeTimeout': 'tcp_handshake_timeout',
+        'tcpStripSack': 'tcp_strip_sack',
+        'tcpTimeWaitTimeout': 'tcp_time_wait_timeout',
+        'tcpTimestampMode': 'tcp_timestamp_mode',
+        'tcpWscaleMode': 'tcp_wscale_mode',
+        'timeoutRecovery': 'timeout_recovery',
+        'hardwareSynCookie': 'hardware_syn_cookie',
+        'synCookieEnable': 'syn_cookie_enable',
+        'pvaAcceleration': 'pva_acceleration',
+    }
+
+    api_attributes = [
+        'clientTimeout',
+        'defaultsFrom',
+        'description',
+        'explicitFlowMigration',
+        'idleTimeout',
+        'ipDfMode',
+        'ipTosToClient',
+        'ipTosToServer',
+        'ipTtlMode',
+        'ipTtlV4',
+        'ipTtlV6',
+        'keepAliveInterval',
+        'lateBinding',
+        'linkQosToClient',
+        'linkQosToServer',
+        'looseClose',
+        'looseInitialization',
+        'mssOverride',
+        'reassembleFragments',
+        'receiveWindowSize',
+        'resetOnTimeou

@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_debugger_case_module_entry_point.py
+KIND: code
+
+def main():
+    print('TEST SUCEEDED!')

@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/FIELD_TYPE_documentation.py
+KIND: code
+
+MySQL FIELD_TYPE Constants
+
+These constants represent the various column (field) types that are
+supported by MySQL.

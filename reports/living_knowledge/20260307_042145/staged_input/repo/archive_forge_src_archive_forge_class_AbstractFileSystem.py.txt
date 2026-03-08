@@ -1,0 +1,561 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AbstractFileSystem.py
+KIND: code
+
+from __future__ import annotations
+import io
+import logging
+import os
+import threading
+import warnings
+import weakref
+from errno import ESPIPE
+from glob import has_magic
+from hashlib import sha256
+from typing import ClassVar
+from .callbacks import DEFAULT_CALLBACK
+from .config import apply_config, conf
+from .dircache import DirCache
+from .transaction import Transaction
+from .utils import (
+class AbstractFileSystem(metaclass=_Cached):
+    """
+    An abstract super-class for pythonic file-systems
+
+    Implementations are expected to be compatible with or, better, subclass
+    from here.
+    """
+    cachable = True
+    _cached = False
+    blocksize = 2 ** 22
+    sep = '/'
+    protocol: ClassVar[str | tuple[str, ...]] = 'abstract'
+    _latest = None
+    async_impl = False
+    mirror_sync_methods = False
+    root_marker = ''
+    transaction_type = Transaction
+    _extra_tokenize_attributes = ()
+
+    def __init__(self, *args, **storage_options):
+        """Create and configure file-system instance
+
+        Instances may be cachable, so if similar enough arguments are seen
+        a new instance is not required. The token attribute exists to allow
+        implementations to cache instances if they wish.
+
+        A reasonable default should be provided if there are no arguments.
+
+        Subclasses should call this method.
+
+        Parameters
+        ----------
+        use_listings_cache, listings_expiry_time, max_paths:
+            passed to ``DirCache``, if the implementation supports
+            directory listing caching. Pass use_listings_cache=False
+            to disable such caching.
+        skip_instance_cache: bool
+            If this is a cachable implementation, pass True here to force
+            creating a new instance even if a matching instance exists, and prevent
+            storing this instance.
+        asynchronous: bool
+        loop: asyncio-compatible IOLoop or None
+        """
+        if self._cached:
+            return
+        self._cached = True
+        self._intrans = False
+        self._transaction = None
+        self._invalidated_caches_in_transaction = []
+        self.dircache = DirCache(**storage_options)
+        if storage_options.pop('add_docs', None):
+            warnings.warn('add_docs is no longer supported.', FutureWarning)
+        if storage_options.pop('add_aliases', None):
+            warnings.warn('add_aliases has been removed.', FutureWarning)
+        self._fs_token_ = None
+
+    @property
+    def fsid(self):
+        """Persistent filesystem id that can be used to compare filesystems
+        across sessions.
+        """
+        raise NotImplementedError
+
+    @property
+    def _fs_token(self):
+        return self._fs_token_
+
+    def __dask_tokenize__(self):
+        return self._fs_token
+
+    def __hash__(self):
+        return int(self._fs_token, 16)
+
+    def __eq__(self, other):
+        return isinstance(other, type(self)) and self._fs_token == other._fs_token
+
+    def __reduce__(self):
+        return (make_instance, (type(self), self.storage_args, self.storage_options))
+
+    @classmethod
+    def _strip_protocol(cls, path):
+        """Turn path from fully-qualified to file-system-specific
+
+        May require FS-specific handling, e.g., for relative paths or links.
+        """
+        if isinstance(path, list):
+            return [cls._strip_protocol(p) for p in path]
+        path = stringify_path(path)
+        protos = (cls.protocol,) if isinstance(cls.protocol, str) else cls.protocol
+        for protocol in protos:
+            if path.startswith(protocol + '://'):
+                path = path[len(protocol) + 3:]
+            elif path.startswith(protocol + '::'):
+                path = path[len(protocol) + 2:]
+        path = path.rstrip('/')
+        return path or cls.root_marker
+
+    def unstrip_protocol(self, name: str) -> str:
+        """Format FS-specific path to generic, including protocol"""
+        protos = (self.protocol,) if isinstance(self.protocol, str) else self.protocol
+        for protocol in protos:
+            if name.startswith(f'{protocol}://'):
+                return name
+        return f'{protos[0]}://{name}'
+
+    @staticmethod
+    def _get_kwargs_from_urls(path):
+        """If kwargs can be encoded in the paths, extract them here
+
+        This should happen before instantiation of the class; incoming paths
+        then should be amended to strip the options in methods.
+
+        Examples may look like an sftp path "sftp://user@host:/my/path", where
+        the user and host should become kwargs and later get stripped.
+        """
+        return {}
+
+    @classmethod
+    def current(cls):
+        """Return the most recently instantiated FileSystem
+
+        If no instance has been created, then create one with defaults
+        """
+        if cls._latest in cls._cache:
+            return cls._cache[cls._latest]
+        return cls()
+
+    @property
+    def transaction(self):
+        """A context within which files are committed together upon exit
+
+        Requires the file class to implement `.commit()` and `.discard()`
+        for the normal and exception cases.
+        """
+        if self._transaction is None:
+            self._transaction = self.transaction_type(self)
+        return self._transaction
+
+    def start_transaction(self):
+        """Begin write transaction for deferring files, non-context version"""
+        self._intrans = True
+        self._transaction = self.transaction_type(self)
+        return self.transaction
+
+    def end_transaction(self):
+        """Finish write transaction, non-context version"""
+        self.transaction.complete()
+        self._transaction = None
+        for path in self._invalidated_caches_in_transaction:
+            self.invalidate_cache(path)
+        self._invalidated_caches_in_transaction.clear()
+
+    def invalidate_cache(self, path=None):
+        """
+        Discard any cached directory information
+
+        Parameters
+        ----------
+        path: string or None
+            If None, clear all listings cached else listings at or under given
+            path.
+        """
+        if self._intrans:
+            self._invalidated_caches_in_transaction.append(path)
+
+    def mkdir(self, path, create_parents=True, **kwargs):
+        """
+        Create directory entry at path
+
+        For systems that don't have true directories, may create an for
+        this instance only and not touch the real filesystem
+
+        Parameters
+        ----------
+        path: str
+            location
+        create_parents: bool
+            if True, this is equivalent to ``makedirs``
+        kwargs:
+            may be permissions, etc.
+        """
+        pass
+
+    def makedirs(self, path, exist_ok=False):
+        """Recursively make directories
+
+        Creates directory at path and any intervening required directories.
+        Raises exception if, for instance, the path already exists but is a
+        file.
+
+        Parameters
+        ----------
+        path: str
+            leaf directory name
+        exist_ok: bool (False)
+            If False, will error if the target already exists
+        """
+        pass
+
+    def rmdir(self, path):
+        """Remove a directory, if empty"""
+        pass
+
+    def ls(self, path, detail=True, **kwargs):
+        """List objects at path.
+
+        This should include subdirectories and files at that location. The
+        difference between a file and a directory must be clear when details
+        are requested.
+
+        The specific keys, or perhaps a FileInfo class, or similar, is TBD,
+        but must be consistent across implementations.
+        Must include:
+
+        - full path to the entry (without protocol)
+        - size of the entry, in bytes. If the value cannot be determined, will
+          be ``None``.
+        - type of entry, "file", "directory" or other
+
+        Additional information
+        may be present, appropriate to the file-system, e.g., generation,
+        checksum, etc.
+
+        May use refresh=True|False to allow use of self._ls_from_cache to
+        check for a saved listing and avoid calling the backend. This would be
+        common where listing may be expensive.
+
+        Parameters
+        ----------
+        path: str
+        detail: bool
+            if True, gives a list of dictionaries, where each is the same as
+            the result of ``info(path)``. If False, gives a list of paths
+            (str).
+        kwargs: may have additional backend-specific options, such as version
+            information
+
+        Returns
+        -------
+        List of strings if detail is False, or list of directory information
+        dicts if detail is True.
+        """
+        raise NotImplementedError
+
+    def _ls_from_cache(self, path):
+        """Check cache for listing
+
+        Returns listing, if found (may be empty list for a directly that exists
+        but contains nothing), None if not in cache.
+        """
+        parent = self._parent(path)
+        if path.rstrip('/') in self.dircache:
+            return self.dircache[path.rstrip('/')]
+        try:
+            files = [f for f in self.dircache[parent] if f['name'] == path or (f['name'] == path.rstrip('/') and f['type'] == 'directory')]
+            if len(files) == 0:
+                raise FileNotFoundError(path)
+            return files
+        except KeyError:
+            pass
+
+    def walk(self, path, maxdepth=None, topdown=True, on_error='omit', **kwargs):
+        """Return all files belows path
+
+        List all files, recursing into subdirectories; output is iterator-style,
+        like ``os.walk()``. For a simple list of files, ``find()`` is available.
+
+        When topdown is True, the caller can modify the dirnames list in-place (perhaps
+        using del or slice assignment), and walk() will
+        only recurse into the subdirectories whose names remain in dirnames;
+        this can be used to prune the search, impose a specific order of visiting,
+        or even to inform walk() about directories the caller creates or renames before
+        it resumes walk() again.
+        Modifying dirnames when topdown is False has no effect. (see os.walk)
+
+        Note that the "files" outputted will include anything that is not
+        a directory, such as links.
+
+        Parameters
+        ----------
+        path: str
+            Root to recurse into
+        maxdepth: int
+            Maximum recursion depth. None means limitless, but not recommended
+            on link-based file-systems.
+        topdown: bool (True)
+            Whether to walk the directory tree from the top downwards or from
+            the bottom upwards.
+        on_error: "omit", "raise", a collable
+            if omit (default), path with exception will simply be empty;
+            If raise, an underlying exception will be raised;
+            if callable, it will be called with a single OSError instance as argument
+        kwargs: passed to ``ls``
+        """
+        if maxdepth is not None and maxdepth < 1:
+            raise ValueError('maxdepth must be at least 1')
+        path = self._strip_protocol(path)
+        full_dirs = {}
+        dirs = {}
+        files = {}
+        detail = kwargs.pop('detail', False)
+        try:
+            listing = self.ls(path, detail=True, **kwargs)
+        except (FileNotFoundError, OSError) as e:
+            if on_error == 'raise':
+                raise
+            elif callable(on_error):
+                on_error(e)
+            if detail:
+                return (path, {}, {})
+            return (path, [], [])
+        for info in listing:
+            pathname = info['name'].rstrip('/')
+            name = pathname.rsplit('/', 1)[-1]
+            if info['type'] == 'directory' and pathname != path:
+                full_dirs[name] = pathname
+                dirs[name] = info
+            elif pathname == path:
+                files[''] = info
+            else:
+                files[name] = info
+        if not detail:
+            dirs = list(dirs)
+            files = list(files)
+        if topdown:
+            yield (path, dirs, files)
+        if maxdepth is not None:
+            maxdepth -= 1
+            if maxdepth < 1:
+                if not topdown:
+                    yield (path, dirs, files)
+                return
+        for d in dirs:
+            yield from self.walk(full_dirs[d], maxdepth=maxdepth, detail=detail, topdown=topdown, **kwargs)
+        if not topdown:
+            yield (path, dirs, files)
+
+    def find(self, path, maxdepth=None, withdirs=False, detail=False, **kwargs):
+        """List all files below path.
+
+        Like posix ``find`` command without conditions
+
+        Parameters
+        ----------
+        path : str
+        maxdepth: int or None
+            If not None, the maximum number of levels to descend
+        withdirs: bool
+            Whether to include directory paths in the output. This is True
+            when used by glob, but users usually only want files.
+        kwargs are passed to ``ls``.
+        """
+        path = self._strip_protocol(path)
+        out = {}
+        if withdirs and path != '' and self.isdir(path):
+            out[path] = self.info(path)
+        for _, dirs, files in self.walk(path, maxdepth, detail=True, **kwargs):
+            if withdirs:
+                files.update(dirs)
+            out.update({info['name']: info for name, info in files.items()})
+        if not out and self.isfile(path):
+            out[path] = {}
+        names = sorted(out)
+        if not detail:
+            return names
+        else:
+            return {name: out[name] for name in names}
+
+    def du(self, path, total=True, maxdepth=None, withdirs=False, **kwargs):
+        """Space used by files and optionally directories within a path
+
+        Directory size does not include the size of its contents.
+
+        Parameters
+        ----------
+        path: str
+        total: bool
+            Whether to sum all the file sizes
+        maxdepth: int or None
+            Maximum number of directory levels to descend, None for unlimited.
+        withdirs: bool
+            Whether to include directory paths in the output.
+        kwargs: passed to ``find``
+
+        Returns
+        -------
+        Dict of {path: size} if total=False, or int otherwise, where numbers
+        refer to bytes used.
+        """
+        sizes = {}
+        if withdirs and self.isdir(path):
+            info = self.info(path)
+            sizes[info['name']] = info['size']
+        for f in self.find(path, maxdepth=maxdepth, withdirs=withdirs, **kwargs):
+            info = self.info(f)
+            sizes[info['name']] = info['size']
+        if total:
+            return sum(sizes.values())
+        else:
+            return sizes
+
+    def glob(self, path, maxdepth=None, **kwargs):
+        """
+        Find files by glob-matching.
+
+        If the path ends with '/', only folders are returned.
+
+        We support ``"**"``,
+        ``"?"`` and ``"[..]"``. We do not support ^ for pattern negation.
+
+        The `maxdepth` option is applied on the first `**` found in the path.
+
+        kwargs are passed to ``ls``.
+        """
+        if maxdepth is not None and maxdepth < 1:
+            raise ValueError('maxdepth must be at least 1')
+        import re
+        seps = (os.path.sep, os.path.altsep) if os.path.altsep else (os.path.sep,)
+        ends_with_sep = path.endswith(seps)
+        path = self._strip_protocol(path)
+        append_slash_to_dirname = ends_with_sep or path.endswith(tuple((sep + '**' for sep in seps)))
+        idx_star = path.find('*') if path.find('*') >= 0 else len(path)
+        idx_qmark = path.find('?') if path.find('?') >= 0 else len(path)
+        idx_brace = path.find('[') if path.find('[') >= 0 else len(path)
+        min_idx = min(idx_star, idx_qmark, idx_brace)
+        detail = kwargs.pop('detail', False)
+        if not has_magic(path):
+            if self.exists(path, **kwargs):
+                if not detail:
+                    return [path]
+                else:
+                    return {path: self.info(path, **kwargs)}
+            elif not detail:
+                return []
+            else:
+                return {}
+        elif '/' in path[:min_idx]:
+            min_idx = path[:min_idx].rindex('/')
+            root = path[:min_idx + 1]
+            depth = path[min_idx + 1:].count('/') + 1
+        else:
+            root = ''
+            depth = path[min_idx + 1:].count('/') + 1
+        if '**' in path:
+            if maxdepth is not None:
+                idx_double_stars = path.find('**')
+                depth_double_stars = path[idx_double_stars:].count('/') + 1
+                depth = depth - depth_double_stars + maxdepth
+            else:
+                depth = None
+        allpaths = self.find(root, maxdepth=depth, withdirs=True, detail=True, **kwargs)
+        pattern = glob_translate(path + ('/' if ends_with_sep else ''))
+        pattern = re.compile(pattern)
+        out = {p: info for p, info in sorted(allpaths.items()) if pattern.match(p + '/' if append_slash_to_dirname and info['type'] == 'directory' else p)}
+        if detail:
+            return out
+        else:
+            return list(out)
+
+    def exists(self, path, **kwargs):
+        """Is there a file at the given path"""
+        try:
+            self.info(path, **kwargs)
+            return True
+        except:
+            return False
+
+    def lexists(self, path, **kwargs):
+        """If there is a file at the given path (including
+        broken links)"""
+        return self.exists(path)
+
+    def info(self, path, **kwargs):
+        """Give details of entry at path
+
+        Returns a single dictionary, with exactly the same information as ``ls``
+        would with ``detail=True``.
+
+        The default implementation should calls ls and could be overridden by a
+        shortcut. kwargs are passed on to ```ls()``.
+
+        Some file systems might not be able to measure the file's size, in
+        which case, the returned dict will include ``'size': None``.
+
+        Returns
+        -------
+        dict with keys: name (full path in the FS), size (in bytes), type (file,
+        directory, or something else) and other FS-specific keys.
+        """
+        path = self._strip_protocol(path)
+        out = self.ls(self._parent(path), detail=True, **kwargs)
+        out = [o for o in out if o['name'].rstrip('/') == path]
+        if out:
+            return out[0]
+        out = self.ls(path, detail=True, **kwargs)
+        path = path.rstrip('/')
+        out1 = [o for o in out if o['name'].rstrip('/') == path]
+        if len(out1) == 1:
+            if 'size' not in out1[0]:
+                out1[0]['size'] = None
+            return out1[0]
+        elif len(out1) > 1 or out:
+            return {'name': path, 'size': 0, 'type': 'directory'}
+        else:
+            raise FileNotFoundError(path)
+
+    def checksum(self, path):
+        """Unique value for current version of file
+
+        If the checksum is the same from one moment to another, the contents
+        are guaranteed to be the same. If the checksum changes, the contents
+        *might* have changed.
+
+        This should normally be overridden; default will probably capture
+        creation/modification timestamp (which would be good) or maybe
+        access timestamp (which would be bad)
+        """
+        return int(tokenize(self.info(path)), 16)
+
+    def size(self, path):
+        """Size in bytes of file"""
+        return self.info(path).get('size', None)
+
+    def sizes(self, paths):
+        """Size in bytes of each file in a list of paths"""
+        return [self.size(p) for p in paths]
+
+    def isdir(self, path):
+        """Is this entry directory-like?"""
+        try:
+            return self.info(path)['type'] == 'directory'
+        except OSError:
+            return False
+
+    def isfile(self, path):
+        """Is this entry file-like?"""
+        try:
+            return self.info(path)['type'] == 'file'
+        except:
+            return False
+
+    def read_text(self, path, encoding=None, errors=None, newline=None,

@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/class_AlreadyUsedError.py
+KIND: code
+
+from typing import Any, Dict
+class AlreadyUsedError(RuntimeError):
+    """An Outcome can only be unwrapped once."""
+    pass

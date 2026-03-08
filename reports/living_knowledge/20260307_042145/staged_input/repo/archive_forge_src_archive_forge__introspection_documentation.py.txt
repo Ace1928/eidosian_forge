@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_introspection_documentation.py
+KIND: code
+
+from types import CodeType as code, FunctionType as function
+
+    Preserve the name of the given function on the decorated function.

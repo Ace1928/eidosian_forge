@@ -1,0 +1,18 @@
+SOURCE_PATH: .eidos_chrome_profile/AutofillStates/2025.6.13.84507/CZ
+KIND: config
+
+CZ
+hlavní město prahaprague.
+středočeský krajcentral bohemian region)
+jihočeský krajsouth bohemian region 
+plzeňský krajplzeň region(
+karlovarský krajkarlovy vary region)
+ústecký krajústí nad labem region!
+liberecký krajliberec region2
+královéhradecký krajhradec králové region$
+pardubický krajpardubice region"
+kraj vysočinavysočina region+
+jihomoravský krajsouth moravian region!
+olomoucký krajolomouc region
+zlínský krajzlín region0
+moravskoslezský krajmoraviansilesian region

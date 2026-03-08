@@ -1,0 +1,517 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_cavefast.py
+KIND: code
+
+#!/usr/bin/env python3
+# --------------------( LICENSE                            )--------------------
+# Copyright (c) 2014-2024 Beartype authors.
+# See "LICENSE" for further details.
+
+'''
+**Beartype fast cave** (i.e., private subset of the public :mod:`beartype.cave`
+subpackage profiled to be efficiently importable at :mod:`beartype` startup and
+thus safely importable throughout the internal :mod:`beartype` codebase).
+
+The public :mod:`beartype.cave` subpackage has been profiled to *not* be
+efficiently importable at :mod:`beartype` startup and thus *not* safely
+importable throughout the internal :mod:`beartype` codebase. Why? Because
+:mod:`beartype.cave` currently imports from expensive third-party packages on
+importation (e.g., :mod:`numpy`) despite :mod:`beartype` itself *never*
+requiring those imports. Until resolved, that subpackage is considered tainted.
+'''
+
+# ....................{ TODO                               }....................
+#FIXME: Add types for all remaining useful "collections.abc" interfaces,
+#including:
+#* "Reversible".
+#* "AsyncIterable".
+#* "AsyncIterator".
+#* "AsyncGenerator".
+#
+#There certainly exist other "collections.abc" interfaces as well, but it's
+#unclear whether they have any practical real-world utility during type
+#checking. These include:
+#* "ByteString". (wut)
+#* Dictionary-specific views (e.g., "MappingView", "ItemsView").
+
+# ....................{ IMPORTS                            }....................
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# WARNING: To avoid polluting the public module namespace, external attributes
+# should be locally imported at module scope *ONLY* under alternate private
+# names (e.g., "from argparse import ArgumentParser as _ArgumentParser" rather
+# than merely "from argparse import ArgumentParser").
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+import functools as _functools
+import numbers as _numbers
+import re as _re
+import types as _types
+import typing as _typing
+from beartype.roar import BeartypeCallUnavailableTypeException
+from beartype._cave._caveabc import BoolType
+from beartype._util.py.utilpyversion import (
+    IS_PYTHON_AT_LEAST_3_12,
+    IS_PYTHON_AT_LEAST_3_10,
+    IS_PYTHON_AT_LEAST_3_9,
+)
+from collections import deque as _deque
+from collections.abc import (
+    Collection as _Collection,
+    Container as _Container,
+    Generator as _Generator,
+    Hashable as _Hashable,
+    Iterable as _Iterable,
+    Iterator as _Iterator,
+    Mapping as _Mapping,
+    MutableMapping as _MutableMapping,
+    Sequence as _Sequence,
+    MutableSequence as _MutableSequence,
+    Set as _Set,
+    Sized as _Sized,
+)
+from enum import (
+    Enum as _Enum,
+    EnumMeta as _EnumMeta,
+)
+from io import IOBase as _IOBase
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Tuple as _TupleTyping,
+)
+
+# Note that:
+#
+# * "BuiltinMethodType" is intentionally *NOT* imported, as that type is
+#   exactly synonymous with "BuiltinFunctionType", implying C-based methods are
+#   indistinguishable from C-based functions. To prevent C-based functions from
+#   being misidentified as C-based methods, all C-based functions and methods
+#   are ambiguously identified as C-based callables.
+# * "LambdaType" is intentionally *NOT* imported, as that type is exactly
+#   synonymous with "FunctionType", implying lambdas are indistinguishable from
+#   pure-Python functions. To prevent pure-Python functions from being
+#   misidentified as lambdas, all lambdas are currently misidentified as
+#   pure-Python functions.
+#
+# These are the lesser of multiple evils.
+from types import (
+    AsyncGeneratorType as _AsyncGeneratorType,
+    BuiltinFunctionType as _BuiltinFunctionType,
+    CellType as _CellType,
+    CoroutineType as _CoroutineType,
+    FrameType as _FrameType,
+    FunctionType as _FunctionType,
+    GeneratorType as _GeneratorType,
+    GetSetDescriptorType as _GetSetDescriptorType,
+    MemberDescriptorType as _MemberDescriptorType,
+    MethodType as _MethodType,
+    ModuleType as _ModuleType,
+    TracebackType as _TracebackType,
+)
+
+# ....................{ IMPORTS ~ conditional              }....................
+#FIXME: Preserve for when we inevitably require similar logic in the future.
+
+# # Attempt to import types unavailable under Python 3.5, all of which should
+# # be passed through the intermediary _get_type_or_unavailable() helper
+# # function first before being assigned to module globals below. The
+# # docstrings for such globals should contain a sentence resembling:
+# #     **This type is unavailable under Python 3.5,** where it defaults to
+# #     :class:`UnavailableType` for safety.
+# try:
+#     _Collection = type(list[str])
+# # If this is Python 3.5, define placeholder globals of the same name.
+# except ImportError:
+#     _Collection = None
+
+# ....................{ CLASSES                            }....................
+class UnavailableType(object):
+    '''
+    **Unavailable type** (i.e., type *not* available under the active Python
+    interpreter, typically due to insufficient Python version or non-installed
+    third-party dependencies).
+    '''
+
+    def __instancecheck__(self, obj) -> None:
+        raise BeartypeCallUnavailableTypeException(
+            f'{self} not passable as the second parameter to isinstance().')
+
+    def __subclasscheck__(self, cls) -> None:
+        raise BeartypeCallUnavailableTypeException(
+            f'{self} not passable as the second parameter to issubclass().')
+
+
+# This is private, as it's unclear whether anyone requires access to this yet.
+class _UnavailableTypesTuple(tuple):
+    '''
+    Type of any **tuple of unavailable types** (i.e., types *not* available
+    under the active Python interpreter, typically due to insufficient Python
+    version or non-installed third-party dependencies).
+    '''
+
+    pass
+
+# ....................{ TYPES ~ core                       }....................
+AnyType = object
+'''
+Type of all objects regardless of type.
+'''
+
+
+ClassType = type
+'''
+Type of all types.
+'''
+
+
+FileType = _IOBase
+'''
+Abstract base class of all **file-like objects** (i.e., objects implementing
+the standard ``read()``, ``write()``, and ``close()`` methods).
+'''
+
+
+ModuleType = _ModuleType
+'''
+Type of all **C- and Python-based modules** (i.e., importable files implemented
+either as C extensions or in pure Python).
+'''
+
+# ....................{ TYPES ~ core : singleton           }....................
+EllipsisType: type = type(Ellipsis)
+'''
+Type of the :data:`Ellipsis` singleton.
+'''
+
+
+NoneType: type = type(None)
+'''
+Type of the :data:`None` singleton.
+
+Curiously, although the type of the :data:`None` object is a class object whose
+``__name__`` attribute is ``NoneType``, there exists no globally accessible
+class by that name. To circumvents this obvious oversight, this global globally
+exposes this class.
+
+This class is principally useful for annotating both:
+
+* Callable parameters accepting :data:`None` as a valid value.
+* Callables returning :data:`None` as a valid value.
+
+Note that, for obscure and uninteresting reasons, the standard :mod:`types`
+module defined the same type with the same name under Python 2.x but *not* 3.x.
+Depressingly, this type must now be manually redefined everywhere.
+'''
+
+
+# Define this type as either...
+NotImplementedType: type = (
+    # If the active Python interpreter targets at least Python >= 3.10 and thus
+    # exposes this type in the standard "types" module, this type;
+    _types.NotImplementedType  # type: ignore[assignment,attr-defined]
+    if IS_PYTHON_AT_LEAST_3_10 else
+    # Else, this type manually introspected from this builtin singleton.
+    type(NotImplemented)  # type: ignore[misc]
+)
+'''
+Type of the :data:`NotImplemented` singleton.
+'''
+
+# ....................{ TYPES ~ call                       }....................
+CallableCodeObjectType: Any = type((lambda: None).__code__)
+'''
+Type of all **code objects** (i.e., C-based objects underlying all pure-Python
+callables to which those callables are compiled for efficiency).
+'''
+
+
+# Alias this type to this standard type.
+#
+# Note that this is explicitly required for "nuitka" support, which supports
+# this standard type but *NOT* the non-standard approach used to deduce this
+# type under Python 3.7 leveraged below.
+ClosureVarCellType = _CellType
+'''
+Type of all **pure-Python closure cell variables.**
+'''
+
+# ....................{ TYPES ~ call : exception           }....................
+ExceptionTracebackType = _TracebackType
+'''
+Type of all **traceback objects** (i.e., C-based objects comprising the full
+stack traces associated with raised exceptions).
+'''
+
+
+CallableFrameType = _FrameType
+'''
+Type of all **call stack frame objects** (i.e., C-based objects
+encapsulating each call to each callable on the current call stack).
+'''
+
+# ....................{ TYPES ~ call : function            }....................
+FunctionType = _FunctionType
+'''
+Type of all **pure-Python functions** (i.e., functions implemented in Python
+*not* associated with an owning class or instance of a class).
+
+Caveats
+-------
+**This type ambiguously matches many callables not commonly associated with
+standard functions,** including:
+
+* **Lambda functions.** Of course, distinguishing between conventional named
+  functions and unnamed lambda functions would usually be seen as overly
+  specific. So, this ambiguity is *not* necessarily a bad thing.
+* **Unbound instance methods** (i.e., instance methods accessed on their
+  declaring classes rather than bound instances).
+* **Static methods** (i.e., methods decorated with the builtin
+  :func:`staticmethod` decorator, regardless of whether those methods are
+  accessed on their declaring classes or associated instances).
+
+**This type matches no callables whatsoever under some non-CPython
+interpreters,** including:
+
+* PyPy, which unconditionally compiles *all* pure-Python functions into C-based
+  functions. Ergo, under PyPy, *all* functions are guaranteed to be of the type
+  :class:`FunctionOrMethodCType` regardless of whether those functions were
+  initially defined in Python or C.
+
+See Also
+--------
+:class:`.MethodBoundInstanceOrClassType`
+    Type of all pure-Python bound instance and class methods.
+'''
+
+
+FunctionOrMethodCType = _BuiltinFunctionType
+'''
+Type of all **C-based callables** (i.e., functions and methods implemented with
+low-level C rather than high-level Python, typically either in third-party C
+extensions, official stdlib C extensions, or the active Python interpreter
+itself).
+'''
+
+# ....................{ TYPES ~ call : method : bound      }....................
+MethodBoundInstanceOrClassType = _MethodType
+'''
+Type of all **pure-Python bound instance and class methods** (i.e., methods
+implemented in pure Python, bound to either instances of classes or classes
+*and* implicitly passed those instances or classes as their first parameters).
+
+Caveats
+-------
+There exists *no* corresponding :class:`MethodUnboundInstanceType` type, as
+unbound pure-Python instance methods are ambiguously implemented as functions of
+type :class:`.FunctionType` indistinguishable from conventional functions.
+Indeed, `official documentation <PyInstanceMethod_Type documentation_>`__ for
+the ``PyInstanceMethod_Type`` C type explicitly admits that:
+
+    This instance of PyTypeObject represents the Python instance method type.
+    It is not exposed to Python programs.
+
+.. _PyInstanceMethod_Type documentation:
+   https://docs.python.org/3/c-api/method.html#c.PyInstanceMethod_Type
+'''
+
+
+#FIXME: Directly alias this to "_types.MethodWrapperType" now, please.
+# Although Python >= 3.7 now exposes an explicit method wrapper type via the
+# standard "types.MethodWrapperType" object, this is of no benefit to older
+# versions of Python. Ergo, the type of an arbitrary method wrapper guaranteed
+# to *ALWAYS* exist is obtained instead.
+MethodBoundInstanceDunderCType: Any = type(''.__add__)
+'''
+Type of all **C-based bound method wrappers** (i.e., callable objects
+implemented in low-level C, associated with special methods of builtin types
+when accessed as instance rather than class attributes).
+
+See Also
+--------
+:class:`MethodUnboundInstanceDunderCType`
+    Type of all C-based unbound dunder method wrapper descriptors.
+'''
+
+# ....................{ TYPES ~ call : method : unbound    }....................
+# Although Python >= 3.7 now exposes an explicit method wrapper type via the
+# standard "types.ClassMethodDescriptorType" object, this is of no benefit to
+# older versions of Python. Ergo, the type of an arbitrary method descriptor
+# guaranteed to *ALWAYS* exist is obtained instead.
+MethodUnboundClassCType: Any = type(dict.__dict__['fromkeys'])
+'''
+Type of all **C-based unbound class method descriptors** (i.e., callable objects
+implemented in low-level C, associated with class methods of builtin types when
+accessed with the low-level :attr:`object.__dict__` dictionary rather than as
+class or instance attributes).
+
+Despite being unbound, class method descriptors remain callable (e.g., by
+explicitly passing the intended ``cls`` objects as their first parameters).
+'''
+
+
+# Although Python >= 3.7 now exposes an explicit method wrapper type via the
+# standard "types.WrapperDescriptorType" object, this is of no benefit to older
+# versions of Python. Ergo, the type of an arbitrary method descriptor
+# guaranteed to *ALWAYS* exist is obtained instead.
+MethodUnboundInstanceDunderCType: Any = type(str.__add__)
+'''
+Type of all **C-based unbound dunder method wrapper descriptors** (i.e.,
+callable objects implemented in low-level C, associated with dunder methods of
+builtin types when accessed as class rather than instance attributes).
+
+Despite being unbound, method descriptor wrappers remain callable (e.g., by
+explicitly passing the intended ``self`` objects as their first parameters).
+
+See Also
+--------
+:class:`MethodBoundInstanceDunderCType`
+    Type of all C-based unbound dunder method wrappers.
+:class:`MethodUnboundInstanceNondunderCType`
+    Type of all C-based unbound non-dunder method descriptors.
+'''
+
+
+# Although Python >= 3.7 now exposes an explicit method wrapper type via the
+# standard "types.MethodDescriptorType" object, this is of no benefit to older
+# versions of Python. Ergo, the type of an arbitrary method descriptor
+# guaranteed to *ALWAYS* exist is obtained instead.
+MethodUnboundInstanceNondunderCType: Any = type(str.upper)
+'''
+Type of all **C-based unbound non-dunder method descriptors** (i.e., callable
+objects implemented in low-level C, associated with non-dunder methods of
+builtin types when accessed as class rather than instance attributes).
+
+Despite being unbound, method descriptors remain callable (e.g., by explicitly
+passing the intended ``self`` objects as their first parameters).
+
+See Also
+--------
+:class:`MethodUnboundInstanceDunderCType`
+    Type of all C-based unbound dunder method wrapper descriptors.
+'''
+
+
+MethodUnboundPropertyNontrivialCExtensionType = _GetSetDescriptorType
+'''
+Type of all **C extension-specific unbound non-trivial property method
+descriptors** (i.e., uncallable objects implemented in low-level C extensions,
+associated with **non-trivial property methods** (i.e., wrapping underlying
+attributes that are *not* trivially convertible to C types) of C extensions when
+accessed with the low-level :attr:`object.__dict__` dictionary rather than as
+class or instance attributes).
+'''
+
+
+MethodUnboundPropertyTrivialCExtensionType = _MemberDescriptorType
+'''
+Type of all **C extension-specific unbound trivial property method descriptors**
+(i.e., uncallable objects implemented in low-level C extensions, associated with
+**trivial property methods** (i.e., wrapping underlying attributes that are
+trivially convertible to C types) of C extensions when accessed with the
+low-level :attr:`object.__dict__` dictionary rather than as class or instance
+attributes).
+'''
+
+# ....................{ TYPES ~ call : method : decorator  }....................
+MethodDecoratorClassType = classmethod
+'''
+Type of all **C-based unbound class method descriptors** (i.e., non-callable
+instances of the builtin :class:`classmethod` decorator class implemented in
+low-level C, associated with class methods implemented in pure Python, and
+accessed with the low-level :attr:`object.__dict__` dictionary rather than as
+class or instance attributes).
+
+Caveats
+-------
+Class method objects are *only* directly accessible via the low-level
+:attr:`object.__dict__` dictionary. When accessed as class or instance
+attributes, class methods reduce to instances of the standard
+:class:`MethodBoundInstanceOrClassType` type.
+
+Class method objects are *not* callable, as their implementations fail to
+define the ``__call__`` dunder method.
+'''
+
+
+MethodDecoratorPropertyType = property
+'''
+Type of all **C-based unbound property method descriptors** (i.e., non-callable
+instances of the builtin :class:`property` decorator class implemented in
+low-level C, associated with property getter and setter methods implemented in
+pure Python, and accessed as class rather than instance attributes).
+
+Caveats
+-------
+Property objects are directly accessible both as class attributes *and* via the
+low-level :attr:`object.__dict__` dictionary. Property objects are *not*
+accessible as instance attributes, for hopefully obvious reasons.
+
+Property objects are *not* callable, as their implementations fail to define
+the ``__call__`` dunder method.
+'''
+
+
+MethodDecoratorStaticType = staticmethod
+'''
+Type of all **C-based unbound static method descriptors** (i.e., non-callable
+instances of the builtin :class:`classmethod` decorator class implemented in
+low-level C, associated with static methods implemented in pure Python, and
+accessed with the low-level :attr:`object.__dict__` dictionary rather than as
+class or instance attributes).
+
+Caveats
+-------
+Static method objects are *only* directly accessible via the low-level
+:attr:`object.__dict__` dictionary. When accessed as class or instance
+attributes, static methods reduce to instances of the standard
+:class:`FunctionType` type.
+
+Static method objects are *not* callable, as their implementations fail to
+define the ``__call__`` dunder method.
+'''
+
+# ....................{ TYPES ~ call : return : async      }....................
+AsyncGeneratorCType = _AsyncGeneratorType
+'''
+C-based type returned by all **asynchronous pure-Python generators** (i.e.,
+callables implemented in pure Python containing one or more ``yield``
+statements whose declaration is preceded by the ``async`` keyword).
+
+Caveats
+-------
+**This is not the type of asynchronous generator callables** but rather the
+type implicitly created and *returned* by these callables. Since these
+callables are simply callables subject to syntactic sugar, the type of these
+callables is simply :data:`CallableTypes`.
+'''
+
+
+AsyncCoroutineCType = _CoroutineType
+'''
+C-based type returned by all **asynchronous coroutines** (i.e., callables
+implemented in pure Python *not* containing one or more ``yield`` statements
+whose declaration is preceded by the ``async`` keyword).
+
+Caveats
+-------
+**This is not the type of asynchronous coroutine callables** but rather the
+type implicitly created and *returned* by these callables. Since these
+callables are simply callables subject to syntactic sugar, the type of these
+callables is simply :data:`CallableTypes`.
+'''
+
+# ....................{ TYPES ~ call : return : generator  }....................
+GeneratorType = _Generator
+'''
+Type of all **C- and Python-based generator objects** (i.e., iterators
+implementing the :class:`collections.abc.Generator` protocol), including:
+
+* Pure-Python subclasses of the :class:`collections.abc.Generator` superclass.
+* C-based generators returned by pure-Python callables containing one or more
+  ``yield`` statements.
+* C-based generator comprehensions created by pure-Python syntax delimited by
+  ``(`` and ``)``.
+
+Caveats
+-------
+**This is not the type of generator callables** but rather the type implicitly
+create

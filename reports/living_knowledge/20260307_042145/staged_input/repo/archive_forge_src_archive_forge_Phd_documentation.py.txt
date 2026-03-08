@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/Phd_documentation.py
+KIND: code
+
+from Bio import Seq
+Initialize the class.

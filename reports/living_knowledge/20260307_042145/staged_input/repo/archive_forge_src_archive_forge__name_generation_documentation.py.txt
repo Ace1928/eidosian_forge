@@ -1,0 +1,5 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_name_generation_documentation.py
+KIND: code
+
+import random
+Generate a random name.

@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/choco_api_documentation.py
+KIND: code
+
+from .core import LpSolver_CMD, subprocess, PulpSolverError
+import os
+from .. import constants
+import warnings
+Read a Choco solution file

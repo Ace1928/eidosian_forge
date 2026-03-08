@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/bit_documentation.py
+KIND: code
+
+import copy
+from qiskit.circuit.exceptions import CircuitError
+Return the official string representing the bit.

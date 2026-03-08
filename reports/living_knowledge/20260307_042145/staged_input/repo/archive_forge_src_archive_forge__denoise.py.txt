@@ -1,0 +1,576 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_denoise.py
+KIND: code
+
+import functools
+from math import ceil
+import numbers
+
+import scipy.stats
+import numpy as np
+
+from ..util.dtype import img_as_float
+from .._shared import utils
+from .._shared.utils import _supported_float_type, warn
+from ._denoise_cy import _denoise_bilateral, _denoise_tv_bregman
+from .. import color
+from ..color.colorconv import ycbcr_from_rgb
+
+
+def _gaussian_weight(array, sigma_squared, *, dtype=float):
+    """Helping function. Define a Gaussian weighting from array and
+    sigma_square.
+
+    Parameters
+    ----------
+    array : ndarray
+        Input array.
+    sigma_squared : float
+        The squared standard deviation used in the filter.
+    dtype : data type object, optional (default : float)
+        The type and size of the data to be returned.
+
+    Returns
+    -------
+    gaussian : ndarray
+        The input array filtered by the Gaussian.
+    """
+    return np.exp(-0.5 * (array**2 / sigma_squared), dtype=dtype)
+
+
+def _compute_color_lut(bins, sigma, max_value, *, dtype=float):
+    """Helping function. Define a lookup table containing Gaussian filter
+    values using the color distance sigma.
+
+    Parameters
+    ----------
+    bins : int
+        Number of discrete values for Gaussian weights of color filtering.
+        A larger value results in improved accuracy.
+    sigma : float
+        Standard deviation for grayvalue/color distance (radiometric
+        similarity). A larger value results in averaging of pixels with larger
+        radiometric differences. Note, that the image will be converted using
+        the `img_as_float` function and thus the standard deviation is in
+        respect to the range ``[0, 1]``. If the value is ``None`` the standard
+        deviation of the ``image`` will be used.
+    max_value : float
+        Maximum value of the input image.
+    dtype : data type object, optional (default : float)
+        The type and size of the data to be returned.
+
+    Returns
+    -------
+    color_lut : ndarray
+        Lookup table for the color distance sigma.
+    """
+    values = np.linspace(0, max_value, bins, endpoint=False)
+    return _gaussian_weight(values, sigma**2, dtype=dtype)
+
+
+def _compute_spatial_lut(win_size, sigma, *, dtype=float):
+    """Helping function. Define a lookup table containing Gaussian filter
+    values using the spatial sigma.
+
+    Parameters
+    ----------
+    win_size : int
+        Window size for filtering.
+        If win_size is not specified, it is calculated as
+        ``max(5, 2 * ceil(3 * sigma_spatial) + 1)``.
+    sigma : float
+        Standard deviation for range distance. A larger value results in
+        averaging of pixels with larger spatial differences.
+    dtype : data type object
+        The type and size of the data to be returned.
+
+    Returns
+    -------
+    spatial_lut : ndarray
+        Lookup table for the spatial sigma.
+    """
+    grid_points = np.arange(-win_size // 2, win_size // 2 + 1)
+    rr, cc = np.meshgrid(grid_points, grid_points, indexing='ij')
+    distances = np.hypot(rr, cc)
+    return _gaussian_weight(distances, sigma**2, dtype=dtype).ravel()
+
+
+@utils.channel_as_last_axis()
+def denoise_bilateral(
+    image,
+    win_size=None,
+    sigma_color=None,
+    sigma_spatial=1,
+    bins=10000,
+    mode='constant',
+    cval=0,
+    *,
+    channel_axis=None,
+):
+    """Denoise image using bilateral filter.
+
+    Parameters
+    ----------
+    image : ndarray, shape (M, N[, 3])
+        Input image, 2D grayscale or RGB.
+    win_size : int
+        Window size for filtering.
+        If win_size is not specified, it is calculated as
+        ``max(5, 2 * ceil(3 * sigma_spatial) + 1)``.
+    sigma_color : float
+        Standard deviation for grayvalue/color distance (radiometric
+        similarity). A larger value results in averaging of pixels with larger
+        radiometric differences. If ``None``, the standard deviation of
+        ``image`` will be used.
+    sigma_spatial : float
+        Standard deviation for range distance. A larger value results in
+        averaging of pixels with larger spatial differences.
+    bins : int
+        Number of discrete values for Gaussian weights of color filtering.
+        A larger value results in improved accuracy.
+    mode : {'constant', 'edge', 'symmetric', 'reflect', 'wrap'}
+        How to handle values outside the image borders. See
+        `numpy.pad` for detail.
+    cval : int or float
+        Used in conjunction with mode 'constant', the value outside
+        the image boundaries.
+    channel_axis : int or None, optional
+        If ``None``, the image is assumed to be grayscale (single-channel).
+        Otherwise, this parameter indicates which axis of the array corresponds
+        to channels.
+
+        .. versionadded:: 0.19
+           ``channel_axis`` was added in 0.19.
+
+    Returns
+    -------
+    denoised : ndarray
+        Denoised image.
+
+    Notes
+    -----
+    This is an edge-preserving, denoising filter. It averages pixels based on
+    their spatial closeness and radiometric similarity [1]_.
+
+    Spatial closeness is measured by the Gaussian function of the Euclidean
+    distance between two pixels and a certain standard deviation
+    (`sigma_spatial`).
+
+    Radiometric similarity is measured by the Gaussian function of the
+    Euclidean distance between two color values and a certain standard
+    deviation (`sigma_color`).
+
+    Note that, if the image is of any `int` dtype, ``image`` will be
+    converted using the `img_as_float` function and thus the standard
+    deviation (`sigma_color`) will be in range ``[0, 1]``.
+
+    For more information on scikit-image's data type conversions and how
+    images are rescaled in these conversions,
+    see: https://scikit-image.org/docs/stable/user_guide/data_types.html.
+
+    References
+    ----------
+    .. [1] C. Tomasi and R. Manduchi. "Bilateral Filtering for Gray and Color
+           Images." IEEE International Conference on Computer Vision (1998)
+           839-846. :DOI:`10.1109/ICCV.1998.710815`
+
+    Examples
+    --------
+    >>> from skimage import data, img_as_float
+    >>> astro = img_as_float(data.astronaut())
+    >>> astro = astro[220:300, 220:320]
+    >>> rng = np.random.default_rng()
+    >>> noisy = astro + 0.6 * astro.std() * rng.random(astro.shape)
+    >>> noisy = np.clip(noisy, 0, 1)
+    >>> denoised = denoise_bilateral(noisy, sigma_color=0.05, sigma_spatial=15,
+    ...                              channel_axis=-1)
+    """
+    if channel_axis is not None:
+        if image.ndim != 3:
+            if image.ndim == 2:
+                raise ValueError(
+                    "Use ``channel_axis=None`` for 2D grayscale "
+                    "images. The last axis of the input image "
+                    "must be multiple color channels not another "
+                    "spatial dimension."
+                )
+            else:
+                raise ValueError(
+                    f'Bilateral filter is only implemented for '
+                    f'2D grayscale images (image.ndim == 2) and '
+                    f'2D multichannel (image.ndim == 3) images, '
+                    f'but the input image has {image.ndim} dimensions.'
+                )
+        elif image.shape[2] not in (3, 4):
+            if image.shape[2] > 4:
+                msg = (
+                    f'The last axis of the input image is '
+                    f'interpreted as channels. Input image with '
+                    f'shape {image.shape} has {image.shape[2]} channels '
+                    f'in last axis. ``denoise_bilateral``is implemented '
+                    f'for 2D grayscale and color images only.'
+                )
+                warn(msg)
+            else:
+                msg = (
+                    f'Input image must be grayscale, RGB, or RGBA; '
+                    f'but has shape {image.shape}.'
+                )
+                warn(msg)
+    else:
+        if image.ndim > 2:
+            raise ValueError(
+                f'Bilateral filter is not implemented for '
+                f'grayscale images of 3 or more dimensions, '
+                f'but input image has {image.shape} shape. Use '
+                f'``channel_axis=-1`` for 2D RGB images.'
+            )
+
+    if win_size is None:
+        win_size = max(5, 2 * int(ceil(3 * sigma_spatial)) + 1)
+
+    min_value = image.min()
+    max_value = image.max()
+
+    if min_value == max_value:
+        return image
+
+    # if image.max() is 0, then dist_scale can have an unverified value
+    # and color_lut[<int>(dist * dist_scale)] may cause a segmentation fault
+    # so we verify we have a positive image and that the max is not 0.0.
+
+    image = np.atleast_3d(img_as_float(image))
+    image = np.ascontiguousarray(image)
+
+    sigma_color = sigma_color or image.std()
+
+    color_lut = _compute_color_lut(bins, sigma_color, max_value, dtype=image.dtype)
+
+    range_lut = _compute_spatial_lut(win_size, sigma_spatial, dtype=image.dtype)
+
+    out = np.empty(image.shape, dtype=image.dtype)
+
+    dims = image.shape[2]
+
+    # There are a number of arrays needed in the Cython function.
+    # It's easier to allocate them outside of Cython so that all
+    # arrays are in the same type, then just copy the empty array
+    # where needed within Cython.
+    empty_dims = np.empty(dims, dtype=image.dtype)
+
+    if min_value < 0:
+        image = image - min_value
+        max_value -= min_value
+    _denoise_bilateral(
+        image,
+        max_value,
+        win_size,
+        sigma_color,
+        sigma_spatial,
+        bins,
+        mode,
+        cval,
+        color_lut,
+        range_lut,
+        empty_dims,
+        out,
+    )
+    # need to drop the added channels axis for grayscale images
+    out = np.squeeze(out)
+    if min_value < 0:
+        out += min_value
+    return out
+
+
+@utils.channel_as_last_axis()
+def denoise_tv_bregman(
+    image, weight=5.0, max_num_iter=100, eps=1e-3, isotropic=True, *, channel_axis=None
+):
+    r"""Perform total variation denoising using split-Bregman optimization.
+
+    Given :math:`f`, a noisy image (input data),
+    total variation denoising (also known as total variation regularization)
+    aims to find an image :math:`u` with less total variation than :math:`f`,
+    under the constraint that :math:`u` remain similar to :math:`f`.
+    This can be expressed by the Rudin--Osher--Fatemi (ROF) minimization
+    problem:
+
+    .. math::
+
+        \min_{u} \sum_{i=0}^{N-1} \left( \left| \nabla{u_i} \right| + \frac{\lambda}{2}(f_i - u_i)^2 \right)
+
+    where :math:`\lambda` is a positive parameter.
+    The first term of this cost function is the total variation;
+    the second term represents data fidelity. As :math:`\lambda \to 0`,
+    the total variation term dominates, forcing the solution to have smaller
+    total variation, at the expense of looking less like the input data.
+
+    This code is an implementation of the split Bregman algorithm of Goldstein
+    and Osher to solve the ROF problem ([1]_, [2]_, [3]_).
+
+    Parameters
+    ----------
+    image : ndarray
+        Input image to be denoised (converted using :func:`~.img_as_float`).
+    weight : float, optional
+        Denoising weight. It is equal to :math:`\frac{\lambda}{2}`. Therefore,
+        the smaller the `weight`, the more denoising (at
+        the expense of less similarity to `image`).
+    eps : float, optional
+        Tolerance :math:`\varepsilon > 0` for the stop criterion:
+        The algorithm stops when :math:`\|u_n - u_{n-1}\|_2 < \varepsilon`.
+    max_num_iter : int, optional
+        Maximal number of iterations used for the optimization.
+    isotropic : boolean, optional
+        Switch between isotropic and anisotropic TV denoising.
+    channel_axis : int or None, optional
+        If ``None``, the image is assumed to be grayscale (single-channel).
+        Otherwise, this parameter indicates which axis of the array corresponds
+        to channels.
+
+        .. versionadded:: 0.19
+           ``channel_axis`` was added in 0.19.
+
+    Returns
+    -------
+    u : ndarray
+        Denoised image.
+
+    Notes
+    -----
+    Ensure that `channel_axis` parameter is set appropriately for color
+    images.
+
+    The principle of total variation denoising is explained in [4]_.
+    It is about minimizing the total variation of an image,
+    which can be roughly described as
+    the integral of the norm of the image gradient. Total variation
+    denoising tends to produce cartoon-like images, that is,
+    piecewise-constant images.
+
+    See Also
+    --------
+    denoise_tv_chambolle : Perform total variation denoising in nD.
+
+    References
+    ----------
+    .. [1] Tom Goldstein and Stanley Osher, "The Split Bregman Method For L1
+           Regularized Problems",
+           https://ww3.math.ucla.edu/camreport/cam08-29.pdf
+    .. [2] Pascal Getreuer, "Rudin–Osher–Fatemi Total Variation Denoising
+           using Split Bregman" in Image Processing On Line on 2012–05–19,
+           https://www.ipol.im/pub/art/2012/g-tvd/article_lr.pdf
+    .. [3] https://web.math.ucsb.edu/~cgarcia/UGProjects/BregmanAlgorithms_JacquelineBush.pdf
+    .. [4] https://en.wikipedia.org/wiki/Total_variation_denoising
+
+    """
+    image = np.atleast_3d(img_as_float(image))
+
+    rows = image.shape[0]
+    cols = image.shape[1]
+    dims = image.shape[2]
+
+    shape_ext = (rows + 2, cols + 2, dims)
+
+    out = np.zeros(shape_ext, image.dtype)
+
+    if channel_axis is not None:
+        channel_out = np.zeros(shape_ext[:2] + (1,), dtype=out.dtype)
+        for c in range(image.shape[-1]):
+            # the algorithm below expects 3 dimensions to always be present.
+            # slicing the array in this fashion preserves the channel dimension
+            # for us
+            channel_in = np.ascontiguousarray(image[..., c : c + 1])
+
+            _denoise_tv_bregman(
+                channel_in,
+                image.dtype.type(weight),
+                max_num_iter,
+                eps,
+                isotropic,
+                channel_out,
+            )
+
+            out[..., c] = channel_out[..., 0]
+
+    else:
+        image = np.ascontiguousarray(image)
+
+        _denoise_tv_bregman(
+            image, image.dtype.type(weight), max_num_iter, eps, isotropic, out
+        )
+
+    return np.squeeze(out[1:-1, 1:-1])
+
+
+def _denoise_tv_chambolle_nd(image, weight=0.1, eps=2.0e-4, max_num_iter=200):
+    """Perform total-variation denoising on n-dimensional images.
+
+    Parameters
+    ----------
+    image : ndarray
+        n-D input data to be denoised.
+    weight : float, optional
+        Denoising weight. The greater `weight`, the more denoising (at
+        the expense of fidelity to `input`).
+    eps : float, optional
+        Relative difference of the value of the cost function that determines
+        the stop criterion. The algorithm stops when:
+
+            (E_(n-1) - E_n) < eps * E_0
+
+    max_num_iter : int, optional
+        Maximal number of iterations used for the optimization.
+
+    Returns
+    -------
+    out : ndarray
+        Denoised array of floats.
+
+    Notes
+    -----
+    Rudin, Osher and Fatemi algorithm.
+    """
+
+    ndim = image.ndim
+    p = np.zeros((image.ndim,) + image.shape, dtype=image.dtype)
+    g = np.zeros_like(p)
+    d = np.zeros_like(image)
+    i = 0
+    while i < max_num_iter:
+        if i > 0:
+            # d will be the (negative) divergence of p
+            d = -p.sum(0)
+            slices_d = [
+                slice(None),
+            ] * ndim
+            slices_p = [
+                slice(None),
+            ] * (ndim + 1)
+            for ax in range(ndim):
+                slices_d[ax] = slice(1, None)
+                slices_p[ax + 1] = slice(0, -1)
+                slices_p[0] = ax
+                d[tuple(slices_d)] += p[tuple(slices_p)]
+                slices_d[ax] = slice(None)
+                slices_p[ax + 1] = slice(None)
+            out = image + d
+        else:
+            out = image
+        E = (d**2).sum()
+
+        # g stores the gradients of out along each axis
+        # e.g. g[0] is the first order finite difference along axis 0
+        slices_g = [
+            slice(None),
+        ] * (ndim + 1)
+        for ax in range(ndim):
+            slices_g[ax + 1] = slice(0, -1)
+            slices_g[0] = ax
+            g[tuple(slices_g)] = np.diff(out, axis=ax)
+            slices_g[ax + 1] = slice(None)
+
+        norm = np.sqrt((g**2).sum(axis=0))[np.newaxis, ...]
+        E += weight * norm.sum()
+        tau = 1.0 / (2.0 * ndim)
+        norm *= tau / weight
+        norm += 1.0
+        p -= tau * g
+        p /= norm
+        E /= float(image.size)
+        if i == 0:
+            E_init = E
+            E_previous = E
+        else:
+            if np.abs(E_previous - E) < eps * E_init:
+                break
+            else:
+                E_previous = E
+        i += 1
+    return out
+
+
+def denoise_tv_chambolle(
+    image, weight=0.1, eps=2.0e-4, max_num_iter=200, *, channel_axis=None
+):
+    r"""Perform total variation denoising in nD.
+
+    Given :math:`f`, a noisy image (input data),
+    total variation denoising (also known as total variation regularization)
+    aims to find an image :math:`u` with less total variation than :math:`f`,
+    under the constraint that :math:`u` remain similar to :math:`f`.
+    This can be expressed by the Rudin--Osher--Fatemi (ROF) minimization
+    problem:
+
+    .. math::
+
+        \min_{u} \sum_{i=0}^{N-1} \left( \left| \nabla{u_i} \right| + \frac{\lambda}{2}(f_i - u_i)^2 \right)
+
+    where :math:`\lambda` is a positive parameter.
+    The first term of this cost function is the total variation;
+    the second term represents data fidelity. As :math:`\lambda \to 0`,
+    the total variation term dominates, forcing the solution to have smaller
+    total variation, at the expense of looking less like the input data.
+
+    This code is an implementation of the algorithm proposed by Chambolle
+    in [1]_ to solve the ROF problem.
+
+    Parameters
+    ----------
+    image : ndarray
+        Input image to be denoised. If its dtype is not float, it gets
+        converted with :func:`~.img_as_float`.
+    weight : float, optional
+        Denoising weight. It is equal to :math:`\frac{1}{\lambda}`. Therefore,
+        the greater the `weight`, the more denoising (at the expense of
+        fidelity to `image`).
+    eps : float, optional
+        Tolerance :math:`\varepsilon > 0` for the stop criterion (compares to
+        absolute value of relative difference of the cost function :math:`E`):
+        The algorithm stops when :math:`|E_{n-1} - E_n| < \varepsilon * E_0`.
+    max_num_iter : int, optional
+        Maximal number of iterations used for the optimization.
+    channel_axis : int or None, optional
+        If ``None``, the image is assumed to be grayscale (single-channel).
+        Otherwise, this parameter indicates which axis of the array corresponds
+        to channels.
+
+        .. versionadded:: 0.19
+           ``channel_axis`` was added in 0.19.
+
+    Returns
+    -------
+    u : ndarray
+        Denoised image.
+
+    Notes
+    -----
+    Make sure to set the `channel_axis` parameter appropriately for color
+    images.
+
+    The principle of total variation denoising is explained in [2]_.
+    It is about minimizing the total variation of an image,
+    which can be roughly described as
+    the integral of the norm of the image gradient. Total variation
+    denoising tends to produce cartoon-like images, that is,
+    piecewise-constant images.
+
+    See Also
+    --------
+    denoise_tv_bregman : Perform total variation denoising using split-Bregman
+        optimization.
+
+    References
+    ----------
+    .. [1] A. Chambolle, An algorithm for total variation minimization and
+           applications, Journal of Mathematical Imaging and Vision,
+           Springer, 2004, 20, 89-97.
+    .. [2] https://en.wikipedia.org/wiki/Total_variation_denoising
+
+    Examples
+    --------
+    2D example on astronaut image:
+
+    >>> from skimage import color, data
+    >>> img = color.rgb2gray(data.astronaut())[:50, :50]
+    >>> rng = np.random.default_rng()
+    >>> img += 0.5 * img.std() * rng.standard_normal(

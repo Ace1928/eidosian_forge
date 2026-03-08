@@ -1,3 +1,56 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:5530db7735f1611a30f2fe680938efc72b1cb841ec1b4792d6747dd7a6844402
-size 986
+[
+  {
+    "model": "",
+    "n_prompt": 128,
+    "n_gen": 0,
+    "t_prompt_ms": 0.0,
+    "t_gen_ms": 0.0,
+    "tokens_sec_prompt": 0.0,
+    "tokens_sec_gen": 0.0
+  },
+  {
+    "model": "",
+    "n_prompt": 512,
+    "n_gen": 0,
+    "t_prompt_ms": 0.0,
+    "t_gen_ms": 0.0,
+    "tokens_sec_prompt": 0.0,
+    "tokens_sec_gen": 0.0
+  },
+  {
+    "model": "",
+    "n_prompt": 1024,
+    "n_gen": 0,
+    "t_prompt_ms": 0.0,
+    "t_gen_ms": 0.0,
+    "tokens_sec_prompt": 0.0,
+    "tokens_sec_gen": 0.0
+  },
+  {
+    "model": "",
+    "n_prompt": 0,
+    "n_gen": 32,
+    "t_prompt_ms": 0.0,
+    "t_gen_ms": 0.0,
+    "tokens_sec_prompt": 0.0,
+    "tokens_sec_gen": 0.0
+  },
+  {
+    "model": "",
+    "n_prompt": 0,
+    "n_gen": 128,
+    "t_prompt_ms": 0.0,
+    "t_gen_ms": 0.0,
+    "tokens_sec_prompt": 0.0,
+    "tokens_sec_gen": 0.0
+  },
+  {
+    "model": "",
+    "n_prompt": 0,
+    "n_gen": 512,
+    "t_prompt_ms": 0.0,
+    "t_gen_ms": 0.0,
+    "tokens_sec_prompt": 0.0,
+    "tokens_sec_gen": 0.0
+  }
+]

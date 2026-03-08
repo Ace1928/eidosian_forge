@@ -1,0 +1,8 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_deprecations_documentation.py
+KIND: code
+
+import warnings
+
+                plotly.graph_objs.Histogram2dcontour is deprecated.
+        Please replace it with one of the following more specific types
+          - plotly.graph_objs.Histogram2dContour

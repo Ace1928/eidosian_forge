@@ -1,0 +1,572 @@
+SOURCE_PATH: archive_forge/src/archive_forge/backend_wx.py
+KIND: code
+
+"""
+A wxPython backend for matplotlib.
+
+Originally contributed by Jeremy O'Donoghue (jeremy@o-donoghue.com) and John
+Hunter (jdhunter@ace.bsd.uchicago.edu).
+
+Copyright (C) Jeremy O'Donoghue & John Hunter, 2003-4.
+"""
+
+import functools
+import logging
+import math
+import pathlib
+import sys
+import weakref
+
+import numpy as np
+import PIL.Image
+
+import matplotlib as mpl
+from matplotlib.backend_bases import (
+    _Backend, FigureCanvasBase, FigureManagerBase,
+    GraphicsContextBase, MouseButton, NavigationToolbar2, RendererBase,
+    TimerBase, ToolContainerBase, cursors,
+    CloseEvent, KeyEvent, LocationEvent, MouseEvent, ResizeEvent)
+
+from matplotlib import _api, cbook, backend_tools
+from matplotlib._pylab_helpers import Gcf
+from matplotlib.path import Path
+from matplotlib.transforms import Affine2D
+
+import wx
+
+_log = logging.getLogger(__name__)
+
+# the True dots per inch on the screen; should be display dependent; see
+# http://groups.google.com/d/msg/comp.lang.postscript/-/omHAc9FEuAsJ?hl=en
+# for some info about screen dpi
+PIXELS_PER_INCH = 75
+
+
+# lru_cache holds a reference to the App and prevents it from being gc'ed.
+@functools.lru_cache(1)
+def _create_wxapp():
+    wxapp = wx.App(False)
+    wxapp.SetExitOnFrameDelete(True)
+    cbook._setup_new_guiapp()
+    return wxapp
+
+
+class TimerWx(TimerBase):
+    """Subclass of `.TimerBase` using wx.Timer events."""
+
+    def __init__(self, *args, **kwargs):
+        self._timer = wx.Timer()
+        self._timer.Notify = self._on_timer
+        super().__init__(*args, **kwargs)
+
+    def _timer_start(self):
+        self._timer.Start(self._interval, self._single)
+
+    def _timer_stop(self):
+        self._timer.Stop()
+
+    def _timer_set_interval(self):
+        if self._timer.IsRunning():
+            self._timer_start()  # Restart with new interval.
+
+
+@_api.deprecated(
+    "2.0", name="wx", obj_type="backend", removal="the future",
+    alternative="wxagg",
+    addendum="See the Matplotlib usage FAQ for more info on backends.")
+class RendererWx(RendererBase):
+    """
+    The renderer handles all the drawing primitives using a graphics
+    context instance that controls the colors/styles. It acts as the
+    'renderer' instance used by many classes in the hierarchy.
+    """
+    # In wxPython, drawing is performed on a wxDC instance, which will
+    # generally be mapped to the client area of the window displaying
+    # the plot. Under wxPython, the wxDC instance has a wx.Pen which
+    # describes the colour and weight of any lines drawn, and a wxBrush
+    # which describes the fill colour of any closed polygon.
+
+    # Font styles, families and weight.
+    fontweights = {
+        100: wx.FONTWEIGHT_LIGHT,
+        200: wx.FONTWEIGHT_LIGHT,
+        300: wx.FONTWEIGHT_LIGHT,
+        400: wx.FONTWEIGHT_NORMAL,
+        500: wx.FONTWEIGHT_NORMAL,
+        600: wx.FONTWEIGHT_NORMAL,
+        700: wx.FONTWEIGHT_BOLD,
+        800: wx.FONTWEIGHT_BOLD,
+        900: wx.FONTWEIGHT_BOLD,
+        'ultralight': wx.FONTWEIGHT_LIGHT,
+        'light': wx.FONTWEIGHT_LIGHT,
+        'normal': wx.FONTWEIGHT_NORMAL,
+        'medium': wx.FONTWEIGHT_NORMAL,
+        'semibold': wx.FONTWEIGHT_NORMAL,
+        'bold': wx.FONTWEIGHT_BOLD,
+        'heavy': wx.FONTWEIGHT_BOLD,
+        'ultrabold': wx.FONTWEIGHT_BOLD,
+        'black': wx.FONTWEIGHT_BOLD,
+    }
+    fontangles = {
+        'italic': wx.FONTSTYLE_ITALIC,
+        'normal': wx.FONTSTYLE_NORMAL,
+        'oblique': wx.FONTSTYLE_SLANT,
+    }
+
+    # wxPython allows for portable font styles, choosing them appropriately for
+    # the target platform. Map some standard font names to the portable styles.
+    # QUESTION: Is it wise to agree to standard fontnames across all backends?
+    fontnames = {
+        'Sans': wx.FONTFAMILY_SWISS,
+        'Roman': wx.FONTFAMILY_ROMAN,
+        'Script': wx.FONTFAMILY_SCRIPT,
+        'Decorative': wx.FONTFAMILY_DECORATIVE,
+        'Modern': wx.FONTFAMILY_MODERN,
+        'Courier': wx.FONTFAMILY_MODERN,
+        'courier': wx.FONTFAMILY_MODERN,
+    }
+
+    def __init__(self, bitmap, dpi):
+        """Initialise a wxWindows renderer instance."""
+        super().__init__()
+        _log.debug("%s - __init__()", type(self))
+        self.width = bitmap.GetWidth()
+        self.height = bitmap.GetHeight()
+        self.bitmap = bitmap
+        self.fontd = {}
+        self.dpi = dpi
+        self.gc = None
+
+    def flipy(self):
+        # docstring inherited
+        return True
+
+    def get_text_width_height_descent(self, s, prop, ismath):
+        # docstring inherited
+
+        if ismath:
+            s = cbook.strip_math(s)
+
+        if self.gc is None:
+            gc = self.new_gc()
+        else:
+            gc = self.gc
+        gfx_ctx = gc.gfx_ctx
+        font = self.get_wx_font(s, prop)
+        gfx_ctx.SetFont(font, wx.BLACK)
+        w, h, descent, leading = gfx_ctx.GetFullTextExtent(s)
+
+        return w, h, descent
+
+    def get_canvas_width_height(self):
+        # docstring inherited
+        return self.width, self.height
+
+    def handle_clip_rectangle(self, gc):
+        new_bounds = gc.get_clip_rectangle()
+        if new_bounds is not None:
+            new_bounds = new_bounds.bounds
+        gfx_ctx = gc.gfx_ctx
+        if gfx_ctx._lastcliprect != new_bounds:
+            gfx_ctx._lastcliprect = new_bounds
+            if new_bounds is None:
+                gfx_ctx.ResetClip()
+            else:
+                gfx_ctx.Clip(new_bounds[0],
+                             self.height - new_bounds[1] - new_bounds[3],
+                             new_bounds[2], new_bounds[3])
+
+    @staticmethod
+    def convert_path(gfx_ctx, path, transform):
+        wxpath = gfx_ctx.CreatePath()
+        for points, code in path.iter_segments(transform):
+            if code == Path.MOVETO:
+                wxpath.MoveToPoint(*points)
+            elif code == Path.LINETO:
+                wxpath.AddLineToPoint(*points)
+            elif code == Path.CURVE3:
+                wxpath.AddQuadCurveToPoint(*points)
+            elif code == Path.CURVE4:
+                wxpath.AddCurveToPoint(*points)
+            elif code == Path.CLOSEPOLY:
+                wxpath.CloseSubpath()
+        return wxpath
+
+    def draw_path(self, gc, path, transform, rgbFace=None):
+        # docstring inherited
+        gc.select()
+        self.handle_clip_rectangle(gc)
+        gfx_ctx = gc.gfx_ctx
+        transform = transform + \
+            Affine2D().scale(1.0, -1.0).translate(0.0, self.height)
+        wxpath = self.convert_path(gfx_ctx, path, transform)
+        if rgbFace is not None:
+            gfx_ctx.SetBrush(wx.Brush(gc.get_wxcolour(rgbFace)))
+            gfx_ctx.DrawPath(wxpath)
+        else:
+            gfx_ctx.StrokePath(wxpath)
+        gc.unselect()
+
+    def draw_image(self, gc, x, y, im):
+        bbox = gc.get_clip_rectangle()
+        if bbox is not None:
+            l, b, w, h = bbox.bounds
+        else:
+            l = 0
+            b = 0
+            w = self.width
+            h = self.height
+        rows, cols = im.shape[:2]
+        bitmap = wx.Bitmap.FromBufferRGBA(cols, rows, im.tobytes())
+        gc.select()
+        gc.gfx_ctx.DrawBitmap(bitmap, int(l), int(self.height - b),
+                              int(w), int(-h))
+        gc.unselect()
+
+    def draw_text(self, gc, x, y, s, prop, angle, ismath=False, mtext=None):
+        # docstring inherited
+
+        if ismath:
+            s = cbook.strip_math(s)
+        _log.debug("%s - draw_text()", type(self))
+        gc.select()
+        self.handle_clip_rectangle(gc)
+        gfx_ctx = gc.gfx_ctx
+
+        font = self.get_wx_font(s, prop)
+        color = gc.get_wxcolour(gc.get_rgb())
+        gfx_ctx.SetFont(font, color)
+
+        w, h, d = self.get_text_width_height_descent(s, prop, ismath)
+        x = int(x)
+        y = int(y - h)
+
+        if angle == 0.0:
+            gfx_ctx.DrawText(s, x, y)
+        else:
+            rads = math.radians(angle)
+            xo = h * math.sin(rads)
+            yo = h * math.cos(rads)
+            gfx_ctx.DrawRotatedText(s, x - xo, y - yo, rads)
+
+        gc.unselect()
+
+    def new_gc(self):
+        # docstring inherited
+        _log.debug("%s - new_gc()", type(self))
+        self.gc = GraphicsContextWx(self.bitmap, self)
+        self.gc.select()
+        self.gc.unselect()
+        return self.gc
+
+    def get_wx_font(self, s, prop):
+        """Return a wx font.  Cache font instances for efficiency."""
+        _log.debug("%s - get_wx_font()", type(self))
+        key = hash(prop)
+        font = self.fontd.get(key)
+        if font is not None:
+            return font
+        size = self.points_to_pixels(prop.get_size_in_points())
+        # Font colour is determined by the active wx.Pen
+        # TODO: It may be wise to cache font information
+        self.fontd[key] = font = wx.Font(  # Cache the font and gc.
+            pointSize=round(size),
+            family=self.fontnames.get(prop.get_name(), wx.ROMAN),
+            style=self.fontangles[prop.get_style()],
+            weight=self.fontweights[prop.get_weight()])
+        return font
+
+    def points_to_pixels(self, points):
+        # docstring inherited
+        return points * (PIXELS_PER_INCH / 72.0 * self.dpi / 72.0)
+
+
+class GraphicsContextWx(GraphicsContextBase):
+    """
+    The graphics context provides the color, line styles, etc.
+
+    This class stores a reference to a wxMemoryDC, and a
+    wxGraphicsContext that draws to it.  Creating a wxGraphicsContext
+    seems to be fairly heavy, so these objects are cached based on the
+    bitmap object that is passed in.
+
+    The base GraphicsContext stores colors as an RGB tuple on the unit
+    interval, e.g., (0.5, 0.0, 1.0).  wxPython uses an int interval, but
+    since wxPython colour management is rather simple, I have not chosen
+    to implement a separate colour manager class.
+    """
+    _capd = {'butt': wx.CAP_BUTT,
+             'projecting': wx.CAP_PROJECTING,
+             'round': wx.CAP_ROUND}
+
+    _joind = {'bevel': wx.JOIN_BEVEL,
+              'miter': wx.JOIN_MITER,
+              'round': wx.JOIN_ROUND}
+
+    _cache = weakref.WeakKeyDictionary()
+
+    def __init__(self, bitmap, renderer):
+        super().__init__()
+        # assert self.Ok(), "wxMemoryDC not OK to use"
+        _log.debug("%s - __init__(): %s", type(self), bitmap)
+
+        dc, gfx_ctx = self._cache.get(bitmap, (None, None))
+        if dc is None:
+            dc = wx.MemoryDC(bitmap)
+            gfx_ctx = wx.GraphicsContext.Create(dc)
+            gfx_ctx._lastcliprect = None
+            self._cache[bitmap] = dc, gfx_ctx
+
+        self.bitmap = bitmap
+        self.dc = dc
+        self.gfx_ctx = gfx_ctx
+        self._pen = wx.Pen('BLACK', 1, wx.SOLID)
+        gfx_ctx.SetPen(self._pen)
+        self.renderer = renderer
+
+    def select(self):
+        """Select the current bitmap into this wxDC instance."""
+        if sys.platform == 'win32':
+            self.dc.SelectObject(self.bitmap)
+            self.IsSelected = True
+
+    def unselect(self):
+        """Select a Null bitmap into this wxDC instance."""
+        if sys.platform == 'win32':
+            self.dc.SelectObject(wx.NullBitmap)
+            self.IsSelected = False
+
+    def set_foreground(self, fg, isRGBA=None):
+        # docstring inherited
+        # Implementation note: wxPython has a separate concept of pen and
+        # brush - the brush fills any outline trace left by the pen.
+        # Here we set both to the same colour - if a figure is not to be
+        # filled, the renderer will set the brush to be transparent
+        # Same goes for text foreground...
+        _log.debug("%s - set_foreground()", type(self))
+        self.select()
+        super().set_foreground(fg, isRGBA)
+
+        self._pen.SetColour(self.get_wxcolour(self.get_rgb()))
+        self.gfx_ctx.SetPen(self._pen)
+        self.unselect()
+
+    def set_linewidth(self, w):
+        # docstring inherited
+        w = float(w)
+        _log.debug("%s - set_linewidth()", type(self))
+        self.select()
+        if 0 < w < 1:
+            w = 1
+        super().set_linewidth(w)
+        lw = int(self.renderer.points_to_pixels(self._linewidth))
+        if lw == 0:
+            lw = 1
+        self._pen.SetWidth(lw)
+        self.gfx_ctx.SetPen(self._pen)
+        self.unselect()
+
+    def set_capstyle(self, cs):
+        # docstring inherited
+        _log.debug("%s - set_capstyle()", type(self))
+        self.select()
+        super().set_capstyle(cs)
+        self._pen.SetCap(GraphicsContextWx._capd[self._capstyle])
+        self.gfx_ctx.SetPen(self._pen)
+        self.unselect()
+
+    def set_joinstyle(self, js):
+        # docstring inherited
+        _log.debug("%s - set_joinstyle()", type(self))
+        self.select()
+        super().set_joinstyle(js)
+        self._pen.SetJoin(GraphicsContextWx._joind[self._joinstyle])
+        self.gfx_ctx.SetPen(self._pen)
+        self.unselect()
+
+    def get_wxcolour(self, color):
+        """Convert an RGB(A) color to a wx.Colour."""
+        _log.debug("%s - get_wx_color()", type(self))
+        return wx.Colour(*[int(255 * x) for x in color])
+
+
+class _FigureCanvasWxBase(FigureCanvasBase, wx.Panel):
+    """
+    The FigureCanvas contains the figure and does event handling.
+
+    In the wxPython backend, it is derived from wxPanel, and (usually) lives
+    inside a frame instantiated by a FigureManagerWx. The parent window
+    probably implements a wx.Sizer to control the displayed control size - but
+    we give a hint as to our preferred minimum size.
+    """
+
+    required_interactive_framework = "wx"
+    _timer_cls = TimerWx
+    manager_class = _api.classproperty(lambda cls: FigureManagerWx)
+
+    keyvald = {
+        wx.WXK_CONTROL: 'control',
+        wx.WXK_SHIFT: 'shift',
+        wx.WXK_ALT: 'alt',
+        wx.WXK_CAPITAL: 'caps_lock',
+        wx.WXK_LEFT: 'left',
+        wx.WXK_UP: 'up',
+        wx.WXK_RIGHT: 'right',
+        wx.WXK_DOWN: 'down',
+        wx.WXK_ESCAPE: 'escape',
+        wx.WXK_F1: 'f1',
+        wx.WXK_F2: 'f2',
+        wx.WXK_F3: 'f3',
+        wx.WXK_F4: 'f4',
+        wx.WXK_F5: 'f5',
+        wx.WXK_F6: 'f6',
+        wx.WXK_F7: 'f7',
+        wx.WXK_F8: 'f8',
+        wx.WXK_F9: 'f9',
+        wx.WXK_F10: 'f10',
+        wx.WXK_F11: 'f11',
+        wx.WXK_F12: 'f12',
+        wx.WXK_SCROLL: 'scroll_lock',
+        wx.WXK_PAUSE: 'break',
+        wx.WXK_BACK: 'backspace',
+        wx.WXK_RETURN: 'enter',
+        wx.WXK_INSERT: 'insert',
+        wx.WXK_DELETE: 'delete',
+        wx.WXK_HOME: 'home',
+        wx.WXK_END: 'end',
+        wx.WXK_PAGEUP: 'pageup',
+        wx.WXK_PAGEDOWN: 'pagedown',
+        wx.WXK_NUMPAD0: '0',
+        wx.WXK_NUMPAD1: '1',
+        wx.WXK_NUMPAD2: '2',
+        wx.WXK_NUMPAD3: '3',
+        wx.WXK_NUMPAD4: '4',
+        wx.WXK_NUMPAD5: '5',
+        wx.WXK_NUMPAD6: '6',
+        wx.WXK_NUMPAD7: '7',
+        wx.WXK_NUMPAD8: '8',
+        wx.WXK_NUMPAD9: '9',
+        wx.WXK_NUMPAD_ADD: '+',
+        wx.WXK_NUMPAD_SUBTRACT: '-',
+        wx.WXK_NUMPAD_MULTIPLY: '*',
+        wx.WXK_NUMPAD_DIVIDE: '/',
+        wx.WXK_NUMPAD_DECIMAL: 'dec',
+        wx.WXK_NUMPAD_ENTER: 'enter',
+        wx.WXK_NUMPAD_UP: 'up',
+        wx.WXK_NUMPAD_RIGHT: 'right',
+        wx.WXK_NUMPAD_DOWN: 'down',
+        wx.WXK_NUMPAD_LEFT: 'left',
+        wx.WXK_NUMPAD_PAGEUP: 'pageup',
+        wx.WXK_NUMPAD_PAGEDOWN: 'pagedown',
+        wx.WXK_NUMPAD_HOME: 'home',
+        wx.WXK_NUMPAD_END: 'end',
+        wx.WXK_NUMPAD_INSERT: 'insert',
+        wx.WXK_NUMPAD_DELETE: 'delete',
+    }
+
+    def __init__(self, parent, id, figure=None):
+        """
+        Initialize a FigureWx instance.
+
+        - Initialize the FigureCanvasBase and wxPanel parents.
+        - Set event handlers for resize, paint, and keyboard and mouse
+          interaction.
+        """
+
+        FigureCanvasBase.__init__(self, figure)
+        w, h = map(math.ceil, self.figure.bbox.size)
+        # Set preferred window size hint - helps the sizer, if one is connected
+        wx.Panel.__init__(self, parent, id, size=wx.Size(w, h))
+        # Create the drawing bitmap
+        self.bitmap = wx.Bitmap(w, h)
+        _log.debug("%s - __init__() - bitmap w:%d h:%d", type(self), w, h)
+        self._isDrawn = False
+        self._rubberband_rect = None
+        self._rubberband_pen_black = wx.Pen('BLACK', 1, wx.PENSTYLE_SHORT_DASH)
+        self._rubberband_pen_white = wx.Pen('WHITE', 1, wx.PENSTYLE_SOLID)
+
+        self.Bind(wx.EVT_SIZE, self._on_size)
+        self.Bind(wx.EVT_PAINT, self._on_paint)
+        self.Bind(wx.EVT_CHAR_HOOK, self._on_key_down)
+        self.Bind(wx.EVT_KEY_UP, self._on_key_up)
+        self.Bind(wx.EVT_LEFT_DOWN, self._on_mouse_button)
+        self.Bind(wx.EVT_LEFT_DCLICK, self._on_mouse_button)
+        self.Bind(wx.EVT_LEFT_UP, self._on_mouse_button)
+        self.Bind(wx.EVT_MIDDLE_DOWN, self._on_mouse_button)
+        self.Bind(wx.EVT_MIDDLE_DCLICK, self._on_mouse_button)
+        self.Bind(wx.EVT_MIDDLE_UP, self._on_mouse_button)
+        self.Bind(wx.EVT_RIGHT_DOWN, self._on_mouse_button)
+        self.Bind(wx.EVT_RIGHT_DCLICK, self._on_mouse_button)
+        self.Bind(wx.EVT_RIGHT_UP, self._on_mouse_button)
+        self.Bind(wx.EVT_MOUSE_AUX1_DOWN, self._on_mouse_button)
+        self.Bind(wx.EVT_MOUSE_AUX1_UP, self._on_mouse_button)
+        self.Bind(wx.EVT_MOUSE_AUX2_DOWN, self._on_mouse_button)
+        self.Bind(wx.EVT_MOUSE_AUX2_UP, self._on_mouse_button)
+        self.Bind(wx.EVT_MOUSE_AUX1_DCLICK, self._on_mouse_button)
+        self.Bind(wx.EVT_MOUSE_AUX2_DCLICK, self._on_mouse_button)
+        self.Bind(wx.EVT_MOUSEWHEEL, self._on_mouse_wheel)
+        self.Bind(wx.EVT_MOTION, self._on_motion)
+        self.Bind(wx.EVT_ENTER_WINDOW, self._on_enter)
+        self.Bind(wx.EVT_LEAVE_WINDOW, self._on_leave)
+
+        self.Bind(wx.EVT_MOUSE_CAPTURE_CHANGED, self._on_capture_lost)
+        self.Bind(wx.EVT_MOUSE_CAPTURE_LOST, self._on_capture_lost)
+
+        self.SetBackgroundStyle(wx.BG_STYLE_PAINT)  # Reduce flicker.
+        self.SetBackgroundColour(wx.WHITE)
+
+    def Copy_to_Clipboard(self, event=None):
+        """Copy bitmap of canvas to system clipboard."""
+        bmp_obj = wx.BitmapDataObject()
+        bmp_obj.SetBitmap(self.bitmap)
+
+        if not wx.TheClipboard.IsOpened():
+            open_success = wx.TheClipboard.Open()
+            if open_success:
+                wx.TheClipboard.SetData(bmp_obj)
+                wx.TheClipboard.Flush()
+                wx.TheClipboard.Close()
+
+    def draw_idle(self):
+        # docstring inherited
+        _log.debug("%s - draw_idle()", type(self))
+        self._isDrawn = False  # Force redraw
+        # Triggering a paint event is all that is needed to defer drawing
+        # until later. The platform will send the event when it thinks it is
+        # a good time (usually as soon as there are no other events pending).
+        self.Refresh(eraseBackground=False)
+
+    def flush_events(self):
+        # docstring inherited
+        wx.Yield()
+
+    def start_event_loop(self, timeout=0):
+        # docstring inherited
+        if hasattr(self, '_event_loop'):
+            raise RuntimeError("Event loop already running")
+        timer = wx.Timer(self, id=wx.ID_ANY)
+        if timeout > 0:
+            timer.Start(int(timeout * 1000), oneShot=True)
+            self.Bind(wx.EVT_TIMER, self.stop_event_loop, id=timer.GetId())
+        # Event loop handler for start/stop event loop
+        self._event_loop = wx.GUIEventLoop()
+        self._event_loop.Run()
+        timer.Stop()
+
+    def stop_event_loop(self, event=None):
+        # docstring inherited
+        if hasattr(self, '_event_loop'):
+            if self._event_loop.IsRunning():
+                self._event_loop.Exit()
+            del self._event_loop
+
+    def _get_imagesave_wildcards(self):
+        """Return the wildcard string for the filesave dialog."""
+        default_filetype = self.get_default_filetype()
+        filetypes = self.get_supported_filetypes_grouped()
+        sorted_filetypes = sorted(filetypes.items())
+        wildcards = []
+        extensions = []
+        filter_index = 0
+        for i, (name, exts) in enumerate(sorted_filetypes):
+            ext_list = ';'.join(['*.%

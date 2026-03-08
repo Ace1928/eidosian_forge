@@ -1,0 +1,508 @@
+SOURCE_PATH: archive_forge/src/archive_forge/SeqRecord.py
+KIND: code
+
+# Copyright 2000-2002 Andrew Dalke.  All rights reserved.
+# Copyright 2002-2004 Brad Chapman.  All rights reserved.
+# Copyright 2006-2023 by Peter Cock.  All rights reserved.
+# Copyright 2020 by Michael R. Crusoe
+#
+# This file is part of the Biopython distribution and governed by your
+# choice of the "Biopython License Agreement" or the "BSD 3-Clause License".
+# Please see the LICENSE file that should have been included as part of this
+# package.
+"""Represent a Sequence Record, a sequence with annotation."""
+# NEEDS TO BE SYNCH WITH THE REST OF BIOPYTHON AND BIOPERL
+# In particular, the SeqRecord and BioSQL.BioSeq.DBSeqRecord classes
+# need to be in sync (this is the BioSQL "Database SeqRecord").
+from io import StringIO
+import numbers
+
+from typing import (
+    cast,
+    overload,
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    NoReturn,
+    Optional,
+    Sequence,
+    Union,
+    TYPE_CHECKING,
+)
+
+from Bio import BiopythonDeprecationWarning, StreamModeError
+from Bio.Seq import Seq, MutableSeq, UndefinedSequenceError
+import warnings
+
+if TYPE_CHECKING:
+    from Bio.SeqFeature import SeqFeature
+
+_NO_SEQRECORD_COMPARISON = "SeqRecord comparison is deliberately not implemented. Explicitly compare the attributes of interest."
+
+
+class _RestrictedDict(Dict[str, Sequence[Any]]):
+    """Dict which only allows sequences of given length as values (PRIVATE).
+
+    This simple subclass of the Python dictionary is used in the SeqRecord
+    object for holding per-letter-annotations.  This class is intended to
+    prevent simple errors by only allowing python sequences (e.g. lists,
+    strings and tuples) to be stored, and only if their length matches that
+    expected (the length of the SeqRecord's seq object).  It cannot however
+    prevent the entries being edited in situ (for example appending entries
+    to a list).
+
+    >>> x = _RestrictedDict(5)
+    >>> x["test"] = "hello"
+    >>> x
+    {'test': 'hello'}
+
+    Adding entries which don't have the expected length are blocked:
+
+    >>> x["test"] = "hello world"
+    Traceback (most recent call last):
+    ...
+    TypeError: Any per-letter annotation should be a Python sequence (list, tuple or string) of the same length as the biological sequence, here 5.
+
+    The expected length is stored as a private attribute,
+
+    >>> x._length
+    5
+
+    In order that the SeqRecord (and other objects using this class) can be
+    pickled, for example for use in the multiprocessing library, we need to
+    be able to pickle the restricted dictionary objects.
+
+    Using the default protocol, which is 3 on Python 3,
+
+    >>> import pickle
+    >>> y = pickle.loads(pickle.dumps(x))
+    >>> y
+    {'test': 'hello'}
+    >>> y._length
+    5
+
+    Using the highest protocol, which is 4 on Python 3,
+
+    >>> import pickle
+    >>> z = pickle.loads(pickle.dumps(x, pickle.HIGHEST_PROTOCOL))
+    >>> z
+    {'test': 'hello'}
+    >>> z._length
+    5
+    """
+
+    def __init__(self, length: int) -> None:
+        """Create an EMPTY restricted dictionary."""
+        dict.__init__(self)
+        self._length = int(length)
+
+    def __setitem__(self, key: str, value: Sequence[Any]) -> None:
+        # The check hasattr(self, "_length") is to cope with pickle protocol 2
+        # I couldn't seem to avoid this with __getstate__ and __setstate__
+        if (
+            not hasattr(value, "__len__")
+            or not hasattr(value, "__getitem__")
+            or (hasattr(self, "_length") and len(value) != self._length)
+        ):
+            raise TypeError(
+                "Any per-letter annotation should be a Python sequence "
+                "(list, tuple or string) of the same length as the "
+                f"biological sequence, here {self._length}."
+            )
+        dict.__setitem__(self, key, value)
+
+    def update(self, new_dict):
+        # Force this to go via our strict __setitem__ method
+        for key, value in new_dict.items():
+            self[key] = value
+
+
+class SeqRecord:
+    """A SeqRecord object holds a sequence and information about it.
+
+    Main attributes:
+     - id          - Identifier such as a locus tag (string)
+     - seq         - The sequence itself (Seq object or similar)
+
+    Additional attributes:
+     - name        - Sequence name, e.g. gene name (string)
+     - description - Additional text (string)
+     - dbxrefs     - List of database cross references (list of strings)
+     - features    - Any (sub)features defined (list of SeqFeature objects)
+     - annotations - Further information about the whole sequence (dictionary).
+       Most entries are strings, or lists of strings.
+     - letter_annotations - Per letter/symbol annotation (restricted
+       dictionary). This holds Python sequences (lists, strings
+       or tuples) whose length matches that of the sequence.
+       A typical use would be to hold a list of integers
+       representing sequencing quality scores, or a string
+       representing the secondary structure.
+
+    You will typically use Bio.SeqIO to read in sequences from files as
+    SeqRecord objects.  However, you may want to create your own SeqRecord
+    objects directly (see the __init__ method for further details):
+
+    >>> from Bio.Seq import Seq
+    >>> from Bio.SeqRecord import SeqRecord
+    >>> record = SeqRecord(Seq("MKQHKAMIVALIVICITAVVAALVTRKDLCEVHIRTGQTEVAVF"),
+    ...                    id="YP_025292.1", name="HokC",
+    ...                    description="toxic membrane protein")
+    >>> print(record)
+    ID: YP_025292.1
+    Name: HokC
+    Description: toxic membrane protein
+    Number of features: 0
+    Seq('MKQHKAMIVALIVICITAVVAALVTRKDLCEVHIRTGQTEVAVF')
+
+    If you want to save SeqRecord objects to a sequence file, use Bio.SeqIO
+    for this.  For the special case where you want the SeqRecord turned into
+    a string in a particular file format there is a format method which uses
+    Bio.SeqIO internally:
+
+    >>> print(record.format("fasta"))
+    >YP_025292.1 toxic membrane protein
+    MKQHKAMIVALIVICITAVVAALVTRKDLCEVHIRTGQTEVAVF
+    <BLANKLINE>
+
+    You can also do things like slicing a SeqRecord, checking its length, etc
+
+    >>> len(record)
+    44
+    >>> edited = record[:10] + record[11:]
+    >>> print(edited.seq)
+    MKQHKAMIVAIVICITAVVAALVTRKDLCEVHIRTGQTEVAVF
+    >>> print(record.seq)
+    MKQHKAMIVALIVICITAVVAALVTRKDLCEVHIRTGQTEVAVF
+
+    """
+
+    _AnnotationsDictValue = Union[str, int]
+    _AnnotationsDict = Dict[str, _AnnotationsDictValue]
+
+    annotations: _AnnotationsDict
+    dbxrefs: List[str]
+
+    def __init__(
+        self,
+        seq: Optional[Union["Seq", "MutableSeq"]],
+        id: Optional[str] = "<unknown id>",
+        name: str = "<unknown name>",
+        description: str = "<unknown description>",
+        dbxrefs: Optional[List[str]] = None,
+        features: Optional[List["SeqFeature"]] = None,
+        annotations: Optional[_AnnotationsDict] = None,
+        letter_annotations: Optional[Dict[str, Sequence[Any]]] = None,
+    ) -> None:
+        """Create a SeqRecord.
+
+        Arguments:
+         - seq         - Sequence, required (Seq or MutableSeq)
+         - id          - Sequence identifier, recommended (string)
+         - name        - Sequence name, optional (string)
+         - description - Sequence description, optional (string)
+         - dbxrefs     - Database cross references, optional (list of strings)
+         - features    - Any (sub)features, optional (list of SeqFeature objects)
+         - annotations - Dictionary of annotations for the whole sequence
+         - letter_annotations - Dictionary of per-letter-annotations, values
+           should be strings, list or tuples of the same length as the full
+           sequence.
+
+        You will typically use Bio.SeqIO to read in sequences from files as
+        SeqRecord objects.  However, you may want to create your own SeqRecord
+        objects directly.
+
+        Note that while an id is optional, we strongly recommend you supply a
+        unique id string for each record.  This is especially important
+        if you wish to write your sequences to a file.
+
+        You can create a 'blank' SeqRecord object, and then populate the
+        attributes later.
+        """
+        if id is not None and not isinstance(id, str):
+            # Lots of existing code uses id=None... this may be a bad idea.
+            raise TypeError("id argument should be a string")
+        if not isinstance(name, str):
+            raise TypeError("name argument should be a string")
+        if not isinstance(description, str):
+            raise TypeError("description argument should be a string")
+
+        if seq is not None and not isinstance(seq, (Seq, MutableSeq)):
+            warnings.warn(
+                "Using a string as the sequence is deprecated and will raise a"
+                " TypeError in future. It has been converted to a Seq object.",
+                BiopythonDeprecationWarning,
+            )
+            seq = Seq(seq)
+
+        self._seq = seq
+        self.id = id
+        self.name = name
+        self.description = description
+
+        # database cross references (for the whole sequence)
+        if dbxrefs is None:
+            dbxrefs = []
+        elif not isinstance(dbxrefs, list):
+            raise TypeError("dbxrefs argument should be a list (of strings)")
+        self.dbxrefs = dbxrefs
+
+        # annotations about the whole sequence
+        if annotations is None:
+            annotations = {}
+        elif not isinstance(annotations, dict):
+            raise TypeError("annotations argument must be a dict or None")
+        self.annotations = annotations
+
+        if letter_annotations is None:
+            # annotations about each letter in the sequence
+            if seq is None:
+                # Should we allow this and use a normal unrestricted dict?
+                self._per_letter_annotations: _RestrictedDict = _RestrictedDict(
+                    length=0
+                )
+            else:
+                try:
+                    self._per_letter_annotations = _RestrictedDict(length=len(seq))
+                except TypeError:
+                    raise TypeError(
+                        "seq argument should be a Seq object or similar"
+                    ) from None
+        else:
+            # This will be handled via the property set function, which will
+            # turn this into a _RestrictedDict and thus ensure all the values
+            # in the dict are the right length
+            self.letter_annotations = letter_annotations
+
+        # annotations about parts of the sequence
+        if features is None:
+            features = []
+        elif not isinstance(features, list):
+            raise TypeError(
+                "features argument should be a list (of SeqFeature objects)"
+            )
+        self.features = features
+
+    # TODO - Just make this a read only property?
+    def _set_per_letter_annotations(self, value: Mapping[str, str]) -> None:
+        if not isinstance(value, dict):
+            raise TypeError(
+                "The per-letter-annotations should be a (restricted) dictionary."
+            )
+        # Turn this into a restricted-dictionary (and check the entries)
+        try:
+            self._per_letter_annotations = _RestrictedDict(length=len(self.seq))
+        except AttributeError:
+            # e.g. seq is None
+            self._per_letter_annotations = _RestrictedDict(length=0)
+        self._per_letter_annotations.update(value)
+
+    letter_annotations = property(
+        fget=lambda self: self._per_letter_annotations,
+        fset=_set_per_letter_annotations,
+        doc="""Dictionary of per-letter-annotation for the sequence.
+
+        For example, this can hold quality scores used in FASTQ or QUAL files.
+        Consider this example using Bio.SeqIO to read in an example Solexa
+        variant FASTQ file as a SeqRecord:
+
+        >>> from Bio import SeqIO
+        >>> record = SeqIO.read("Quality/solexa_faked.fastq", "fastq-solexa")
+        >>> print("%s %s" % (record.id, record.seq))
+        slxa_0001_1_0001_01 ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTNNNNNN
+        >>> print(list(record.letter_annotations))
+        ['solexa_quality']
+        >>> print(record.letter_annotations["solexa_quality"])
+        [40, 39, 38, 37, 36, 35, 34, 33, 32, 31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, -1, -2, -3, -4, -5]
+
+        The letter_annotations get sliced automatically if you slice the
+        parent SeqRecord, for example taking the last ten bases:
+
+        >>> sub_record = record[-10:]
+        >>> print("%s %s" % (sub_record.id, sub_record.seq))
+        slxa_0001_1_0001_01 ACGTNNNNNN
+        >>> print(sub_record.letter_annotations["solexa_quality"])
+        [4, 3, 2, 1, 0, -1, -2, -3, -4, -5]
+
+        Any python sequence (i.e. list, tuple or string) can be recorded in
+        the SeqRecord's letter_annotations dictionary as long as the length
+        matches that of the SeqRecord's sequence.  e.g.
+
+        >>> len(sub_record.letter_annotations)
+        1
+        >>> sub_record.letter_annotations["dummy"] = "abcdefghij"
+        >>> len(sub_record.letter_annotations)
+        2
+
+        You can delete entries from the letter_annotations dictionary as usual:
+
+        >>> del sub_record.letter_annotations["solexa_quality"]
+        >>> sub_record.letter_annotations
+        {'dummy': 'abcdefghij'}
+
+        You can completely clear the dictionary easily as follows:
+
+        >>> sub_record.letter_annotations = {}
+        >>> sub_record.letter_annotations
+        {}
+
+        Note that if replacing the record's sequence with a sequence of a
+        different length you must first clear the letter_annotations dict.
+        """,
+    )
+
+    def _set_seq(self, value: Union["Seq", "MutableSeq"]) -> None:
+        # Adding this here for users who are not type-checking their code.
+        if not isinstance(value, (Seq, MutableSeq)):
+            warnings.warn(
+                "Using a string as the sequence is deprecated and will raise a"
+                " TypeError in future. It has been converted to a Seq object.",
+                BiopythonDeprecationWarning,
+            )
+            value = Seq(value)
+
+        # TODO - Add a deprecation warning that the seq should be write only?
+        if self._per_letter_annotations:
+            if len(self) != len(value):
+                # TODO - Make this a warning? Silently empty the dictionary?
+                raise ValueError("You must empty the letter annotations first!")
+            else:
+                # Leave the existing per letter annotations unchanged:
+                self._seq = value
+        else:
+            self._seq = value
+            # Reset the (empty) letter annotations dict with new length:
+            try:
+                self._per_letter_annotations = _RestrictedDict(length=len(self.seq))
+            except AttributeError:
+                # e.g. seq is None
+                self._per_letter_annotations = _RestrictedDict(length=0)
+
+    seq = property(
+        fget=lambda self: self._seq,
+        fset=_set_seq,
+        doc="The sequence itself, as a Seq or MutableSeq object.",
+    )
+
+    @overload
+    def __getitem__(self, index: int) -> str:
+        ...
+
+    @overload
+    def __getitem__(self, index: slice) -> "SeqRecord":
+        ...
+
+    def __getitem__(self, index):
+        """Return a sub-sequence or an individual letter.
+
+        Slicing, e.g. my_record[5:10], returns a new SeqRecord for
+        that sub-sequence with some annotation preserved as follows:
+
+        * The name, id and description are kept as-is.
+        * Any per-letter-annotations are sliced to match the requested
+          sub-sequence.
+        * Unless a stride is used, all those features which fall fully
+          within the subsequence are included (with their locations
+          adjusted accordingly). If you want to preserve any truncated
+          features (e.g. GenBank/EMBL source features), you must
+          explicitly add them to the new SeqRecord yourself.
+        * With the exception of any molecule type, the annotations
+          dictionary and the dbxrefs list are not used for the new
+          SeqRecord, as in general they may not apply to the
+          subsequence. If you want to preserve them, you must explicitly
+          copy them to the new SeqRecord yourself.
+
+        Using an integer index, e.g. my_record[5] is shorthand for
+        extracting that letter from the sequence, my_record.seq[5].
+
+        For example, consider this short protein and its secondary
+        structure as encoded by the PDB (e.g. H for alpha helices),
+        plus a simple feature for its histidine self phosphorylation
+        site:
+
+        >>> from Bio.Seq import Seq
+        >>> from Bio.SeqRecord import SeqRecord
+        >>> from Bio.SeqFeature import SeqFeature, SimpleLocation
+        >>> rec = SeqRecord(Seq("MAAGVKQLADDRTLLMAGVSHDLRTPLTRIRLAT"
+        ...                     "EMMSEQDGYLAESINKDIEECNAIIEQFIDYLR"),
+        ...                 id="1JOY", name="EnvZ",
+        ...                 description="Homodimeric domain of EnvZ from E. coli")
+        >>> rec.letter_annotations["secondary_structure"] = "  S  SSSSSSHHHHHTTTHHHHHHHHHHHHHHHHHHHHHHTHHHHHHHHHHHHHHHHHHHHHTT  "
+        >>> rec.features.append(SeqFeature(SimpleLocation(20, 21),
+        ...                     type = "Site"))
+
+        Now let's have a quick look at the full record,
+
+        >>> print(rec)
+        ID: 1JOY
+        Name: EnvZ
+        Description: Homodimeric domain of EnvZ from E. coli
+        Number of features: 1
+        Per letter annotation for: secondary_structure
+        Seq('MAAGVKQLADDRTLLMAGVSHDLRTPLTRIRLATEMMSEQDGYLAESINKDIEE...YLR')
+        >>> rec.letter_annotations["secondary_structure"]
+        '  S  SSSSSSHHHHHTTTHHHHHHHHHHHHHHHHHHHHHHTHHHHHHHHHHHHHHHHHHHHHTT  '
+        >>> print(rec.features[0].location)
+        [20:21]
+
+        Now let's take a sub sequence, here chosen as the first (fractured)
+        alpha helix which includes the histidine phosphorylation site:
+
+        >>> sub = rec[11:41]
+        >>> print(sub)
+        ID: 1JOY
+        Name: EnvZ
+        Description: Homodimeric domain of EnvZ from E. coli
+        Number of features: 1
+        Per letter annotation for: secondary_structure
+        Seq('RTLLMAGVSHDLRTPLTRIRLATEMMSEQD')
+        >>> sub.letter_annotations["secondary_structure"]
+        'HHHHHTTTHHHHHHHHHHHHHHHHHHHHHH'
+        >>> print(sub.features[0].location)
+        [9:10]
+
+        You can also of course omit the start or end values, for
+        example to get the first ten letters only:
+
+        >>> print(rec[:10])
+        ID: 1JOY
+        Name: EnvZ
+        Description: Homodimeric domain of EnvZ from E. coli
+        Number of features: 0
+        Per letter annotation for: secondary_structure
+        Seq('MAAGVKQLAD')
+
+        Or for the last ten letters:
+
+        >>> print(rec[-10:])
+        ID: 1JOY
+        Name: EnvZ
+        Description: Homodimeric domain of EnvZ from E. coli
+        Number of features: 0
+        Per letter annotation for: secondary_structure
+        Seq('IIEQFIDYLR')
+
+        If you omit both, then you get a copy of the original record (although
+        lacking the annotations and dbxrefs):
+
+        >>> print(rec[:])
+        ID: 1JOY
+        Name: EnvZ
+        Description: Homodimeric domain of EnvZ from E. coli
+        Number of features: 1
+        Per letter annotation for: secondary_structure
+        Seq('MAAGVKQLADDRTLLMAGVSHDLRTPLTRIRLATEMMSEQDGYLAESINKDIEE...YLR')
+
+        Finally, indexing with a simple integer is shorthand for pulling out
+        that letter from the sequence directly:
+
+        >>> rec[5]
+        'K'
+        >>> rec.seq[5]
+        'K'
+        """
+        if isinstance(index, numbers.Integral):
+            # NOTE - The sequence level annotation like the id, name, etc
+            # do not really apply to a single character.  However, should
+            # we try and expose any per-letter-annotation

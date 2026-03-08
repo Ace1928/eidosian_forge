@@ -1,0 +1,639 @@
+SOURCE_PATH: archive_forge/src/archive_forge/EmbedLib.py
+KIND: code
+
+#
+# Copyright (C) 2004-2008 Greg Landrum and Rational Discovery LLC
+#
+#   @@ All Rights Reserved @@
+#  This file is part of the RDKit.
+#  The contents are covered by the terms of the BSD license
+#  which is included in the file license.txt, found at the root
+#  of the RDKit source tree.
+#
+
+import math
+import sys
+import time
+
+import numpy
+
+import rdkit.DistanceGeometry as DG
+from rdkit import Chem
+from rdkit import RDLogger as logging
+from rdkit.Chem import ChemicalFeatures, ChemicalForceFields
+from rdkit.Chem import rdDistGeom as MolDG
+from rdkit.Chem.Pharm3D import ExcludedVolume
+from rdkit.ML.Data import Stats
+
+_times = {}
+
+logger = logging.logger()
+defaultFeatLength = 2.0
+
+
+def GetAtomHeavyNeighbors(atom):
+  """ returns a list of the heavy-atom neighbors of the
+  atom passed in:
+
+  >>> m = Chem.MolFromSmiles('CCO')
+  >>> l = GetAtomHeavyNeighbors(m.GetAtomWithIdx(0))
+  >>> len(l)
+  1
+  >>> isinstance(l[0],Chem.Atom)
+  True
+  >>> l[0].GetIdx()
+  1
+
+  >>> l = GetAtomHeavyNeighbors(m.GetAtomWithIdx(1))
+  >>> len(l)
+  2
+  >>> l[0].GetIdx()
+  0
+  >>> l[1].GetIdx()
+  2
+
+  """
+  return [nbr for nbr in atom.GetNeighbors() if nbr.GetAtomicNum() != 1]
+
+
+def ReplaceGroup(match, bounds, slop=0.01, useDirs=False, dirLength=defaultFeatLength):
+  """ Adds an entry at the end of the bounds matrix for a point at
+   the center of a multi-point feature
+
+   returns a 2-tuple:
+     new bounds mat
+     index of point added
+
+   >>> boundsMat = numpy.array([[0.0, 2.0, 2.0],[1.0, 0.0, 2.0],[1.0, 1.0, 0.0]])
+   >>> match = [0, 1, 2]
+   >>> bm,idx = ReplaceGroup(match, boundsMat, slop=0.0)
+
+   the index is at the end:
+
+   >>> idx == 3
+   True
+
+   and the matrix is one bigger:
+
+   >>> bm.shape == (4, 4)
+   True
+
+   but the original bounds mat is not altered:
+
+   >>> boundsMat.shape == (3, 3)
+   True
+
+
+   We make the assumption that the points of the
+   feature form a regular polygon, are listed in order
+   (i.e. pt 0 is a neighbor to pt 1 and pt N-1)
+   and that the replacement point goes at the center:
+
+   >>> print(', '.join([f'{x:.3f}' for x in bm[-1]]))
+   0.577, 0.577, 0.577, 0.000
+   >>> print(', '.join([f'{x:.3f}' for x in bm[:,-1]]))
+   1.155, 1.155, 1.155, 0.000
+
+   The slop argument (default = 0.01) is fractional:
+
+   >>> bm, idx = ReplaceGroup(match, boundsMat)
+   >>> print(', '.join([f'{x:.3f}' for x in bm[-1]]))
+   0.572, 0.572, 0.572, 0.000
+   >>> print(', '.join([f'{x:.3f}' for x in bm[:,-1]]))
+   1.166, 1.166, 1.166, 0.000
+
+  """
+  maxVal = -1000.0
+  minVal = 1e8
+  nPts = len(match)
+  for i in range(nPts):
+    idx0 = match[i]
+    if i < nPts - 1:
+      idx1 = match[i + 1]
+    else:
+      idx1 = match[0]
+    if idx1 < idx0:
+      idx0, idx1 = idx1, idx0
+    minVal = min(minVal, bounds[idx1, idx0])
+    maxVal = max(maxVal, bounds[idx0, idx1])
+  maxVal *= (1 + slop)
+  minVal *= (1 - slop)
+
+  scaleFact = 1.0 / (2.0 * math.sin(math.pi / nPts))
+  minVal *= scaleFact
+  maxVal *= scaleFact
+
+  replaceIdx = bounds.shape[0]
+  enhanceSize: int = int(bool(useDirs))  # Whether to increase the size of the bounds matrix by one
+  bm = numpy.zeros((bounds.shape[0] + 1 + enhanceSize, bounds.shape[1] + 1 + enhanceSize),
+                   dtype=numpy.float64)
+  bm[:bounds.shape[0], :bounds.shape[1]] = bounds
+  bm[:replaceIdx, replaceIdx] = 1000.
+
+  if useDirs:
+    bm[:replaceIdx + 1, replaceIdx + 1] = 1000.
+    # set the feature - direction point bounds:
+    bm[replaceIdx, replaceIdx + 1] = dirLength + slop
+    bm[replaceIdx + 1, replaceIdx] = dirLength - slop
+
+  for idx1 in match:
+    bm[idx1, replaceIdx] = maxVal
+    bm[replaceIdx, idx1] = minVal
+    if useDirs:
+      # set the point - direction point bounds:
+      bm[idx1, replaceIdx + 1] = numpy.sqrt(bm[replaceIdx, replaceIdx + 1]**2 + maxVal**2)
+      bm[replaceIdx + 1, idx1] = numpy.sqrt(bm[replaceIdx + 1, replaceIdx]**2 + minVal**2)
+  return bm, replaceIdx
+
+
+def EmbedMol(mol, bm, atomMatch=None, weight=2.0, randomSeed=-1, excludedVolumes=None):
+  """  Generates an embedding for a molecule based on a bounds matrix and adds
+  a conformer (id 0) to the molecule
+
+  if the optional argument atomMatch is provided, it will be used to provide
+  supplemental weights for the embedding routine (used in the optimization
+  phase to ensure that the resulting geometry really does satisfy the
+  pharmacophore).
+
+  if the excludedVolumes is provided, it should be a sequence of
+  ExcludedVolume objects
+
+  >>> m = Chem.MolFromSmiles('c1ccccc1C')
+  >>> bounds = MolDG.GetMoleculeBoundsMatrix(m)
+  >>> bounds.shape == (7, 7)
+  True
+  >>> m.GetNumConformers()
+  0
+  >>> EmbedMol(m,bounds,randomSeed=23)
+  >>> m.GetNumConformers()
+  1
+
+
+  """
+  nAts = mol.GetNumAtoms()
+  weights = []
+  if atomMatch:
+    atomMatchSize = len(atomMatch)
+    weights = [(i, j, weight) for i in range(atomMatchSize) for j in range(i + 1, atomMatchSize)]
+
+  if excludedVolumes:
+    for vol in excludedVolumes:
+      idx = vol.index
+      # excluded volumes affect every other atom:
+      for i in range(nAts):
+        weights.append((i, idx, weight))
+  coords = DG.EmbedBoundsMatrix(bm, weights=weights, numZeroFail=1, randomSeed=randomSeed)
+  # for row in coords:
+  #  print(', '.join(['%.2f'%x for x in row]))
+
+  conf = Chem.Conformer(nAts)
+  conf.SetId(0)
+  for i in range(nAts):
+    conf.SetAtomPosition(i, list(coords[i]))
+  if excludedVolumes:
+    for vol in excludedVolumes:
+      vol.pos = numpy.array(coords[vol.index])
+
+    print('   % 7.4f   % 7.4f   % 7.4f Ar  0  0  0  0  0  0  0  0  0  0  0  0' % tuple(coords[-1]),
+          file=sys.stderr)
+  mol.AddConformer(conf)
+
+
+def AddExcludedVolumes(bm, excludedVolumes, smoothIt=True):
+  """ Adds a set of excluded volumes to the bounds matrix
+  and returns the new matrix
+
+  excludedVolumes is a list of ExcludedVolume objects
+
+
+   >>> boundsMat = numpy.array([[0.0, 2.0, 2.0],[1.0, 0.0, 2.0],[1.0, 1.0, 0.0]])
+   >>> ev1 = ExcludedVolume.ExcludedVolume(([(0, ), 0.5, 1.0], ), exclusionDist=1.5)
+   >>> bm = AddExcludedVolumes(boundsMat, (ev1, ))
+
+   the results matrix is one bigger:
+
+   >>> bm.shape == (4, 4)
+   True
+
+   and the original bounds mat is not altered:
+
+   >>> boundsMat.shape == (3, 3)
+   True
+
+   >>> print(', '.join([f'{x:.3f}' for x in bm[-1]]))
+   0.500, 1.500, 1.500, 0.000
+   >>> print(', '.join([f'{x:.3f}' for x in bm[:,-1]]))
+   1.000, 3.000, 3.000, 0.000
+
+  """
+  oDim = bm.shape[0]
+  dim = oDim + len(excludedVolumes)
+  res = numpy.zeros((dim, dim), dtype=numpy.float64)
+  res[:oDim, :oDim] = bm
+  for i, vol in enumerate(excludedVolumes):
+    bmIdx = oDim + i
+    vol.index = bmIdx
+
+    # set values to all the atoms:
+    res[bmIdx, :bmIdx] = vol.exclusionDist
+    res[:bmIdx, bmIdx] = 1000.0
+
+    # set values to our defining features:
+    for indices, minV, maxV in vol.featInfo:
+      for index in indices:
+        try:
+          res[bmIdx, index] = minV
+          res[index, bmIdx] = maxV
+        except IndexError:
+          logger.error(f'BAD INDEX: res[{bmIdx},{index}], shape is {str(res.shape)}')
+          raise IndexError
+
+    # set values to other excluded volumes:
+    for j in range(bmIdx + 1, dim):
+      res[bmIdx, j:dim] = 0.0
+      res[j:dim, bmIdx] = 1000.0
+
+  if smoothIt:
+    DG.DoTriangleSmoothing(res)
+  return res
+
+
+def UpdatePharmacophoreBounds(bm, atomMatch, pcophore, useDirs=False, dirLength=defaultFeatLength,
+                              mol=None):
+  """ loops over a distance bounds matrix and replaces the elements
+  that are altered by a pharmacophore
+
+  **NOTE** this returns the resulting bounds matrix, but it may also
+  alter the input matrix
+
+  atomMatch is a sequence of sequences containing atom indices
+  for each of the pharmacophore's features.
+
+    >>> from rdkit import Geometry
+    >>> from rdkit.Chem.Pharm3D import Pharmacophore
+    >>> feats = [
+    ...   ChemicalFeatures.FreeChemicalFeature('HBondAcceptor', 'HAcceptor1',
+    ...                                        Geometry.Point3D(0.0, 0.0, 0.0)),
+    ...   ChemicalFeatures.FreeChemicalFeature('HBondDonor', 'HDonor1',
+    ...                                        Geometry.Point3D(2.65, 0.0, 0.0)),
+    ...   ]
+    >>> pcophore = Pharmacophore.Pharmacophore(feats)
+    >>> pcophore.setLowerBound(0,1, 1.0)
+    >>> pcophore.setUpperBound(0,1, 2.0)
+
+    >>> boundsMat = numpy.array([[0.0, 3.0, 3.0],[2.0, 0.0, 3.0],[2.0, 2.0, 0.0]])
+    >>> atomMatch = ((0, ), (1, ))
+    >>> bm = UpdatePharmacophoreBounds(boundsMat, atomMatch, pcophore)
+
+
+     In this case, there are no multi-atom features, so the result matrix
+     is the same as the input:
+
+     >>> bm is boundsMat
+     True
+
+     this means, of course, that the input boundsMat is altered:
+
+     >>> print(', '.join([f'{x:.3f}' for x in boundsMat[0]]))
+     0.000, 2.000, 3.000
+     >>> print(', '.join([f'{x:.3f}' for x in boundsMat[1]]))
+     1.000, 0.000, 3.000
+     >>> print(', '.join([f'{x:.3f}' for x in boundsMat[2]]))
+     2.000, 2.000, 0.000
+
+  """
+  replaceMap = {}
+  for i, matchI in enumerate(atomMatch):
+    if len(matchI) > 1:
+      bm, replaceMap[i] = ReplaceGroup(matchI, bm, useDirs=useDirs)
+
+  for i, matchI in enumerate(atomMatch):
+    mi = replaceMap.get(i, matchI[0])
+    for j in range(i + 1, len(atomMatch)):
+      mj = replaceMap.get(j, atomMatch[j][0])
+      if mi < mj:
+        idx0, idx1 = mi, mj
+      else:
+        idx0, idx1 = mj, mi
+      bm[idx0, idx1] = pcophore.getUpperBound(i, j)
+      bm[idx1, idx0] = pcophore.getLowerBound(i, j)
+
+  return bm
+
+
+def EmbedPharmacophore(mol, atomMatch, pcophore, randomSeed=-1, count=10, smoothFirst=True,
+                       silent=False, bounds=None, excludedVolumes=None, targetNumber=-1,
+                       useDirs=False):
+  """ Generates one or more embeddings for a molecule that satisfy a pharmacophore
+
+  atomMatch is a sequence of sequences containing atom indices
+  for each of the pharmacophore's features.
+
+    - count: is the maximum number of attempts to make a generating an embedding
+    - smoothFirst: toggles triangle smoothing of the molecular bounds matix
+    - bounds: if provided, should be the molecular bounds matrix. If this isn't
+       provided, the matrix will be generated.
+    - targetNumber: if this number is positive, it provides a maximum number
+       of embeddings to generate (i.e. we'll have count attempts to generate
+       targetNumber embeddings).
+
+  returns: a 3 tuple:
+    1) the molecular bounds matrix adjusted for the pharmacophore
+    2) a list of embeddings (molecules with a single conformer)
+    3) the number of failed attempts at embedding
+
+    >>> from rdkit import Geometry
+    >>> from rdkit.Chem.Pharm3D import Pharmacophore
+    >>> m = Chem.MolFromSmiles('OCCN')
+    >>> feats = [
+    ...   ChemicalFeatures.FreeChemicalFeature('HBondAcceptor', 'HAcceptor1',
+    ...                                        Geometry.Point3D(0.0, 0.0, 0.0)),
+    ...   ChemicalFeatures.FreeChemicalFeature('HBondDonor', 'HDonor1',
+    ...                                        Geometry.Point3D(2.65, 0.0, 0.0)),
+    ...   ]
+    >>> pcophore=Pharmacophore.Pharmacophore(feats)
+    >>> pcophore.setLowerBound(0,1, 2.5)
+    >>> pcophore.setUpperBound(0,1, 3.5)
+    >>> atomMatch = ((0, ), (3, ))
+
+    >>> bm,embeds,nFail = EmbedPharmacophore(m, atomMatch, pcophore, randomSeed=23, silent=1)
+    >>> len(embeds)
+    10
+    >>> nFail
+    0
+
+    Set up a case that can't succeed:
+
+    >>> pcophore = Pharmacophore.Pharmacophore(feats)
+    >>> pcophore.setLowerBound(0,1, 2.0)
+    >>> pcophore.setUpperBound(0,1, 2.1)
+    >>> atomMatch = ((0, ), (3, ))
+
+    >>> bm, embeds, nFail = EmbedPharmacophore(m, atomMatch, pcophore, randomSeed=23, silent=1)
+    >>> len(embeds)
+    0
+    >>> nFail
+    10
+
+  """
+  global _times
+  if not hasattr(mol, '_chiralCenters'):
+    mol._chiralCenters = Chem.FindMolChiralCenters(mol)
+
+  if bounds is None:
+    bounds = MolDG.GetMoleculeBoundsMatrix(mol)
+  if smoothFirst:
+    DG.DoTriangleSmoothing(bounds)
+
+  # print '------------'
+  # print 'initial'
+  # for row in bm:
+  #  print ' ',' '.join(['% 4.2f'%x for x in row])
+  # print '------------'
+
+  bm = UpdatePharmacophoreBounds(bounds.copy(), atomMatch, pcophore, useDirs=useDirs, mol=mol)
+  if excludedVolumes:
+    bm = AddExcludedVolumes(bm, excludedVolumes, smoothIt=False)
+
+  if not DG.DoTriangleSmoothing(bm):
+    raise ValueError("could not smooth bounds matrix")
+
+  # print '------------'
+  # print 'post replace and smooth'
+  # for row in bm:
+  #  print ' ',' '.join(['% 4.2f'%x for x in row])
+  # print '------------'
+
+  if targetNumber <= 0:
+    targetNumber = count
+  nFailed = 0
+  res = []
+  for i in range(count):
+    m2 = Chem.Mol(mol)
+    t1 = time.perf_counter()
+    try:
+      if randomSeed <= 0:
+        seed = i * 10 + 1
+      else:
+        seed = i * 10 + randomSeed
+      EmbedMol(m2, bm.copy(), atomMatch, randomSeed=seed, excludedVolumes=excludedVolumes)
+    except ValueError:
+      if not silent:
+        logger.info('Embed failed')
+      nFailed += 1
+    else:
+      t2 = time.perf_counter()
+      _times['embed'] = _times.get('embed', 0) + t2 - t1
+      keepIt = True
+      for idx, stereo in mol._chiralCenters:
+        if stereo in ('R', 'S'):
+          vol = ComputeChiralVolume(m2, idx)
+          if (stereo == 'R' and vol >= 0) or (stereo == 'S' and vol <= 0):
+            keepIt = False
+            break
+      if keepIt:
+        res.append(m2)
+      else:
+        logger.debug('Removed embedding due to chiral constraints.')
+      if len(res) == targetNumber:
+        break
+  return bm, res, nFailed
+
+
+def isNaN(v):
+  """ provides an OS independent way of detecting NaNs
+  This is intended to be used with values returned from the C++
+  side of things.
+
+  We can't actually test this from Python (which traps
+  zero division errors), but it would work something like
+  this if we could:
+
+  >>> isNaN(0)
+  False
+
+  #>>> isNan(1/0)
+  #True
+
+  """
+  if v != v and sys.platform == 'win32':
+    return True
+  elif v == 0 and v == 1 and sys.platform != 'win32':
+    return True
+  return False
+
+
+def OptimizeMol(mol, bm, atomMatches=None, excludedVolumes=None, forceConstant=1200.0, maxPasses=5,
+                verbose=False):
+  """  carries out a UFF optimization for a molecule optionally subject
+  to the constraints in a bounds matrix
+
+    - atomMatches, if provided, is a sequence of sequences
+    - forceConstant is the force constant of the spring used to enforce
+      the constraints
+
+   returns a 2-tuple:
+     1) the energy of the initial conformation
+     2) the energy post-embedding
+   NOTE that these energies include the energies of the constraints
+
+    >>> from rdkit import Geometry
+    >>> from rdkit.Chem.Pharm3D import Pharmacophore
+    >>> m = Chem.MolFromSmiles('OCCN')
+    >>> feats = [
+    ...  ChemicalFeatures.FreeChemicalFeature('HBondAcceptor', 'HAcceptor1',
+    ...                                       Geometry.Point3D(0.0, 0.0, 0.0)),
+    ...  ChemicalFeatures.FreeChemicalFeature('HBondDonor', 'HDonor1',
+    ...                                       Geometry.Point3D(2.65, 0.0, 0.0)),
+    ...  ]
+    >>> pcophore=Pharmacophore.Pharmacophore(feats)
+    >>> pcophore.setLowerBound(0,1, 2.5)
+    >>> pcophore.setUpperBound(0,1, 2.8)
+    >>> atomMatch = ((0, ), (3, ))
+    >>> bm, embeds, nFail = EmbedPharmacophore(m, atomMatch, pcophore, randomSeed=23, silent=1)
+    >>> len(embeds)
+    10
+    >>> testM = embeds[0]
+
+    Do the optimization:
+
+    >>> e1, e2 = OptimizeMol(testM,bm,atomMatches=atomMatch)
+
+    Optimizing should have lowered the energy:
+
+    >>> e2 < e1
+    True
+
+    Check the constrained distance:
+
+    >>> conf = testM.GetConformer(0)
+    >>> p0 = conf.GetAtomPosition(0)
+    >>> p3 = conf.GetAtomPosition(3)
+    >>> d03 = p0.Distance(p3)
+    >>> d03 >= pcophore.getLowerBound(0,1) - 0.01
+    True
+    >>> d03 <= pcophore.getUpperBound(0,1) + 0.01
+    True
+
+    If we optimize without the distance constraints (provided via the atomMatches
+    argument) we're not guaranteed to get the same results, particularly in a case
+    like the current one where the pharmacophore brings the atoms uncomfortably
+    close together:
+
+    >>> testM = embeds[1]
+    >>> e1, e2 = OptimizeMol(testM,bm)
+    >>> e2 < e1
+    True
+    >>> conf = testM.GetConformer(0)
+    >>> p0 = conf.GetAtomPosition(0)
+    >>> p3 = conf.GetAtomPosition(3)
+    >>> d03 = p0.Distance(p3)
+    >>> d03 >= pcophore.getLowerBound(0, 1) - 0.01
+    True
+    >>> d03 <= pcophore.getUpperBound(0, 1) + 0.01
+    False
+
+  """
+  try:
+    ff = ChemicalForceFields.UFFGetMoleculeForceField(mol)
+  except Exception:
+    logger.info('Problems building molecular forcefield', exc_info=True)
+    return -1.0, -1.0
+
+  weights = []
+  if atomMatches:
+    weights = [(i, j) for k in range(len(atomMatches)) for i in atomMatches[k]
+               for l in range(k + 1, len(atomMatches)) for j in atomMatches[l]]
+
+  for i, j in weights:
+    if j < i:
+      i, j = j, i
+    ff.AddDistanceConstraint(i, j, bm[j, i], bm[i, j], forceConstant)
+
+  if excludedVolumes:
+    nAts = mol.GetNumAtoms()
+    conf = mol.GetConformer()
+    idx = nAts
+    for exVol in excludedVolumes:
+      assert exVol.pos is not None
+      logger.debug(f'ff.AddExtraPoint({exVol.pos[0]:.4f},{exVol.pos[1]:.4f},{exVol.pos[2]:.4f}')
+      ff.AddExtraPoint(exVol.pos[0], exVol.pos[1], exVol.pos[2], True)
+
+      indices = []
+      for localIndices, _, _ in exVol.featInfo:
+        indices.extend(list(localIndices))
+      indicesSet = set(indices)
+      del indices
+
+      for i in range(nAts):
+        v = numpy.array(conf.GetAtomPosition(i)) - numpy.array(exVol.pos)
+        d = numpy.sqrt(numpy.dot(v, v))
+        if i not in indicesSet:
+          if d < 5.0:
+            logger.debug(
+              f'ff.AddDistanceConstraint({i},{idx},{exVol.exclusionDist:.3f},1000,{forceConstant:.0f})'
+            )
+            ff.AddDistanceConstraint(i, idx, exVol.exclusionDist, 1000, forceConstant)
+
+        else:
+          logger.debug(f'ff.AddDistanceConstraint({i},{idx},{bm[exVol.index, i]:.3f},'
+                       f'{bm[i, exVol.index]:.3f},{forceConstant:.0f})')
+          ff.AddDistanceConstraint(i, idx, bm[exVol.index, i], bm[i, exVol.index], forceConstant)
+      idx += 1
+
+  ff.Initialize()
+  e1 = ff.CalcEnergy()
+  if isNaN(e1):
+    raise ValueError('bogus energy')
+  if verbose:
+    print(Chem.MolToMolBlock(mol))
+    for i, _ in enumerate(excludedVolumes):
+      pos = ff.GetExtraPointPos(i)
+      print('   % 7.4f   % 7.4f   % 7.4f As  0  0  0  0  0  0  0  0  0  0  0  0' % tuple(pos),
+            file=sys.stderr)
+
+  needsMore = ff.Minimize()
+  nPasses = 0
+  while needsMore and nPasses < maxPasses:
+    needsMore = ff.Minimize()
+    nPasses += 1
+
+  e2 = ff.CalcEnergy()
+  if isNaN(e2):
+    raise ValueError('bogus energy')
+  if verbose:
+    print('--------')
+    print(Chem.MolToMolBlock(mol))
+    for i, _ in enumerate(excludedVolumes):
+      pos = ff.GetExtraPointPos(i)
+      print('   % 7.4f   % 7.4f   % 7.4f Sb  0  0  0  0  0  0  0  0  0  0  0  0' % tuple(pos),
+            file=sys.stderr)
+  ff = None
+  return e1, e2
+
+
+def EmbedOne(mol, name, match, pcophore, count=1, silent=0, **kwargs):
+  """ generates statistics for a molecule's embeddings
+
+  Four energies are computed for each embedding:
+      1) E1: the energy (with constraints) of the initial embedding
+      2) E2: the energy (with constraints) of the optimized embedding
+      3) E3: the energy (no constraints) the geometry for E2
+      4) E4: the energy (no constraints) of the optimized free-molecule
+         (starting from the E3 geometry)
+
+  Returns a 9-tuple:
+      1) the mean value of E1
+      2) the sample standard deviation of E1
+      3) the mean value of E2
+      4) the sample standard deviation of E2
+      5) the mean value of E3
+      6) the sample standard deviation of E3
+      7) the mean value of E4
+      8) the sample standard deviation of E4
+      9) The number of embeddings that failed
+
+  """
+  global _times
+  atomMatch = [list(x.GetAtomIds()) for x in match]
+  bm, ms, nFailed = EmbedPharmacophore(mol, atomMatch, pcophore, count=count, silent=silent,

@@ -1,0 +1,7 @@
+SOURCE_PATH: archive_forge/src/archive_forge/_tenbin_documentation.py
+KIND: code
+
+import struct
+import sys
+import numpy as np
+Read a list of arrays from a file, with magics, length, and padding.

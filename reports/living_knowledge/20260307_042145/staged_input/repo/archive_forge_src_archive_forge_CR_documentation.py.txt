@@ -1,0 +1,4 @@
+SOURCE_PATH: archive_forge/src/archive_forge/CR_documentation.py
+KIND: code
+
+Usage: python CR.py [/path/to/mysql/errmsg.h ...] >> CR.py

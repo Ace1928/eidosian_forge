@@ -1,0 +1,9 @@
+SOURCE_PATH: archive_forge/src/archive_forge/c_cpp_documentation.py
+KIND: code
+
+import re
+from pygments.lexer import RegexLexer, include, bygroups, using, \
+from pygments.util import get_bool_opt
+from pygments.token import Text, Comment, Operator, Keyword, Name, String, \
+
+    For C++ source code with preprocessor directives.

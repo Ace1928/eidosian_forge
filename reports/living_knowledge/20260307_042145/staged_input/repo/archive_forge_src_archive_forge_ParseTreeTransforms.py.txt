@@ -1,0 +1,521 @@
+SOURCE_PATH: archive_forge/src/archive_forge/ParseTreeTransforms.py
+KIND: code
+
+from __future__ import absolute_import
+
+import cython
+cython.declare(PyrexTypes=object, Naming=object, ExprNodes=object, Nodes=object,
+               Options=object, UtilNodes=object, LetNode=object,
+               LetRefNode=object, TreeFragment=object, EncodedString=object,
+               error=object, warning=object, copy=object, hashlib=object, sys=object,
+               _unicode=object)
+
+import copy
+import hashlib
+import sys
+
+from . import PyrexTypes
+from . import Naming
+from . import ExprNodes
+from . import Nodes
+from . import Options
+from . import Builtin
+from . import Errors
+
+from .Visitor import VisitorTransform, TreeVisitor
+from .Visitor import CythonTransform, EnvTransform, ScopeTrackingTransform
+from .UtilNodes import LetNode, LetRefNode
+from .TreeFragment import TreeFragment
+from .StringEncoding import EncodedString, _unicode
+from .Errors import error, warning, CompileError, InternalError
+from .Code import UtilityCode
+
+
+class SkipDeclarations(object):
+    """
+    Variable and function declarations can often have a deep tree structure,
+    and yet most transformations don't need to descend to this depth.
+
+    Declaration nodes are removed after AnalyseDeclarationsTransform, so there
+    is no need to use this for transformations after that point.
+    """
+    def visit_CTypeDefNode(self, node):
+        return node
+
+    def visit_CVarDefNode(self, node):
+        return node
+
+    def visit_CDeclaratorNode(self, node):
+        return node
+
+    def visit_CBaseTypeNode(self, node):
+        return node
+
+    def visit_CEnumDefNode(self, node):
+        return node
+
+    def visit_CStructOrUnionDefNode(self, node):
+        return node
+
+
+class NormalizeTree(CythonTransform):
+    """
+    This transform fixes up a few things after parsing
+    in order to make the parse tree more suitable for
+    transforms.
+
+    a) After parsing, blocks with only one statement will
+    be represented by that statement, not by a StatListNode.
+    When doing transforms this is annoying and inconsistent,
+    as one cannot in general remove a statement in a consistent
+    way and so on. This transform wraps any single statements
+    in a StatListNode containing a single statement.
+
+    b) The PassStatNode is a noop and serves no purpose beyond
+    plugging such one-statement blocks; i.e., once parsed a
+`    "pass" can just as well be represented using an empty
+    StatListNode. This means less special cases to worry about
+    in subsequent transforms (one always checks to see if a
+    StatListNode has no children to see if the block is empty).
+    """
+
+    def __init__(self, context):
+        super(NormalizeTree, self).__init__(context)
+        self.is_in_statlist = False
+        self.is_in_expr = False
+
+    def visit_ExprNode(self, node):
+        stacktmp = self.is_in_expr
+        self.is_in_expr = True
+        self.visitchildren(node)
+        self.is_in_expr = stacktmp
+        return node
+
+    def visit_StatNode(self, node, is_listcontainer=False):
+        stacktmp = self.is_in_statlist
+        self.is_in_statlist = is_listcontainer
+        self.visitchildren(node)
+        self.is_in_statlist = stacktmp
+        if not self.is_in_statlist and not self.is_in_expr:
+            return Nodes.StatListNode(pos=node.pos, stats=[node])
+        else:
+            return node
+
+    def visit_StatListNode(self, node):
+        self.is_in_statlist = True
+        self.visitchildren(node)
+        self.is_in_statlist = False
+        return node
+
+    def visit_ParallelAssignmentNode(self, node):
+        return self.visit_StatNode(node, True)
+
+    def visit_CEnumDefNode(self, node):
+        return self.visit_StatNode(node, True)
+
+    def visit_CStructOrUnionDefNode(self, node):
+        return self.visit_StatNode(node, True)
+
+    def visit_PassStatNode(self, node):
+        """Eliminate PassStatNode"""
+        if not self.is_in_statlist:
+            return Nodes.StatListNode(pos=node.pos, stats=[])
+        else:
+            return []
+
+    def visit_ExprStatNode(self, node):
+        """Eliminate useless string literals"""
+        if node.expr.is_string_literal:
+            return self.visit_PassStatNode(node)
+        else:
+            return self.visit_StatNode(node)
+
+    def visit_CDeclaratorNode(self, node):
+        return node
+
+
+class PostParseError(CompileError): pass
+
+# error strings checked by unit tests, so define them
+ERR_CDEF_INCLASS = 'Cannot assign default value to fields in cdef classes, structs or unions'
+ERR_BUF_DEFAULTS = 'Invalid buffer defaults specification (see docs)'
+ERR_INVALID_SPECIALATTR_TYPE = 'Special attributes must not have a type declared'
+class PostParse(ScopeTrackingTransform):
+    """
+    Basic interpretation of the parse tree, as well as validity
+    checking that can be done on a very basic level on the parse
+    tree (while still not being a problem with the basic syntax,
+    as such).
+
+    Specifically:
+    - Default values to cdef assignments are turned into single
+    assignments following the declaration (everywhere but in class
+    bodies, where they raise a compile error)
+
+    - Interpret some node structures into Python runtime values.
+    Some nodes take compile-time arguments (currently:
+    TemplatedTypeNode[args] and __cythonbufferdefaults__ = {args}),
+    which should be interpreted. This happens in a general way
+    and other steps should be taken to ensure validity.
+
+    Type arguments cannot be interpreted in this way.
+
+    - For __cythonbufferdefaults__ the arguments are checked for
+    validity.
+
+    TemplatedTypeNode has its directives interpreted:
+    Any first positional argument goes into the "dtype" attribute,
+    any "ndim" keyword argument goes into the "ndim" attribute and
+    so on. Also it is checked that the directive combination is valid.
+    - __cythonbufferdefaults__ attributes are parsed and put into the
+    type information.
+
+    Note: Currently Parsing.py does a lot of interpretation and
+    reorganization that can be refactored into this transform
+    if a more pure Abstract Syntax Tree is wanted.
+    """
+
+    def __init__(self, context):
+        super(PostParse, self).__init__(context)
+        self.specialattribute_handlers = {
+            '__cythonbufferdefaults__' : self.handle_bufferdefaults
+        }
+
+    def visit_LambdaNode(self, node):
+        # unpack a lambda expression into the corresponding DefNode
+        collector = YieldNodeCollector()
+        collector.visitchildren(node.result_expr)
+        if collector.has_yield or collector.has_await or isinstance(node.result_expr, ExprNodes.YieldExprNode):
+            body = Nodes.ExprStatNode(
+                node.result_expr.pos, expr=node.result_expr)
+        else:
+            body = Nodes.ReturnStatNode(
+                node.result_expr.pos, value=node.result_expr)
+        node.def_node = Nodes.DefNode(
+            node.pos, name=node.name,
+            args=node.args, star_arg=node.star_arg,
+            starstar_arg=node.starstar_arg,
+            body=body, doc=None)
+        self.visitchildren(node)
+        return node
+
+    def visit_GeneratorExpressionNode(self, node):
+        # unpack a generator expression into the corresponding DefNode
+        collector = YieldNodeCollector()
+        collector.visitchildren(node.loop)
+        node.def_node = Nodes.DefNode(
+            node.pos, name=node.name, doc=None,
+            args=[], star_arg=None, starstar_arg=None,
+            body=node.loop, is_async_def=collector.has_await)
+        self.visitchildren(node)
+        return node
+
+    def visit_ComprehensionNode(self, node):
+        # enforce local scope also in Py2 for async generators (seriously, that's a Py3.6 feature...)
+        if not node.has_local_scope:
+            collector = YieldNodeCollector()
+            collector.visitchildren(node.loop)
+            if collector.has_await:
+                node.has_local_scope = True
+        self.visitchildren(node)
+        return node
+
+    # cdef variables
+    def handle_bufferdefaults(self, decl):
+        if not isinstance(decl.default, ExprNodes.DictNode):
+            raise PostParseError(decl.pos, ERR_BUF_DEFAULTS)
+        self.scope_node.buffer_defaults_node = decl.default
+        self.scope_node.buffer_defaults_pos = decl.pos
+
+    def visit_CVarDefNode(self, node):
+        # This assumes only plain names and pointers are assignable on
+        # declaration. Also, it makes use of the fact that a cdef decl
+        # must appear before the first use, so we don't have to deal with
+        # "i = 3; cdef int i = i" and can simply move the nodes around.
+        try:
+            self.visitchildren(node)
+            stats = [node]
+            newdecls = []
+            for decl in node.declarators:
+                declbase = decl
+                while isinstance(declbase, Nodes.CPtrDeclaratorNode):
+                    declbase = declbase.base
+                if isinstance(declbase, Nodes.CNameDeclaratorNode):
+                    if declbase.default is not None:
+                        if self.scope_type in ('cclass', 'pyclass', 'struct'):
+                            if isinstance(self.scope_node, Nodes.CClassDefNode):
+                                handler = self.specialattribute_handlers.get(decl.name)
+                                if handler:
+                                    if decl is not declbase:
+                                        raise PostParseError(decl.pos, ERR_INVALID_SPECIALATTR_TYPE)
+                                    handler(decl)
+                                    continue # Remove declaration
+                            raise PostParseError(decl.pos, ERR_CDEF_INCLASS)
+                        first_assignment = self.scope_type != 'module'
+                        stats.append(Nodes.SingleAssignmentNode(node.pos,
+                            lhs=ExprNodes.NameNode(node.pos, name=declbase.name),
+                            rhs=declbase.default, first=first_assignment))
+                        declbase.default = None
+                newdecls.append(decl)
+            node.declarators = newdecls
+            return stats
+        except PostParseError as e:
+            # An error in a cdef clause is ok, simply remove the declaration
+            # and try to move on to report more errors
+            self.context.nonfatal_error(e)
+            return None
+
+    # Split parallel assignments (a,b = b,a) into separate partial
+    # assignments that are executed rhs-first using temps.  This
+    # restructuring must be applied before type analysis so that known
+    # types on rhs and lhs can be matched directly.  It is required in
+    # the case that the types cannot be coerced to a Python type in
+    # order to assign from a tuple.
+
+    def visit_SingleAssignmentNode(self, node):
+        self.visitchildren(node)
+        return self._visit_assignment_node(node, [node.lhs, node.rhs])
+
+    def visit_CascadedAssignmentNode(self, node):
+        self.visitchildren(node)
+        return self._visit_assignment_node(node, node.lhs_list + [node.rhs])
+
+    def _visit_assignment_node(self, node, expr_list):
+        """Flatten parallel assignments into separate single
+        assignments or cascaded assignments.
+        """
+        if sum([ 1 for expr in expr_list
+                 if expr.is_sequence_constructor or expr.is_string_literal ]) < 2:
+            # no parallel assignments => nothing to do
+            return node
+
+        expr_list_list = []
+        flatten_parallel_assignments(expr_list, expr_list_list)
+        temp_refs = []
+        eliminate_rhs_duplicates(expr_list_list, temp_refs)
+
+        nodes = []
+        for expr_list in expr_list_list:
+            lhs_list = expr_list[:-1]
+            rhs = expr_list[-1]
+            if len(lhs_list) == 1:
+                node = Nodes.SingleAssignmentNode(rhs.pos,
+                    lhs = lhs_list[0], rhs = rhs)
+            else:
+                node = Nodes.CascadedAssignmentNode(rhs.pos,
+                    lhs_list = lhs_list, rhs = rhs)
+            nodes.append(node)
+
+        if len(nodes) == 1:
+            assign_node = nodes[0]
+        else:
+            assign_node = Nodes.ParallelAssignmentNode(nodes[0].pos, stats = nodes)
+
+        if temp_refs:
+            duplicates_and_temps = [ (temp.expression, temp)
+                                     for temp in temp_refs ]
+            sort_common_subsequences(duplicates_and_temps)
+            for _, temp_ref in duplicates_and_temps[::-1]:
+                assign_node = LetNode(temp_ref, assign_node)
+
+        return assign_node
+
+    def _flatten_sequence(self, seq, result):
+        for arg in seq.args:
+            if arg.is_sequence_constructor:
+                self._flatten_sequence(arg, result)
+            else:
+                result.append(arg)
+        return result
+
+    def visit_DelStatNode(self, node):
+        self.visitchildren(node)
+        node.args = self._flatten_sequence(node, [])
+        return node
+
+    def visit_ExceptClauseNode(self, node):
+        if node.is_except_as:
+            # except-as must delete NameNode target at the end
+            del_target = Nodes.DelStatNode(
+                node.pos,
+                args=[ExprNodes.NameNode(
+                    node.target.pos, name=node.target.name)],
+                ignore_nonexisting=True)
+            node.body = Nodes.StatListNode(
+                node.pos,
+                stats=[Nodes.TryFinallyStatNode(
+                    node.pos,
+                    body=node.body,
+                    finally_clause=Nodes.StatListNode(
+                        node.pos,
+                        stats=[del_target]))])
+        self.visitchildren(node)
+        return node
+
+
+def eliminate_rhs_duplicates(expr_list_list, ref_node_sequence):
+    """Replace rhs items by LetRefNodes if they appear more than once.
+    Creates a sequence of LetRefNodes that set up the required temps
+    and appends them to ref_node_sequence.  The input list is modified
+    in-place.
+    """
+    seen_nodes = set()
+    ref_nodes = {}
+    def find_duplicates(node):
+        if node.is_literal or node.is_name:
+            # no need to replace those; can't include attributes here
+            # as their access is not necessarily side-effect free
+            return
+        if node in seen_nodes:
+            if node not in ref_nodes:
+                ref_node = LetRefNode(node)
+                ref_nodes[node] = ref_node
+                ref_node_sequence.append(ref_node)
+        else:
+            seen_nodes.add(node)
+            if node.is_sequence_constructor:
+                for item in node.args:
+                    find_duplicates(item)
+
+    for expr_list in expr_list_list:
+        rhs = expr_list[-1]
+        find_duplicates(rhs)
+    if not ref_nodes:
+        return
+
+    def substitute_nodes(node):
+        if node in ref_nodes:
+            return ref_nodes[node]
+        elif node.is_sequence_constructor:
+            node.args = list(map(substitute_nodes, node.args))
+        return node
+
+    # replace nodes inside of the common subexpressions
+    for node in ref_nodes:
+        if node.is_sequence_constructor:
+            node.args = list(map(substitute_nodes, node.args))
+
+    # replace common subexpressions on all rhs items
+    for expr_list in expr_list_list:
+        expr_list[-1] = substitute_nodes(expr_list[-1])
+
+def sort_common_subsequences(items):
+    """Sort items/subsequences so that all items and subsequences that
+    an item contains appear before the item itself.  This is needed
+    because each rhs item must only be evaluated once, so its value
+    must be evaluated first and then reused when packing sequences
+    that contain it.
+
+    This implies a partial order, and the sort must be stable to
+    preserve the original order as much as possible, so we use a
+    simple insertion sort (which is very fast for short sequences, the
+    normal case in practice).
+    """
+    def contains(seq, x):
+        for item in seq:
+            if item is x:
+                return True
+            elif item.is_sequence_constructor and contains(item.args, x):
+                return True
+        return False
+    def lower_than(a,b):
+        return b.is_sequence_constructor and contains(b.args, a)
+
+    for pos, item in enumerate(items):
+        key = item[1] # the ResultRefNode which has already been injected into the sequences
+        new_pos = pos
+        for i in range(pos-1, -1, -1):
+            if lower_than(key, items[i][0]):
+                new_pos = i
+        if new_pos != pos:
+            for i in range(pos, new_pos, -1):
+                items[i] = items[i-1]
+            items[new_pos] = item
+
+def unpack_string_to_character_literals(literal):
+    chars = []
+    pos = literal.pos
+    stype = literal.__class__
+    sval = literal.value
+    sval_type = sval.__class__
+    for char in sval:
+        cval = sval_type(char)
+        chars.append(stype(pos, value=cval, constant_result=cval))
+    return chars
+
+def flatten_parallel_assignments(input, output):
+    #  The input is a list of expression nodes, representing the LHSs
+    #  and RHS of one (possibly cascaded) assignment statement.  For
+    #  sequence constructors, rearranges the matching parts of both
+    #  sides into a list of equivalent assignments between the
+    #  individual elements.  This transformation is applied
+    #  recursively, so that nested structures get matched as well.
+    rhs = input[-1]
+    if (not (rhs.is_sequence_constructor or isinstance(rhs, ExprNodes.UnicodeNode))
+        or not sum([lhs.is_sequence_constructor for lhs in input[:-1]])):
+        output.append(input)
+        return
+
+    complete_assignments = []
+
+    if rhs.is_sequence_constructor:
+        rhs_args = rhs.args
+    elif rhs.is_string_literal:
+        rhs_args = unpack_string_to_character_literals(rhs)
+
+    rhs_size = len(rhs_args)
+    lhs_targets = [[] for _ in range(rhs_size)]
+    starred_assignments = []
+    for lhs in input[:-1]:
+        if not lhs.is_sequence_constructor:
+            if lhs.is_starred:
+                error(lhs.pos, "starred assignment target must be in a list or tuple")
+            complete_assignments.append(lhs)
+            continue
+        lhs_size = len(lhs.args)
+        starred_targets = sum([1 for expr in lhs.args if expr.is_starred])
+        if starred_targets > 1:
+            error(lhs.pos, "more than 1 starred expression in assignment")
+            output.append([lhs,rhs])
+            continue
+        elif lhs_size - starred_targets > rhs_size:
+            error(lhs.pos, "need more than %d value%s to unpack"
+                  % (rhs_size, (rhs_size != 1) and 's' or ''))
+            output.append([lhs,rhs])
+            continue
+        elif starred_targets:
+            map_starred_assignment(lhs_targets, starred_assignments,
+                                   lhs.args, rhs_args)
+        elif lhs_size < rhs_size:
+            error(lhs.pos, "too many values to unpack (expected %d, got %d)"
+                  % (lhs_size, rhs_size))
+            output.append([lhs,rhs])
+            continue
+        else:
+            for targets, expr in zip(lhs_targets, lhs.args):
+                targets.append(expr)
+
+    if complete_assignments:
+        complete_assignments.append(rhs)
+        output.append(complete_assignments)
+
+    # recursively flatten partial assignments
+    for cascade, rhs in zip(lhs_targets, rhs_args):
+        if cascade:
+            cascade.append(rhs)
+            flatten_parallel_assignments(cascade, output)
+
+    # recursively flatten starred assignments
+    for cascade in starred_assignments:
+        if cascade[0].is_sequence_constructor:
+            flatten_parallel_assignments(cascade, output)
+        else:
+            output.append(cascade)
+
+def map_starred_assignment(lhs_targets, starred_assignments, lhs_args, rhs_args):
+    # Appends the fixed-position LHS targets to the target list that
+    # appear left and right of the starred argument.
+    #
+    # The starred_assignments list receives a new tuple
+    # (lhs_target, rhs_values_list) that maps the remaining arguments
+    # (those that match the star

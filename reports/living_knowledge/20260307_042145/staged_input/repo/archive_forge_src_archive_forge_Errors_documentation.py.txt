@@ -1,0 +1,6 @@
+SOURCE_PATH: archive_forge/src/archive_forge/Errors_documentation.py
+KIND: code
+
+Python Lexical Analyser
+
+Exception classes
