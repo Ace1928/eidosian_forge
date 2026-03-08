@@ -23,7 +23,7 @@ def test_runtime_model_defaults_are_centralized() -> None:
     ).rstrip("/")
     assert (
         cfg.local_model_path.endswith("Qwen3.5-2B-Instruct-Q4_K_M.gguf")
-        or cfg.local_model_path.endswith("Qwen2.5-1.5B-Instruct-Q8_0.gguf")
+        or cfg.local_model_path.endswith("Qwen3.5-2B-Instruct-Q8_0.gguf")
         or cfg.local_model_path.endswith("Qwen3.5-2B-Instruct-Q8_0.gguf")
     )
     assert cfg.local_inference.llama_cli_path.endswith("llama.cpp/build/bin/llama-cli")
