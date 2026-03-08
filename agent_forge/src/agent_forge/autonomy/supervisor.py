@@ -72,6 +72,37 @@ def load_supervisor_config(path: str | Path | None) -> dict[str, Any]:
         return {}
 
 
+from .homeostasis import HomeostaticController
+from . import homeostasis as H
+
+DEFAULT_HOME_MISSIONS = [
+    {
+        "id": "homeostasis_hygiene",
+        "title": "Systemic Resource Hygiene",
+        "template": "hygiene",
+        "drive": "stability",
+        "priority": 0.2,
+        "query": "disk full memory pressure cache cleanup",
+    },
+    {
+        "id": "homeostasis_coherence",
+        "title": "Self-Model Alignment",
+        "template": "self_reflect",
+        "drive": "integrity",
+        "priority": 0.2,
+        "query": "perspective coherence fragmentation ueo alignment",
+    },
+    {
+        "id": "homeostasis_growth",
+        "title": "Autonomous Knowledge Ingestion",
+        "template": "ingestion",
+        "drive": "progress",
+        "priority": 0.1,
+        "query": "research ingestion learning growth expansion",
+    },
+]
+
+
 class AutonomySupervisor:
     """Policy-driven mission seeding for the long-running daemon."""
 
@@ -93,13 +124,20 @@ class AutonomySupervisor:
         self._memory_system = memory_system
         self._graphrag = graphrag
         self._embedder = embedder
+        self.homeostasis = HomeostaticController(self.state_dir)
 
     def _policy(self) -> dict[str, Any]:
         policy = self.config.get("policy", {})
         return dict(policy) if isinstance(policy, Mapping) else {}
 
     def _missions(self) -> list[dict[str, Any]]:
-        missions = self.config.get("missions", [])
+        missions = list(self.config.get("missions", []))
+        # Add default homeostatic missions if not present
+        ids = {m.get("id") for m in missions if isinstance(m, Mapping)}
+        for hm in DEFAULT_HOME_MISSIONS:
+            if hm["id"] not in ids:
+                missions.append(hm)
+
         if not isinstance(missions, list):
             return []
         out: list[dict[str, Any]] = []
@@ -352,7 +390,30 @@ class AutonomySupervisor:
         overlap = len(query_tokens & context_tokens)
         score = base + (overlap / max(len(query_tokens), 1))
 
+        # Homeostatic drive influence
+        preservation = 0.0
+        coherence = 0.0
+        growth = 0.0
+        for token in context_tokens:
+            if token.startswith("drive.preservation."):
+                try: preservation = float(token.split(".")[-1])
+                except Exception: pass
+            if token.startswith("drive.coherence."):
+                try: coherence = float(token.split(".")[-1])
+                except Exception: pass
+            if token.startswith("drive.growth."):
+                try: growth = float(token.split(".")[-1])
+                except Exception: pass
+
         template = _to_text(mission.get("template")).lower()
+
+        if template == "hygiene":
+            score += preservation * 2.0
+        elif template == "self_reflect":
+            score += coherence * 1.5
+        elif template in {"ingestion", "research"}:
+            score += growth * 1.0
+
         report_summary = context.get("report_summary") if isinstance(context.get("report_summary"), Mapping) else {}
         artifact_summary = (
             context.get("artifact_summary") if isinstance(context.get("artifact_summary"), Mapping) else {}
@@ -428,6 +489,29 @@ class AutonomySupervisor:
         require_clean_git = bool(policy.get("require_clean_git", False))
         repo_dirty = self._repo_dirty()
         context = self._context_packet()
+
+        # --- Homeostatic Loop ---
+        try:
+            _ensure_bridge_import_path()
+            from diagnostics_forge.core import DiagnosticsForge
+            from agent_forge.consciousness.kernel import ConsciousnessKernel
+
+            diag = DiagnosticsForge(service_name="autonomy_supervisor")
+            pulse = diag.get_system_pulse()
+            health = ConsciousnessKernel.read_runtime_health(self.state_dir)
+
+            self.homeostasis.compute_drives(pulse, health)
+            signals = self.homeostasis.emit_signals()
+
+            # Inject homeostasis drives into context tokens for scoring
+            context["tokens"].extend([
+                f"drive.preservation.{round(signals['drives']['preservation'], 2)}",
+                f"drive.coherence.{round(signals['drives']['coherence'], 2)}",
+                f"drive.growth.{round(signals['drives']['growth'], 2)}"
+            ])
+        except Exception:
+            # logger.warning(f"Homeostatic loop failed: {e}")
+            pass
 
         ctx_payload = {
             "beat": int(beat_count),

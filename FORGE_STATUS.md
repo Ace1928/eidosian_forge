@@ -12,7 +12,7 @@
 
 | Forge | Status | Standards | Notes |
 | :--- | :---: | :--- | :--- |
-| `agent_forge` | 🟢 | R, T, M | 12 Tools (Consciousness Kernel). Qwen 3.5 2B canonical. |
+| `agent_forge` | 🟢 | R, T, M | 12 Tools (Consciousness Kernel). Homeostatic Autonomy active. |
 | `article_forge` | 🟢 | R, T | Core publishing logic & profile extraction. |
 | `audit_forge` | 🟢 | R, T | 2 Tools (Idempotent task manager & coverage). |
 | `code_forge` | 🟢 | R, T, M | Code indexer, digester, roundtrip validation. |
@@ -50,4 +50,5 @@
 2. [DONE] Learner Agent v2 Implementation.
 3. [ACTIVE] UEO Migration (Unified Eidosian Ontology).
 4. [DONE] Systematic Audit of 🔴 Legacy Forges.
-5. [TODO] Full Integration Verification.
+5. [DONE] Deeper Pass: 32 Forges Aligned to 2.1.0 Standards & Qwen 3.5.
+6. [TODO] Full Integration Verification.

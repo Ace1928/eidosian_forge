@@ -1,0 +1,15 @@
+name: "ingestion"
+description: "Recursive knowledge harvesting and semantic expansion."
+steps:
+  - name: "discover_new_sources"
+    cmd: ["find", ".", "-maxdepth", "3", "-name", "*.md"]
+    budget_s: 30
+  - name: "semantic_ingestion"
+    cmd: ["python", "-m", "knowledge_forge.cli", "ingest-memory", "memory_data.json"]
+    budget_s: 300
+  - name: "index_codebase"
+    cmd: ["python", "-m", "code_forge.cli", "index", "src/"]
+    budget_s: 600
+  - name: "update_atlas"
+    cmd: ["python", "-m", "repo_forge.cli", "doctor"]
+    budget_s: 120

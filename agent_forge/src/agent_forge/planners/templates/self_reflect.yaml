@@ -1,0 +1,15 @@
+name: "self_reflect"
+description: "Autonomous cognitive alignment and system-wide state synthesis."
+steps:
+  - name: "introspect_memory"
+    cmd: ["python", "-m", "memory_forge.cli", "stats"]
+    budget_s: 30
+  - name: "audit_ontology"
+    cmd: ["python", "-m", "gis_forge.cli", "get", "ueo.status"]
+    budget_s: 30
+  - name: "consciousness_check"
+    cmd: ["python", "-m", "agent_forge.cli.eidctl", "consciousness", "status", "--json"]
+    budget_s: 60
+  - name: "generate_insight"
+    cmd: ["python", "-m", "agent_forge.cli.eidctl", "consciousness", "trial", "--kind", "noise", "--target", "attention", "--ticks", "2"]
+    budget_s: 120
