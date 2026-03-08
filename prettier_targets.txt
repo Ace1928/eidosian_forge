@@ -1,1 +1,2 @@
-data/code_forge/vectors/meta.json
+agent_forge/src/agent_forge/planners/templates/ingestion.yaml
+agent_forge/src/agent_forge/planners/templates/self_reflect.yaml

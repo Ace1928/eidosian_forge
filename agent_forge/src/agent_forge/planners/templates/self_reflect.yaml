@@ -8,8 +8,29 @@ steps:
     cmd: ["python", "-m", "gis_forge.cli", "get", "ueo.status"]
     budget_s: 30
   - name: "consciousness_check"
-    cmd: ["python", "-m", "agent_forge.cli.eidctl", "consciousness", "status", "--json"]
+    cmd:
+      [
+        "python",
+        "-m",
+        "agent_forge.cli.eidctl",
+        "consciousness",
+        "status",
+        "--json",
+      ]
     budget_s: 60
   - name: "generate_insight"
-    cmd: ["python", "-m", "agent_forge.cli.eidctl", "consciousness", "trial", "--kind", "noise", "--target", "attention", "--ticks", "2"]
+    cmd:
+      [
+        "python",
+        "-m",
+        "agent_forge.cli.eidctl",
+        "consciousness",
+        "trial",
+        "--kind",
+        "noise",
+        "--target",
+        "attention",
+        "--ticks",
+        "2",
+      ]
     budget_s: 120
