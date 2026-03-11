@@ -9,7 +9,7 @@ from eidosian_core import eidosian
 class SimpleEmbedder:
     """Deterministic lightweight embedder for local similarity scoring."""
 
-    def __init__(self, dimensions: int = 16) -> None:
+    def __init__(self, dimensions: int = 768) -> None:
         self.dimensions = max(1, dimensions)
 
     @eidosian()

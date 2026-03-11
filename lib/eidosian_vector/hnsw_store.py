@@ -190,7 +190,7 @@ class HNSWVectorStore:
                 self._ensure_capacity(max(self._active_count() + (0 if existing and not deleted else 1), label + 1))
                 labels = np.array([label], dtype=np.int64)
                 try:
-                    self._index.add_items(vec, labels, replace_deleted=bool(existing and deleted))
+                    self._index.add_items(vec, labels, replace_deleted=bool(existing))
                 except TypeError:
                     self._index.add_items(vec, labels)
                 conn.execute(

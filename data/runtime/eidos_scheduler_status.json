@@ -1,0 +1,13 @@
+{
+  "contract": "eidos.scheduler.status.v1",
+  "updated_at": "2026-03-11T10:04:44.364623+00:00",
+  "state": "running",
+  "owner": "eidos_scheduler",
+  "current_task": "living_pipeline",
+  "cycle": 101,
+  "interval_sec": 900.0,
+  "next_run_in_seconds": 0.0,
+  "pid": 7795,
+  "last_result": {},
+  "last_error": ""
+}

@@ -1,0 +1,19 @@
+{
+  "contract": "eidos.scheduler.state.v1",
+  "updated_at": "2026-03-11T10:04:44.365168+00:00",
+  "cycle": 101,
+  "state": "running",
+  "interval_sec": 900.0,
+  "model": "qwen3.5:2b",
+  "run_graphrag": true,
+  "code_max_files": null,
+  "consecutive_failures": 2,
+  "last_result": {
+    "status": "timeout",
+    "returncode": -1,
+    "elapsed_sec": 7200.354,
+    "stdout": "",
+    "stderr": ""
+  },
+  "stop_requested": false
+}

@@ -149,6 +149,48 @@ def kb_get_by_tag(tag: str) -> str:
 
 
 @tool(
+    name="kb_apply_decay",
+    description="Apply confidence decay to inactive nodes and prune those below threshold.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "factor": {"type": "number", "description": "Decay factor per day since last access (default: 0.05)"},
+            "threshold": {"type": "number", "description": "Pruning threshold (default: 0.1)"},
+        },
+    },
+)
+@eidosian()
+def kb_apply_decay(factor: float = 0.05, threshold: float = 0.1) -> str:
+    """Apply confidence decay to knowledge nodes."""
+    persistence_path = getattr(kb, "persistence_path", None)
+    if not isinstance(persistence_path, Path):
+        persistence_path = None
+
+    with begin_transaction("kb_decay", [persistence_path]) as txn:
+        report = kb.apply_decay(decay_factor=factor, threshold=threshold)
+        return json.dumps(report, indent=2)
+
+
+@tool(
+    name="kb_detect_conflicts",
+    description="Detect potential semantic contradictions or overlaps for new content.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "content": {"type": "string", "description": "New content to check for conflicts"},
+            "threshold": {"type": "number", "description": "Similarity threshold (default: 0.85)"},
+        },
+        "required": ["content"],
+    },
+)
+@eidosian()
+def kb_detect_conflicts(content: str, threshold: float = 0.85) -> str:
+    """Detect potential semantic contradictions."""
+    conflicts = kb.detect_conflicts(content, similarity_threshold=threshold)
+    return json.dumps(conflicts, indent=2)
+
+
+@tool(
     name="kb_link",
     description="Create a bidirectional link between two knowledge nodes.",
 )

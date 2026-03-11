@@ -1,7 +1,7 @@
 {
   "dim": 128,
   "space": "cosine",
-  "max_elements": 16384,
+  "max_elements": 65536,
   "ef_construction": 200,
   "M": 16
 }

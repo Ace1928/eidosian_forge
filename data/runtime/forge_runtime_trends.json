@@ -44,6 +44,160 @@
       "doc_model": null,
       "doc_thinking_mode": null,
       "summary": {}
+    },
+    {
+      "updated_at": "2026-03-11T06:44:46.035031+00:00",
+      "owner": "local_mcp_agent:observer",
+      "task": "local_agent:observer",
+      "state": "running",
+      "active_model_count": 1,
+      "active_models": [
+        {
+          "family": "ollama",
+          "model": "qwen3.5:2b",
+          "role": "local_agent:observer"
+        }
+      ],
+      "policy": {},
+      "cycle": null,
+      "run_id": null,
+      "records_total": null,
+      "consecutive_failures": null,
+      "doc_model": null,
+      "doc_thinking_mode": null,
+      "summary": {}
+    },
+    {
+      "updated_at": "2026-03-11T07:17:46.657854+00:00",
+      "owner": "local_mcp_agent:observer",
+      "task": "local_agent:observer",
+      "state": "running",
+      "active_model_count": 1,
+      "active_models": [
+        {
+          "family": "ollama",
+          "model": "qwen3.5:2b",
+          "role": "local_agent:observer"
+        }
+      ],
+      "policy": {},
+      "cycle": null,
+      "run_id": null,
+      "records_total": null,
+      "consecutive_failures": null,
+      "doc_model": null,
+      "doc_thinking_mode": null,
+      "summary": {}
+    },
+    {
+      "updated_at": "2026-03-11T07:49:43.566521+00:00",
+      "owner": "eidos_scheduler",
+      "task": "living_pipeline",
+      "state": "running",
+      "active_model_count": 1,
+      "active_models": [
+        {
+          "family": "ollama",
+          "model": "qwen3.5:2b",
+          "role": "living_pipeline"
+        }
+      ],
+      "policy": {},
+      "cycle": 100,
+      "run_id": null,
+      "records_total": null,
+      "consecutive_failures": null,
+      "doc_model": "qwen3.5:2b",
+      "doc_thinking_mode": null,
+      "summary": {}
+    },
+    {
+      "updated_at": "2026-03-11T09:50:50.497024+00:00",
+      "owner": "local_mcp_agent:observer",
+      "task": "local_agent:observer",
+      "state": "running",
+      "active_model_count": 1,
+      "active_models": [
+        {
+          "family": "ollama",
+          "model": "qwen3.5:2b",
+          "role": "local_agent:observer"
+        }
+      ],
+      "policy": {},
+      "cycle": null,
+      "run_id": null,
+      "records_total": null,
+      "consecutive_failures": null,
+      "doc_model": null,
+      "doc_thinking_mode": null,
+      "summary": {}
+    },
+    {
+      "updated_at": "2026-03-11T09:56:59.522898+00:00",
+      "owner": "local_mcp_agent:observer",
+      "task": "local_agent:observer",
+      "state": "running",
+      "active_model_count": 1,
+      "active_models": [
+        {
+          "family": "ollama",
+          "model": "qwen3.5:2b",
+          "role": "local_agent:observer"
+        }
+      ],
+      "policy": {},
+      "cycle": null,
+      "run_id": null,
+      "records_total": null,
+      "consecutive_failures": null,
+      "doc_model": null,
+      "doc_thinking_mode": null,
+      "summary": {}
+    },
+    {
+      "updated_at": "2026-03-11T10:01:42.997206+00:00",
+      "owner": "local_mcp_agent:observer",
+      "task": "local_agent:observer",
+      "state": "running",
+      "active_model_count": 1,
+      "active_models": [
+        {
+          "family": "ollama",
+          "model": "qwen3.5:2b",
+          "role": "local_agent:observer"
+        }
+      ],
+      "policy": {},
+      "cycle": null,
+      "run_id": null,
+      "records_total": null,
+      "consecutive_failures": null,
+      "doc_model": null,
+      "doc_thinking_mode": null,
+      "summary": {}
+    },
+    {
+      "updated_at": "2026-03-11T10:04:44.360057+00:00",
+      "owner": "eidos_scheduler",
+      "task": "living_pipeline",
+      "state": "running",
+      "active_model_count": 1,
+      "active_models": [
+        {
+          "family": "ollama",
+          "model": "qwen3.5:2b",
+          "role": "living_pipeline"
+        }
+      ],
+      "policy": {},
+      "cycle": 101,
+      "run_id": null,
+      "records_total": null,
+      "consecutive_failures": null,
+      "doc_model": "qwen3.5:2b",
+      "doc_thinking_mode": null,
+      "summary": {}
     }
   ]
 }

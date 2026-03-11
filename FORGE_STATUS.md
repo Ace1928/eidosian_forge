@@ -49,7 +49,8 @@
 ## 🚀 Elevation Roadmap
 1. [DONE] Infrastructure Stabilisation (Ollama, MCP, Doc Forge v3).
 2. [DONE] Learner Agent v2 Implementation.
-3. [ACTIVE] UEO Migration (Unified Eidosian Ontology).
+3. [ACTIVE] UEO Migration (Unified Eidosian Ontology) - Phase 3 Dynamics.
 4. [DONE] Systematic Audit of 🔴 Legacy Forges.
 5. [DONE] Deeper Pass: 32 Forges Aligned to 2.1.0 Standards & Qwen 3.5.
-6. [TODO] Full Integration Verification.
+6. [ACTIVE] Phase 3: Graph Dynamics & Consolidation (Aging, Decay, Conflict Detection).
+7. [TODO] Full Integration Verification.

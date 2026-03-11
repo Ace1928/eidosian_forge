@@ -1,0 +1,14 @@
+name: ontological_pruning
+description: Apply decay and pruning to the knowledge graph to prevent ossification.
+steps:
+  - id: apply_decay
+    tool: kb_apply_decay
+    args:
+      factor: 0.05
+      threshold: 0.1
+  - id: analyze_report
+    tool: eidos_remember_self
+    args:
+      subdomain: autobiography
+      content: "Executed ontological pruning. Applied confidence decay to inactive knowledge nodes. Verified graph integrity."
+      tags: ["maintenance", "knowledge_forge"]

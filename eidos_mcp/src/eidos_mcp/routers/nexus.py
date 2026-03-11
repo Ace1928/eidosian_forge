@@ -177,3 +177,53 @@ def mcp_self_upgrade(benefit: str, run_tests: bool = True) -> str:
             return f"Error: Failed to schedule direct restart: {e}"
 
     return f"Upgrade scheduled. Service will restart shortly.\nBenefit: {benefit}"
+
+
+@tool(
+    name="nexus_map_forge",
+    description="Formally map a forge module into the Unified Eidosian Ontology and index its components.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "forge_name": {"type": "string", "description": "The directory name of the forge (e.g., 'figlet_forge')"},
+            "functional_cluster": {
+                "type": "string",
+                "enum": ["Cognitive Spine", "Perceptual/Actuator", "Communication", "Infrastructure"],
+                "description": "The architectural cluster this forge belongs to"
+            },
+            "status": {"type": "string", "enum": ["Active", "Legacy", "Metabolized"], "description": "Current operational status"},
+            "summary": {"type": "string", "description": "One-sentence technical summary of the forge's purpose"}
+        },
+        "required": ["forge_name", "functional_cluster", "status", "summary"]
+    }
+)
+@eidosian()
+def nexus_map_forge(
+    forge_name: str,
+    functional_cluster: str,
+    status: str,
+    summary: str
+) -> str:
+    """Metabolic mapping of a forge into the systemic ontology."""
+    from .knowledge import kb_add_fact
+    from .code import code_index_directory
+    
+    # 1. Ontological Linkage
+    fact = f"FORGE_COMPONENT: {forge_name} | CLUSTER: {functional_cluster} | STATUS: {status} | SUMMARY: {summary}"
+    kb_res = kb_add_fact(fact, tags=["ontology", "forge_map", forge_name])
+    
+    # 2. Code Indexing (if not metabolized)
+    code_res = ""
+    if status != "Metabolized":
+        try:
+            code_res = code_index_directory(f"./{forge_name}")
+        except Exception as e:
+            code_res = f"Code indexing failed: {e}"
+            
+    return json.dumps({
+        "forge": forge_name,
+        "ontology_result": kb_res,
+        "indexing_result": code_res,
+        "message": f"Forge {forge_name} has been formally mapped as a {functional_cluster} organ."
+    }, indent=2)
+

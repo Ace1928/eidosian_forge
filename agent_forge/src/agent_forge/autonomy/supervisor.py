@@ -101,6 +101,14 @@ DEFAULT_HOME_MISSIONS = [
         "priority": 0.1,
         "query": "research ingestion learning growth expansion",
     },
+    {
+        "id": "homeostasis_pruning",
+        "title": "Ontological Pruning & Decay",
+        "template": "ontological_pruning",
+        "drive": "integrity",
+        "priority": 0.15,
+        "query": "graph decay ossification prune knowledge relevance",
+    },
 ]
 
 
@@ -526,7 +534,9 @@ class AutonomySupervisor:
             context["tokens"].extend([
                 f"drive.preservation.{round(signals['drives']['preservation'], 2)}",
                 f"drive.coherence.{round(signals['drives']['coherence'], 2)}",
-                f"drive.growth.{round(signals['drives']['growth'], 2)}"
+                f"drive.growth.{round(signals['drives']['growth'], 2)}",
+                f"drive.curiosity.{round(signals['drives'].get('curiosity', 0.0), 2)}",
+                f"drive.caution.{round(signals['drives'].get('caution', 0.0), 2)}"
             ])
         except Exception:
             # logger.warning(f"Homeostatic loop failed: {e}")

@@ -5,6 +5,7 @@ import threading
 import uuid
 from collections import deque
 from contextlib import contextmanager
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Union
 
@@ -26,6 +27,18 @@ class KnowledgeNode:
         self.metadata = metadata or {}
         self.tags: Set[str] = set(self.metadata.get("tags", []))
         self.links: Set[str] = set()
+        
+        # Temporal and Confidence attributes
+        self.created_at = datetime.fromisoformat(self.metadata.get("created_at", datetime.now().isoformat()))
+        self.last_accessed = datetime.fromisoformat(self.metadata.get("last_accessed", self.created_at.isoformat()))
+        self.access_count = int(self.metadata.get("access_count", 0))
+        self.confidence = float(self.metadata.get("confidence", 1.0))
+
+    @eidosian()
+    def touch(self):
+        """Update access metadata."""
+        self.last_accessed = datetime.now()
+        self.access_count += 1
 
     @eidosian()
     def add_link(self, node_id: str):
@@ -36,7 +49,14 @@ class KnowledgeNode:
         return {
             "id": self.id,
             "content": self.content,
-            "metadata": {**self.metadata, "tags": list(self.tags)},
+            "metadata": {
+                **self.metadata, 
+                "tags": list(self.tags),
+                "created_at": self.created_at.isoformat(),
+                "last_accessed": self.last_accessed.isoformat(),
+                "access_count": self.access_count,
+                "confidence": self.confidence
+            },
             "links": list(self.links),
         }
 
@@ -146,13 +166,56 @@ class KnowledgeForge:
     @eidosian()
     def get_by_tag(self, tag: str) -> List[KnowledgeNode]:
         """Find nodes by tag."""
-        return [n for n in self.nodes.values() if tag in n.tags]
+        nodes = [n for n in self.nodes.values() if tag in n.tags]
+        for n in nodes:
+            n.touch()
+        return nodes
 
     @eidosian()
     def get_by_concept(self, concept: str) -> List[KnowledgeNode]:
         """Retrieve all nodes associated with a concept."""
         node_ids = self.concept_map.get(concept, [])
-        return [self.nodes[nid] for nid in node_ids]
+        nodes = [self.nodes[nid] for nid in node_ids]
+        for n in nodes:
+            n.touch()
+        return nodes
+
+    @eidosian()
+    def apply_decay(self, decay_factor: float = 0.05, threshold: float = 0.1) -> Dict[str, Any]:
+        """
+        Apply confidence decay to nodes that haven't been accessed recently.
+        Prunes nodes that fall below the threshold.
+        """
+        with self._mutation_lock():
+            self._reload_from_disk_locked()
+            now = datetime.now()
+            pruned_count = 0
+            decayed_count = 0
+            
+            to_delete = []
+            for node_id, node in self.nodes.items():
+                days_since_access = (now - node.last_accessed).total_seconds() / 86400.0
+                if days_since_access > 1.0: # Only decay if not accessed in last 24h
+                    # Exponential decay based on time and lack of access
+                    decay = days_since_access * decay_factor
+                    node.confidence = max(0.0, node.confidence - decay)
+                    decayed_count += 1
+                
+                if node.confidence < threshold:
+                    to_delete.append(node_id)
+            
+            for nid in to_delete:
+                self.delete_node(nid)
+                pruned_count += 1
+                
+            if self.persistence_path and (decayed_count > 0 or pruned_count > 0):
+                self._save_locked()
+                
+            return {
+                "decayed_nodes": decayed_count,
+                "pruned_nodes": pruned_count,
+                "current_node_count": len(self.nodes)
+            }
 
     @eidosian()
     def get_related_nodes(self, node_id: str) -> List[KnowledgeNode]:
@@ -202,6 +265,7 @@ class KnowledgeForge:
         results = []
         for node in self.nodes.values():
             if query.lower() in str(node.content).lower():
+                node.touch()
                 results.append(node)
         return results
 
@@ -216,8 +280,35 @@ class KnowledgeForge:
         for hit in self.vector_store.query(query_vec, limit=limit):
             node = self.nodes.get(hit.item_id)
             if node is not None:
+                node.touch()
                 results.append(node)
         return results
+
+    @eidosian()
+    def detect_conflicts(self, content: str, similarity_threshold: float = 0.85) -> List[Dict[str, Any]]:
+        """
+        Detect potential semantic contradictions for new incoming content.
+        Returns a list of conflicting nodes with similarity scores.
+        """
+        if self.embedder is None or self.vector_store is None:
+            return []
+            
+        query_vec = self.embedder.embed_text(content)
+        if not query_vec:
+            return []
+            
+        conflicts = []
+        for hit in self.vector_store.query(query_vec, limit=5):
+            if hit.score >= similarity_threshold:
+                node = self.nodes.get(hit.item_id)
+                if node:
+                    conflicts.append({
+                        "node_id": node.id,
+                        "content": node.content,
+                        "similarity": hit.score,
+                        "message": "Potential semantic overlap or contradiction detected."
+                    })
+        return conflicts
 
     @eidosian()
     def list_nodes(self, limit: int = 100) -> List[KnowledgeNode]:

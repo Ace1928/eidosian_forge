@@ -22,11 +22,6 @@ TIKA_AVAILABLE: bool | None = None
 TikaExtractor = None
 TikaKnowledgeIngester = None
 
-try:
-    from knowledge_forge.core.graph import KnowledgeForge
-except ImportError:
-    KnowledgeForge = None
-
 FORGE_DIR = Path(os.environ.get("EIDOS_FORGE_DIR", str(FORGE_ROOT))).resolve()
 TIKA_CACHE_DIR = Path(os.environ.get("EIDOS_TIKA_CACHE_DIR", Path.home() / ".eidosian" / "tika_cache"))
 KB_PATH = FORGE_DIR / "data" / "kb.json"
@@ -76,8 +71,13 @@ def _get_ingester() -> Optional[TikaKnowledgeIngester]:
             return None
         tika = _get_tika()
         if tika:
-            if _knowledge_forge is None and KnowledgeForge:
-                _knowledge_forge = KnowledgeForge(persistence_path=KB_PATH)
+            if _knowledge_forge is None:
+                ensure_forge_import("knowledge_forge")
+                try:
+                    from knowledge_forge.core.graph import KnowledgeForge
+                    _knowledge_forge = KnowledgeForge(persistence_path=KB_PATH)
+                except ImportError:
+                    _knowledge_forge = None
             _ingester = TikaKnowledgeIngester(tika=tika, knowledge_forge=_knowledge_forge)
     return _ingester
 

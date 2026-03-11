@@ -8,6 +8,7 @@ from ..logging_utils import log_debug, log_error
 # Router modules register tools on import.
 prepare_forge_imports(
     [
+        "agent_forge",
         "audit_forge",
         "diagnostics_forge",
         "file_forge",
@@ -23,6 +24,7 @@ prepare_forge_imports(
 _ROUTER_MODULES = (
     "audit",
     "auth",
+    "autonomy",
     "consciousness",
     "diagnostics",
     "gis",

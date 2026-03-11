@@ -203,6 +203,25 @@ class KnowledgeForgeCLI(StandardCLI):
         )
         stats_parser.set_defaults(func=self._cmd_stats)
 
+        # Decay command
+        decay_parser = subparsers.add_parser(
+            "decay",
+            help="Apply confidence decay to inactive nodes",
+        )
+        decay_parser.add_argument(
+            "--factor",
+            type=float,
+            default=0.05,
+            help="Decay factor (default: 0.05)",
+        )
+        decay_parser.add_argument(
+            "--threshold",
+            type=float,
+            default=0.1,
+            help="Pruning threshold (default: 0.1)",
+        )
+        decay_parser.set_defaults(func=self._cmd_decay)
+
         # Delete command
         delete_parser = subparsers.add_parser(
             "delete",
@@ -541,6 +560,19 @@ class KnowledgeForgeCLI(StandardCLI):
             )
         except Exception as e:
             result = CommandResult(False, f"Error: {e}")
+        self._output(result, args)
+
+    def _cmd_decay(self, args) -> None:
+        """Apply confidence decay to nodes."""
+        try:
+            report = self.kb.apply_decay(decay_factor=args.factor, threshold=args.threshold)
+            result = CommandResult(
+                True, 
+                f"Decay applied: {report['decayed_nodes']} nodes decayed, {report['pruned_nodes']} nodes pruned.",
+                report
+            )
+        except Exception as e:
+            result = CommandResult(False, f"Error applying decay: {e}")
         self._output(result, args)
 
     def _cmd_delete(self, args) -> None:
