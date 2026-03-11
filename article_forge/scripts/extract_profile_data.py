@@ -16,8 +16,10 @@ FORGE_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(FORGE_ROOT / "llm_forge" / "src"))
 sys.path.insert(0, str(FORGE_ROOT / "ollama_forge" / "src"))
 from llm_forge.core.manager import ModelManager
+from eidosian_core import eidosian
 
 
+@eidosian()
 def extract_profile_data(
     file_path: Path, llm_model: Optional[str] = None, max_tokens: Optional[int] = None
 ) -> Dict[str, Any]:

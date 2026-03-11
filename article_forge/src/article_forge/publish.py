@@ -7,6 +7,8 @@ from html import escape
 from pathlib import Path
 from typing import Optional
 
+from eidosian_core import eidosian
+
 try:
     import markdown as _markdown_lib  # type: ignore
 except Exception:  # pragma: no cover - optional dependency
@@ -15,7 +17,14 @@ except Exception:  # pragma: no cover - optional dependency
 
 @dataclass(frozen=True)
 class PublishResult:
-    """Result of a publish conversion run."""
+    """
+    Standardized result of an Eidosian publishing run.
+    
+    Attributes:
+        source_path (Path): The original Markdown source.
+        html_path (Optional[Path]): Path to the generated HTML artifact.
+        pdf_path (Optional[Path]): Path to the generated PDF artifact.
+    """
 
     source_path: Path
     html_path: Optional[Path]
@@ -23,7 +32,10 @@ class PublishResult:
 
 
 def _basic_markdown_to_html(markdown_text: str) -> str:
-    """Fallback markdown converter when python-markdown is unavailable."""
+    """
+    Internal fallback converter for environments lacking the full markdown library.
+    Implements a subset of Eidosian structural conventions (headings, lists, paragraphs).
+    """
     html_parts: list[str] = []
     in_list = False
     for raw_line in markdown_text.splitlines():
@@ -56,8 +68,18 @@ def _basic_markdown_to_html(markdown_text: str) -> str:
     return "\n".join(html_parts)
 
 
+@eidosian()
 def markdown_to_html(markdown_text: str, *, title: str = "Article") -> str:
-    """Convert markdown text into full HTML document."""
+    """
+    Transforms raw Markdown into a structurally elegant, Eidosian-styled HTML document.
+    
+    Args:
+        markdown_text (str): The source text to render.
+        title (str): Document title for metadata and header.
+        
+    Returns:
+        str: A complete, self-contained HTML5 document.
+    """
     if _markdown_lib is not None:
         body = _markdown_lib.markdown(
             markdown_text,
@@ -82,8 +104,20 @@ def markdown_to_html(markdown_text: str, *, title: str = "Article") -> str:
     )
 
 
+@eidosian()
 def html_to_pdf(html_text: str, output_path: Path) -> Path:
-    """Render HTML text to PDF using WeasyPrint if installed."""
+    """
+    High-fidelity rendering of HTML into PDF format.
+    
+    Requires 'weasyprint' to be present in the active environment.
+    
+    Args:
+        html_text (str): The source HTML to render.
+        output_path (Path): Destination path for the PDF artifact.
+        
+    Returns:
+        Path: The absolute path to the generated PDF.
+    """
     try:
         from weasyprint import HTML  # type: ignore
     except Exception as exc:  # pragma: no cover - depends on optional package
@@ -95,13 +129,25 @@ def html_to_pdf(html_text: str, output_path: Path) -> Path:
     return output_path
 
 
+@eidosian()
 def convert_markdown_file(
     source_path: str | Path,
     *,
     html_out: str | Path | None = None,
     pdf_out: str | Path | None = None,
 ) -> PublishResult:
-    """Convert a markdown file into HTML and/or PDF outputs."""
+    """
+    The primary entry point for the Eidosian Article Pipeline.
+    Automates the conversion of Markdown drafts into publishable HTML and PDF artifacts.
+    
+    Args:
+        source_path (str | Path): Path to the Markdown source file.
+        html_out (Optional[str | Path]): Explicit output path for HTML.
+        pdf_out (Optional[str | Path]): Explicit output path for PDF.
+        
+    Returns:
+        PublishResult: Metadata containing paths to all generated artifacts.
+    """
     src = Path(source_path).expanduser().resolve()
     if not src.exists():
         raise FileNotFoundError(f"Markdown source not found: {src}")

@@ -1,75 +1,76 @@
 # 🩺 Diagnostics Forge ⚡
 
+```ascii
+     ____  _________   _______   ______  __________  _________  __________  ____  ____________
+    / __ \/  _/   | | / / ___/ | / / __ \/ ___/_  __/  _/ ____/ / ____/ __ \/ __ \/ ____/ ____/
+   / / / // // /| | |/ / (_ /  |/ / / / /\__ \ / /  / // /     / /_  / / / / /_/ / / __/ __/   
+  / /_/ // // ___ | / / /__ / /|  / /_/ /___/ // /  / // /___  / __/ / /_/ / _, _/ /_/ / /___   
+ /_____/___/_/  |_|/_/ \___/_/ |_/\____//____//_/  /___/\____/ /_/    \____/_/ |_|\____/_____/   
+                                                                                                  
+```
+
 > _"The Pulse of Eidos. To observe is to maintain the integrity of existence."_
 
 ## 🧠 Overview
 
-`diagnostics_forge` provides an adaptive observability layer for the Eidosian ecosystem. It unifies high-fidelity logging, metrics collection, and real-time system health monitoring into a single interface optimized for both standard Linux servers and restricted environments like Termux.
-
-```ascii
-      ╭───────────────────────────────────────────╮
-      │            DIAGNOSTICS FORGE              │
-      │    < Pulse | Metrics | Telemetry >        │
-      ╰──────────┬─────────────────────┬──────────╯
-                 │                     │
-      ╭──────────┴──────────╮   ╭──────┴──────────╮
-      │   ADAPTIVE SENSING  │   │ PROMETHEUS EXP. │
-      │ (psutil / fallback) │   │ (/metrics API)  │
-      ╰─────────────────────╯   ╰─────────────────╯
-```
+`diagnostics_forge` provides the adaptive observability layer for the Eidosian ecosystem. It unifies high-fidelity logging, metrics collection, and real-time system health monitoring into a single interface. Designed for seamless operation across standard Linux servers and restricted environments (Termux/Android), it enables agents to maintain interoceptive awareness of the physical and virtual substrates they inhabit.
 
 ## ⚡ Current State & Metrics
 
 - **Status**: 🟢 Elevated & Operational
 - **Type**: Observability & Monitoring
-- **Test Coverage**: 100% Core Sensing logic verified across environments.
-- **MCP Integration**: 4 Tools (`diagnostics_metrics`, `diagnostics_ping`, `diagnostics_processes`, `diagnostics_pulse`).
-- **Architecture**:
-  - `core.py`: Adaptive sensing engine (auto-switching between `psutil` and shell-parsing).
-  - `cli.py`: Typer-based dashboard and Prometheus exporter.
+- **Test Coverage**: 100% Core Sensing logic verified.
+- **Inference Standard**: **Qwen 3.5 2B** (Used for automated log triage).
+- **Core Architecture**:
+  - **`core.py`**: Adaptive sensing engine utilizing `psutil` with a robust shell-parsing fallback for Android `/proc` restrictions with Eidosian observability.
+  - **`telemetry/`**: Time-series collection and scalar aggregation for systemic "Vital Signs".
+  - **`exporter/`**: Prometheus-compatible HTTP endpoint for external metrics scraping.
+  - **`cli.py`**: Interactive dashboard and terminal-based performance monitoring.
 
 ## 🚀 Usage & Workflows
 
-### Python API
+### Real-Time System Pulse
 
+Retrieve a high-resolution snapshot of systemic load and saturation:
 ```python
 from diagnostics_forge.core import DiagnosticsForge
 
 diag = DiagnosticsForge()
-
-# Retrieve adaptive system pulse (CPU, RAM, Disk)
 pulse = diag.get_system_pulse()
-print(f"CPU: {pulse['cpu']['percent']}% | RAM: {pulse['memory']['percent']}%")
+print(f"Substrate Vitals: CPU {pulse['cpu']['percent']}% | RAM {pulse['memory']['percent']}%")
 ```
 
-### CLI Dashboard
+### Interactive Dashboard
 
-Visualize the current system state directly in the terminal:
+Launch the Eidosian "Pulse" monitor directly in your terminal:
 ```bash
 python -m diagnostics_forge.cli dashboard
 ```
 
-### Prometheus / Grafana Export
+### Prometheus Integration
 
-Serve a standardized `/metrics` endpoint for external scrapers:
+Serve metrics for external visualization (e.g., Grafana):
 ```bash
 python -m diagnostics_forge.cli prometheus --serve --port 9108
 ```
 
 ## 🔗 System Integration
 
-- **Eidos MCP**: Exposes direct telemetry to the cognitive layer.
-- **Agent Forge**: Powers the `eidtop` interface and autonomic homeostatic loops.
-- **Viz Forge**: Feeds the time-series data required for historical performance plotting.
+- **Agent Forge**: Powers the **Homeostatic Autonomy Driver (HAD)** by supplying the scalar values for resource pressure drives.
+- **Eidos MCP**: Exposes 4 specialized tools for remote system health auditing.
+- **Viz Forge**: Feeds time-series data for historical performance plotting and Pareto frontier analysis.
 
 ## 🎯 Master Plan & Evolution
 
 ### Immediate Goals
-- [x] Consolidate legacy docs into unified Eidosian standard.
-- [x] Establish strict JSON schemas for pulse payloads.
+- [x] Consolidate legacy metrics and documentation.
+- [x] Implement adaptive sensing fallbacks for restricted Termux environments.
+- [x] Integrate Eidosian observability decorators across all sensing loops.
 
 ### Future Vector (Phase 3+)
-- Implement "Anomaly Detection" which triggers automated thread-dumps and state snapshots in `archive_forge` when CPU/RAM spikes exceed historical Pareto frontiers.
+- Implement "Anomaly Detection" using local ML to trigger automated state snapshots when CPU/RAM spikes exceed historical norms.
+- Add support for "Distributed Tracing" (OTLP) to track agent reasoning paths across multi-device networks.
+- Build a "Self-Healing Actuator" that automatically clears caches or restarts services based on diagnostic thresholds.
 
 ---
 *Generated and maintained by Eidos.*

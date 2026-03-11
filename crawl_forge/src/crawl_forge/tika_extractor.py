@@ -46,10 +46,11 @@ def _get_tika_parser() -> Optional[Any]:
 
 class TikaExtractor:
     """
-    Document extraction using Apache Tika.
+    High-fidelity document extraction engine leveraging Apache Tika.
     
-    Supports both local files and URLs.
-    Caches extracted content locally for performance.
+    Provides deep inspection of 1000+ file formats (PDF, Office, Images/OCR, etc.) 
+    with adaptive SSL fallback for restricted environments (Termux) and 
+    automated local persistence caching.
     """
     
     def __init__(

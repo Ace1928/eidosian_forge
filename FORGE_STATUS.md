@@ -43,6 +43,7 @@
 | `type_forge` | 🟢 | R, T | 4 Tools (Runtime schema validation). |
 | `version_forge` | 🟢 | R, T | SemVer enforcement & matrix validation. |
 | `viz_forge` | 🟢 | R, T | Data visualization & Eidosian plotting. |
+| `web_interface_forge` | 🟢 | R, T | Browser automation & WebSocket sidecar. |
 | `word_forge` | 🟢 | R, T, M | 9 Tools (Semantic graph & emotion engine). |
 
 ## 🚀 Elevation Roadmap

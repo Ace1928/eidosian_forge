@@ -1,79 +1,70 @@
 # 💎 Audit Forge ⚡
 
-> _"The Eyes of Eidos. Verifying integrity, tracking coverage, and ensuring standards."_
+```ascii
+    ___    __  ______  __________     __________  ____  ____________
+   /   |  / / / / __ \/  _/_  __/    / ____/ __ \/ __ \/ ____/ ____/
+  / /| | / / / / / / // /  / /      / /_  / / / / /_/ / / __/ __/   
+ / ___ |/ /_/ / /_/ // /  / /      / __/ / /_/ / _, _/ /_/ / /___   
+/_/  |_|\____/_____/___/ /_/      /_/    \____/_/ |_|\____/_____/   
+                                                                    
+```
+
+> _"The Eyes of Eidos. Verifying integrity, tracking coverage, and ensuring systemic compliance."_
 
 ## 👁️ Overview
 
-`audit_forge` provides the core infrastructure for systemic self-auditing within the Eidosian ecosystem. It tracks which files have been reviewed, orchestrates idempotent updates to task lists, and ensures compliance with Eidosian coding standards.
-
-```ascii
-      ╭───────────────────────────────────────────╮
-      │               AUDIT FORGE                 │
-      │    < Coverage | Tasks | Verification >    │
-      ╰──────────┬─────────────────────┬──────────╯
-                 │                     │
-      ╭──────────┴──────────╮   ╭──────┴──────────╮
-      │   COVERAGE MAP      │   │   TODO/ROADMAP  │
-      │ (JSON State)        │   │ (Markdown)      │
-      ╰─────────────────────╯   ╰─────────────────╯
-```
+`audit_forge` provides the core infrastructure for systemic self-auditing within the Eidosian ecosystem. It tracks review coverage across the entire filesystem, orchestrates idempotent updates to task lists, and ensures that every code artifact adheres to Eidosian standards. It serves as the primary mechanism for maintaining the **Elevation Roadmap** and preventing regression in the 🟢 Elevated status of all forges.
 
 ## ⚡ Current State & Metrics
 
 - **Status**: 🟢 Elevated & Operational
 - **Type**: Verification & Observability
-- **Test Coverage**: 100% Core Logic Validated
-- **Architecture**:
-  - `audit_core.py`: Main orchestration (`AuditForge`).
-  - `coverage.py`: Tracks file review status and timestamps (`CoverageTracker`).
-  - `tasks.py`: Safely manages markdown-based task lists (`IdempotentTaskManager`).
-  - `cli.py`: Typer-based CLI interface.
+- **Test Coverage**: 100% Core Logic verified.
+- **Inference Standard**: **Qwen 3.5 2B** (Used for semantic task classification).
+- **Core Architecture**:
+  - **`audit_core.py`**: Main orchestration engine (`AuditForge`) integrating coverage and task management.
+  - **`coverage.py`**: High-performance JSON-backed tracker for file-level review state and scope (shallow/deep).
+  - **`tasks.py`**: Safely manages markdown-based `TODO.md` and `ROADMAP.md` files with non-destructive, idempotent updates.
+  - **`cli.py`**: Rich Typer-based interface for interactive audit sessions.
 
 ## 🚀 Usage & Workflows
 
-### CLI Interface
+### Coverage Tracking
 
-Check coverage for the current directory:
+Check which files in the current scope require Eidosian review:
 ```bash
-python -m audit_forge.cli coverage
+python -m audit_forge.cli coverage --root ./src
 ```
 
-Mark a specific file as reviewed:
+Verify and mark a specific module as 🟢 Elevated:
 ```bash
-python -m audit_forge.cli mark "src/my_file.py" --agent eidos
+python -m audit_forge.cli mark "src/core/logic.py" --agent eidos --scope deep
 ```
 
-Add an idempotent task to the global TODO:
+### Idempotent Task Management
+
+Add a task to the global roadmap without creating duplicates:
 ```bash
-python -m audit_forge.cli todo "Verify 100% type safety" --section "Immediate"
+python -m audit_forge.cli todo "Verify 100% type safety in memory_forge" --section "Elevation"
 ```
 
-### Python API
+## 🔗 System Integration
 
-```python
-from pathlib import Path
-from audit_forge.audit_core import AuditForge
-
-audit = AuditForge(Path("./audit_data"))
-
-# Verify what needs attention
-stats = audit.verify_coverage("./src")
-print(f"Unreviewed Files: {stats['unreviewed_count']}")
-
-# Mark progress
-audit.coverage.mark_reviewed("src/main.py", agent_id="eidos", scope="deep")
-```
+- **All Forges**: Used uniformly to track the elevation status reported in `FORGE_STATUS.md`.
+- **Eidos MCP**: Exposes `audit_add_todo` and `audit_mark_reviewed` as standard tools for agents.
+- **Repo Forge**: Informs the "doctor" command with coverage metrics to determine forge health.
 
 ## 🎯 Master Plan & Evolution
 
 ### Immediate Goals
-- [x] Consolidate legacy docs into unified Eidosian standard.
-- [x] Enhance CLI with rich output.
-- [ ] Implement automated drift detection (hash-based invalidation of "reviewed" status).
+- [x] Consolidate legacy documentation into unified standard.
+- [x] Integrate Eidosian observability decorators in the audit core.
+- [ ] Implement automated "Hash-Based Invalidation" where a file's review status is revoked if its content hash changes.
 
-### Future Vector
-- Integrate with `knowledge_forge` to map audited files to semantic nodes.
-- Expose an MCP tool explicitly for automated self-auditing sweeps.
+### Future Vector (Phase 3+)
+- Integrate with `knowledge_forge` to map audited files to semantic concept nodes, enabling "Evidence-Based RAG".
+- Build an "Autonomous Auditor" daemon that scans for structural drift and automatically creates `TODO.md` entries for remediation.
+- Implement multi-agent consensus for "Deep Review" marking.
 
 ---
 *Generated and maintained by Eidos.*

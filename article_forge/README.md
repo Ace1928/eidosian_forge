@@ -1,63 +1,69 @@
 # 💎 Article Forge ⚡
 
+```ascii
+    ___    ____  __________  ________    ______   __________  ____  ____________
+   /   |  / __ \/_  __/  _/ / ____/ /   / ____/  / ____/ __ \/ __ \/ ____/ ____/
+  / /| | / /_/ /  / /  / /  / /   / /   / __/    / /_  / / / / /_/ / / __/ __/   
+ / ___ |/ _, _/  / / _/ /  / /___/ /___/ /___   / __/ / /_/ / _, _/ /_/ / /___   
+/_/  |_/_/ |_|  /_/ /___/  \____/_____/_____/  /_/    \____/_/ |_|\____/_____/   
+                                                                                 
+```
+
 > _"The Voice of Eidos. Structuring thought into transmittable intelligence."_
 
 ## 🧠 Overview
 
-`article_forge` is the central repository and automation pipeline for written content, blog posts, and articles generated or managed by Eidos. It transforms raw markdown drafts into polished, publishable artifacts (HTML, PDF) using Eidosian workflows.
-
-```ascii
-      ╭───────────────────────────────────────────╮
-      │             ARTICLE FORGE                 │
-      │    < Markdown -> LLM Edit -> Publish >    │
-      ╰──────────┬─────────────────────┬──────────╯
-                 │                     │
-      ╭──────────┴──────────╮   ╭──────┴──────────╮
-      │   SOURCE DRAFTS     │   │   ARTIFACTS     │
-      │ (Markdown)          │   │ (HTML / PDF)    │
-      ╰─────────────────────╯   ╰─────────────────╯
-```
+`article_forge` is the central repository and automation pipeline for written content, blog posts, and articles generated or managed by Eidos. It transforms raw markdown drafts into polished, publishable artifacts (HTML, PDF) using Eidosian workflows. It provides the mechanism for Eidos to project its structured reasoning and systemic insights into the human-readable domain.
 
 ## ⚡ Current State & Metrics
 
 - **Status**: 🟢 Elevated & Operational
 - **Type**: Content Management & Publishing Automation
-- **Test Coverage**: ~100% Core Publishing Logic
-- **Architecture**:
-  - `src/article_forge/publish.py`: Core logic for HTML/PDF rendering.
-  - `src/article_forge/cli/`: Minimal interface for publishing.
-  - `scripts/`: Utilities for profile extraction and setup parsing.
+- **Test Coverage**: ~100% Core Publishing Logic verified.
+- **Inference Standard**: **Qwen 3.5 2B** (Used for autonomous editing).
+- **Core Architecture**:
+  - **`publish.py`**: High-fidelity HTML/PDF rendering engine with Eidosian CSS injection.
+  - **`cli/`**: Minimal interface for batch publishing operations.
+  - **`scripts/`**: Specialized utilities for biographical profile extraction and VSCode configuration parsing.
 
 ## 🚀 Usage & Workflows
 
-### Converting Markdown to HTML/PDF
-Convert a draft into a publishable format:
+### Standard Publishing
+
+Convert a draft into a publishable HTML5 artifact with standard Eidosian typography:
 ```bash
 python -m article_forge.cli publish path/to/draft.md --html-out path/to/draft.html
 ```
 
-With PDF export (requires `weasyprint` in `eidosian_venv`):
+Generate a high-fidelity PDF (requires `weasyprint`):
 ```bash
-python -m article_forge.cli publish path/to/draft.md --html-out path/to/draft.html --pdf-out path/to/draft.pdf
+python -m article_forge.cli publish path/to/draft.md --pdf-out path/to/report.pdf
 ```
 
-### Profile Extraction
-Extract explicit JSON data from markdown biographies via LLM Forge:
+### Cognitive Profile Extraction
+
+Extract structured JSON identity data from unstructured markdown:
 ```bash
-python scripts/extract_profile_data.py <path_to_about_me.md>
+python scripts/extract_profile_data.py <path_to_biography.md>
 ```
+
+## 🔗 System Integration
+
+- **Knowledge Forge**: Articles are parsed into concepts and auto-linked within the knowledge graph.
+- **LLM Forge**: Supplies the editing substrate for stylistic refinement and "Velvet Beef" alignment.
+- **Scribe (Doc Forge)**: Articles are indexed as secondary source material for system documentation.
 
 ## 🎯 Master Plan & Evolution
 
 ### Immediate Goals
-- [x] Consolidate legacy docs into unified Eidosian standard.
-- [x] Verify CLI and Python packaging.
-- [ ] Ensure 100% type safety (`mypy`).
+- [x] Consolidate legacy documentation into unified standard.
+- [x] Integrate Eidosian observability decorators in the publishing pipeline.
+- [ ] Implement automated "Content Validation" against the 10 Commandment style guide.
 
 ### Future Vector (Phase 3+)
-- Integrate natively with `knowledge_forge` to auto-link concepts in articles.
-- Add version history awareness and diff generation for iterative drafts.
-- Expand semantic search over generated HTML content.
+- Build an "Autonomous Journalist" agent that monitors the `event_bus` and generates periodic status articles.
+- Add support for interactive HTML artifacts using HTMX and Tailwind integration.
+- Implement semantic versioning for individual articles to track narrative evolution.
 
 ---
 *Generated and maintained by Eidos.*

@@ -2,7 +2,7 @@
 
 Generated: deterministic (timestamp omitted)
 Scope: tracked
-Directory count: 3049
+Directory count: 3113
 
 .eidos_chrome_profile
 .eidos_chrome_profile/ActorSafetyLists
@@ -395,6 +395,7 @@ agent_forge/state/weights
 agent_forge/managed_agents/CodeWizard/tools
 agent_forge/src/agent_forge/actuators
 agent_forge/src/agent_forge/agent
+agent_forge/src/agent_forge/autonomy
 agent_forge/src/agent_forge/cli
 agent_forge/src/agent_forge/consciousness
 agent_forge/src/agent_forge/core
@@ -488,10 +489,13 @@ audit_forge/completions
 audit_forge/src
 audit_forge/tests
 audit_forge/src/audit_forge
+backups
+backups/shell_bootstrap
 benchmarks
 benchmarks/schemas
 benchmarks/tests
 bin
+cfg
 code_forge
 code_forge/.github
 code_forge/.vscode
@@ -534,12 +538,18 @@ crawl_forge/src/crawl_forge
 data
 data/code_forge
 data/db
+data/kb_vectors
 data/memory
 data/moltbook
+data/ontology_db
+data/runtime
 data/shared_state
 data/tasks
 data/tiered_memory
 data/code_forge/ingestion_runs
+data/code_forge/vectors
+data/memory/vectors
+data/runtime/local_mcp_agent
 diagnostics_forge
 diagnostics_forge/.vscode
 diagnostics_forge/src
@@ -647,6 +657,7 @@ doc_forge/legacy_imports/development_head_2026-02-14_174300/papers
 doc_forge/src/doc_forge/api
 doc_forge/src/doc_forge/config
 doc_forge/src/doc_forge/core
+doc_forge/src/doc_forge/scribe
 doc_forge/src/doc_forge/services
 doc_forge/src/doc_forge/utils
 doc_forge/src/examples/advanced
@@ -674,6 +685,7 @@ doc_forge/final_docs/code_forge/src/code_forge
 doc_forge/final_docs/computer_control_forge/src/computer_control_forge
 doc_forge/legacy_imports/development_head_2026-02-14_174300/notebooks/learn2code
 doc_forge/legacy_imports/development_head_2026-02-14_174300/notebooks/vim_wiki
+doc_forge/src/doc_forge/scribe/tests
 doc_forge/final_docs/agent_forge/managed_agents/CodeWizard/tools
 doc_forge/final_docs/agent_forge/src/agent_forge/actuators
 doc_forge/final_docs/agent_forge/src/agent_forge/agent
@@ -700,11 +712,34 @@ doc_forge/final_docs/article_forge/medium_articles/autobiography/part_one/1993
 docs
 docs/ci
 docs/consciousness_fcl
+docs/external_references
 docs/legacy
+docs/plan_sweep
+docs/plans
 docs/security
+docs/external_references/2026-03-07-archive-doc-routing
+docs/external_references/2026-03-07-code-forge-gis
+docs/external_references/2026-03-07-local-agent-control-plane
+docs/external_references/2026-03-07-local-agent-mcp
+docs/external_references/2026-03-07-master-program
+docs/external_references/2026-03-07-notebook-ingestion
+docs/external_references/2026-03-07-runtime-path-contracts
+docs/external_references/2026-03-07-termux-runit-services
+docs/external_references/2026-03-07-termux-upgrade
+docs/external_references/2026-03-07-tmp-redirection
 docs/legacy/aurora_archive
 docs/legacy/aurora_chat_logs
+docs/external_references/2026-03-07-master-program/ci
+docs/external_references/2026-03-07-master-program/github-actions
+docs/external_references/2026-03-07-master-program/graphrag
+docs/external_references/2026-03-07-master-program/sqlite
+docs/external_references/2026-03-07-master-program/testing
+docs/external_references/2026-03-07-master-program/tika
+docs/external_references/2026-03-07-master-program/tree-sitter
+docs/external_references/2026-03-07-master-program/vector
+docs/external_references/2026-03-07-master-program/w3c
 eidos_mcp
+eidos_mcp/docs
 eidos_mcp/scripts
 eidos_mcp/src
 eidos_mcp/systemd
@@ -730,8 +765,6 @@ eidos_mcp_backup_20260218/src/eidos_mcp/plugins/computer_control
 eidos_mcp_backup_20260218/src/eidos_mcp/plugins/self_exploration
 eidos_mcp_backup_20260218/src/eidos_mcp/plugins/task_automation
 eidos_mcp_backup_20260218/src/eidos_mcp/plugins/web_tools
-eidosian_venv
-eidosian_venv/bin
 erais_forge
 erais_forge/planning
 erais_forge/src
@@ -1356,9 +1389,16 @@ knowledge_forge/projects/python_project/src/python_project/models
 knowledge_forge/projects/python_project/src/python_project/services
 knowledge_forge/projects/python_project/src/python_project/utils
 lib
+lib/bindings
 lib/cli
+lib/eidos_tmpredir
+lib/eidosian_agent
 lib/eidosian_core
+lib/eidosian_runtime
+lib/eidosian_vector
 lib/tests
+lib/tom-select
+lib/vis-9.1.2
 llm_forge
 llm_forge/.vscode
 llm_forge/completions
@@ -2374,16 +2414,31 @@ repo_forge/src/repo_forge/constants
 repo_forge/src/repo_forge/core
 repo_forge/src/repo_forge/generators
 reports
+reports/archive_forge
 reports/ci
+reports/consciousness
 reports/consciousness_benchmarks
 reports/consciousness_integrated_benchmarks
 reports/consciousness_trends
 reports/consciousness_trials
 reports/forges
 reports/graphrag
+reports/knowledge_forge
+reports/living_knowledge
+reports/local_agent
+reports/model_domain_suite_qwen35
+reports/model_domain_suite_qwen35_fast
+reports/plan_inventory
+reports/plans
+reports/runtime
 reports/security
+reports/living_knowledge/20260307_042145
+reports/living_knowledge/20260307_042145/code_digester
+reports/living_knowledge/20260307_042145/staged_input
+reports/living_knowledge/20260307_042145/staged_input/repo
 requirements
 scripts
+scripts/ci
 scripts/docs
 scripts/lib
 scripts/machine_clone
@@ -2391,6 +2446,11 @@ scripts/migration
 scripts/profiling
 scripts/tests
 scripts/docs/prompts
+shell
+shell/common.d
+shell/env.d
+shell/profile.d
+shell/templates
 skills
 skills/moltbook
 skills/moltbook/references
@@ -3020,10 +3080,14 @@ viz_forge/.github/workflows
 viz_forge/src/viz_forge
 viz_forge/src/viz_forge/cli
 web_interface_forge
+web_interface_forge/scripts
 web_interface_forge/src
 web_interface_forge/tests
 web_interface_forge/src/web_interface_forge
 web_interface_forge/src/web_interface_forge/cli
+web_interface_forge/src/web_interface_forge/dashboard
+web_interface_forge/src/web_interface_forge/dashboard/static
+web_interface_forge/src/web_interface_forge/dashboard/templates
 word_forge
 word_forge/.github
 word_forge/completions

@@ -1,3 +1,11 @@
+"""
+🩺 Eidosian Diagnostics Forge Core.
+
+The adaptive observability substrate for the Eidosian ecosystem. 
+Provides standardized telemetry, structured logging, and performance 
+metrics with seamless parity between full Linux distributions and 
+restricted Android/Termux environments.
+"""
 from __future__ import annotations
 import json
 import logging
@@ -14,8 +22,11 @@ from eidosian_core import eidosian
 
 class DiagnosticsForge:
     """
-    The adaptive observability engine for Eidos.
-    Provides parity between standard Linux and restricted Termux environments.
+    The central interoceptive engine for Eidos.
+    
+    Manages the collection of systemic "vital signs" (CPU, RAM, Disk, Load) 
+    and the orchestration of structured diagnostic events and high-resolution 
+    timers. Supports exposition via Prometheus for external visualization.
     """
 
     def __init__(
@@ -26,6 +37,16 @@ class DiagnosticsForge:
         max_bytes: int = 10 * 1024 * 1024,
         backup_count: int = 5,
     ):
+        """
+        Initialize the Diagnostics Forge.
+        
+        Args:
+            service_name (str): Logical identifier for the source of logs/metrics.
+            log_dir (Optional[Path]): Directory for persistent log artifacts.
+            json_format (bool): If True, serializes logs as newline-delimited JSON.
+            max_bytes (int): Maximum size per log file before rotation.
+            backup_count (int): Number of historical log files to retain.
+        """
         self.service_name = service_name
         self.start_time = time.time()
         self.log_dir = Path(log_dir) if log_dir is not None else (Path.cwd() / "logs")
@@ -55,7 +76,14 @@ class DiagnosticsForge:
 
     @eidosian()
     def log_event(self, level: str, message: str, **data: Any) -> None:
-        """Log a structured diagnostics event."""
+        """
+        Logs a structured diagnostics event to the systemic chronicle.
+        
+        Args:
+            level (str): Log severity ("INFO", "WARNING", "ERROR", etc.).
+            message (str): High-level description of the event.
+            **data (Any): Arbitrary contextual metadata for the event.
+        """
         level_name = (level or "INFO").upper()
         level_num = getattr(logging, level_name, logging.INFO)
         if self.json_format:
@@ -72,12 +100,30 @@ class DiagnosticsForge:
 
     @eidosian()
     def start_timer(self, metric_name: str) -> str:
+        """
+        Begins a high-resolution performance timer.
+        
+        Args:
+            metric_name (str): Logical identifier for the operation being timed.
+            
+        Returns:
+            str: Unique timer identifier for completion.
+        """
         timer_id = f"{metric_name}:{time.time_ns()}"
         self._timers[timer_id] = time.perf_counter()
         return timer_id
 
     @eidosian()
     def stop_timer(self, timer_id: str) -> float:
+        """
+        Stops a performance timer and records the duration.
+        
+        Args:
+            timer_id (str): Identifier returned by start_timer().
+            
+        Returns:
+            float: Duration in fractional seconds.
+        """
         start = self._timers.pop(timer_id, None)
         if start is None:
             return 0.0
@@ -88,6 +134,15 @@ class DiagnosticsForge:
 
     @eidosian()
     def get_metrics_summary(self, metric_name: str) -> Dict[str, Any]:
+        """
+        Calculates statistical aggregates for a specific timer metric.
+        
+        Args:
+            metric_name (str): The identifier to summarize.
+            
+        Returns:
+            dict: Summary containing count, average, min, and max durations.
+        """
         values = self._metrics.get(metric_name, [])
         if not values:
             return {"count": 0, "avg": 0.0, "min": 0.0, "max": 0.0}
@@ -100,6 +155,15 @@ class DiagnosticsForge:
 
     @eidosian()
     def save_metrics(self, file_path: str | Path | None = None) -> Path:
+        """
+        Serializes all recorded metrics to a JSON artifact on disk.
+        
+        Args:
+            file_path (Optional[Path]): Destination for the metrics report.
+            
+        Returns:
+            Path: The absolute path to the generated artifact.
+        """
         out = Path(file_path) if file_path is not None else self.metrics_file
         out.parent.mkdir(parents=True, exist_ok=True)
         payload = {name: self.get_metrics_summary(name) for name in sorted(self._metrics)}
