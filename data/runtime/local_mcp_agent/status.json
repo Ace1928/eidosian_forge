@@ -1,9 +1,57 @@
 {
   "contract": "eidos.local_mcp_agent.result.v1",
-  "status": "blocked",
-  "blocked_reason": "instance_budget_exceeded",
+  "status": "error",
+  "created_at": "2026-03-11T05:51:59.908666+00:00",
   "objective": "Inspect forge health, use read-only MCP tools under policy, and report the single highest-leverage next action.",
   "profile": "observer",
-  "owner": "local_mcp_agent:observer",
-  "created_at": "2026-03-08T10:25:40.820036+00:00"
+  "thinking_mode": "on",
+  "effective_thinking_mode": "on",
+  "mcp_transport": "streamable_http",
+  "list_tools_ms": 378,
+  "resource_count": 15,
+  "resource_sample": [
+    {
+      "uri": "eidos://consciousness/hypotheses",
+      "name": "consciousness_hypotheses_resource",
+      "description": ""
+    },
+    {
+      "uri": "eidos://consciousness/latest",
+      "name": "consciousness_latest_resource",
+      "description": ""
+    },
+    {
+      "uri": "eidos://consciousness/runtime-status",
+      "name": "consciousness_runtime_status_resource",
+      "description": ""
+    },
+    {
+      "uri": "eidos://consciousness/runtime-integrations",
+      "name": "consciousness_runtime_integrations_resource",
+      "description": ""
+    },
+    {
+      "uri": "eidos://consciousness/runtime-latest-trial",
+      "name": "consciousness_runtime_latest_trial_resource",
+      "description": ""
+    },
+    {
+      "uri": "eidos://consciousness/runtime-latest-benchmark",
+      "name": "consciousness_runtime_latest_benchmark_resource",
+      "description": ""
+    }
+  ],
+  "tool_contract_count": 15,
+  "tool_calls": 1,
+  "tool_latency_ms_total": 0,
+  "mutating_calls": 0,
+  "final_message": "",
+  "cycle_log": [],
+  "error_type": "ExceptionGroup",
+  "error": "ExceptionGroup | ExceptionGroup | ValidationError: 1 validation error for ReadResourceRequestParams\nuri\n  Input should be a valid URL, relative URL without a base [type=url_parsing, input_value='consciousness_runtime_status_resource', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.12/v/url_parsing",
+  "error_chain": [
+    "ExceptionGroup",
+    "ExceptionGroup",
+    "ValidationError: 1 validation error for ReadResourceRequestParams\nuri\n  Input should be a valid URL, relative URL without a base [type=url_parsing, input_value='consciousness_runtime_status_resource', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.12/v/url_parsing"
+  ]
 }

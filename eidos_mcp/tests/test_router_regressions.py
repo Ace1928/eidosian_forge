@@ -37,7 +37,7 @@ def test_refactor_analyze_resolves_relative_paths_without_root_prefix(monkeypatc
 
 def test_eidos_remember_self_no_importance_argument_regression(monkeypatch) -> None:
     class _FakeMemory:
-        def remember_self(self, content: str, tags=None) -> str:
+        def remember_self(self, content: str, subdomain: str = "autobiography", tags=None) -> str:
             return "mem_self_001"
 
     monkeypatch.setattr(tiered_router, "_get_tiered_memory", lambda: _FakeMemory())

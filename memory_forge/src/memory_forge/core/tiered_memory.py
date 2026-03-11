@@ -339,19 +339,43 @@ class TieredMemorySystem:
     def remember_self(
         self,
         content: str,
+        subdomain: str = "autobiography",
         memory_type: MemoryType = MemoryType.SEMANTIC,
         tags: Optional[Set[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> str:
-        """Store an EIDOS self-memory (identity, lesson, insight)."""
+        """
+        Store an EIDOS self-memory within a specific constitutional subdomain.
+        
+        Subdomains:
+        - invariants: Core claims (e.g., Prime Directives) that are highly resistant to drift.
+        - values: Ranked operational priorities.
+        - autobiography: The historical self-model (milestones, upgrades).
+        - hypotheses: Things under test via experimentation.
+        """
+        valid_subdomains = {"invariants", "values", "autobiography", "hypotheses"}
+        if subdomain not in valid_subdomains:
+            raise ValueError(f"Invalid SELF subdomain '{subdomain}'. Must be one of {valid_subdomains}")
+
+        meta = metadata or {}
+        meta["self_subdomain"] = subdomain
+        
+        importance = 1.5
+        if subdomain == "invariants":
+            importance = 2.0  # Maximum gravity for invariants
+
+        all_tags = {"self", "eidos", subdomain}
+        if tags:
+            all_tags.update(tags)
+
         return self.remember(
             content=content,
             tier=MemoryTier.SELF,
             namespace=MemoryNamespace.EIDOS,
             memory_type=memory_type,
-            importance=1.5,  # Self memories are high importance
-            tags=tags or {"self", "eidos"},
-            metadata=metadata or {},
+            importance=importance,
+            tags=all_tags,
+            metadata=meta,
         )
 
     @eidosian()
@@ -396,6 +420,7 @@ class TieredMemorySystem:
 
         return self.remember_self(
             content=content,
+            subdomain="autobiography",
             memory_type=MemoryType.PROCEDURAL,
             tags=all_tags,
             metadata={"lesson": lesson, "context": context, "outcome": outcome},

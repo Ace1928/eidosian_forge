@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import random
 import uuid
+import hashlib
+import json
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -30,6 +32,7 @@ from .modules.world_model import WorldModelModule
 from .state_store import ModuleStateStore
 from .tuning.overlay import load_tuned_overlay, resolve_config
 from .types import Module, TickContext, merged_config
+from .ledger import ContinuityLedger
 
 
 @dataclass
@@ -65,6 +68,7 @@ class ConsciousnessKernel:
         self._refresh_config()
         self.beat_count = int(self.state_store.get_meta("beat_count", 0) or 0)
         self._active_perturbations: list[dict[str, Any]] = []
+        self.ledger = ContinuityLedger(self.state_dir / "ledger")
         self.modules: List[Module] = list(
             modules
             or [
@@ -87,6 +91,18 @@ class ConsciousnessKernel:
                 ExperimentDesignerModule(),
             ]
         )
+        self._record_initial_ledger_state()
+
+    def _record_initial_ledger_state(self) -> None:
+        try:
+            state_snapshot = {
+                "beat_count": self.beat_count,
+                "modules_active": [m.name for m in self.modules if not self._module_disabled(m.name)],
+                "config_hash": hashlib.sha256(json.dumps(self.config, sort_keys=True).encode("utf-8")).hexdigest()
+            }
+            self.ledger.record_heartbeat(state_snapshot)
+        except Exception:
+            pass
 
     def set_runtime_overrides(self, overrides: Mapping[str, Any] | None) -> None:
         self._runtime_overrides = dict(overrides or {})
@@ -414,6 +430,7 @@ class ConsciousnessKernel:
             state_store=self.state_store,
             active_perturbations=list(self._active_perturbations),
             now=datetime.now(timezone.utc),
+            ledger=self.ledger,
         )
 
     def tick(self) -> KernelResult:

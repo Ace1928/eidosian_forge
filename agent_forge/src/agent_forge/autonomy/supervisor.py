@@ -73,6 +73,7 @@ def load_supervisor_config(path: str | Path | None) -> dict[str, Any]:
 
 
 from .homeostasis import HomeostaticController
+from .gates import SystemicGateKeeper
 from . import homeostasis as H
 
 DEFAULT_HOME_MISSIONS = [
@@ -125,6 +126,10 @@ class AutonomySupervisor:
         self._graphrag = graphrag
         self._embedder = embedder
         self.homeostasis = HomeostaticController(self.state_dir)
+        self.gatekeeper = SystemicGateKeeper(
+            repo_root=self.repo_root, 
+            invariants_path=self.repo_root / "GEMINI.md"
+        )
 
     def _policy(self) -> dict[str, Any]:
         policy = self.config.get("policy", {})
@@ -394,6 +399,8 @@ class AutonomySupervisor:
         preservation = 0.0
         coherence = 0.0
         growth = 0.0
+        curiosity = 0.0
+        caution = 0.0
         for token in context_tokens:
             if token.startswith("drive.preservation."):
                 try: preservation = float(token.split(".")[-1])
@@ -404,15 +411,27 @@ class AutonomySupervisor:
             if token.startswith("drive.growth."):
                 try: growth = float(token.split(".")[-1])
                 except Exception: pass
+            if token.startswith("drive.curiosity."):
+                try: curiosity = float(token.split(".")[-1])
+                except Exception: pass
+            if token.startswith("drive.caution."):
+                try: caution = float(token.split(".")[-1])
+                except Exception: pass
 
         template = _to_text(mission.get("template")).lower()
 
         if template == "hygiene":
             score += preservation * 2.0
+            score += caution * 1.0
         elif template == "self_reflect":
             score += coherence * 1.5
+            score += caution * 0.5
         elif template in {"ingestion", "research"}:
             score += growth * 1.0
+            score += curiosity * 1.2
+        elif template == "experiment":
+            score += curiosity * 2.0
+            score -= caution * 1.5  # Risky templates are penalized by caution drive
 
         report_summary = context.get("report_summary") if isinstance(context.get("report_summary"), Mapping) else {}
         artifact_summary = (

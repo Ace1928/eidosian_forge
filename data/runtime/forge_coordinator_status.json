@@ -1,41 +1,36 @@
 {
   "contract": "eidos.runtime_coordinator.v1",
   "state": "running",
-  "task": "living_pipeline",
-  "owner": "eidos_scheduler",
-  "updated_at": "2026-03-07T04:21:44.951686+00:00",
+  "task": "local_agent:observer",
+  "owner": "local_mcp_agent:observer",
+  "updated_at": "2026-03-11T05:55:00.000508+00:00",
   "active_models": [
     {
       "family": "ollama",
       "model": "qwen3.5:2b",
-      "role": "living_pipeline"
+      "role": "local_agent:observer"
     }
   ],
   "metadata": {
-    "mode": "scheduler_cycle",
-    "cycle": 1,
-    "interval_sec": 30.0,
-    "doc_model": "qwen3.5:2b"
+    "exclusive": false,
+    "mode": "local_agent_cycle",
+    "profile": "observer",
+    "objective": "Inspect forge health, use read-only MCP tools under policy, and report the single highest-leverage next action.",
+    "pid": 7801,
+    "host": "localhost"
   },
   "history": [
     {
-      "updated_at": "2026-03-07T04:19:56.433468+00:00",
-      "owner": "eidos_scheduler",
-      "task": "living_pipeline",
+      "updated_at": "2026-03-11T05:28:45.326589+00:00",
+      "owner": "local_mcp_agent:observer",
+      "task": "local_agent:observer",
       "state": "running",
       "active_model_count": 1
     },
     {
-      "updated_at": "2026-03-07T04:20:45.984450+00:00",
-      "owner": "eidos_scheduler",
-      "task": "living_pipeline",
-      "state": "running",
-      "active_model_count": 1
-    },
-    {
-      "updated_at": "2026-03-07T04:21:44.951674+00:00",
-      "owner": "eidos_scheduler",
-      "task": "living_pipeline",
+      "updated_at": "2026-03-11T05:55:00.000449+00:00",
+      "owner": "local_mcp_agent:observer",
+      "task": "local_agent:observer",
       "state": "running",
       "active_model_count": 1
     }

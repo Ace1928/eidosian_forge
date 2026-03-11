@@ -67,6 +67,11 @@ def _get_tiered_memory() -> Optional[TieredMemorySystem]:
         "type": "object",
         "properties": {
             "content": {"type": "string", "description": "The self-knowledge content to remember"},
+            "subdomain": {
+                "type": "string",
+                "enum": ["invariants", "values", "autobiography", "hypotheses"],
+                "description": "The constitutional subdomain for this memory. Default is 'autobiography'."
+            },
             "tags": {
                 "type": "array",
                 "items": {"type": "string"},
@@ -79,6 +84,7 @@ def _get_tiered_memory() -> Optional[TieredMemorySystem]:
 @eidosian()
 def eidos_remember_self(
     content: str,
+    subdomain: str = "autobiography",
     tags: Optional[List[str]] = None,
 ) -> str:
     """Store EIDOS self-memory."""
@@ -87,7 +93,7 @@ def eidos_remember_self(
         return "Error: Tiered memory system not available"
 
     tag_set = set(tags) if tags else set()
-    mid = mem.remember_self(content, tags=tag_set)
+    mid = mem.remember_self(content, subdomain=subdomain, tags=tag_set)
     return f"Self-memory stored: {mid}"
 
 

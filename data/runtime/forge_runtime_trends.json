@@ -2,7 +2,7 @@
   "contract": "eidos.runtime_trends.v1",
   "entries": [
     {
-      "updated_at": "2026-03-07T03:44:58.763841+00:00",
+      "updated_at": "2026-03-11T05:28:45.326714+00:00",
       "owner": "local_mcp_agent:observer",
       "task": "local_agent:observer",
       "state": "running",
@@ -24,7 +24,7 @@
       "summary": {}
     },
     {
-      "updated_at": "2026-03-07T03:47:14.373934+00:00",
+      "updated_at": "2026-03-11T05:55:00.000508+00:00",
       "owner": "local_mcp_agent:observer",
       "task": "local_agent:observer",
       "state": "running",
@@ -42,116 +42,6 @@
       "records_total": null,
       "consecutive_failures": null,
       "doc_model": null,
-      "doc_thinking_mode": null,
-      "summary": {}
-    },
-    {
-      "updated_at": "2026-03-07T03:54:31.220204+00:00",
-      "owner": "local_mcp_agent:observer",
-      "task": "local_agent:observer",
-      "state": "running",
-      "active_model_count": 1,
-      "active_models": [
-        {
-          "family": "ollama",
-          "model": "qwen3.5:2b",
-          "role": "local_agent:observer"
-        }
-      ],
-      "policy": {},
-      "cycle": null,
-      "run_id": null,
-      "records_total": null,
-      "consecutive_failures": null,
-      "doc_model": null,
-      "doc_thinking_mode": null,
-      "summary": {}
-    },
-    {
-      "updated_at": "2026-03-07T03:56:12.310794+00:00",
-      "owner": "local_mcp_agent:observer",
-      "task": "local_agent:observer",
-      "state": "running",
-      "active_model_count": 1,
-      "active_models": [
-        {
-          "family": "ollama",
-          "model": "qwen3.5:2b",
-          "role": "local_agent:observer"
-        }
-      ],
-      "policy": {},
-      "cycle": null,
-      "run_id": null,
-      "records_total": null,
-      "consecutive_failures": null,
-      "doc_model": null,
-      "doc_thinking_mode": null,
-      "summary": {}
-    },
-    {
-      "updated_at": "2026-03-07T04:19:56.433480+00:00",
-      "owner": "eidos_scheduler",
-      "task": "living_pipeline",
-      "state": "running",
-      "active_model_count": 1,
-      "active_models": [
-        {
-          "family": "ollama",
-          "model": "qwen3.5:2b",
-          "role": "living_pipeline"
-        }
-      ],
-      "policy": {},
-      "cycle": 1,
-      "run_id": null,
-      "records_total": null,
-      "consecutive_failures": null,
-      "doc_model": "qwen3.5:2b",
-      "doc_thinking_mode": null,
-      "summary": {}
-    },
-    {
-      "updated_at": "2026-03-07T04:20:45.984461+00:00",
-      "owner": "eidos_scheduler",
-      "task": "living_pipeline",
-      "state": "running",
-      "active_model_count": 1,
-      "active_models": [
-        {
-          "family": "ollama",
-          "model": "qwen3.5:2b",
-          "role": "living_pipeline"
-        }
-      ],
-      "policy": {},
-      "cycle": 1,
-      "run_id": null,
-      "records_total": null,
-      "consecutive_failures": null,
-      "doc_model": "qwen3.5:2b",
-      "doc_thinking_mode": null,
-      "summary": {}
-    },
-    {
-      "updated_at": "2026-03-07T04:21:44.951686+00:00",
-      "owner": "eidos_scheduler",
-      "task": "living_pipeline",
-      "state": "running",
-      "active_model_count": 1,
-      "active_models": [
-        {
-          "family": "ollama",
-          "model": "qwen3.5:2b",
-          "role": "living_pipeline"
-        }
-      ],
-      "policy": {},
-      "cycle": 1,
-      "run_id": null,
-      "records_total": null,
-      "consecutive_failures": null,
-      "doc_model": "qwen3.5:2b",
       "doc_thinking_mode": null,
       "summary": {}
     }

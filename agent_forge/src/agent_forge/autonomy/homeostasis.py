@@ -38,6 +38,8 @@ class HomeostaticState:
     preservation_drive: float = 0.0  # High when resources are critical
     coherence_drive: float = 0.0     # High when internal state is fragmented
     growth_drive: float = 0.5        # Base urge to expand knowledge/capability
+    curiosity_drive: float = 0.0     # High when world prediction error is high
+    caution_drive: float = 0.0       # High when internal/external stability is low
 
 class HomeostaticController:
     """
@@ -69,16 +71,26 @@ class HomeostaticController:
         self.current_state.agency_index = workspace.get("agency", 1.0)
         
         # 3. Drive Computation
-        # Preservation: High if memory > 90% or disk > 95%
+        # Preservation: High if memory > 80% or disk > 90%
         self.current_state.preservation_drive = max(
             0.0,
-            (self.current_state.memory_pressure - 0.8) * 5.0,  # Starts rising at 80%
-            (self.current_state.disk_saturation - 0.9) * 10.0 # Starts rising at 90%
+            (self.current_state.memory_pressure - 0.8) * 5.0,
+            (self.current_state.disk_saturation - 0.9) * 10.0
         )
         
         # Coherence: High if perspective coherence < 0.7
         self.current_state.coherence_drive = max(0.0, 1.0 - self.current_state.perspective_coherence)
         
+        # Curiosity: Driven by World Prediction Error (WPE)
+        # High WPE means the world is surprising -> Explore/Learn
+        self.current_state.curiosity_drive = min(1.0, self.current_state.world_prediction_error * 1.5)
+
+        # Caution: High if resource pressure is extreme OR coherence is dangerously low
+        self.current_state.caution_drive = max(
+            self.current_state.preservation_drive,
+            max(0.0, 0.5 - self.current_state.perspective_coherence) * 2.0
+        )
+
         # Growth: High if system is healthy and idle
         if self.current_state.preservation_drive < 0.2 and self.current_state.cpu_load < 0.5:
             self.current_state.growth_drive = 0.8
@@ -106,6 +118,8 @@ class HomeostaticController:
                 "preservation": self.current_state.preservation_drive,
                 "coherence": self.current_state.coherence_drive,
                 "growth": self.current_state.growth_drive,
+                "curiosity": self.current_state.curiosity_drive,
+                "caution": self.current_state.caution_drive,
             }
         }
         BUS.append(self.state_dir, "autonomy.homeostasis", state_dict, tags=["homeostasis", "autonomic"])
