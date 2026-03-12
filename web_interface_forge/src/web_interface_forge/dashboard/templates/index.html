@@ -82,6 +82,64 @@
     </div>
 </div>
 
+<div class="grid">
+    <div class="card">
+        <h3>Supervised Services</h3>
+        <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+            <button onclick="serviceAction('start')">Start</button>
+            <button onclick="serviceAction('restart')">Restart</button>
+            <button onclick="serviceAction('stop')">Stop</button>
+            <button onclick="refreshServices()">Refresh</button>
+        </div>
+        <table>
+            <thead>
+                <tr><th>Service</th><th>State</th></tr>
+            </thead>
+            <tbody id="service-table-body">
+                {% for row in service_snapshot.get('services', []) %}
+                <tr>
+                    <td>{{ row.get('name') }}</td>
+                    <td>{{ row.get('state') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="card">
+        <h3>Scheduler Control</h3>
+        <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+            <button onclick="schedulerAction('pause')">Pause</button>
+            <button onclick="schedulerAction('resume')">Resume</button>
+            <button onclick="schedulerAction('stop')">Stop</button>
+            <button onclick="refreshScheduler()">Refresh</button>
+        </div>
+        <table>
+            <tbody>
+                <tr><th>State</th><td id="scheduler-state">{{ runtime_snapshot.get('scheduler', {}).get('state', 'unknown') }}</td></tr>
+                <tr><th>Cycle</th><td id="scheduler-cycle">{{ runtime_snapshot.get('scheduler', {}).get('cycle', 0) }}</td></tr>
+                <tr><th>Task</th><td id="scheduler-task">{{ runtime_snapshot.get('scheduler', {}).get('current_task', 'idle') }}</td></tr>
+                <tr><th>Next Run</th><td id="scheduler-next-run">{{ runtime_snapshot.get('scheduler', {}).get('next_run_in_seconds', 0) }}</td></tr>
+                <tr><th>Pause Requested</th><td id="scheduler-pause-flag">false</td></tr>
+                <tr><th>Stop Requested</th><td id="scheduler-stop-flag">false</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="card">
+        <h3>Platform Capabilities</h3>
+        <table>
+            <tbody>
+                <tr><th>Platform</th><td>{{ runtime_snapshot.get('capabilities', {}).get('platform', 'unknown') }}</td></tr>
+                <tr><th>Runit</th><td>{{ runtime_snapshot.get('capabilities', {}).get('has_sv', false) }}</td></tr>
+                <tr><th>runsvdir</th><td>{{ runtime_snapshot.get('capabilities', {}).get('has_runsvdir', false) }}</td></tr>
+                <tr><th>Wake Lock</th><td>{{ runtime_snapshot.get('capabilities', {}).get('has_termux_wake_lock', false) }}</td></tr>
+                <tr><th>Termux API</th><td>{{ runtime_snapshot.get('capabilities', {}).get('has_termux_api', false) }}</td></tr>
+                <tr><th>Dashboard URL</th><td>{{ runtime_snapshot.get('capabilities', {}).get('default_dashboard_url', '') }}</td></tr>
+                <tr><th>Booted At</th><td>{{ runtime_snapshot.get('boot', {}).get('booted_at', 'n/a') }}</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
 <div class="card">
     <h3>Recent Documents</h3>
     {% if recent_docs %}
@@ -173,5 +231,61 @@ async function refreshDocStatus() {
     }
 }
 setInterval(refreshDocStatus, 5000);
+
+async function refreshServices() {
+    try {
+        const res = await fetch("/api/services", {cache: "no-store"});
+        if (!res.ok) return;
+        const payload = await res.json();
+        const body = document.getElementById("service-table-body");
+        if (!body) return;
+        body.innerHTML = "";
+        for (const row of (payload.services || [])) {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `<td>${row.name}</td><td>${row.state}</td>`;
+            body.appendChild(tr);
+        }
+    } catch (err) {
+        // ignore transient refresh failures
+    }
+}
+
+async function serviceAction(action) {
+    try {
+        await fetch(`/api/services/${action}`, {method: "POST"});
+    } finally {
+        await refreshServices();
+    }
+}
+
+async function refreshScheduler() {
+    try {
+        const res = await fetch("/api/scheduler", {cache: "no-store"});
+        if (!res.ok) return;
+        const payload = await res.json();
+        const state = payload.payload?.state || {};
+        const status = payload.payload?.status || {};
+        document.getElementById("scheduler-state").textContent = status.state || "unknown";
+        document.getElementById("scheduler-cycle").textContent = status.cycle ?? state.cycle ?? 0;
+        document.getElementById("scheduler-task").textContent = status.current_task || "idle";
+        document.getElementById("scheduler-next-run").textContent = status.next_run_in_seconds ?? 0;
+        document.getElementById("scheduler-pause-flag").textContent = String(Boolean(state.pause_requested));
+        document.getElementById("scheduler-stop-flag").textContent = String(Boolean(state.stop_requested));
+    } catch (err) {
+        // ignore transient refresh failures
+    }
+}
+
+async function schedulerAction(action) {
+    try {
+        await fetch(`/api/scheduler/${action}`, {method: "POST"});
+    } finally {
+        await refreshScheduler();
+    }
+}
+
+setInterval(refreshServices, 8000);
+setInterval(refreshScheduler, 8000);
+refreshScheduler();
 </script>
 {% endblock %}

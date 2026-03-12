@@ -31,6 +31,7 @@ def test_install_termux_boot_writes_wrapper(tmp_path: Path) -> None:
     env = os.environ.copy()
     env["HOME"] = str(home)
     env["EIDOS_FORGE_ROOT"] = str(FORGE_ROOT)
+    env["EIDOS_INSTALL_RUNIT_ON_BOOT_INSTALL"] = "0"
     subprocess.run([str(INSTALL_BOOT)], check=True, env=env, cwd=FORGE_ROOT)
     wrapper = home / ".termux" / "boot" / "00-eidos-boot"
     assert wrapper.exists()

@@ -137,3 +137,52 @@ def test_service_api_invalid_action() -> None:
     with TestClient(dashboard.app) as client:
         resp = client.post("/api/services/invalid")
         assert resp.status_code == 400
+
+
+def test_services_api_parses_status(monkeypatch, tmp_path: Path) -> None:
+    service_script = tmp_path / "eidos_termux_services.sh"
+    service_script.write_text(
+        "#!/bin/sh\n"
+        "printf 'Eidos Scheduler: runit run: /tmp/service: (pid 1) 10s; run: log: (pid 2) 10s\\n'\n"
+        "printf 'Interactive shell refcount: 1\\n'\n",
+        encoding="utf-8",
+    )
+    service_script.chmod(0o755)
+    monkeypatch.setattr(dashboard, "SERVICES_SCRIPT", service_script)
+    with TestClient(dashboard.app) as client:
+        resp = client.get("/api/services")
+        assert resp.status_code == 200
+        payload = resp.json()
+        assert payload["services"][0]["name"] == "Eidos Scheduler"
+        assert payload["services"][0]["running"] is True
+
+
+def test_scheduler_api(monkeypatch, tmp_path: Path) -> None:
+    scheduler_script = tmp_path / "eidos_scheduler_control.py"
+    scheduler_script.write_text(
+        "#!/bin/sh\n"
+        "printf '{\"action\":\"status\",\"state\":{\"pause_requested\":false,\"stop_requested\":false},\"status\":{\"state\":\"sleeping\",\"cycle\":4,\"current_task\":\"living_pipeline\"}}\\n'\n",
+        encoding="utf-8",
+    )
+    scheduler_script.chmod(0o755)
+    monkeypatch.setattr(dashboard, "SCHEDULER_CONTROL_SCRIPT", scheduler_script)
+    venv_dir = tmp_path / "eidosian_venv" / "bin"
+    venv_dir.mkdir(parents=True, exist_ok=True)
+    python_bin = venv_dir / "python"
+    python_bin.write_text(
+        "#!/bin/sh\nexec \"$@\"\n",
+        encoding="utf-8",
+    )
+    python_bin.chmod(0o755)
+    monkeypatch.setattr(dashboard, "FORGE_ROOT", tmp_path)
+    with TestClient(dashboard.app) as client:
+        resp = client.get("/api/scheduler")
+        assert resp.status_code == 200
+        payload = resp.json()
+        assert payload["payload"]["status"]["state"] == "sleeping"
+
+
+def test_scheduler_api_invalid_action() -> None:
+    with TestClient(dashboard.app) as client:
+        resp = client.post("/api/scheduler/invalid")
+        assert resp.status_code == 400

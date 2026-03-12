@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import subprocess
+from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List
@@ -12,6 +13,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from eidosian_runtime import collect_runtime_capabilities
 
 # --- Configuration ---
 FORGE_ROOT = Path(os.environ.get("EIDOS_FORGE_ROOT", "/data/data/com.termux/files/home/eidosian_forge")).resolve()
@@ -26,7 +28,10 @@ LOCAL_AGENT_HISTORY = RUNTIME_DIR / "local_mcp_agent" / "history.jsonl"
 SCHEDULER_STATUS = RUNTIME_DIR / "eidos_scheduler_status.json"
 COORDINATOR_STATUS = RUNTIME_DIR / "forge_coordinator_status.json"
 COORDINATOR_HISTORY = RUNTIME_DIR / "forge_runtime_trends.json"
+BOOT_STATUS = RUNTIME_DIR / "termux_boot_status.json"
+CAPABILITIES_STATUS = RUNTIME_DIR / "platform_capabilities.json"
 SERVICES_SCRIPT = FORGE_ROOT / "scripts" / "eidos_termux_services.sh"
+SCHEDULER_CONTROL_SCRIPT = FORGE_ROOT / "scripts" / "eidos_scheduler_control.py"
 TEMPLATES_DIR = Path(__file__).parent / "templates"
 STATIC_DIR = Path(__file__).parent / "static"
 STATIC_DIR.mkdir(parents=True, exist_ok=True)
@@ -106,10 +111,16 @@ def get_runtime_snapshot() -> Dict[str, Any]:
     coordinator = _read_json(COORDINATOR_STATUS, {})
     scheduler = _read_json(SCHEDULER_STATUS, {})
     local_agent = _read_json(LOCAL_AGENT_STATUS, {})
+    boot_status = _read_json(BOOT_STATUS, {})
+    capabilities = _read_json(CAPABILITIES_STATUS, {})
+    if not capabilities:
+        capabilities = asdict(collect_runtime_capabilities())
     return {
         "coordinator": coordinator,
         "scheduler": scheduler,
         "local_agent": local_agent,
+        "boot": boot_status,
+        "capabilities": capabilities,
     }
 
 
@@ -143,7 +154,7 @@ def get_runtime_history(limit: int = 24) -> List[Dict[str, Any]]:
     return [row for row in rows if isinstance(row, dict)][-max(1, int(limit)) :]
 
 
-def get_file_tree(path: Path) -> List[Dict[str, Any]]:
+def get_file_tree(path: Path, root: Path) -> List[Dict[str, Any]]:
     tree = []
     try:
         # Sort directories first, then files
@@ -153,7 +164,7 @@ def get_file_tree(path: Path) -> List[Dict[str, Any]]:
                 continue
             item = {
                 "name": entry.name,
-                "path": str(entry.relative_to(DOC_FINAL)),
+                "path": str(entry.relative_to(root)),
                 "is_dir": entry.is_dir(),
                 "size": entry.stat().st_size if entry.is_file() else 0,
                 "mtime": datetime.fromtimestamp(entry.stat().st_mtime).isoformat(),
@@ -197,7 +208,62 @@ def _service_command(action: str) -> Dict[str, Any]:
         "stdout": result.stdout,
         "stderr": result.stderr,
         "ok": result.returncode == 0,
+        "services": _parse_service_status_output(result.stdout) if action == "status" else [],
     }
+
+
+def _scheduler_command(action: str) -> Dict[str, Any]:
+    allowed = {"status", "pause", "resume", "stop"}
+    if action not in allowed:
+        raise HTTPException(status_code=400, detail="Invalid scheduler action")
+    if not SCHEDULER_CONTROL_SCRIPT.exists():
+        raise HTTPException(status_code=503, detail="Scheduler controller unavailable")
+    env = os.environ.copy()
+    env["EIDOS_FORGE_ROOT"] = str(FORGE_ROOT)
+    result = subprocess.run(
+        [
+            str(FORGE_ROOT / "eidosian_venv" / "bin" / "python"),
+            str(SCHEDULER_CONTROL_SCRIPT),
+            action,
+        ],
+        cwd=str(FORGE_ROOT),
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=90,
+        check=False,
+    )
+    payload: dict[str, Any] = {}
+    try:
+        payload = json.loads(result.stdout or "{}")
+    except Exception:
+        payload = {}
+    return {
+        "action": action,
+        "returncode": result.returncode,
+        "stdout": result.stdout,
+        "stderr": result.stderr,
+        "ok": result.returncode == 0,
+        "payload": payload if isinstance(payload, dict) else {},
+    }
+
+
+def _parse_service_status_output(raw: str) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for line in (raw or "").splitlines():
+        line = line.strip()
+        if not line or ":" not in line or line.startswith("Interactive shell refcount"):
+            continue
+        name, state = line.split(":", 1)
+        state_value = state.strip()
+        rows.append(
+            {
+                "name": name.strip(),
+                "state": state_value,
+                "running": "run:" in state_value or "running(" in state_value,
+            }
+        )
+    return rows
 
 
 # --- Routes ---
@@ -223,6 +289,7 @@ async def dashboard(request: Request):
             "doc_index_count": doc_snapshot["index_count"],
             "runtime_snapshot": runtime_snapshot,
             "local_agent_history": local_agent_history,
+            "service_snapshot": _service_command("status"),
         },
     )
 
@@ -247,7 +314,7 @@ async def browse_domain(request: Request, domain: str, path: str = "."):
         raise HTTPException(status_code=404, detail="Path not found")
 
     if target_path.is_dir():
-        files = get_file_tree(target_path)
+        files = get_file_tree(target_path, root)
         parent = str(Path(path).parent) if path != "." else None
         return templates.TemplateResponse(
             request,
@@ -305,6 +372,21 @@ async def api_services():
 @app.post("/api/services/{action}")
 async def api_services_action(action: str):
     return _service_command(action)
+
+
+@app.get("/api/capabilities")
+async def api_capabilities():
+    return get_runtime_snapshot().get("capabilities", {})
+
+
+@app.get("/api/scheduler")
+async def api_scheduler():
+    return _scheduler_command("status")
+
+
+@app.post("/api/scheduler/{action}")
+async def api_scheduler_action(action: str):
+    return _scheduler_command(action)
 
 
 @app.get("/api/runtime/local-agent")

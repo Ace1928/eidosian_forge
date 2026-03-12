@@ -67,6 +67,8 @@ def _load_state() -> dict[str, Any]:
     payload.setdefault("cycle", 0)
     payload.setdefault("consecutive_failures", 0)
     payload.setdefault("last_result", {})
+    payload.setdefault("pause_requested", False)
+    payload.setdefault("stop_requested", False)
     return payload
 
 
@@ -141,6 +143,7 @@ def _mark_scheduler_state(
     code_max_files: int | None,
     state: str,
     last_result: dict[str, Any] | None = None,
+    pause_requested: bool = False,
     stop_requested: bool = False,
 ) -> None:
     previous = _load_state()
@@ -159,6 +162,7 @@ def _mark_scheduler_state(
             "code_max_files": code_max_files,
             "consecutive_failures": consecutive_failures,
             "last_result": dict(last_result or previous.get("last_result") or {}),
+            "pause_requested": bool(pause_requested),
             "stop_requested": bool(stop_requested),
         }
     )
@@ -201,6 +205,7 @@ def run_scheduler_cycle(
             code_max_files=code_max_files,
             state="stopped",
             last_result=result,
+            pause_requested=False,
             stop_requested=True,
         )
         return result
@@ -225,6 +230,7 @@ def run_scheduler_cycle(
             code_max_files=code_max_files,
             state="waiting",
             last_result=payload.get("last_result"),
+            pause_requested=bool(_load_state().get("pause_requested")),
         )
         return payload
 
@@ -326,6 +332,7 @@ def run_scheduler_cycle(
             code_max_files=code_max_files,
             state=result["status"],
             last_result=result,
+            pause_requested=False,
         )
         return result
     except subprocess.TimeoutExpired as exc:
@@ -357,6 +364,7 @@ def run_scheduler_cycle(
             code_max_files=code_max_files,
             state="timeout",
             last_result=result,
+            pause_requested=False,
         )
         return result
     finally:
@@ -386,6 +394,30 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--model", default=os.environ.get("EIDOS_QWEN_MODEL", "qwen3.5:2b"))
     parser.add_argument("--run-graphrag", action="store_true")
     return parser.parse_args()
+
+
+@eidosian()
+def apply_scheduler_control(action: str) -> dict[str, Any]:
+    action_value = str(action or "").strip().lower()
+    if action_value not in {"status", "pause", "resume", "stop"}:
+        raise ValueError(f"Unsupported scheduler action: {action}")
+    state = _load_state()
+    if action_value == "pause":
+        state["pause_requested"] = True
+        state["stop_requested"] = False
+    elif action_value == "resume":
+        state["pause_requested"] = False
+        state["stop_requested"] = False
+    elif action_value == "stop":
+        state["pause_requested"] = False
+        state["stop_requested"] = True
+    _write_state(state)
+    status = _load_json(STATUS_PATH)
+    return {
+        "action": action_value,
+        "state": _load_state(),
+        "status": status,
+    }
 
 
 @eidosian()
@@ -421,6 +453,9 @@ def main() -> int:
         signal.signal(sig, _request_stop)
 
     while True:
+        persisted = _load_state()
+        if persisted.get("stop_requested"):
+            _STOP_REQUESTED = True
         if _STOP_REQUESTED:
             _write_json(
                 STATUS_PATH,
@@ -446,9 +481,48 @@ def main() -> int:
                 last_result=(
                     _load_state().get("last_result") if isinstance(_load_state().get("last_result"), dict) else {}
                 ),
+                pause_requested=False,
                 stop_requested=True,
             )
             return 0
+        if persisted.get("pause_requested"):
+            while True:
+                control = _load_state()
+                if control.get("stop_requested"):
+                    _STOP_REQUESTED = True
+                    break
+                if not control.get("pause_requested"):
+                    break
+                _write_json(
+                    STATUS_PATH,
+                    _status_payload(
+                        state="paused",
+                        current_task="living_pipeline",
+                        interval_sec=interval_sec,
+                        cycle=cycle,
+                        next_run_in_seconds=0.0,
+                        last_result=(
+                            control.get("last_result") if isinstance(control.get("last_result"), dict) else {}
+                        ),
+                        last_error="pause_requested",
+                    ),
+                )
+                _mark_scheduler_state(
+                    cycle=cycle,
+                    interval_sec=interval_sec,
+                    model=str(args.model),
+                    run_graphrag=bool(args.run_graphrag),
+                    code_max_files=args.code_max_files,
+                    state="paused",
+                    last_result=(
+                        control.get("last_result") if isinstance(control.get("last_result"), dict) else {}
+                    ),
+                    pause_requested=True,
+                    stop_requested=False,
+                )
+                time.sleep(5.0)
+            if _STOP_REQUESTED:
+                continue
         cycle += 1
         run_scheduler_cycle(
             interval_sec=interval_sec,
@@ -482,6 +556,12 @@ def main() -> int:
                     last_error=_load_json(STATUS_PATH).get("last_error") if STATUS_PATH.exists() else "",
                 ),
             )
+            control = _load_state()
+            if control.get("stop_requested"):
+                _STOP_REQUESTED = True
+                break
+            if control.get("pause_requested"):
+                break
             step = min(5.0, sleep_remaining)
             time.sleep(step)
             sleep_remaining = max(0.0, sleep_remaining - step)
