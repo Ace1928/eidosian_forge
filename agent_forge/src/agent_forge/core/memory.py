@@ -103,9 +103,12 @@ class MemorySystem:
         if override:
             return Path(override).expanduser().resolve()
         root = _forge_root()
-        candidate = root / "data" / "memory"
-        if candidate.exists():
-            return candidate
+        preferred = root / "data" / "tiered_memory"
+        legacy = root / "data" / "memory"
+        if preferred.exists() or not legacy.exists():
+            return preferred
+        if legacy.exists():
+            return legacy
         return (self.memory_path / "tiered").resolve()
 
     def _load_tiered_memory_system(self) -> Any:

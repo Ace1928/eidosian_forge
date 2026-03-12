@@ -19,6 +19,15 @@ def _forge_root() -> Path:
     return Path(__file__).resolve().parents[5]
 
 
+def _default_memory_dir() -> Path:
+    root = _forge_root()
+    preferred = root / "data" / "tiered_memory"
+    legacy = root / "data" / "memory"
+    if preferred.exists() or not legacy.exists():
+        return preferred
+    return legacy
+
+
 def _ensure_knowledge_import_path() -> None:
     root = _forge_root()
     candidates = [
@@ -92,7 +101,7 @@ class KnowledgeBridgeModule:
             else Path(
                 os.environ.get(
                     "EIDOS_MEMORY_DIR",
-                    str(root / "data" / "memory"),
+                    str(_default_memory_dir()),
                 )
             )
             .expanduser()

@@ -95,8 +95,8 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
 - [~] Keep one canonical shell bootstrap contract across Termux and Linux.
 - [~] Finish boot/resume semantics and ensure resumable services restart cleanly.
 - [~] Standardize temp/runtime/cache/data paths across Termux and Linux.
-- [ ] Build a capability registry for platform differences instead of littering checks across code.
-- [~] Integrate boot/service/runtime state into Atlas and the scheduler.
+- [x] Build a capability registry for platform differences instead of littering checks across code.
+- [x] Integrate boot/service/runtime state into Atlas and the scheduler.
 
 ### Phase 3: GIS Core and Universal Information Model
 - [ ] Define GIS as the canonical identification, classification, and governance layer for all information constructs.
@@ -207,7 +207,7 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
 - [~] Feed runtime, ingestion, memory, report, and vector health into autonomy scoring.
 - [~] Feed the same state into consciousness broadcasts and metrics.
 - [~] Add explicit backlog and resume semantics for unfinished ingestion waves.
-- [~] Add governed local-agent execution as a first-class runtime surface.
+- [x] Add governed local-agent execution as a first-class runtime surface.
 
 ### Phase 12: Atlas and Operator UX
 - [~] Expand Atlas into the operator control plane for:
@@ -222,7 +222,7 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
 - [~] Add saved exploration sessions, filters, community overlays, and reversible snippet export.
 - [~] Add runtime trend/history panes for workflows, pipelines, vector state, and archive burn-down.
 - [~] Add local-agent runtime status/history to the operator surface.
-- [ ] Add execution control for supervised services and scheduler queues.
+- [~] Add execution control for supervised services and scheduler queues.
 
 ### Phase 13: Validation, Benchmarks, and Promotion Gates
 - [ ] Define end-to-end promotion gates for each subsystem.
@@ -258,6 +258,15 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
   - `docs/external_references/2026-03-07-master-program/`
 - [x] Phase 1 implementation slice started:
   - dynamic Python component test-matrix planner added
+- [x] Phase 2 runtime-control slice deepened:
+  - runtime capability registry is now emitted as a canonical artifact
+  - Termux boot install ensures runit service definitions exist before first boot use
+  - Atlas now exposes supervised service state and scheduler control surfaces
+  - scheduler pause/resume/stop controls now exist as explicit runtime operations
+- [x] Consciousness bridge continuity hardened:
+  - status tool now falls back to direct bridge probing when recent events are absent
+  - bridge and self-model defaults now point to `data/tiered_memory`
+  - live MCP reload confirmed real bridge visibility (`memory_total=219`, `knowledge_count=4595`)
 - [x] Termux shell bootstrap thinned and modularized:
   - repo-managed `~/.bashrc` bootstrap
   - restored `eidosian_venv/bin/activate`

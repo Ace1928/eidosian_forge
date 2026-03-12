@@ -40,6 +40,17 @@ from agent_forge.core.state import (  # type: ignore
     snapshot,
 )
 
+
+def _default_memory_dir() -> str:
+    override = os.environ.get("EIDOS_MEMORY_DIR")
+    if override:
+        return override
+    preferred = _P.cwd() / "data" / "tiered_memory"
+    legacy = _P.cwd() / "data" / "memory"
+    if preferred.exists() or not legacy.exists():
+        return str(preferred)
+    return str(legacy)
+
 DEFAULT_OLLAMA_ENDPOINT = get_service_url("ollama_http", default_port=11434, default_path="")
 
 
@@ -130,7 +141,7 @@ def main(argv: list[str] | None = None) -> int:
         p_self.add_argument("--dir", default="state", help="state directory")
         p_self.add_argument(
             "--memory-dir",
-            default=os.environ.get("EIDOS_MEMORY_DIR", str(_P.cwd() / "data" / "memory")),
+            default=_default_memory_dir(),
         )
         p_self.add_argument("--last", type=int, default=5, help="number of recent events to include")
         p_self.add_argument("--window", type=float, default=1.0, help="window size in seconds")
@@ -182,17 +193,10 @@ def main(argv: list[str] | None = None) -> int:
         cbench_latest.add_argument("--dir", default="state", help="state directory")
         cbench_latest.add_argument("--json", action="store_true", help="JSON output")
 
-        cimport "import-benchmark"
-        cimport =
-        cimport artifact"
-        cimport benchmark
-        cimport consciousness
-        cimport csub.add_parser
-        cimport external
-        cimport help="import
-        cimport into
-        cimport JSON
-        cimport standardized
+        cimport = csub.add_parser(
+            "import-benchmark",
+            help="import external benchmark artifact into standardized consciousness JSON",
+        )
         cimport.add_argument("--dir", default="state", help="state directory")
         cimport.add_argument("--path", required=True, help="path to external benchmark JSON payload")
         cimport.add_argument(

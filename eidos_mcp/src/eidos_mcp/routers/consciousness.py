@@ -6,7 +6,7 @@ import shutil
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Optional
+from typing import Any, Mapping, Optional
 
 from eidosian_core import eidosian
 from eidosian_core.ports import get_service_url
@@ -108,13 +108,100 @@ def _bridge_status_payload(state_dir: Optional[str] = None) -> dict[str, object]
     if runner is None:
         return {"error": "agent_forge consciousness runtime unavailable"}
     status = runner.status()
+    memory_bridge = _merge_bridge_payload(
+        status.get("memory_bridge"),
+        _direct_memory_bridge_status(),
+    )
+    knowledge_bridge = _merge_bridge_payload(
+        status.get("knowledge_bridge"),
+        _direct_knowledge_bridge_status(),
+    )
     return {
         "timestamp": status.get("timestamp"),
         "state_dir": status.get("state_dir"),
-        "memory_bridge": status.get("memory_bridge") or {},
-        "knowledge_bridge": status.get("knowledge_bridge") or {},
-        "memory_recalls": status.get("memory_recalls"),
-        "knowledge_hits": status.get("knowledge_hits"),
+        "memory_bridge": memory_bridge,
+        "knowledge_bridge": knowledge_bridge,
+        "memory_recalls": status.get("memory_recalls")
+        if status.get("memory_recalls") is not None
+        else memory_bridge.get("recall_count"),
+        "knowledge_hits": status.get("knowledge_hits")
+        if status.get("knowledge_hits") is not None
+        else knowledge_bridge.get("total_hits"),
+    }
+
+
+def _merge_bridge_payload(runtime_payload: object, direct_payload: Mapping[str, Any]) -> dict[str, Any]:
+    merged = dict(direct_payload)
+    if not isinstance(runtime_payload, Mapping):
+        return merged
+    for key, value in runtime_payload.items():
+        if value not in (None, "", [], {}):
+            merged[key] = value
+        elif key not in merged:
+            merged[key] = value
+    return merged
+
+
+def _direct_memory_bridge_status() -> dict[str, Any]:
+    try:
+        from agent_forge.consciousness.modules.memory_bridge import MemoryBridgeModule
+    except Exception as exc:
+        return {
+            "available": False,
+            "introspector_available": False,
+            "query": "",
+            "recall_count": 0,
+            "last_error": str(exc),
+            "stats": {},
+            "probe_source": "direct",
+        }
+    module = MemoryBridgeModule()
+    memory_system, memory_err = module._load_memory_system()
+    introspector, intro_err = module._load_introspector()
+    stats: dict[str, Any] = {}
+    if memory_system is not None:
+        try:
+            stats = dict(memory_system.stats())
+        except Exception:
+            stats = {}
+    return {
+        "available": memory_system is not None,
+        "introspector_available": introspector is not None,
+        "query": "",
+        "recall_count": 0,
+        "last_error": memory_err or intro_err,
+        "stats": stats,
+        "probe_source": "direct",
+    }
+
+
+def _direct_knowledge_bridge_status() -> dict[str, Any]:
+    try:
+        from agent_forge.consciousness.modules.knowledge_bridge import KnowledgeBridgeModule
+    except Exception as exc:
+        return {
+            "available": False,
+            "query": "",
+            "total_hits": 0,
+            "last_error": str(exc),
+            "stats": {},
+            "probe_source": "direct",
+        }
+    module = KnowledgeBridgeModule()
+    bridge, bridge_err = module._load_bridge()
+    stats: dict[str, Any] = {}
+    if bridge is not None:
+        try:
+            stats = dict(bridge.stats())
+        except Exception:
+            stats = {}
+    return {
+        "available": bridge is not None,
+        "query": "",
+        "total_hits": 0,
+        "last_error": bridge_err,
+        "stats": stats,
+        "probe_source": "direct",
     }
 
 

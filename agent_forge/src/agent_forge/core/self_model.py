@@ -21,6 +21,17 @@ FORGE_ROOT = Path(
 ).resolve()
 
 
+def _default_memory_dir() -> Path:
+    override = os.environ.get("EIDOS_MEMORY_DIR")
+    if override:
+        return Path(override).expanduser().resolve()
+    preferred = FORGE_ROOT / "data" / "tiered_memory"
+    legacy = FORGE_ROOT / "data" / "memory"
+    if preferred.exists() or not legacy.exists():
+        return preferred
+    return legacy
+
+
 def _memory_stats(memory_dir: Path) -> tuple[Optional[Dict[str, Any]], List[Dict[str, Any]]]:
     try:
         from memory_forge.core.introspection import MemoryIntrospector
@@ -146,7 +157,7 @@ def _consciousness_snapshot(state_dir: Path, *, last_events: int = 300) -> Dict[
 def snapshot(
     *,
     state_dir: str | Path = "state",
-    memory_dir: str | Path = os.environ.get("EIDOS_MEMORY_DIR", str(FORGE_ROOT / "data" / "memory")),
+    memory_dir: str | Path = str(_default_memory_dir()),
     last_events: int = 5,
     window_seconds: float = 1.0,
     min_sources: int = 3,
@@ -172,7 +183,7 @@ def snapshot(
 def emit_snapshot(
     *,
     state_dir: str | Path = "state",
-    memory_dir: str | Path = os.environ.get("EIDOS_MEMORY_DIR", str(FORGE_ROOT / "data" / "memory")),
+    memory_dir: str | Path = str(_default_memory_dir()),
     last_events: int = 5,
     window_seconds: float = 1.0,
     min_sources: int = 3,
