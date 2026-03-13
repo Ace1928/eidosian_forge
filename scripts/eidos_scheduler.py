@@ -112,7 +112,9 @@ def _pipeline_pythonpath() -> str:
     return ":".join(items)
 
 
-def _refresh_directory_docs_status(repo_root: Path, *, force: bool = False, max_age_sec: float = 3600.0) -> dict[str, Any]:
+def _refresh_directory_docs_status(
+    repo_root: Path, *, force: bool = False, max_age_sec: float = 3600.0
+) -> dict[str, Any]:
     try:
         if not force and DIRECTORY_DOCS_STATUS_PATH.exists():
             age = time.time() - DIRECTORY_DOCS_STATUS_PATH.stat().st_mtime
@@ -637,9 +639,7 @@ def main() -> int:
                     run_graphrag=bool(args.run_graphrag),
                     code_max_files=args.code_max_files,
                     state="paused",
-                    last_result=(
-                        control.get("last_result") if isinstance(control.get("last_result"), dict) else {}
-                    ),
+                    last_result=(control.get("last_result") if isinstance(control.get("last_result"), dict) else {}),
                     pause_requested=True,
                     stop_requested=False,
                 )

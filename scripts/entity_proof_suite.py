@@ -64,7 +64,9 @@ def _latest_existing(paths: Iterable[Path]) -> Path | None:
 
 def _latest_json(paths: Iterable[Path]) -> tuple[Path | None, dict[str, Any] | None]:
     newest_pointer: tuple[Path | None, dict[str, Any] | None] = (None, None)
-    for path in sorted((item for item in paths if item.exists()), key=lambda item: item.stat().st_mtime_ns, reverse=True):
+    for path in sorted(
+        (item for item in paths if item.exists()), key=lambda item: item.stat().st_mtime_ns, reverse=True
+    ):
         payload = _load_json(path)
         if payload is None:
             continue
@@ -322,7 +324,9 @@ def _regression_summary(
         if isinstance(item, dict)
     }
     category_deltas = {
-        str(item.get("category")): round(float(item.get("score") or 0.0) - previous_categories.get(str(item.get("category")), 0.0), 6)
+        str(item.get("category")): round(
+            float(item.get("score") or 0.0) - previous_categories.get(str(item.get("category")), 0.0), 6
+        )
         for item in categories
     }
     overall_delta = round(float(overall_score) - _safe_float((previous.get("overall") or {}).get("score")), 6)
@@ -385,9 +389,7 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
     if model_payload:
         benchmark_paths.append(str(model_path))
         benchmark_score += 0.2
-        benchmark_strengths.append(
-            f"Model-domain suite present with winner `{model_payload.get('winner')}`."
-        )
+        benchmark_strengths.append(f"Model-domain suite present with winner `{model_payload.get('winner')}`.")
     else:
         benchmark_gaps.append("No model-domain benchmark artifact found.")
     if graphrag_assess:
@@ -491,18 +493,14 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
     if _safe_float(continuity.get("perspective_coherence_index")) > 0.5:
         continuity_score += 0.05
     if _safe_float(continuity.get("continuity_index")) <= 0.0:
-        continuity_gaps.append(
-            "Phenomenological continuity remains weak or zero in the latest surfaced metrics."
-        )
+        continuity_gaps.append("Phenomenological continuity remains weak or zero in the latest surfaced metrics.")
 
     governance_score = 0.0
     governance_strengths: list[str] = []
     governance_gaps: list[str] = []
     governance_paths: list[str] = []
     gates_path = repo_root / "agent_forge" / "src" / "agent_forge" / "autonomy" / "gates.py"
-    autotune_path = (
-        repo_root / "agent_forge" / "src" / "agent_forge" / "consciousness" / "modules" / "autotune.py"
-    )
+    autotune_path = repo_root / "agent_forge" / "src" / "agent_forge" / "consciousness" / "modules" / "autotune.py"
     if gates_path.exists():
         governance_score += 0.25
         governance_paths.append(str(gates_path))
@@ -538,7 +536,9 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
         governance_strengths.append("Canonical theory-of-operation document exists.")
     else:
         governance_gaps.append("No canonical published theory-of-operation document detected.")
-    governance_gaps.append("Change classes, staged deployment, and constitutional approval thresholds are still incomplete.")
+    governance_gaps.append(
+        "Change classes, staged deployment, and constitutional approval thresholds are still incomplete."
+    )
 
     observability_score = 0.0
     observability_strengths: list[str] = []
@@ -622,7 +622,11 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
     robustness_strengths: list[str] = []
     robustness_gaps: list[str] = []
     robustness_paths: list[str] = []
-    red_team = (validation or {}).get("security_boundary") if isinstance((validation or {}).get("security_boundary"), dict) else {}
+    red_team = (
+        (validation or {}).get("security_boundary")
+        if isinstance((validation or {}).get("security_boundary"), dict)
+        else {}
+    )
     if validation:
         robustness_score += 0.2
         robustness_paths.append(str(validation_path))
@@ -645,9 +649,7 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
     if attack_success <= 0.25:
         robustness_score += 0.1
     else:
-        robustness_gaps.append(
-            f"Attack success rate remains too high at `{attack_success}`."
-        )
+        robustness_gaps.append(f"Attack success rate remains too high at `{attack_success}`.")
     if stress and not _has_unresolved_pointer(stress):
         robustness_score += 0.1
         robustness_paths.append(str(stress_path))
@@ -658,9 +660,19 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
     categories = [
         _category("external_validity", benchmark_score, benchmark_strengths, benchmark_gaps, benchmark_paths),
         _category("identity_continuity", continuity_score, continuity_strengths, continuity_gaps, continuity_paths),
-        _category("governed_self_modification", governance_score, governance_strengths, governance_gaps, governance_paths),
-        _category("observability", observability_score, observability_strengths, observability_gaps, observability_paths),
-        _category("operational_reproducibility", reproducibility_score, reproducibility_strengths, reproducibility_gaps, reproducibility_paths),
+        _category(
+            "governed_self_modification", governance_score, governance_strengths, governance_gaps, governance_paths
+        ),
+        _category(
+            "observability", observability_score, observability_strengths, observability_gaps, observability_paths
+        ),
+        _category(
+            "operational_reproducibility",
+            reproducibility_score,
+            reproducibility_strengths,
+            reproducibility_gaps,
+            reproducibility_paths,
+        ),
         _category("adversarial_robustness", robustness_score, robustness_strengths, robustness_gaps, robustness_paths),
     ]
     artifact_inventory = {
@@ -778,9 +790,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         "| --- | --- | ---: |",
     ]
     for category in report.get("categories") or []:
-        lines.append(
-            f"| {category.get('category')} | {category.get('status')} | {category.get('score')} |"
-        )
+        lines.append(f"| {category.get('category')} | {category.get('status')} | {category.get('score')} |")
     lines.extend(["", "## Top Gaps", ""])
     for row in report.get("top_gaps") or []:
         lines.append(f"- `{row.get('category')}`: {row.get('gap')}")

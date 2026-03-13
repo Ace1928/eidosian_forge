@@ -136,7 +136,11 @@ def main() -> int:
     md_path.write_text(render_markdown(payload), encoding="utf-8")
     latest_json.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
     latest_md.write_text(render_markdown(payload), encoding="utf-8")
-    print(json.dumps({"json": str(json_path), "latest": str(latest_json), "overall_score": payload["overall_score"]}, indent=2))
+    print(
+        json.dumps(
+            {"json": str(json_path), "latest": str(latest_json), "overall_score": payload["overall_score"]}, indent=2
+        )
+    )
     return 0
 
 

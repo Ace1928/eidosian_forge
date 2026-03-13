@@ -54,7 +54,9 @@ def test_run_scheduler_cycle_waits_on_coordinator(tmp_path: Path, monkeypatch) -
             "suppressed_directory_count": 1,
         },
     )
-    monkeypatch.setattr(mod, "_refresh_proof_status", lambda repo_root: {"status": "yellow", "fresh": True, "top_gap_count": 3})
+    monkeypatch.setattr(
+        mod, "_refresh_proof_status", lambda repo_root: {"status": "yellow", "fresh": True, "top_gap_count": 3}
+    )
     result = mod.run_scheduler_cycle(
         interval_sec=30.0,
         timeout_sec=60.0,
@@ -91,7 +93,9 @@ def test_run_scheduler_cycle_records_success(tmp_path: Path, monkeypatch) -> Non
             "suppressed_directory_count": 1,
         },
     )
-    monkeypatch.setattr(mod, "_refresh_proof_status", lambda repo_root: {"status": "green", "fresh": True, "top_gap_count": 1})
+    monkeypatch.setattr(
+        mod, "_refresh_proof_status", lambda repo_root: {"status": "green", "fresh": True, "top_gap_count": 1}
+    )
     (tmp_path / "living_pipeline_status.json").write_text(
         json.dumps({"phase": "indexing", "eta_seconds": 12}), encoding="utf-8"
     )

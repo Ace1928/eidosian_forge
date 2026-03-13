@@ -10,11 +10,11 @@ from typing import Any, Dict, List
 
 import markdown
 import psutil
+from eidosian_runtime import collect_runtime_capabilities
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from eidosian_runtime import collect_runtime_capabilities
 
 # --- Configuration ---
 FORGE_ROOT = Path(os.environ.get("EIDOS_FORGE_ROOT", "/data/data/com.termux/files/home/eidosian_forge")).resolve()
@@ -130,7 +130,14 @@ def _docs_inventory(
     from doc_forge.scribe.directory_docs import inventory_summary, write_inventory_status  # type: ignore
 
     selected = {path_prefix.strip("/")} if path_prefix else None
-    if not refresh and not path_prefix and not missing_only and not suppressed_only and not review_only and DIRECTORY_DOCS_STATUS.exists():
+    if (
+        not refresh
+        and not path_prefix
+        and not missing_only
+        and not suppressed_only
+        and not review_only
+        and DIRECTORY_DOCS_STATUS.exists()
+    ):
         status_payload = _read_json(DIRECTORY_DOCS_STATUS, {})
         if status_payload:
             result = dict(status_payload)

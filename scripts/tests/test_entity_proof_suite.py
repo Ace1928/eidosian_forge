@@ -4,7 +4,6 @@ import importlib.util
 import json
 from pathlib import Path
 
-
 SCRIPT_PATH = Path(__file__).resolve().parents[1] / "entity_proof_suite.py"
 
 
@@ -63,7 +62,9 @@ def test_build_proof_report_flags_missing_external_benchmarks(tmp_path: Path) ->
     )
     _write_json(repo / "reports" / "linux_audit_20260313.json", {"counts": {"checks_fail": 0}})
     _write_json(repo / "reports" / "runtime" / "local_agent_scheduler_slice_20260313.json", {"ok": True})
-    _write_json(repo / "data" / "runtime" / "directory_docs_status.json", {"missing_readme_count": 0, "review_pending_count": 2})
+    _write_json(
+        repo / "data" / "runtime" / "directory_docs_status.json", {"missing_readme_count": 0, "review_pending_count": 2}
+    )
     _write_json(repo / "data" / "runtime" / "local_mcp_agent" / "status.json", {"status": "success"})
     _write_json(repo / "data" / "runtime" / "forge_coordinator_status.json", {"state": "running", "owner": "scheduler"})
     _write_json(repo / "data" / "runtime" / "forge_runtime_trends.json", {"entries": [{"state": "running"}]})
@@ -164,7 +165,9 @@ def test_main_writes_latest_scorecard_files(tmp_path: Path, monkeypatch) -> None
     module = _load_module()
     repo = tmp_path
     _write_json(repo / "reports" / "model_domain_suite" / "model_domain_suite_latest.json", {"winner": "qwen35@off"})
-    _write_json(repo / "data" / "runtime" / "directory_docs_status.json", {"missing_readme_count": 1, "review_pending_count": 0})
+    _write_json(
+        repo / "data" / "runtime" / "directory_docs_status.json", {"missing_readme_count": 1, "review_pending_count": 0}
+    )
     _write_json(repo / "data" / "runtime" / "forge_coordinator_status.json", {"state": "idle"})
     _write_json(repo / "data" / "runtime" / "forge_runtime_trends.json", {"entries": []})
     _write_json(repo / "data" / "runtime" / "local_mcp_agent" / "status.json", {"status": "blocked"})
