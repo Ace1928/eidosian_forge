@@ -463,8 +463,7 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
         benchmark_strengths.append(
             "Imported external benchmark evidence present: "
             + ", ".join(
-                f"{row['suite']}:{row.get('execution_mode') or 'unknown'}={row['score']}"
-                for row in external_results
+                f"{row['suite']}:{row.get('execution_mode') or 'unknown'}={row['score']}" for row in external_results
             )
             + "."
         )

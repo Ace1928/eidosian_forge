@@ -69,7 +69,9 @@ def aggregate_agencybench(root: Path) -> dict[str, Any]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Aggregate official AgencyBench sample results into the proof pipeline.")
+    parser = argparse.ArgumentParser(
+        description="Aggregate official AgencyBench sample results into the proof pipeline."
+    )
     parser.add_argument("--agencybench-root", required=True, help="Path to a local AgencyBench checkout")
     parser.add_argument("--repo-root", default=str(Path(__file__).resolve().parents[1]))
     args = parser.parse_args()

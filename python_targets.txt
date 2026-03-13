@@ -1,9 +1,6 @@
-scripts/eidos_scheduler.py
 scripts/entity_proof_suite.py
+scripts/import_agencybench_reference.py
 scripts/import_external_benchmark.py
-scripts/migration_replay_scorecard.py
-scripts/tests/test_eidos_scheduler.py
 scripts/tests/test_entity_proof_suite.py
+scripts/tests/test_import_agencybench_reference.py
 scripts/tests/test_import_external_benchmark.py
-scripts/tests/test_migration_replay_scorecard.py
-web_interface_forge/src/web_interface_forge/dashboard/main.py
