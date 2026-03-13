@@ -157,8 +157,9 @@ Primary source targets:
 - [ ] code-clone / parsing references if current internal approach is insufficient
 
 ### Wave C: UX / operator plane / runtime control
-- [ ] official docs for current dashboard stack
+- [~] official docs for current dashboard stack
 - [~] any service-control/websocket/runtime telemetry references directly tied to implementation
+- [x] documentation-system references captured for managed README generation and Doc Forge documentation APIs
 
 ### Wave D: Local agent / MCP tool use
 - [x] MCP tool/resource/client/authorization references
@@ -202,3 +203,4 @@ For every saved source set:
 - `docs/external_references/2026-03-07-local-agent-control-plane/`
 - `docs/external_references/2026-03-07-termux-runit-services/`
 - `docs/external_references/2026-03-07-runtime-path-contracts/`
+- `docs/external_references/2026-03-13-directory-doc-system/`

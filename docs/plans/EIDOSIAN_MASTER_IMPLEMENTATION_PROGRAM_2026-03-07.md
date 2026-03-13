@@ -10,6 +10,7 @@ Canonical backlog inventory:
 Active subordinate execution slices:
 - `docs/plans/CODE_FORGE_GIS_EXECUTION_PROGRAM_2026-03-07.md`
 - `docs/plans/LOCAL_AGENT_MCP_EXECUTION_PROGRAM_2026-03-07.md`
+- `docs/plans/DIRECTORY_DOCUMENTATION_EXECUTION_PROGRAM_2026-03-13.md`
 
 ## Program Intent
 
@@ -184,6 +185,7 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
 - [~] Ensure final docs from doc processing are re-ingested into knowledge/GraphRAG.
 - [~] Add source-reference ingestion as a first-class workflow with provenance, GIS IDs, and vectors.
 - [~] Add file-type-specific routing policies and extraction QA metrics.
+- [~] Add managed directory documentation, coverage APIs, and batch README generation across the forge estate.
 
 ### Phase 10: Word Forge and Living Lexicon Completion
 - [~] Ensure every new term/phrase discovered by code/doc/crawl/memory pipelines enters the lexicon queue.
@@ -223,6 +225,7 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
 - [~] Add runtime trend/history panes for workflows, pipelines, vector state, and archive burn-down.
 - [~] Add local-agent runtime status/history to the operator surface.
 - [~] Add execution control for supervised services and scheduler queues.
+- [ ] Add documentation coverage/diff/regeneration controls to Atlas.
 
 ### Phase 13: Validation, Benchmarks, and Promotion Gates
 - [ ] Define end-to-end promotion gates for each subsystem.
@@ -258,6 +261,9 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
   - `docs/external_references/2026-03-07-master-program/`
 - [x] Phase 1 implementation slice started:
   - dynamic Python component test-matrix planner added
+- [x] Directory documentation execution slice started and broad README coverage generated:
+  - `docs/plans/DIRECTORY_DOCUMENTATION_EXECUTION_PROGRAM_2026-03-13.md`
+  - `reports/docs/directory_docs_postwave_all.json`
 - [x] Phase 2 runtime-control slice deepened:
   - runtime capability registry is now emitted as a canonical artifact
   - Termux boot install ensures runit service definitions exist before first boot use

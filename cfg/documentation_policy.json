@@ -1,0 +1,121 @@
+{
+  "contract": "eidos.documentation_policy.v1",
+  "documented_prefixes": [
+    ".github",
+    "agent_forge",
+    "article_forge",
+    "audit_forge",
+    "benchmarks",
+    "bin",
+    "cfg",
+    "code_forge",
+    "computer_control_forge",
+    "config",
+    "crawl_forge",
+    "diagnostics_forge",
+    "doc_forge",
+    "docs",
+    "eidos_mcp",
+    "erais_forge",
+    "figlet_forge",
+    "file_forge",
+    "game_forge",
+    "gis_forge",
+    "glyph_forge",
+    "knowledge_forge",
+    "lib",
+    "llm_forge",
+    "lyrics_forge",
+    "memory_forge",
+    "metadata_forge",
+    "moltbook_forge",
+    "narrative_forge",
+    "ollama_forge",
+    "prompt_forge",
+    "refactor_forge",
+    "repo_forge",
+    "requirements",
+    "scripts",
+    "shell",
+    "skills",
+    "sms_forge",
+    "terminal_forge",
+    "test_forge",
+    "type_forge",
+    "version_forge",
+    "viz_forge",
+    "web_interface_forge",
+    "word_forge"
+  ],
+  "excluded_prefixes": [
+    ".eidos_chrome_profile",
+    ".gemini",
+    ".graphrag_index/cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".tmp_test",
+    ".vscode",
+    "Backups",
+    "backups",
+    "build",
+    "cache",
+    "data",
+    "doc_forge/final_docs",
+    "doc_forge/runtime",
+    "doc_forge/staging",
+    "eidosian_venv",
+    "logs",
+    "reports",
+    "state"
+  ],
+  "excluded_segments": [
+    "__pycache__",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".mypy_cache",
+    "node_modules",
+    ".git"
+  ],
+  "path_overrides": {
+    "doc_forge/src/doc_forge": {
+      "summary": "Primary Doc Forge Python package for repository-scale documentation extraction, generation, judging, and service orchestration.",
+      "why": "It centralizes documentation production logic so documentation can be treated as a first-class maintained system instead of ad hoc markdown.",
+      "next_steps": [
+        "Expand the documentation contract deeper across package subdirectories.",
+        "Keep API and service claims synchronized with test coverage."
+      ]
+    },
+    "doc_forge/src/doc_forge/scribe": {
+      "summary": "Production document-processing pipeline: extract source context, generate docs, judge quality, persist state, and expose service APIs.",
+      "why": "This is the operational heart of Doc Forge and the main integration point for living documentation automation.",
+      "next_steps": [
+        "Extend route coverage for documentation inventory and managed README generation.",
+        "Benchmark generation quality and latency per directory class."
+      ]
+    },
+    "web_interface_forge/src/web_interface_forge/dashboard": {
+      "summary": "Atlas dashboard backend and templates for runtime control, graph exploration, and operator-facing forge observability.",
+      "why": "It gives the forge an operator plane instead of requiring shell-only control and log inspection.",
+      "next_steps": [
+        "Expose documentation coverage and diff workflows directly in Atlas.",
+        "Continue converging service, scheduler, and documentation control in one surface."
+      ]
+    },
+    "agent_forge/src/agent_forge/consciousness": {
+      "summary": "Consciousness runtime, metrics, perturbation, and benchmark substrate used by Eidos runtime status and experiments.",
+      "why": "This package supplies the operational continuity, bridge state, and evaluative signals that the rest of the control plane depends on.",
+      "next_steps": [
+        "Keep bridge and memory defaults aligned with the canonical vector-native stores.",
+        "Expand explicit evidence lineage and contradiction analysis in the graph-facing outputs."
+      ]
+    },
+    "lib/eidosian_runtime": {
+      "summary": "Shared runtime coordination helpers for scheduler, capability registry, and service-state governance.",
+      "why": "It keeps platform/runtime checks out of leaf modules and gives Atlas, boot scripts, and scheduler one shared contract.",
+      "next_steps": [
+        "Continue moving platform checks out of leaf modules into capability-driven paths.",
+        "Expose longer-lived runtime history and policy state through the same contract."
+      ]
+    }
+  }
+}

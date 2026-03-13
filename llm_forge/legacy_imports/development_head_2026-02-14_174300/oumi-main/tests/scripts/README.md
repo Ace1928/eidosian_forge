@@ -1,0 +1,52 @@
+# `llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/tests/scripts`
+
+<!-- EIDOS:DOCSYS:START -->
+- Contract: `eidos.directory_doc.v1`
+- Generated: `2026-03-13T00:19:22Z`
+- Path: `llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/tests/scripts`
+
+## What It Is
+
+Managed directory documentation for `llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/tests/scripts`, generated from tracked files and directory structure.
+
+## Why It Exists
+
+This directory exists to hold the `scripts` surface for `llm_forge` and keep that responsibility separate from adjacent forge concerns.
+
+## How It Works
+
+- Tracked files in scope: `2`
+- Child directories: `0`
+- Tests detected: `True`
+
+## Contents
+
+- No managed child directories detected.
+
+## Prominent Files
+
+- [`launch_tests.sh`](./launch_tests.sh)
+- [`predownload_for_github_gpu_tests.sh`](./predownload_for_github_gpu_tests.sh)
+
+## Strengths
+
+- A directly associated test surface is present in or below this directory.
+
+## Weaknesses / Risks
+
+- No structural documentation risks were detected automatically; functional review is still required for behavior-level claims.
+
+## Next Steps
+
+- Keep this README synchronized with code and test changes through the managed documentation toolchain.
+
+## References
+
+- Parent README: [`llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/tests/README.md`](../README.md)
+- Forge README: [`llm_forge/README.md`](../../../../../README.md)
+
+## Accuracy Contract
+
+- This README is generated from tracked repository structure and conservative code scanning.
+- Behavior claims should be backed by tests, routes, or directly linked source files.
+<!-- EIDOS:DOCSYS:END -->

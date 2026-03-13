@@ -1,0 +1,60 @@
+# `glyph_forge/src/glyph_forge/streaming/core`
+
+<!-- EIDOS:DOCSYS:START -->
+- Contract: `eidos.directory_doc.v1`
+- Generated: `2026-03-13T00:19:22Z`
+- Path: `glyph_forge/src/glyph_forge/streaming/core`
+
+## What It Is
+
+Managed directory documentation for `glyph_forge/src/glyph_forge/streaming/core`, generated from tracked files and directory structure.
+
+## Why It Exists
+
+This directory exists to hold the `core` surface for `glyph_forge` and keep that responsibility separate from adjacent forge concerns.
+
+## How It Works
+
+- Tracked files in scope: `10`
+- Child directories: `0`
+- Tests detected: `False`
+- Python modules: `browser, buffer, capture, config, netflix, recorder, renderer, screen, sync`
+
+## Contents
+
+- No managed child directories detected.
+
+## Prominent Files
+
+- [`__init__.py`](./__init__.py)
+- [`browser.py`](./browser.py)
+- [`buffer.py`](./buffer.py)
+- [`capture.py`](./capture.py)
+- [`config.py`](./config.py)
+- [`netflix.py`](./netflix.py)
+- [`recorder.py`](./recorder.py)
+- [`renderer.py`](./renderer.py)
+
+## Strengths
+
+- The directory exposes importable Python modules rather than only opaque assets.
+
+## Weaknesses / Risks
+
+- No directly associated test coverage was detected under the tracked file set for this directory.
+
+## Next Steps
+
+- Add focused tests or point this directory explicitly at its validating test surface.
+- Keep this README synchronized with code and test changes through the managed documentation toolchain.
+
+## References
+
+- Parent README: [`glyph_forge/src/glyph_forge/streaming/README.md`](../README.md)
+- Forge README: [`glyph_forge/README.md`](../../../../README.md)
+
+## Accuracy Contract
+
+- This README is generated from tracked repository structure and conservative code scanning.
+- Behavior claims should be backed by tests, routes, or directly linked source files.
+<!-- EIDOS:DOCSYS:END -->
