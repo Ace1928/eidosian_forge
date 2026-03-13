@@ -72,7 +72,9 @@ def test_docs_api_endpoints(mock_config):
         encoding="utf-8",
     )
     subprocess.run(["git", "init"], cwd=str(root), check=True, capture_output=True, text=True)
-    subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=str(root), check=True, capture_output=True, text=True)
+    subprocess.run(
+        ["git", "config", "user.email", "test@example.com"], cwd=str(root), check=True, capture_output=True, text=True
+    )
     subprocess.run(["git", "config", "user.name", "Test"], cwd=str(root), check=True, capture_output=True, text=True)
     subprocess.run(["git", "add", "."], cwd=str(root), check=True, capture_output=True, text=True)
     subprocess.run(["git", "commit", "-m", "init"], cwd=str(root), check=True, capture_output=True, text=True)

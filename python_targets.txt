@@ -1,6 +1,6 @@
-agent_forge/notebooks/smolagents_examples.py
-agent_forge/notebooks/working_document.py
-scripts/context_catalog.py
-scripts/living_knowledge_pipeline.py
-word_forge/scripts/verify_llm.py
-word_forge/src/word_forge/parser/parser_refiner.py
+doc_forge/src/doc_forge/scribe/directory_docs.py
+doc_forge/src/doc_forge/scribe/service.py
+doc_forge/src/doc_forge/scribe/tests/test_directory_docs.py
+doc_forge/src/doc_forge/scribe/tests/test_service.py
+scripts/generate_directory_readmes.py
+scripts/tests/test_generate_directory_readmes.py

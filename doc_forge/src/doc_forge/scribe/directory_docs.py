@@ -11,9 +11,7 @@ from pathlib import Path
 from typing import Any
 
 README_NAMES = ("README.md", "README")
-ROUTE_RE = re.compile(
-    r"""@(?:app|router|[A-Za-z_]\w*)\.(get|post|put|patch|delete)\(\s*["']([^"']+)["']"""
-)
+ROUTE_RE = re.compile(r"""@(?:app|router|[A-Za-z_]\w*)\.(get|post|put|patch|delete)\(\s*["']([^"']+)["']""")
 
 DEFAULT_POLICY: dict[str, Any] = {
     "contract": "eidos.documentation_policy.v1",
@@ -298,9 +296,7 @@ def inventory_directories(
             [
                 Path(f).stem
                 for f in files
-                if f.endswith(".py")
-                and Path(f).parent.as_posix() == rel_dir
-                and Path(f).name != "__init__.py"
+                if f.endswith(".py") and Path(f).parent.as_posix() == rel_dir and Path(f).name != "__init__.py"
             ]
         )[:10]
         api_routes = []
@@ -329,7 +325,9 @@ def inventory_directories(
         if tests_present:
             strengths.append("A directly associated test surface is present in or below this directory.")
         if api_routes:
-            strengths.append("The directory contains detected HTTP/API route definitions that can be referenced programmatically.")
+            strengths.append(
+                "The directory contains detected HTTP/API route definitions that can be referenced programmatically."
+            )
         if python_modules:
             strengths.append("The directory exposes importable Python modules rather than only opaque assets.")
         if child_dirs:
@@ -338,19 +336,29 @@ def inventory_directories(
         if not has_readme:
             weaknesses.append("The directory had no local README before this managed documentation pass.")
         if not tests_present:
-            weaknesses.append("No directly associated test coverage was detected under the tracked file set for this directory.")
+            weaknesses.append(
+                "No directly associated test coverage was detected under the tracked file set for this directory."
+            )
         if not api_routes and _category(rel_dir) in {"services", "dashboard", "api", "cli"}:
-            weaknesses.append("No route or explicit API entrypoint was detected automatically; verify interface coverage manually.")
+            weaknesses.append(
+                "No route or explicit API entrypoint was detected automatically; verify interface coverage manually."
+            )
         if not child_dirs and len(files) > 12:
-            weaknesses.append("The directory has many tracked files but no child-directory decomposition, which may make ownership blur over time.")
+            weaknesses.append(
+                "The directory has many tracked files but no child-directory decomposition, which may make ownership blur over time."
+            )
         next_steps = list(override.get("next_steps") or [])
         if not next_steps:
             if not tests_present:
-                next_steps.append("Add focused tests or point this directory explicitly at its validating test surface.")
+                next_steps.append(
+                    "Add focused tests or point this directory explicitly at its validating test surface."
+                )
             if not api_routes and _category(rel_dir) in {"services", "dashboard", "api", "cli"}:
                 next_steps.append("Document or expose the public interface contract more explicitly.")
             if has_readme:
-                next_steps.append("Keep this README synchronized with code and test changes through the managed documentation toolchain.")
+                next_steps.append(
+                    "Keep this README synchronized with code and test changes through the managed documentation toolchain."
+                )
             else:
                 next_steps.append("Adopt and retain the managed README generated for this directory.")
         records.append(
@@ -399,10 +407,7 @@ def record_map(
     policy: dict[str, Any] | None = None,
     selected_paths: set[str] | None = None,
 ) -> dict[str, DirectoryDocRecord]:
-    return {
-        record.path: record
-        for record in inventory_directories(repo_root, policy, selected_paths=selected_paths)
-    }
+    return {record.path: record for record in inventory_directories(repo_root, policy, selected_paths=selected_paths)}
 
 
 def render_directory_readme(
@@ -471,7 +476,9 @@ def render_directory_readme(
         for item in record.weaknesses:
             lines.append(f"- {item}")
     else:
-        lines.append("- No structural documentation risks were detected automatically; functional review is still required for behavior-level claims.")
+        lines.append(
+            "- No structural documentation risks were detected automatically; functional review is still required for behavior-level claims."
+        )
     lines.extend(["", "## Next Steps", ""])
     for item in record.next_steps:
         lines.append(f"- {item}")
