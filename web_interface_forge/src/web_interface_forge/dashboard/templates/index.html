@@ -88,10 +88,49 @@
             missing of
             <span id="docs-required-count">{{ docs_inventory.get('status', docs_inventory).get('required_directory_count', 0) }}</span>
         </div>
+        <div class="stat-label">
+            reviews pending:
+            <span id="docs-review-count">{{ docs_inventory.get('status', docs_inventory).get('review_pending_count', 0) }}</span>
+            · suppressed:
+            <span id="docs-suppressed-count">{{ docs_inventory.get('status', docs_inventory).get('suppressed_directory_count', 0) }}</span>
+        </div>
+    </div>
+    <div class="card">
+        <h3>Proof Status</h3>
+        <div class="stat-value">{{ proof_snapshot.get('overall', {}).get('status', 'missing')|upper }}</div>
+        <div class="stat-label">
+            score: {{ proof_snapshot.get('overall', {}).get('score', 'n/a') }}
+            · gaps: {{ (proof_snapshot.get('top_gaps', []) or [])|length }}
+        </div>
+        <div class="stat-label">
+            freshness: {{ proof_snapshot.get('freshness', {}).get('status', 'unknown') }}
+            · regression: {{ proof_snapshot.get('regression', {}).get('status', 'unknown') }}
+        </div>
+        <div class="stat-label"><a href="/api/proof/latest" target="_blank">Latest Proof JSON</a></div>
     </div>
 </div>
 
 <div class="grid">
+    <div class="card">
+        <h3>Proof Scorecard</h3>
+        <div class="stat-label" style="margin-bottom:12px;">
+            External validity, continuity, governance, observability, reproducibility, and adversarial robustness.
+        </div>
+        <table>
+            <thead>
+                <tr><th>Category</th><th>Status</th><th>Score</th></tr>
+            </thead>
+            <tbody>
+                {% for row in proof_snapshot.get('categories', []) %}
+                <tr>
+                    <td>{{ row.get('category') }}</td>
+                    <td>{{ row.get('status') }}</td>
+                    <td>{{ row.get('score') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
     <div class="card">
         <h3>Supervised Services</h3>
         <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
@@ -154,6 +193,8 @@
     <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
         <button onclick="refreshDocs()">Refresh Coverage</button>
         <button onclick="window.open('/api/docs/coverage?missing_only=true&limit=50', '_blank')">Missing JSON</button>
+        <button onclick="window.open('/api/docs/coverage?review_only=true&limit=50', '_blank')">Review JSON</button>
+        <button onclick="window.open('/api/docs/coverage?suppressed_only=true&limit=50', '_blank')">Suppressed JSON</button>
         <button onclick="window.open('/api/docs/coverage?limit=50', '_blank')">Coverage JSON</button>
         <button onclick="window.open('/api/docs/tree?limit=100', '_blank')">Tree JSON</button>
         <button onclick="window.open('/api/docs/history?limit=100', '_blank')">History JSON</button>
@@ -207,6 +248,23 @@
                     <td>{{ row.get('missing_readme_count', 0) }}</td>
                     <td>{{ row.get('missing_delta', 0) }}</td>
                     <td>{{ row.get('drift_state', 'stable') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="card">
+        <h3>Review Queue</h3>
+        <table>
+            <thead>
+                <tr><th>Path</th><th>Status</th><th>Risk</th></tr>
+            </thead>
+            <tbody>
+                {% for row in docs_reviews.get('records', [])[:8] %}
+                <tr>
+                    <td><button onclick="setDocsPath('{{ row.get('path', '') }}')">{{ row.get('path', '') }}</button></td>
+                    <td>{{ row.get('review_status', 'n/a') }}</td>
+                    <td>{{ row.get('risk_level', 'normal') }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -341,6 +399,8 @@ async function refreshDocs() {
         document.getElementById("docs-coverage-ratio").textContent = `${((Number(status.coverage_ratio || 0)) * 100).toFixed(1)}%`;
         document.getElementById("docs-missing-count").textContent = status.missing_readme_count ?? 0;
         document.getElementById("docs-required-count").textContent = status.required_directory_count ?? 0;
+        document.getElementById("docs-review-count").textContent = status.review_pending_count ?? 0;
+        document.getElementById("docs-suppressed-count").textContent = status.suppressed_directory_count ?? 0;
         document.getElementById("docs-output").textContent = (status.missing_examples || []).join("\n");
         await refreshDocsTree();
         await refreshDocsHistory();

@@ -11,6 +11,7 @@ Active subordinate execution slices:
 - `docs/plans/CODE_FORGE_GIS_EXECUTION_PROGRAM_2026-03-07.md`
 - `docs/plans/LOCAL_AGENT_MCP_EXECUTION_PROGRAM_2026-03-07.md`
 - `docs/plans/DIRECTORY_DOCUMENTATION_EXECUTION_PROGRAM_2026-03-13.md`
+- `docs/plans/ENTITY_PROOF_EXECUTION_PROGRAM_2026-03-13.md`
 
 ## Program Intent
 
@@ -187,6 +188,7 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
 - [~] Add file-type-specific routing policies and extraction QA metrics.
 - [~] Add managed directory documentation, coverage APIs, batch README generation, and runtime health integration across the forge estate.
 - [~] Add Atlas-side documentation navigation, batch regeneration, and drift history as operator-facing controls.
+- [~] Add documentation governance contracts for suppressed directories, review gates, and promotion readiness.
 
 ### Phase 10: Word Forge and Living Lexicon Completion
 - [~] Ensure every new term/phrase discovered by code/doc/crawl/memory pipelines enters the lexicon queue.
@@ -239,6 +241,12 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
   - scheduler throughput,
   - service resiliency.
 - [ ] Require green CI, green targeted regression suites, and artifact publication before promotion/deletion actions.
+- [~] Add an externally legible proof scorecard that aggregates capability, continuity, governance, observability, reproducibility, and adversarial evidence into one reportable contract.
+- [~] Add freshness/regression proof policy and migration/replay contracts:
+  - [x] freshness degradation for stale evidence
+  - [x] previous-scorecard regression deltas
+  - [x] migration/replay scorecard contract
+  - [ ] live imported mainstream external benchmark evidence
 
 ## Immediate Execution Order
 
@@ -258,6 +266,20 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
   - `docs/plans/AUTONOMOUS_EXECUTION_DIRECTIVE_2026-03-07.md`
 - [x] Research/source program created:
   - `docs/plans/EIDOSIAN_RESEARCH_AND_SOURCE_PROGRAM_2026-03-07.md`
+- [x] Documentation governance slice extended with:
+  - suppression/override policy
+  - high-risk README review gates
+  - scheduler/coordinator/autonomy/daemon integration
+  - Atlas review/suppression visibility
+- [x] Entity proof slice started with:
+  - canonical proof scorecard generator
+  - Atlas/API exposure of latest proof report
+  - explicit missing-evidence reporting for external validity gaps
+- [x] Entity proof slice extended with:
+  - freshness and regression scoring
+  - external benchmark import contract
+  - migration/replay scorecard contract
+  - scheduler runtime proof normalization
 - [x] Initial primary-source set saved and ingested:
   - `docs/external_references/2026-03-07-master-program/`
 - [x] Phase 1 implementation slice started:

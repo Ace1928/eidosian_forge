@@ -155,11 +155,19 @@ Primary source targets:
 - [x] W3C provenance / RDF / OWL references for GIS and graph identity
 - [ ] additional vector/metadata filtering references if backend changes are needed
 - [ ] code-clone / parsing references if current internal approach is insufficient
+- [~] external-proof benchmark/governance references for:
+  - external agent benchmarks
+  - observability / telemetry
+  - adversarial failure analysis
+  - publishable proof framing
+  - migration/replay reproducibility doctrine
+  - benchmark freshness/regression policy
 
 ### Wave C: UX / operator plane / runtime control
 - [~] official docs for current dashboard stack
 - [~] any service-control/websocket/runtime telemetry references directly tied to implementation
 - [x] documentation-system references captured for managed README generation and Doc Forge documentation APIs
+- [x] documentation governance / review references captured for suppression, review-gate, and ownership follow-up design
 
 ### Wave D: Local agent / MCP tool use
 - [x] MCP tool/resource/client/authorization references
@@ -204,3 +212,6 @@ For every saved source set:
 - `docs/external_references/2026-03-07-termux-runit-services/`
 - `docs/external_references/2026-03-07-runtime-path-contracts/`
 - `docs/external_references/2026-03-13-directory-doc-system/`
+- `docs/external_references/2026-03-13-doc-governance-review/`
+- `docs/external_references/2026-03-13-entity-proof/`
+- `docs/external_references/2026-03-13-proof-governance/`

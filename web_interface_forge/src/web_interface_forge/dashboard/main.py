@@ -10,11 +10,11 @@ from typing import Any, Dict, List
 
 import markdown
 import psutil
-from eidosian_runtime import collect_runtime_capabilities
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from eidosian_runtime import collect_runtime_capabilities
 
 # --- Configuration ---
 FORGE_ROOT = Path(os.environ.get("EIDOS_FORGE_ROOT", "/data/data/com.termux/files/home/eidosian_forge")).resolve()
@@ -41,6 +41,7 @@ CAPABILITIES_STATUS = RUNTIME_DIR / "platform_capabilities.json"
 DIRECTORY_DOCS_STATUS = RUNTIME_DIR / "directory_docs_status.json"
 DIRECTORY_DOCS_HISTORY = RUNTIME_DIR / "directory_docs_history.json"
 DIRECTORY_DOCS_TREE = RUNTIME_DIR / "directory_docs_tree.json"
+PROOF_REPORT_DIR = FORGE_ROOT / "reports" / "proof"
 SERVICES_SCRIPT = FORGE_ROOT / "scripts" / "eidos_termux_services.sh"
 SCHEDULER_CONTROL_SCRIPT = FORGE_ROOT / "scripts" / "eidos_scheduler_control.py"
 TEMPLATES_DIR = Path(__file__).parent / "templates"
@@ -119,12 +120,17 @@ def get_doc_snapshot() -> Dict[str, Any]:
 
 
 def _docs_inventory(
-    path_prefix: str = "", refresh: bool = False, missing_only: bool = False, limit: int = 50
+    path_prefix: str = "",
+    refresh: bool = False,
+    missing_only: bool = False,
+    suppressed_only: bool = False,
+    review_only: bool = False,
+    limit: int = 50,
 ) -> Dict[str, Any]:
     from doc_forge.scribe.directory_docs import inventory_summary, write_inventory_status  # type: ignore
 
     selected = {path_prefix.strip("/")} if path_prefix else None
-    if not refresh and not path_prefix and DIRECTORY_DOCS_STATUS.exists():
+    if not refresh and not path_prefix and not missing_only and not suppressed_only and not review_only and DIRECTORY_DOCS_STATUS.exists():
         status_payload = _read_json(DIRECTORY_DOCS_STATUS, {})
         if status_payload:
             result = dict(status_payload)
@@ -132,7 +138,7 @@ def _docs_inventory(
             result["returned_count"] = 0
             return result
 
-    if not path_prefix and not missing_only:
+    if not path_prefix and not missing_only and not suppressed_only and not review_only:
         status_payload = write_inventory_status(FORGE_ROOT, DIRECTORY_DOCS_STATUS, selected_paths=selected)
     else:
         status_payload = {}
@@ -140,6 +146,10 @@ def _docs_inventory(
     records = [row for row in payload.get("records", []) if isinstance(row, dict)]
     if missing_only:
         records = [row for row in records if not row.get("has_readme")]
+    if suppressed_only:
+        records = [row for row in records if row.get("suppressed")]
+    if review_only:
+        records = [row for row in records if row.get("review_required")]
     payload["records"] = records[: max(1, int(limit))]
     payload["returned_count"] = len(payload["records"])
     if status_payload:
@@ -244,6 +254,14 @@ def get_runtime_history(limit: int = 24) -> List[Dict[str, Any]]:
     if not isinstance(rows, list):
         return []
     return [row for row in rows if isinstance(row, dict)][-max(1, int(limit)) :]
+
+
+def get_latest_proof_report() -> Dict[str, Any]:
+    latest = PROOF_REPORT_DIR / "entity_proof_scorecard_latest.json"
+    payload = _read_json(latest, {})
+    if not isinstance(payload, dict):
+        return {}
+    return payload
 
 
 def get_file_tree(path: Path, root: Path) -> List[Dict[str, Any]]:
@@ -367,10 +385,13 @@ async def dashboard(request: Request):
     forge_status = get_forge_status()
     doc_snapshot = get_doc_snapshot()
     docs_inventory = _docs_inventory(limit=12)
+    docs_reviews = _docs_inventory(limit=12, review_only=True)
+    docs_suppressed = _docs_inventory(limit=12, suppressed_only=True)
     docs_tree = _docs_tree(limit=40, refresh=False)
     docs_history = get_docs_history(limit=24)
     runtime_snapshot = get_runtime_snapshot()
     local_agent_history = get_local_agent_history()
+    proof_snapshot = get_latest_proof_report()
 
     return templates.TemplateResponse(
         request,
@@ -383,10 +404,13 @@ async def dashboard(request: Request):
             "doc_status": doc_snapshot["status"],
             "doc_index_count": doc_snapshot["index_count"],
             "docs_inventory": docs_inventory,
+            "docs_reviews": docs_reviews,
+            "docs_suppressed": docs_suppressed,
             "docs_tree": docs_tree,
             "docs_history": docs_history,
             "runtime_snapshot": runtime_snapshot,
             "local_agent_history": local_agent_history,
+            "proof_snapshot": proof_snapshot,
             "service_snapshot": _service_command("status"),
         },
     )
@@ -456,8 +480,22 @@ async def api_doc_status():
 
 
 @app.get("/api/docs/coverage")
-async def api_docs_coverage(limit: int = 50, missing_only: bool = False, path_prefix: str = "", refresh: bool = False):
-    return _docs_inventory(path_prefix=path_prefix, refresh=refresh, missing_only=missing_only, limit=limit)
+async def api_docs_coverage(
+    limit: int = 50,
+    missing_only: bool = False,
+    suppressed_only: bool = False,
+    review_only: bool = False,
+    path_prefix: str = "",
+    refresh: bool = False,
+):
+    return _docs_inventory(
+        path_prefix=path_prefix,
+        refresh=refresh,
+        missing_only=missing_only,
+        suppressed_only=suppressed_only,
+        review_only=review_only,
+        limit=limit,
+    )
 
 
 @app.get("/api/docs/tree")
@@ -526,7 +564,16 @@ async def api_docs_history(limit: int = 60):
 async def api_runtime():
     snapshot = get_runtime_snapshot()
     snapshot["history"] = get_runtime_history()
+    snapshot["proof"] = get_latest_proof_report()
     return snapshot
+
+
+@app.get("/api/proof/latest")
+async def api_proof_latest():
+    payload = get_latest_proof_report()
+    if payload:
+        return payload
+    raise HTTPException(status_code=404, detail="No proof report found")
 
 
 @app.get("/api/services")

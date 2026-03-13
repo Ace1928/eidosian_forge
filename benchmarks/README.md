@@ -124,3 +124,63 @@ Use `model_domain_suite.py` to benchmark local or Ollama-hosted models across to
 - `reports/model_domain_suite/model_domain_suite_*.md`
 - `reports/model_domain_suite/model_domain_suite_latest.json`
 - `reports/model_domain_suite/model_domain_suite_latest.md`
+
+## Entity Proof Scorecard
+Use `scripts/entity_proof_suite.py` to aggregate the latest benchmark, continuity, governance, runtime, and red-team evidence into a single externally legible proof bundle.
+
+### Run
+```bash
+./eidosian_venv/bin/python scripts/entity_proof_suite.py
+```
+
+### What it aggregates
+- model-domain benchmark evidence
+- GraphRAG benchmark and qualitative assessment evidence
+- consciousness benchmark / trial / RAC-AP validation evidence
+- Linux parity evidence
+- runtime coordinator, scheduler, local-agent, and documentation drift state
+- governance surface checks for self-modification and rollback/red-team gating
+- freshness policy for stale or missing evidence
+- regression deltas against the previous scorecard
+- imported external benchmark evidence under `reports/external_benchmarks/<suite>/latest.json`
+- migration/replay reproducibility evidence from `scripts/migration_replay_scorecard.py`
+
+### Outputs
+- `reports/proof/entity_proof_scorecard_<stamp>.json`
+- `reports/proof/entity_proof_scorecard_<stamp>.md`
+- `reports/proof/entity_proof_scorecard_latest.json`
+- `reports/proof/entity_proof_scorecard_latest.md`
+
+### Current purpose
+- make missing evidence explicit rather than implicit
+- provide one reportable scorecard for external review
+- turn internal benchmark fragments into a publishable proof surface
+
+## External Benchmark Import
+Use `scripts/import_external_benchmark.py` to normalize upstream external-suite results into the proof pipeline.
+
+### Run
+```bash
+./eidosian_venv/bin/python scripts/import_external_benchmark.py \
+  --suite agentbench \
+  --input path/to/upstream_summary.json \
+  --source-url https://github.com/THUDM/AgentBench
+```
+
+### Outputs
+- `reports/external_benchmarks/<suite>/<suite>_<stamp>.json`
+- `reports/external_benchmarks/<suite>/latest.json`
+
+## Migration Replay Scorecard
+Use `scripts/migration_replay_scorecard.py` to report replay and portability evidence.
+
+### Run
+```bash
+./eidosian_venv/bin/python scripts/migration_replay_scorecard.py
+```
+
+### Outputs
+- `reports/proof/migration_replay_scorecard_<stamp>.json`
+- `reports/proof/migration_replay_scorecard_<stamp>.md`
+- `reports/proof/migration_replay_scorecard_latest.json`
+- `reports/proof/migration_replay_scorecard_latest.md`

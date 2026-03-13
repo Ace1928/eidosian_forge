@@ -27,6 +27,7 @@ STATE_PATH = RUNTIME_DIR / "eidos_scheduler_state.json"
 PIPELINE_STATUS_PATH = RUNTIME_DIR / "living_pipeline_status.json"
 DIRECTORY_DOCS_STATUS_PATH = RUNTIME_DIR / "directory_docs_status.json"
 DIRECTORY_DOCS_HISTORY_PATH = RUNTIME_DIR / "directory_docs_history.json"
+PROOF_STATUS_PATH = RUNTIME_DIR / "entity_proof_status.json"
 _STOP_REQUESTED = False
 
 
@@ -111,9 +112,7 @@ def _pipeline_pythonpath() -> str:
     return ":".join(items)
 
 
-def _refresh_directory_docs_status(
-    repo_root: Path, *, force: bool = False, max_age_sec: float = 3600.0
-) -> dict[str, Any]:
+def _refresh_directory_docs_status(repo_root: Path, *, force: bool = False, max_age_sec: float = 3600.0) -> dict[str, Any]:
     try:
         if not force and DIRECTORY_DOCS_STATUS_PATH.exists():
             age = time.time() - DIRECTORY_DOCS_STATUS_PATH.stat().st_mtime
@@ -202,6 +201,37 @@ def _status_payload(
     }
 
 
+def _refresh_proof_status(repo_root: Path, *, max_age_sec: float = 7200.0) -> dict[str, Any]:
+    latest = repo_root / "reports" / "proof" / "entity_proof_scorecard_latest.json"
+    if not latest.exists():
+        payload = {
+            "contract": "eidos.entity_proof_runtime.v1",
+            "generated_at": _now_utc(),
+            "status": "missing",
+            "overall_score": 0.0,
+            "fresh": False,
+            "top_gap_count": 0,
+        }
+        _write_json(PROOF_STATUS_PATH, payload)
+        return payload
+    proof = _load_json(latest)
+    age_sec = max(0.0, time.time() - latest.stat().st_mtime)
+    payload = {
+        "contract": "eidos.entity_proof_runtime.v1",
+        "generated_at": _now_utc(),
+        "path": str(latest),
+        "status": str((proof.get("overall") or {}).get("status") or "unknown"),
+        "overall_score": float(((proof.get("overall") or {}).get("score")) or 0.0),
+        "fresh": age_sec <= max_age_sec,
+        "age_seconds": round(age_sec, 3),
+        "freshness_status": str((proof.get("freshness") or {}).get("status") or "unknown"),
+        "regression_status": str((proof.get("regression") or {}).get("status") or "unknown"),
+        "top_gap_count": len(proof.get("top_gaps") or []),
+    }
+    _write_json(PROOF_STATUS_PATH, payload)
+    return payload
+
+
 def _mark_scheduler_state(
     *,
     cycle: int,
@@ -253,8 +283,14 @@ def run_scheduler_cycle(
 ) -> dict[str, Any]:
     coordinator = coordinator or ForgeRuntimeCoordinator()
     docs_status = _refresh_directory_docs_status(repo_root)
+    proof_status = _refresh_proof_status(repo_root)
     if _STOP_REQUESTED:
-        result = {"status": "stopped", "reason": "stop_requested", "directory_docs": docs_status}
+        result = {
+            "status": "stopped",
+            "reason": "stop_requested",
+            "directory_docs": docs_status,
+            "proof": proof_status,
+        }
         _write_json(
             STATUS_PATH,
             _status_payload(
@@ -292,6 +328,7 @@ def run_scheduler_cycle(
                 "status": "waiting",
                 "reason": str(decision.get("reason") or "blocked"),
                 "directory_docs": docs_status,
+                "proof": proof_status,
             },
         )
         _write_json(STATUS_PATH, payload)
@@ -321,6 +358,11 @@ def run_scheduler_cycle(
             "directory_docs_coverage": float(docs_status.get("coverage_ratio") or 0.0),
             "directory_docs_missing_delta": int(docs_status.get("missing_delta") or 0),
             "directory_docs_coverage_delta": float(docs_status.get("coverage_delta") or 0.0),
+            "directory_docs_review_pending": int(docs_status.get("review_pending_count") or 0),
+            "directory_docs_suppressed": int(docs_status.get("suppressed_directory_count") or 0),
+            "proof_status": str(proof_status.get("status") or "unknown"),
+            "proof_fresh": bool(proof_status.get("fresh")),
+            "proof_top_gaps": int(proof_status.get("top_gap_count") or 0),
         },
     )
     start = time.perf_counter()
@@ -389,6 +431,7 @@ def run_scheduler_cycle(
             "stderr": str(proc.stderr or "").strip()[:1200],
             "pipeline_status": _load_json(PIPELINE_STATUS_PATH),
             "directory_docs": docs_status,
+            "proof": proof_status,
         }
         _write_json(
             STATUS_PATH,
@@ -422,6 +465,7 @@ def run_scheduler_cycle(
             "stdout": str(exc.stdout or "")[:1200],
             "stderr": str(exc.stderr or "")[:1200],
             "directory_docs": docs_status,
+            "proof": proof_status,
         }
         _write_json(
             STATUS_PATH,
@@ -593,7 +637,9 @@ def main() -> int:
                     run_graphrag=bool(args.run_graphrag),
                     code_max_files=args.code_max_files,
                     state="paused",
-                    last_result=(control.get("last_result") if isinstance(control.get("last_result"), dict) else {}),
+                    last_result=(
+                        control.get("last_result") if isinstance(control.get("last_result"), dict) else {}
+                    ),
                     pause_requested=True,
                     stop_requested=False,
                 )

@@ -41,6 +41,7 @@ def test_run_scheduler_cycle_waits_on_coordinator(tmp_path: Path, monkeypatch) -
         metadata={"exclusive": True, "exclusive_owner": "qwenchat"},
     )
     monkeypatch.setattr(mod, "STATUS_PATH", tmp_path / "eidos_scheduler_status.json")
+    monkeypatch.setattr(mod, "PROOF_STATUS_PATH", tmp_path / "entity_proof_status.json")
     monkeypatch.setattr(
         mod,
         "_refresh_directory_docs_status",
@@ -49,8 +50,11 @@ def test_run_scheduler_cycle_waits_on_coordinator(tmp_path: Path, monkeypatch) -
             "coverage_ratio": 0.9,
             "missing_delta": 1,
             "coverage_delta": -0.01,
+            "review_pending_count": 3,
+            "suppressed_directory_count": 1,
         },
     )
+    monkeypatch.setattr(mod, "_refresh_proof_status", lambda repo_root: {"status": "yellow", "fresh": True, "top_gap_count": 3})
     result = mod.run_scheduler_cycle(
         interval_sec=30.0,
         timeout_sec=60.0,
@@ -65,6 +69,7 @@ def test_run_scheduler_cycle_waits_on_coordinator(tmp_path: Path, monkeypatch) -
     )
     assert result["state"] == "waiting"
     assert result["last_result"]["reason"] == "exclusive_owner_active"
+    assert result["last_result"]["proof"]["status"] == "yellow"
 
 
 def test_run_scheduler_cycle_records_success(tmp_path: Path, monkeypatch) -> None:
@@ -73,6 +78,7 @@ def test_run_scheduler_cycle_records_success(tmp_path: Path, monkeypatch) -> Non
     monkeypatch.setattr(mod, "PIPELINE_STATUS_PATH", tmp_path / "living_pipeline_status.json")
     monkeypatch.setattr(mod, "DIRECTORY_DOCS_STATUS_PATH", tmp_path / "directory_docs_status.json")
     monkeypatch.setattr(mod, "DIRECTORY_DOCS_HISTORY_PATH", tmp_path / "directory_docs_history.json")
+    monkeypatch.setattr(mod, "PROOF_STATUS_PATH", tmp_path / "entity_proof_status.json")
     monkeypatch.setattr(
         mod,
         "_refresh_directory_docs_status",
@@ -81,8 +87,11 @@ def test_run_scheduler_cycle_records_success(tmp_path: Path, monkeypatch) -> Non
             "coverage_ratio": 0.95,
             "missing_delta": -1,
             "coverage_delta": 0.02,
+            "review_pending_count": 2,
+            "suppressed_directory_count": 1,
         },
     )
+    monkeypatch.setattr(mod, "_refresh_proof_status", lambda repo_root: {"status": "green", "fresh": True, "top_gap_count": 1})
     (tmp_path / "living_pipeline_status.json").write_text(
         json.dumps({"phase": "indexing", "eta_seconds": 12}), encoding="utf-8"
     )
@@ -106,9 +115,30 @@ def test_run_scheduler_cycle_records_success(tmp_path: Path, monkeypatch) -> Non
     assert result["status"] == "success"
     assert result["run_id"] == "run-1"
     assert result["directory_docs"]["missing_readme_count"] == 1
+    assert result["proof"]["status"] == "green"
     saved = json.loads((tmp_path / "eidos_scheduler_status.json").read_text(encoding="utf-8"))
     assert saved["state"] == "sleeping"
     assert saved["last_result"]["records_total"] == 7
+
+
+def test_refresh_proof_status_reads_latest_proof_report(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(mod, "PROOF_STATUS_PATH", tmp_path / "entity_proof_status.json")
+    latest = tmp_path / "reports" / "proof" / "entity_proof_scorecard_latest.json"
+    latest.parent.mkdir(parents=True, exist_ok=True)
+    latest.write_text(
+        json.dumps(
+            {
+                "overall": {"status": "yellow", "score": 0.61},
+                "freshness": {"status": "yellow"},
+                "regression": {"status": "stable"},
+                "top_gaps": [{"gap": "a"}, {"gap": "b"}],
+            }
+        ),
+        encoding="utf-8",
+    )
+    payload = mod._refresh_proof_status(tmp_path)
+    assert payload["status"] == "yellow"
+    assert payload["top_gap_count"] == 2
 
 
 def test_refresh_directory_docs_status_tracks_drift(tmp_path: Path, monkeypatch) -> None:
