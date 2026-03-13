@@ -207,6 +207,7 @@ def _external_benchmark_coverage(repo_root: Path) -> dict[str, bool]:
     ]
     needles = {
         "agentbench": "agentbench",
+        "agencybench": "agencybench",
         "webarena": "webarena",
         "osworld": "osworld",
         "swebench": "swebench",
@@ -244,6 +245,8 @@ def _load_external_benchmark_results(repo_root: Path) -> list[dict[str, Any]]:
                 "generated_at": payload.get("generated_at"),
                 "score": _safe_float(payload.get("score")),
                 "status": str(payload.get("status") or ""),
+                "participant": str(payload.get("participant") or ""),
+                "execution_mode": str(payload.get("execution_mode") or ""),
                 "source_path": payload.get("source_path"),
                 "metrics": payload.get("metrics") if isinstance(payload.get("metrics"), dict) else {},
             }
@@ -448,14 +451,28 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
             "No imported or wired mainstream external suites detected yet (AgentBench/WebArena/OSWorld/SWE-bench)."
         )
     if external_results:
+        live_results = [
+            row for row in external_results if str(row.get("execution_mode") or "") in {"local_run", "remote_run"}
+        ]
+        reference_results = [
+            row for row in external_results if str(row.get("execution_mode") or "") == "imported_reference"
+        ]
         external_scores = [float(row.get("score") or 0.0) for row in external_results]
-        benchmark_score += min(0.15, sum(external_scores) / max(1, len(external_scores)) * 0.15)
+        score_weight = 0.15 if live_results else 0.08
+        benchmark_score += min(score_weight, sum(external_scores) / max(1, len(external_scores)) * score_weight)
         benchmark_strengths.append(
             "Imported external benchmark evidence present: "
-            + ", ".join(f"{row['suite']}={row['score']}" for row in external_results)
+            + ", ".join(
+                f"{row['suite']}:{row.get('execution_mode') or 'unknown'}={row['score']}"
+                for row in external_results
+            )
             + "."
         )
         benchmark_paths.extend(str(row["path"]) for row in external_results if row.get("path"))
+        if not live_results and reference_results:
+            benchmark_gaps.append(
+                "Only imported reference external benchmark baselines are present; no Eidos-run local or remote external suite artifact exists yet."
+            )
 
     continuity = _continuity_summary(core_bench, trial)
     continuity_score = 0.0

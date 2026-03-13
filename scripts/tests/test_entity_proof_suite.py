@@ -142,6 +142,7 @@ def test_build_proof_report_tracks_freshness_regression_and_external_results(tmp
             "contract": "eidos.external_benchmark_result.v1",
             "suite": "agentbench",
             "score": 0.73,
+            "execution_mode": "imported_reference",
             "metrics": {"success_rate": 0.73},
         },
     )
@@ -156,6 +157,7 @@ def test_build_proof_report_tracks_freshness_regression_and_external_results(tmp
 
     assert report["external_benchmark_coverage"]["agentbench"] is True
     assert report["external_benchmark_results"][0]["suite"] == "agentbench"
+    assert report["external_benchmark_results"][0]["execution_mode"] == "imported_reference"
     assert report["freshness"]["status"] in {"yellow", "red"}
     assert report["regression"]["status"] == "regressed"
     assert any(row["category"] == "regression" for row in report["top_gaps"])

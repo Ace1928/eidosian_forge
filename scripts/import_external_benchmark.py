@@ -42,6 +42,8 @@ def normalize_external_benchmark(
     input_path: Path,
     source_url: str = "",
     notes: str = "",
+    participant: str = "",
+    execution_mode: str = "local_run",
 ) -> dict[str, Any]:
     payload = _load_json(input_path)
     score = _pick_metric(payload, ["score", "success_rate", "pass_rate", "resolved_rate"])
@@ -55,6 +57,8 @@ def normalize_external_benchmark(
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "source_path": str(input_path),
         "source_url": source_url,
+        "participant": participant,
+        "execution_mode": execution_mode,
         "status": status,
         "score": round(score, 6),
         "metrics": {
@@ -75,6 +79,13 @@ def main() -> int:
     parser.add_argument("--repo-root", default=str(Path(__file__).resolve().parents[1]))
     parser.add_argument("--source-url", default="", help="Upstream suite URL or results page URL")
     parser.add_argument("--notes", default="", help="Free-form operator notes")
+    parser.add_argument("--participant", default="", help="Model or system name represented by the result")
+    parser.add_argument(
+        "--execution-mode",
+        default="local_run",
+        choices=["local_run", "remote_run", "imported_reference"],
+        help="Whether the result came from a local run, remote run, or imported reference baseline",
+    )
     args = parser.parse_args()
 
     repo_root = Path(args.repo_root).resolve()
@@ -84,6 +95,8 @@ def main() -> int:
         input_path=input_path,
         source_url=args.source_url,
         notes=args.notes,
+        participant=args.participant,
+        execution_mode=args.execution_mode,
     )
     report_dir = repo_root / "reports" / "external_benchmarks" / report["suite"]
     report_dir.mkdir(parents=True, exist_ok=True)

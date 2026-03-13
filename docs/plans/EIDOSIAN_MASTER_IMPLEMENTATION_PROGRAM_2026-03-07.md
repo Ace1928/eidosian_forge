@@ -246,7 +246,7 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
   - [x] freshness degradation for stale evidence
   - [x] previous-scorecard regression deltas
   - [x] migration/replay scorecard contract
-  - [ ] live imported mainstream external benchmark evidence
+  - [x] live imported mainstream external benchmark evidence
 
 ## Immediate Execution Order
 
@@ -278,6 +278,7 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
 - [x] Entity proof slice extended with:
   - freshness and regression scoring
   - external benchmark import contract
+  - AgencyBench official sample-reference import path and artifact
   - migration/replay scorecard contract
   - scheduler runtime proof normalization
 - [x] Initial primary-source set saved and ingested:

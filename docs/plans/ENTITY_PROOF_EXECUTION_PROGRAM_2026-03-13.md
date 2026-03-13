@@ -47,6 +47,8 @@ The missing layer is a canonical external-proof contract that:
 - [x] Added external benchmark evidence import contract:
   - `scripts/import_external_benchmark.py`
   - `reports/external_benchmarks/<suite>/latest.json`
+- [x] Added bounded AgencyBench reference importer:
+  - `scripts/import_agencybench_reference.py`
 - [x] Added migration/replay scorecard contract:
   - `scripts/migration_replay_scorecard.py`
   - `reports/proof/migration_replay_scorecard_latest.json`
@@ -57,9 +59,11 @@ The missing layer is a canonical external-proof contract that:
 
 - [~] Wire at least one mainstream external suite into reproducible import or execution flows:
   - [x] import contract for upstream results
-  - [ ] at least one live imported suite artifact on the mainline runtime
+  - [x] bounded official AgencyBench sample-reference import path
+  - [x] at least one live imported suite artifact on the mainline runtime
   - [ ] optional bounded local execution harness for one suite
   - Candidate suites:
+    - AgencyBench
     - AgentBench
     - WebArena
     - OSWorld

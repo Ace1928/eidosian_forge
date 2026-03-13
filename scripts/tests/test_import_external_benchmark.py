@@ -27,7 +27,11 @@ def test_normalize_external_benchmark_reads_summary_metrics(tmp_path: Path) -> N
         input_path=source,
         source_url="https://github.com/THUDM/AgentBench",
         notes="imported",
+        participant="eidos",
+        execution_mode="local_run",
     )
     assert payload["suite"] == "agentbench"
     assert payload["score"] == 0.62
     assert payload["metrics"]["tasks_total"] == 100
+    assert payload["participant"] == "eidos"
+    assert payload["execution_mode"] == "local_run"

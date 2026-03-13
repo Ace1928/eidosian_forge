@@ -171,6 +171,19 @@ Use `scripts/import_external_benchmark.py` to normalize upstream external-suite 
 - `reports/external_benchmarks/<suite>/<suite>_<stamp>.json`
 - `reports/external_benchmarks/<suite>/latest.json`
 
+## AgencyBench Reference Import
+Use `scripts/import_agencybench_reference.py` to aggregate the official sample `claude/meta_eval.json` artifacts from an `AgencyBench` checkout into a bounded external-benchmark reference bundle.
+
+### Run
+```bash
+./eidosian_venv/bin/python scripts/import_agencybench_reference.py \
+  --agencybench-root /path/to/AgencyBench
+```
+
+### Outputs
+- `reports/external_benchmarks/agencybench/agencybench_<stamp>.json`
+- `reports/external_benchmarks/agencybench/latest.json`
+
 ## Migration Replay Scorecard
 Use `scripts/migration_replay_scorecard.py` to report replay and portability evidence.
 
