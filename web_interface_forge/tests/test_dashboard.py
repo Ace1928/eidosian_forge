@@ -127,8 +127,16 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         encoding="utf-8",
     )
     subprocess.run(["git", "init"], cwd=str(tmp_path), check=True, capture_output=True, text=True)
-    subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=str(tmp_path), check=True, capture_output=True, text=True)
-    subprocess.run(["git", "config", "user.name", "Test"], cwd=str(tmp_path), check=True, capture_output=True, text=True)
+    subprocess.run(
+        ["git", "config", "user.email", "test@example.com"],
+        cwd=str(tmp_path),
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.name", "Test"], cwd=str(tmp_path), check=True, capture_output=True, text=True
+    )
     subprocess.run(["git", "add", "."], cwd=str(tmp_path), check=True, capture_output=True, text=True)
     subprocess.run(["git", "commit", "-m", "init"], cwd=str(tmp_path), check=True, capture_output=True, text=True)
 
@@ -148,8 +156,7 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(dashboard, "DIRECTORY_DOCS_HISTORY", runtime_dir / "directory_docs_history.json")
     service_script = tmp_path / "eidos_termux_services.sh"
     service_script.write_text(
-        "#!/bin/sh\n"
-        "printf 'Atlas: runit run: /tmp/service: (pid 1) 10s; run: log: (pid 2) 10s\\n'\n",
+        "#!/bin/sh\n" "printf 'Atlas: runit run: /tmp/service: (pid 1) 10s; run: log: (pid 2) 10s\\n'\n",
         encoding="utf-8",
     )
     service_script.chmod(0o755)

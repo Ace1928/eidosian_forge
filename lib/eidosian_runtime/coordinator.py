@@ -189,7 +189,9 @@ class ForgeRuntimeCoordinator:
         if active_model_counts:
             avg_models = round(sum(active_model_counts) / len(active_model_counts), 3)
             peak_models = max(active_model_counts)
-        avg_docs_coverage = round(sum(docs_coverage_values) / len(docs_coverage_values), 6) if docs_coverage_values else 0.0
+        avg_docs_coverage = (
+            round(sum(docs_coverage_values) / len(docs_coverage_values), 6) if docs_coverage_values else 0.0
+        )
         latest_docs_coverage = docs_coverage_values[-1] if docs_coverage_values else 0.0
         latest_docs_missing = docs_missing_values[-1] if docs_missing_values else 0
         top_tasks = [

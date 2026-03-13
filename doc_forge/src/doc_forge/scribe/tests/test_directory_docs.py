@@ -5,9 +5,9 @@ import subprocess
 from pathlib import Path
 
 from doc_forge.scribe.directory_docs import (
+    inventory_status,
     inventory_summary,
     inventory_tree,
-    inventory_status,
     load_policy,
     readme_diff,
     render_directory_readme,
@@ -181,8 +181,14 @@ def test_route_detection_skips_test_routes(temp_forge_root: Path) -> None:
     tests = target / "tests"
     target.mkdir(parents=True, exist_ok=True)
     tests.mkdir(parents=True, exist_ok=True)
-    (target / "service.py").write_text('from fastapi import FastAPI\napp = FastAPI()\n@app.get("/health")\ndef health():\n    return {"ok": True}\n', encoding="utf-8")
-    (tests / "test_service.py").write_text('from fastapi import APIRouter\nrouter = APIRouter()\n@router.get("/coverage")\ndef coverage():\n    return {"ok": True}\n', encoding="utf-8")
+    (target / "service.py").write_text(
+        'from fastapi import FastAPI\napp = FastAPI()\n@app.get("/health")\ndef health():\n    return {"ok": True}\n',
+        encoding="utf-8",
+    )
+    (tests / "test_service.py").write_text(
+        'from fastapi import APIRouter\nrouter = APIRouter()\n@router.get("/coverage")\ndef coverage():\n    return {"ok": True}\n',
+        encoding="utf-8",
+    )
     cfg_dir = temp_forge_root / "cfg"
     cfg_dir.mkdir(parents=True, exist_ok=True)
     (cfg_dir / "documentation_policy.json").write_text(

@@ -22,8 +22,8 @@ from .directory_docs import (
     inventory_tree,
     readme_diff,
     render_directory_readme,
-    upsert_directory_readme,
     upsert_directory_batch,
+    upsert_directory_readme,
 )
 from .extract import DocumentExtractor, extract_terms
 from .generate import DocGenerator
