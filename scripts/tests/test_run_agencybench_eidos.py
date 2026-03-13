@@ -71,18 +71,99 @@ def _complete_workspace(workspace: Path) -> None:
     (base / "data_warehouse" / "active_datasets").mkdir(parents=True, exist_ok=True)
     (base / "knowledge_base").mkdir(parents=True, exist_ok=True)
     moves = {
-        workspace / "desktop" / "exp_logs" / "2023_aug" / "debug_utils.py": base / "dev_bundle" / "tests" / "debug_utils.py",
-        workspace / "desktop" / "learning" / "2024" / "test_runner.py": base / "dev_bundle" / "tests" / "test_runner.py",
-        workspace / "desktop" / "exp_logs" / "project_alpha" / "train_model.py": base / "dev_bundle" / "source" / "train_model.py",
-        workspace / "desktop" / "old_homebrew" / "config" / "settings.py": base / "dev_bundle" / "source" / "settings.py",
-        workspace / "desktop" / "travel_plan" / "budget_calculator.py": base / "dev_bundle" / "source" / "budget_calculator.py",
-        workspace / "desktop" / "exp_logs" / "project_alpha" / "raw_data.csv": base / "data_warehouse" / "legacy_archives" / "raw_data.csv",
-        workspace / "desktop" / "exp_logs" / "deprecated" / "old_results.csv": base / "data_warehouse" / "legacy_archives" / "old_results.csv",
-        workspace / "desktop" / "old_homebrew" / "inventory" / "inventory_list.csv": base / "data_warehouse" / "legacy_archives" / "inventory_list.csv",
-        workspace / "desktop" / "learning" / "2024" / "progress.csv": base / "data_warehouse" / "active_datasets" / "progress.csv",
-        workspace / "desktop" / "music" / "jay_chou" / "favorite_songs.csv": base / "data_warehouse" / "active_datasets" / "favorite_songs.csv",
-        workspace / "desktop" / "exp_logs" / "project_alpha" / "README.md": base / "knowledge_base" / "project_alpha_README.md",
-        workspace / "desktop" / "learning" / "docs" / "architecture.md": base / "knowledge_base" / "docs_architecture.md",
+        workspace
+        / "desktop"
+        / "exp_logs"
+        / "2023_aug"
+        / "debug_utils.py": base
+        / "dev_bundle"
+        / "tests"
+        / "debug_utils.py",
+        workspace
+        / "desktop"
+        / "learning"
+        / "2024"
+        / "test_runner.py": base
+        / "dev_bundle"
+        / "tests"
+        / "test_runner.py",
+        workspace
+        / "desktop"
+        / "exp_logs"
+        / "project_alpha"
+        / "train_model.py": base
+        / "dev_bundle"
+        / "source"
+        / "train_model.py",
+        workspace
+        / "desktop"
+        / "old_homebrew"
+        / "config"
+        / "settings.py": base
+        / "dev_bundle"
+        / "source"
+        / "settings.py",
+        workspace
+        / "desktop"
+        / "travel_plan"
+        / "budget_calculator.py": base
+        / "dev_bundle"
+        / "source"
+        / "budget_calculator.py",
+        workspace
+        / "desktop"
+        / "exp_logs"
+        / "project_alpha"
+        / "raw_data.csv": base
+        / "data_warehouse"
+        / "legacy_archives"
+        / "raw_data.csv",
+        workspace
+        / "desktop"
+        / "exp_logs"
+        / "deprecated"
+        / "old_results.csv": base
+        / "data_warehouse"
+        / "legacy_archives"
+        / "old_results.csv",
+        workspace
+        / "desktop"
+        / "old_homebrew"
+        / "inventory"
+        / "inventory_list.csv": base
+        / "data_warehouse"
+        / "legacy_archives"
+        / "inventory_list.csv",
+        workspace
+        / "desktop"
+        / "learning"
+        / "2024"
+        / "progress.csv": base
+        / "data_warehouse"
+        / "active_datasets"
+        / "progress.csv",
+        workspace
+        / "desktop"
+        / "music"
+        / "jay_chou"
+        / "favorite_songs.csv": base
+        / "data_warehouse"
+        / "active_datasets"
+        / "favorite_songs.csv",
+        workspace
+        / "desktop"
+        / "exp_logs"
+        / "project_alpha"
+        / "README.md": base
+        / "knowledge_base"
+        / "project_alpha_README.md",
+        workspace
+        / "desktop"
+        / "learning"
+        / "docs"
+        / "architecture.md": base
+        / "knowledge_base"
+        / "docs_architecture.md",
         workspace / "desktop" / "learning" / "study_notes.md": base / "knowledge_base" / "learning_study_notes.md",
         workspace / "desktop" / "music" / "music_manifest.md": base / "knowledge_base" / "music_music_manifest.md",
         workspace / "desktop" / "travel_plan" / "draft_plan.md": base / "knowledge_base" / "travel_plan_draft_plan.md",
@@ -159,11 +240,17 @@ def test_verify_scenario1_contracts(monkeypatch) -> None:
         },
     )
     monkeypatch.setattr(module, "_gh_branch_exists", lambda _full_name, branch: branch == "config/issue-templates")
-    monkeypatch.setattr(module, "_gh_file_content", lambda _full_name, _path, ref: module.SCENARIO1_TEMPLATE_BODY if ref == "config/issue-templates" else "")
+    monkeypatch.setattr(
+        module,
+        "_gh_file_content",
+        lambda _full_name, _path, ref: module.SCENARIO1_TEMPLATE_BODY if ref == "config/issue-templates" else "",
+    )
     monkeypatch.setattr(
         module,
         "_gh_issue_comments",
-        lambda _full_name, _issue_number: [{"body": module.SCENARIO1_COMMENT_TEMPLATE.format(template=module.SCENARIO1_TEMPLATE_BODY.rstrip())}],
+        lambda _full_name, _issue_number: [
+            {"body": module.SCENARIO1_COMMENT_TEMPLATE.format(template=module.SCENARIO1_TEMPLATE_BODY.rstrip())}
+        ],
     )
     monkeypatch.setattr(
         module,

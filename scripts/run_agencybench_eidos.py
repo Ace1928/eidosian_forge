@@ -19,9 +19,9 @@ for extra in (REPO_ROOT / "lib", REPO_ROOT / "eidos_mcp" / "src", REPO_ROOT / "s
     if value not in sys.path:
         sys.path.insert(0, value)
 
+from eidos_scheduler import apply_scheduler_control
 from eidosian_agent.local_mcp_agent import LocalMcpAgent, normalize_profile
 from eidosian_runtime import ForgeRuntimeCoordinator
-from eidos_scheduler import apply_scheduler_control
 
 DEFAULT_AGENCYBENCH_ROOT = Path("/data/data/com.termux/files/usr/tmp/eidos-agencybench-22810")
 RUNTIME_ROOT = REPO_ROOT / "data" / "runtime" / "external_benchmarks" / "agencybench"
@@ -349,9 +349,7 @@ def _run(cmd: list[str], *, cwd: Path | None = None, env: dict[str, str] | None 
     )
     if completed.returncode != 0:
         raise RuntimeError(
-            "command_failed: "
-            + " ".join(cmd)
-            + f"\nstdout:\n{completed.stdout}\nstderr:\n{completed.stderr}"
+            "command_failed: " + " ".join(cmd) + f"\nstdout:\n{completed.stdout}\nstderr:\n{completed.stderr}"
         )
     return completed.stdout.strip()
 
@@ -555,7 +553,9 @@ def verify_scenario1_subtask1(target: GitHubBenchmarkTarget, issue_number: int |
         return False, "Issue title missing required keywords."
     body = str(issue.get("body") or "")
     missing_sections = [section for section in ("## Context", "## Goals", "## Expected Outcome") if section not in body]
-    missing_keywords = [word for word in ("issue template", "standardization", "bug tracking") if word not in body.lower()]
+    missing_keywords = [
+        word for word in ("issue template", "standardization", "bug tracking") if word not in body.lower()
+    ]
     labels = {str(row.get("name") or "") for row in issue.get("labels") or [] if isinstance(row, dict)}
     if missing_sections:
         return False, f"Issue body missing sections: {missing_sections}"
@@ -616,7 +616,9 @@ def verify_scenario1_subtask4(target: GitHubBenchmarkTarget, issue_number: int |
     return True, "Issue labels and template comment are correct."
 
 
-def verify_scenario1_subtask5(target: GitHubBenchmarkTarget, issue_number: int | None = None, pr_number: int | None = None) -> tuple[bool, str]:
+def verify_scenario1_subtask5(
+    target: GitHubBenchmarkTarget, issue_number: int | None = None, pr_number: int | None = None
+) -> tuple[bool, str]:
     if issue_number is None or pr_number is None:
         return False, "Issue or PR number missing."
     pr = _gh_pr_view(f"{target.owner}/{target.repo}", pr_number)
@@ -650,7 +652,9 @@ def _execute_scenario1_deterministic(
     target = _ensure_github_repo(run_root, owner=owner, repo_name=repo_name, visibility=repo_visibility)
     full_name = f"{target.owner}/{target.repo}"
     _ensure_labels(full_name)
-    issue_number = _gh_issue_create(full_name, title=SCENARIO1_ISSUE_TITLE, body=SCENARIO1_ISSUE_BODY, labels=["triage", "meta"])
+    issue_number = _gh_issue_create(
+        full_name, title=SCENARIO1_ISSUE_TITLE, body=SCENARIO1_ISSUE_BODY, labels=["triage", "meta"]
+    )
     verification_rows = []
     ok, message = verify_scenario1_subtask1(target, issue_number)
     verification_rows.append({"step": "subtask1", "success": ok, "message": message})
@@ -666,7 +670,9 @@ def _execute_scenario1_deterministic(
     ok, message = verify_scenario1_subtask3(target)
     verification_rows.append({"step": "subtask3", "success": ok, "message": message})
     _gh_issue_labels_set(full_name, issue_number, ["meta", "in-progress"])
-    _gh_issue_comment(full_name, issue_number, SCENARIO1_COMMENT_TEMPLATE.format(template=SCENARIO1_TEMPLATE_BODY.rstrip()))
+    _gh_issue_comment(
+        full_name, issue_number, SCENARIO1_COMMENT_TEMPLATE.format(template=SCENARIO1_TEMPLATE_BODY.rstrip())
+    )
     ok, message = verify_scenario1_subtask4(target, issue_number)
     verification_rows.append({"step": "subtask4", "success": ok, "message": message})
     pr_number = _gh_pr_create(
@@ -718,11 +724,7 @@ def _build_scenario2_policy(workspace: Path) -> dict[str, Any]:
                         "allowed_keys": ["command", "cwd", "timeout_sec"],
                         "string_max_lengths": {"command": 320, "cwd": 400},
                         "path_prefixes": {"cwd": [root]},
-                        "allowed_patterns": {
-                            "command": [
-                                r"^(pwd|ls|find|mkdir|mv|rm|test|cat|sed|printf)(\s|$)"
-                            ]
-                        },
+                        "allowed_patterns": {"command": [r"^(pwd|ls|find|mkdir|mv|rm|test|cat|sed|printf)(\s|$)"]},
                         "blocked_patterns": {
                             "command": [
                                 r"[;&|]",
@@ -798,7 +800,11 @@ def _execute_scenario2_step_deterministic(workspace: Path, step_key: str) -> dic
     elif step_key == "subtask2":
         _mkdirs([base / "dev_bundle" / "tests", base / "dev_bundle" / "source"])
         for src in (workspace / "desktop").rglob("*.py"):
-            target_dir = base / "dev_bundle" / ("tests" if ("test" in src.name.lower() or "debug" in src.name.lower()) else "source")
+            target_dir = (
+                base
+                / "dev_bundle"
+                / ("tests" if ("test" in src.name.lower() or "debug" in src.name.lower()) else "source")
+            )
             _move_if_exists(src, target_dir / src.name)
     elif step_key == "subtask3":
         _mkdirs([base / "data_warehouse" / "legacy_archives", base / "data_warehouse" / "active_datasets"])
@@ -826,7 +832,15 @@ def _execute_scenario2_step_deterministic(workspace: Path, step_key: str) -> dic
     }
 
 
-def _render_attempt_objective(*, workspace: Path, description_text: str, completed: list[str], current_step: ScenarioStep, feedback: str, attempt_index: int) -> str:
+def _render_attempt_objective(
+    *,
+    workspace: Path,
+    description_text: str,
+    completed: list[str],
+    current_step: ScenarioStep,
+    feedback: str,
+    attempt_index: int,
+) -> str:
     completed_text = "\n".join(f"- {item}" for item in completed) or "- none yet"
     feedback_text = feedback.strip() or "No previous failure feedback."
     return (
@@ -1032,12 +1046,19 @@ def run_scenario2(
                 f"- stop_reason: {stop_reason}",
                 "",
                 "## Verification",
-                *[f"- {row['step']}: {'pass' if row['success'] else 'fail'} - {row['message']}" for row in verification_rows],
+                *[
+                    f"- {row['step']}: {'pass' if row['success'] else 'fail'} - {row['message']}"
+                    for row in verification_rows
+                ],
             ]
         )
         + "\n",
     )
-    return {"detailed": detailed, "normalized": normalized, "paths": {"latest": str(latest_json), "latest_detailed": str(latest_detailed)}}
+    return {
+        "detailed": detailed,
+        "normalized": normalized,
+        "paths": {"latest": str(latest_json), "latest_detailed": str(latest_detailed)},
+    }
 
 
 def run_scenario1(
@@ -1146,16 +1167,25 @@ def run_scenario1(
                 f"- pr_number: {pr_number}",
                 "",
                 "## Verification",
-                *[f"- {row['step']}: {'pass' if row['success'] else 'fail'} - {row['message']}" for row in verification_rows],
+                *[
+                    f"- {row['step']}: {'pass' if row['success'] else 'fail'} - {row['message']}"
+                    for row in verification_rows
+                ],
             ]
         )
         + "\n",
     )
-    return {"detailed": detailed, "normalized": normalized, "paths": {"latest": str(latest_json), "latest_detailed": str(latest_detailed)}}
+    return {
+        "detailed": detailed,
+        "normalized": normalized,
+        "paths": {"latest": str(latest_json), "latest_detailed": str(latest_detailed)},
+    }
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Run a bounded Eidos local execution for selected AgencyBench scenarios.")
+    parser = argparse.ArgumentParser(
+        description="Run a bounded Eidos local execution for selected AgencyBench scenarios."
+    )
     parser.add_argument("--scenario", default="scenario2", choices=["scenario1", "scenario2"])
     parser.add_argument("--agencybench-root", default=str(DEFAULT_AGENCYBENCH_ROOT))
     parser.add_argument("--repo-root", default=str(REPO_ROOT))

@@ -1,6 +1,6 @@
-scripts/entity_proof_suite.py
-scripts/import_agencybench_reference.py
-scripts/import_external_benchmark.py
-scripts/tests/test_entity_proof_suite.py
-scripts/tests/test_import_agencybench_reference.py
-scripts/tests/test_import_external_benchmark.py
+lib/eidosian_agent/local_mcp_agent.py
+lib/eidosian_runtime/coordinator.py
+scripts/run_agencybench_eidos.py
+scripts/tests/test_eidos_local_agent.py
+scripts/tests/test_qwenchat.py
+scripts/tests/test_run_agencybench_eidos.py

@@ -341,9 +341,7 @@ def test_run_cycle_can_read_allowed_resource(monkeypatch, tmp_path: Path) -> Non
         if calls["count"] == 1:
             return {
                 "message": {
-                    "tool_calls": [
-                        {"function": {"name": "read_resource", "arguments": {"uri": "memory://status"}}}
-                    ]
+                    "tool_calls": [{"function": {"name": "read_resource", "arguments": {"uri": "memory://status"}}}]
                 },
                 "effective_thinking_mode": "on",
             }
