@@ -1,6 +1,10 @@
+agent_forge/src/agent_forge/autonomy/supervisor.py
+agent_forge/src/agent_forge/cli/eidosd.py
+agent_forge/tests/test_autonomy_supervisor.py
+agent_forge/tests/test_db_and_daemon.py
 doc_forge/src/doc_forge/scribe/directory_docs.py
-doc_forge/src/doc_forge/scribe/service.py
 doc_forge/src/doc_forge/scribe/tests/test_directory_docs.py
-doc_forge/src/doc_forge/scribe/tests/test_service.py
-scripts/generate_directory_readmes.py
-scripts/tests/test_generate_directory_readmes.py
+scripts/eidos_scheduler.py
+scripts/tests/test_eidos_scheduler.py
+web_interface_forge/src/web_interface_forge/dashboard/main.py
+web_interface_forge/tests/test_dashboard.py

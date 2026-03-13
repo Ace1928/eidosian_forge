@@ -72,9 +72,8 @@ def load_supervisor_config(path: str | Path | None) -> dict[str, Any]:
         return {}
 
 
-from .homeostasis import HomeostaticController
 from .gates import SystemicGateKeeper
-from . import homeostasis as H
+from .homeostasis import HomeostaticController
 
 DEFAULT_HOME_MISSIONS = [
     {
@@ -134,10 +133,7 @@ class AutonomySupervisor:
         self._graphrag = graphrag
         self._embedder = embedder
         self.homeostasis = HomeostaticController(self.state_dir)
-        self.gatekeeper = SystemicGateKeeper(
-            repo_root=self.repo_root, 
-            invariants_path=self.repo_root / "GEMINI.md"
-        )
+        self.gatekeeper = SystemicGateKeeper(repo_root=self.repo_root, invariants_path=self.repo_root / "GEMINI.md")
 
     def _policy(self) -> dict[str, Any]:
         policy = self.config.get("policy", {})
@@ -349,9 +345,7 @@ class AutonomySupervisor:
                         "required_directory_count": int(payload.get("required_directory_count") or 0),
                         "missing_readme_count": int(payload.get("missing_readme_count") or 0),
                         "coverage_ratio": float(payload.get("coverage_ratio") or 0.0),
-                        "missing_examples": [
-                            _to_text(item) for item in (payload.get("missing_examples") or [])[:8]
-                        ],
+                        "missing_examples": [_to_text(item) for item in (payload.get("missing_examples") or [])[:8]],
                     }
                     context_tokens |= _tokenize(" ".join(directory_docs_summary["missing_examples"]))
         except Exception:
@@ -430,20 +424,30 @@ class AutonomySupervisor:
         caution = 0.0
         for token in context_tokens:
             if token.startswith("drive.preservation."):
-                try: preservation = float(token.split(".")[-1])
-                except Exception: pass
+                try:
+                    preservation = float(token.split(".")[-1])
+                except Exception:
+                    pass
             if token.startswith("drive.coherence."):
-                try: coherence = float(token.split(".")[-1])
-                except Exception: pass
+                try:
+                    coherence = float(token.split(".")[-1])
+                except Exception:
+                    pass
             if token.startswith("drive.growth."):
-                try: growth = float(token.split(".")[-1])
-                except Exception: pass
+                try:
+                    growth = float(token.split(".")[-1])
+                except Exception:
+                    pass
             if token.startswith("drive.curiosity."):
-                try: curiosity = float(token.split(".")[-1])
-                except Exception: pass
+                try:
+                    curiosity = float(token.split(".")[-1])
+                except Exception:
+                    pass
             if token.startswith("drive.caution."):
-                try: caution = float(token.split(".")[-1])
-                except Exception: pass
+                try:
+                    caution = float(token.split(".")[-1])
+                except Exception:
+                    pass
 
         template = _to_text(mission.get("template")).lower()
 
@@ -474,9 +478,7 @@ class AutonomySupervisor:
         local_agent_status = _to_text(local_agent.get("status")).lower()
         local_agent_tool_calls = int(local_agent.get("tool_calls") or 0)
         directory_docs = (
-            context.get("directory_docs_summary")
-            if isinstance(context.get("directory_docs_summary"), Mapping)
-            else {}
+            context.get("directory_docs_summary") if isinstance(context.get("directory_docs_summary"), Mapping) else {}
         )
         docs_missing = int(directory_docs.get("missing_readme_count") or 0)
         docs_coverage = float(directory_docs.get("coverage_ratio") or 0.0)
@@ -550,6 +552,7 @@ class AutonomySupervisor:
         try:
             _ensure_bridge_import_path()
             from diagnostics_forge.core import DiagnosticsForge
+
             from agent_forge.consciousness.kernel import ConsciousnessKernel
 
             diag = DiagnosticsForge(service_name="autonomy_supervisor")
@@ -560,13 +563,15 @@ class AutonomySupervisor:
             signals = self.homeostasis.emit_signals()
 
             # Inject homeostasis drives into context tokens for scoring
-            context["tokens"].extend([
-                f"drive.preservation.{round(signals['drives']['preservation'], 2)}",
-                f"drive.coherence.{round(signals['drives']['coherence'], 2)}",
-                f"drive.growth.{round(signals['drives']['growth'], 2)}",
-                f"drive.curiosity.{round(signals['drives'].get('curiosity', 0.0), 2)}",
-                f"drive.caution.{round(signals['drives'].get('caution', 0.0), 2)}"
-            ])
+            context["tokens"].extend(
+                [
+                    f"drive.preservation.{round(signals['drives']['preservation'], 2)}",
+                    f"drive.coherence.{round(signals['drives']['coherence'], 2)}",
+                    f"drive.growth.{round(signals['drives']['growth'], 2)}",
+                    f"drive.curiosity.{round(signals['drives'].get('curiosity', 0.0), 2)}",
+                    f"drive.caution.{round(signals['drives'].get('caution', 0.0), 2)}",
+                ]
+            )
         except Exception:
             # logger.warning(f"Homeostatic loop failed: {e}")
             pass
@@ -583,8 +588,12 @@ class AutonomySupervisor:
             "benchmark_failures": int(((context.get("artifact_summary") or {}).get("benchmark_failures")) or 0),
             "local_agent_status": _to_text(((context.get("local_agent_summary") or {}).get("status")) or ""),
             "local_agent_tool_calls": int(((context.get("local_agent_summary") or {}).get("tool_calls")) or 0),
-            "directory_docs_missing": int(((context.get("directory_docs_summary") or {}).get("missing_readme_count")) or 0),
-            "directory_docs_coverage": float(((context.get("directory_docs_summary") or {}).get("coverage_ratio")) or 0.0),
+            "directory_docs_missing": int(
+                ((context.get("directory_docs_summary") or {}).get("missing_readme_count")) or 0
+            ),
+            "directory_docs_coverage": float(
+                ((context.get("directory_docs_summary") or {}).get("coverage_ratio")) or 0.0
+            ),
             "repo_root": str(self.repo_root),
             "repo_dirty": repo_dirty,
         }
@@ -680,8 +689,12 @@ class AutonomySupervisor:
             "benchmark_failures": int(((context.get("artifact_summary") or {}).get("benchmark_failures")) or 0),
             "local_agent_status": _to_text(((context.get("local_agent_summary") or {}).get("status")) or ""),
             "local_agent_tool_calls": int(((context.get("local_agent_summary") or {}).get("tool_calls")) or 0),
-            "directory_docs_missing": int(((context.get("directory_docs_summary") or {}).get("missing_readme_count")) or 0),
-            "directory_docs_coverage": float(((context.get("directory_docs_summary") or {}).get("coverage_ratio")) or 0.0),
+            "directory_docs_missing": int(
+                ((context.get("directory_docs_summary") or {}).get("missing_readme_count")) or 0
+            ),
+            "directory_docs_coverage": float(
+                ((context.get("directory_docs_summary") or {}).get("coverage_ratio")) or 0.0
+            ),
         }
         BUS.append(self.state_dir, "autonomy.mission_selected", payload, tags=["autonomy", "selected"])
         S.append_journal(

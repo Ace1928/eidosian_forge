@@ -178,7 +178,7 @@ def test_scheduler_api(monkeypatch, tmp_path: Path) -> None:
     scheduler_script = tmp_path / "eidos_scheduler_control.py"
     scheduler_script.write_text(
         "#!/bin/sh\n"
-        "printf '{\"action\":\"status\",\"state\":{\"pause_requested\":false,\"stop_requested\":false},\"status\":{\"state\":\"sleeping\",\"cycle\":4,\"current_task\":\"living_pipeline\"}}\\n'\n",
+        'printf \'{"action":"status","state":{"pause_requested":false,"stop_requested":false},"status":{"state":"sleeping","cycle":4,"current_task":"living_pipeline"}}\\n\'\n',
         encoding="utf-8",
     )
     scheduler_script.chmod(0o755)
@@ -187,7 +187,7 @@ def test_scheduler_api(monkeypatch, tmp_path: Path) -> None:
     venv_dir.mkdir(parents=True, exist_ok=True)
     python_bin = venv_dir / "python"
     python_bin.write_text(
-        "#!/bin/sh\nexec \"$@\"\n",
+        '#!/bin/sh\nexec "$@"\n',
         encoding="utf-8",
     )
     python_bin.chmod(0o755)
