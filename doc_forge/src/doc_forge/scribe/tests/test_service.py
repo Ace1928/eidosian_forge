@@ -88,6 +88,9 @@ def test_docs_api_endpoints(mock_config):
         assert coverage.status_code == 200
         payload = coverage.json()
         assert payload["contract"] == "eidos.documentation_inventory.v1"
+        tree = client.get("/api/docs/tree", params={"path_prefix": "doc_forge/src/doc_forge"})
+        assert tree.status_code == 200
+        assert tree.json()["contract"] == "eidos.documentation_tree.v1"
 
         render = client.get("/api/docs/render", params={"path": "doc_forge/src/doc_forge/scribe"})
         assert render.status_code == 200
@@ -105,9 +108,9 @@ def test_docs_api_endpoints(mock_config):
 
         batch = client.post(
             "/api/docs/upsert-batch",
-            params={"path_prefix": "doc_forge/src/doc_forge", "limit": 5, "missing_only": False},
+            params={"path_prefix": "doc_forge/src/doc_forge", "limit": 5, "missing_only": False, "dry_run": True},
         )
         assert batch.status_code == 200
         batch_payload = batch.json()
-        assert batch_payload["contract"] == "eidos.docs_upsert_batch.v1"
+        assert batch_payload["contract"] == "eidos.docs_upsert_batch.v2"
         assert batch_payload["write_count"] >= 1

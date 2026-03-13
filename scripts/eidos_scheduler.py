@@ -26,6 +26,7 @@ STATUS_PATH = RUNTIME_DIR / "eidos_scheduler_status.json"
 STATE_PATH = RUNTIME_DIR / "eidos_scheduler_state.json"
 PIPELINE_STATUS_PATH = RUNTIME_DIR / "living_pipeline_status.json"
 DIRECTORY_DOCS_STATUS_PATH = RUNTIME_DIR / "directory_docs_status.json"
+DIRECTORY_DOCS_HISTORY_PATH = RUNTIME_DIR / "directory_docs_history.json"
 _STOP_REQUESTED = False
 
 
@@ -120,11 +121,45 @@ def _refresh_directory_docs_status(
                 payload = _load_json(DIRECTORY_DOCS_STATUS_PATH)
                 if payload:
                     return payload
+        previous = _load_json(DIRECTORY_DOCS_STATUS_PATH)
         from doc_forge.scribe.directory_docs import write_inventory_status  # type: ignore
 
-        return write_inventory_status(repo_root, DIRECTORY_DOCS_STATUS_PATH)
+        payload = write_inventory_status(repo_root, DIRECTORY_DOCS_STATUS_PATH)
+        previous_coverage = float(previous.get("coverage_ratio") or 0.0) if isinstance(previous, dict) else 0.0
+        previous_missing = int(previous.get("missing_readme_count") or 0) if isinstance(previous, dict) else 0
+        payload["coverage_delta"] = round(float(payload.get("coverage_ratio") or 0.0) - previous_coverage, 6)
+        payload["missing_delta"] = int(payload.get("missing_readme_count") or 0) - previous_missing
+        if payload["missing_delta"] < 0 or payload["coverage_delta"] > 0:
+            payload["drift_state"] = "improved"
+        elif payload["missing_delta"] > 0 or payload["coverage_delta"] < 0:
+            payload["drift_state"] = "regressed"
+        else:
+            payload["drift_state"] = "stable"
+        _write_json(DIRECTORY_DOCS_STATUS_PATH, payload)
+        history = _load_json(DIRECTORY_DOCS_HISTORY_PATH)
+        entries = history.get("entries") if isinstance(history.get("entries"), list) else []
+        entries.append(
+            {
+                "generated_at": payload.get("generated_at"),
+                "required_directory_count": int(payload.get("required_directory_count") or 0),
+                "missing_readme_count": int(payload.get("missing_readme_count") or 0),
+                "documented_directory_count": int(payload.get("documented_directory_count") or 0),
+                "coverage_ratio": float(payload.get("coverage_ratio") or 0.0),
+                "coverage_delta": float(payload.get("coverage_delta") or 0.0),
+                "missing_delta": int(payload.get("missing_delta") or 0),
+                "drift_state": str(payload.get("drift_state") or "stable"),
+            }
+        )
+        _write_json(
+            DIRECTORY_DOCS_HISTORY_PATH,
+            {
+                "contract": "eidos.documentation_history.v1",
+                "entries": entries[-240:],
+            },
+        )
+        return payload
     except Exception as exc:
-        return {
+        payload = {
             "contract": "eidos.documentation_status.v1",
             "generated_at": _now_utc(),
             "error": str(exc),
@@ -132,8 +167,13 @@ def _refresh_directory_docs_status(
             "missing_readme_count": 0,
             "documented_directory_count": 0,
             "coverage_ratio": 0.0,
+            "coverage_delta": 0.0,
+            "missing_delta": 0,
+            "drift_state": "error",
             "missing_examples": [],
         }
+        _write_json(DIRECTORY_DOCS_STATUS_PATH, payload)
+        return payload
 
 
 def _status_payload(
@@ -278,6 +318,9 @@ def run_scheduler_cycle(
             "interval_sec": float(interval_sec),
             "doc_model": model,
             "directory_docs_missing": int(docs_status.get("missing_readme_count") or 0),
+            "directory_docs_coverage": float(docs_status.get("coverage_ratio") or 0.0),
+            "directory_docs_missing_delta": int(docs_status.get("missing_delta") or 0),
+            "directory_docs_coverage_delta": float(docs_status.get("coverage_delta") or 0.0),
         },
     )
     start = time.perf_counter()

@@ -75,10 +75,16 @@ def run_once(
     if isinstance(docs_status, dict):
         docs_missing = int(docs_status.get("missing_readme_count") or 0)
         docs_coverage = float(docs_status.get("coverage_ratio") or 0.0)
+        docs_missing_delta = int(docs_status.get("missing_delta") or 0)
+        docs_coverage_delta = float(docs_status.get("coverage_delta") or 0.0)
         DB.insert_metric(state_dir, "directory_docs.missing_readmes", float(docs_missing))
         DB.insert_metric(state_dir, "directory_docs.coverage_ratio", docs_coverage)
+        DB.insert_metric(state_dir, "directory_docs.missing_delta", float(docs_missing_delta))
+        DB.insert_metric(state_dir, "directory_docs.coverage_delta", docs_coverage_delta)
         payload["directory_docs_missing"] = docs_missing
         payload["directory_docs_coverage"] = docs_coverage
+        payload["directory_docs_missing_delta"] = docs_missing_delta
+        payload["directory_docs_coverage_delta"] = docs_coverage_delta
     local_agent_path = _P(state_dir).parent / "data" / "runtime" / "local_mcp_agent" / "status.json"
     try:
         local_agent = json.loads(local_agent_path.read_text(encoding="utf-8")) if local_agent_path.exists() else {}

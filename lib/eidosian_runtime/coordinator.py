@@ -149,6 +149,8 @@ class ForgeRuntimeCoordinator:
     def trend_summary(self, limit: int = 120) -> dict[str, Any]:
         entries = self.history(limit=max(1, int(limit)))
         active_model_counts: list[int] = []
+        docs_coverage_values: list[float] = []
+        docs_missing_values: list[int] = []
         state_counts: dict[str, int] = {}
         task_counts: dict[str, int] = {}
         saturated = 0
@@ -165,6 +167,15 @@ class ForgeRuntimeCoordinator:
             task = str(entry.get("task") or "").strip().lower()
             if task:
                 task_counts[task] = task_counts.get(task, 0) + 1
+            metadata = entry.get("metadata") if isinstance(entry.get("metadata"), dict) else {}
+            try:
+                docs_coverage_values.append(float(metadata.get("directory_docs_coverage") or 0.0))
+            except Exception:
+                pass
+            try:
+                docs_missing_values.append(max(0, int(metadata.get("directory_docs_missing") or 0)))
+            except Exception:
+                pass
             policy = entry.get("policy") if isinstance(entry.get("policy"), dict) else {}
             try:
                 max_instances = max(1, int(policy.get("max_active_model_instances", 1) or 1))
@@ -178,6 +189,9 @@ class ForgeRuntimeCoordinator:
         if active_model_counts:
             avg_models = round(sum(active_model_counts) / len(active_model_counts), 3)
             peak_models = max(active_model_counts)
+        avg_docs_coverage = round(sum(docs_coverage_values) / len(docs_coverage_values), 6) if docs_coverage_values else 0.0
+        latest_docs_coverage = docs_coverage_values[-1] if docs_coverage_values else 0.0
+        latest_docs_missing = docs_missing_values[-1] if docs_missing_values else 0
         top_tasks = [
             {"task": task, "count": count}
             for task, count in sorted(task_counts.items(), key=lambda kv: (-kv[1], kv[0]))[:8]
@@ -187,6 +201,10 @@ class ForgeRuntimeCoordinator:
             "count": len(entries),
             "average_active_models": avg_models,
             "peak_active_models": peak_models,
+            "average_directory_docs_coverage": avg_docs_coverage,
+            "latest_directory_docs_coverage": latest_docs_coverage,
+            "latest_directory_docs_missing": latest_docs_missing,
+            "peak_directory_docs_missing": max(docs_missing_values) if docs_missing_values else 0,
             "saturated_samples": saturated,
             "state_counts": state_counts,
             "top_tasks": top_tasks,
@@ -325,6 +343,12 @@ class ForgeRuntimeCoordinator:
                 "consecutive_failures": metadata.get("consecutive_failures"),
                 "doc_model": metadata.get("doc_model"),
                 "doc_thinking_mode": metadata.get("doc_thinking_mode"),
+                "metadata": {
+                    "directory_docs_missing": metadata.get("directory_docs_missing"),
+                    "directory_docs_coverage": metadata.get("directory_docs_coverage"),
+                    "directory_docs_missing_delta": metadata.get("directory_docs_missing_delta"),
+                    "directory_docs_coverage_delta": metadata.get("directory_docs_coverage_delta"),
+                },
                 "summary": dict(metadata.get("summary") or {}) if isinstance(metadata.get("summary"), dict) else {},
             }
         )

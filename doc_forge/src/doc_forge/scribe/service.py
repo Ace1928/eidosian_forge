@@ -19,10 +19,11 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from .config import ScribeConfig
 from .directory_docs import (
     inventory_summary,
+    inventory_tree,
     readme_diff,
-    record_map,
     render_directory_readme,
     upsert_directory_readme,
+    upsert_directory_batch,
 )
 from .extract import DocumentExtractor, extract_terms
 from .generate import DocGenerator
@@ -412,6 +413,11 @@ def create_app(processor: DocProcessor) -> FastAPI:
         payload["returned_count"] = len(payload["records"])
         return JSONResponse(payload)
 
+    @app.get("/api/docs/tree")
+    def api_docs_tree(limit: int = 250, path_prefix: str = "") -> JSONResponse:
+        selected = {path_prefix} if path_prefix else None
+        return JSONResponse(inventory_tree(processor.cfg.forge_root, selected_paths=selected, limit=limit))
+
     @app.get("/api/docs/readme")
     def api_docs_readme(path: str) -> JSONResponse:
         try:
@@ -449,30 +455,16 @@ def create_app(processor: DocProcessor) -> FastAPI:
         limit: int = 50,
         missing_only: bool = True,
         path_prefix: str = "",
+        dry_run: bool = False,
     ) -> JSONResponse:
-        selected = {path_prefix} if path_prefix else None
-        summary = inventory_summary(processor.cfg.forge_root, selected_paths=selected)
-        records_by_path = record_map(processor.cfg.forge_root, selected_paths=selected)
-        rows = summary.get("records", [])
-        if missing_only:
-            rows = [row for row in rows if not row.get("has_readme")]
-        writes = []
-        for row in rows[: max(1, int(limit))]:
-            writes.append(
-                upsert_directory_readme(
-                    processor.cfg.forge_root,
-                    row["path"],
-                    records=records_by_path,
-                )
-            )
         return JSONResponse(
-            {
-                "contract": "eidos.docs_upsert_batch.v1",
-                "path_prefix": path_prefix,
-                "missing_only": missing_only,
-                "write_count": len(writes),
-                "writes": writes,
-            }
+            upsert_directory_batch(
+                processor.cfg.forge_root,
+                path_prefix=path_prefix,
+                missing_only=missing_only,
+                limit=limit,
+                dry_run=dry_run,
+            )
         )
 
     @app.get("/")

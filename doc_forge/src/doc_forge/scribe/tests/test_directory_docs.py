@@ -5,11 +5,13 @@ import subprocess
 from pathlib import Path
 
 from doc_forge.scribe.directory_docs import (
-    inventory_status,
     inventory_summary,
+    inventory_tree,
+    inventory_status,
     load_policy,
     readme_diff,
     render_directory_readme,
+    upsert_directory_batch,
     upsert_directory_readme,
 )
 
@@ -136,6 +138,41 @@ def test_inventory_status_and_test_reference_detection(temp_forge_root: Path) ->
     assert 0.0 <= status["coverage_ratio"] <= 1.0
 
 
+def test_inventory_tree_and_batch_preview(temp_forge_root: Path) -> None:
+    _git(["init"], temp_forge_root)
+    _git(["config", "user.email", "test@example.com"], temp_forge_root)
+    _git(["config", "user.name", "Test"], temp_forge_root)
+    target = temp_forge_root / "doc_forge" / "src" / "doc_forge" / "scribe"
+    tests = temp_forge_root / "doc_forge" / "tests"
+    target.mkdir(parents=True, exist_ok=True)
+    tests.mkdir(parents=True, exist_ok=True)
+    (target / "service.py").write_text("def health():\n    return True\n", encoding="utf-8")
+    (tests / "test_service.py").write_text("def test_health():\n    assert True\n", encoding="utf-8")
+    cfg_dir = temp_forge_root / "cfg"
+    cfg_dir.mkdir(parents=True, exist_ok=True)
+    (cfg_dir / "documentation_policy.json").write_text(
+        json.dumps({"documented_prefixes": ["doc_forge"], "excluded_prefixes": [], "excluded_segments": []}),
+        encoding="utf-8",
+    )
+    _git(["add", "."], temp_forge_root)
+    _git(["commit", "-m", "init"], temp_forge_root)
+
+    tree = inventory_tree(temp_forge_root, selected_paths={"doc_forge/src/doc_forge"}, limit=10)
+    assert tree["contract"] == "eidos.documentation_tree.v1"
+    assert any(row["path"] == "doc_forge/src/doc_forge/scribe" for row in tree["nodes"])
+
+    preview = upsert_directory_batch(
+        temp_forge_root,
+        path_prefix="doc_forge/src/doc_forge",
+        missing_only=False,
+        limit=10,
+        dry_run=True,
+    )
+    assert preview["contract"] == "eidos.docs_upsert_batch.v2"
+    assert preview["candidate_count"] >= 1
+    assert any(row["path"] == "doc_forge/src/doc_forge/scribe" for row in preview["writes"])
+
+
 def test_route_detection_skips_test_routes(temp_forge_root: Path) -> None:
     _git(["init"], temp_forge_root)
     _git(["config", "user.email", "test@example.com"], temp_forge_root)
@@ -144,14 +181,8 @@ def test_route_detection_skips_test_routes(temp_forge_root: Path) -> None:
     tests = target / "tests"
     target.mkdir(parents=True, exist_ok=True)
     tests.mkdir(parents=True, exist_ok=True)
-    (target / "service.py").write_text(
-        'from fastapi import FastAPI\napp = FastAPI()\n@app.get("/health")\ndef health():\n    return {"ok": True}\n',
-        encoding="utf-8",
-    )
-    (tests / "test_service.py").write_text(
-        'from fastapi import APIRouter\nrouter = APIRouter()\n@router.get("/coverage")\ndef coverage():\n    return {"ok": True}\n',
-        encoding="utf-8",
-    )
+    (target / "service.py").write_text('from fastapi import FastAPI\napp = FastAPI()\n@app.get("/health")\ndef health():\n    return {"ok": True}\n', encoding="utf-8")
+    (tests / "test_service.py").write_text('from fastapi import APIRouter\nrouter = APIRouter()\n@router.get("/coverage")\ndef coverage():\n    return {"ok": True}\n', encoding="utf-8")
     cfg_dir = temp_forge_root / "cfg"
     cfg_dir.mkdir(parents=True, exist_ok=True)
     (cfg_dir / "documentation_policy.json").write_text(

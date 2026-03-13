@@ -39,6 +39,8 @@ COORDINATOR_HISTORY = RUNTIME_DIR / "forge_runtime_trends.json"
 BOOT_STATUS = RUNTIME_DIR / "termux_boot_status.json"
 CAPABILITIES_STATUS = RUNTIME_DIR / "platform_capabilities.json"
 DIRECTORY_DOCS_STATUS = RUNTIME_DIR / "directory_docs_status.json"
+DIRECTORY_DOCS_HISTORY = RUNTIME_DIR / "directory_docs_history.json"
+DIRECTORY_DOCS_TREE = RUNTIME_DIR / "directory_docs_tree.json"
 SERVICES_SCRIPT = FORGE_ROOT / "scripts" / "eidos_termux_services.sh"
 SCHEDULER_CONTROL_SCRIPT = FORGE_ROOT / "scripts" / "eidos_scheduler_control.py"
 TEMPLATES_DIR = Path(__file__).parent / "templates"
@@ -145,6 +147,55 @@ def _docs_inventory(
     return payload
 
 
+def _docs_tree(path_prefix: str = "", limit: int = 250, refresh: bool = False) -> Dict[str, Any]:
+    from doc_forge.scribe.directory_docs import inventory_tree  # type: ignore
+
+    if not refresh and not path_prefix:
+        cached = _read_json(DIRECTORY_DOCS_TREE, {})
+        if cached:
+            return cached
+        status = _read_json(DIRECTORY_DOCS_STATUS, {})
+        missing_examples = [row for row in (status.get("missing_examples") or []) if isinstance(row, str)]
+        if missing_examples:
+            nodes = [
+                {
+                    "path": row,
+                    "name": Path(row).name,
+                    "parent_path": "" if Path(row).parent.as_posix() == "." else Path(row).parent.as_posix(),
+                    "depth": len(Path(row).parts),
+                    "has_readme": False,
+                    "tracked_files": 0,
+                    "tests_present": False,
+                    "api_route_count": 0,
+                    "child_directory_count": 0,
+                    "summary": "Cached missing README example from scheduler status.",
+                }
+                for row in missing_examples[: max(1, int(limit))]
+            ]
+            return {
+                "contract": "eidos.documentation_tree.v1",
+                "generated_at": status.get("generated_at", ""),
+                "repo_root": str(FORGE_ROOT),
+                "selected_paths": [],
+                "returned_count": len(nodes),
+                "groups": [],
+                "nodes": nodes,
+            }
+    selected = {path_prefix.strip("/")} if path_prefix else None
+    payload = inventory_tree(FORGE_ROOT, selected_paths=selected, limit=limit)
+    if not path_prefix:
+        _write_json(DIRECTORY_DOCS_TREE, payload)
+    return payload
+
+
+def get_docs_history(limit: int = 60) -> List[Dict[str, Any]]:
+    payload = _read_json(DIRECTORY_DOCS_HISTORY, {})
+    rows = payload.get("entries", [])
+    if not isinstance(rows, list):
+        return []
+    return [row for row in rows if isinstance(row, dict)][-max(1, int(limit)) :]
+
+
 def get_runtime_snapshot() -> Dict[str, Any]:
     coordinator = _read_json(COORDINATOR_STATUS, {})
     scheduler = _read_json(SCHEDULER_STATUS, {})
@@ -161,6 +212,7 @@ def get_runtime_snapshot() -> Dict[str, Any]:
         "boot": boot_status,
         "capabilities": capabilities,
         "directory_docs": directory_docs,
+        "directory_docs_history": get_docs_history(limit=12),
     }
 
 
@@ -315,6 +367,8 @@ async def dashboard(request: Request):
     forge_status = get_forge_status()
     doc_snapshot = get_doc_snapshot()
     docs_inventory = _docs_inventory(limit=12)
+    docs_tree = _docs_tree(limit=40, refresh=False)
+    docs_history = get_docs_history(limit=24)
     runtime_snapshot = get_runtime_snapshot()
     local_agent_history = get_local_agent_history()
 
@@ -329,6 +383,8 @@ async def dashboard(request: Request):
             "doc_status": doc_snapshot["status"],
             "doc_index_count": doc_snapshot["index_count"],
             "docs_inventory": docs_inventory,
+            "docs_tree": docs_tree,
+            "docs_history": docs_history,
             "runtime_snapshot": runtime_snapshot,
             "local_agent_history": local_agent_history,
             "service_snapshot": _service_command("status"),
@@ -404,11 +460,24 @@ async def api_docs_coverage(limit: int = 50, missing_only: bool = False, path_pr
     return _docs_inventory(path_prefix=path_prefix, refresh=refresh, missing_only=missing_only, limit=limit)
 
 
+@app.get("/api/docs/tree")
+async def api_docs_tree(limit: int = 250, path_prefix: str = "", refresh: bool = False):
+    return _docs_tree(path_prefix=path_prefix, limit=limit, refresh=refresh)
+
+
 @app.get("/api/docs/render")
 async def api_docs_render(path: str):
     from doc_forge.scribe.directory_docs import render_directory_readme  # type: ignore
 
     return {"path": path, "content": render_directory_readme(FORGE_ROOT, path)}
+
+
+@app.get("/api/docs/readme")
+async def api_docs_readme(path: str):
+    target = (FORGE_ROOT / path / "README.md").resolve()
+    if not str(target).startswith(str(FORGE_ROOT.resolve())) or not target.exists():
+        raise HTTPException(status_code=404, detail="README not found")
+    return {"path": path, "content": target.read_text(encoding="utf-8")}
 
 
 @app.get("/api/docs/diff")
@@ -425,9 +494,32 @@ async def api_docs_upsert(path: str):
     return upsert_directory_readme(FORGE_ROOT, path)
 
 
+@app.post("/api/docs/upsert-batch")
+async def api_docs_upsert_batch(
+    limit: int = 50,
+    missing_only: bool = True,
+    path_prefix: str = "",
+    dry_run: bool = False,
+):
+    from doc_forge.scribe.directory_docs import upsert_directory_batch  # type: ignore
+
+    return upsert_directory_batch(
+        FORGE_ROOT,
+        path_prefix=path_prefix,
+        missing_only=missing_only,
+        limit=limit,
+        dry_run=dry_run,
+    )
+
+
 @app.post("/api/docs/refresh")
 async def api_docs_refresh():
     return _docs_inventory(refresh=True, limit=20)
+
+
+@app.get("/api/docs/history")
+async def api_docs_history(limit: int = 60):
+    return {"contract": "eidos.documentation_history.v1", "entries": get_docs_history(limit=limit)}
 
 
 @app.get("/api/runtime")

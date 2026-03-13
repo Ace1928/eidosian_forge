@@ -91,6 +91,14 @@ DEFAULT_POLICY: dict[str, Any] = {
         "node_modules",
         ".git",
     ],
+    "excluded_test_prefixes": [
+        "archive_forge",
+        "backups",
+        "data",
+        "doc_forge/final_docs",
+        "docs/external_references",
+        "reports",
+    ],
     "path_overrides": {
         "doc_forge/src/doc_forge": {
             "summary": "Primary Doc Forge Python package for repository-scale documentation extraction, generation, judging, and service orchestration.",
@@ -228,6 +236,15 @@ def _matches_selected_prefix(rel_dir: str, selected_paths: set[str]) -> bool:
     return False
 
 
+def _is_excluded_test_candidate(rel_file: str, policy: dict[str, Any]) -> bool:
+    if _is_excluded(rel_file, policy):
+        return True
+    for prefix in policy.get("excluded_test_prefixes", []):
+        if rel_file == prefix or rel_file.startswith(prefix + "/"):
+            return True
+    return False
+
+
 def _relative_link(from_dir: str, to_path: str) -> str:
     return os.path.relpath(to_path, start=from_dir).replace(os.sep, "/")
 
@@ -276,7 +293,7 @@ def _test_reference_candidates(
         token_set.add(Path(rel_dir).name.lower())
     candidates: list[tuple[int, str]] = []
     for rel_file in tracked_files:
-        if _is_excluded(rel_file, policy):
+        if _is_excluded_test_candidate(rel_file, policy):
             continue
         if not rel_file.startswith(forge_root + "/"):
             continue
@@ -306,6 +323,61 @@ def _test_reference_candidates(
         if len(refs) >= 6:
             break
     return refs
+
+
+def inventory_tree(
+    repo_root: Path,
+    policy: dict[str, Any] | None = None,
+    selected_paths: set[str] | None = None,
+    limit: int = 250,
+) -> dict[str, Any]:
+    policy = policy or load_policy(repo_root)
+    records = inventory_directories(repo_root, policy, selected_paths=selected_paths)
+    groups: dict[str, dict[str, Any]] = {}
+    nodes: list[dict[str, Any]] = []
+    for record in records[: max(1, int(limit))]:
+        top = record.path.split("/", 1)[0]
+        group = groups.setdefault(
+            top,
+            {
+                "path": top,
+                "required_directory_count": 0,
+                "missing_readme_count": 0,
+                "documented_directory_count": 0,
+                "directories": [],
+            },
+        )
+        has_readme = bool(record.has_readme)
+        group["required_directory_count"] += 1
+        group["missing_readme_count"] += 0 if has_readme else 1
+        group["documented_directory_count"] += 1 if has_readme else 0
+        parent = Path(record.path).parent.as_posix()
+        node = {
+            "path": record.path,
+            "name": Path(record.path).name,
+            "parent_path": "" if parent == "." else parent,
+            "depth": len(Path(record.path).parts),
+            "has_readme": has_readme,
+            "tracked_files": int(record.tracked_files),
+            "tests_present": bool(record.tests_present),
+            "api_route_count": len(record.api_routes),
+            "child_directory_count": len(record.child_directories),
+            "summary": record.summary,
+        }
+        group["directories"].append(node)
+        nodes.append(node)
+    for group in groups.values():
+        required = max(1, int(group["required_directory_count"]))
+        group["coverage_ratio"] = round(int(group["documented_directory_count"]) / required, 6)
+    return {
+        "contract": "eidos.documentation_tree.v1",
+        "generated_at": _now(),
+        "repo_root": str(repo_root.resolve()),
+        "selected_paths": sorted(selected_paths or []),
+        "returned_count": len(nodes),
+        "groups": [groups[key] for key in sorted(groups)],
+        "nodes": nodes,
+    }
 
 
 def inventory_directories(
@@ -482,6 +554,7 @@ def inventory_status(
         "contract": "eidos.documentation_status.v1",
         "generated_at": payload.get("generated_at"),
         "repo_root": payload.get("repo_root"),
+        "selected_paths": sorted(selected_paths or []),
         "required_directory_count": required,
         "missing_readme_count": missing,
         "documented_directory_count": max(0, required - missing),
@@ -651,4 +724,63 @@ def upsert_directory_readme(
         "changed": prior != content,
         "created": not bool(prior),
         "content": content,
+    }
+
+
+def upsert_directory_batch(
+    repo_root: Path,
+    *,
+    path_prefix: str = "",
+    missing_only: bool = True,
+    limit: int = 50,
+    dry_run: bool = False,
+    policy: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    selected = {path_prefix.strip("/")} if path_prefix else None
+    summary = inventory_summary(repo_root, policy=policy, selected_paths=selected)
+    records_by_path = record_map(repo_root, policy=policy, selected_paths=selected)
+    rows = [row for row in (summary.get("records") or []) if isinstance(row, dict)]
+    if missing_only:
+        rows = [row for row in rows if not row.get("has_readme")]
+    candidates = rows[: max(1, int(limit))]
+    writes: list[dict[str, Any]] = []
+    changed_count = 0
+    for row in candidates:
+        rel_dir = str(row.get("path") or "")
+        if not rel_dir:
+            continue
+        if dry_run:
+            diff = readme_diff(repo_root, rel_dir, policy=policy, records=records_by_path)
+            changed = bool(diff.strip())
+            changed_count += 1 if changed else 0
+            writes.append(
+                {
+                    "path": rel_dir,
+                    "readme_path": f"{rel_dir}/README.md",
+                    "changed": changed,
+                    "created": not bool(row.get("has_readme")),
+                    "diff_lines": len(diff.splitlines()) if diff else 0,
+                }
+            )
+            continue
+        payload = upsert_directory_readme(repo_root, rel_dir, policy=policy, records=records_by_path)
+        changed_count += 1 if payload.get("changed") else 0
+        writes.append(
+            {
+                "path": payload["path"],
+                "readme_path": payload["readme_path"],
+                "changed": bool(payload["changed"]),
+                "created": bool(payload["created"]),
+            }
+        )
+    return {
+        "contract": "eidos.docs_upsert_batch.v2",
+        "generated_at": _now(),
+        "path_prefix": path_prefix,
+        "missing_only": bool(missing_only),
+        "dry_run": bool(dry_run),
+        "candidate_count": len(candidates),
+        "write_count": len(writes),
+        "changed_count": changed_count,
+        "writes": writes,
     }

@@ -85,7 +85,7 @@ def test_eidosd_once_reads_directory_docs_status(tmp_path: Path):
     runtime_dir = tmp_path / "data" / "runtime"
     runtime_dir.mkdir(parents=True, exist_ok=True)
     (runtime_dir / "directory_docs_status.json").write_text(
-        '{"missing_readme_count":3,"coverage_ratio":0.99}',
+        '{"missing_readme_count":3,"coverage_ratio":0.99,"missing_delta":-1,"coverage_delta":0.02}',
         encoding="utf-8",
     )
     cmd = [sys.executable, str(EIDOSD), "--state-dir", str(state_dir), "--once"]
@@ -101,4 +101,6 @@ def test_eidosd_once_reads_directory_docs_status(tmp_path: Path):
     conn = sqlite3.connect(state_dir / "e3.sqlite")
     assert conn.execute("SELECT value FROM metrics WHERE key='directory_docs.missing_readmes'").fetchone()[0] == 3.0
     assert conn.execute("SELECT value FROM metrics WHERE key='directory_docs.coverage_ratio'").fetchone()[0] == 0.99
+    assert conn.execute("SELECT value FROM metrics WHERE key='directory_docs.missing_delta'").fetchone()[0] == -1.0
+    assert conn.execute("SELECT value FROM metrics WHERE key='directory_docs.coverage_delta'").fetchone()[0] == 0.02
     conn.close()

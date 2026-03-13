@@ -54,11 +54,12 @@ Treat directory documentation as a maintained system rather than ad hoc markdown
 
 ## Open Work
 
-- [~] Add Atlas control-plane views for documentation coverage, diffing, and batch regeneration.
+- [x] Add Atlas control-plane views for documentation coverage, diffing, and batch regeneration.
 - [~] Add source/test linking beyond directory-local detection so package roots can reference sibling test suites accurately.
-- [~] Add coverage drift reporting to scheduler/autonomy/runtime artifacts.
+- [x] Add coverage drift reporting to scheduler/autonomy/runtime artifacts.
 - [ ] Add managed suppression/override contracts for intentionally undocumented directories.
 - [ ] Add review gates for generated README quality on high-risk directories before promotion.
+- [ ] Add cached full-tree generation and operator navigation beyond the current lightweight/cached Atlas directory-doc explorer.
 
 ## Validation
 
@@ -68,6 +69,6 @@ Treat directory documentation as a maintained system rather than ad hoc markdown
 
 ## Next Execution Slice
 
-1. expose documentation inventory and diff controls in Atlas
-2. add batch-regeneration and directory-doc navigation UI in Atlas
-3. improve validation-source precision and suppress low-value generated or archived test references
+1. improve validation-source precision and suppress low-value generated or archived test references further
+2. add managed suppression/override contracts for intentionally undocumented directories
+3. add review gates for high-risk directory README promotion

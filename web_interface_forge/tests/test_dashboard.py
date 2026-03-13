@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -89,14 +90,54 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
             "coverage_ratio": 0.995,
             "missing_readme_count": 2,
             "required_directory_count": 400,
+            "coverage_delta": 0.005,
+            "missing_delta": -1,
+            "drift_state": "improved",
             "missing_examples": ["doc_forge/src/doc_forge/scribe"],
         },
     )
+    _write_json(
+        runtime_dir / "directory_docs_history.json",
+        {
+            "entries": [
+                {
+                    "coverage_ratio": 0.99,
+                    "missing_readme_count": 3,
+                    "missing_delta": 0,
+                    "drift_state": "stable",
+                },
+                {
+                    "coverage_ratio": 0.995,
+                    "missing_readme_count": 2,
+                    "missing_delta": -1,
+                    "drift_state": "improved",
+                },
+            ]
+        },
+    )
+    target = tmp_path / "doc_forge" / "src" / "doc_forge" / "scribe"
+    target.mkdir(parents=True, exist_ok=True)
+    (target / "service.py").write_text(
+        'from fastapi import FastAPI\napp = FastAPI()\n@app.get("/health")\ndef health():\n    return {"ok": True}\n',
+        encoding="utf-8",
+    )
+    (tmp_path / "cfg").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "cfg" / "documentation_policy.json").write_text(
+        '{"documented_prefixes":["doc_forge"],"excluded_prefixes":[],"excluded_segments":[]}',
+        encoding="utf-8",
+    )
+    subprocess.run(["git", "init"], cwd=str(tmp_path), check=True, capture_output=True, text=True)
+    subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=str(tmp_path), check=True, capture_output=True, text=True)
+    subprocess.run(["git", "config", "user.name", "Test"], cwd=str(tmp_path), check=True, capture_output=True, text=True)
+    subprocess.run(["git", "add", "."], cwd=str(tmp_path), check=True, capture_output=True, text=True)
+    subprocess.run(["git", "commit", "-m", "init"], cwd=str(tmp_path), check=True, capture_output=True, text=True)
 
     monkeypatch.setattr(dashboard, "DOC_RUNTIME", runtime)
     monkeypatch.setattr(dashboard, "DOC_FINAL", final_docs)
     monkeypatch.setattr(dashboard, "DOC_INDEX", runtime / "doc_index.json")
     monkeypatch.setattr(dashboard, "DOC_STATUS", runtime / "processor_status.json")
+    monkeypatch.setattr(dashboard, "FORGE_ROOT", tmp_path)
+    monkeypatch.setattr(dashboard, "HOME_ROOT", tmp_path)
     monkeypatch.setattr(dashboard, "RUNTIME_DIR", runtime_dir)
     monkeypatch.setattr(dashboard, "LOCAL_AGENT_STATUS", runtime_dir / "local_mcp_agent" / "status.json")
     monkeypatch.setattr(dashboard, "LOCAL_AGENT_HISTORY", runtime_dir / "local_mcp_agent" / "history.jsonl")
@@ -104,6 +145,15 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(dashboard, "COORDINATOR_STATUS", runtime_dir / "forge_coordinator_status.json")
     monkeypatch.setattr(dashboard, "COORDINATOR_HISTORY", runtime_dir / "forge_runtime_trends.json")
     monkeypatch.setattr(dashboard, "DIRECTORY_DOCS_STATUS", runtime_dir / "directory_docs_status.json")
+    monkeypatch.setattr(dashboard, "DIRECTORY_DOCS_HISTORY", runtime_dir / "directory_docs_history.json")
+    service_script = tmp_path / "eidos_termux_services.sh"
+    service_script.write_text(
+        "#!/bin/sh\n"
+        "printf 'Atlas: runit run: /tmp/service: (pid 1) 10s; run: log: (pid 2) 10s\\n'\n",
+        encoding="utf-8",
+    )
+    service_script.chmod(0o755)
+    monkeypatch.setattr(dashboard, "SERVICES_SCRIPT", service_script)
 
     with TestClient(dashboard.app) as client:
         resp = client.get("/api/doc/status")
@@ -127,9 +177,23 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         docs_resp = client.get("/api/docs/coverage")
         assert docs_resp.status_code == 200
         assert docs_resp.json()["missing_readme_count"] == 2
+        docs_tree_resp = client.get("/api/docs/tree")
+        assert docs_tree_resp.status_code == 200
+        assert docs_tree_resp.json()["contract"] == "eidos.documentation_tree.v1"
+        docs_history_resp = client.get("/api/docs/history")
+        assert docs_history_resp.status_code == 200
+        assert len(docs_history_resp.json()["entries"]) == 2
         render_resp = client.get("/api/docs/render", params={"path": "doc_forge/src/doc_forge/scribe"})
         assert render_resp.status_code == 200
         assert "GET /health" in render_resp.json()["content"]
+        upsert_resp = client.post("/api/docs/upsert", params={"path": "doc_forge/src/doc_forge/scribe"})
+        assert upsert_resp.status_code == 200
+        batch_resp = client.post("/api/docs/upsert-batch", params={"limit": 5, "dry_run": True})
+        assert batch_resp.status_code == 200
+        assert batch_resp.json()["contract"] == "eidos.docs_upsert_batch.v2"
+        readme_resp = client.get("/api/docs/readme", params={"path": "doc_forge/src/doc_forge/scribe"})
+        assert readme_resp.status_code == 200
+        assert "GET /health" in readme_resp.json()["content"]
         assert client.get("/browse/forge/").status_code == 200
         assert client.get("/browse/home/").status_code == 200
 

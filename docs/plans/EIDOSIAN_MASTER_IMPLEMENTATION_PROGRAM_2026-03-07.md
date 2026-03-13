@@ -186,6 +186,7 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
 - [~] Add source-reference ingestion as a first-class workflow with provenance, GIS IDs, and vectors.
 - [~] Add file-type-specific routing policies and extraction QA metrics.
 - [~] Add managed directory documentation, coverage APIs, batch README generation, and runtime health integration across the forge estate.
+- [~] Add Atlas-side documentation navigation, batch regeneration, and drift history as operator-facing controls.
 
 ### Phase 10: Word Forge and Living Lexicon Completion
 - [~] Ensure every new term/phrase discovered by code/doc/crawl/memory pipelines enters the lexicon queue.

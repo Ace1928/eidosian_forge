@@ -155,14 +155,63 @@
         <button onclick="refreshDocs()">Refresh Coverage</button>
         <button onclick="window.open('/api/docs/coverage?missing_only=true&limit=50', '_blank')">Missing JSON</button>
         <button onclick="window.open('/api/docs/coverage?limit=50', '_blank')">Coverage JSON</button>
+        <button onclick="window.open('/api/docs/tree?limit=100', '_blank')">Tree JSON</button>
+        <button onclick="window.open('/api/docs/history?limit=100', '_blank')">History JSON</button>
     </div>
     <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
         <input id="docs-path-input" type="text" placeholder="directory path, e.g. doc_forge/src/doc_forge/scribe" style="min-width:340px;">
+        <input id="docs-batch-limit" type="number" min="1" max="200" value="20" style="width:90px;">
+        <label style="display:flex; align-items:center; gap:6px;">
+            <input id="docs-missing-only" type="checkbox" checked>
+            missing only
+        </label>
+        <button onclick="readDocsReadme()">Current README</button>
         <button onclick="renderDocsReadme()">Render</button>
         <button onclick="diffDocsReadme()">Diff</button>
         <button onclick="upsertDocsReadme()">Upsert</button>
+        <button onclick="batchDocs(true)">Batch Preview</button>
+        <button onclick="batchDocs(false)">Batch Upsert</button>
     </div>
     <pre id="docs-output" style="max-height:320px; overflow:auto; white-space:pre-wrap;">{{ (docs_inventory.get('missing_examples', []) or [])|join('\n') }}</pre>
+</div>
+
+<div class="grid">
+    <div class="card">
+        <h3>Documentation Navigation</h3>
+        <table>
+            <thead>
+                <tr><th>Path</th><th>README</th><th>Files</th><th>Tests</th></tr>
+            </thead>
+            <tbody id="docs-tree-body">
+                {% for row in docs_tree.get('nodes', [])[:12] %}
+                <tr>
+                    <td><button onclick="setDocsPath('{{ row.get('path', '') }}')">{{ row.get('path', '') }}</button></td>
+                    <td>{{ row.get('has_readme') }}</td>
+                    <td>{{ row.get('tracked_files', 0) }}</td>
+                    <td>{{ row.get('tests_present') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="card">
+        <h3>Documentation Drift</h3>
+        <table>
+            <thead>
+                <tr><th>Coverage</th><th>Missing</th><th>Delta</th><th>State</th></tr>
+            </thead>
+            <tbody id="docs-history-body">
+                {% for row in docs_history[-8:] %}
+                <tr>
+                    <td>{{ "%.1f"|format((row.get('coverage_ratio', 0.0) * 100)) }}%</td>
+                    <td>{{ row.get('missing_readme_count', 0) }}</td>
+                    <td>{{ row.get('missing_delta', 0) }}</td>
+                    <td>{{ row.get('drift_state', 'stable') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <div class="card">
@@ -293,6 +342,8 @@ async function refreshDocs() {
         document.getElementById("docs-missing-count").textContent = status.missing_readme_count ?? 0;
         document.getElementById("docs-required-count").textContent = status.required_directory_count ?? 0;
         document.getElementById("docs-output").textContent = (status.missing_examples || []).join("\n");
+        await refreshDocsTree();
+        await refreshDocsHistory();
     } catch (err) {
         // ignore transient refresh failures
     }
@@ -302,10 +353,30 @@ function docsPath() {
     return document.getElementById("docs-path-input").value.trim();
 }
 
+function docsBatchLimit() {
+    return Math.max(1, Number(document.getElementById("docs-batch-limit").value || 20));
+}
+
+function docsMissingOnly() {
+    return Boolean(document.getElementById("docs-missing-only").checked);
+}
+
+function setDocsPath(path) {
+    document.getElementById("docs-path-input").value = path;
+}
+
 async function renderDocsReadme() {
     const path = docsPath();
     if (!path) return;
     const res = await fetch(`/api/docs/render?path=${encodeURIComponent(path)}`);
+    const payload = await res.json();
+    document.getElementById("docs-output").textContent = payload.content || JSON.stringify(payload, null, 2);
+}
+
+async function readDocsReadme() {
+    const path = docsPath();
+    if (!path) return;
+    const res = await fetch(`/api/docs/readme?path=${encodeURIComponent(path)}`);
     const payload = await res.json();
     document.getElementById("docs-output").textContent = payload.content || JSON.stringify(payload, null, 2);
 }
@@ -325,6 +396,56 @@ async function upsertDocsReadme() {
     const payload = await res.json();
     document.getElementById("docs-output").textContent = JSON.stringify(payload, null, 2);
     await refreshDocs();
+}
+
+async function batchDocs(dryRun) {
+    const params = new URLSearchParams({
+        limit: String(docsBatchLimit()),
+        missing_only: String(docsMissingOnly()),
+        dry_run: String(Boolean(dryRun)),
+    });
+    const path = docsPath();
+    if (path) params.set("path_prefix", path);
+    const res = await fetch(`/api/docs/upsert-batch?${params.toString()}`, {method: "POST"});
+    const payload = await res.json();
+    document.getElementById("docs-output").textContent = JSON.stringify(payload, null, 2);
+    await refreshDocs();
+    await refreshDocsTree();
+    await refreshDocsHistory();
+}
+
+async function refreshDocsTree() {
+    try {
+        const res = await fetch("/api/docs/tree?limit=24&refresh=true", {cache: "no-store"});
+        if (!res.ok) return;
+        const payload = await res.json();
+        const body = document.getElementById("docs-tree-body");
+        body.innerHTML = "";
+        for (const row of (payload.nodes || []).slice(0, 24)) {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `<td><button onclick="setDocsPath('${row.path}')">${row.path}</button></td><td>${row.has_readme}</td><td>${row.tracked_files}</td><td>${row.tests_present}</td>`;
+            body.appendChild(tr);
+        }
+    } catch (err) {
+        // ignore transient refresh failures
+    }
+}
+
+async function refreshDocsHistory() {
+    try {
+        const res = await fetch("/api/docs/history?limit=8", {cache: "no-store"});
+        if (!res.ok) return;
+        const payload = await res.json();
+        const body = document.getElementById("docs-history-body");
+        body.innerHTML = "";
+        for (const row of (payload.entries || [])) {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `<td>${(Number(row.coverage_ratio || 0) * 100).toFixed(1)}%</td><td>${row.missing_readme_count ?? 0}</td><td>${row.missing_delta ?? 0}</td><td>${row.drift_state || 'stable'}</td>`;
+            body.appendChild(tr);
+        }
+    } catch (err) {
+        // ignore transient refresh failures
+    }
 }
 
 async function refreshScheduler() {
@@ -355,6 +476,9 @@ async function schedulerAction(action) {
 
 setInterval(refreshServices, 8000);
 setInterval(refreshScheduler, 8000);
+setInterval(refreshDocsHistory, 12000);
 refreshScheduler();
+refreshDocsTree();
+refreshDocsHistory();
 </script>
 {% endblock %}
