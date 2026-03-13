@@ -142,7 +142,7 @@ def test_supervisor_blocks_disallowed_template(tmp_path: Path) -> None:
         graphrag=_FakeGraphRAG(),
         config={
             "enabled": True,
-            "policy": {"max_active_goals": 1, "allowed_templates": ["hygiene"]},
+            "policy": {"max_active_goals": 1, "allowed_templates": ["lint"]},
             "missions": [
                 {
                     "id": "blocked_guard",
@@ -247,6 +247,10 @@ def test_supervisor_reads_local_agent_runtime_state(tmp_path: Path) -> None:
         '{"status":"timeout","profile":"observer","tool_calls":1,"resource_count":1,"mcp_transport":"stdio"}',
         encoding="utf-8",
     )
+    (repo_root / "data" / "runtime" / "directory_docs_status.json").write_text(
+        '{"missing_readme_count":4,"coverage_ratio":0.97,"missing_examples":["code_forge/src/code_forge/library"]}',
+        encoding="utf-8",
+    )
     S.migrate(state_dir)
 
     supervisor = AutonomySupervisor(
@@ -275,3 +279,5 @@ def test_supervisor_reads_local_agent_runtime_state(tmp_path: Path) -> None:
     assert payload["status"] == "selected"
     assert payload["local_agent_status"] == "timeout"
     assert payload["local_agent_tool_calls"] == 1
+    assert payload["directory_docs_missing"] == 4
+    assert payload["directory_docs_coverage"] == 0.97

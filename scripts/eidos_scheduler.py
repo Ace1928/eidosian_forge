@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any
 
 FORGE_ROOT = Path(__file__).resolve().parent.parent
-for extra in (FORGE_ROOT / "lib", FORGE_ROOT):
+for extra in (FORGE_ROOT / "lib", FORGE_ROOT / "doc_forge" / "src", FORGE_ROOT):
     value = str(extra)
     if extra.exists() and value not in sys.path:
         sys.path.insert(0, value)
@@ -25,6 +25,7 @@ RUNTIME_DIR = FORGE_ROOT / "data" / "runtime"
 STATUS_PATH = RUNTIME_DIR / "eidos_scheduler_status.json"
 STATE_PATH = RUNTIME_DIR / "eidos_scheduler_state.json"
 PIPELINE_STATUS_PATH = RUNTIME_DIR / "living_pipeline_status.json"
+DIRECTORY_DOCS_STATUS_PATH = RUNTIME_DIR / "directory_docs_status.json"
 _STOP_REQUESTED = False
 
 
@@ -93,6 +94,7 @@ def _pipeline_pythonpath() -> str:
     paths = [
         FORGE_ROOT / "lib",
         FORGE_ROOT / "agent_forge" / "src",
+        FORGE_ROOT / "doc_forge" / "src",
         FORGE_ROOT / "memory_forge" / "src",
         FORGE_ROOT / "knowledge_forge" / "src",
         FORGE_ROOT / "code_forge" / "src",
@@ -106,6 +108,30 @@ def _pipeline_pythonpath() -> str:
     if existing:
         items.append(existing)
     return ":".join(items)
+
+
+def _refresh_directory_docs_status(repo_root: Path, *, force: bool = False, max_age_sec: float = 3600.0) -> dict[str, Any]:
+    try:
+        if not force and DIRECTORY_DOCS_STATUS_PATH.exists():
+            age = time.time() - DIRECTORY_DOCS_STATUS_PATH.stat().st_mtime
+            if age <= max_age_sec:
+                payload = _load_json(DIRECTORY_DOCS_STATUS_PATH)
+                if payload:
+                    return payload
+        from doc_forge.scribe.directory_docs import write_inventory_status  # type: ignore
+
+        return write_inventory_status(repo_root, DIRECTORY_DOCS_STATUS_PATH)
+    except Exception as exc:
+        return {
+            "contract": "eidos.documentation_status.v1",
+            "generated_at": _now_utc(),
+            "error": str(exc),
+            "required_directory_count": 0,
+            "missing_readme_count": 0,
+            "documented_directory_count": 0,
+            "coverage_ratio": 0.0,
+            "missing_examples": [],
+        }
 
 
 def _status_payload(
@@ -184,8 +210,9 @@ def run_scheduler_cycle(
     cycle: int = 1,
 ) -> dict[str, Any]:
     coordinator = coordinator or ForgeRuntimeCoordinator()
+    docs_status = _refresh_directory_docs_status(repo_root)
     if _STOP_REQUESTED:
-        result = {"status": "stopped", "reason": "stop_requested"}
+        result = {"status": "stopped", "reason": "stop_requested", "directory_docs": docs_status}
         _write_json(
             STATUS_PATH,
             _status_payload(
@@ -219,7 +246,11 @@ def run_scheduler_cycle(
             interval_sec=interval_sec,
             cycle=cycle,
             next_run_in_seconds=interval_sec,
-            last_result={"status": "waiting", "reason": str(decision.get("reason") or "blocked")},
+            last_result={
+                "status": "waiting",
+                "reason": str(decision.get("reason") or "blocked"),
+                "directory_docs": docs_status,
+            },
         )
         _write_json(STATUS_PATH, payload)
         _mark_scheduler_state(
@@ -244,6 +275,7 @@ def run_scheduler_cycle(
             "cycle": int(cycle),
             "interval_sec": float(interval_sec),
             "doc_model": model,
+            "directory_docs_missing": int(docs_status.get("missing_readme_count") or 0),
         },
     )
     start = time.perf_counter()
@@ -311,6 +343,7 @@ def run_scheduler_cycle(
             "stdout": stdout[:1200],
             "stderr": str(proc.stderr or "").strip()[:1200],
             "pipeline_status": _load_json(PIPELINE_STATUS_PATH),
+            "directory_docs": docs_status,
         }
         _write_json(
             STATUS_PATH,
@@ -343,6 +376,7 @@ def run_scheduler_cycle(
             "elapsed_sec": elapsed,
             "stdout": str(exc.stdout or "")[:1200],
             "stderr": str(exc.stderr or "")[:1200],
+            "directory_docs": docs_status,
         }
         _write_json(
             STATUS_PATH,

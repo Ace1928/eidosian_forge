@@ -6,6 +6,7 @@ from pathlib import Path
 
 from doc_forge.scribe.directory_docs import (
     inventory_summary,
+    inventory_status,
     load_policy,
     readme_diff,
     render_directory_readme,
@@ -104,6 +105,59 @@ def test_render_includes_parent_readme_reference_and_router_routes(temp_forge_ro
     assert "GET /coverage" in content
     assert "Parent README" in content
     assert "[`doc_forge/src/doc_forge/README.md`](../README.md)" in content
+
+
+def test_inventory_status_and_test_reference_detection(temp_forge_root: Path) -> None:
+    _git(["init"], temp_forge_root)
+    _git(["config", "user.email", "test@example.com"], temp_forge_root)
+    _git(["config", "user.name", "Test"], temp_forge_root)
+    target = temp_forge_root / "code_forge" / "src" / "code_forge" / "library"
+    tests = temp_forge_root / "code_forge" / "tests"
+    target.mkdir(parents=True, exist_ok=True)
+    tests.mkdir(parents=True, exist_ok=True)
+    (target / "db.py").write_text("def x():\n    return 1\n", encoding="utf-8")
+    (tests / "test_library_db.py").write_text("def test_x():\n    assert True\n", encoding="utf-8")
+    cfg_dir = temp_forge_root / "cfg"
+    cfg_dir.mkdir(parents=True, exist_ok=True)
+    (cfg_dir / "documentation_policy.json").write_text(
+        json.dumps({"documented_prefixes": ["code_forge"], "excluded_prefixes": [], "excluded_segments": []}),
+        encoding="utf-8",
+    )
+    _git(["add", "."], temp_forge_root)
+    _git(["commit", "-m", "init"], temp_forge_root)
+
+    payload = inventory_summary(temp_forge_root, selected_paths={"code_forge/src/code_forge/library"})
+    record = next(row for row in payload["records"] if row["path"] == "code_forge/src/code_forge/library")
+    assert "code_forge/tests/test_library_db.py" in record["test_references"]
+    assert not any("final_docs" in row for row in record["test_references"])
+
+    status = inventory_status(temp_forge_root, selected_paths={"code_forge/src/code_forge/library"})
+    assert status["required_directory_count"] >= 1
+    assert 0.0 <= status["coverage_ratio"] <= 1.0
+
+
+def test_route_detection_skips_test_routes(temp_forge_root: Path) -> None:
+    _git(["init"], temp_forge_root)
+    _git(["config", "user.email", "test@example.com"], temp_forge_root)
+    _git(["config", "user.name", "Test"], temp_forge_root)
+    target = temp_forge_root / "doc_forge" / "src" / "doc_forge" / "scribe"
+    tests = target / "tests"
+    target.mkdir(parents=True, exist_ok=True)
+    tests.mkdir(parents=True, exist_ok=True)
+    (target / "service.py").write_text('from fastapi import FastAPI\napp = FastAPI()\n@app.get("/health")\ndef health():\n    return {"ok": True}\n', encoding="utf-8")
+    (tests / "test_service.py").write_text('from fastapi import APIRouter\nrouter = APIRouter()\n@router.get("/coverage")\ndef coverage():\n    return {"ok": True}\n', encoding="utf-8")
+    cfg_dir = temp_forge_root / "cfg"
+    cfg_dir.mkdir(parents=True, exist_ok=True)
+    (cfg_dir / "documentation_policy.json").write_text(
+        json.dumps({"documented_prefixes": ["doc_forge"], "excluded_prefixes": [], "excluded_segments": []}),
+        encoding="utf-8",
+    )
+    _git(["add", "."], temp_forge_root)
+    _git(["commit", "-m", "init"], temp_forge_root)
+
+    content = render_directory_readme(temp_forge_root, "doc_forge/src/doc_forge/scribe")
+    assert "GET /health" in content
+    assert "GET /coverage" not in content
 
 
 def test_load_policy_merges_override(temp_forge_root: Path) -> None:

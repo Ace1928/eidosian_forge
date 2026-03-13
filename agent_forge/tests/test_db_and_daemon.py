@@ -78,3 +78,27 @@ def test_eidosd_once_reads_local_agent_status(tmp_path: Path):
     assert conn.execute("SELECT value FROM metrics WHERE key='local_agent.tool_calls'").fetchone()[0] == 2.0
     assert conn.execute("SELECT value FROM metrics WHERE key='local_agent.resource_count'").fetchone()[0] == 1.0
     conn.close()
+
+
+def test_eidosd_once_reads_directory_docs_status(tmp_path: Path):
+    state_dir = tmp_path / "state"
+    runtime_dir = tmp_path / "data" / "runtime"
+    runtime_dir.mkdir(parents=True, exist_ok=True)
+    (runtime_dir / "directory_docs_status.json").write_text(
+        '{"missing_readme_count":3,"coverage_ratio":0.99}',
+        encoding="utf-8",
+    )
+    cmd = [sys.executable, str(EIDOSD), "--state-dir", str(state_dir), "--once"]
+    res = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        cwd=str(tmp_path),
+        env={**os.environ, "PYTHONPATH": PYTHONPATH},
+    )
+    assert res.returncode == 0, res.stderr
+
+    conn = sqlite3.connect(state_dir / "e3.sqlite")
+    assert conn.execute("SELECT value FROM metrics WHERE key='directory_docs.missing_readmes'").fetchone()[0] == 3.0
+    assert conn.execute("SELECT value FROM metrics WHERE key='directory_docs.coverage_ratio'").fetchone()[0] == 0.99
+    conn.close()

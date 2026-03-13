@@ -41,6 +41,11 @@ def test_run_scheduler_cycle_waits_on_coordinator(tmp_path: Path, monkeypatch) -
         metadata={"exclusive": True, "exclusive_owner": "qwenchat"},
     )
     monkeypatch.setattr(mod, "STATUS_PATH", tmp_path / "eidos_scheduler_status.json")
+    monkeypatch.setattr(
+        mod,
+        "_refresh_directory_docs_status",
+        lambda repo_root, force=False, max_age_sec=3600.0: {"missing_readme_count": 2, "coverage_ratio": 0.9},
+    )
     result = mod.run_scheduler_cycle(
         interval_sec=30.0,
         timeout_sec=60.0,
@@ -61,6 +66,12 @@ def test_run_scheduler_cycle_records_success(tmp_path: Path, monkeypatch) -> Non
     coordinator = ForgeRuntimeCoordinator(tmp_path / "forge_coordinator_status.json")
     monkeypatch.setattr(mod, "STATUS_PATH", tmp_path / "eidos_scheduler_status.json")
     monkeypatch.setattr(mod, "PIPELINE_STATUS_PATH", tmp_path / "living_pipeline_status.json")
+    monkeypatch.setattr(mod, "DIRECTORY_DOCS_STATUS_PATH", tmp_path / "directory_docs_status.json")
+    monkeypatch.setattr(
+        mod,
+        "_refresh_directory_docs_status",
+        lambda repo_root, force=False, max_age_sec=3600.0: {"missing_readme_count": 1, "coverage_ratio": 0.95},
+    )
     (tmp_path / "living_pipeline_status.json").write_text(
         json.dumps({"phase": "indexing", "eta_seconds": 12}), encoding="utf-8"
     )
@@ -83,6 +94,7 @@ def test_run_scheduler_cycle_records_success(tmp_path: Path, monkeypatch) -> Non
     )
     assert result["status"] == "success"
     assert result["run_id"] == "run-1"
+    assert result["directory_docs"]["missing_readme_count"] == 1
     saved = json.loads((tmp_path / "eidos_scheduler_status.json").read_text(encoding="utf-8"))
     assert saved["state"] == "sleeping"
     assert saved["last_result"]["records_total"] == 7

@@ -148,6 +148,7 @@ class DirectoryDocRecord:
     python_modules: list[str]
     api_routes: list[str]
     tests_present: bool
+    test_references: list[str]
     summary: str
     why: str
     strengths: list[str]
@@ -252,6 +253,61 @@ def _reference_links(repo_root: Path, rel_dir: str) -> list[tuple[str, str, str]
     return refs
 
 
+def _token_parts(value: str) -> list[str]:
+    return [part.lower() for part in re.split(r"[^A-Za-z0-9]+", value) if part]
+
+
+def _test_reference_candidates(
+    rel_dir: str,
+    local_files: list[str],
+    python_modules: list[str],
+    tracked_files: list[str],
+    policy: dict[str, Any],
+) -> list[str]:
+    forge_root = rel_dir.split("/", 1)[0]
+    dir_parts = [part for part in Path(rel_dir).parts if part not in {"src", "tests", "docs", "scripts"}]
+    token_set = {
+        token
+        for part in dir_parts[-3:] + python_modules + [Path(name).stem for name in local_files]
+        for token in _token_parts(part)
+        if token not in {"py", "md", "readme", "init", "forge", "core", "utils", "config", "configs"}
+    }
+    if not token_set:
+        token_set.add(Path(rel_dir).name.lower())
+    candidates: list[tuple[int, str]] = []
+    for rel_file in tracked_files:
+        if _is_excluded(rel_file, policy):
+            continue
+        if not rel_file.startswith(forge_root + "/"):
+            continue
+        if "/tests/" not in rel_file and not Path(rel_file).name.startswith("test_"):
+            continue
+        name = Path(rel_file).name
+        if not (name.endswith(".py") or name == "README.md"):
+            continue
+        path_tokens = set(_token_parts(rel_file))
+        score = len(token_set & path_tokens)
+        stem = Path(rel_file).stem.lower()
+        if stem.startswith("test_"):
+            stem = stem[5:]
+        if stem in token_set:
+            score += 3
+        if score <= 0:
+            continue
+        candidates.append((score, rel_file))
+    candidates.sort(key=lambda item: (-item[0], item[1]))
+    seen: set[str] = set()
+    refs: list[str] = []
+    for _, rel_file in candidates:
+        if rel_file in seen:
+            continue
+        seen.add(rel_file)
+        refs.append(rel_file)
+        if len(refs) >= 6:
+            break
+    return refs
+
+
 def inventory_directories(
     repo_root: Path,
     policy: dict[str, Any] | None = None,
@@ -260,6 +316,7 @@ def inventory_directories(
     policy = policy or load_policy(repo_root)
     selected_paths = {p.strip().strip("/") for p in (selected_paths or set()) if p.strip()}
     tracked_files = _git_ls_files(repo_root, selected_paths=selected_paths or None)
+    all_tracked_files = tracked_files if not selected_paths else _git_ls_files(repo_root)
     dir_to_files: dict[str, list[str]] = {}
     dir_children: dict[str, set[str]] = {}
     dirs: set[str] = set()
@@ -303,6 +360,8 @@ def inventory_directories(
         for rel_file in files:
             if not rel_file.endswith(".py"):
                 continue
+            if "/tests/" in rel_file or Path(rel_file).name.startswith("test_"):
+                continue
             fp = repo_root / rel_file
             try:
                 text = fp.read_text(encoding="utf-8", errors="ignore")
@@ -312,6 +371,9 @@ def inventory_directories(
                 api_routes.append(f"{method.upper()} {route}")
         api_routes = sorted(dict.fromkeys(api_routes))[:20]
         tests_present = any("/tests/" in f or Path(f).name.startswith("test_") for f in files)
+        test_references = _test_reference_candidates(rel_dir, local_files, python_modules, all_tracked_files, policy)
+        if test_references:
+            tests_present = True
         override = policy.get("path_overrides", {}).get(rel_dir, {})
         summary = (
             override.get("summary")
@@ -324,6 +386,8 @@ def inventory_directories(
         strengths = []
         if tests_present:
             strengths.append("A directly associated test surface is present in or below this directory.")
+        if test_references:
+            strengths.append("Likely validating test files were matched from the surrounding forge test surface.")
         if api_routes:
             strengths.append(
                 "The directory contains detected HTTP/API route definitions that can be referenced programmatically."
@@ -373,6 +437,7 @@ def inventory_directories(
                 python_modules=python_modules,
                 api_routes=api_routes,
                 tests_present=tests_present,
+                test_references=test_references,
                 summary=summary,
                 why=why,
                 strengths=strengths,
@@ -400,6 +465,42 @@ def inventory_summary(
         "missing_readmes": missing,
         "records": [asdict(r) for r in records],
     }
+
+
+def inventory_status(
+    repo_root: Path,
+    policy: dict[str, Any] | None = None,
+    selected_paths: set[str] | None = None,
+    limit: int = 20,
+) -> dict[str, Any]:
+    payload = inventory_summary(repo_root, policy, selected_paths=selected_paths)
+    required = int(payload.get("required_directory_count") or 0)
+    missing = int(payload.get("missing_readme_count") or 0)
+    records = payload.get("records") or []
+    missing_records = [row for row in records if not row.get("has_readme")][: max(1, int(limit))]
+    return {
+        "contract": "eidos.documentation_status.v1",
+        "generated_at": payload.get("generated_at"),
+        "repo_root": payload.get("repo_root"),
+        "required_directory_count": required,
+        "missing_readme_count": missing,
+        "documented_directory_count": max(0, required - missing),
+        "coverage_ratio": round((required - missing) / required, 6) if required else 1.0,
+        "missing_examples": [row.get("path") for row in missing_records],
+    }
+
+
+def write_inventory_status(
+    repo_root: Path,
+    output_path: Path,
+    policy: dict[str, Any] | None = None,
+    selected_paths: set[str] | None = None,
+    limit: int = 20,
+) -> dict[str, Any]:
+    payload = inventory_status(repo_root, policy=policy, selected_paths=selected_paths, limit=limit)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    return payload
 
 
 def record_map(
@@ -465,6 +566,10 @@ def render_directory_readme(
         lines.extend(["", "## API Surface", ""])
         for route in record.api_routes:
             lines.append(f"- `{route}`")
+    if record.test_references:
+        lines.extend(["", "## Validating Tests", ""])
+        for rel_file in record.test_references:
+            lines.append(f"- [`{rel_file}`]({_relative_link(rel_dir, rel_file)})")
     lines.extend(["", "## Strengths", ""])
     if record.strengths:
         for item in record.strengths:

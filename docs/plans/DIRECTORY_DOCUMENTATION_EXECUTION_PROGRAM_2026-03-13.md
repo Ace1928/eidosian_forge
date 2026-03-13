@@ -24,9 +24,17 @@ Treat directory documentation as a maintained system rather than ad hoc markdown
   - diff
   - single-directory upsert
   - batch upsert
+- [x] Added Atlas-side documentation control APIs and operator actions for:
+  - coverage refresh
+  - coverage lookup
+  - render
+  - diff
+  - upsert
 - [x] Fixed descendant-write behavior so selected roots generate README files for nested directories
 - [x] Fixed generated ancestor/forge README reference paths
 - [x] Expanded route detection beyond `@app.*` to include router-style path decorators
+- [x] Added validating-test reference detection to generated directory READMEs
+- [x] Fed documentation coverage status into scheduler/runtime/autonomy surfaces
 - [x] Captured and saved documentation-system references under `docs/external_references/2026-03-13-directory-doc-system/`
 - [x] Generated managed README coverage for the current documented-prefix estate
 - [x] Produced post-wave coverage artifact:
@@ -46,9 +54,9 @@ Treat directory documentation as a maintained system rather than ad hoc markdown
 
 ## Open Work
 
-- [ ] Add Atlas control-plane views for documentation coverage, diffing, and batch regeneration.
-- [ ] Add source/test linking beyond directory-local detection so package roots can reference sibling test suites accurately.
-- [ ] Add coverage drift reporting to scheduler/autonomy/runtime artifacts.
+- [~] Add Atlas control-plane views for documentation coverage, diffing, and batch regeneration.
+- [~] Add source/test linking beyond directory-local detection so package roots can reference sibling test suites accurately.
+- [~] Add coverage drift reporting to scheduler/autonomy/runtime artifacts.
 - [ ] Add managed suppression/override contracts for intentionally undocumented directories.
 - [ ] Add review gates for generated README quality on high-risk directories before promotion.
 
@@ -61,5 +69,5 @@ Treat directory documentation as a maintained system rather than ad hoc markdown
 ## Next Execution Slice
 
 1. expose documentation inventory and diff controls in Atlas
-2. link documentation coverage into scheduler/runtime status
-3. add richer test-surface and source-surface references for generated directory READMEs
+2. add batch-regeneration and directory-doc navigation UI in Atlas
+3. improve validation-source precision and suppress low-value generated or archived test references

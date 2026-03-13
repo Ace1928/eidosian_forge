@@ -80,6 +80,15 @@
         <div class="stat-value"><a href="/browse/forge/">FORGE</a></div>
         <div class="stat-label"><a href="/browse/home/">Home Browser</a> · <a href="/api/services" target="_blank">Service Status</a></div>
     </div>
+    <div class="card">
+        <h3>Directory Docs</h3>
+        <div class="stat-value" id="docs-coverage-ratio">{{ "%.1f"|format((docs_inventory.get('status', docs_inventory).get('coverage_ratio', 0.0) * 100)) }}%</div>
+        <div class="stat-label">
+            <span id="docs-missing-count">{{ docs_inventory.get('status', docs_inventory).get('missing_readme_count', 0) }}</span>
+            missing of
+            <span id="docs-required-count">{{ docs_inventory.get('status', docs_inventory).get('required_directory_count', 0) }}</span>
+        </div>
+    </div>
 </div>
 
 <div class="grid">
@@ -138,6 +147,22 @@
             </tbody>
         </table>
     </div>
+</div>
+
+<div class="card">
+    <h3>Documentation Control</h3>
+    <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+        <button onclick="refreshDocs()">Refresh Coverage</button>
+        <button onclick="window.open('/api/docs/coverage?missing_only=true&limit=50', '_blank')">Missing JSON</button>
+        <button onclick="window.open('/api/docs/coverage?limit=50', '_blank')">Coverage JSON</button>
+    </div>
+    <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+        <input id="docs-path-input" type="text" placeholder="directory path, e.g. doc_forge/src/doc_forge/scribe" style="min-width:340px;">
+        <button onclick="renderDocsReadme()">Render</button>
+        <button onclick="diffDocsReadme()">Diff</button>
+        <button onclick="upsertDocsReadme()">Upsert</button>
+    </div>
+    <pre id="docs-output" style="max-height:320px; overflow:auto; white-space:pre-wrap;">{{ (docs_inventory.get('missing_examples', []) or [])|join('\n') }}</pre>
 </div>
 
 <div class="card">
@@ -256,6 +281,50 @@ async function serviceAction(action) {
     } finally {
         await refreshServices();
     }
+}
+
+async function refreshDocs() {
+    try {
+        const res = await fetch("/api/docs/refresh", {method: "POST"});
+        if (!res.ok) return;
+        const payload = await res.json();
+        const status = payload.status || payload;
+        document.getElementById("docs-coverage-ratio").textContent = `${((Number(status.coverage_ratio || 0)) * 100).toFixed(1)}%`;
+        document.getElementById("docs-missing-count").textContent = status.missing_readme_count ?? 0;
+        document.getElementById("docs-required-count").textContent = status.required_directory_count ?? 0;
+        document.getElementById("docs-output").textContent = (status.missing_examples || []).join("\n");
+    } catch (err) {
+        // ignore transient refresh failures
+    }
+}
+
+function docsPath() {
+    return document.getElementById("docs-path-input").value.trim();
+}
+
+async function renderDocsReadme() {
+    const path = docsPath();
+    if (!path) return;
+    const res = await fetch(`/api/docs/render?path=${encodeURIComponent(path)}`);
+    const payload = await res.json();
+    document.getElementById("docs-output").textContent = payload.content || JSON.stringify(payload, null, 2);
+}
+
+async function diffDocsReadme() {
+    const path = docsPath();
+    if (!path) return;
+    const res = await fetch(`/api/docs/diff?path=${encodeURIComponent(path)}`);
+    const payload = await res.json();
+    document.getElementById("docs-output").textContent = payload.diff || JSON.stringify(payload, null, 2);
+}
+
+async function upsertDocsReadme() {
+    const path = docsPath();
+    if (!path) return;
+    const res = await fetch(`/api/docs/upsert?path=${encodeURIComponent(path)}`, {method: "POST"});
+    const payload = await res.json();
+    document.getElementById("docs-output").textContent = JSON.stringify(payload, null, 2);
+    await refreshDocs();
 }
 
 async function refreshScheduler() {

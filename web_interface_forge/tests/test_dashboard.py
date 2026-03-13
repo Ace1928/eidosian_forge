@@ -83,6 +83,15 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
             "active_models": [],
         },
     )
+    _write_json(
+        runtime_dir / "directory_docs_status.json",
+        {
+            "coverage_ratio": 0.995,
+            "missing_readme_count": 2,
+            "required_directory_count": 400,
+            "missing_examples": ["doc_forge/src/doc_forge/scribe"],
+        },
+    )
 
     monkeypatch.setattr(dashboard, "DOC_RUNTIME", runtime)
     monkeypatch.setattr(dashboard, "DOC_FINAL", final_docs)
@@ -94,6 +103,7 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(dashboard, "SCHEDULER_STATUS", runtime_dir / "eidos_scheduler_status.json")
     monkeypatch.setattr(dashboard, "COORDINATOR_STATUS", runtime_dir / "forge_coordinator_status.json")
     monkeypatch.setattr(dashboard, "COORDINATOR_HISTORY", runtime_dir / "forge_runtime_trends.json")
+    monkeypatch.setattr(dashboard, "DIRECTORY_DOCS_STATUS", runtime_dir / "directory_docs_status.json")
 
     with TestClient(dashboard.app) as client:
         resp = client.get("/api/doc/status")
@@ -110,9 +120,16 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         assert runtime_resp.status_code == 200
         runtime_payload = runtime_resp.json()
         assert runtime_payload["local_agent"]["status"] == "success"
+        assert runtime_payload["directory_docs"]["missing_readme_count"] == 2
         local_agent_resp = client.get("/api/runtime/local-agent")
         assert local_agent_resp.status_code == 200
         assert local_agent_resp.json()["status"]["profile"] == "observer"
+        docs_resp = client.get("/api/docs/coverage")
+        assert docs_resp.status_code == 200
+        assert docs_resp.json()["missing_readme_count"] == 2
+        render_resp = client.get("/api/docs/render", params={"path": "doc_forge/src/doc_forge/scribe"})
+        assert render_resp.status_code == 200
+        assert "GET /health" in render_resp.json()["content"]
         assert client.get("/browse/forge/").status_code == 200
         assert client.get("/browse/home/").status_code == 200
 

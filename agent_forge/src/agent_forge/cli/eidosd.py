@@ -67,6 +67,18 @@ def run_once(
         "load1": s.get("load1"),
         "mem_available_kb": s.get("mem_available_kb"),
     }
+    docs_status_path = _P(state_dir).parent / "data" / "runtime" / "directory_docs_status.json"
+    try:
+        docs_status = json.loads(docs_status_path.read_text(encoding="utf-8")) if docs_status_path.exists() else {}
+    except Exception:
+        docs_status = {}
+    if isinstance(docs_status, dict):
+        docs_missing = int(docs_status.get("missing_readme_count") or 0)
+        docs_coverage = float(docs_status.get("coverage_ratio") or 0.0)
+        DB.insert_metric(state_dir, "directory_docs.missing_readmes", float(docs_missing))
+        DB.insert_metric(state_dir, "directory_docs.coverage_ratio", docs_coverage)
+        payload["directory_docs_missing"] = docs_missing
+        payload["directory_docs_coverage"] = docs_coverage
     local_agent_path = _P(state_dir).parent / "data" / "runtime" / "local_mcp_agent" / "status.json"
     try:
         local_agent = json.loads(local_agent_path.read_text(encoding="utf-8")) if local_agent_path.exists() else {}

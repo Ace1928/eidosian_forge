@@ -339,6 +339,24 @@ class AutonomySupervisor:
         except Exception:
             local_agent_summary = {}
 
+        directory_docs_summary: dict[str, Any] = {}
+        try:
+            directory_docs_path = runtime_dir / "directory_docs_status.json"
+            if directory_docs_path.exists():
+                payload = json.loads(directory_docs_path.read_text(encoding="utf-8"))
+                if isinstance(payload, Mapping):
+                    directory_docs_summary = {
+                        "required_directory_count": int(payload.get("required_directory_count") or 0),
+                        "missing_readme_count": int(payload.get("missing_readme_count") or 0),
+                        "coverage_ratio": float(payload.get("coverage_ratio") or 0.0),
+                        "missing_examples": [
+                            _to_text(item) for item in (payload.get("missing_examples") or [])[:8]
+                        ],
+                    }
+                    context_tokens |= _tokenize(" ".join(directory_docs_summary["missing_examples"]))
+        except Exception:
+            directory_docs_summary = {}
+
         return {
             "query": query,
             "load_error": load_error,
@@ -347,6 +365,7 @@ class AutonomySupervisor:
             "report_summary": report_summary,
             "artifact_summary": artifact_summary,
             "local_agent_summary": local_agent_summary,
+            "directory_docs_summary": directory_docs_summary,
         }
 
     def _recent_selections(self) -> list[dict[str, Any]]:
@@ -454,6 +473,13 @@ class AutonomySupervisor:
         )
         local_agent_status = _to_text(local_agent.get("status")).lower()
         local_agent_tool_calls = int(local_agent.get("tool_calls") or 0)
+        directory_docs = (
+            context.get("directory_docs_summary")
+            if isinstance(context.get("directory_docs_summary"), Mapping)
+            else {}
+        )
+        docs_missing = int(directory_docs.get("missing_readme_count") or 0)
+        docs_coverage = float(directory_docs.get("coverage_ratio") or 0.0)
 
         if template == "hygiene":
             score += min(1.4, benchmark_failures * 0.45 + drift_warning_artifacts * 0.25)
@@ -461,6 +487,9 @@ class AutonomySupervisor:
                 score += min(0.45, 0.75 - avg_quality)
             if local_agent_status in {"timeout", "error"}:
                 score += 0.3
+            score += min(0.8, docs_missing * 0.05)
+            if docs_coverage and docs_coverage < 0.98:
+                score += min(0.35, 0.98 - docs_coverage)
         elif template == "consciousness_guard":
             if avg_quality >= 0.7:
                 score += min(0.25, avg_quality * 0.25)
@@ -554,6 +583,8 @@ class AutonomySupervisor:
             "benchmark_failures": int(((context.get("artifact_summary") or {}).get("benchmark_failures")) or 0),
             "local_agent_status": _to_text(((context.get("local_agent_summary") or {}).get("status")) or ""),
             "local_agent_tool_calls": int(((context.get("local_agent_summary") or {}).get("tool_calls")) or 0),
+            "directory_docs_missing": int(((context.get("directory_docs_summary") or {}).get("missing_readme_count")) or 0),
+            "directory_docs_coverage": float(((context.get("directory_docs_summary") or {}).get("coverage_ratio")) or 0.0),
             "repo_root": str(self.repo_root),
             "repo_dirty": repo_dirty,
         }
@@ -649,6 +680,8 @@ class AutonomySupervisor:
             "benchmark_failures": int(((context.get("artifact_summary") or {}).get("benchmark_failures")) or 0),
             "local_agent_status": _to_text(((context.get("local_agent_summary") or {}).get("status")) or ""),
             "local_agent_tool_calls": int(((context.get("local_agent_summary") or {}).get("tool_calls")) or 0),
+            "directory_docs_missing": int(((context.get("directory_docs_summary") or {}).get("missing_readme_count")) or 0),
+            "directory_docs_coverage": float(((context.get("directory_docs_summary") or {}).get("coverage_ratio")) or 0.0),
         }
         BUS.append(self.state_dir, "autonomy.mission_selected", payload, tags=["autonomy", "selected"])
         S.append_journal(
