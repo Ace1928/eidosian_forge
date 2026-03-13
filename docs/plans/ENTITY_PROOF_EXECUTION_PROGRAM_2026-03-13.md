@@ -54,6 +54,18 @@ The missing layer is a canonical external-proof contract that:
   - `reports/proof/migration_replay_scorecard_latest.json`
 - [x] Added scheduler-side proof runtime normalization:
   - `data/runtime/entity_proof_status.json`
+- [x] Added first real live Eidos-run external benchmark harness:
+  - `scripts/run_agencybench_eidos.py`
+- [x] Generated live AgencyBench scenario2 deterministic artifact:
+  - `reports/external_benchmarks/agencybench_eidos_scenario2_deterministic/latest.json`
+  - score: `1.0`
+- [x] Generated live AgencyBench scenario1 deterministic artifact:
+  - `reports/external_benchmarks/agencybench_eidos_scenario1_deterministic/latest.json`
+  - score: `1.0`
+- [x] Refreshed proof scorecard after live external Eidos-run artifacts:
+  - `reports/proof/entity_proof_scorecard_20260313_072818.json`
+  - overall score: `0.703282`
+  - status: `yellow`
 
 ## Open Work
 
@@ -61,7 +73,9 @@ The missing layer is a canonical external-proof contract that:
   - [x] import contract for upstream results
   - [x] bounded official AgencyBench sample-reference import path
   - [x] at least one live imported suite artifact on the mainline runtime
-  - [ ] optional bounded local execution harness for one suite
+  - [x] optional bounded local execution harness for one suite
+  - [x] second live external benchmark artifact beyond the first proof run
+  - [ ] non-deterministic live model-driven benchmark path that is stable enough for publication
   - Candidate suites:
     - AgencyBench
     - AgentBench
@@ -82,6 +96,6 @@ The missing layer is a canonical external-proof contract that:
 
 ## Next Execution Slice
 
-1. import at least one real mainstream benchmark result into `reports/external_benchmarks/`
+1. stabilize the `qwen3.5:2b` live benchmark execution path so `local_agent` scenario runs can replace deterministic fallback as publication-grade evidence
 2. add publishable proof-bundle export with scorecard, migration scorecard, theory of operation, and benchmark manifests
 3. add identity continuity scorecards across upgrade boundaries

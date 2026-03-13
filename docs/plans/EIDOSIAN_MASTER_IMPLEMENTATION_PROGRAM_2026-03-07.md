@@ -238,6 +238,12 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
   - Code Forge reuse/retrieval quality,
   - doc quality,
   - lexicon enrichment quality,
+  - external agent suites with publishable artifacts.
+- [~] Add externally reportable benchmark evidence:
+  - [x] imported AgencyBench reference artifact
+  - [x] live AgencyBench scenario2 deterministic artifact
+  - [x] live AgencyBench scenario1 deterministic artifact
+  - [ ] live non-deterministic model-driven external benchmark artifact
   - scheduler throughput,
   - service resiliency.
 - [ ] Require green CI, green targeted regression suites, and artifact publication before promotion/deletion actions.

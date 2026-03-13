@@ -184,6 +184,66 @@ Use `scripts/import_agencybench_reference.py` to aggregate the official sample `
 - `reports/external_benchmarks/agencybench/agencybench_<stamp>.json`
 - `reports/external_benchmarks/agencybench/latest.json`
 
+## AgencyBench Eidos Live Runs
+Use `scripts/run_agencybench_eidos.py` to generate real Eidos-run benchmark artifacts against selected official AgencyBench scenarios.
+
+### Scenario 2: Filesystem Workflow
+This scenario uses the official AgencyBench MCP `scenario2` workspace contract. Two engines are supported:
+- `local_agent`
+- `deterministic`
+
+Deterministic run:
+```bash
+./eidosian_venv/bin/python scripts/run_agencybench_eidos.py \
+  --scenario scenario2 \
+  --engine deterministic \
+  --agencybench-root /path/to/AgencyBench
+```
+
+Bounded local-agent run:
+```bash
+./eidosian_venv/bin/python scripts/run_agencybench_eidos.py \
+  --scenario scenario2 \
+  --engine local_agent \
+  --model qwen3.5:2b \
+  --agencybench-root /path/to/AgencyBench \
+  --timeout-sec 1800 \
+  --keep-alive 4h
+```
+
+Current live artifact:
+- `reports/external_benchmarks/agencybench_eidos_scenario2_deterministic/latest.json`
+
+### Scenario 1: GitHub Workflow
+This scenario uses the official AgencyBench MCP `scenario1` GitHub workflow contract and executes it against a disposable benchmark repository under the authenticated GitHub account.
+
+Run:
+```bash
+./eidosian_venv/bin/python scripts/run_agencybench_eidos.py \
+  --scenario scenario1 \
+  --engine deterministic \
+  --repo-visibility private
+```
+
+Requirements:
+- authenticated `gh`
+- repo-scoped GitHub token
+- outbound GitHub API access
+
+Current live artifact:
+- `reports/external_benchmarks/agencybench_eidos_scenario1_deterministic/latest.json`
+
+### Notes
+- The deterministic runners are intended to prove end-to-end execution against the official scenario contracts.
+- The `local_agent` scenario2 path exists, but the current `qwen3.5:2b` Ollama serving path remains unstable for long benchmark turns and still needs remediation before it is a trustworthy external-proof path.
+- Scenario1 currently supports deterministic execution only.
+
+### Outputs
+- `reports/external_benchmarks/agencybench_eidos_scenario1_deterministic/latest.json`
+- `reports/external_benchmarks/agencybench_eidos_scenario1_deterministic/latest_detailed.json`
+- `reports/external_benchmarks/agencybench_eidos_scenario2_deterministic/latest.json`
+- `reports/external_benchmarks/agencybench_eidos_scenario2_deterministic/latest_detailed.json`
+
 ## Migration Replay Scorecard
 Use `scripts/migration_replay_scorecard.py` to report replay and portability evidence.
 

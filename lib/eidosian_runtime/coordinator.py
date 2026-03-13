@@ -5,6 +5,7 @@ import os
 import tempfile
 import threading
 from contextlib import contextmanager
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterator
 
@@ -34,9 +35,31 @@ def _forge_root() -> Path:
 
 
 def _now_utc() -> str:
-    from datetime import datetime, timezone
-
     return datetime.now(timezone.utc).isoformat()
+
+
+def _parse_iso_utc(value: Any) -> datetime | None:
+    text = str(value or "").strip()
+    if not text:
+        return None
+    try:
+        return datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except Exception:
+        return None
+
+
+def _pid_alive(value: Any) -> bool:
+    try:
+        pid = int(value)
+    except Exception:
+        return False
+    if pid <= 0:
+        return False
+    try:
+        os.kill(pid, 0)
+    except OSError:
+        return False
+    return True
 
 
 class ForgeRuntimeCoordinator:
@@ -280,6 +303,70 @@ class ForgeRuntimeCoordinator:
                 "max_active_model_instances": max_instances,
                 "max_active_model_families": max_families,
             }
+
+    def recover_stale_owner(
+        self,
+        *,
+        stale_after_sec: float = 1800.0,
+        owner_filter: str | None = None,
+        reason: str = "stale_owner_recovery",
+    ) -> dict[str, Any]:
+        with self._lock():
+            payload = self._read_locked()
+            owner = str(payload.get("owner") or "").strip()
+            if not owner:
+                return {"released": False, "reason": "no_owner", "payload": payload}
+            if owner_filter and owner != str(owner_filter):
+                return {"released": False, "reason": "owner_filter_mismatch", "payload": payload}
+            metadata = dict(payload.get("metadata") or {})
+            owner_pid = metadata.get("pid")
+            if owner_pid and not _pid_alive(owner_pid):
+                metadata.update(
+                    {
+                        "released_owner": owner,
+                        "released_reason": f"{reason}_dead_pid",
+                        "released_pid": int(owner_pid),
+                    }
+                )
+                payload.update(
+                    {
+                        "owner": "",
+                        "task": "idle",
+                        "state": "idle",
+                        "updated_at": _now_utc(),
+                        "active_models": [],
+                        "metadata": metadata,
+                    }
+                )
+                self._save_locked(payload)
+                self._append_history_locked(payload)
+                return {"released": True, "reason": f"{reason}_dead_pid", "payload": payload}
+            updated_at = _parse_iso_utc(payload.get("updated_at"))
+            if updated_at is None:
+                return {"released": False, "reason": "missing_updated_at", "payload": payload}
+            age = (datetime.now(timezone.utc) - updated_at).total_seconds()
+            if age < max(30.0, float(stale_after_sec)):
+                return {"released": False, "reason": "not_stale", "age_sec": age, "payload": payload}
+            metadata.update(
+                {
+                    "released_owner": owner,
+                    "released_reason": str(reason),
+                    "stale_age_sec": round(age, 3),
+                }
+            )
+            payload.update(
+                {
+                    "owner": "",
+                    "task": "idle",
+                    "state": "idle",
+                    "updated_at": _now_utc(),
+                    "active_models": [],
+                    "metadata": metadata,
+                }
+            )
+            self._save_locked(payload)
+            self._append_history_locked(payload)
+            return {"released": True, "reason": str(reason), "age_sec": age, "payload": payload}
 
     def _read_locked(self) -> dict[str, Any]:
         if not self.status_path.exists():

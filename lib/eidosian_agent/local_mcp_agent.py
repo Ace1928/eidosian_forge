@@ -131,6 +131,11 @@ def _normalize_tool_rule(name: str, payload: Any) -> dict[str, Any]:
         for k, vals in _as_dict(rule.get("blocked_patterns")).items()
         if str(k).strip()
     }
+    allowed_patterns = {
+        str(k): [str(v) for v in _as_list(vals)]
+        for k, vals in _as_dict(rule.get("allowed_patterns")).items()
+        if str(k).strip()
+    }
     return {
         "synthetic": str(rule.get("synthetic") or "").strip().lower(),
         "mode": str(rule.get("mode") or ("mutating" if name in MUTATING_TOOL_NAMES else "read")).strip().lower(),
@@ -141,6 +146,7 @@ def _normalize_tool_rule(name: str, payload: Any) -> dict[str, Any]:
         "const_arguments": const_arguments,
         "path_prefixes": path_prefixes,
         "blocked_patterns": blocked_patterns,
+        "allowed_patterns": allowed_patterns,
         "max_calls_per_cycle": max(1, int(rule.get("max_calls_per_cycle", 1) or 1)),
     }
 
@@ -272,6 +278,9 @@ def validate_tool_arguments(name: str, args: Any, profile: AgentProfile, call_co
             allowed_values = _as_dict(rule.get("allowed_values")).get(str_key)
             if allowed_values and value not in allowed_values:
                 raise ToolPolicyError(f"unexpected_value:{name}:{str_key}")
+            allowed_patterns = _as_dict(rule.get("allowed_patterns")).get(str_key, [])
+            if allowed_patterns and not any(re.search(pattern, value) for pattern in allowed_patterns):
+                raise ToolPolicyError(f"allowed_pattern_mismatch:{name}:{str_key}")
             for pattern in _as_dict(rule.get("blocked_patterns")).get(str_key, []):
                 if re.search(pattern, value):
                     raise ToolPolicyError(f"blocked_pattern:{name}:{str_key}")

@@ -55,3 +55,19 @@ def test_exclusive_qwenchat_owner_blocks_other_allocations(tmp_path: Path) -> No
     )
     assert decision["allowed"] is False
     assert decision["reason"] == "exclusive_owner_active"
+
+
+def test_coordinator_recovers_dead_pid_owner(tmp_path: Path) -> None:
+    coordinator = ForgeRuntimeCoordinator(tmp_path / "forge_coordinator_status.json")
+    coordinator.heartbeat(
+        owner="local_mcp_agent:agencybench_scenario2",
+        task="local_agent:agencybench_scenario2",
+        state="running",
+        active_models=[{"family": "ollama", "model": "qwen3.5:2b", "role": "local_agent:agencybench_scenario2"}],
+        metadata={"mode": "local_agent_cycle", "pid": 99999999},
+    )
+    recovery = coordinator.recover_stale_owner(reason="test_recovery")
+    assert recovery["released"] is True
+    payload = coordinator.read()
+    assert payload["owner"] == ""
+    assert payload["state"] == "idle"

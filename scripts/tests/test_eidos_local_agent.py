@@ -188,6 +188,28 @@ def test_validate_tool_arguments_enforces_bounds() -> None:
         raise AssertionError("expected validation failure")
 
 
+def test_validate_tool_arguments_enforces_allowed_patterns() -> None:
+    profile = normalize_profile(
+        "observer",
+        {
+            "allowed_tools": {
+                "run_shell_command": {
+                    "allowed_keys": ["command"],
+                    "allowed_patterns": {"command": [r"^(ls|find)(\s|$)"]},
+                }
+            }
+        },
+    )
+    ok = validate_tool_arguments("run_shell_command", {"command": "ls -la"}, profile, {})
+    assert ok["command"] == "ls -la"
+    try:
+        validate_tool_arguments("run_shell_command", {"command": "rm -rf tmp"}, profile, {})
+    except ValueError as exc:
+        assert "allowed_pattern_mismatch" in str(exc)
+    else:
+        raise AssertionError("expected validation failure")
+
+
 def test_cli_wrapper_loads() -> None:
     module = _load_script_module()
     assert hasattr(module, "main")
