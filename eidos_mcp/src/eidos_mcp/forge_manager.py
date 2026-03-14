@@ -57,16 +57,18 @@ class ForgeManager:
         """Dynamically import and register all configured MCP routers."""
         for module_name in self.router_modules:
             try:
+                log_debug(f"Attempting to load router: {module_name}")
                 if force_reload and module_name in sys.modules:
                     importlib.reload(sys.modules[module_name])
                 else:
                     importlib.import_module(module_name)
-            except ImportError as e:
-                log_debug(f"Warning: Failed to load router {module_name}: {e}")
-                log_error(f"load_router:{module_name}", str(e))
+                log_debug(f"Successfully loaded router: {module_name}")
+            except (ImportError, ModuleNotFoundError) as e:
+                log_debug(f"Warning: Module dependency missing for {module_name}: {e}")
+                log_error(f"load_router:{module_name}", f"Missing dependency: {str(e)}")
             except Exception as e:
-                log_debug(f"Error: Unexpected error loading router {module_name}: {e}")
-                log_error(f"load_router:{module_name}", str(e))
+                log_debug(f"Critical Error: Unexpected failure loading router {module_name}: {e}")
+                log_error(f"load_router:{module_name}", f"Unexpected error: {str(e)}")
 
     def sync_agent_tools(self) -> None:
         """Register all registered MCP tools into AgentForge for agent use."""
