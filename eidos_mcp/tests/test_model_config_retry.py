@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import httpx
-
 from eidos_mcp.config.models import ModelConfig
 
 

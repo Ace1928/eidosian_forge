@@ -8,8 +8,8 @@ sys.path.append(str(ROOT.parent / "prompt_forge/src"))
 sys.path.append(str(ROOT.parent / "article_forge/src"))
 sys.path.append(str(ROOT.parent / "glyph_forge/src"))
 
-from eidos_mcp.forge_manager import manager
 from eidos_mcp.core import list_tool_metadata
+from eidos_mcp.forge_manager import manager
 
 # Force initialization
 manager.initialize_all(force_reload=True)
@@ -23,10 +23,15 @@ print(f"Newly Registered Tools: {new_tools}")
 
 # Verify specific critical tools
 expected = [
-    "prompt_get", "prompt_list", "prompt_save",
-    "article_markdown_to_html", "article_convert_file",
-    "figlet_generate", "figlet_header",
-    "glyph_text_to_banner", "glyph_image_to_ascii"
+    "prompt_get",
+    "prompt_list",
+    "prompt_save",
+    "article_markdown_to_html",
+    "article_convert_file",
+    "figlet_generate",
+    "figlet_header",
+    "glyph_text_to_banner",
+    "glyph_image_to_ascii",
 ]
 
 missing = [e for e in expected if e not in tools]

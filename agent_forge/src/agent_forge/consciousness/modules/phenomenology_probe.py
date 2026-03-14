@@ -259,7 +259,7 @@ def _ownership_index(events: Sequence[Mapping[str, Any]]) -> tuple[float, dict[s
 
     # Motor-based agency boost: Active initiative increases sense of ownership
     motor_boost = clamp01((motor_intents + motor_executions) / 10.0, default=0.0)
-    
+
     responses: list[float] = []
     if perturb_ts and agency_vals:
         for ts in perturb_ts:
@@ -284,7 +284,7 @@ def _ownership_index(events: Sequence[Mapping[str, Any]]) -> tuple[float, dict[s
             "perturb_response_samples": len(responses),
             "motor_intents": motor_intents,
             "motor_executions": motor_executions,
-            "motor_boost": round(motor_boost, 6)
+            "motor_boost": round(motor_boost, 6),
         },
     )
 

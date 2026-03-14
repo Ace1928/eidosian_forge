@@ -426,7 +426,7 @@ class WorkspaceCompetitionModule:
         intero = ctx.module_state("intero", defaults={"signals": {}})
         signals = intero.get("signals") if isinstance(intero.get("signals"), Mapping) else {}
         prediction_error = float(signals.get("prediction_error", 0.5))
-        
+
         # Use RCI as a proxy for Phi (Integrated Information)
         metrics = list(ctx.latest_events("metrics.sample", k=100))
         rci_val = 0.5
@@ -439,23 +439,23 @@ class WorkspaceCompetitionModule:
         for candidate in candidates:
             base_score = _candidate_score(candidate)
             source_mod = str(candidate.get("source_module", ""))
-            
+
             fe_boost = 0.0
             phi_boost = 0.0
-            
+
             # Active Inference: High surprise demands immediate grounding/action
             if prediction_error > 0.6 and source_mod in ["policy", "intero", "sense", "motor"]:
                 fe_boost = prediction_error * 0.25
-            
+
             # Integrated Information: High integration allows complex simulation/memory
             if rci_val > 0.4 and source_mod in ["world_model", "simulation", "memory_bridge", "knowledge_bridge"]:
                 phi_boost = rci_val * 0.25
-                
+
             noisy = base_score + fe_boost + phi_boost
-            
+
             if noise_mag > 0.0:
                 noisy += ctx.rng.uniform(-noise_mag, noise_mag)
-                
+
             candidate["score"] = round(clamp01(noisy, default=0.0), 6)
 
         if scramble:

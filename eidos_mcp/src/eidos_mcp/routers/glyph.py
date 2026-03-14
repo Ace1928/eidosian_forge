@@ -1,21 +1,22 @@
 from __future__ import annotations
 
-import os
-from pathlib import Path
-from typing import List, Optional, Any
+from typing import List, Optional
 
 from eidosian_core import eidosian
+
 from ..core import tool
 from ..state import FORGE_DIR
 
 try:
-    from glyph_forge.services.text_to_banner import text_to_banner
     from glyph_forge.services.image_to_glyph import image_to_glyph
+    from glyph_forge.services.text_to_banner import text_to_banner
 except ImportError:
     import sys
+
     sys.path.append(str(FORGE_DIR / "glyph_forge/src"))
-    from glyph_forge.services.text_to_banner import text_to_banner
     from glyph_forge.services.image_to_glyph import image_to_glyph
+    from glyph_forge.services.text_to_banner import text_to_banner
+
 
 @eidosian()
 @tool(name="glyph_text_to_banner", description="Convert text to a styled ASCII banner.")
@@ -31,14 +32,8 @@ def glyph_text_to_banner(
     Generate a styled ASCII banner using the Glyph Forge engine.
     Supports various fonts, styles, and special effects.
     """
-    return text_to_banner(
-        text=text,
-        style=style,
-        font=font,
-        width=width,
-        effects=effects,
-        color=color
-    )
+    return text_to_banner(text=text, style=style, font=font, width=width, effects=effects, color=color)
+
 
 @eidosian()
 @tool(name="glyph_image_to_ascii", description="Convert an image to high-fidelity ASCII/ANSI art.")
@@ -52,11 +47,11 @@ def glyph_image_to_ascii(
     contrast: float = 1.0,
     dithering: bool = False,
     invert: bool = False,
-    charset: str = "general"
+    charset: str = "general",
 ) -> str:
     """
     High-fidelity image-to-text conversion.
-    
+
     Args:
         image_path: Local path to the source image.
         output_path: Optional path to save the result.
@@ -79,5 +74,5 @@ def glyph_image_to_ascii(
         contrast=contrast,
         dithering=dithering,
         invert=invert,
-        charset=charset
+        charset=charset,
     )

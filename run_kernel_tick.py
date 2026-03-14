@@ -1,5 +1,4 @@
 import sys
-import os
 from pathlib import Path
 
 # Add project root and src to path
@@ -7,7 +6,6 @@ ROOT = Path(__file__).resolve().parent
 sys.path.append(str(ROOT / "agent_forge/src"))
 
 from agent_forge.consciousness.kernel import ConsciousnessKernel
-from agent_forge.consciousness.modules.motor import MotorModule
 
 state_dir = ROOT / "state"
 
@@ -23,6 +21,6 @@ for i in range(5):
 ledger_file = state_dir / "ledger" / "continuity_ledger.jsonl"
 if ledger_file.exists():
     lines = ledger_file.read_text().strip().splitlines()
-    print(f"\n--- Last 3 Ledger Entries ---")
+    print("\n--- Last 3 Ledger Entries ---")
     for line in lines[-3:]:
         print(line)

@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import importlib
 import sys
-from typing import Any, List, Optional
+from typing import Any, List
 
+from . import state as _forge_state
 from .core import list_tool_metadata, mcp
 from .logging_utils import log_debug, log_error
-from .plugins import init_plugins, list_plugins, list_tools
-from . import state as _forge_state
+from .plugins import init_plugins, list_tools
+
 
 class ForgeManager:
     """
@@ -103,6 +104,7 @@ class ForgeManager:
         self.register_routers(force_reload=force_reload)
         self.sync_agent_tools()
         self.load_plugins()
+
 
 # Default singleton instance
 manager = ForgeManager()

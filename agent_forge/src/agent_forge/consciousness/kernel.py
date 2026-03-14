@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import random
-import uuid
 import hashlib
 import json
+import random
+import uuid
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -12,6 +12,7 @@ from typing import Any, Dict, Iterable, List, Mapping, MutableMapping, Optional
 from agent_forge.core import events as bus
 from agent_forge.core import workspace
 
+from .ledger import ContinuityLedger
 from .modules.affect import AffectModule
 from .modules.attention import AttentionModule
 from .modules.autotune import AutotuneModule
@@ -33,7 +34,6 @@ from .modules.world_model import WorldModelModule
 from .state_store import ModuleStateStore
 from .tuning.overlay import load_tuned_overlay, resolve_config
 from .types import Module, TickContext, merged_config
-from .ledger import ContinuityLedger
 
 
 @dataclass
@@ -100,7 +100,7 @@ class ConsciousnessKernel:
             state_snapshot = {
                 "beat_count": self.beat_count,
                 "modules_active": [m.name for m in self.modules if not self._module_disabled(m.name)],
-                "config_hash": hashlib.sha256(json.dumps(self.config, sort_keys=True).encode("utf-8")).hexdigest()
+                "config_hash": hashlib.sha256(json.dumps(self.config, sort_keys=True).encode("utf-8")).hexdigest(),
             }
             self.ledger.record_heartbeat(state_snapshot)
         except Exception:

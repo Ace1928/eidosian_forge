@@ -1,7 +1,9 @@
 from __future__ import annotations
 
-from typing import List, Optional, Tuple
+from typing import Tuple
+
 from eidosian_core import eidosian
+
 from ..core import tool
 from ..state import FORGE_DIR
 
@@ -9,22 +11,19 @@ try:
     from terminal_forge import banner
 except ImportError:
     import sys
+
     sys.path.append(str(FORGE_DIR / "terminal_forge/src"))
     from terminal_forge import banner
+
 
 @eidosian()
 @tool(name="terminal_banner", description="Generate a stylized terminal banner.")
 def terminal_banner(
-    text: str,
-    title: str = "",
-    style: str = "single",
-    theme: str = "default",
-    alignment: str = "left",
-    width: int = 0
+    text: str, title: str = "", style: str = "single", theme: str = "default", alignment: str = "left", width: int = 0
 ) -> str:
     """
     Create a modular terminal banner with borders and themes.
-    
+
     Args:
         text: The main content of the banner.
         title: Optional banner title.
@@ -43,11 +42,13 @@ def terminal_banner(
         pass
     return b.render()
 
+
 @eidosian()
 @tool(name="terminal_rainbow", description="Apply rainbow coloring to text.")
 def terminal_rainbow(text: str) -> str:
     """Apply a rainbow ANSI color sequence to the provided text."""
     return banner.Color.rainbow(text)
+
 
 @eidosian()
 @tool(name="terminal_gradient", description="Apply smooth RGB gradient to text.")
