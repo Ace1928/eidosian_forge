@@ -78,6 +78,15 @@ class SenseModule:
 
             prior = float(counts_map.get(etype, 0))
             novelty = 1.0 / (1.0 + prior)
+
+            # GWT: Top-Down Bias
+            # If this event aligns with the previous tick's global winner, boost its strength.
+            top_down_boost = 0.0
+            if ctx.global_winner:
+                gw_links = ctx.global_winner.get("links", {})
+                if str(evt.get("corr_id")) == str(gw_links.get("corr_id")) or str(evt.get("parent_id")) == str(gw_links.get("corr_id")):
+                    top_down_boost = 0.2
+
             uncertainty = clamp01(1.0 - (prior / max(prior + 3.0, 1.0)), default=0.5)
             if noise_mag > 0.0:
                 novelty = clamp01(novelty + ctx.rng.uniform(-noise_mag, noise_mag), default=novelty)
@@ -94,9 +103,11 @@ class SenseModule:
                     "source_module": source,
                     "novelty": round(novelty, 6),
                     "uncertainty": round(uncertainty, 6),
-                    "strength": round(clamp01(0.55 * novelty + 0.45 * uncertainty, default=0.5), 6),
+                    "top_down_boost": round(top_down_boost, 6),
+                    "strength": round(clamp01(0.55 * novelty + 0.45 * uncertainty + top_down_boost, default=0.5), 6),
                     "raw": dict((evt.get("data") or {})),
                 },
+
                 tags=["consciousness", "sense", "percept"],
                 corr_id=str(evt.get("corr_id") or "") or None,
                 parent_id=str(evt.get("parent_id") or "") or None,

@@ -442,6 +442,17 @@ class WorkspaceCompetitionModule:
 
             fe_boost = 0.0
             phi_boost = 0.0
+            recurrent_boost = 0.0
+
+            # GWT: Recurrent Stabilizing Loop
+            # If this candidate aligns with the previous tick's winner, boost it to maintain stability.
+            if ctx.global_winner:
+                prev_winner_id = str(ctx.global_winner.get("content", {}).get("candidate_id", ""))
+                if str(candidate.get("candidate_id")) == prev_winner_id:
+                    recurrent_boost = 0.15
+                elif str(candidate.get("source_module")) == str(ctx.global_winner.get("content", {}).get("source_module")):
+                    # Same module continuation boost
+                    recurrent_boost = 0.05
 
             # Active Inference: High surprise demands immediate grounding/action
             if prediction_error > 0.6 and source_mod in ["policy", "intero", "sense", "motor"]:
@@ -451,7 +462,7 @@ class WorkspaceCompetitionModule:
             if rci_val > 0.4 and source_mod in ["world_model", "simulation", "memory_bridge", "knowledge_bridge"]:
                 phi_boost = rci_val * 0.25
 
-            noisy = base_score + fe_boost + phi_boost
+            noisy = base_score + fe_boost + phi_boost + recurrent_boost
 
             if noise_mag > 0.0:
                 noisy += ctx.rng.uniform(-noise_mag, noise_mag)

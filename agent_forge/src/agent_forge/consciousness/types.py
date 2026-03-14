@@ -333,6 +333,7 @@ class TickContext:
     emitted_events: list[Dict[str, Any]] = field(default_factory=list)
     ledger: Optional[Any] = None
     gatekeeper: Optional[Any] = None
+    global_winner: Optional[Dict[str, Any]] = None
     _event_type_index: Optional[Dict[str, list[Dict[str, Any]]]] = field(default=None, init=False, repr=False)
     _broadcast_kind_index: Optional[Dict[str, list[Dict[str, Any]]]] = field(default=None, init=False, repr=False)
     _broadcast_events: Optional[list[Dict[str, Any]]] = field(default=None, init=False, repr=False)

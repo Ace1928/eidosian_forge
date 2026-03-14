@@ -23,6 +23,8 @@ from .modules.knowledge_bridge import KnowledgeBridgeModule
 from .modules.memory_bridge import MemoryBridgeModule
 from .modules.meta import MetaModule
 from .modules.motor import MotorModule
+from .modules.metacognition import MetacognitionModule
+from .modules.default_mode import DefaultModeModule
 from .modules.phenomenology_probe import PhenomenologyProbeModule
 from .modules.policy import PolicyModule
 from .modules.report import ReportModule
@@ -70,6 +72,7 @@ class ConsciousnessKernel:
         self._refresh_config()
         self.beat_count = int(self.state_store.get_meta("beat_count", 0) or 0)
         self._active_perturbations: list[dict[str, Any]] = []
+        self._last_winner: Optional[Dict[str, Any]] = None
         self.ledger = ContinuityLedger(self.state_dir / "ledger")
         self.modules: List[Module] = list(
             modules
@@ -87,6 +90,7 @@ class ConsciousnessKernel:
                 PolicyModule(),
                 SelfModelExtModule(),
                 MetaModule(),
+                MetacognitionModule(),
                 DefaultModeModule(),
                 MotorModule(),
                 ReportModule(),
@@ -435,6 +439,7 @@ class ConsciousnessKernel:
             active_perturbations=list(self._active_perturbations),
             now=datetime.now(timezone.utc),
             ledger=self.ledger,
+            global_winner=self._last_winner,
         )
 
     def tick(self) -> KernelResult:
@@ -459,6 +464,14 @@ class ConsciousnessKernel:
                 msg = f"{module.name}: {exc}"
                 errors.append(msg)
                 self._register_module_error(module.name, str(exc), ctx)
+
+        # GWT: Identify the winner of this tick to broadcast to all modules in the next tick
+        for evt in reversed(ctx.emitted_events):
+            if evt.get("type") == "workspace.broadcast":
+                payload = evt.get("data", {}).get("payload", {})
+                if payload.get("kind") == "GW_WINNER":
+                    self._last_winner = payload
+                    break
 
         self.beat_count += 1
         self.state_store.set_meta("beat_count", self.beat_count)

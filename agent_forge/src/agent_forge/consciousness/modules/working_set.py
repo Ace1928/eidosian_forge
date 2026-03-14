@@ -101,7 +101,26 @@ class WorkingSetModule:
             if str(item.get("item_id") or item.get("id") or "")
         }
 
-        changed = False
+        # GWT: Global Ignition
+        # The winner of the previous tick is automatically injected into the working set.
+        if ctx.global_winner:
+            gw_id = _item_key(ctx.global_winner)
+            if gw_id:
+                gw_links = ctx.global_winner.get("links", {})
+                by_key[gw_id] = {
+                    "item_id": gw_id,
+                    "kind": str(ctx.global_winner.get("kind", "GW_WINNER")),
+                    "salience": 1.0, # Maximum salience for the ignited winner
+                    "confidence": float(ctx.global_winner.get("confidence", 0.9)),
+                    "signature": _related_signature(ctx.global_winner),
+                    "links": dict(gw_links),
+                    "entered_ts": str(ctx.global_winner.get("ts") or _now_iso(ctx.now)),
+                    "last_seen_ts": _now_iso(ctx.now),
+                    "source": str(ctx.global_winner.get("source_module") or "workspace_competition"),
+                    "ignited": True
+                }
+                changed = True
+
         recent = ctx.latest_events("workspace.broadcast", k=scan_limit)
         for evt in recent:
             data = evt.get("data") if isinstance(evt.get("data"), Mapping) else {}

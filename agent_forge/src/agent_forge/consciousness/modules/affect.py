@@ -62,6 +62,26 @@ class AffectModule:
             "learning_rate": clamp01((0.15 + (0.4 * curiosity) + (0.3 * coherence_hunger)), default=0.25),
             "attention_gain": clamp01((0.45 + (0.45 * threat) + (0.25 * coherence_hunger)), default=0.6),
         }
+
+        # HER Model: Metacognitive signals modulate targets
+        metacog_conflict = 0.0
+        metacog_stability = 0.5
+        for evt in ctx.latest_events("metrics.sample", k=50):
+            d = evt.get("data", {})
+            if d.get("key") == "consciousness.metacog.conflict_intensity":
+                metacog_conflict = float(d.get("value", 0.0))
+            elif d.get("key") == "consciousness.metacog.stability":
+                metacog_stability = float(d.get("value", 0.5))
+
+        # High conflict or low stability increases arousal and attention gain
+        targets["arousal"] = clamp01(targets["arousal"] + (metacog_conflict * 0.25))
+        targets["attention_gain"] = clamp01(targets["attention_gain"] + (metacog_conflict * 0.35))
+        
+        # Stability is directly modulated by metacognitive stability
+        targets["stability"] = (targets["stability"] * 0.6) + (metacog_stability * 0.4)
+        
+        # New: Cognitive Effort
+        targets["effort"] = clamp01((metacog_conflict * 0.6) + ((1.0 - metacog_stability) * 0.4))
         if scramble:
             targets["exploration_rate"], targets["learning_rate"] = (
                 targets["learning_rate"],

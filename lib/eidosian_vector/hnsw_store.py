@@ -245,7 +245,13 @@ class HNSWVectorStore:
             return []
         query_vec = np.array([dense], dtype=np.float32)
         k = min(max(1, int(overfetch or max(limit * 8, 32))), self._active_count())
-        labels, distances = self._index.knn_query(query_vec, k=k)
+        try:
+            labels, distances = self._index.knn_query(query_vec, k=k)
+        except RuntimeError as e:
+            # HNSWlib can fail with "contiguous 2D array" error if index is tiny/unstable
+            if "contiguous 2D array" in str(e):
+                return []
+            raise
         label_ids = [int(label) for label in labels[0] if int(label) >= 0]
         if not label_ids:
             return []
