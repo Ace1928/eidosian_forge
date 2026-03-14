@@ -2,7 +2,7 @@
 
 <!-- EIDOS:DOCSYS:START -->
 - Contract: `eidos.directory_doc.v1`
-- Generated: `2026-03-13T00:19:21Z`
+- Generated: `2026-03-13T00:49:19Z`
 - Path: `agent_forge/src/agent_forge/consciousness/metrics`
 
 ## What It Is
@@ -15,9 +15,9 @@ This directory exists to hold the `forge` surface for `agent_forge` and keep tha
 
 ## How It Works
 
-- Tracked files in scope: `9`
+- Tracked files in scope: `10`
 - Child directories: `0`
-- Tests detected: `False`
+- Tests detected: `True`
 - Python modules: `agency, coherence, connectivity, directionality, entropy, ignition_trace, rci, self_stability`
 
 ## Contents
@@ -26,6 +26,7 @@ This directory exists to hold the `forge` surface for `agent_forge` and keep tha
 
 ## Prominent Files
 
+- [`README.md`](./README.md)
 - [`__init__.py`](./__init__.py)
 - [`agency.py`](./agency.py)
 - [`coherence.py`](./coherence.py)
@@ -33,19 +34,28 @@ This directory exists to hold the `forge` surface for `agent_forge` and keep tha
 - [`directionality.py`](./directionality.py)
 - [`entropy.py`](./entropy.py)
 - [`ignition_trace.py`](./ignition_trace.py)
-- [`rci.py`](./rci.py)
+
+## Validating Tests
+
+- [`agent_forge/tests/test_agent.py`](../../../../tests/test_agent.py)
+- [`agent_forge/tests/test_consciousness_ignition_trace.py`](../../../../tests/test_consciousness_ignition_trace.py)
+- [`agent_forge/tests/test_consciousness_metrics_v2.py`](../../../../tests/test_consciousness_metrics_v2.py)
+- [`agent_forge/tests/test_consciousness_ablations.py`](../../../../tests/test_consciousness_ablations.py)
+- [`agent_forge/tests/test_consciousness_attention_competition_learning.py`](../../../../tests/test_consciousness_attention_competition_learning.py)
+- [`agent_forge/tests/test_consciousness_autotune.py`](../../../../tests/test_consciousness_autotune.py)
 
 ## Strengths
 
+- A directly associated test surface is present in or below this directory.
+- Likely validating test files were matched from the surrounding forge test surface.
 - The directory exposes importable Python modules rather than only opaque assets.
 
 ## Weaknesses / Risks
 
-- No directly associated test coverage was detected under the tracked file set for this directory.
+- No structural documentation risks were detected automatically; functional review is still required for behavior-level claims.
 
 ## Next Steps
 
-- Add focused tests or point this directory explicitly at its validating test surface.
 - Keep this README synchronized with code and test changes through the managed documentation toolchain.
 
 ## References

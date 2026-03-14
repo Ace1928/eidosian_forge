@@ -222,6 +222,8 @@ def _ownership_index(events: Sequence[Mapping[str, Any]]) -> tuple[float, dict[s
     agency_vals: list[tuple[datetime, float]] = []
     boundary_vals: list[float] = []
     perturb_ts: list[datetime] = []
+    motor_intents = 0
+    motor_executions = 0
 
     for evt in events:
         etype = str(evt.get("type") or "")
@@ -234,6 +236,12 @@ def _ownership_index(events: Sequence[Mapping[str, Any]]) -> tuple[float, dict[s
             agency_vals.append((ts, clamp01(data.get("agency_confidence"), default=0.0)))
         elif etype == "self.boundary_estimate":
             boundary_vals.append(clamp01(data.get("boundary_stability"), default=0.0))
+        elif etype == "motor.execution":
+            motor_executions += 1
+        elif etype == "workspace.broadcast":
+            payload = data.get("payload") if isinstance(data.get("payload"), Mapping) else {}
+            if payload.get("kind") == "MOTOR_INTENT":
+                motor_intents += 1
         elif etype == "metrics.sample":
             key = str(data.get("key") or "")
             value = clamp01(data.get("value"), default=0.0)
@@ -249,6 +257,9 @@ def _ownership_index(events: Sequence[Mapping[str, Any]]) -> tuple[float, dict[s
     agency_mean = _mean(agency_only)
     boundary_mean = _mean(boundary_vals)
 
+    # Motor-based agency boost: Active initiative increases sense of ownership
+    motor_boost = clamp01((motor_intents + motor_executions) / 10.0, default=0.0)
+    
     responses: list[float] = []
     if perturb_ts and agency_vals:
         for ts in perturb_ts:
@@ -260,7 +271,7 @@ def _ownership_index(events: Sequence[Mapping[str, Any]]) -> tuple[float, dict[s
     response_score = _mean(responses) if perturb_ts else 0.5
 
     ownership = clamp01(
-        (0.50 * agency_mean) + (0.30 * boundary_mean) + (0.20 * response_score),
+        (0.40 * agency_mean) + (0.30 * boundary_mean) + (0.20 * response_score) + (0.10 * motor_boost),
         default=0.0,
     )
     return (
@@ -271,6 +282,9 @@ def _ownership_index(events: Sequence[Mapping[str, Any]]) -> tuple[float, dict[s
             "perturb_count": len(perturb_ts),
             "perturb_response_score": round(response_score, 6),
             "perturb_response_samples": len(responses),
+            "motor_intents": motor_intents,
+            "motor_executions": motor_executions,
+            "motor_boost": round(motor_boost, 6)
         },
     )
 

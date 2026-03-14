@@ -26,6 +26,7 @@ Usage:
 
 import json
 import os
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -158,6 +159,9 @@ DEFAULT_LOCAL_MODEL_PATH = os.environ.get(
             FORGE_ROOT / "models" / "Qwen3.5-2B-Instruct-Q4_K_M.gguf",
             FORGE_ROOT / "models" / "Qwen3.5-2B-Instruct-Q8_0.gguf",
             FORGE_ROOT / "models" / "Qwen3.5-2B-Instruct-Q8_0.gguf",
+            FORGE_ROOT / "models" / "Qwen2.5-1.5B-Instruct-Q8_0.gguf",
+            FORGE_ROOT / "models" / "Qwen2.5-3B-Instruct-Q6_K.gguf",
+            FORGE_ROOT / "models" / "Qwen2.5-Coder-3B-Instruct-Q6_K.gguf",
             FORGE_ROOT / "doc_forge" / "models" / "qwen3.5-2b-instruct-q5_k_m.gguf",
         ]
     ),
@@ -180,6 +184,19 @@ DEFAULT_LLAMA_BENCH_PATH = os.environ.get(
         ]
     ),
 )
+DEFAULT_LLAMA_SERVER_PATH = os.environ.get(
+    "EIDOS_LLAMA_CPP_SERVER_PATH",
+    _resolve_existing_path(
+        [
+            FORGE_ROOT / "llama.cpp" / "build" / "bin" / "llama-server",
+            FORGE_ROOT / "llm_forge" / "bin" / "llama-server",
+        ]
+    ),
+)
+DEFAULT_LLAMA_SERVER_BASE_URL = os.environ.get(
+    "EIDOS_LLAMA_CPP_BASE_URL",
+    get_service_url("llama_cpp_qwen_http", default_port=8942, default_host="127.0.0.1", default_path=""),
+).rstrip("/")
 
 
 @dataclass
@@ -227,6 +244,8 @@ class LocalInferenceConfig:
     model_path: str = DEFAULT_LOCAL_MODEL_PATH
     llama_cli_path: str = DEFAULT_LLAMA_CLI_PATH
     llama_bench_path: str = DEFAULT_LLAMA_BENCH_PATH
+    llama_server_path: str = DEFAULT_LLAMA_SERVER_PATH
+    llama_server_base_url: str = DEFAULT_LLAMA_SERVER_BASE_URL
     prefer_llama_cpp: bool = True
 
 
@@ -305,6 +324,10 @@ class ModelConfig:
                 model_path=data.get("local_inference", {}).get("model_path", DEFAULT_LOCAL_MODEL_PATH),
                 llama_cli_path=data.get("local_inference", {}).get("llama_cli_path", DEFAULT_LLAMA_CLI_PATH),
                 llama_bench_path=data.get("local_inference", {}).get("llama_bench_path", DEFAULT_LLAMA_BENCH_PATH),
+                llama_server_path=data.get("local_inference", {}).get("llama_server_path", DEFAULT_LLAMA_SERVER_PATH),
+                llama_server_base_url=data.get("local_inference", {}).get(
+                    "llama_server_base_url", DEFAULT_LLAMA_SERVER_BASE_URL
+                ),
                 prefer_llama_cpp=bool(data.get("local_inference", {}).get("prefer_llama_cpp", True)),
             )
         else:
@@ -413,10 +436,8 @@ class ModelConfig:
             data["system"] = system
 
         current_timeout = self.ollama.timeout if timeout is None else timeout
-        with httpx.Client(timeout=current_timeout) as client:
-            resp = client.post(url, json=data)
-            resp.raise_for_status()
-            return normalize_generate_payload(resp.json())["response"]
+        resp = self._post_json_with_retry(url, data, timeout=float(current_timeout))
+        return normalize_generate_payload(resp)["response"]
 
     @eidosian()
     def generate_payload(
@@ -455,10 +476,8 @@ class ModelConfig:
             data["system"] = system
 
         current_timeout = self.ollama.timeout if timeout is None else timeout
-        with httpx.Client(timeout=current_timeout) as client:
-            resp = client.post(url, json=data)
-            resp.raise_for_status()
-            return normalize_generate_payload(resp.json())
+        resp = self._post_json_with_retry(url, data, timeout=float(current_timeout))
+        return normalize_generate_payload(resp)
 
     @eidosian()
     def chat(
@@ -492,10 +511,8 @@ class ModelConfig:
         data.pop("thinking_mode", None)
 
         current_timeout = self.ollama.timeout if timeout is None else timeout
-        with httpx.Client(timeout=current_timeout) as client:
-            resp = client.post(url, json=data)
-            resp.raise_for_status()
-            return normalize_chat_payload(resp.json())["message"]["content"]
+        resp = self._post_json_with_retry(url, data, timeout=float(current_timeout))
+        return normalize_chat_payload(resp)["message"]["content"]
 
     @eidosian()
     def chat_payload(
@@ -517,10 +534,48 @@ class ModelConfig:
         data.pop("thinking_mode", None)
 
         current_timeout = self.ollama.timeout if timeout is None else timeout
-        with httpx.Client(timeout=current_timeout) as client:
-            resp = client.post(url, json=data)
-            resp.raise_for_status()
-            return normalize_chat_payload(resp.json())
+        resp = self._post_json_with_retry(url, data, timeout=float(current_timeout))
+        return normalize_chat_payload(resp)
+
+    def _post_json_with_retry(
+        self,
+        url: str,
+        data: Dict[str, Any],
+        *,
+        timeout: float,
+        attempts: int = 3,
+    ) -> Dict[str, Any]:
+        last_error: Exception | None = None
+        transient_errors = (
+            httpx.RemoteProtocolError,
+            httpx.ConnectError,
+            httpx.ReadTimeout,
+            httpx.WriteError,
+            httpx.ReadError,
+        )
+        retriable_statuses = {500, 502, 503, 504}
+        for attempt in range(1, max(1, attempts) + 1):
+            try:
+                with httpx.Client(timeout=timeout) as client:
+                    resp = client.post(url, json=data)
+                    if resp.status_code in retriable_statuses and attempt < attempts:
+                        time.sleep(min(2.0 * attempt, 5.0))
+                        continue
+                    resp.raise_for_status()
+                    return resp.json()
+            except transient_errors as exc:
+                last_error = exc
+                if attempt >= attempts:
+                    break
+                time.sleep(min(2.0 * attempt, 5.0))
+            except httpx.HTTPStatusError as exc:
+                last_error = exc
+                if exc.response.status_code not in retriable_statuses or attempt >= attempts:
+                    break
+                time.sleep(min(2.0 * attempt, 5.0))
+        if last_error is not None:
+            raise last_error
+        raise RuntimeError(f"Failed POST request to {url}")
 
     @eidosian()
     def is_ollama_running(self) -> bool:
@@ -573,6 +628,8 @@ class ModelConfig:
                 "model_path": self.local_inference.model_path,
                 "llama_cli_path": self.local_inference.llama_cli_path,
                 "llama_bench_path": self.local_inference.llama_bench_path,
+                "llama_server_path": self.local_inference.llama_server_path,
+                "llama_server_base_url": self.local_inference.llama_server_base_url,
                 "prefer_llama_cpp": self.local_inference.prefer_llama_cpp,
             },
         }

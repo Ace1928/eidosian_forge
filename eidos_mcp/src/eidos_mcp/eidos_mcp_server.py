@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, Optional, Sequence
 from urllib.parse import urlparse
 
+from .forge_manager import manager
 from .logging_utils import log_debug, log_error, log_startup, setup_logging
 
 setup_logging()
@@ -22,7 +23,7 @@ from . import routers as _routers  # noqa: F401
 from . import state as _forge_state
 from .config.runtime import RuntimeConfig, load_runtime_config
 from .core import list_tool_metadata, mcp, resource
-from .plugins import init_plugins, list_plugins, list_tools
+from .plugins import list_plugins, list_tools
 from .state import FORGE_DIR, ROOT_DIR
 
 # Backwards-compatible module-level exports expected by test and tooling.
@@ -39,82 +40,8 @@ except Exception:  # pragma: no cover - optional dependency
     google_requests = None
 
 
-def _ensure_router_tools() -> None:
-    if list_tool_metadata():
-        return
-    router_modules = [
-        "eidos_mcp.routers.audit",
-        "eidos_mcp.routers.auth",
-        "eidos_mcp.routers.consciousness",
-        "eidos_mcp.routers.diagnostics",
-        "eidos_mcp.routers.erais",
-        "eidos_mcp.routers.gis",
-        "eidos_mcp.routers.llm",
-        "eidos_mcp.routers.knowledge",
-        "eidos_mcp.routers.learner",
-        "eidos_mcp.routers.memory",
-        "eidos_mcp.routers.moltbook",
-        "eidos_mcp.routers.nexus",
-        "eidos_mcp.routers.prompt",
-        "eidos_mcp.routers.refactor",
-        "eidos_mcp.routers.sms",
-        "eidos_mcp.routers.system",
-        "eidos_mcp.routers.tika",
-        "eidos_mcp.routers.tiered_memory",
-        "eidos_mcp.routers.types",
-        "eidos_mcp.routers.word_forge",
-        "eidos_mcp.routers.plugins",  # Plugin management router
-    ]
-    for module_name in router_modules:
-        try:
-            if module_name in sys.modules:
-                importlib.reload(sys.modules[module_name])
-            else:
-                importlib.import_module(module_name)
-        except ImportError as e:
-            log_debug(f"Warning: Failed to load router {module_name}: {e}")
-            log_error(f"load_router:{module_name}", str(e))
-        except Exception as e:
-            log_debug(f"Error: Unexpected error loading router {module_name}: {e}")
-            log_error(f"load_router:{module_name}", str(e))
-
-
-def _sync_agent_tools() -> None:
-    """Register all MCP tools into AgentForge so the agent can use them."""
-    if not agent:
-        log_debug("Warning: AgentForge instance is None, cannot sync tools.")
-        return
-
-    tools = list_tool_metadata()
-    log_debug(f"Found {len(tools)} tools in registry.")
-
-    count = 0
-    for t in tools:
-        if t.get("func"):
-            agent.register_tool(t["name"], t["func"], t["description"])
-            count += 1
-        else:
-            log_debug(f"Tool {t['name']} has no func!")
-
-    if count > 0:
-        log_debug(f"Synced {count} tools to AgentForge.")
-
-
-def _load_plugins() -> None:
-    """Load all plugins from plugin directories."""
-    try:
-        loaded = init_plugins(mcp)
-        plugin_count = len(loaded)
-        tool_count = len(list_tools())
-        log_debug(f"Loaded {plugin_count} plugins with {tool_count} tools")
-    except Exception as e:
-        log_debug(f"Warning: Plugin loading failed: {e}")
-        log_error("load_plugins", str(e))
-
-
-_ensure_router_tools()
-_sync_agent_tools()
-_load_plugins()
+# Initialize all forge components (routers, tools, plugins)
+manager.initialize_all()
 
 
 _PERSONA_HEADER = "EIDOSIAN SYSTEM CONTEXT"

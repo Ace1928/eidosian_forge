@@ -11,7 +11,7 @@ import logging
 import os
 from collections import Counter
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
@@ -97,8 +97,8 @@ class MemoryIntrospector:
         tag_counter: Counter = Counter()
         total_importance = 0.0
         total_access = 0
-        oldest = datetime.max
-        newest = datetime.min
+        oldest = datetime.max.replace(tzinfo=timezone.utc)
+        newest = datetime.min.replace(tzinfo=timezone.utc)
 
         for mem in all_memories:
             # Tier

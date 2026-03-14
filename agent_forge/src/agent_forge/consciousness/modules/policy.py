@@ -50,11 +50,53 @@ class PolicyModule:
                 return winner
         return None
 
+    def _check_initiative(self, ctx: TickContext) -> Optional[Dict[str, Any]]:
+        """Determine if autonomous initiative should be triggered based on affect."""
+        affect = ctx.module_state("affect", defaults={"modulators": {}})
+        modulators = affect.get("modulators", {})
+        
+        exploration_rate = float(modulators.get("exploration_rate", 0.35))
+        curiosity = float(modulators.get("curiosity", 0.4))
+        arousal = float(modulators.get("arousal", 0.4))
+        
+        # Trigger spontaneous exploration if curiosity and exploration_rate are high enough
+        if exploration_rate > 0.6 and curiosity > 0.5:
+            return {
+                "candidate_id": f"spontaneous_explore_{uuid.uuid4().hex[:8]}",
+                "source_event_type": "internal.initiative",
+                "source_module": "policy",
+                "score": exploration_rate,
+                "salience": 0.85,
+                "confidence": curiosity,
+                "action_kind": "explore_ecosystem"
+            }
+        
+        # Trigger optimization drive if arousal is high but valence is low (frustration/drive)
+        valence = float(modulators.get("valence", 0.5))
+        if arousal > 0.7 and valence < 0.4:
+            return {
+                "candidate_id": f"spontaneous_optimize_{uuid.uuid4().hex[:8]}",
+                "source_event_type": "internal.initiative",
+                "source_module": "policy",
+                "score": arousal,
+                "salience": 0.9,
+                "confidence": 0.8,
+                "action_kind": "optimize_self"
+            }
+            
+        return None
+
     def tick(self, ctx: TickContext) -> None:
         max_actions = int(ctx.config.get("policy_max_actions_per_tick", 1))
         emit_broadcast = bool(ctx.config.get("policy_emit_broadcast", True))
 
+        # 1. Look for a workspace winner (Reactive)
         winner = self._latest_winner(ctx)
+        
+        # 2. If no external winner, check for internal initiative (Proactive)
+        if not winner:
+            winner = self._check_initiative(ctx)
+            
         if not winner:
             return
 
@@ -63,7 +105,10 @@ class PolicyModule:
             action_count += 1
             action_id = uuid.uuid4().hex
             source_event_type = str(winner.get("source_event_type") or "")
-            action_kind = _select_action_kind(source_event_type)
+            
+            # Use the explicit action_kind from initiative, or select based on source
+            action_kind = winner.get("action_kind") or _select_action_kind(source_event_type)
+            
             confidence = float(winner.get("confidence") or 0.5)
             salience = float(winner.get("salience") or 0.5)
 
