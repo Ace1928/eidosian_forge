@@ -34,8 +34,7 @@ class MotorModule:
             # 2. Translate the plan into an execution intent
             action_kind = plan.get("action_kind")
             action_id = plan.get("action_id")
-
-            # 3. Autonomous Execution: If it's a systemic optimization, propose it formally
+            # 3. Autonomous Execution: Handle specific autonomous actions
             if action_kind == "optimize_self" and _gk is not None:
                 proposal_id = _gk.propose_change(
                     target_path="agent_forge/src/agent_forge/consciousness/config.json",  # Heuristic target
@@ -44,6 +43,10 @@ class MotorModule:
                     rationale="Spontaneous autonomous optimization triggered by high arousal and drive.",
                 )
                 action_kind = f"optimize_self_proposed_{proposal_id}"
+            elif action_kind == "consolidate_memory":
+                # DMN triggered memory consolidation (Hippocampal Replay)
+                # In a live system, this sends an event for the memory daemon to pick up.
+                action_kind = "consolidate_memory_initiated"
 
             # 4. Emit a 'motor.execution' event to signal intent to the system
             ctx.emit_event(
@@ -88,6 +91,6 @@ class MotorModule:
             if evt.get("type") == "workspace.broadcast":
                 data = evt.get("data", {})
                 payload = data.get("payload", {})
-                if payload.get("kind") == "PLAN" and payload.get("source_module") == "policy":
+                if payload.get("kind") == "PLAN" and payload.get("source_module") in ("policy", "default_mode"):
                     plans.append(payload.get("content", {}))
         return plans
