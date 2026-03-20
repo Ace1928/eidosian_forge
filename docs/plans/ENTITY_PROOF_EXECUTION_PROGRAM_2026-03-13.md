@@ -72,6 +72,9 @@ The missing layer is a canonical external-proof contract that:
   - `reports/proof_bundle/latest_bundle.txt`
 - [x] Added canonical theory-of-operation document:
   - `docs/THEORY_OF_OPERATION.md`
+- [x] Added explicit identity continuity scorecard generation:
+  - `scripts/identity_continuity_scorecard.py`
+  - `reports/proof/identity_continuity_scorecard_latest.json`
 
 ## Open Work
 
@@ -92,7 +95,7 @@ The missing layer is a canonical external-proof contract that:
 - [x] Add replay/migration scorecards for cross-machine continuity claims.
 - [x] Add a canonical theory-of-operation document and make it part of the proof bundle.
 - [ ] Promote self-modification governance from basic gates to change classes, staged deployment, and rollback-verified approval thresholds.
-- [ ] Add explicit identity continuity scorecards across upgrades, not just raw continuity metrics.
+- [~] Add explicit identity continuity scorecards across upgrades, not just raw continuity metrics.
 - [x] Add benchmark artifact publication for external review bundles.
 
 ## Validation

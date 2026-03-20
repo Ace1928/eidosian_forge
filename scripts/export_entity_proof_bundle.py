@@ -75,6 +75,16 @@ def export_bundle(repo_root: Path, output_root: Path) -> dict[str, Any]:
         "proof/migration_replay_scorecard_latest.md",
         "migration_markdown",
     )
+    include(
+        proof_root / "identity_continuity_scorecard_latest.json",
+        "proof/identity_continuity_scorecard_latest.json",
+        "identity_continuity_json",
+    )
+    include(
+        proof_root / "identity_continuity_scorecard_latest.md",
+        "proof/identity_continuity_scorecard_latest.md",
+        "identity_continuity_markdown",
+    )
     include(docs_root / "THEORY_OF_OPERATION.md", "docs/THEORY_OF_OPERATION.md", "theory_of_operation")
 
     benchmark_rows: list[dict[str, Any]] = []

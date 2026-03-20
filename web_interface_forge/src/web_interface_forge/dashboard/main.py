@@ -49,6 +49,7 @@ SESSION_BRIDGE_DIR = RUNTIME_DIR / "session_bridge"
 SESSION_BRIDGE_CONTEXT = SESSION_BRIDGE_DIR / "latest_context.json"
 SESSION_BRIDGE_IMPORT_STATUS = SESSION_BRIDGE_DIR / "import_status.json"
 PROOF_REPORT_DIR = FORGE_ROOT / "reports" / "proof"
+PROOF_BUNDLE_DIR = FORGE_ROOT / "reports" / "proof_bundle"
 SERVICES_SCRIPT = FORGE_ROOT / "scripts" / "eidos_termux_services.sh"
 SERVICE_ACTION_LOG = RUNTIME_DIR / "atlas_service_actions.log"
 SCHEDULER_CONTROL_SCRIPT = FORGE_ROOT / "scripts" / "eidos_scheduler_control.py"
@@ -296,6 +297,22 @@ def get_runtime_history(limit: int = 24) -> List[Dict[str, Any]]:
 
 def get_latest_proof_report() -> Dict[str, Any]:
     latest = PROOF_REPORT_DIR / "entity_proof_scorecard_latest.json"
+    payload = _read_json(latest, {})
+    if not isinstance(payload, dict):
+        return {}
+    return payload
+
+
+def get_latest_proof_bundle_manifest() -> Dict[str, Any]:
+    latest = PROOF_BUNDLE_DIR / "latest_manifest.json"
+    payload = _read_json(latest, {})
+    if not isinstance(payload, dict):
+        return {}
+    return payload
+
+
+def get_latest_identity_continuity_scorecard() -> Dict[str, Any]:
+    latest = PROOF_REPORT_DIR / "identity_continuity_scorecard_latest.json"
     payload = _read_json(latest, {})
     if not isinstance(payload, dict):
         return {}
@@ -765,6 +782,8 @@ async def api_runtime():
     snapshot = get_runtime_snapshot()
     snapshot["history"] = get_runtime_history()
     snapshot["proof"] = get_latest_proof_report()
+    snapshot["proof_bundle"] = get_latest_proof_bundle_manifest()
+    snapshot["identity_continuity"] = get_latest_identity_continuity_scorecard()
     return snapshot
 
 
@@ -774,6 +793,22 @@ async def api_proof_latest():
     if payload:
         return payload
     raise HTTPException(status_code=404, detail="No proof report found")
+
+
+@app.get("/api/proof/bundle/latest")
+async def api_proof_bundle_latest():
+    payload = get_latest_proof_bundle_manifest()
+    if payload:
+        return payload
+    raise HTTPException(status_code=404, detail="No proof bundle manifest found")
+
+
+@app.get("/api/proof/identity/latest")
+async def api_proof_identity_latest():
+    payload = get_latest_identity_continuity_scorecard()
+    if payload:
+        return payload
+    raise HTTPException(status_code=404, detail="No identity continuity scorecard found")
 
 
 @app.get("/api/services")

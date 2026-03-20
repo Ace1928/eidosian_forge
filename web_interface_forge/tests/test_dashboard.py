@@ -135,6 +135,24 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
             "last_sync_at": "2026-03-20T00:00:00+00:00",
         },
     )
+    _write_json(
+        tmp_path / "reports" / "proof_bundle" / "latest_manifest.json",
+        {
+            "contract": "eidos.entity_proof_bundle.v1",
+            "bundle_root": "20260320_033604",
+            "benchmarks": [{"suite": "agencybench"}],
+            "missing": [],
+        },
+    )
+    _write_json(
+        tmp_path / "reports" / "proof" / "identity_continuity_scorecard_latest.json",
+        {
+            "contract": "eidos.identity_continuity_scorecard.v1",
+            "overall_score": 0.93,
+            "status": "green",
+            "session_bridge": {"recent_sessions": 2},
+        },
+    )
     target = tmp_path / "doc_forge" / "src" / "doc_forge" / "scribe"
     target.mkdir(parents=True, exist_ok=True)
     (target / "service.py").write_text(
@@ -167,6 +185,8 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(dashboard, "FORGE_ROOT", tmp_path)
     monkeypatch.setattr(dashboard, "HOME_ROOT", tmp_path)
     monkeypatch.setattr(dashboard, "RUNTIME_DIR", runtime_dir)
+    monkeypatch.setattr(dashboard, "PROOF_REPORT_DIR", tmp_path / "reports" / "proof")
+    monkeypatch.setattr(dashboard, "PROOF_BUNDLE_DIR", tmp_path / "reports" / "proof_bundle")
     monkeypatch.setattr(dashboard, "LOCAL_AGENT_STATUS", runtime_dir / "local_mcp_agent" / "status.json")
     monkeypatch.setattr(dashboard, "LOCAL_AGENT_HISTORY", runtime_dir / "local_mcp_agent" / "history.jsonl")
     monkeypatch.setattr(dashboard, "SCHEDULER_STATUS", runtime_dir / "eidos_scheduler_status.json")
@@ -203,6 +223,8 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         assert runtime_payload["local_agent"]["status"] == "success"
         assert runtime_payload["directory_docs"]["missing_readme_count"] == 2
         assert runtime_payload["session_bridge"]["context"]["session_id"] == "qwenchat:test"
+        assert runtime_payload["proof_bundle"]["bundle_root"] == "20260320_033604"
+        assert runtime_payload["identity_continuity"]["overall_score"] == 0.93
         local_agent_resp = client.get("/api/runtime/local-agent")
         assert local_agent_resp.status_code == 200
         assert local_agent_resp.json()["status"]["profile"] == "observer"
@@ -215,6 +237,12 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         docs_history_resp = client.get("/api/docs/history")
         assert docs_history_resp.status_code == 200
         assert len(docs_history_resp.json()["entries"]) == 2
+        proof_bundle_resp = client.get("/api/proof/bundle/latest")
+        assert proof_bundle_resp.status_code == 200
+        assert proof_bundle_resp.json()["bundle_root"] == "20260320_033604"
+        identity_resp = client.get("/api/proof/identity/latest")
+        assert identity_resp.status_code == 200
+        assert identity_resp.json()["overall_score"] == 0.93
         session_bridge_resp = client.get("/api/session-bridge")
         assert session_bridge_resp.status_code == 200
         assert session_bridge_resp.json()["context"]["session_id"] == "qwenchat:test"
