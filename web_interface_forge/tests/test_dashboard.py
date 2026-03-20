@@ -23,12 +23,27 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
     _write_json(
         runtime / "processor_status.json",
         {
+            "contract": "eidos.doc_processor.status.v1",
             "status": "running",
+            "phase": "processing",
             "processed": 12,
             "remaining": 4,
             "average_quality_score": 0.88,
             "last_approved": "foo/bar.py",
         },
+    )
+    (runtime / "processor_history.jsonl").write_text(
+        json.dumps(
+            {
+                "contract": "eidos.doc_processor.status.v1",
+                "status": "running",
+                "phase": "processing",
+                "processed": 12,
+                "generated_at": "2026-03-20T00:00:00Z",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
     )
     _write_json(
         runtime / "doc_index.json",
@@ -58,6 +73,28 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
             "created_at": "2026-03-07T00:00:00+00:00",
         },
     )
+    _write_json(
+        runtime_dir / "qwenchat" / "status.json",
+        {
+            "contract": "eidos.qwenchat.status.v1",
+            "status": "running",
+            "phase": "interactive",
+            "session_id": "qwenchat:test",
+            "model": "qwen3.5:2b",
+        },
+    )
+    (runtime_dir / "qwenchat" / "history.jsonl").write_text(
+        json.dumps(
+            {
+                "contract": "eidos.qwenchat.status.v1",
+                "status": "running",
+                "phase": "interactive",
+                "session_id": "qwenchat:test",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     (runtime_dir / "local_mcp_agent" / "history.jsonl").write_text(
         json.dumps(
             {
@@ -71,11 +108,46 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         encoding="utf-8",
     )
     _write_json(
+        runtime_dir / "living_pipeline_status.json",
+        {
+            "contract": "eidos.living_pipeline.status.v1",
+            "status": "running",
+            "phase": "graphrag",
+            "run_id": "20260320_010203",
+            "records_total": 42,
+        },
+    )
+    (runtime_dir / "living_pipeline_history.jsonl").write_text(
+        json.dumps(
+            {
+                "contract": "eidos.living_pipeline.status.v1",
+                "status": "running",
+                "phase": "graphrag",
+                "run_id": "20260320_010203",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    _write_json(
         runtime_dir / "eidos_scheduler_status.json",
         {
             "state": "sleeping",
             "current_task": "living_pipeline",
+            "phase": "cycle_complete",
         },
+    )
+    (runtime_dir / "eidos_scheduler_history.jsonl").write_text(
+        json.dumps(
+            {
+                "state": "sleeping",
+                "current_task": "living_pipeline",
+                "cycle": 2,
+                "updated_at": "2026-03-20T00:20:00Z",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
     )
     _write_json(
         runtime_dir / "forge_coordinator_status.json",
@@ -134,12 +206,194 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         },
     )
     _write_json(
+        runtime_dir / "external_benchmarks" / "agencybench" / "scenario2" / "20260320_000000" / "status.json",
+        {
+            "contract": "eidos.agencybench_runtime_status.v1",
+            "scenario": "scenario2",
+            "engine": "local_agent",
+            "model": "qwen3.5:2b",
+            "status": "running",
+            "stop_reason": "subtask1_attempt_1",
+            "completed_count": 1,
+            "attempt_count": 1,
+            "generated_at": "2026-03-20T00:10:00Z",
+            "run_root": str(runtime_dir / "external_benchmarks" / "agencybench" / "scenario2" / "20260320_000000"),
+        },
+    )
+    _write_json(
         tmp_path / "reports" / "proof_bundle" / "latest_manifest.json",
         {
             "contract": "eidos.entity_proof_bundle.v1",
             "bundle_root": "20260320_033604",
             "benchmarks": [{"suite": "agencybench"}],
             "missing": [],
+            "session_bridge_summary": {"imported_records": 3},
+        },
+    )
+    _write_json(
+        runtime_dir / "proof_refresh_status.json",
+        {
+            "contract": "eidos.proof_refresh.status.v1",
+            "status": "completed",
+            "window_days": 30,
+            "proof_returncode": 0,
+            "bundle_returncode": 0,
+            "started_at": "2026-03-20T00:30:00Z",
+        },
+    )
+    (runtime_dir / "proof_refresh_history.jsonl").write_text(
+        json.dumps(
+            {
+                "contract": "eidos.proof_refresh.status.v1",
+                "status": "completed",
+                "window_days": 30,
+                "proof_returncode": 0,
+                "finished_at": "2026-03-20T00:31:00Z",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    _write_json(
+        runtime_dir / "runtime_benchmark_run_status.json",
+        {
+            "contract": "eidos.runtime_benchmark_run.status.v1",
+            "status": "completed",
+            "scenario": "scenario2",
+            "engine": "local_agent",
+            "returncode": 0,
+            "finished_at": "2026-03-20T00:40:00Z",
+        },
+    )
+    (runtime_dir / "runtime_benchmark_run_history.jsonl").write_text(
+        json.dumps(
+            {
+                "contract": "eidos.runtime_benchmark_run.status.v1",
+                "status": "completed",
+                "scenario": "scenario2",
+                "engine": "local_agent",
+                "finished_at": "2026-03-20T00:41:00Z",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    _write_json(
+        runtime_dir / "docs_upsert_batch_status.json",
+        {
+            "contract": "eidos.docs_upsert_batch.status.v1",
+            "status": "completed",
+            "limit": 5,
+            "path_prefix": "doc_forge/src/doc_forge",
+            "dry_run": True,
+            "finished_at": "2026-03-20T00:42:00Z",
+        },
+    )
+    (runtime_dir / "docs_upsert_batch_history.jsonl").write_text(
+        json.dumps(
+            {
+                "contract": "eidos.docs_upsert_batch.status.v1",
+                "status": "completed",
+                "limit": 5,
+                "path_prefix": "doc_forge/src/doc_forge",
+                "finished_at": "2026-03-20T00:42:00Z",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    _write_json(
+        runtime_dir / "runtime_artifact_audit_status.json",
+        {
+            "contract": "eidos.runtime_artifact_audit.status.v1",
+            "status": "completed",
+            "tracked_violation_count": 3,
+            "live_generated_count": 9,
+            "latest_report": "reports/runtime_artifact_audit/runtime_artifact_audit_20260320_004500.json",
+            "finished_at": "2026-03-20T00:45:00Z",
+        },
+    )
+    _write_json(
+        runtime_dir / "code_forge_provenance_audit_status.json",
+        {
+            "contract": "eidos.code_forge_provenance_audit.status.v1",
+            "status": "completed",
+            "link_file_count": 0,
+            "registry_file_count": 0,
+            "invalid_file_count": 0,
+            "latest_report": "reports/code_forge_provenance_audit/latest.json",
+            "finished_at": "2026-03-20T00:46:00Z",
+        },
+    )
+    (runtime_dir / "runtime_artifact_audit_history.jsonl").write_text(
+        json.dumps(
+            {
+                "contract": "eidos.runtime_artifact_audit.status.v1",
+                "status": "completed",
+                "tracked_violation_count": 3,
+                "live_generated_count": 9,
+                "finished_at": "2026-03-20T00:45:00Z",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    (runtime_dir / "code_forge_provenance_audit_history.jsonl").write_text(
+        json.dumps(
+            {
+                "contract": "eidos.code_forge_provenance_audit.status.v1",
+                "status": "completed",
+                "link_file_count": 0,
+                "registry_file_count": 0,
+                "finished_at": "2026-03-20T00:46:00Z",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    _write_json(
+        tmp_path / "reports" / "runtime_artifact_audit" / "latest.json",
+        {
+            "repo_root": str(tmp_path),
+            "tracked_violation_count": 3,
+            "live_generated_count": 9,
+        },
+    )
+    _write_json(
+        tmp_path / "reports" / "code_forge_provenance_audit" / "latest.json",
+        {
+            "contract": "eidos.code_forge_provenance_audit.v1",
+            "link_file_count": 0,
+            "registry_file_count": 0,
+            "invalid_file_count": 0,
+        },
+    )
+    (tmp_path / "reports" / "runtime_artifact_audit" / "latest.md").write_text(
+        "# Runtime Artifact Audit\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "reports" / "code_forge_provenance_audit" / "latest.md").write_text(
+        "# Code Forge Provenance Audit\n",
+        encoding="utf-8",
+    )
+    _write_json(
+        tmp_path / "reports" / "proof" / "entity_proof_scorecard_latest.json",
+        {
+            "contract": "eidos.entity_proof_scorecard.v1",
+            "overall": {"score": 0.74, "status": "yellow"},
+            "freshness": {"status": "yellow"},
+            "regression": {"status": "stable"},
+            "categories": [{"category": "external_validity", "status": "yellow", "score": 0.7}],
+        },
+    )
+    _write_json(
+        tmp_path / "reports" / "proof" / "entity_proof_scorecard_20260320_000000.json",
+        {
+            "contract": "eidos.entity_proof_scorecard.v1",
+            "generated_at": "2026-03-20T00:00:00Z",
+            "overall": {"score": 0.71, "status": "yellow"},
+            "freshness": {"status": "yellow"},
+            "regression": {"status": "stable"},
         },
     )
     _write_json(
@@ -148,7 +402,43 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
             "contract": "eidos.identity_continuity_scorecard.v1",
             "overall_score": 0.93,
             "status": "green",
+            "history": {"trend": "improved", "delta_from_previous": 0.05, "sample_count": 3},
             "session_bridge": {"recent_sessions": 2},
+        },
+    )
+    _write_json(
+        tmp_path / "reports" / "proof" / "identity_continuity_scorecard_20260320_010101.json",
+        {
+            "contract": "eidos.identity_continuity_scorecard.v1",
+            "generated_at": "2026-03-20T01:01:01Z",
+            "overall_score": 0.88,
+            "status": "yellow",
+            "session_bridge": {"recent_sessions": 1},
+        },
+    )
+    _write_json(
+        tmp_path / "reports" / "proof" / "identity_continuity_scorecard_20260320_020202.json",
+        {
+            "contract": "eidos.identity_continuity_scorecard.v1",
+            "generated_at": "2026-03-20T02:02:02Z",
+            "overall_score": 0.93,
+            "status": "green",
+            "session_bridge": {"recent_sessions": 2},
+        },
+    )
+    _write_json(
+        tmp_path / "reports" / "security" / "dependabot_open_summary_2026-03-20.json",
+        {
+            "totals": {"alerts": 15, "open": 15, "fixed": 0},
+            "open_by_severity": {"critical": 1, "high": 10, "medium": 3, "low": 1},
+            "top_packages": [["nltk", 3], ["authlib", 3], ["PyJWT", 2]],
+        },
+    )
+    _write_json(
+        tmp_path / "reports" / "security" / "dependabot_remediation_plan_2026-03-20.json",
+        {
+            "repo": "Ace1928/eidosian_forge",
+            "batches": [{"name": "batch-1", "alerts": [232, 235, 243]}],
         },
     )
     target = tmp_path / "doc_forge" / "src" / "doc_forge" / "scribe"
@@ -180,20 +470,43 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(dashboard, "DOC_FINAL", final_docs)
     monkeypatch.setattr(dashboard, "DOC_INDEX", runtime / "doc_index.json")
     monkeypatch.setattr(dashboard, "DOC_STATUS", runtime / "processor_status.json")
+    monkeypatch.setattr(dashboard, "DOC_HISTORY", runtime / "processor_history.jsonl")
     monkeypatch.setattr(dashboard, "FORGE_ROOT", tmp_path)
     monkeypatch.setattr(dashboard, "HOME_ROOT", tmp_path)
     monkeypatch.setattr(dashboard, "RUNTIME_DIR", runtime_dir)
     monkeypatch.setattr(dashboard, "PROOF_REPORT_DIR", tmp_path / "reports" / "proof")
     monkeypatch.setattr(dashboard, "PROOF_BUNDLE_DIR", tmp_path / "reports" / "proof_bundle")
+    monkeypatch.setattr(dashboard, "SECURITY_REPORT_DIR", tmp_path / "reports" / "security")
     monkeypatch.setattr(dashboard, "LOCAL_AGENT_STATUS", runtime_dir / "local_mcp_agent" / "status.json")
     monkeypatch.setattr(dashboard, "LOCAL_AGENT_HISTORY", runtime_dir / "local_mcp_agent" / "history.jsonl")
+    monkeypatch.setattr(dashboard, "QWENCHAT_STATUS", runtime_dir / "qwenchat" / "status.json")
+    monkeypatch.setattr(dashboard, "QWENCHAT_HISTORY", runtime_dir / "qwenchat" / "history.jsonl")
     monkeypatch.setattr(dashboard, "SCHEDULER_STATUS", runtime_dir / "eidos_scheduler_status.json")
+    monkeypatch.setattr(dashboard, "SCHEDULER_HISTORY", runtime_dir / "eidos_scheduler_history.jsonl")
+    monkeypatch.setattr(dashboard, "LIVING_PIPELINE_STATUS", runtime_dir / "living_pipeline_status.json")
+    monkeypatch.setattr(dashboard, "LIVING_PIPELINE_HISTORY", runtime_dir / "living_pipeline_history.jsonl")
     monkeypatch.setattr(dashboard, "COORDINATOR_STATUS", runtime_dir / "forge_coordinator_status.json")
     monkeypatch.setattr(dashboard, "COORDINATOR_HISTORY", runtime_dir / "forge_runtime_trends.json")
     monkeypatch.setattr(dashboard, "DIRECTORY_DOCS_STATUS", runtime_dir / "directory_docs_status.json")
     monkeypatch.setattr(dashboard, "DIRECTORY_DOCS_HISTORY", runtime_dir / "directory_docs_history.json")
+    monkeypatch.setattr(dashboard, "DOCS_BATCH_STATUS", runtime_dir / "docs_upsert_batch_status.json")
+    monkeypatch.setattr(dashboard, "DOCS_BATCH_HISTORY", runtime_dir / "docs_upsert_batch_history.jsonl")
+    monkeypatch.setattr(dashboard, "PROOF_REFRESH_STATUS", runtime_dir / "proof_refresh_status.json")
+    monkeypatch.setattr(dashboard, "PROOF_REFRESH_HISTORY", runtime_dir / "proof_refresh_history.jsonl")
+    monkeypatch.setattr(dashboard, "RUNTIME_BENCHMARK_RUN_STATUS", runtime_dir / "runtime_benchmark_run_status.json")
+    monkeypatch.setattr(dashboard, "RUNTIME_BENCHMARK_RUN_HISTORY", runtime_dir / "runtime_benchmark_run_history.jsonl")
+    monkeypatch.setattr(dashboard, "RUNTIME_ARTIFACT_AUDIT_STATUS", runtime_dir / "runtime_artifact_audit_status.json")
+    monkeypatch.setattr(dashboard, "RUNTIME_ARTIFACT_AUDIT_HISTORY", runtime_dir / "runtime_artifact_audit_history.jsonl")
+    monkeypatch.setattr(dashboard, "CODE_FORGE_PROVENANCE_AUDIT_STATUS", runtime_dir / "code_forge_provenance_audit_status.json")
+    monkeypatch.setattr(dashboard, "CODE_FORGE_PROVENANCE_AUDIT_HISTORY", runtime_dir / "code_forge_provenance_audit_history.jsonl")
+    monkeypatch.setattr(dashboard, "CODE_FORGE_ARCHIVE_PLAN_STATUS", runtime_dir / "code_forge_archive_plan_status.json")
+    monkeypatch.setattr(dashboard, "CODE_FORGE_ARCHIVE_PLAN_HISTORY", runtime_dir / "code_forge_archive_plan_history.jsonl")
+    monkeypatch.setattr(dashboard, "CODE_FORGE_ARCHIVE_LIFECYCLE_STATUS", runtime_dir / "code_forge_archive_lifecycle_status.json")
+    monkeypatch.setattr(dashboard, "CODE_FORGE_ARCHIVE_LIFECYCLE_HISTORY", runtime_dir / "code_forge_archive_lifecycle_history.jsonl")
     monkeypatch.setattr(dashboard, "SESSION_BRIDGE_CONTEXT", runtime_dir / "session_bridge" / "latest_context.json")
     monkeypatch.setattr(dashboard, "SESSION_BRIDGE_IMPORT_STATUS", runtime_dir / "session_bridge" / "import_status.json")
+    monkeypatch.setattr(dashboard, "RUNTIME_ARTIFACT_REPORT_DIR", tmp_path / "reports" / "runtime_artifact_audit")
+    monkeypatch.setattr(dashboard, "CODE_FORGE_PROVENANCE_REPORT_DIR", tmp_path / "reports" / "code_forge_provenance_audit")
     service_script = tmp_path / "eidos_termux_services.sh"
     service_script.write_text(
         "#!/bin/sh\n" "printf 'Atlas: runit run: /tmp/service: (pid 1) 10s; run: log: (pid 2) 10s\\n'\n",
@@ -213,17 +526,101 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         assert "foo/bar.py" in html
         assert "Indexed Docs" in html
         assert "Local Agent" in html
+        assert "Doc Processor" in html
+        assert "Qwenchat" in html
+        assert "Living Pipeline" in html
+        assert "Scheduler History" in html
+        assert "Runtime Services" in html
+        assert "Docs Batch" in html
+        assert "Proof Refresh" in html
+        assert "Benchmark Run" in html
+        assert "Runtime Artifact Audit" in html
+        assert "Code Forge Provenance Audit" in html
+        assert "Docs Batch History" in html
+        assert "Proof Refresh History" in html
+        assert "Benchmark Run History" in html
+        assert "Runtime Artifact Audit History" in html
+        assert "Code Forge Provenance Audit History" in html
+        assert "Doc Processor History" in html
+        assert "Qwenchat History" in html
+        assert "Living Pipeline History" in html
         runtime_resp = client.get("/api/runtime")
         assert runtime_resp.status_code == 200
         runtime_payload = runtime_resp.json()
         assert runtime_payload["local_agent"]["status"] == "success"
+        assert runtime_payload["doc_processor"]["phase"] == "processing"
+        assert runtime_payload["qwenchat"]["phase"] == "interactive"
+        assert runtime_payload["living_pipeline"]["phase"] == "graphrag"
         assert runtime_payload["directory_docs"]["missing_readme_count"] == 2
         assert runtime_payload["session_bridge"]["context"]["session_id"] == "qwenchat:test"
         assert runtime_payload["proof_bundle"]["bundle_root"] == "20260320_033604"
+        assert runtime_payload["proof"]["overall"]["score"] == 0.74
         assert runtime_payload["identity_continuity"]["overall_score"] == 0.93
+        assert runtime_payload["identity_continuity"]["history"]["trend"] == "improved"
+        assert len(runtime_payload["identity_history"]) == 2
+        assert len(runtime_payload["proof_history"]) == 1
+        assert runtime_payload["external_benchmarks"] == []
+        assert runtime_payload["runtime_benchmarks"][0]["scenario"] == "scenario2"
+        assert runtime_payload["proof_refresh"]["status"] == "completed"
+        assert runtime_payload["proof_refresh_history"][0]["status"] == "completed"
+        assert runtime_payload["runtime_benchmark_run"]["status"] == "completed"
+        assert runtime_payload["runtime_benchmark_run_history"][0]["engine"] == "local_agent"
+        assert runtime_payload["docs_batch"]["status"] == "completed"
+        assert runtime_payload["docs_batch_history"][0]["path_prefix"] == "doc_forge/src/doc_forge"
+        assert runtime_payload["runtime_artifact_audit"]["tracked_violation_count"] == 3
+        assert runtime_payload["runtime_artifact_audit_history"][0]["live_generated_count"] == 9
+        assert runtime_payload["security"]["totals"]["open"] == 15
+        assert runtime_payload["security_plan"]["batches"][0]["name"] == "batch-1"
+        runtime_services_resp = client.get("/api/runtime/services")
+        assert runtime_services_resp.status_code == 200
+        services = runtime_services_resp.json()["entries"]
+        assert any(row["service"] == "scheduler" and row["phase"] == "cycle_complete" for row in services)
+        assert any(row["service"] == "doc_processor" and row["phase"] == "processing" for row in services)
+        assert any(row["service"] == "qwenchat" and row["phase"] == "interactive" for row in services)
+        assert any(row["service"] == "living_pipeline" and row["phase"] == "graphrag" for row in services)
+        scheduler_resp = client.get("/api/runtime/scheduler")
+        assert scheduler_resp.status_code == 200
+        assert scheduler_resp.json()["status"]["state"] == "sleeping"
+        assert scheduler_resp.json()["history"][0]["cycle"] == 2
+        proof_refresh_resp = client.get("/api/proof/refresh/status")
+        assert proof_refresh_resp.status_code == 200
+        assert proof_refresh_resp.json()["status"] == "completed"
+        proof_refresh_history_resp = client.get("/api/proof/refresh/history")
+        assert proof_refresh_history_resp.status_code == 200
+        assert proof_refresh_history_resp.json()["entries"][0]["proof_returncode"] == 0
+        benchmark_run_resp = client.get("/api/benchmarks/runtime/run/status")
+        assert benchmark_run_resp.status_code == 200
+        assert benchmark_run_resp.json()["scenario"] == "scenario2"
+        benchmark_run_history_resp = client.get("/api/benchmarks/runtime/run/history")
+        assert benchmark_run_history_resp.status_code == 200
+        assert benchmark_run_history_resp.json()["entries"][0]["engine"] == "local_agent"
+        docs_batch_status_resp = client.get("/api/docs/upsert-batch/status")
+        assert docs_batch_status_resp.status_code == 200
+        assert docs_batch_status_resp.json()["status"] == "completed"
+        docs_batch_history_resp = client.get("/api/docs/upsert-batch/history")
+        assert docs_batch_history_resp.status_code == 200
+        assert docs_batch_history_resp.json()["entries"][0]["limit"] == 5
+        runtime_audit_status_resp = client.get("/api/runtime-artifacts/audit/status")
+        assert runtime_audit_status_resp.status_code == 200
+        assert runtime_audit_status_resp.json()["tracked_violation_count"] == 3
+        runtime_audit_history_resp = client.get("/api/runtime-artifacts/audit/history")
+        assert runtime_audit_history_resp.status_code == 200
+        assert runtime_audit_history_resp.json()["entries"][0]["live_generated_count"] == 9
         local_agent_resp = client.get("/api/runtime/local-agent")
         assert local_agent_resp.status_code == 200
         assert local_agent_resp.json()["status"]["profile"] == "observer"
+        doc_processor_resp = client.get("/api/runtime/doc-processor")
+        assert doc_processor_resp.status_code == 200
+        assert doc_processor_resp.json()["status"]["phase"] == "processing"
+        assert doc_processor_resp.json()["history"][0]["processed"] == 12
+        qwenchat_resp = client.get("/api/runtime/qwenchat")
+        assert qwenchat_resp.status_code == 200
+        assert qwenchat_resp.json()["status"]["session_id"] == "qwenchat:test"
+        assert qwenchat_resp.json()["history"][0]["phase"] == "interactive"
+        living_resp = client.get("/api/runtime/living-pipeline")
+        assert living_resp.status_code == 200
+        assert living_resp.json()["status"]["run_id"] == "20260320_010203"
+        assert living_resp.json()["history"][0]["phase"] == "graphrag"
         docs_resp = client.get("/api/docs/coverage")
         assert docs_resp.status_code == 200
         assert docs_resp.json()["missing_readme_count"] == 2
@@ -236,9 +633,65 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         proof_bundle_resp = client.get("/api/proof/bundle/latest")
         assert proof_bundle_resp.status_code == 200
         assert proof_bundle_resp.json()["bundle_root"] == "20260320_033604"
+        proof_summary_resp = client.get("/api/proof/summary")
+        assert proof_summary_resp.status_code == 200
+        assert proof_summary_resp.json()["proof"]["overall"]["score"] == 0.74
+        monkeypatch.setattr(
+            dashboard,
+            "_run_proof_refresh_job",
+            lambda *, window_days: _write_json(
+                runtime_dir / "proof_refresh_status.json",
+                {"contract": "eidos.proof_refresh.status.v1", "status": "completed", "window_days": window_days},
+            ),
+        )
+        monkeypatch.setattr(
+            dashboard,
+            "_run_runtime_benchmark_job",
+            lambda **kwargs: _write_json(
+                runtime_dir / "runtime_benchmark_run_status.json",
+                {"contract": "eidos.runtime_benchmark_run.status.v1", "status": "completed", **kwargs},
+            ),
+        )
+        monkeypatch.setattr(
+            dashboard,
+            "_run_runtime_artifact_audit_job",
+            lambda **kwargs: _write_json(
+                runtime_dir / "runtime_artifact_audit_status.json",
+                {"contract": "eidos.runtime_artifact_audit.status.v1", "status": "completed", **kwargs},
+            ),
+        )
+        proof_refresh_run = client.post("/api/proof/refresh?background=false&window_days=14")
+        assert proof_refresh_run.status_code == 200
+        assert proof_refresh_run.json()["window_days"] == 14
+        benchmark_run = client.post(
+            "/api/benchmarks/runtime/run?background=false&scenario=scenario2&engine=local_agent&attempts_per_step=1&timeout_sec=900&keep_alive=4h"
+        )
+        assert benchmark_run.status_code == 200
+        assert benchmark_run.json()["scenario"] == "scenario2"
+        runtime_audit_run = client.post("/api/runtime-artifacts/audit?background=false")
+        assert runtime_audit_run.status_code == 200
+        assert runtime_audit_run.json()["status"] == "completed"
+        proof_history_resp = client.get("/api/proof/history")
+        assert proof_history_resp.status_code == 200
+        assert len(proof_history_resp.json()["entries"]) == 1
         identity_resp = client.get("/api/proof/identity/latest")
         assert identity_resp.status_code == 200
         assert identity_resp.json()["overall_score"] == 0.93
+        assert identity_resp.json()["history"]["trend"] == "improved"
+        identity_history_resp = client.get("/api/proof/identity/history")
+        assert identity_history_resp.status_code == 200
+        assert len(identity_history_resp.json()["entries"]) == 2
+        assert identity_history_resp.json()["entries"][-1]["overall_score"] == 0.93
+        external_resp = client.get("/api/proof/external")
+        assert external_resp.status_code == 200
+        assert external_resp.json()["entries"] == []
+        runtime_bench_resp = client.get("/api/benchmarks/runtime")
+        assert runtime_bench_resp.status_code == 200
+        assert runtime_bench_resp.json()["entries"][0]["engine"] == "local_agent"
+        security_resp = client.get("/api/security/dependabot")
+        assert security_resp.status_code == 200
+        assert security_resp.json()["summary"]["totals"]["open"] == 15
+        assert security_resp.json()["plan"]["batches"][0]["alerts"] == [232, 235, 243]
         session_bridge_resp = client.get("/api/session-bridge")
         assert session_bridge_resp.status_code == 200
         assert session_bridge_resp.json()["context"]["session_id"] == "qwenchat:test"
@@ -305,6 +758,24 @@ def test_services_api_parses_status(monkeypatch, tmp_path: Path) -> None:
         assert payload["services"][0]["running"] is True
 
 
+
+
+def test_services_api_parses_paused_status(monkeypatch, tmp_path: Path) -> None:
+    service_script = tmp_path / "eidos_termux_services.sh"
+    service_script.write_text(
+        "#!/bin/sh\n"
+        "printf 'Eidos Scheduler: paused(runit run: /tmp/service: (pid 1) 10s, paused; run: log: (pid 2) 10s)\\n'\n",
+        encoding="utf-8",
+    )
+    service_script.chmod(0o755)
+    monkeypatch.setattr(dashboard, "SERVICES_SCRIPT", service_script)
+    with TestClient(dashboard.app) as client:
+        resp = client.get("/api/services")
+        assert resp.status_code == 200
+        payload = resp.json()
+        assert payload["services"][0]["name"] == "Eidos Scheduler"
+        assert payload["services"][0]["running"] is False
+        assert payload["services"][0]["paused"] is True
 def test_services_api_accepts_targeted_restart(monkeypatch) -> None:
     recorded = {}
 
@@ -321,6 +792,25 @@ def test_services_api_accepts_targeted_restart(monkeypatch) -> None:
         assert payload["queued"] is True
         assert payload["service"] == "atlas"
         assert recorded == {"action": "restart", "service": "atlas"}
+
+
+
+def test_services_api_accepts_targeted_pause(monkeypatch) -> None:
+    recorded = {}
+
+    async def _fake_service_command(action: str, service: str | None = None):
+        recorded["action"] = action
+        recorded["service"] = service
+        return {"action": action, "service": service or "all", "accepted": True, "queued": True, "ok": True}
+
+    monkeypatch.setattr(dashboard, "_service_command", _fake_service_command)
+    with TestClient(dashboard.app) as client:
+        resp = client.post("/api/services/pause", params={"service": "scheduler"})
+        assert resp.status_code == 200
+        payload = resp.json()
+        assert payload["queued"] is True
+        assert payload["service"] == "scheduler"
+        assert recorded == {"action": "pause", "service": "scheduler"}
 
 
 def test_scheduler_api(monkeypatch, tmp_path: Path) -> None:
@@ -417,3 +907,61 @@ def test_consciousness_api_reads_runtime_health(monkeypatch) -> None:
         payload = resp.json()
         assert payload["status"] == "ok"
         assert payload["beat_count"] == 7
+
+
+def test_code_forge_provenance_api_defaults(monkeypatch, tmp_path: Path) -> None:
+    runtime_dir = tmp_path / "data" / "runtime"
+    monkeypatch.setattr(dashboard, "CODE_FORGE_PROVENANCE_AUDIT_STATUS", runtime_dir / "code_forge_provenance_audit_status.json")
+    monkeypatch.setattr(dashboard, "CODE_FORGE_PROVENANCE_AUDIT_HISTORY", runtime_dir / "code_forge_provenance_audit_history.jsonl")
+    with TestClient(dashboard.app) as client:
+        resp = client.get("/api/code-forge/provenance-audit/status")
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "idle"
+        hist = client.get("/api/code-forge/provenance-audit/history")
+        assert hist.status_code == 200
+        assert hist.json()["entries"] == []
+
+
+
+def test_services_api_accepts_low_load(monkeypatch) -> None:
+    recorded = {}
+
+    async def _fake_service_command(action: str, service: str | None = None):
+        recorded["action"] = action
+        recorded["service"] = service
+        return {"action": action, "service": service or "all", "accepted": True, "queued": True, "ok": True}
+
+    monkeypatch.setattr(dashboard, "_service_command", _fake_service_command)
+    with TestClient(dashboard.app) as client:
+        resp = client.post("/api/services/low-load")
+        assert resp.status_code == 200
+        payload = resp.json()
+        assert payload["queued"] is True
+        assert payload["service"] == "all"
+        assert recorded == {"action": "low-load", "service": ""}
+
+
+def test_code_forge_archive_routes(tmp_path: Path, monkeypatch) -> None:
+    runtime_dir = tmp_path / "data" / "runtime"
+    plan_report_dir = tmp_path / "reports" / "code_forge_archive_plan"
+    lifecycle_report_dir = tmp_path / "reports" / "code_forge_archive_lifecycle"
+    monkeypatch.setattr(dashboard, "CODE_FORGE_ARCHIVE_PLAN_STATUS", runtime_dir / "code_forge_archive_plan_status.json")
+    monkeypatch.setattr(dashboard, "CODE_FORGE_ARCHIVE_PLAN_HISTORY", runtime_dir / "code_forge_archive_plan_history.jsonl")
+    monkeypatch.setattr(dashboard, "CODE_FORGE_ARCHIVE_LIFECYCLE_STATUS", runtime_dir / "code_forge_archive_lifecycle_status.json")
+    monkeypatch.setattr(dashboard, "CODE_FORGE_ARCHIVE_LIFECYCLE_HISTORY", runtime_dir / "code_forge_archive_lifecycle_history.jsonl")
+    monkeypatch.setattr(dashboard, "CODE_FORGE_ARCHIVE_PLAN_REPORT_DIR", plan_report_dir)
+    monkeypatch.setattr(dashboard, "CODE_FORGE_ARCHIVE_LIFECYCLE_REPORT_DIR", lifecycle_report_dir)
+    _write_json(runtime_dir / "code_forge_archive_plan_status.json", {"status": "completed", "archive_files_total": 12, "batch_count": 3})
+    (runtime_dir / "code_forge_archive_plan_history.jsonl").write_text(json.dumps({"status": "completed"}) + "\n", encoding="utf-8")
+    _write_json(runtime_dir / "code_forge_archive_lifecycle_status.json", {"status": "completed", "repo_count": 2})
+    (runtime_dir / "code_forge_archive_lifecycle_history.jsonl").write_text(json.dumps({"status": "completed", "phase": "status"}) + "\n", encoding="utf-8")
+    _write_json(plan_report_dir / "latest.json", {"archive_files_total": 12, "batch_count": 3})
+    _write_json(lifecycle_report_dir / "latest.json", {"repo_count": 2, "summary": {"retirement_ready": 1, "retired": 0}})
+
+    with TestClient(dashboard.app) as client:
+        plan = client.get("/api/code-forge/archive-plan")
+        assert plan.status_code == 200
+        assert plan.json()["status"]["status"] == "completed"
+        lifecycle = client.get("/api/code-forge/archive-lifecycle")
+        assert lifecycle.status_code == 200
+        assert lifecycle.json()["report"]["summary"]["retirement_ready"] == 1

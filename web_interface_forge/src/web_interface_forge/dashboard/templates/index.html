@@ -76,6 +76,21 @@
         <div class="stat-label">{{ runtime_snapshot.get('local_agent', {}).get('profile', 'n/a') }}</div>
     </div>
     <div class="card">
+        <h3>Doc Processor</h3>
+        <div class="stat-value">{{ runtime_snapshot.get('doc_processor', {}).get('status', 'unknown')|upper }}</div>
+        <div class="stat-label">{{ runtime_snapshot.get('doc_processor', {}).get('phase', 'idle') }}</div>
+    </div>
+    <div class="card">
+        <h3>Qwenchat</h3>
+        <div class="stat-value">{{ runtime_snapshot.get('qwenchat', {}).get('status', 'unknown')|upper }}</div>
+        <div class="stat-label">{{ runtime_snapshot.get('qwenchat', {}).get('phase', 'idle') }}</div>
+    </div>
+    <div class="card">
+        <h3>Living Pipeline</h3>
+        <div class="stat-value">{{ runtime_snapshot.get('living_pipeline', {}).get('status', 'unknown')|upper }}</div>
+        <div class="stat-label">{{ runtime_snapshot.get('living_pipeline', {}).get('phase', 'idle') }}</div>
+    </div>
+    <div class="card">
         <h3>Consciousness</h3>
         <div class="stat-value" id="cog-unity">1.0</div>
         <div class="stat-label">Unity Index</div>
@@ -115,7 +130,11 @@
             freshness: {{ proof_snapshot.get('freshness', {}).get('status', 'unknown') }}
             · regression: {{ proof_snapshot.get('regression', {}).get('status', 'unknown') }}
         </div>
-        <div class="stat-label"><a href="/api/proof/latest" target="_blank">Latest Proof JSON</a></div>
+        <div class="stat-label">
+            <a href="/api/proof/latest" target="_blank">Latest Proof JSON</a>
+            · <a href="/api/proof/summary" target="_blank">Proof Summary JSON</a>
+            · <a href="/api/proof/history" target="_blank">Proof History JSON</a>
+        </div>
     </div>
     <div class="card">
         <h3>Session Bridge</h3>
@@ -143,7 +162,16 @@
             <span id="identity-sessions">{{ runtime_snapshot.get('identity_continuity', {}).get('session_bridge', {}).get('recent_sessions', 0) }}</span>
         </div>
         <div class="stat-label">
-            <a href="/api/proof/identity/latest" target="_blank">Identity Scorecard JSON</a>
+            trend:
+            <span id="identity-trend">{{ runtime_snapshot.get('identity_continuity', {}).get('history', {}).get('trend', 'n/a') }}</span>
+            · delta:
+            <span id="identity-delta">{{ runtime_snapshot.get('identity_continuity', {}).get('history', {}).get('delta_from_previous', 'n/a') }}</span>
+        </div>
+        <div class="stat-label">
+            history:
+            <span id="identity-history-count">{{ (runtime_snapshot.get('identity_history', []) or [])|length }}</span>
+            · <a href="/api/proof/identity/latest" target="_blank">Identity Scorecard JSON</a>
+            · <a href="/api/proof/identity/history" target="_blank">Identity History JSON</a>
         </div>
     </div>
 </div>
@@ -179,9 +207,356 @@
             <span id="proof-bundle-root">{{ runtime_snapshot.get('proof_bundle', {}).get('bundle_root', 'n/a') }}</span>
         </div>
         <div class="stat-label">
+            proof:
+            <span id="proof-bundle-score">{{ runtime_snapshot.get('proof_bundle', {}).get('proof_summary', {}).get('score', 'n/a') }}</span>
+            · status:
+            <span id="proof-bundle-status">{{ runtime_snapshot.get('proof_bundle', {}).get('proof_summary', {}).get('status', 'n/a') }}</span>
+        </div>
+        <div class="stat-label">
+            identity trend:
+            <span id="proof-bundle-identity-trend">{{ runtime_snapshot.get('proof_bundle', {}).get('identity_summary', {}).get('history', {}).get('trend', 'n/a') }}</span>
+            · delta:
+            <span id="proof-bundle-identity-delta">{{ runtime_snapshot.get('proof_bundle', {}).get('identity_summary', {}).get('history', {}).get('delta_from_previous', 'n/a') }}</span>
+        </div>
+        <div class="stat-label">
             <a href="/api/proof/bundle/latest" target="_blank">Latest Bundle Manifest</a>
             · <a href="/browse/forge/reports/proof_bundle/">Browse Bundles</a>
+            · session imports:
+            <span id="proof-bundle-session-imports">{{ runtime_snapshot.get('proof_bundle', {}).get('session_bridge_summary', {}).get('imported_records', 0) }}</span>
         </div>
+    </div>
+    <div class="card">
+        <h3>Identity History</h3>
+        <table>
+            <thead>
+                <tr><th>Generated</th><th>Status</th><th>Score</th><th>Sessions</th></tr>
+            </thead>
+            <tbody id="identity-history-body">
+                {% for row in runtime_snapshot.get('identity_history', [])[-6:] %}
+                <tr>
+                    <td>{{ row.get('generated_at') }}</td>
+                    <td>{{ row.get('status') }}</td>
+                    <td>{{ row.get('overall_score') }}</td>
+                    <td>{{ row.get('recent_sessions') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="card">
+        <h3>Proof History</h3>
+        <table>
+            <thead>
+                <tr><th>Generated</th><th>Status</th><th>Score</th><th>Freshness</th><th>Regression</th></tr>
+            </thead>
+            <tbody id="proof-history-body">
+                {% for row in runtime_snapshot.get('proof_history', [])[-6:] %}
+                <tr>
+                    <td>{{ row.get('generated_at') }}</td>
+                    <td>{{ row.get('status') }}</td>
+                    <td>{{ row.get('overall_score') }}</td>
+                    <td>{{ row.get('freshness_status') }}</td>
+                    <td>{{ row.get('regression_status') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="card">
+        <h3>External Benchmarks</h3>
+        <table>
+            <thead>
+                <tr><th>Suite</th><th>Mode</th><th>Status</th><th>Score</th></tr>
+            </thead>
+            <tbody id="external-benchmarks-body">
+                {% for row in runtime_snapshot.get('external_benchmarks', [])[:8] %}
+                <tr>
+                    <td>{{ row.get('suite') }}</td>
+                    <td>{{ row.get('execution_mode') }}</td>
+                    <td>{{ row.get('status') }}</td>
+                    <td>{{ row.get('score') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="stat-label">
+            <a href="/api/proof/external" target="_blank">External Benchmark JSON</a>
+        </div>
+    </div>
+    <div class="card">
+        <h3>Runtime Benchmarks</h3>
+        <table>
+            <thead>
+                <tr><th>Scenario</th><th>Engine</th><th>Status</th><th>Done</th><th>Attempts</th></tr>
+            </thead>
+            <tbody id="runtime-benchmarks-body">
+                {% for row in runtime_snapshot.get('runtime_benchmarks', [])[:8] %}
+                <tr>
+                    <td>{{ row.get('scenario') }}</td>
+                    <td>{{ row.get('engine') }}</td>
+                    <td>{{ row.get('status') }}</td>
+                    <td>{{ row.get('completed_count') }}</td>
+                    <td>{{ row.get('attempt_count') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="stat-label">
+            <a href="/api/benchmarks/runtime" target="_blank">Runtime Benchmark JSON</a>
+            · <a href="/browse/forge/data/runtime/external_benchmarks/">Browse Runtime Runs</a>
+        </div>
+    </div>
+    <div class="card">
+        <h3>Docs Batch</h3>
+        <div class="stat-value" id="docs-batch-status">{{ runtime_snapshot.get('docs_batch', {}).get('status', 'idle')|upper }}</div>
+        <div class="stat-label">
+            limit:
+            <span id="docs-batch-limit-view">{{ runtime_snapshot.get('docs_batch', {}).get('limit', '') }}</span>
+            · path:
+            <span id="docs-batch-path">{{ runtime_snapshot.get('docs_batch', {}).get('path_prefix', '') or 'forge' }}</span>
+        </div>
+        <div class="stat-label">
+            dry_run:
+            <span id="docs-batch-dry-run">{{ runtime_snapshot.get('docs_batch', {}).get('dry_run', False) }}</span>
+            · finished:
+            <span id="docs-batch-finished">{{ runtime_snapshot.get('docs_batch', {}).get('finished_at', '')[:19].replace('T', ' ') }}</span>
+        </div>
+        <div class="stat-label">
+            <button onclick="batchDocs(true)">Batch Preview</button>
+            <button onclick="batchDocs(false)">Batch Upsert</button>
+            · <a href="/api/docs/upsert-batch/status" target="_blank">Job JSON</a>
+            · <a href="/api/docs/upsert-batch/history" target="_blank">History JSON</a>
+        </div>
+    </div>
+    <div class="card">
+        <h3>Proof Refresh</h3>
+        <div class="stat-value" id="proof-refresh-status">{{ runtime_snapshot.get('proof_refresh', {}).get('status', 'idle')|upper }}</div>
+        <div class="stat-label">
+            window:
+            <span id="proof-refresh-window">{{ runtime_snapshot.get('proof_refresh', {}).get('window_days', 30) }}</span>
+            · started:
+            <span id="proof-refresh-started">{{ runtime_snapshot.get('proof_refresh', {}).get('started_at', '')[:19].replace('T', ' ') }}</span>
+        </div>
+        <div class="stat-label">
+            proof rc:
+            <span id="proof-refresh-proof-rc">{{ runtime_snapshot.get('proof_refresh', {}).get('proof_returncode', '') }}</span>
+            · bundle rc:
+            <span id="proof-refresh-bundle-rc">{{ runtime_snapshot.get('proof_refresh', {}).get('bundle_returncode', '') }}</span>
+        </div>
+        <div class="stat-label">
+            <button onclick="triggerProofRefresh()">Refresh Proof</button>
+            · <a href="/api/proof/refresh/status" target="_blank">Job JSON</a>
+            · <a href="/api/proof/refresh/history" target="_blank">History JSON</a>
+        </div>
+    </div>
+    <div class="card">
+        <h3>Benchmark Run</h3>
+        <div class="stat-value" id="benchmark-run-status">{{ runtime_snapshot.get('runtime_benchmark_run', {}).get('status', 'idle')|upper }}</div>
+        <div class="stat-label">
+            scenario:
+            <span id="benchmark-run-scenario">{{ runtime_snapshot.get('runtime_benchmark_run', {}).get('scenario', 'scenario2') }}</span>
+            · engine:
+            <span id="benchmark-run-engine">{{ runtime_snapshot.get('runtime_benchmark_run', {}).get('engine', 'local_agent') }}</span>
+        </div>
+        <div class="stat-label">
+            returncode:
+            <span id="benchmark-run-returncode">{{ runtime_snapshot.get('runtime_benchmark_run', {}).get('returncode', '') }}</span>
+            · finished:
+            <span id="benchmark-run-finished">{{ runtime_snapshot.get('runtime_benchmark_run', {}).get('finished_at', '')[:19].replace('T', ' ') }}</span>
+        </div>
+        <div class="stat-label">
+            <button onclick="triggerRuntimeBenchmark('local_agent')">Run Scenario2 Local</button>
+            <button onclick="triggerRuntimeBenchmark('deterministic')">Run Scenario2 Deterministic</button>
+            · <a href="/api/benchmarks/runtime/run/status" target="_blank">Job JSON</a>
+            · <a href="/api/benchmarks/runtime/run/history" target="_blank">History JSON</a>
+        </div>
+    </div>
+    <div class="card">
+        <h3>Runtime Artifact Audit</h3>
+        <div class="stat-value" id="runtime-audit-status">{{ runtime_snapshot.get('runtime_artifact_audit', {}).get('status', 'idle')|upper }}</div>
+        <div class="stat-label">
+            tracked:
+            <span id="runtime-audit-tracked">{{ runtime_snapshot.get('runtime_artifact_audit', {}).get('tracked_violation_count', '') }}</span>
+            · live:
+            <span id="runtime-audit-live">{{ runtime_snapshot.get('runtime_artifact_audit', {}).get('live_generated_count', '') }}</span>
+        </div>
+        <div class="stat-label">
+            report:
+            <span id="runtime-audit-report">{{ runtime_snapshot.get('runtime_artifact_audit', {}).get('latest_report', '') or 'n/a' }}</span>
+        </div>
+        <div class="stat-label">
+            <button onclick="triggerRuntimeArtifactAudit()">Run Audit</button>
+            · <a href="/api/runtime-artifacts/audit/status" target="_blank">Job JSON</a>
+            · <a href="/api/runtime-artifacts/audit/history" target="_blank">History JSON</a>
+            · <a href="/browse/forge/reports/runtime_artifact_audit/" target="_blank">Reports</a>
+        </div>
+    </div>
+    <div class="card">
+        <h3>Code Forge Provenance Audit</h3>
+        <div class="stat-value" id="provenance-audit-status">{{ runtime_snapshot.get('code_forge_provenance_audit', {}).get('status', 'idle')|upper }}</div>
+        <div class="stat-label">
+            links:
+            <span id="provenance-audit-links">{{ runtime_snapshot.get('code_forge_provenance_audit', {}).get('link_file_count', '') }}</span>
+            · registries:
+            <span id="provenance-audit-registries">{{ runtime_snapshot.get('code_forge_provenance_audit', {}).get('registry_file_count', '') }}</span>
+        </div>
+        <div class="stat-label">
+            invalid:
+            <span id="provenance-audit-invalid">{{ runtime_snapshot.get('code_forge_provenance_audit', {}).get('invalid_file_count', '') }}</span>
+            · report:
+            <span id="provenance-audit-report">{{ runtime_snapshot.get('code_forge_provenance_audit', {}).get('latest_report', '') or 'n/a' }}</span>
+        </div>
+        <div class="stat-label">
+            <button onclick="triggerCodeForgeProvenanceAudit()">Run Provenance Audit</button>
+            · <a href="/api/code-forge/provenance-audit/status" target="_blank">Job JSON</a>
+            · <a href="/api/code-forge/provenance-audit/history" target="_blank">History JSON</a>
+            · <a href="/browse/forge/reports/code_forge_provenance_audit/" target="_blank">Reports</a>
+        </div>
+    </div>
+    <div class="card">
+        <h3>Dependabot</h3>
+        <div class="stat-value">{{ runtime_snapshot.get('security', {}).get('totals', {}).get('open', 0) }}</div>
+        <div class="stat-label">
+            critical:
+            {{ runtime_snapshot.get('security', {}).get('open_by_severity', {}).get('critical', 0) }}
+            · high:
+            {{ runtime_snapshot.get('security', {}).get('open_by_severity', {}).get('high', 0) }}
+        </div>
+        <div class="stat-label">
+            summary:
+            {{ runtime_snapshot.get('security', {}).get('_path', 'n/a') }}
+        </div>
+        <div class="stat-label">
+            plan:
+            {{ runtime_snapshot.get('security_plan', {}).get('_path', 'n/a') }}
+        </div>
+        <div class="stat-label">
+            <a href="/api/security/dependabot" target="_blank">Dependabot JSON</a>
+            · <a href="/browse/forge/reports/security/">Browse Security Reports</a>
+        </div>
+        <table>
+            <thead>
+                <tr><th>Package</th><th>Count</th></tr>
+            </thead>
+            <tbody>
+                {% for row in runtime_snapshot.get('security', {}).get('top_packages', [])[:6] %}
+                <tr>
+                    <td>{{ row[0] }}</td>
+                    <td>{{ row[1] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="card">
+        <h3>Docs Batch History</h3>
+        {% if runtime_snapshot.get('docs_batch_history') %}
+        <table>
+            <thead>
+                <tr><th>Status</th><th>Limit</th><th>Path</th><th>Finished</th></tr>
+            </thead>
+            <tbody id="docs-batch-history-body">
+                {% for row in runtime_snapshot.get('docs_batch_history', [])[:6] %}
+                <tr>
+                    <td>{{ row.get('status', 'unknown') }}</td>
+                    <td>{{ row.get('limit', '') }}</td>
+                    <td>{{ row.get('path_prefix', '') or 'forge' }}</td>
+                    <td>{{ row.get('finished_at', '')[:19].replace('T', ' ') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No docs batch history available.</p>
+        {% endif %}
+    </div>
+    <div class="card">
+        <h3>Proof Refresh History</h3>
+        {% if runtime_snapshot.get('proof_refresh_history') %}
+        <table>
+            <thead>
+                <tr><th>Status</th><th>Window</th><th>Proof RC</th><th>Finished</th></tr>
+            </thead>
+            <tbody id="proof-refresh-history-body">
+                {% for row in runtime_snapshot.get('proof_refresh_history', [])[:6] %}
+                <tr>
+                    <td>{{ row.get('status', 'unknown') }}</td>
+                    <td>{{ row.get('window_days', '') }}</td>
+                    <td>{{ row.get('proof_returncode', '') }}</td>
+                    <td>{{ row.get('finished_at', '')[:19].replace('T', ' ') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No proof refresh history available.</p>
+        {% endif %}
+    </div>
+    <div class="card">
+        <h3>Benchmark Run History</h3>
+        {% if runtime_snapshot.get('runtime_benchmark_run_history') %}
+        <table>
+            <thead>
+                <tr><th>Status</th><th>Scenario</th><th>Engine</th><th>Finished</th></tr>
+            </thead>
+            <tbody id="benchmark-run-history-body">
+                {% for row in runtime_snapshot.get('runtime_benchmark_run_history', [])[:6] %}
+                <tr>
+                    <td>{{ row.get('status', 'unknown') }}</td>
+                    <td>{{ row.get('scenario', '') }}</td>
+                    <td>{{ row.get('engine', '') }}</td>
+                    <td>{{ row.get('finished_at', '')[:19].replace('T', ' ') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No benchmark run history available.</p>
+        {% endif %}
+    </div>
+    <div class="card">
+        <h3>Runtime Artifact Audit History</h3>
+        {% if runtime_snapshot.get('runtime_artifact_audit_history') %}
+        <table>
+            <thead>
+                <tr><th>Status</th><th>Tracked</th><th>Live</th><th>Finished</th></tr>
+            </thead>
+            <tbody id="runtime-audit-history-body">
+                {% for row in runtime_snapshot.get('runtime_artifact_audit_history', [])[:6] %}
+                <tr>
+                    <td>{{ row.get('status', 'unknown') }}</td>
+                    <td>{{ row.get('tracked_violation_count', '') }}</td>
+                    <td>{{ row.get('live_generated_count', '') }}</td>
+                    <td>{{ row.get('finished_at', '')[:19].replace('T', ' ') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No runtime artifact audit history available.</p>
+        {% endif %}
+    </div>
+    <div class="card">
+        <h3>Code Forge Provenance Audit History</h3>
+        {% if runtime_snapshot.get('code_forge_provenance_audit_history') %}
+        <table>
+            <thead>
+                <tr><th>Status</th><th>Links</th><th>Registries</th><th>Finished</th></tr>
+            </thead>
+            <tbody id="provenance-audit-history-body">
+                {% for row in runtime_snapshot.get('code_forge_provenance_audit_history', [])[:6] %}
+                <tr>
+                    <td>{{ row.get('status', 'unknown') }}</td>
+                    <td>{{ row.get('link_file_count', '') }}</td>
+                    <td>{{ row.get('registry_file_count', '') }}</td>
+                    <td>{{ row.get('finished_at', '')[:19].replace('T', ' ') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No provenance audit history available.</p>
+        {% endif %}
     </div>
     <div class="card">
         <h3>Supervised Services</h3>
@@ -197,8 +572,12 @@
                 <option value="ollama-embedding">ollama-embedding</option>
             </select>
             <button onclick="serviceAction('start')">Start</button>
+            <button onclick="serviceAction('pause')">Pause</button>
+            <button onclick="serviceAction('resume')">Resume</button>
             <button onclick="serviceAction('restart')">Restart</button>
             <button onclick="serviceAction('stop')">Stop</button>
+            <button onclick="serviceAction('low-load')">Low Load</button>
+            <button onclick="serviceAction('restore-standard')">Restore Standard</button>
             <button onclick="refreshServices()">Refresh</button>
         </div>
         <table>
@@ -248,6 +627,26 @@
             </tbody>
         </table>
     </div>
+    <div class="card">
+        <h3>Archive Forge Lifecycle</h3>
+        <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+            <button onclick="triggerArchivePlan(true)">Refresh Plan</button>
+            <button onclick="triggerArchiveLifecycleStatus(false)">Lifecycle Status</button>
+            <button onclick="triggerArchiveWave('eidos_v1_concept', 5, false)">Wave eidos_v1_concept</button>
+            <button onclick="window.open('/api/code-forge/archive-plan', '_blank')">Plan JSON</button>
+            <button onclick="window.open('/api/code-forge/archive-lifecycle', '_blank')">Lifecycle JSON</button>
+        </div>
+        <table>
+            <tbody>
+                <tr><th>Plan Status</th><td id="archive-plan-status">{{ runtime_snapshot.get('archive_plan', {}).get('status', 'idle') }}</td></tr>
+                <tr><th>Archive Files</th><td id="archive-plan-files">{{ runtime_snapshot.get('archive_plan', {}).get('archive_files_total', runtime_snapshot.get('archive_plan_report', {}).get('archive_files_total', 0)) }}</td></tr>
+                <tr><th>Batches</th><td id="archive-plan-batches">{{ runtime_snapshot.get('archive_plan', {}).get('batch_count', runtime_snapshot.get('archive_plan_report', {}).get('batch_count', 0)) }}</td></tr>
+                <tr><th>Lifecycle Status</th><td id="archive-lifecycle-status">{{ runtime_snapshot.get('archive_lifecycle', {}).get('status', 'idle') }}</td></tr>
+                <tr><th>Repos</th><td id="archive-lifecycle-repos">{{ runtime_snapshot.get('archive_lifecycle_report', {}).get('repo_count', runtime_snapshot.get('archive_lifecycle', {}).get('repo_count', 0)) }}</td></tr>
+                <tr><th>Ready / Retired</th><td id="archive-lifecycle-ready">{{ runtime_snapshot.get('archive_lifecycle_report', {}).get('summary', {}).get('retirement_ready', 0) }} / {{ runtime_snapshot.get('archive_lifecycle_report', {}).get('summary', {}).get('retired', 0) }}</td></tr>
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <div class="card">
@@ -277,7 +676,9 @@
         <button onclick="batchDocs(false)">Batch Upsert</button>
     </div>
     <div class="stat-label" id="docs-batch-status-line" style="margin-bottom:12px;">
-        batch: {{ runtime_snapshot.get('docs_batch', {}).get('state', 'idle') if runtime_snapshot.get('docs_batch') else 'idle' }}
+        batch: {{ runtime_snapshot.get('docs_batch', {}).get('status', 'idle') if runtime_snapshot.get('docs_batch') else 'idle' }}
+        · <a href="/api/docs/upsert-batch/status" target="_blank">status</a>
+        · <a href="/api/docs/upsert-batch/history" target="_blank">history</a>
     </div>
     <pre id="docs-output" style="max-height:320px; overflow:auto; white-space:pre-wrap;">{{ (docs_inventory.get('missing_examples', []) or [])|join('\n') }}</pre>
 </div>
@@ -379,6 +780,23 @@
         </table>
     </div>
     <div class="card">
+        <h3>Runtime Services</h3>
+        <table>
+            <thead>
+                <tr><th>Service</th><th>Status</th><th>Phase</th></tr>
+            </thead>
+            <tbody id="runtime-services-body">
+                {% for row in runtime_services %}
+                <tr>
+                    <td>{{ row.get('service', '') }}</td>
+                    <td>{{ row.get('status', 'unknown') }}</td>
+                    <td>{{ row.get('phase', '') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="card">
         <h3>Local Agent History</h3>
         {% if local_agent_history %}
         <table>
@@ -403,6 +821,114 @@
         </table>
         {% else %}
         <p>No local-agent history available.</p>
+        {% endif %}
+    </div>
+    <div class="card">
+        <h3>Scheduler History</h3>
+        {% if scheduler_history %}
+        <table>
+            <thead>
+                <tr>
+                    <th>State</th>
+                    <th>Task</th>
+                    <th>Cycle</th>
+                    <th>Updated</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in scheduler_history %}
+                <tr>
+                    <td>{{ row.get('state', 'unknown') }}</td>
+                    <td>{{ row.get('current_task', '') }}</td>
+                    <td>{{ row.get('cycle', 0) }}</td>
+                    <td>{{ row.get('updated_at', '')[:19].replace('T', ' ') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No scheduler history available.</p>
+        {% endif %}
+    </div>
+    <div class="card">
+        <h3>Doc Processor History</h3>
+        {% if doc_processor_history %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Status</th>
+                    <th>Phase</th>
+                    <th>Processed</th>
+                    <th>Updated</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in doc_processor_history %}
+                <tr>
+                    <td>{{ row.get('status', 'unknown') }}</td>
+                    <td>{{ row.get('phase', '') }}</td>
+                    <td>{{ row.get('processed', 0) }}</td>
+                    <td>{{ row.get('generated_at', '')[:19].replace('T', ' ') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No doc-processor history available.</p>
+        {% endif %}
+    </div>
+    <div class="card">
+        <h3>Qwenchat History</h3>
+        {% if qwenchat_history %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Status</th>
+                    <th>Phase</th>
+                    <th>Model</th>
+                    <th>Updated</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in qwenchat_history %}
+                <tr>
+                    <td>{{ row.get('status', 'unknown') }}</td>
+                    <td>{{ row.get('phase', '') }}</td>
+                    <td>{{ row.get('model', 'n/a') }}</td>
+                    <td>{{ row.get('generated_at', '')[:19].replace('T', ' ') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No qwenchat history available.</p>
+        {% endif %}
+    </div>
+    <div class="card">
+        <h3>Living Pipeline History</h3>
+        {% if living_pipeline_history %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Status</th>
+                    <th>Phase</th>
+                    <th>Run</th>
+                    <th>Records</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in living_pipeline_history %}
+                <tr>
+                    <td>{{ row.get('status', 'unknown') }}</td>
+                    <td>{{ row.get('phase', '') }}</td>
+                    <td>{{ row.get('run_id', '') }}</td>
+                    <td>{{ row.get('records_total', '') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No living pipeline history available.</p>
         {% endif %}
     </div>
 </div>
@@ -475,6 +1001,24 @@ async function refreshServices() {
     }
 }
 
+async function refreshRuntimeServices() {
+    try {
+        const res = await fetch("/api/runtime/services", {cache: "no-store"});
+        if (!res.ok) return;
+        const payload = await res.json();
+        const body = document.getElementById("runtime-services-body");
+        if (!body) return;
+        body.innerHTML = "";
+        for (const row of (payload.entries || [])) {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `<td>${escapeHtml(row.service || "")}</td><td>${escapeHtml(row.status || "unknown")}</td><td>${escapeHtml(row.phase || "")}</td>`;
+            body.appendChild(tr);
+        }
+    } catch (err) {
+        // ignore transient refresh failures
+    }
+}
+
 async function serviceAction(action) {
     try {
         const params = new URLSearchParams();
@@ -484,6 +1028,67 @@ async function serviceAction(action) {
         await fetch(url, {method: "POST"});
     } finally {
         await refreshServices();
+        await refreshRuntimeServices();
+    }
+}
+
+async function refreshArchiveState() {
+    try {
+        const [planRes, lifecycleRes] = await Promise.all([
+            fetch('/api/code-forge/archive-plan', {cache: 'no-store'}),
+            fetch('/api/code-forge/archive-lifecycle', {cache: 'no-store'}),
+        ]);
+        if (planRes.ok) {
+            const payload = await planRes.json();
+            const status = payload.status || {};
+            const report = payload.report || {};
+            document.getElementById('archive-plan-status').textContent = status.status || 'idle';
+            document.getElementById('archive-plan-files').textContent = status.archive_files_total ?? report.archive_files_total ?? 0;
+            document.getElementById('archive-plan-batches').textContent = status.batch_count ?? report.batch_count ?? 0;
+        }
+        if (lifecycleRes.ok) {
+            const payload = await lifecycleRes.json();
+            const status = payload.status || {};
+            const report = payload.report || {};
+            const summary = report.summary || {};
+            document.getElementById('archive-lifecycle-status').textContent = status.status || 'idle';
+            document.getElementById('archive-lifecycle-repos').textContent = report.repo_count ?? status.repo_count ?? 0;
+            document.getElementById('archive-lifecycle-ready').textContent = `${summary.retirement_ready ?? 0} / ${summary.retired ?? 0}`;
+        }
+    } catch (err) {
+        // ignore transient refresh failures
+    }
+}
+
+async function triggerArchivePlan(refresh) {
+    try {
+        await fetch(`/api/code-forge/archive-plan?background=true&refresh=${refresh ? 'true' : 'false'}`, {method: 'POST'});
+    } finally {
+        await refreshArchiveState();
+        await refreshRuntimeServices();
+    }
+}
+
+async function triggerArchiveLifecycleStatus(refresh) {
+    try {
+        await fetch(`/api/code-forge/archive-lifecycle/status?background=true&refresh=${refresh ? 'true' : 'false'}`, {method: 'POST'});
+    } finally {
+        await refreshArchiveState();
+        await refreshRuntimeServices();
+    }
+}
+
+async function triggerArchiveWave(repoKey, batchLimit, refresh) {
+    try {
+        const params = new URLSearchParams();
+        params.set('background', 'true');
+        params.set('repo_key', repoKey || '');
+        params.set('batch_limit', String(batchLimit || 5));
+        params.set('refresh', refresh ? 'true' : 'false');
+        await fetch(`/api/code-forge/archive-lifecycle/run-wave?${params.toString()}`, {method: 'POST'});
+    } finally {
+        await refreshArchiveState();
+        await refreshRuntimeServices();
     }
 }
 
@@ -626,6 +1231,36 @@ async function refreshDocsBatchStatus() {
         if ((status.state || status.status || "") === "completed") {
             await refreshDocs();
         }
+        const batchStatus = document.getElementById("docs-batch-status");
+        if (batchStatus) batchStatus.textContent = String(status.status || status.state || "idle").toUpperCase();
+        const batchLimit = document.getElementById("docs-batch-limit-view");
+        if (batchLimit) batchLimit.textContent = status.limit ?? "";
+        const batchPath = document.getElementById("docs-batch-path");
+        if (batchPath) batchPath.textContent = status.path_prefix || "forge";
+        const batchDryRun = document.getElementById("docs-batch-dry-run");
+        if (batchDryRun) batchDryRun.textContent = String(Boolean(status.dry_run));
+        const batchFinished = document.getElementById("docs-batch-finished");
+        if (batchFinished) batchFinished.textContent = String(status.finished_at || "").slice(0, 19).replace("T", " ");
+    } catch (err) {
+        // ignore transient refresh failures
+    }
+}
+
+async function refreshDocsBatchHistory() {
+    try {
+        const res = await fetch("/api/docs/upsert-batch/history", {cache: "no-store"});
+        if (!res.ok) return;
+        const payload = await res.json();
+        const body = document.getElementById("docs-batch-history-body");
+        if (!body) return;
+        body.innerHTML = (payload.entries || []).slice(0, 6).map((row) => `
+            <tr>
+                <td>${escapeHtml(row.status || "unknown")}</td>
+                <td>${escapeHtml(row.limit ?? "")}</td>
+                <td>${escapeHtml(row.path_prefix || "forge")}</td>
+                <td>${escapeHtml(String(row.finished_at || "").slice(0, 19).replace("T", " "))}</td>
+            </tr>
+        `).join("");
     } catch (err) {
         // ignore transient refresh failures
     }
@@ -636,12 +1271,12 @@ async function refreshSessionBridge() {
         const res = await fetch("/api/session-bridge", {cache: "no-store"});
         if (!res.ok) return;
         const payload = await res.json();
-        const importStatus = payload.import_status || {};
-        const geminiImported = (importStatus.gemini?.imported_ids || []).length;
-        const codexImported = Object.keys(importStatus.codex?.threads || {}).length;
+        const summary = payload.summary || {};
+        const geminiImported = summary.gemini_records ?? 0;
+        const codexImported = summary.codex_records ?? 0;
         document.getElementById("session-bridge-count").textContent = (payload.recent_sessions || []).length;
         document.getElementById("session-bridge-imported").textContent = geminiImported + codexImported;
-        document.getElementById("session-bridge-sync").textContent = importStatus.last_sync_at || "n/a";
+        document.getElementById("session-bridge-sync").textContent = summary.last_sync_at || "n/a";
         document.getElementById("session-bridge-codex").textContent = codexImported;
         document.getElementById("session-bridge-gemini").textContent = geminiImported;
     } catch (err) {
@@ -657,6 +1292,13 @@ async function refreshProofBundle() {
         document.getElementById("proof-bundle-benchmarks").textContent = (payload.benchmarks || []).length;
         document.getElementById("proof-bundle-missing").textContent = (payload.missing || []).length;
         document.getElementById("proof-bundle-root").textContent = payload.bundle_root || "n/a";
+        document.getElementById("proof-bundle-score").textContent = payload.proof_summary?.score ?? "n/a";
+        document.getElementById("proof-bundle-status").textContent = payload.proof_summary?.status || "n/a";
+        document.getElementById("proof-bundle-identity-trend").textContent = payload.identity_summary?.history?.trend || "n/a";
+        document.getElementById("proof-bundle-identity-delta").textContent =
+            payload.identity_summary?.history?.delta_from_previous ?? "n/a";
+        document.getElementById("proof-bundle-session-imports").textContent =
+            payload.session_bridge_summary?.imported_records ?? 0;
     } catch (err) {
         // ignore transient refresh failures
     }
@@ -671,8 +1313,270 @@ async function refreshIdentityContinuity() {
         document.getElementById("identity-status").textContent = payload.status || "missing";
         document.getElementById("identity-sessions").textContent =
             payload.session_bridge?.recent_sessions ?? 0;
+        document.getElementById("identity-trend").textContent =
+            payload.history?.trend || "n/a";
+        document.getElementById("identity-delta").textContent =
+            payload.history?.delta_from_previous ?? "n/a";
     } catch (err) {
         // ignore transient refresh failures
+    }
+}
+
+async function refreshIdentityHistory() {
+    try {
+        const res = await fetch("/api/proof/identity/history", {cache: "no-store"});
+        if (!res.ok) return;
+        const payload = await res.json();
+        const entries = payload.entries || [];
+        document.getElementById("identity-history-count").textContent = entries.length;
+        const body = document.getElementById("identity-history-body");
+        body.innerHTML = entries.slice(-6).map((row) => `
+            <tr>
+                <td>${row.generated_at || ""}</td>
+                <td>${row.status || ""}</td>
+                <td>${row.overall_score ?? ""}</td>
+                <td>${row.recent_sessions ?? 0}</td>
+            </tr>
+        `).join("");
+    } catch (err) {
+        // ignore transient refresh failures
+    }
+}
+
+async function refreshProofHistory() {
+    try {
+        const res = await fetch("/api/proof/history", {cache: "no-store"});
+        if (!res.ok) return;
+        const payload = await res.json();
+        const entries = payload.entries || [];
+        const body = document.getElementById("proof-history-body");
+        body.innerHTML = entries.slice(-6).map((row) => `
+            <tr>
+                <td>${row.generated_at || ""}</td>
+                <td>${row.status || ""}</td>
+                <td>${row.overall_score ?? ""}</td>
+                <td>${row.freshness_status || ""}</td>
+                <td>${row.regression_status || ""}</td>
+            </tr>
+        `).join("");
+    } catch (err) {
+        // ignore transient refresh failures
+    }
+}
+
+async function refreshExternalBenchmarks() {
+    try {
+        const res = await fetch("/api/proof/external", {cache: "no-store"});
+        if (!res.ok) return;
+        const payload = await res.json();
+        const entries = payload.entries || [];
+        const body = document.getElementById("external-benchmarks-body");
+        body.innerHTML = entries.slice(0, 8).map((row) => `
+            <tr>
+                <td>${row.suite || ""}</td>
+                <td>${row.execution_mode || ""}</td>
+                <td>${row.status || ""}</td>
+                <td>${row.score ?? ""}</td>
+            </tr>
+        `).join("");
+    } catch (err) {
+        // ignore transient refresh failures
+    }
+}
+
+async function refreshRuntimeBenchmarks() {
+    try {
+        const res = await fetch("/api/benchmarks/runtime", {cache: "no-store"});
+        if (!res.ok) return;
+        const payload = await res.json();
+        const entries = payload.entries || [];
+        const body = document.getElementById("runtime-benchmarks-body");
+        body.innerHTML = entries.slice(0, 8).map((row) => `
+            <tr>
+                <td>${row.scenario || ""}</td>
+                <td>${row.engine || ""}</td>
+                <td>${row.status || ""}</td>
+                <td>${row.completed_count ?? 0}</td>
+                <td>${row.attempt_count ?? 0}</td>
+            </tr>
+        `).join("");
+    } catch (err) {
+        // ignore transient refresh failures
+    }
+}
+
+async function refreshProofRefreshStatus() {
+    try {
+        const res = await fetch("/api/proof/refresh/status", {cache: "no-store"});
+        if (!res.ok) return;
+        const payload = await res.json();
+        document.getElementById("proof-refresh-status").textContent = String(payload.status || "idle").toUpperCase();
+        document.getElementById("proof-refresh-window").textContent = payload.window_days ?? 30;
+        document.getElementById("proof-refresh-started").textContent = (payload.started_at || "").slice(0, 19).replace("T", " ");
+        document.getElementById("proof-refresh-proof-rc").textContent = payload.proof_returncode ?? "";
+        document.getElementById("proof-refresh-bundle-rc").textContent = payload.bundle_returncode ?? "";
+    } catch (err) {
+        // ignore transient refresh failures
+    }
+}
+
+async function refreshProofRefreshHistory() {
+    try {
+        const res = await fetch("/api/proof/refresh/history", {cache: "no-store"});
+        if (!res.ok) return;
+        const payload = await res.json();
+        const body = document.getElementById("proof-refresh-history-body");
+        if (!body) return;
+        body.innerHTML = (payload.entries || []).slice(0, 6).map((row) => `
+            <tr>
+                <td>${escapeHtml(row.status || "unknown")}</td>
+                <td>${escapeHtml(row.window_days ?? "")}</td>
+                <td>${escapeHtml(row.proof_returncode ?? "")}</td>
+                <td>${escapeHtml(String(row.finished_at || "").slice(0, 19).replace("T", " "))}</td>
+            </tr>
+        `).join("");
+    } catch (err) {
+        // ignore transient refresh failures
+    }
+}
+
+async function triggerProofRefresh() {
+    try {
+        await fetch("/api/proof/refresh?background=true&window_days=30", {method: "POST"});
+    } finally {
+        await refreshProofRefreshStatus();
+        await refreshProofRefreshHistory();
+    }
+}
+
+async function refreshRuntimeBenchmarkRunStatus() {
+    try {
+        const res = await fetch("/api/benchmarks/runtime/run/status", {cache: "no-store"});
+        if (!res.ok) return;
+        const payload = await res.json();
+        document.getElementById("benchmark-run-status").textContent = String(payload.status || "idle").toUpperCase();
+        document.getElementById("benchmark-run-scenario").textContent = payload.scenario || "scenario2";
+        document.getElementById("benchmark-run-engine").textContent = payload.engine || "local_agent";
+        document.getElementById("benchmark-run-returncode").textContent = payload.returncode ?? "";
+        document.getElementById("benchmark-run-finished").textContent = (payload.finished_at || "").slice(0, 19).replace("T", " ");
+    } catch (err) {
+        // ignore transient refresh failures
+    }
+}
+
+async function refreshRuntimeBenchmarkRunHistory() {
+    try {
+        const res = await fetch("/api/benchmarks/runtime/run/history", {cache: "no-store"});
+        if (!res.ok) return;
+        const payload = await res.json();
+        const body = document.getElementById("benchmark-run-history-body");
+        if (!body) return;
+        body.innerHTML = (payload.entries || []).slice(0, 6).map((row) => `
+            <tr>
+                <td>${escapeHtml(row.status || "unknown")}</td>
+                <td>${escapeHtml(row.scenario || "")}</td>
+                <td>${escapeHtml(row.engine || "")}</td>
+                <td>${escapeHtml(String(row.finished_at || "").slice(0, 19).replace("T", " "))}</td>
+            </tr>
+        `).join("");
+    } catch (err) {
+        // ignore transient refresh failures
+    }
+}
+
+async function triggerRuntimeBenchmark(engine) {
+    try {
+        await fetch(`/api/benchmarks/runtime/run?background=true&scenario=scenario2&engine=${encodeURIComponent(engine || "local_agent")}&attempts_per_step=1&timeout_sec=900&keep_alive=4h`, {method: "POST"});
+    } finally {
+        await refreshRuntimeBenchmarkRunStatus();
+        await refreshRuntimeBenchmarkRunHistory();
+    }
+}
+
+async function refreshRuntimeArtifactAuditStatus() {
+    try {
+        const res = await fetch("/api/runtime-artifacts/audit/status", {cache: "no-store"});
+        if (!res.ok) return;
+        const payload = await res.json();
+        document.getElementById("runtime-audit-status").textContent = String(payload.status || "idle").toUpperCase();
+        document.getElementById("runtime-audit-tracked").textContent = payload.tracked_violation_count ?? "";
+        document.getElementById("runtime-audit-live").textContent = payload.live_generated_count ?? "";
+        document.getElementById("runtime-audit-report").textContent = payload.latest_report || "n/a";
+    } catch (err) {
+        // ignore transient refresh failures
+    }
+}
+
+async function refreshRuntimeArtifactAuditHistory() {
+    try {
+        const res = await fetch("/api/runtime-artifacts/audit/history", {cache: "no-store"});
+        if (!res.ok) return;
+        const payload = await res.json();
+        const body = document.getElementById("runtime-audit-history-body");
+        if (!body) return;
+        body.innerHTML = (payload.entries || []).slice(0, 6).map((row) => `
+            <tr>
+                <td>${escapeHtml(row.status || "unknown")}</td>
+                <td>${escapeHtml(row.tracked_violation_count ?? "")}</td>
+                <td>${escapeHtml(row.live_generated_count ?? "")}</td>
+                <td>${escapeHtml(String(row.finished_at || "").slice(0, 19).replace("T", " "))}</td>
+            </tr>
+        `).join("");
+    } catch (err) {
+        // ignore transient refresh failures
+    }
+}
+
+async function triggerRuntimeArtifactAudit() {
+    try {
+        await fetch("/api/runtime-artifacts/audit?background=true", {method: "POST"});
+    } finally {
+        await refreshRuntimeArtifactAuditStatus();
+        await refreshRuntimeArtifactAuditHistory();
+    }
+}
+
+async function refreshCodeForgeProvenanceAuditStatus() {
+    try {
+        const res = await fetch("/api/code-forge/provenance-audit/status", {cache: "no-store"});
+        if (!res.ok) return;
+        const payload = await res.json();
+        document.getElementById("provenance-audit-status").textContent = String(payload.status || "idle").toUpperCase();
+        document.getElementById("provenance-audit-links").textContent = payload.link_file_count ?? "";
+        document.getElementById("provenance-audit-registries").textContent = payload.registry_file_count ?? "";
+        document.getElementById("provenance-audit-invalid").textContent = payload.invalid_file_count ?? "";
+        document.getElementById("provenance-audit-report").textContent = payload.latest_report || "n/a";
+    } catch (err) {
+        // ignore transient refresh failures
+    }
+}
+
+async function refreshCodeForgeProvenanceAuditHistory() {
+    try {
+        const res = await fetch("/api/code-forge/provenance-audit/history", {cache: "no-store"});
+        if (!res.ok) return;
+        const payload = await res.json();
+        const body = document.getElementById("provenance-audit-history-body");
+        if (!body) return;
+        body.innerHTML = (payload.entries || []).slice(0, 6).map((row) => `
+            <tr>
+                <td>${escapeHtml(row.status || "unknown")}</td>
+                <td>${escapeHtml(row.link_file_count ?? "")}</td>
+                <td>${escapeHtml(row.registry_file_count ?? "")}</td>
+                <td>${escapeHtml(String(row.finished_at || "").slice(0, 19).replace("T", " "))}</td>
+            </tr>
+        `).join("");
+    } catch (err) {
+        // ignore transient refresh failures
+    }
+}
+
+async function triggerCodeForgeProvenanceAudit() {
+    try {
+        await fetch("/api/code-forge/provenance-audit?background=true", {method: "POST"});
+    } finally {
+        await refreshCodeForgeProvenanceAuditStatus();
+        await refreshCodeForgeProvenanceAuditHistory();
     }
 }
 
@@ -716,16 +1620,46 @@ setInterval(refreshServices, 8000);
 setInterval(refreshScheduler, 8000);
 setInterval(refreshDocsHistory, 12000);
 setInterval(refreshDocsBatchStatus, 5000);
+setInterval(refreshDocsBatchHistory, 12000);
 setInterval(refreshSessionBridge, 15000);
 setInterval(refreshProofBundle, 15000);
 setInterval(refreshIdentityContinuity, 15000);
+setInterval(refreshIdentityHistory, 15000);
+setInterval(refreshProofHistory, 15000);
+setInterval(refreshExternalBenchmarks, 15000);
+setInterval(refreshRuntimeBenchmarks, 15000);
+setInterval(refreshProofRefreshStatus, 10000);
+setInterval(refreshProofRefreshHistory, 15000);
+setInterval(refreshRuntimeBenchmarkRunStatus, 10000);
+setInterval(refreshRuntimeBenchmarkRunHistory, 15000);
+setInterval(refreshRuntimeArtifactAuditStatus, 10000);
+setInterval(refreshRuntimeArtifactAuditHistory, 15000);
+setInterval(refreshCodeForgeProvenanceAuditStatus, 10000);
+setInterval(refreshCodeForgeProvenanceAuditHistory, 15000);
+setInterval(refreshRuntimeServices, 10000);
+setInterval(refreshArchiveState, 12000);
 refreshScheduler();
 refreshServices();
+refreshRuntimeServices();
+refreshArchiveState();
 refreshDocsTree();
 refreshDocsHistory();
 refreshDocsBatchStatus();
+refreshDocsBatchHistory();
 refreshSessionBridge();
 refreshProofBundle();
 refreshIdentityContinuity();
+refreshIdentityHistory();
+refreshProofHistory();
+refreshExternalBenchmarks();
+refreshRuntimeBenchmarks();
+refreshProofRefreshStatus();
+refreshProofRefreshHistory();
+refreshRuntimeBenchmarkRunStatus();
+refreshRuntimeBenchmarkRunHistory();
+refreshRuntimeArtifactAuditStatus();
+refreshRuntimeArtifactAuditHistory();
+refreshCodeForgeProvenanceAuditStatus();
+refreshCodeForgeProvenanceAuditHistory();
 </script>
 {% endblock %}

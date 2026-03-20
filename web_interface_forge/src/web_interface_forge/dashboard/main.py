@@ -32,11 +32,17 @@ DOC_RUNTIME = FORGE_ROOT / "doc_forge" / "runtime"
 DOC_FINAL = DOC_RUNTIME / "final_docs"
 DOC_INDEX = DOC_RUNTIME / "doc_index.json"
 DOC_STATUS = DOC_RUNTIME / "processor_status.json"
+DOC_HISTORY = DOC_RUNTIME / "processor_history.jsonl"
 RUNTIME_DIR = FORGE_ROOT / "data" / "runtime"
 HOME_ROOT = Path(os.environ.get("HOME", "/data/data/com.termux/files/home")).resolve()
 LOCAL_AGENT_STATUS = RUNTIME_DIR / "local_mcp_agent" / "status.json"
 LOCAL_AGENT_HISTORY = RUNTIME_DIR / "local_mcp_agent" / "history.jsonl"
+QWENCHAT_STATUS = RUNTIME_DIR / "qwenchat" / "status.json"
+QWENCHAT_HISTORY = RUNTIME_DIR / "qwenchat" / "history.jsonl"
 SCHEDULER_STATUS = RUNTIME_DIR / "eidos_scheduler_status.json"
+SCHEDULER_HISTORY = RUNTIME_DIR / "eidos_scheduler_history.jsonl"
+LIVING_PIPELINE_STATUS = RUNTIME_DIR / "living_pipeline_status.json"
+LIVING_PIPELINE_HISTORY = RUNTIME_DIR / "living_pipeline_history.jsonl"
 COORDINATOR_STATUS = RUNTIME_DIR / "forge_coordinator_status.json"
 COORDINATOR_HISTORY = RUNTIME_DIR / "forge_runtime_trends.json"
 BOOT_STATUS = RUNTIME_DIR / "termux_boot_status.json"
@@ -45,11 +51,29 @@ DIRECTORY_DOCS_STATUS = RUNTIME_DIR / "directory_docs_status.json"
 DIRECTORY_DOCS_HISTORY = RUNTIME_DIR / "directory_docs_history.json"
 DIRECTORY_DOCS_TREE = RUNTIME_DIR / "directory_docs_tree.json"
 DOCS_BATCH_STATUS = RUNTIME_DIR / "docs_upsert_batch_status.json"
+DOCS_BATCH_HISTORY = RUNTIME_DIR / "docs_upsert_batch_history.jsonl"
+PROOF_REFRESH_STATUS = RUNTIME_DIR / "proof_refresh_status.json"
+PROOF_REFRESH_HISTORY = RUNTIME_DIR / "proof_refresh_history.jsonl"
+RUNTIME_BENCHMARK_RUN_STATUS = RUNTIME_DIR / "runtime_benchmark_run_status.json"
+RUNTIME_BENCHMARK_RUN_HISTORY = RUNTIME_DIR / "runtime_benchmark_run_history.jsonl"
+RUNTIME_ARTIFACT_AUDIT_STATUS = RUNTIME_DIR / "runtime_artifact_audit_status.json"
+RUNTIME_ARTIFACT_AUDIT_HISTORY = RUNTIME_DIR / "runtime_artifact_audit_history.jsonl"
+CODE_FORGE_PROVENANCE_AUDIT_STATUS = RUNTIME_DIR / "code_forge_provenance_audit_status.json"
+CODE_FORGE_PROVENANCE_AUDIT_HISTORY = RUNTIME_DIR / "code_forge_provenance_audit_history.jsonl"
+CODE_FORGE_ARCHIVE_PLAN_STATUS = RUNTIME_DIR / "code_forge_archive_plan_status.json"
+CODE_FORGE_ARCHIVE_PLAN_HISTORY = RUNTIME_DIR / "code_forge_archive_plan_history.jsonl"
+CODE_FORGE_ARCHIVE_LIFECYCLE_STATUS = RUNTIME_DIR / "code_forge_archive_lifecycle_status.json"
+CODE_FORGE_ARCHIVE_LIFECYCLE_HISTORY = RUNTIME_DIR / "code_forge_archive_lifecycle_history.jsonl"
 SESSION_BRIDGE_DIR = RUNTIME_DIR / "session_bridge"
 SESSION_BRIDGE_CONTEXT = SESSION_BRIDGE_DIR / "latest_context.json"
 SESSION_BRIDGE_IMPORT_STATUS = SESSION_BRIDGE_DIR / "import_status.json"
 PROOF_REPORT_DIR = FORGE_ROOT / "reports" / "proof"
 PROOF_BUNDLE_DIR = FORGE_ROOT / "reports" / "proof_bundle"
+SECURITY_REPORT_DIR = FORGE_ROOT / "reports" / "security"
+RUNTIME_ARTIFACT_REPORT_DIR = FORGE_ROOT / "reports" / "runtime_artifact_audit"
+CODE_FORGE_PROVENANCE_REPORT_DIR = FORGE_ROOT / "reports" / "code_forge_provenance_audit"
+CODE_FORGE_ARCHIVE_PLAN_REPORT_DIR = FORGE_ROOT / "reports" / "code_forge_archive_plan"
+CODE_FORGE_ARCHIVE_LIFECYCLE_REPORT_DIR = FORGE_ROOT / "reports" / "code_forge_archive_lifecycle"
 SERVICES_SCRIPT = FORGE_ROOT / "scripts" / "eidos_termux_services.sh"
 SERVICE_ACTION_LOG = RUNTIME_DIR / "atlas_service_actions.log"
 SCHEDULER_CONTROL_SCRIPT = FORGE_ROOT / "scripts" / "eidos_scheduler_control.py"
@@ -246,21 +270,56 @@ def get_runtime_snapshot() -> Dict[str, Any]:
     coordinator = _read_json(COORDINATOR_STATUS, {})
     scheduler = _read_json(SCHEDULER_STATUS, {})
     local_agent = _read_json(LOCAL_AGENT_STATUS, {})
+    qwenchat = _read_json(QWENCHAT_STATUS, {})
+    living_pipeline = _read_json(LIVING_PIPELINE_STATUS, {})
+    doc_processor = _read_json(DOC_STATUS, {})
     boot_status = _read_json(BOOT_STATUS, {})
     capabilities = _read_json(CAPABILITIES_STATUS, {})
     directory_docs = _read_json(DIRECTORY_DOCS_STATUS, {})
     session_bridge = get_session_bridge_status()
+    proof_summary = get_proof_summary()
+    archive_plan = get_code_forge_archive_plan_status()
+    archive_lifecycle = get_code_forge_archive_lifecycle_status()
     if not capabilities:
         capabilities = asdict(collect_runtime_capabilities())
     return {
         "coordinator": coordinator,
         "scheduler": scheduler,
         "local_agent": local_agent,
+        "qwenchat": qwenchat,
+        "living_pipeline": living_pipeline,
+        "doc_processor": doc_processor,
+        "archive_plan": archive_plan,
+        "archive_lifecycle": archive_lifecycle,
+        "archive_plan_history": get_code_forge_archive_plan_history(),
+        "archive_lifecycle_history": get_code_forge_archive_lifecycle_history(),
+        "archive_plan_report": get_latest_code_forge_archive_plan(),
+        "archive_lifecycle_report": get_latest_code_forge_archive_lifecycle(),
         "boot": boot_status,
         "capabilities": capabilities,
         "directory_docs": directory_docs,
         "directory_docs_history": get_docs_history(limit=12),
         "session_bridge": session_bridge,
+        "proof": proof_summary.get("proof", {}),
+        "proof_bundle": proof_summary.get("bundle", {}),
+        "identity_continuity": proof_summary.get("identity", {}),
+        "identity_history": proof_summary.get("identity_history", []),
+        "proof_history": proof_summary.get("proof_history", []),
+        "external_benchmarks": proof_summary.get("external_benchmarks", []),
+        "runtime_benchmarks": proof_summary.get("runtime_benchmarks", []),
+        "proof_refresh": get_proof_refresh_status(),
+        "proof_refresh_history": get_proof_refresh_history(),
+        "runtime_benchmark_run": get_runtime_benchmark_run_status(),
+        "runtime_benchmark_run_history": get_runtime_benchmark_run_history(),
+        "docs_batch": get_docs_batch_status(),
+        "docs_batch_history": get_docs_batch_history(),
+        "runtime_artifact_audit": get_runtime_artifact_audit_status(),
+        "runtime_artifact_audit_history": get_runtime_artifact_audit_history(),
+        "code_forge_provenance_audit": get_code_forge_provenance_audit_status(),
+        "code_forge_provenance_audit_history": get_code_forge_provenance_audit_history(),
+        "security": (proof_summary.get("security") or {}).get("summary", {}),
+        "security_plan": (proof_summary.get("security") or {}).get("plan", {}),
+        "proof_summary": proof_summary,
     }
 
 
@@ -286,6 +345,64 @@ def get_local_agent_history(limit: int = 12) -> List[Dict[str, Any]]:
     return rows
 
 
+def _read_jsonl_rows(path: Path, limit: int = 12) -> List[Dict[str, Any]]:
+    rows: List[Dict[str, Any]] = []
+    if not path.exists():
+        return rows
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except Exception:
+        return rows
+    for line in reversed(lines):
+        if not line.strip():
+            continue
+        try:
+            payload = json.loads(line)
+        except Exception:
+            continue
+        if isinstance(payload, dict):
+            rows.append(payload)
+        if len(rows) >= max(1, int(limit)):
+            break
+    return rows
+
+
+def get_qwenchat_history(limit: int = 12) -> List[Dict[str, Any]]:
+    return _read_jsonl_rows(QWENCHAT_HISTORY, limit=limit)
+
+
+def get_living_pipeline_history(limit: int = 12) -> List[Dict[str, Any]]:
+    return _read_jsonl_rows(LIVING_PIPELINE_HISTORY, limit=limit)
+
+
+def get_doc_processor_history(limit: int = 12) -> List[Dict[str, Any]]:
+    return _read_jsonl_rows(DOC_HISTORY, limit=limit)
+
+
+def get_scheduler_history(limit: int = 12) -> List[Dict[str, Any]]:
+    return _read_jsonl_rows(SCHEDULER_HISTORY, limit=limit)
+
+
+def get_runtime_services_snapshot() -> List[Dict[str, Any]]:
+    def _row(name: str, payload: Dict[str, Any], path: Path) -> Dict[str, Any]:
+        return {
+            "service": name,
+            "status": payload.get("status") or payload.get("state"),
+            "phase": payload.get("phase") or payload.get("current_task"),
+            "path": str(path.relative_to(FORGE_ROOT)) if path.exists() else str(path),
+        }
+
+    return [
+        _row("scheduler", _read_json(SCHEDULER_STATUS, {}), SCHEDULER_STATUS),
+        _row("doc_processor", _read_json(DOC_STATUS, {}), DOC_STATUS),
+        _row("local_agent", _read_json(LOCAL_AGENT_STATUS, {}), LOCAL_AGENT_STATUS),
+        _row("qwenchat", _read_json(QWENCHAT_STATUS, {}), QWENCHAT_STATUS),
+        _row("living_pipeline", _read_json(LIVING_PIPELINE_STATUS, {}), LIVING_PIPELINE_STATUS),
+        _row("archive_plan", _read_json(CODE_FORGE_ARCHIVE_PLAN_STATUS, {}), CODE_FORGE_ARCHIVE_PLAN_STATUS),
+        _row("archive_lifecycle", _read_json(CODE_FORGE_ARCHIVE_LIFECYCLE_STATUS, {}), CODE_FORGE_ARCHIVE_LIFECYCLE_STATUS),
+    ]
+
+
 def get_runtime_history(limit: int = 24) -> List[Dict[str, Any]]:
     payload = _read_json(COORDINATOR_HISTORY, {})
     rows = payload.get("entries", [])
@@ -300,6 +417,84 @@ def get_latest_proof_report() -> Dict[str, Any]:
     if not isinstance(payload, dict):
         return {}
     return payload
+
+
+def get_proof_history(limit: int = 12) -> List[Dict[str, Any]]:
+    rows: List[Dict[str, Any]] = []
+    for path in sorted(PROOF_REPORT_DIR.glob("entity_proof_scorecard_*.json"), reverse=True):
+        if path.name.endswith("_latest.json"):
+            continue
+        payload = _read_json(path, {})
+        if not payload:
+            continue
+        overall = payload.get("overall") if isinstance(payload.get("overall"), dict) else {}
+        freshness = payload.get("freshness") if isinstance(payload.get("freshness"), dict) else {}
+        regression = payload.get("regression") if isinstance(payload.get("regression"), dict) else {}
+        rows.append(
+            {
+                "generated_at": payload.get("generated_at") or "",
+                "overall_score": overall.get("score"),
+                "status": overall.get("status", ""),
+                "freshness_status": freshness.get("status", ""),
+                "regression_status": regression.get("status", ""),
+                "path": str(path.relative_to(FORGE_ROOT)),
+            }
+        )
+        if len(rows) >= max(1, int(limit)):
+            break
+    return list(reversed(rows))
+
+
+def get_external_benchmark_results(limit: int = 12) -> List[Dict[str, Any]]:
+    rows: List[Dict[str, Any]] = []
+    root = FORGE_ROOT / "reports" / "external_benchmarks"
+    if not root.exists():
+        return rows
+    for latest in sorted(root.glob("*/latest.json")):
+        payload = _read_json(latest, {})
+        if not payload:
+            continue
+        rows.append(
+            {
+                "suite": payload.get("suite") or latest.parent.name,
+                "score": payload.get("score"),
+                "status": payload.get("status", ""),
+                "participant": payload.get("participant", ""),
+                "execution_mode": payload.get("execution_mode", ""),
+                "generated_at": payload.get("generated_at", ""),
+                "path": str(latest.relative_to(FORGE_ROOT)),
+            }
+        )
+    rows.sort(key=lambda row: str(row.get("generated_at") or ""), reverse=True)
+    return rows[: max(1, int(limit))]
+
+
+def get_runtime_benchmark_statuses(limit: int = 12) -> List[Dict[str, Any]]:
+    rows: List[Dict[str, Any]] = []
+    root = FORGE_ROOT / "data" / "runtime" / "external_benchmarks" / "agencybench"
+    if not root.exists():
+        return rows
+    for status_path in sorted(root.glob("**/status.json"), key=lambda p: p.stat().st_mtime, reverse=True):
+        payload = _read_json(status_path, {})
+        if not payload:
+            continue
+        rows.append(
+            {
+                "scenario": payload.get("scenario") or status_path.parent.name,
+                "engine": payload.get("engine", ""),
+                "model": payload.get("model", ""),
+                "status": payload.get("status", ""),
+                "stop_reason": payload.get("stop_reason", ""),
+                "completed_count": payload.get("completed_count", 0),
+                "attempt_count": payload.get("attempt_count", 0),
+                "generated_at": payload.get("generated_at", ""),
+                "path": str(status_path.relative_to(FORGE_ROOT)),
+                "run_root": payload.get("run_root", ""),
+            }
+        )
+        if len(rows) >= max(1, int(limit)):
+            break
+    return rows
 
 
 def get_latest_proof_bundle_manifest() -> Dict[str, Any]:
@@ -318,6 +513,85 @@ def get_latest_identity_continuity_scorecard() -> Dict[str, Any]:
     return payload
 
 
+def get_latest_dependabot_summary() -> Dict[str, Any]:
+    for path in sorted(SECURITY_REPORT_DIR.glob("dependabot_open_summary_*.json"), reverse=True):
+        payload = _read_json(path, {})
+        if payload:
+            payload["_path"] = str(path.relative_to(FORGE_ROOT))
+            return payload
+    return {}
+
+
+def get_latest_dependabot_plan() -> Dict[str, Any]:
+    for path in sorted(SECURITY_REPORT_DIR.glob("dependabot_remediation_plan_*.json"), reverse=True):
+        payload = _read_json(path, {})
+        if payload:
+            payload["_path"] = str(path.relative_to(FORGE_ROOT))
+            return payload
+    return {}
+
+
+def get_proof_summary() -> Dict[str, Any]:
+    proof = get_latest_proof_report()
+    bundle = get_latest_proof_bundle_manifest()
+    identity = get_latest_identity_continuity_scorecard()
+    identity_history = get_identity_continuity_history(limit=12)
+    proof_history = get_proof_history(limit=12)
+    external = get_external_benchmark_results(limit=12)
+    runtime_benchmarks = get_runtime_benchmark_statuses(limit=12)
+    session_bridge = get_session_bridge_status()
+    security = get_latest_dependabot_summary()
+    security_plan = get_latest_dependabot_plan()
+    history = identity.get("history") if isinstance(identity.get("history"), dict) else {}
+    return {
+        "contract": "eidos.proof.summary.v1",
+        "proof": proof,
+        "bundle": bundle,
+        "identity": identity,
+        "identity_history": identity_history,
+        "proof_history": proof_history,
+        "external_benchmarks": external,
+        "runtime_benchmarks": runtime_benchmarks,
+        "security": {
+            "summary": security,
+            "plan": security_plan,
+        },
+        "session_bridge": {
+            "recent_sessions": len(session_bridge.get("recent_sessions") or [])
+            if isinstance(session_bridge.get("recent_sessions"), list)
+            else 0,
+            "last_sync_at": ((session_bridge.get("summary") or {}).get("last_sync_at")),
+            "codex_records": ((session_bridge.get("summary") or {}).get("codex_records", 0)),
+            "gemini_records": ((session_bridge.get("summary") or {}).get("gemini_records", 0)),
+            "imported_records": ((session_bridge.get("summary") or {}).get("imported_records", 0)),
+        },
+        "identity_trend": history.get("trend"),
+        "identity_delta": history.get("delta_from_previous"),
+    }
+
+
+def get_identity_continuity_history(limit: int = 12) -> List[Dict[str, Any]]:
+    rows: List[Dict[str, Any]] = []
+    for path in sorted(PROOF_REPORT_DIR.glob("identity_continuity_scorecard_*.json"), reverse=True):
+        if path.name.endswith("_latest.json"):
+            continue
+        payload = _read_json(path, {})
+        if not isinstance(payload, dict) or not payload:
+            continue
+        rows.append(
+            {
+                "generated_at": payload.get("generated_at") or payload.get("ts") or "",
+                "overall_score": payload.get("overall_score"),
+                "status": payload.get("status", ""),
+                "recent_sessions": ((payload.get("session_bridge") or {}).get("recent_sessions", 0)),
+                "path": str(path.relative_to(FORGE_ROOT)),
+            }
+        )
+        if len(rows) >= max(1, int(limit)):
+            break
+    return list(reversed(rows))
+
+
 def _write_docs_batch_status(payload: Dict[str, Any]) -> None:
     DOCS_BATCH_STATUS.parent.mkdir(parents=True, exist_ok=True)
     DOCS_BATCH_STATUS.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
@@ -327,6 +601,92 @@ def get_docs_batch_status() -> Dict[str, Any]:
     return _read_json(DOCS_BATCH_STATUS, {"contract": "eidos.docs_upsert_batch.status.v1", "status": "idle"})
 
 
+def get_docs_batch_history(limit: int = 12) -> List[Dict[str, Any]]:
+    return _read_jsonl_rows(DOCS_BATCH_HISTORY, limit=limit)
+
+
+def _write_job_status(path: Path, payload: Dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
+def _append_job_history(path: Path, payload: Dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(payload, ensure_ascii=False) + "\n")
+
+
+def get_proof_refresh_status() -> Dict[str, Any]:
+    return _read_json(PROOF_REFRESH_STATUS, {"contract": "eidos.proof_refresh.status.v1", "status": "idle"})
+
+
+def get_proof_refresh_history(limit: int = 12) -> List[Dict[str, Any]]:
+    return _read_jsonl_rows(PROOF_REFRESH_HISTORY, limit=limit)
+
+
+def get_runtime_benchmark_run_status() -> Dict[str, Any]:
+    return _read_json(
+        RUNTIME_BENCHMARK_RUN_STATUS,
+        {"contract": "eidos.runtime_benchmark_run.status.v1", "status": "idle"},
+    )
+
+
+def get_runtime_benchmark_run_history(limit: int = 12) -> List[Dict[str, Any]]:
+    return _read_jsonl_rows(RUNTIME_BENCHMARK_RUN_HISTORY, limit=limit)
+
+
+def get_runtime_artifact_audit_status() -> Dict[str, Any]:
+    return _read_json(
+        RUNTIME_ARTIFACT_AUDIT_STATUS,
+        {"contract": "eidos.runtime_artifact_audit.status.v1", "status": "idle"},
+    )
+
+
+def get_runtime_artifact_audit_history(limit: int = 12) -> List[Dict[str, Any]]:
+    return _read_jsonl_rows(RUNTIME_ARTIFACT_AUDIT_HISTORY, limit=limit)
+
+
+def get_code_forge_provenance_audit_status() -> Dict[str, Any]:
+    return _read_json(
+        CODE_FORGE_PROVENANCE_AUDIT_STATUS,
+        {"contract": "eidos.code_forge_provenance_audit.status.v1", "status": "idle"},
+    )
+
+
+def get_code_forge_provenance_audit_history(limit: int = 12) -> List[Dict[str, Any]]:
+    return _read_jsonl_rows(CODE_FORGE_PROVENANCE_AUDIT_HISTORY, limit=limit)
+
+
+def get_code_forge_archive_plan_status() -> Dict[str, Any]:
+    return _read_json(
+        CODE_FORGE_ARCHIVE_PLAN_STATUS,
+        {"contract": "eidos.code_forge_archive_plan.status.v1", "status": "idle"},
+    )
+
+
+def get_code_forge_archive_plan_history(limit: int = 12) -> List[Dict[str, Any]]:
+    return _read_jsonl_rows(CODE_FORGE_ARCHIVE_PLAN_HISTORY, limit=limit)
+
+
+def get_latest_code_forge_archive_plan() -> Dict[str, Any]:
+    return _read_json(CODE_FORGE_ARCHIVE_PLAN_REPORT_DIR / "latest.json", {})
+
+
+def get_code_forge_archive_lifecycle_status() -> Dict[str, Any]:
+    return _read_json(
+        CODE_FORGE_ARCHIVE_LIFECYCLE_STATUS,
+        {"contract": "eidos.code_forge_archive_lifecycle.status.v1", "status": "idle"},
+    )
+
+
+def get_code_forge_archive_lifecycle_history(limit: int = 12) -> List[Dict[str, Any]]:
+    return _read_jsonl_rows(CODE_FORGE_ARCHIVE_LIFECYCLE_HISTORY, limit=limit)
+
+
+def get_latest_code_forge_archive_lifecycle() -> Dict[str, Any]:
+    return _read_json(CODE_FORGE_ARCHIVE_LIFECYCLE_REPORT_DIR / "latest.json", {})
+
+
 def get_session_bridge_status() -> Dict[str, Any]:
     payload = {
         "contract": "eidos.session_bridge.status.v1",
@@ -334,11 +694,13 @@ def get_session_bridge_status() -> Dict[str, Any]:
         "import_status": _read_json(SESSION_BRIDGE_IMPORT_STATUS, {}),
     }
     try:
-        from eidosian_runtime.session_bridge import recent_session_digest  # type: ignore
+        from eidosian_runtime.session_bridge import recent_session_digest, summarize_import_status  # type: ignore
 
         payload["recent_sessions"] = recent_session_digest(limit=6)
+        payload["summary"] = summarize_import_status(payload.get("import_status"))
     except Exception as exc:
         payload["recent_sessions"] = []
+        payload["summary"] = {}
         payload["error"] = str(exc)
     return payload
 
@@ -347,17 +709,17 @@ def _run_docs_upsert_batch_job(*, limit: int, missing_only: bool, path_prefix: s
     from doc_forge.scribe.directory_docs import upsert_directory_batch  # type: ignore
 
     started_at = _now_utc_iso()
-    _write_docs_batch_status(
-        {
-            "contract": "eidos.docs_upsert_batch.status.v1",
-            "status": "running",
-            "started_at": started_at,
-            "limit": int(limit),
-            "missing_only": bool(missing_only),
-            "path_prefix": path_prefix,
-            "dry_run": bool(dry_run),
-        }
-    )
+    running_payload = {
+        "contract": "eidos.docs_upsert_batch.status.v1",
+        "status": "running",
+        "started_at": started_at,
+        "limit": int(limit),
+        "missing_only": bool(missing_only),
+        "path_prefix": path_prefix,
+        "dry_run": bool(dry_run),
+    }
+    _write_docs_batch_status(running_payload)
+    _append_job_history(DOCS_BATCH_HISTORY, running_payload)
     try:
         result = upsert_directory_batch(
             FORGE_ROOT,
@@ -366,33 +728,393 @@ def _run_docs_upsert_batch_job(*, limit: int, missing_only: bool, path_prefix: s
             limit=limit,
             dry_run=dry_run,
         )
-        _write_docs_batch_status(
-            {
-                "contract": "eidos.docs_upsert_batch.status.v1",
-                "status": "completed",
-                "started_at": started_at,
-                "finished_at": _now_utc_iso(),
-                "limit": int(limit),
-                "missing_only": bool(missing_only),
-                "path_prefix": path_prefix,
-                "dry_run": bool(dry_run),
-                "result": result,
-            }
-        )
+        final_payload = {
+            "contract": "eidos.docs_upsert_batch.status.v1",
+            "status": "completed",
+            "started_at": started_at,
+            "finished_at": _now_utc_iso(),
+            "limit": int(limit),
+            "missing_only": bool(missing_only),
+            "path_prefix": path_prefix,
+            "dry_run": bool(dry_run),
+            "result": result,
+        }
+        _write_docs_batch_status(final_payload)
+        _append_job_history(DOCS_BATCH_HISTORY, final_payload)
     except Exception as exc:
-        _write_docs_batch_status(
-            {
-                "contract": "eidos.docs_upsert_batch.status.v1",
-                "status": "error",
-                "started_at": started_at,
-                "finished_at": _now_utc_iso(),
-                "limit": int(limit),
-                "missing_only": bool(missing_only),
-                "path_prefix": path_prefix,
-                "dry_run": bool(dry_run),
-                "error": str(exc),
-            }
+        error_payload = {
+            "contract": "eidos.docs_upsert_batch.status.v1",
+            "status": "error",
+            "started_at": started_at,
+            "finished_at": _now_utc_iso(),
+            "limit": int(limit),
+            "missing_only": bool(missing_only),
+            "path_prefix": path_prefix,
+            "dry_run": bool(dry_run),
+            "error": str(exc),
+        }
+        _write_docs_batch_status(error_payload)
+        _append_job_history(DOCS_BATCH_HISTORY, error_payload)
+
+
+def _run_runtime_artifact_audit_job(*, policy_path: str = "") -> None:
+    started_at = _now_utc_iso()
+    running_payload = {
+        "contract": "eidos.runtime_artifact_audit.status.v1",
+        "status": "running",
+        "started_at": started_at,
+        "policy_path": policy_path,
+    }
+    _write_job_status(RUNTIME_ARTIFACT_AUDIT_STATUS, running_payload)
+    _append_job_history(RUNTIME_ARTIFACT_AUDIT_HISTORY, running_payload)
+    try:
+        from eidosian_runtime.artifact_policy import (  # type: ignore
+            audit_runtime_artifacts,
+            write_runtime_artifact_audit,
+            write_runtime_artifact_audit_markdown,
         )
+
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        report = audit_runtime_artifacts(FORGE_ROOT, policy_path=policy_path or None)
+        report["generated_at"] = _now_utc_iso()
+        report["policy_override"] = policy_path or None
+        report_json_path = RUNTIME_ARTIFACT_REPORT_DIR / f"runtime_artifact_audit_{stamp}.json"
+        report_md_path = RUNTIME_ARTIFACT_REPORT_DIR / f"runtime_artifact_audit_{stamp}.md"
+        latest_json_path = RUNTIME_ARTIFACT_REPORT_DIR / "latest.json"
+        latest_md_path = RUNTIME_ARTIFACT_REPORT_DIR / "latest.md"
+        write_runtime_artifact_audit(FORGE_ROOT, report_json_path, policy_path=policy_path or None)
+        latest_json_path.parent.mkdir(parents=True, exist_ok=True)
+        latest_json_path.write_text(report_json_path.read_text(encoding="utf-8"), encoding="utf-8")
+        write_runtime_artifact_audit_markdown(report, report_md_path)
+        latest_md_path.write_text(report_md_path.read_text(encoding="utf-8"), encoding="utf-8")
+        final_payload = {
+            "contract": "eidos.runtime_artifact_audit.status.v1",
+            "status": "completed",
+            "started_at": started_at,
+            "finished_at": _now_utc_iso(),
+            "policy_path": policy_path,
+            "tracked_violation_count": report.get("tracked_violation_count"),
+            "live_generated_count": report.get("live_generated_count"),
+            "latest_report": str(report_json_path.relative_to(FORGE_ROOT)),
+            "latest_markdown": str(report_md_path.relative_to(FORGE_ROOT)),
+        }
+        _write_job_status(RUNTIME_ARTIFACT_AUDIT_STATUS, final_payload)
+        _append_job_history(RUNTIME_ARTIFACT_AUDIT_HISTORY, final_payload)
+    except Exception as exc:
+        error_payload = {
+            "contract": "eidos.runtime_artifact_audit.status.v1",
+            "status": "error",
+            "started_at": started_at,
+            "finished_at": _now_utc_iso(),
+            "policy_path": policy_path,
+            "error": str(exc),
+        }
+        _write_job_status(RUNTIME_ARTIFACT_AUDIT_STATUS, error_payload)
+        _append_job_history(RUNTIME_ARTIFACT_AUDIT_HISTORY, error_payload)
+
+
+def _run_code_forge_provenance_audit_job(*, limit: int = 12) -> None:
+    started_at = _now_utc_iso()
+    running_payload = {
+        "contract": "eidos.code_forge_provenance_audit.status.v1",
+        "status": "running",
+        "started_at": started_at,
+        "limit": int(limit),
+    }
+    _write_job_status(CODE_FORGE_PROVENANCE_AUDIT_STATUS, running_payload)
+    _append_job_history(CODE_FORGE_PROVENANCE_AUDIT_HISTORY, running_payload)
+    env = os.environ.copy()
+    env["EIDOS_FORGE_ROOT"] = str(FORGE_ROOT)
+    python_bin = str(FORGE_ROOT / "eidosian_venv" / "bin" / "python")
+    try:
+        result = subprocess.run(
+            [
+                python_bin,
+                str(FORGE_ROOT / "scripts" / "code_forge_provenance_audit.py"),
+                "--repo-root",
+                str(FORGE_ROOT),
+                "--limit",
+                str(max(1, int(limit))),
+            ],
+            cwd=str(FORGE_ROOT),
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=900,
+            check=False,
+        )
+        latest_report = _read_json(CODE_FORGE_PROVENANCE_REPORT_DIR / "latest.json", {})
+        final_payload = {
+            "contract": "eidos.code_forge_provenance_audit.status.v1",
+            "status": "completed" if result.returncode == 0 else "error",
+            "started_at": started_at,
+            "finished_at": _now_utc_iso(),
+            "limit": int(limit),
+            "returncode": result.returncode,
+            "link_file_count": latest_report.get("link_file_count"),
+            "registry_file_count": latest_report.get("registry_file_count"),
+            "invalid_file_count": latest_report.get("invalid_file_count"),
+            "latest_report": str((CODE_FORGE_PROVENANCE_REPORT_DIR / "latest.json").relative_to(FORGE_ROOT)),
+            "latest_markdown": str((CODE_FORGE_PROVENANCE_REPORT_DIR / "latest.md").relative_to(FORGE_ROOT)),
+            "stdout": result.stdout[-4000:],
+            "stderr": result.stderr[-4000:],
+        }
+        _write_job_status(CODE_FORGE_PROVENANCE_AUDIT_STATUS, final_payload)
+        _append_job_history(CODE_FORGE_PROVENANCE_AUDIT_HISTORY, final_payload)
+    except Exception as exc:
+        error_payload = {
+            "contract": "eidos.code_forge_provenance_audit.status.v1",
+            "status": "error",
+            "started_at": started_at,
+            "finished_at": _now_utc_iso(),
+            "limit": int(limit),
+            "error": str(exc),
+        }
+        _write_job_status(CODE_FORGE_PROVENANCE_AUDIT_STATUS, error_payload)
+        _append_job_history(CODE_FORGE_PROVENANCE_AUDIT_HISTORY, error_payload)
+
+
+def _run_code_forge_archive_plan_job(*, refresh: bool = True) -> None:
+    env = os.environ.copy()
+    env["EIDOS_FORGE_ROOT"] = str(FORGE_ROOT)
+    python_bin = str(FORGE_ROOT / "eidosian_venv" / "bin" / "python")
+    command = [
+        python_bin,
+        str(FORGE_ROOT / "scripts" / "code_forge_archive_plan.py"),
+        "--repo-root",
+        str(FORGE_ROOT),
+    ]
+    if refresh:
+        command.append("--refresh")
+    subprocess.run(
+        command,
+        cwd=str(FORGE_ROOT),
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=3600,
+        check=False,
+    )
+
+
+def _run_code_forge_archive_lifecycle_status_job(*, refresh: bool = False, repo_keys: List[str] | None = None) -> None:
+    env = os.environ.copy()
+    env["EIDOS_FORGE_ROOT"] = str(FORGE_ROOT)
+    python_bin = str(FORGE_ROOT / "eidosian_venv" / "bin" / "python")
+    command = [
+        python_bin,
+        str(FORGE_ROOT / "scripts" / "code_forge_archive_lifecycle.py"),
+        "status",
+        "--repo-root",
+        str(FORGE_ROOT),
+    ]
+    for repo_key in repo_keys or []:
+        command.extend(["--repo-key", repo_key])
+    if refresh:
+        command.append("--refresh")
+    subprocess.run(
+        command,
+        cwd=str(FORGE_ROOT),
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=3600,
+        check=False,
+    )
+
+
+def _run_code_forge_archive_wave_job(*, repo_keys: List[str] | None = None, batch_limit: int | None = None, refresh: bool = False) -> None:
+    env = os.environ.copy()
+    env["EIDOS_FORGE_ROOT"] = str(FORGE_ROOT)
+    python_bin = str(FORGE_ROOT / "eidosian_venv" / "bin" / "python")
+    command = [
+        python_bin,
+        str(FORGE_ROOT / "scripts" / "code_forge_archive_lifecycle.py"),
+        "run-wave",
+        "--repo-root",
+        str(FORGE_ROOT),
+    ]
+    for repo_key in repo_keys or []:
+        command.extend(["--repo-key", repo_key])
+    if batch_limit is not None:
+        command.extend(["--batch-limit", str(max(1, int(batch_limit)))])
+    if refresh:
+        command.append("--refresh")
+    subprocess.run(
+        command,
+        cwd=str(FORGE_ROOT),
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=3600,
+        check=False,
+    )
+
+
+def _run_proof_refresh_job(*, window_days: int) -> None:
+    started_at = _now_utc_iso()
+    running_payload = {
+        "contract": "eidos.proof_refresh.status.v1",
+        "status": "running",
+        "started_at": started_at,
+        "window_days": int(window_days),
+    }
+    _write_job_status(PROOF_REFRESH_STATUS, running_payload)
+    _append_job_history(PROOF_REFRESH_HISTORY, running_payload)
+    env = os.environ.copy()
+    env["EIDOS_FORGE_ROOT"] = str(FORGE_ROOT)
+    python_bin = str(FORGE_ROOT / "eidosian_venv" / "bin" / "python")
+    try:
+        proof = subprocess.run(
+            [
+                python_bin,
+                str(FORGE_ROOT / "scripts" / "entity_proof_suite.py"),
+                "--repo-root",
+                str(FORGE_ROOT),
+                "--window-days",
+                str(max(1, int(window_days))),
+            ],
+            cwd=str(FORGE_ROOT),
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=900,
+            check=False,
+        )
+        bundle = subprocess.run(
+            [
+                python_bin,
+                str(FORGE_ROOT / "scripts" / "export_entity_proof_bundle.py"),
+                "--repo-root",
+                str(FORGE_ROOT),
+            ],
+            cwd=str(FORGE_ROOT),
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=900,
+            check=False,
+        )
+        final_payload = {
+            "contract": "eidos.proof_refresh.status.v1",
+            "status": "completed" if proof.returncode == 0 and bundle.returncode == 0 else "error",
+            "started_at": started_at,
+            "finished_at": _now_utc_iso(),
+            "window_days": int(window_days),
+            "proof_returncode": proof.returncode,
+            "bundle_returncode": bundle.returncode,
+            "proof_stdout": proof.stdout[-4000:],
+            "proof_stderr": proof.stderr[-4000:],
+            "bundle_stdout": bundle.stdout[-4000:],
+            "bundle_stderr": bundle.stderr[-4000:],
+            "latest_proof": get_latest_proof_report(),
+            "latest_bundle": get_latest_proof_bundle_manifest(),
+        }
+        _write_job_status(PROOF_REFRESH_STATUS, final_payload)
+        _append_job_history(PROOF_REFRESH_HISTORY, final_payload)
+    except Exception as exc:
+        error_payload = {
+            "contract": "eidos.proof_refresh.status.v1",
+            "status": "error",
+            "started_at": started_at,
+            "finished_at": _now_utc_iso(),
+            "window_days": int(window_days),
+            "error": str(exc),
+        }
+        _write_job_status(PROOF_REFRESH_STATUS, error_payload)
+        _append_job_history(PROOF_REFRESH_HISTORY, error_payload)
+
+
+def _run_runtime_benchmark_job(
+    *,
+    scenario: str,
+    engine: str,
+    model: str,
+    attempts_per_step: int,
+    timeout_sec: float,
+    keep_alive: str,
+) -> None:
+    started_at = _now_utc_iso()
+    running_payload = {
+        "contract": "eidos.runtime_benchmark_run.status.v1",
+        "status": "running",
+        "started_at": started_at,
+        "scenario": scenario,
+        "engine": engine,
+        "model": model,
+        "attempts_per_step": int(attempts_per_step),
+        "timeout_sec": float(timeout_sec),
+        "keep_alive": keep_alive,
+    }
+    _write_job_status(RUNTIME_BENCHMARK_RUN_STATUS, running_payload)
+    _append_job_history(RUNTIME_BENCHMARK_RUN_HISTORY, running_payload)
+    env = os.environ.copy()
+    env["EIDOS_FORGE_ROOT"] = str(FORGE_ROOT)
+    python_bin = str(FORGE_ROOT / "eidosian_venv" / "bin" / "python")
+    try:
+        result = subprocess.run(
+            [
+                python_bin,
+                str(FORGE_ROOT / "scripts" / "run_agencybench_eidos.py"),
+                "--scenario",
+                scenario,
+                "--engine",
+                engine,
+                "--model",
+                model,
+                "--attempts-per-step",
+                str(max(1, int(attempts_per_step))),
+                "--timeout-sec",
+                str(max(60.0, float(timeout_sec))),
+                "--keep-alive",
+                keep_alive,
+            ],
+            cwd=str(FORGE_ROOT),
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=max(120.0, float(timeout_sec)) + 300.0,
+            check=False,
+        )
+        payload: Dict[str, Any] = {}
+        try:
+            payload = json.loads(result.stdout) if result.stdout.strip() else {}
+        except Exception:
+            payload = {}
+        final_payload = {
+            "contract": "eidos.runtime_benchmark_run.status.v1",
+            "status": "completed" if result.returncode == 0 else "error",
+            "started_at": started_at,
+            "finished_at": _now_utc_iso(),
+            "scenario": scenario,
+            "engine": engine,
+            "model": model,
+            "attempts_per_step": int(attempts_per_step),
+            "timeout_sec": float(timeout_sec),
+            "keep_alive": keep_alive,
+            "returncode": result.returncode,
+            "stdout": result.stdout[-4000:],
+            "stderr": result.stderr[-4000:],
+            "result": payload if isinstance(payload, dict) else {},
+        }
+        _write_job_status(RUNTIME_BENCHMARK_RUN_STATUS, final_payload)
+        _append_job_history(RUNTIME_BENCHMARK_RUN_HISTORY, final_payload)
+    except Exception as exc:
+        error_payload = {
+            "contract": "eidos.runtime_benchmark_run.status.v1",
+            "status": "error",
+            "started_at": started_at,
+            "finished_at": _now_utc_iso(),
+            "scenario": scenario,
+            "engine": engine,
+            "model": model,
+            "attempts_per_step": int(attempts_per_step),
+            "timeout_sec": float(timeout_sec),
+            "keep_alive": keep_alive,
+            "error": str(exc),
+        }
+        _write_job_status(RUNTIME_BENCHMARK_RUN_STATUS, error_payload)
+        _append_job_history(RUNTIME_BENCHMARK_RUN_HISTORY, error_payload)
 
 
 def get_file_tree(path: Path, root: Path) -> List[Dict[str, Any]]:
@@ -444,7 +1166,7 @@ def _run_service_action_async(action: str, service: str | None = None) -> None:
 
 
 async def _service_command(action: str, service: str | None = None) -> Dict[str, Any]:
-    allowed = {"start", "stop", "restart", "status"}
+    allowed = {"start", "stop", "pause", "resume", "restart", "status", "low-load", "restore-standard"}
     if action not in allowed:
         raise HTTPException(status_code=400, detail="Invalid service action")
     if not SERVICES_SCRIPT.exists():
@@ -544,7 +1266,8 @@ def _parse_service_status_output(raw: str) -> list[dict[str, Any]]:
             {
                 "name": name.strip(),
                 "state": state_value,
-                "running": "run:" in state_value or "running(" in state_value,
+                "running": ("run:" in state_value or "running(" in state_value) and "paused" not in state_value,
+                "paused": "paused" in state_value,
             }
         )
     return rows
@@ -564,8 +1287,15 @@ async def dashboard(request: Request):
     docs_tree = _docs_tree(limit=40, refresh=False)
     docs_history = get_docs_history(limit=24)
     runtime_snapshot = get_runtime_snapshot()
+    runtime_services = get_runtime_services_snapshot()
+    code_forge_provenance_audit_history = get_code_forge_provenance_audit_history()
     local_agent_history = get_local_agent_history()
+    scheduler_history = get_scheduler_history()
+    doc_processor_history = get_doc_processor_history()
+    qwenchat_history = get_qwenchat_history()
+    living_pipeline_history = get_living_pipeline_history()
     proof_snapshot = get_latest_proof_report()
+    proof_summary = get_proof_summary()
 
     return templates.TemplateResponse(
         request,
@@ -583,8 +1313,15 @@ async def dashboard(request: Request):
             "docs_tree": docs_tree,
             "docs_history": docs_history,
             "runtime_snapshot": runtime_snapshot,
+            "runtime_services": runtime_services,
+            "code_forge_provenance_audit_history": code_forge_provenance_audit_history,
             "local_agent_history": local_agent_history,
+            "scheduler_history": scheduler_history,
+            "doc_processor_history": doc_processor_history,
+            "qwenchat_history": qwenchat_history,
+            "living_pipeline_history": living_pipeline_history,
             "proof_snapshot": proof_snapshot,
+            "proof_summary": proof_summary,
             "service_snapshot": await _service_command("status"),
         },
     )
@@ -751,6 +1488,14 @@ async def api_docs_upsert_batch_status():
     return get_docs_batch_status()
 
 
+@app.get("/api/docs/upsert-batch/history")
+async def api_docs_upsert_batch_history(limit: int = 12):
+    return {
+        "contract": "eidos.docs_upsert_batch.history.v1",
+        "entries": get_docs_batch_history(limit=limit),
+    }
+
+
 @app.get("/api/session-bridge")
 async def api_session_bridge():
     return get_session_bridge_status()
@@ -780,10 +1525,15 @@ async def api_docs_history(limit: int = 60):
 async def api_runtime():
     snapshot = get_runtime_snapshot()
     snapshot["history"] = get_runtime_history()
-    snapshot["proof"] = get_latest_proof_report()
-    snapshot["proof_bundle"] = get_latest_proof_bundle_manifest()
-    snapshot["identity_continuity"] = get_latest_identity_continuity_scorecard()
     return snapshot
+
+
+@app.get("/api/runtime/services")
+async def api_runtime_services():
+    return {
+        "contract": "eidos.runtime_services_snapshot.v1",
+        "entries": get_runtime_services_snapshot(),
+    }
 
 
 @app.get("/api/proof/latest")
@@ -792,6 +1542,53 @@ async def api_proof_latest():
     if payload:
         return payload
     raise HTTPException(status_code=404, detail="No proof report found")
+
+
+@app.get("/api/proof/summary")
+async def api_proof_summary():
+    payload = get_proof_summary()
+    if payload.get("proof"):
+        return payload
+    raise HTTPException(status_code=404, detail="No proof summary found")
+
+
+@app.get("/api/proof/history")
+async def api_proof_history(limit: int = 12):
+    return {
+        "contract": "eidos.proof.history.v1",
+        "entries": get_proof_history(limit=limit),
+    }
+
+
+@app.post("/api/proof/refresh")
+async def api_proof_refresh(window_days: int = 30, background: bool = True):
+    if background:
+        thread = threading.Thread(
+            target=_run_proof_refresh_job,
+            kwargs={"window_days": window_days},
+            daemon=True,
+        )
+        thread.start()
+        return {
+            "contract": "eidos.proof_refresh.status.v1",
+            "status": "queued",
+            "window_days": int(window_days),
+        }
+    _run_proof_refresh_job(window_days=window_days)
+    return get_proof_refresh_status()
+
+
+@app.get("/api/proof/refresh/status")
+async def api_proof_refresh_status():
+    return get_proof_refresh_status()
+
+
+@app.get("/api/proof/refresh/history")
+async def api_proof_refresh_history(limit: int = 12):
+    return {
+        "contract": "eidos.proof_refresh.history.v1",
+        "entries": get_proof_refresh_history(limit=limit),
+    }
 
 
 @app.get("/api/proof/bundle/latest")
@@ -808,6 +1605,286 @@ async def api_proof_identity_latest():
     if payload:
         return payload
     raise HTTPException(status_code=404, detail="No identity continuity scorecard found")
+
+
+@app.get("/api/proof/identity/history")
+async def api_proof_identity_history(limit: int = 12):
+    return {
+        "contract": "eidos.identity_continuity_history.v1",
+        "entries": get_identity_continuity_history(limit=limit),
+    }
+
+
+@app.get("/api/proof/external")
+async def api_proof_external(limit: int = 12):
+    return {
+        "contract": "eidos.external_benchmark_snapshot.v1",
+        "entries": get_external_benchmark_results(limit=limit),
+    }
+
+
+@app.get("/api/benchmarks/runtime")
+async def api_runtime_benchmarks(limit: int = 12):
+    return {
+        "contract": "eidos.runtime_benchmark_snapshot.v1",
+        "entries": get_runtime_benchmark_statuses(limit=limit),
+    }
+
+
+@app.post("/api/benchmarks/runtime/run")
+async def api_runtime_benchmark_run(
+    scenario: str = "scenario2",
+    engine: str = "local_agent",
+    model: str = "qwen3.5:2b",
+    attempts_per_step: int = 1,
+    timeout_sec: float = 900.0,
+    keep_alive: str = "4h",
+    background: bool = True,
+):
+    if scenario not in {"scenario1", "scenario2"}:
+        raise HTTPException(status_code=400, detail="Invalid benchmark scenario")
+    if engine not in {"local_agent", "deterministic"}:
+        raise HTTPException(status_code=400, detail="Invalid benchmark engine")
+    if background:
+        thread = threading.Thread(
+            target=_run_runtime_benchmark_job,
+            kwargs={
+                "scenario": scenario,
+                "engine": engine,
+                "model": model,
+                "attempts_per_step": attempts_per_step,
+                "timeout_sec": timeout_sec,
+                "keep_alive": keep_alive,
+            },
+            daemon=True,
+        )
+        thread.start()
+        return {
+            "contract": "eidos.runtime_benchmark_run.status.v1",
+            "status": "queued",
+            "scenario": scenario,
+            "engine": engine,
+            "model": model,
+        }
+    _run_runtime_benchmark_job(
+        scenario=scenario,
+        engine=engine,
+        model=model,
+        attempts_per_step=attempts_per_step,
+        timeout_sec=timeout_sec,
+        keep_alive=keep_alive,
+    )
+    return get_runtime_benchmark_run_status()
+
+
+@app.get("/api/benchmarks/runtime/run/status")
+async def api_runtime_benchmark_run_status():
+    return get_runtime_benchmark_run_status()
+
+
+@app.get("/api/benchmarks/runtime/run/history")
+async def api_runtime_benchmark_run_history(limit: int = 12):
+    return {
+        "contract": "eidos.runtime_benchmark_run.history.v1",
+        "entries": get_runtime_benchmark_run_history(limit=limit),
+    }
+
+
+@app.post("/api/code-forge/provenance-audit")
+async def api_code_forge_provenance_audit(limit: int = 12, background: bool = True):
+    if background:
+        thread = threading.Thread(
+            target=_run_code_forge_provenance_audit_job,
+            kwargs={"limit": limit},
+            daemon=True,
+        )
+        thread.start()
+        return {
+            "contract": "eidos.code_forge_provenance_audit.status.v1",
+            "status": "queued",
+            "limit": int(limit),
+        }
+
+    _run_code_forge_provenance_audit_job(limit=limit)
+    return get_code_forge_provenance_audit_status()
+
+
+@app.get("/api/code-forge/provenance-audit/status")
+async def api_code_forge_provenance_audit_status():
+    return get_code_forge_provenance_audit_status()
+
+
+@app.get("/api/code-forge/provenance-audit/history")
+async def api_code_forge_provenance_audit_history(limit: int = 12):
+    return {
+        "contract": "eidos.code_forge_provenance_audit.history.v1",
+        "entries": get_code_forge_provenance_audit_history(limit=limit),
+    }
+
+
+@app.get("/api/code-forge/archive-plan")
+async def api_code_forge_archive_plan():
+    return {
+        "status": get_code_forge_archive_plan_status(),
+        "history": get_code_forge_archive_plan_history(),
+        "report": get_latest_code_forge_archive_plan(),
+    }
+
+
+@app.post("/api/code-forge/archive-plan")
+async def api_code_forge_archive_plan_run(refresh: bool = True, background: bool = True):
+    if background:
+        thread = threading.Thread(
+            target=_run_code_forge_archive_plan_job,
+            kwargs={"refresh": refresh},
+            daemon=True,
+        )
+        thread.start()
+        return {
+            "contract": "eidos.code_forge_archive_plan.status.v1",
+            "status": "queued",
+            "refresh": bool(refresh),
+        }
+    _run_code_forge_archive_plan_job(refresh=refresh)
+    return get_code_forge_archive_plan_status()
+
+
+@app.get("/api/code-forge/archive-lifecycle")
+async def api_code_forge_archive_lifecycle(limit: int = 12):
+    return {
+        "status": get_code_forge_archive_lifecycle_status(),
+        "history": get_code_forge_archive_lifecycle_history(limit=limit),
+        "report": get_latest_code_forge_archive_lifecycle(),
+    }
+
+
+@app.post("/api/code-forge/archive-lifecycle/status")
+async def api_code_forge_archive_lifecycle_status_job(repo_key: str = "", refresh: bool = False, background: bool = True):
+    repo_keys = [item.strip() for item in repo_key.split(",") if item.strip()]
+    if background:
+        thread = threading.Thread(
+            target=_run_code_forge_archive_lifecycle_status_job,
+            kwargs={"refresh": refresh, "repo_keys": repo_keys},
+            daemon=True,
+        )
+        thread.start()
+        return {
+            "contract": "eidos.code_forge_archive_lifecycle.status.v1",
+            "status": "queued",
+            "phase": "status",
+            "refresh": bool(refresh),
+            "repo_keys": repo_keys,
+        }
+    _run_code_forge_archive_lifecycle_status_job(refresh=refresh, repo_keys=repo_keys)
+    return get_code_forge_archive_lifecycle_status()
+
+
+@app.post("/api/code-forge/archive-lifecycle/run-wave")
+async def api_code_forge_archive_lifecycle_wave(repo_key: str = "", batch_limit: int = 20, refresh: bool = False, background: bool = True):
+    repo_keys = [item.strip() for item in repo_key.split(",") if item.strip()]
+    if background:
+        thread = threading.Thread(
+            target=_run_code_forge_archive_wave_job,
+            kwargs={"repo_keys": repo_keys, "batch_limit": batch_limit, "refresh": refresh},
+            daemon=True,
+        )
+        thread.start()
+        return {
+            "contract": "eidos.code_forge_archive_lifecycle.status.v1",
+            "status": "queued",
+            "phase": "run_wave",
+            "refresh": bool(refresh),
+            "repo_keys": repo_keys,
+            "batch_limit": int(batch_limit),
+        }
+    _run_code_forge_archive_wave_job(repo_keys=repo_keys, batch_limit=batch_limit, refresh=refresh)
+    return get_code_forge_archive_lifecycle_status()
+
+
+@app.post("/api/code-forge/archive-lifecycle/set-mode")
+async def api_code_forge_archive_lifecycle_set_mode(repo_key: str, mode: str, reason: str = ""):
+    if mode not in {"ingest_and_keep", "ingest_and_remove"}:
+        raise HTTPException(status_code=400, detail="Invalid lifecycle mode")
+    env = os.environ.copy()
+    env["EIDOS_FORGE_ROOT"] = str(FORGE_ROOT)
+    python_bin = str(FORGE_ROOT / "eidosian_venv" / "bin" / "python")
+    result = subprocess.run(
+        [
+            python_bin,
+            str(FORGE_ROOT / "scripts" / "code_forge_archive_lifecycle.py"),
+            "set-mode",
+            "--repo-root",
+            str(FORGE_ROOT),
+            "--repo-key",
+            repo_key,
+            "--mode",
+            mode,
+            "--reason",
+            reason,
+        ],
+        cwd=str(FORGE_ROOT),
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=300,
+        check=False,
+    )
+    payload: Dict[str, Any] = {}
+    try:
+        payload = json.loads(result.stdout or "{}")
+    except Exception:
+        payload = {}
+    return {
+        "ok": result.returncode == 0,
+        "returncode": result.returncode,
+        "payload": payload,
+        "stderr": result.stderr[-4000:],
+    }
+
+
+@app.post("/api/runtime-artifacts/audit")
+async def api_runtime_artifacts_audit(policy_path: str = "", background: bool = True):
+    if background:
+        thread = threading.Thread(
+            target=_run_runtime_artifact_audit_job,
+            kwargs={"policy_path": policy_path},
+            daemon=True,
+        )
+        thread.start()
+        return {
+            "contract": "eidos.runtime_artifact_audit.status.v1",
+            "status": "queued",
+            "policy_path": policy_path,
+        }
+
+    _run_runtime_artifact_audit_job(policy_path=policy_path)
+    return get_runtime_artifact_audit_status()
+
+
+@app.get("/api/runtime-artifacts/audit/status")
+async def api_runtime_artifacts_audit_status():
+    return get_runtime_artifact_audit_status()
+
+
+@app.get("/api/runtime-artifacts/audit/history")
+async def api_runtime_artifacts_audit_history(limit: int = 12):
+    return {
+        "contract": "eidos.runtime_artifact_audit.history.v1",
+        "entries": get_runtime_artifact_audit_history(limit=limit),
+    }
+
+
+@app.get("/api/security/dependabot")
+async def api_security_dependabot():
+    summary = get_latest_dependabot_summary()
+    plan = get_latest_dependabot_plan()
+    if summary:
+        return {
+            "contract": "eidos.security.dependabot_snapshot.v1",
+            "summary": summary,
+            "plan": plan,
+        }
+    raise HTTPException(status_code=404, detail="No Dependabot summary found")
 
 
 @app.get("/api/services")
@@ -840,6 +1917,38 @@ async def api_local_agent_status():
     return {
         "status": _read_json(LOCAL_AGENT_STATUS, {}),
         "history": get_local_agent_history(),
+    }
+
+
+@app.get("/api/runtime/scheduler")
+async def api_runtime_scheduler_status():
+    return {
+        "status": _read_json(SCHEDULER_STATUS, {}),
+        "history": get_scheduler_history(),
+    }
+
+
+@app.get("/api/runtime/doc-processor")
+async def api_doc_processor_status():
+    return {
+        "status": _read_json(DOC_STATUS, {}),
+        "history": get_doc_processor_history(),
+    }
+
+
+@app.get("/api/runtime/qwenchat")
+async def api_qwenchat_status():
+    return {
+        "status": _read_json(QWENCHAT_STATUS, {}),
+        "history": get_qwenchat_history(),
+    }
+
+
+@app.get("/api/runtime/living-pipeline")
+async def api_living_pipeline_status():
+    return {
+        "status": _read_json(LIVING_PIPELINE_STATUS, {}),
+        "history": get_living_pipeline_history(),
     }
 
 

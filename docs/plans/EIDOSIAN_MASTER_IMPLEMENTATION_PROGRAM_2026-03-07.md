@@ -442,4 +442,6 @@ For each completed item:
   - `ingest_and_keep` for standing library expansion
   - `ingest_and_remove` for reversible retirement after parity/provenance gates
 - [x] Added fast metadata-first archive planning so full `archive_forge` scans reopen only changed batches instead of recomputing heavyweight content hashes.
+- [x] Added cached repo-level archive lifecycle status plus low-load service profiles so archive operations can run without forcing a full metadata rescan or keeping heavy services online.
+- [x] Exposed archive plan/lifecycle operator actions in Atlas for plan refreshes, cached status runs, and bounded repo waves.
 - [x] Added repo-filtered archive wave execution and reversible restore/retire scripts to support controlled archive burn-down.

@@ -62,10 +62,16 @@ Contract:
 
 ## Lifecycle Commands
 
-Show repo-level status:
+Show repo-level status from the cached plan/state without forcing a fresh archive walk:
 
 ```sh
 ./eidosian_venv/bin/python scripts/code_forge_archive_lifecycle.py status
+```
+
+Force a fresh planner walk before status if you specifically need a new metadata snapshot:
+
+```sh
+./eidosian_venv/bin/python scripts/code_forge_archive_lifecycle.py status --refresh
 ```
 
 Mark a repo for reversible retirement after successful ingestion:
@@ -84,6 +90,12 @@ Run an ingestion wave for specific repos only:
 
 ```sh
 ./eidosian_venv/bin/python scripts/code_forge_archive_lifecycle.py run-wave --repo-key <repo_key>
+```
+
+Run a bounded repo wave to validate the route without opening the full archive workload:
+
+```sh
+./eidosian_venv/bin/python scripts/code_forge_archive_lifecycle.py run-wave --repo-key <repo_key> --batch-limit 5
 ```
 
 Retire repos that are fully ready:
@@ -131,14 +143,14 @@ Per retired repo, the run records:
 ## Current Weaknesses
 
 - planner refresh still has to walk the archive tree; it is lighter than full hashing, but still proportional to archive size
-- lifecycle status is currently script/report-driven rather than fully exposed through Atlas
+- Atlas now exposes archive plan/lifecycle state and can trigger cached status refreshes and bounded waves, but repo-mode editing/retirement review still need deeper operator UX
 - removal from raw archive storage is reversible retirement, not final garbage collection
 - deleted files inside a kept repo are currently preserved as historical library evidence rather than purged from Code Forge
 
 ## Next Integration Work
 
-- expose archive lifecycle state and repo-mode controls in Atlas
-- add scheduler/operator jobs for archive planning, archive waves, and retirement actions
+- expand Atlas from current archive plan/lifecycle actions into full repo-mode editing, retirement dry-runs, and restore flows
+- feed archive plan/lifecycle runtime evidence into proof/bundle scoring once live ingestion waves are producing reversible provenance at scale
 - add proof/bundle coverage for archive lifecycle readiness and retirement evidence
 - add explicit repository reconstruction benchmarks for retired repos
 - add a final garbage-collection layer only after retirement manifests are aged, reviewed, and backed up

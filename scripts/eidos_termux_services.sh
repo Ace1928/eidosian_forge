@@ -183,7 +183,9 @@ _runit_start() {
     service_dir="$(_runit_service_path "${service_key}")"
     _runit_service_installed "${service_key}" || return 1
     rm -f "${service_dir}/down"
+    sv cont "${service_dir}" >/dev/null 2>&1 || true
     sv up "${service_dir}" >/dev/null 2>&1 || true
+    sv cont "${service_dir}" >/dev/null 2>&1 || true
     sleep 1
     sv status "${service_dir}" >/dev/null 2>&1
 }
@@ -193,8 +195,29 @@ _runit_stop() {
     local service_dir
     service_dir="$(_runit_service_path "${service_key}")"
     _runit_service_installed "${service_key}" || return 1
+    sv cont "${service_dir}" >/dev/null 2>&1 || true
     sv down "${service_dir}" >/dev/null 2>&1 || true
     : > "${service_dir}/down"
+    return 0
+}
+
+_runit_pause() {
+    local service_key="$1"
+    local service_dir
+    service_dir="$(_runit_service_path "${service_key}")"
+    _runit_service_installed "${service_key}" || return 1
+    sv pause "${service_dir}" >/dev/null 2>&1 || true
+    sleep 1
+    return 0
+}
+
+_runit_resume() {
+    local service_key="$1"
+    local service_dir
+    service_dir="$(_runit_service_path "${service_key}")"
+    _runit_service_installed "${service_key}" || return 1
+    sv cont "${service_dir}" >/dev/null 2>&1 || true
+    sleep 1
     return 0
 }
 
@@ -204,6 +227,19 @@ _runit_status() {
     service_dir="$(_runit_service_path "${service_key}")"
     _runit_service_installed "${service_key}" || return 1
     sv status "${service_dir}" 2>&1 || true
+}
+
+_pid_state() {
+    local pid="${1:-}"
+    [ -n "${pid}" ] || return 1
+    ps -p "${pid}" -o stat= 2>/dev/null | tr -d '[:space:]'
+}
+
+_pid_paused() {
+    local pid="${1:-}"
+    local state=""
+    state="$(_pid_state "${pid}" || true)"
+    [ -n "${state}" ] && printf '%s' "${state}" | grep -Eq '^T'
 }
 
 _ensure_termux_service_supervisor() {
@@ -284,6 +320,46 @@ _stop_service() {
     _log "${service_name}: stopped."
 }
 
+_pause_service() {
+    local service_name="$1"
+    local pid_file="$2"
+    local expected_cmd="${3:-}"
+    local runit_service="${4:-}"
+
+    if [ -n "${runit_service}" ] && _runit_pause "${runit_service}"; then
+        _log "${service_name}: paused via runit (${runit_service})."
+        return 0
+    fi
+
+    [ -f "${pid_file}" ] || return 0
+    local pid
+    pid="$(cat "${pid_file}" 2>/dev/null || true)"
+    if _pid_alive "${pid}" && _pid_matches "${pid}" "${expected_cmd}"; then
+        kill -STOP "${pid}" >/dev/null 2>&1 || true
+        _log "${service_name}: paused."
+    fi
+}
+
+_resume_service() {
+    local service_name="$1"
+    local pid_file="$2"
+    local expected_cmd="${3:-}"
+    local runit_service="${4:-}"
+
+    if [ -n "${runit_service}" ] && _runit_resume "${runit_service}"; then
+        _log "${service_name}: resumed via runit (${runit_service})."
+        return 0
+    fi
+
+    [ -f "${pid_file}" ] || return 0
+    local pid
+    pid="$(cat "${pid_file}" 2>/dev/null || true)"
+    if _pid_alive "${pid}" && _pid_matches "${pid}" "${expected_cmd}"; then
+        kill -CONT "${pid}" >/dev/null 2>&1 || true
+        _log "${service_name}: resumed."
+    fi
+}
+
 _status_service() {
     local service_name="$1"
     local pid_file="$2"
@@ -300,7 +376,11 @@ _status_service() {
         if printf '%s' "${runit_status}" | grep -Fq 'warning:'; then
             runit_status=""
         fi
-        if [ -n "${runit_status}" ] && printf '%s' "${runit_status}" | grep -Eq '^run:'; then
+        if [ -n "${runit_status}" ] && printf '%s' "${runit_status}" | grep -Fq 'paused'; then
+            status="paused(runit ${runit_status})"
+        elif [ -n "${runit_status}" ] && printf '%s' "${runit_status}" | grep -Eq '^pause:'; then
+            status="paused(runit ${runit_status})"
+        elif [ -n "${runit_status}" ] && printf '%s' "${runit_status}" | grep -Eq '^run:'; then
             status="runit ${runit_status}"
         fi
     fi
@@ -308,7 +388,11 @@ _status_service() {
     if [ -f "${pid_file}" ]; then
         pid="$(cat "${pid_file}" 2>/dev/null || true)"
         if _pid_alive "${pid}" && _pid_matches "${pid}" "${expected_cmd}"; then
-            status="running(managed pid=${pid})"
+            if _pid_paused "${pid}"; then
+                status="paused(managed pid=${pid})"
+            else
+                status="running(managed pid=${pid})"
+            fi
         else
             rm -f "${pid_file}"
         fi
@@ -451,9 +535,45 @@ case "${cmd}" in
         if _target_selected "${service_target}" "scheduler"; then _stop_service "Eidos Scheduler" "${SCHEDULER_PID_FILE}" "scripts/run_eidos_scheduler.sh" "eidos-scheduler"; fi
         if _target_selected "${service_target}" "local-agent"; then _stop_service "Eidos Local Agent" "${LOCAL_AGENT_PID_FILE}" "scripts/run_local_mcp_agent.sh" "eidos-local-agent"; fi
         ;;
+    pause)
+        if _target_selected "${service_target}" "ollama-qwen"; then _pause_service "Eidos Ollama Qwen" "${OLLAMA_QWEN_PID_FILE}" "scripts/run_ollama_qwen.sh" "eidos-ollama-qwen"; fi
+        if _target_selected "${service_target}" "ollama-embedding"; then _pause_service "Eidos Ollama Embedding" "${OLLAMA_EMBED_PID_FILE}" "scripts/run_ollama_embedding.sh" "eidos-ollama-embedding"; fi
+        if _target_selected "${service_target}" "mcp"; then _pause_service "Eidos MCP Server" "${MCP_PID_FILE}" "eidos_mcp/run_server.sh" "eidos-mcp"; fi
+        if _target_selected "${service_target}" "doc-forge"; then _pause_service "Eidos Documentation Forge" "${DOC_PID_FILE}" "doc_forge/scripts/run_forge.sh" "eidos-doc-forge"; fi
+        if _target_selected "${service_target}" "atlas"; then _pause_service "Eidos Atlas Dashboard" "${ATLAS_PID_FILE}" "web_interface_forge/scripts/run_dashboard.sh" "eidos-atlas"; fi
+        if _target_selected "${service_target}" "scheduler"; then _pause_service "Eidos Scheduler" "${SCHEDULER_PID_FILE}" "scripts/run_eidos_scheduler.sh" "eidos-scheduler"; fi
+        if _target_selected "${service_target}" "local-agent"; then _pause_service "Eidos Local Agent" "${LOCAL_AGENT_PID_FILE}" "scripts/run_local_mcp_agent.sh" "eidos-local-agent"; fi
+        ;;
+    resume)
+        if _target_selected "${service_target}" "ollama-qwen"; then _resume_service "Eidos Ollama Qwen" "${OLLAMA_QWEN_PID_FILE}" "scripts/run_ollama_qwen.sh" "eidos-ollama-qwen"; fi
+        if _target_selected "${service_target}" "ollama-embedding"; then _resume_service "Eidos Ollama Embedding" "${OLLAMA_EMBED_PID_FILE}" "scripts/run_ollama_embedding.sh" "eidos-ollama-embedding"; fi
+        if _target_selected "${service_target}" "mcp"; then _resume_service "Eidos MCP Server" "${MCP_PID_FILE}" "eidos_mcp/run_server.sh" "eidos-mcp"; fi
+        if _target_selected "${service_target}" "doc-forge"; then _resume_service "Eidos Documentation Forge" "${DOC_PID_FILE}" "doc_forge/scripts/run_forge.sh" "eidos-doc-forge"; fi
+        if _target_selected "${service_target}" "atlas"; then _resume_service "Eidos Atlas Dashboard" "${ATLAS_PID_FILE}" "web_interface_forge/scripts/run_dashboard.sh" "eidos-atlas"; fi
+        if _target_selected "${service_target}" "scheduler"; then _resume_service "Eidos Scheduler" "${SCHEDULER_PID_FILE}" "scripts/run_eidos_scheduler.sh" "eidos-scheduler"; fi
+        if _target_selected "${service_target}" "local-agent"; then _resume_service "Eidos Local Agent" "${LOCAL_AGENT_PID_FILE}" "scripts/run_local_mcp_agent.sh" "eidos-local-agent"; fi
+        ;;
     restart)
         "$0" stop "${service_target}"
         "$0" start "${service_target}"
+        ;;
+    low-load)
+        "$0" start mcp || true
+        "$0" start atlas || true
+        "$0" pause scheduler || true
+        "$0" pause local-agent || true
+        "$0" stop ollama-qwen || true
+        "$0" stop ollama-embedding || true
+        "$0" stop doc-forge || true
+        ;;
+    restore-standard)
+        "$0" start mcp || true
+        "$0" start atlas || true
+        "$0" start doc-forge || true
+        "$0" start ollama-qwen || true
+        "$0" start ollama-embedding || true
+        "$0" resume scheduler || true
+        "$0" resume local-agent || true
         ;;
     install-runit)
         exec "${FORGE_ROOT}/scripts/install_termux_runit_services.sh"
@@ -469,7 +589,7 @@ case "${cmd}" in
         printf 'Interactive shell refcount: %s\n' "$(_read_count)"
         ;;
     *)
-        echo "Usage: $0 {start-shell|exit-shell|start|stop|restart|install-runit|status} [all|ollama-qwen|ollama-embedding|mcp|doc-forge|atlas|scheduler|local-agent]" >&2
+        echo "Usage: $0 {start-shell|exit-shell|start|stop|pause|resume|restart|low-load|restore-standard|install-runit|status} [all|ollama-qwen|ollama-embedding|mcp|doc-forge|atlas|scheduler|local-agent]" >&2
         exit 2
         ;;
 esac
