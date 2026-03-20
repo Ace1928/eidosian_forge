@@ -147,6 +147,7 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
 - [ ] Add LLM-assisted enrichment policies for selective high-value memories.
 - [~] Add community drift tracking, tier-health tracking, and quality scoring.
 - [~] Feed memory trends into autonomy, consciousness, Atlas, and scheduler policy.
+- [x] Normalize timezone handling across tier persistence and introspection so live/report comparisons remain stable across runtimes.
 
 ### Phase 6: Knowledge Forge and Native GraphRAG Completion
 - [~] Complete GraphRAG-native indexing parity for code, docs, memory, lexicon, references, and artifacts.
@@ -178,8 +179,8 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
 - [~] Ingest code-like material into Code Forge first.
 - [~] Ingest document-like material into doc/knowledge/GraphRAG pipelines.
 - [~] Ingest reference/metadata/manifests into GIS/knowledge provenance stores.
-- [ ] Add promotion/deletion gates so raw archive content is only removed after abstraction and evidence thresholds are met.
-- [~] Track archive burn-down with artifacts and dashboards.
+- [~] Add promotion/deletion gates so raw archive content is only removed after abstraction and evidence thresholds are met.
+- [~] Track archive burn-down with artifacts, dashboards, and repo-level retirement status.
 
 ### Phase 9: Document, Tika, and Crawl Completion
 - [~] Harden Tika and crawl ingestion for all supported local and fetched artifacts.
@@ -190,6 +191,7 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
 - [~] Add managed directory documentation, coverage APIs, batch README generation, and runtime health integration across the forge estate.
 - [~] Add Atlas-side documentation navigation, batch regeneration, and drift history as operator-facing controls.
 - [~] Add documentation governance contracts for suppressed directories, review gates, and promotion readiness.
+- [x] Add identity continuity history/trend views to Atlas, not just latest-score surfaces.
 
 ### Phase 10: Word Forge and Living Lexicon Completion
 - [~] Ensure every new term/phrase discovered by code/doc/crawl/memory pipelines enters the lexicon queue.
@@ -216,6 +218,8 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
 - [x] Add governed local-agent execution as a first-class runtime surface.
 - [x] Add explicit unit coverage for new consciousness runtime modules (`default_mode`, `metacognition`, `motor`) and reconcile newly added routers against focused tests.
 - [x] Add cross-interface continuity import/synchronization across Codex, Gemini, qwenchat, and local-agent session surfaces.
+- [x] Make narrative anchoring and desire-state introspection explicit, configurable, and test-covered instead of hidden inline behavior.
+- [~] Normalize MCP boundary coercion so list-like router parameters tolerate stable cross-client inputs instead of brittle schema mismatches.
 
 ### Phase 12: Atlas and Operator UX
 - [~] Expand Atlas into the operator control plane for:
@@ -232,6 +236,8 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
 - [~] Add local-agent runtime status/history to the operator surface.
 - [~] Add execution control for supervised services and scheduler queues.
 - [~] Add documentation coverage/diff/regeneration controls to Atlas.
+  - [x] docs batch operator status/history APIs and live home-page controls
+  - [x] runtime artifact audit operator status/history APIs and live home-page controls
 
 ### Phase 13: Validation, Benchmarks, and Promotion Gates
 - [ ] Define end-to-end promotion gates for each subsystem.
@@ -244,18 +250,25 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
   - external agent suites with publishable artifacts.
 - [~] Add externally reportable benchmark evidence:
   - [x] imported AgencyBench reference artifact
+  - [x] imported AgentBench leaderboard reference artifact
   - [x] live AgencyBench scenario2 deterministic artifact
   - [x] live AgencyBench scenario1 deterministic artifact
+  - [x] live runtime benchmark observability artifacts and Atlas/API surfaces
   - [ ] live non-deterministic model-driven external benchmark artifact
   - scheduler throughput,
   - service resiliency.
 - [ ] Require green CI, green targeted regression suites, and artifact publication before promotion/deletion actions.
+- [~] Reduce live Dependabot exposure through deterministic manifest remediation and operator-visible alert reporting.
 - [~] Add an externally legible proof scorecard that aggregates capability, continuity, governance, observability, reproducibility, and adversarial evidence into one reportable contract.
 - [~] Add freshness/regression proof policy and migration/replay contracts:
   - [x] freshness degradation for stale evidence
   - [x] previous-scorecard regression deltas
   - [x] migration/replay scorecard contract
   - [x] live imported mainstream external benchmark evidence
+  - [x] second mainstream imported benchmark suite evidence
+  - [x] identity continuity trend/history included in proof artifacts
+  - [x] proof history trend/delta included in proof artifacts
+  - [x] session-bridge continuity evidence included in proof artifacts and bundle
 
 ## Immediate Execution Order
 
@@ -290,6 +303,40 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
   - AgencyBench official sample-reference import path and artifact
   - migration/replay scorecard contract
   - scheduler runtime proof normalization
+  - identity continuity history/trend publication in scorecards and bundles
+- [x] Atlas/proof slice extended with:
+  - `/api/proof/summary`
+  - `/api/proof/history`
+  - `/api/proof/external`
+  - Atlas proof-history and external-benchmark tables
+  - bundle inclusion of session-bridge runtime evidence
+- [x] Atlas/operator slice extended with:
+  - `/api/docs/upsert-batch/history`
+  - `/api/runtime-artifacts/audit`
+  - `/api/runtime-artifacts/audit/status`
+  - `/api/runtime-artifacts/audit/history`
+  - durable operator histories for docs regeneration and runtime artifact audits
+- [x] Proof/bundle slice extended with:
+  - docs-batch operator status/history evidence
+  - runtime-artifact-audit status/history evidence
+  - operator job summaries embedded in proof/bundle artifacts
+- [x] Code Forge provenance audit slice started with:
+  - standalone provenance audit/report script
+  - focused regression coverage
+  - latest JSON/Markdown artifacts under `reports/code_forge_provenance_audit/`
+- [x] Compute expansion research captured in:
+  - `docs/operations/COMPUTE_EXPANSION_OPTIONS_2026-03-20.md`
+  - `docs/external_references/2026-03-20-compute-options/README.md`
+- [x] Runtime benchmark observability slice extended with:
+  - `status.json`, `attempts.jsonl`, and `model_trace.jsonl` per live AgencyBench run
+  - `/api/benchmarks/runtime`
+  - Atlas runtime benchmark table
+  - proof scorecard and bundle inclusion of runtime benchmark status evidence
+- [x] Security observability slice extended with:
+  - deterministic Dependabot manifest remediation for current open Python/npm surfaces
+  - `reports/security/dependabot_open_summary_2026-03-20.json`
+  - `reports/security/dependabot_remediation_plan_2026-03-20.{json,md}`
+  - Atlas `/api/security/dependabot` plus home-page summary card
 - [x] Initial primary-source set saved and ingested:
   - `docs/external_references/2026-03-07-master-program/`
 - [x] Phase 1 implementation slice started:
@@ -390,3 +437,9 @@ For each completed item:
 - ingest any new source/reference material,
 - store a lesson or memory if the step changed the operating model,
 - commit and push a narrow change set.
+
+- [x] Added repo-scoped archive lifecycle modes for Code Forge:
+  - `ingest_and_keep` for standing library expansion
+  - `ingest_and_remove` for reversible retirement after parity/provenance gates
+- [x] Added fast metadata-first archive planning so full `archive_forge` scans reopen only changed batches instead of recomputing heavyweight content hashes.
+- [x] Added repo-filtered archive wave execution and reversible restore/retire scripts to support controlled archive burn-down.

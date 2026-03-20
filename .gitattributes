@@ -13,3 +13,13 @@ archive_forge/manifests/**/*.json filter=lfs diff=lfs merge=lfs -text
 reports/**/*.json filter=lfs diff=lfs merge=lfs -text
 models/*.gguf filter=lfs diff=lfs merge=lfs -text
 *.gguf filter=lfs diff=lfs merge=lfs -text
+
+# Code Forge large vector / graph / database assets
+data/code_forge/**/*.sqlite filter=lfs diff=lfs merge=lfs -text
+data/code_forge/**/*.sqlite-wal filter=lfs diff=lfs merge=lfs -text
+data/code_forge/**/*.sqlite-shm filter=lfs diff=lfs merge=lfs -text
+data/code_forge/**/*.graphml filter=lfs diff=lfs merge=lfs -text
+data/code_forge/**/*.gexf filter=lfs diff=lfs merge=lfs -text
+data/code_forge/**/*.npy filter=lfs diff=lfs merge=lfs -text
+data/code_forge/**/*.npz filter=lfs diff=lfs merge=lfs -text
+data/code_forge/**/*.hnsw filter=lfs diff=lfs merge=lfs -text

@@ -93,7 +93,7 @@ Saved under `docs/external_references/2026-03-07-code-forge-gis/` and ingested i
   - binary/unsupported artifacts
 - [~] Route code-like artifacts through Code Forge first.
 - [~] Route document-like artifacts through doc/Tika/native GraphRAG.
-- [ ] Retain deletion evidence and rollback pointers for every retirement action.
+- [~] Retain deletion evidence and rollback pointers for every retirement action.
 
 ### Track D: Graph / Vector Integration
 - [ ] Ensure every Code Forge unit stored in SQLite is mirrored into the shared vector substrate with stable metadata keys.
@@ -125,7 +125,7 @@ Saved under `docs/external_references/2026-03-07-code-forge-gis/` and ingested i
 2. [~] Add GraphRAG export reconciliation for Code Forge units, triage artifacts, and reduction-plan artifacts.
 3. [x] Build batch classification and resumable ingestion state for `archive_forge`.
 4. [ ] Add reverse lookup/report APIs needed by Atlas and the scheduler.
-5. [ ] Add archive retirement gates and evidence artifacts.
+5. [~] Add archive retirement gates and evidence artifacts.
 
 ## Progress Log
 
@@ -210,3 +210,14 @@ Saved under `docs/external_references/2026-03-07-code-forge-gis/` and ingested i
   - code route knowledge nodes: `141` (from `450`)
   - code route GraphRAG docs: `141` (from `450`)
   - code route skipped structural units: `973`
+
+- [x] Added fast metadata-first full-archive planning with repo-scoped batches and change-aware state reopening:
+  - `scripts/code_forge_archive_plan.py`
+  - batches are now grouped by `repo_key`, route, and category
+  - completed batches are reopened only when their inputs change
+- [x] Added explicit archive lifecycle modes and reversible retirement controls:
+  - `scripts/code_forge_archive_lifecycle.py`
+  - `docs/operations/CODE_FORGE_ARCHIVE_LIFECYCLE.md`
+- [x] Added `ingest_and_keep` and `ingest_and_remove` policy contracts with repo-level retention policy:
+  - `data/code_forge/archive_ingestion/latest/repo_retention_policy.json`
+- [x] Added repo-filtered archive wave execution so ingestion can advance selectively instead of rescanning the whole archive wave set.
