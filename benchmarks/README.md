@@ -155,6 +155,7 @@ Use `scripts/entity_proof_suite.py` to aggregate the latest benchmark, continuit
 - make missing evidence explicit rather than implicit
 - provide one reportable scorecard for external review
 - turn internal benchmark fragments into a publishable proof surface
+- include identity continuity trend/delta history, not just a single-point score
 
 ## External Benchmark Import
 Use `scripts/import_external_benchmark.py` to normalize upstream external-suite results into the proof pipeline.

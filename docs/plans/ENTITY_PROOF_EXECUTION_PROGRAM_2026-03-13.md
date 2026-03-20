@@ -75,6 +75,10 @@ The missing layer is a canonical external-proof contract that:
 - [x] Added explicit identity continuity scorecard generation:
   - `scripts/identity_continuity_scorecard.py`
   - `reports/proof/identity_continuity_scorecard_latest.json`
+- [x] Added identity continuity history/trend summaries to the scorecard and proof bundle:
+  - recent scorecard history
+  - delta from previous scorecard
+  - trend classification in latest artifact and bundle manifest
 
 ## Open Work
 

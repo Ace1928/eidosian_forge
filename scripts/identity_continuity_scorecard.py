@@ -42,6 +42,45 @@ def _status(score: float) -> str:
     return "red"
 
 
+def _history_summary(report_dir: Path, current_score: float, limit: int = 12) -> dict[str, Any]:
+    entries: list[dict[str, Any]] = []
+    for path in sorted(report_dir.glob("identity_continuity_scorecard_*.json"), reverse=True):
+        payload = _load_json(path)
+        if payload.get("contract") != "eidos.identity_continuity_scorecard.v1":
+            continue
+        entries.append(
+            {
+                "path": str(path),
+                "generated_at": payload.get("generated_at"),
+                "overall_score": _safe_float(payload.get("overall_score")),
+                "status": payload.get("status"),
+            }
+        )
+        if len(entries) >= max(1, int(limit)):
+            break
+
+    previous = entries[0] if entries else {}
+    previous_score = _safe_float(previous.get("overall_score")) if previous else 0.0
+    delta = round(current_score - previous_score, 6) if previous else None
+    trend = "new"
+    if previous:
+        if delta is not None and delta > 0.02:
+            trend = "improved"
+        elif delta is not None and delta < -0.02:
+            trend = "regressed"
+        else:
+            trend = "stable"
+
+    return {
+        "sample_count": len(entries) + 1,
+        "previous_score": previous_score if previous else None,
+        "delta_from_previous": delta,
+        "trend": trend,
+        "recent_entries": entries,
+        "best_prior_score": max((_safe_float(entry.get("overall_score")) for entry in entries), default=None),
+    }
+
+
 def _continuity_metrics(core_bench: dict[str, Any], trial: dict[str, Any]) -> dict[str, float]:
     cap = core_bench.get("capability") if isinstance(core_bench.get("capability"), dict) else {}
     after = trial.get("after") if isinstance(trial.get("after"), dict) else {}
@@ -197,6 +236,7 @@ def build_scorecard(repo_root: Path) -> dict[str, Any]:
         "identity_alignment": round(min(1.0, alignment_score), 6),
     }
     overall_score = round(sum(sections.values()) / len(sections), 6)
+    history = _history_summary(proof_root, overall_score)
 
     return {
         "contract": "eidos.identity_continuity_scorecard.v1",
@@ -205,6 +245,7 @@ def build_scorecard(repo_root: Path) -> dict[str, Any]:
         "overall_score": overall_score,
         "status": _status(overall_score),
         "section_scores": sections,
+        "history": history,
         "continuity_metrics": metrics,
         "session_bridge": {
             "recent_sessions": len(recent_sessions),
@@ -240,6 +281,11 @@ def render_markdown(payload: dict[str, Any]) -> str:
     lines.extend(["", "## Continuity Metrics", ""])
     for key, value in sorted((payload.get("continuity_metrics") or {}).items()):
         lines.append(f"- `{key}`: `{value}`")
+    history = payload.get("history") or {}
+    lines.extend(["", "## History", ""])
+    lines.append(f"- `trend`: `{history.get('trend')}`")
+    lines.append(f"- `delta_from_previous`: `{history.get('delta_from_previous')}`")
+    lines.append(f"- `sample_count`: `{history.get('sample_count')}`")
     lines.extend(["", "## Gaps", ""])
     for gap in payload.get("gaps") or []:
         lines.append(f"- {gap}")

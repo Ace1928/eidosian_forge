@@ -58,10 +58,16 @@ def test_build_identity_scorecard(tmp_path: Path) -> None:
     ledger = repo / "data" / "runtime" / "test_autonomy" / "ledger" / "continuity_ledger.jsonl"
     ledger.parent.mkdir(parents=True, exist_ok=True)
     ledger.write_text('{"event":"tick"}\n', encoding="utf-8")
+    _write_json(
+        repo / "reports" / "proof" / "identity_continuity_scorecard_20260319_000000.json",
+        {"contract": "eidos.identity_continuity_scorecard.v1", "generated_at": "2026-03-19T00:00:00Z", "overall_score": 0.7, "status": "yellow"},
+    )
 
     payload = module.build_scorecard(repo)
     assert payload["contract"] == "eidos.identity_continuity_scorecard.v1"
     assert payload["overall_score"] > 0.5
+    assert payload["history"]["trend"] == "improved"
+    assert payload["history"]["sample_count"] == 2
     assert payload["session_bridge"]["imported_codex_threads"] == 2
     assert payload["memory"]["working_records"] == 2
     assert payload["identity_sources"]["theory_of_operation"] is True

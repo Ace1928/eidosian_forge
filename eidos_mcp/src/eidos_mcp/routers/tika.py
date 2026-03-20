@@ -17,6 +17,7 @@ from eidosian_core import eidosian
 from .. import FORGE_ROOT
 from ..core import tool
 from ..forge_loader import ensure_forge_import
+from ._param_coercion import coerce_extension_list, coerce_tag_list
 
 TIKA_AVAILABLE: bool | None = None
 TikaExtractor = None
@@ -204,9 +205,11 @@ def tika_get_metadata(file_path: str) -> str:
         "properties": {
             "file_path": {"type": "string", "description": "Path to the file to ingest"},
             "tags": {
-                "type": "array",
-                "items": {"type": "string"},
-                "description": "Tags to apply to the knowledge nodes",
+                "oneOf": [
+                    {"type": "array", "items": {"type": "string"}},
+                    {"type": "string"},
+                ],
+                "description": "Tags to apply to the knowledge nodes. Accepts an array or comma-delimited string.",
             },
             "chunk_size": {"type": "integer", "description": "Maximum characters per chunk (default: 2000)"},
         },
@@ -216,7 +219,7 @@ def tika_get_metadata(file_path: str) -> str:
 @eidosian()
 def tika_ingest_file(
     file_path: str,
-    tags: Optional[List[str]] = None,
+    tags: Optional[List[str] | str] = None,
     chunk_size: int = 2000,
 ) -> str:
     """Extract and ingest a file into Knowledge Forge."""
@@ -224,13 +227,13 @@ def tika_ingest_file(
     if not ingester:
         payload = _tika_unavailable_payload(operation="ingest_file")
         payload["file_path"] = str(file_path)
-        payload["tags"] = tags or []
+        payload["tags"] = coerce_tag_list(tags)
         payload["chunk_size"] = int(chunk_size)
         return json.dumps(payload, indent=2)
 
     result = ingester.ingest_file(
         Path(file_path),
-        tags=tags or [],
+        tags=coerce_tag_list(tags),
         chunk_size=chunk_size,
     )
     return json.dumps(result, indent=2, default=str)
@@ -244,9 +247,11 @@ def tika_ingest_file(
         "properties": {
             "url": {"type": "string", "description": "URL to ingest"},
             "tags": {
-                "type": "array",
-                "items": {"type": "string"},
-                "description": "Tags to apply to the knowledge nodes",
+                "oneOf": [
+                    {"type": "array", "items": {"type": "string"}},
+                    {"type": "string"},
+                ],
+                "description": "Tags to apply to the knowledge nodes. Accepts an array or comma-delimited string.",
             },
             "chunk_size": {"type": "integer", "description": "Maximum characters per chunk (default: 2000)"},
         },
@@ -256,7 +261,7 @@ def tika_ingest_file(
 @eidosian()
 def tika_ingest_url(
     url: str,
-    tags: Optional[List[str]] = None,
+    tags: Optional[List[str] | str] = None,
     chunk_size: int = 2000,
 ) -> str:
     """Extract and ingest a URL into Knowledge Forge."""
@@ -264,13 +269,13 @@ def tika_ingest_url(
     if not ingester:
         payload = _tika_unavailable_payload(operation="ingest_url")
         payload["url"] = str(url)
-        payload["tags"] = tags or []
+        payload["tags"] = coerce_tag_list(tags)
         payload["chunk_size"] = int(chunk_size)
         return json.dumps(payload, indent=2)
 
     result = ingester.ingest_url(
         url,
-        tags=tags or [],
+        tags=coerce_tag_list(tags),
         chunk_size=chunk_size,
     )
     return json.dumps(result, indent=2, default=str)
@@ -284,14 +289,18 @@ def tika_ingest_url(
         "properties": {
             "directory": {"type": "string", "description": "Directory path to scan"},
             "extensions": {
-                "type": "array",
-                "items": {"type": "string"},
-                "description": "File extensions to include (e.g., ['pdf', 'docx'])",
+                "oneOf": [
+                    {"type": "array", "items": {"type": "string"}},
+                    {"type": "string"},
+                ],
+                "description": "File extensions to include. Accepts an array or comma-delimited string.",
             },
             "tags": {
-                "type": "array",
-                "items": {"type": "string"},
-                "description": "Tags to apply to all ingested nodes",
+                "oneOf": [
+                    {"type": "array", "items": {"type": "string"}},
+                    {"type": "string"},
+                ],
+                "description": "Tags to apply to all ingested nodes. Accepts an array or comma-delimited string.",
             },
             "recursive": {"type": "boolean", "description": "Whether to scan subdirectories (default: true)"},
         },
@@ -301,8 +310,8 @@ def tika_ingest_url(
 @eidosian()
 def tika_ingest_directory(
     directory: str,
-    extensions: Optional[List[str]] = None,
-    tags: Optional[List[str]] = None,
+    extensions: Optional[List[str] | str] = None,
+    tags: Optional[List[str] | str] = None,
     recursive: bool = True,
 ) -> str:
     """Ingest all documents from a directory."""
@@ -311,7 +320,8 @@ def tika_ingest_directory(
         payload = _tika_unavailable_payload(operation="ingest_directory")
         payload["directory"] = str(directory)
         payload["recursive"] = bool(recursive)
-        payload["extensions"] = extensions or []
+        payload["extensions"] = coerce_extension_list(extensions)
+        payload["tags"] = coerce_tag_list(tags)
         return json.dumps(payload, indent=2)
 
     dir_path = Path(directory)
@@ -319,11 +329,11 @@ def tika_ingest_directory(
         return f"Error: Directory not found: {directory}"
 
     # Default to common document types
-    if not extensions:
-        extensions = ["pdf", "doc", "docx", "txt", "md", "html", "htm", "rtf", "odt"]
+    normalized_extensions = coerce_extension_list(extensions)
+    if not normalized_extensions:
+        normalized_extensions = ["pdf", "doc", "docx", "txt", "md", "html", "htm", "rtf", "odt"]
 
-    # Normalize extensions
-    extensions = [ext.lower().lstrip(".") for ext in extensions]
+    normalized_tags = coerce_tag_list(tags)
 
     # Find files
     results = {
@@ -336,12 +346,12 @@ def tika_ingest_directory(
 
     pattern = "**/*" if recursive else "*"
     for file_path in dir_path.glob(pattern):
-        if file_path.is_file() and file_path.suffix.lstrip(".").lower() in extensions:
+        if file_path.is_file() and file_path.suffix.lstrip(".").lower() in normalized_extensions:
             results["files_found"] += 1
 
             file_result = ingester.ingest_file(
                 file_path,
-                tags=tags or [],
+                tags=normalized_tags,
             )
 
             if file_result.get("status") == "success":

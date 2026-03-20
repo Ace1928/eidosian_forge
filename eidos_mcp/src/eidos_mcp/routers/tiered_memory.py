@@ -21,6 +21,7 @@ from eidosian_core import eidosian
 from .. import FORGE_ROOT
 from ..core import tool
 from ..forge_loader import ensure_forge_import
+from ._param_coercion import coerce_tag_list
 
 ensure_forge_import("memory_forge")
 
@@ -73,9 +74,11 @@ def _get_tiered_memory() -> Optional[TieredMemorySystem]:
                 "description": "The constitutional subdomain for this memory. Default is 'autobiography'."
             },
             "tags": {
-                "type": "array",
-                "items": {"type": "string"},
-                "description": "Tags for categorizing this self-memory (e.g., 'identity', 'lesson', 'capability')",
+                "oneOf": [
+                    {"type": "array", "items": {"type": "string"}},
+                    {"type": "string"},
+                ],
+                "description": "Tags for categorizing this self-memory. Accepts an array or comma-delimited string.",
             },
         },
         "required": ["content"],
@@ -85,14 +88,14 @@ def _get_tiered_memory() -> Optional[TieredMemorySystem]:
 def eidos_remember_self(
     content: str,
     subdomain: str = "autobiography",
-    tags: Optional[List[str]] = None,
+    tags: Optional[List[str] | str] = None,
 ) -> str:
     """Store EIDOS self-memory."""
     mem = _get_tiered_memory()
     if not mem:
         return "Error: Tiered memory system not available"
 
-    tag_set = set(tags) if tags else set()
+    tag_set = set(coerce_tag_list(tags))
     mid = mem.remember_self(content, subdomain=subdomain, tags=tag_set)
     return f"Self-memory stored: {mid}"
 
@@ -142,7 +145,13 @@ def eidos_recall_self(query: str, limit: int = 5) -> str:
         "properties": {
             "lesson": {"type": "string", "description": "The lesson learned"},
             "context": {"type": "string", "description": "Context in which the lesson was learned"},
-            "tags": {"type": "array", "items": {"type": "string"}, "description": "Additional categorization tags"},
+            "tags": {
+                "oneOf": [
+                    {"type": "array", "items": {"type": "string"}},
+                    {"type": "string"},
+                ],
+                "description": "Additional categorization tags. Accepts an array or comma-delimited string.",
+            },
         },
         "required": ["lesson"],
     },
@@ -151,14 +160,14 @@ def eidos_recall_self(query: str, limit: int = 5) -> str:
 def eidos_remember_lesson(
     lesson: str,
     context: Optional[str] = None,
-    tags: Optional[List[str]] = None,
+    tags: Optional[List[str] | str] = None,
 ) -> str:
     """Store a lesson learned by EIDOS."""
     mem = _get_tiered_memory()
     if not mem:
         return "Error: Tiered memory system not available"
 
-    tag_set = set(tags) if tags else set()
+    tag_set = set(coerce_tag_list(tags))
     mid = mem.remember_lesson(lesson, context=context, tags=tag_set)
     return f"Lesson stored: {mid}"
 
@@ -177,9 +186,11 @@ def eidos_remember_lesson(
             "content": {"type": "string", "description": "Information about the user to remember"},
             "user_id": {"type": "string", "description": "User identifier (default: 'lloyd')"},
             "tags": {
-                "type": "array",
-                "items": {"type": "string"},
-                "description": "Tags for categorizing this user memory",
+                "oneOf": [
+                    {"type": "array", "items": {"type": "string"}},
+                    {"type": "string"},
+                ],
+                "description": "Tags for categorizing this user memory. Accepts an array or comma-delimited string.",
             },
         },
         "required": ["content"],
@@ -189,14 +200,14 @@ def eidos_remember_lesson(
 def eidos_remember_user(
     content: str,
     user_id: str = "lloyd",
-    tags: Optional[List[str]] = None,
+    tags: Optional[List[str] | str] = None,
 ) -> str:
     """Store user-related memory."""
     mem = _get_tiered_memory()
     if not mem:
         return "Error: Tiered memory system not available"
 
-    tag_set = set(tags) if tags else set()
+    tag_set = set(coerce_tag_list(tags))
     mid = mem.remember_user(content, user_id=user_id, tags=tag_set)
     return f"User memory stored: {mid}"
 
@@ -264,7 +275,13 @@ def eidos_recall_user(
                 "enum": ["eidos", "user", "task", "knowledge", "code", "conversation"],
                 "description": "Namespace (default: task)",
             },
-            "tags": {"type": "array", "items": {"type": "string"}, "description": "Tags for categorization"},
+            "tags": {
+                "oneOf": [
+                    {"type": "array", "items": {"type": "string"}},
+                    {"type": "string"},
+                ],
+                "description": "Tags for categorization. Accepts an array or comma-delimited string.",
+            },
             "importance": {"type": "number", "description": "Importance (0.0-1.0)"},
         },
         "required": ["content"],
@@ -275,7 +292,7 @@ def tiered_remember(
     content: str,
     tier: str = "working",
     namespace: str = "task",
-    tags: Optional[List[str]] = None,
+    tags: Optional[List[str] | str] = None,
     importance: float = 0.5,
 ) -> str:
     """Store memory with explicit tier/namespace."""
@@ -299,7 +316,7 @@ def tiered_remember(
         "conversation": MemoryNamespace.CONVERSATION,
     }
 
-    tag_set = set(tags) if tags else set()
+    tag_set = set(coerce_tag_list(tags))
     mid = mem.remember(
         content=content,
         tier=tier_map.get(tier, MemoryTier.WORKING),

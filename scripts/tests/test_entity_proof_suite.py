@@ -152,7 +152,11 @@ def test_build_proof_report_tracks_freshness_regression_and_external_results(tmp
     )
     _write_json(
         repo / "reports" / "proof" / "identity_continuity_scorecard_latest.json",
-        {"contract": "eidos.identity_continuity_scorecard.v1", "overall_score": 0.77},
+        {
+            "contract": "eidos.identity_continuity_scorecard.v1",
+            "overall_score": 0.77,
+            "history": {"trend": "stable", "delta_from_previous": 0.01, "sample_count": 3},
+        },
     )
     stale = repo / "reports" / "linux_audit_20260101.json"
     _write_json(stale, {"counts": {"checks_fail": 0}})
@@ -163,6 +167,7 @@ def test_build_proof_report_tracks_freshness_regression_and_external_results(tmp
     assert report["external_benchmark_results"][0]["suite"] == "agentbench"
     assert report["external_benchmark_results"][0]["execution_mode"] == "imported_reference"
     assert report["identity_continuity_scorecard"]["overall_score"] == 0.77
+    assert report["identity_continuity_history"]["trend"] == "stable"
     assert report["freshness"]["status"] in {"yellow", "red"}
     assert report["regression"]["status"] == "regressed"
     assert any(row["category"] == "regression" for row in report["top_gaps"])

@@ -527,6 +527,22 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
         continuity_strengths.append(
             f"Identity continuity scorecard is present with score `{_safe_float(identity_score.get('overall_score'))}`."
         )
+        history = identity_score.get("history") if isinstance(identity_score.get("history"), dict) else {}
+        if _safe_int(history.get("sample_count")) >= 2:
+            continuity_score += 0.03
+            continuity_strengths.append(
+                f"Identity continuity history tracks `{_safe_int(history.get('sample_count'))}` scored samples."
+            )
+        trend = str(history.get("trend") or "")
+        delta = _safe_float(history.get("delta_from_previous"))
+        if trend == "improved":
+            continuity_score += 0.03
+            continuity_strengths.append(f"Identity continuity trend is improving with delta `{delta}`.")
+        elif trend == "stable":
+            continuity_score += 0.02
+            continuity_strengths.append("Identity continuity trend is stable across recent scorecards.")
+        elif trend == "regressed":
+            continuity_gaps.append(f"Identity continuity regressed by `{delta}` versus the previous scorecard.")
     else:
         continuity_gaps.append("No dedicated identity continuity scorecard artifact found.")
     if _safe_float(continuity.get("continuity_index")) <= 0.0:
@@ -792,6 +808,9 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
         "regression": regression,
         "continuity_metrics": continuity,
         "identity_continuity_scorecard": identity_score or {},
+        "identity_continuity_history": (
+            (identity_score or {}).get("history") if isinstance((identity_score or {}).get("history"), dict) else {}
+        ),
         "runtime": {
             "coordinator_state": coordinator_status.get("state"),
             "coordinator_owner": coordinator_status.get("owner"),

@@ -5,6 +5,7 @@ import json
 import tarfile
 from pathlib import Path
 
+
 _MODULE_PATH = Path(__file__).resolve().parents[1] / "export_entity_proof_bundle.py"
 _SPEC = importlib.util.spec_from_file_location("export_entity_proof_bundle", _MODULE_PATH)
 assert _SPEC and _SPEC.loader
@@ -32,9 +33,19 @@ def test_export_bundle_collects_latest_proof_and_benchmarks(tmp_path: Path) -> N
     _write(repo_root / "reports" / "proof" / "migration_replay_scorecard_latest.md", "# migration\n")
     _write(
         repo_root / "reports" / "proof" / "identity_continuity_scorecard_latest.json",
-        json.dumps({"overall_score": 0.77, "status": "yellow"}),
+        json.dumps(
+            {
+                "overall_score": 0.77,
+                "status": "yellow",
+                "history": {"trend": "stable", "delta_from_previous": 0.01, "sample_count": 3},
+            }
+        ),
     )
     _write(repo_root / "reports" / "proof" / "identity_continuity_scorecard_latest.md", "# identity\n")
+    _write(
+        repo_root / "reports" / "proof" / "identity_continuity_scorecard_20260319_000000.json",
+        json.dumps({"overall_score": 0.7, "status": "yellow", "generated_at": "2026-03-19T00:00:00Z"}),
+    )
     _write(repo_root / "docs" / "THEORY_OF_OPERATION.md", "# theory\n")
     _write(
         repo_root / "reports" / "external_benchmarks" / "agencybench" / "latest.json",
@@ -51,9 +62,12 @@ def test_export_bundle_collects_latest_proof_and_benchmarks(tmp_path: Path) -> N
     assert manifest["proof_summary"]["status"] == "yellow"
     assert manifest["proof_summary"]["score"] == 0.7
     assert manifest["migration_summary"]["status"] == "green"
+    assert manifest["identity_summary"]["history"]["trend"] == "stable"
+    assert len(manifest["identity_summary"]["recent_history"]) == 1
     assert manifest["benchmarks"][0]["suite"] == "agencybench"
     assert manifest["missing"] == []
     assert any(item["label"] == "identity_continuity_json" for item in manifest["files"])
+    assert any(item["label"].startswith("identity_history:") for item in manifest["files"])
     with tarfile.open(bundle_path, "r:gz") as archive:
         names = archive.getnames()
     assert any(name.endswith("manifest.json") for name in names)

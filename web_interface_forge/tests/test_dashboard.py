@@ -148,6 +148,7 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
             "contract": "eidos.identity_continuity_scorecard.v1",
             "overall_score": 0.93,
             "status": "green",
+            "history": {"trend": "improved", "delta_from_previous": 0.05, "sample_count": 3},
             "session_bridge": {"recent_sessions": 2},
         },
     )
@@ -241,6 +242,7 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         assert runtime_payload["session_bridge"]["context"]["session_id"] == "qwenchat:test"
         assert runtime_payload["proof_bundle"]["bundle_root"] == "20260320_033604"
         assert runtime_payload["identity_continuity"]["overall_score"] == 0.93
+        assert runtime_payload["identity_continuity"]["history"]["trend"] == "improved"
         assert len(runtime_payload["identity_history"]) == 2
         local_agent_resp = client.get("/api/runtime/local-agent")
         assert local_agent_resp.status_code == 200
@@ -260,6 +262,7 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         identity_resp = client.get("/api/proof/identity/latest")
         assert identity_resp.status_code == 200
         assert identity_resp.json()["overall_score"] == 0.93
+        assert identity_resp.json()["history"]["trend"] == "improved"
         identity_history_resp = client.get("/api/proof/identity/history")
         assert identity_history_resp.status_code == 200
         assert len(identity_history_resp.json()["entries"]) == 2

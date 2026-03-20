@@ -143,6 +143,12 @@
             <span id="identity-sessions">{{ runtime_snapshot.get('identity_continuity', {}).get('session_bridge', {}).get('recent_sessions', 0) }}</span>
         </div>
         <div class="stat-label">
+            trend:
+            <span id="identity-trend">{{ runtime_snapshot.get('identity_continuity', {}).get('history', {}).get('trend', 'n/a') }}</span>
+            · delta:
+            <span id="identity-delta">{{ runtime_snapshot.get('identity_continuity', {}).get('history', {}).get('delta_from_previous', 'n/a') }}</span>
+        </div>
+        <div class="stat-label">
             history:
             <span id="identity-history-count">{{ (runtime_snapshot.get('identity_history', []) or [])|length }}</span>
             · <a href="/api/proof/identity/latest" target="_blank">Identity Scorecard JSON</a>
@@ -692,6 +698,10 @@ async function refreshIdentityContinuity() {
         document.getElementById("identity-status").textContent = payload.status || "missing";
         document.getElementById("identity-sessions").textContent =
             payload.session_bridge?.recent_sessions ?? 0;
+        document.getElementById("identity-trend").textContent =
+            payload.history?.trend || "n/a";
+        document.getElementById("identity-delta").textContent =
+            payload.history?.delta_from_previous ?? "n/a";
     } catch (err) {
         // ignore transient refresh failures
     }

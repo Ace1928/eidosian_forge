@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 
 from eidos_mcp.routers import refactor as refactor_router
+from eidos_mcp.routers import tika as tika_router
 from eidos_mcp.routers import tiered_memory as tiered_router
 
 
@@ -45,3 +46,46 @@ def test_eidos_remember_self_no_importance_argument_regression(monkeypatch) -> N
     assert "importance" not in signature.parameters
     result = tiered_router.eidos_remember_self(content="identity", tags=["test"])
     assert "Self-memory stored: mem_self_001" in result
+
+
+def test_eidos_remember_lesson_accepts_comma_delimited_tags(monkeypatch) -> None:
+    captured: dict[str, object] = {}
+
+    class _FakeMemory:
+        def remember_lesson(self, lesson: str, context: str | None = None, tags=None) -> str:
+            captured["lesson"] = lesson
+            captured["context"] = context
+            captured["tags"] = tags
+            return "lesson_001"
+
+    monkeypatch.setattr(tiered_router, "_get_tiered_memory", lambda: _FakeMemory())
+    result = tiered_router.eidos_remember_lesson("keep traces", context="tests", tags="proof, continuity , atlas")
+    assert "Lesson stored: lesson_001" in result
+    assert captured["tags"] == {"proof", "continuity", "atlas"}
+
+
+def test_tika_ingest_directory_accepts_string_extensions_and_tags(monkeypatch, tmp_path: Path) -> None:
+    source_dir = tmp_path / "docs"
+    source_dir.mkdir(parents=True, exist_ok=True)
+    (source_dir / "notes.md").write_text("# Notes\n", encoding="utf-8")
+
+    captured: list[dict[str, object]] = []
+
+    class _FakeIngester:
+        def ingest_file(self, file_path: Path, tags=None, chunk_size: int = 2000) -> dict:
+            captured.append({"file_path": str(file_path), "tags": tags, "chunk_size": chunk_size})
+            return {"status": "success", "nodes_created": 2}
+
+    monkeypatch.setattr(tika_router, "_get_ingester", lambda: _FakeIngester())
+    payload = json.loads(
+        tika_router.tika_ingest_directory(
+            str(source_dir),
+            extensions="md,txt",
+            tags="research, proof",
+            recursive=False,
+        )
+    )
+    assert payload["files_found"] == 1
+    assert payload["files_processed"] == 1
+    assert payload["nodes_created"] == 2
+    assert captured[0]["tags"] == ["research", "proof"]

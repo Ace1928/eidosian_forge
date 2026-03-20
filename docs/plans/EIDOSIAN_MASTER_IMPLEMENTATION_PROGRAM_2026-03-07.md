@@ -191,6 +191,7 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
 - [~] Add managed directory documentation, coverage APIs, batch README generation, and runtime health integration across the forge estate.
 - [~] Add Atlas-side documentation navigation, batch regeneration, and drift history as operator-facing controls.
 - [~] Add documentation governance contracts for suppressed directories, review gates, and promotion readiness.
+- [x] Add identity continuity history/trend views to Atlas, not just latest-score surfaces.
 
 ### Phase 10: Word Forge and Living Lexicon Completion
 - [~] Ensure every new term/phrase discovered by code/doc/crawl/memory pipelines enters the lexicon queue.
@@ -260,6 +261,7 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
   - [x] migration/replay scorecard contract
   - [x] live imported mainstream external benchmark evidence
   - [x] second mainstream imported benchmark suite evidence
+  - [x] identity continuity trend/history included in proof artifacts
 
 ## Immediate Execution Order
 

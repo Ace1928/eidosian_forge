@@ -85,6 +85,24 @@ def export_bundle(repo_root: Path, output_root: Path) -> dict[str, Any]:
         "proof/identity_continuity_scorecard_latest.md",
         "identity_continuity_markdown",
     )
+    recent_identity_history: list[dict[str, Any]] = []
+    history_paths = [
+        path
+        for path in sorted(proof_root.glob("identity_continuity_scorecard_*.json"), reverse=True)
+        if path.name != "identity_continuity_scorecard_latest.json"
+    ]
+    for path in history_paths[:5]:
+        target = f"proof/identity_history/{path.name}"
+        include(path, target, f"identity_history:{path.stem}")
+        payload = _load_json(path)
+        recent_identity_history.append(
+            {
+                "path": target,
+                "generated_at": payload.get("generated_at"),
+                "overall_score": payload.get("overall_score"),
+                "status": payload.get("status"),
+            }
+        )
     include(docs_root / "THEORY_OF_OPERATION.md", "docs/THEORY_OF_OPERATION.md", "theory_of_operation")
 
     benchmark_rows: list[dict[str, Any]] = []
@@ -116,6 +134,7 @@ def export_bundle(repo_root: Path, output_root: Path) -> dict[str, Any]:
 
     proof_payload = _load_json(proof_root / "entity_proof_scorecard_latest.json")
     migration_payload = _load_json(proof_root / "migration_replay_scorecard_latest.json")
+    identity_payload = _load_json(proof_root / "identity_continuity_scorecard_latest.json")
 
     manifest = {
         "contract": "eidos.entity_proof_bundle.v1",
@@ -126,6 +145,12 @@ def export_bundle(repo_root: Path, output_root: Path) -> dict[str, Any]:
         "migration_summary": {
             "overall_score": migration_payload.get("overall_score"),
             "status": migration_payload.get("status"),
+        },
+        "identity_summary": {
+            "overall_score": identity_payload.get("overall_score"),
+            "status": identity_payload.get("status"),
+            "history": identity_payload.get("history") if isinstance(identity_payload.get("history"), dict) else {},
+            "recent_history": recent_identity_history,
         },
         "benchmarks": benchmark_rows,
         "files": files,
