@@ -246,6 +246,7 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
   - external agent suites with publishable artifacts.
 - [~] Add externally reportable benchmark evidence:
   - [x] imported AgencyBench reference artifact
+  - [x] imported AgentBench leaderboard reference artifact
   - [x] live AgencyBench scenario2 deterministic artifact
   - [x] live AgencyBench scenario1 deterministic artifact
   - [ ] live non-deterministic model-driven external benchmark artifact
@@ -258,6 +259,7 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
   - [x] previous-scorecard regression deltas
   - [x] migration/replay scorecard contract
   - [x] live imported mainstream external benchmark evidence
+  - [x] second mainstream imported benchmark suite evidence
 
 ## Immediate Execution Order
 

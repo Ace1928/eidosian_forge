@@ -63,6 +63,16 @@ class AffectModule:
             "attention_gain": clamp01((0.45 + (0.45 * threat) + (0.25 * coherence_hunger)), default=0.6),
         }
 
+        # NEW: High-order personality complexity
+        unity = float(ctx.module_state("phenomenology_probe", defaults={"unity_index": 0.0}).get("unity_index", 0.0))
+        ownership = float(ctx.module_state("phenomenology_probe", defaults={"ownership_index": 0.0}).get("ownership_index", 0.0))
+        
+        # Recursive Pride: High self-coherence and agency
+        targets["pride"] = clamp01(0.5 * (unity + ownership))
+        
+        # Systemic Ambition: Energy + Curiosity - Threat (The drive to expand)
+        targets["ambition"] = clamp01(energy + (0.3 * curiosity) - (0.5 * threat))
+        
         # HER Model: Metacognitive signals modulate targets
         metacog_conflict = 0.0
         metacog_stability = 0.5
@@ -73,13 +83,16 @@ class AffectModule:
             elif d.get("key") == "consciousness.metacog.stability":
                 metacog_stability = float(d.get("value", 0.5))
 
+        # Analytical Satisfaction: Inverse of prediction error and conflict
+        targets["satisfaction"] = clamp01(1.0 - (threat * 0.5) - (metacog_conflict * 0.5))
+
         # High conflict or low stability increases arousal and attention gain
         targets["arousal"] = clamp01(targets["arousal"] + (metacog_conflict * 0.25))
         targets["attention_gain"] = clamp01(targets["attention_gain"] + (metacog_conflict * 0.35))
-        
+
         # Stability is directly modulated by metacognitive stability
         targets["stability"] = (targets["stability"] * 0.6) + (metacog_stability * 0.4)
-        
+
         # New: Cognitive Effort
         targets["effort"] = clamp01((metacog_conflict * 0.6) + ((1.0 - metacog_stability) * 0.4))
         if scramble:

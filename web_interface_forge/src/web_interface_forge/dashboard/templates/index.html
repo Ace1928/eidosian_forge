@@ -143,7 +143,10 @@
             <span id="identity-sessions">{{ runtime_snapshot.get('identity_continuity', {}).get('session_bridge', {}).get('recent_sessions', 0) }}</span>
         </div>
         <div class="stat-label">
-            <a href="/api/proof/identity/latest" target="_blank">Identity Scorecard JSON</a>
+            history:
+            <span id="identity-history-count">{{ (runtime_snapshot.get('identity_history', []) or [])|length }}</span>
+            · <a href="/api/proof/identity/latest" target="_blank">Identity Scorecard JSON</a>
+            · <a href="/api/proof/identity/history" target="_blank">Identity History JSON</a>
         </div>
     </div>
 </div>
@@ -182,6 +185,24 @@
             <a href="/api/proof/bundle/latest" target="_blank">Latest Bundle Manifest</a>
             · <a href="/browse/forge/reports/proof_bundle/">Browse Bundles</a>
         </div>
+    </div>
+    <div class="card">
+        <h3>Identity History</h3>
+        <table>
+            <thead>
+                <tr><th>Generated</th><th>Status</th><th>Score</th><th>Sessions</th></tr>
+            </thead>
+            <tbody id="identity-history-body">
+                {% for row in runtime_snapshot.get('identity_history', [])[-6:] %}
+                <tr>
+                    <td>{{ row.get('generated_at') }}</td>
+                    <td>{{ row.get('status') }}</td>
+                    <td>{{ row.get('overall_score') }}</td>
+                    <td>{{ row.get('recent_sessions') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
     <div class="card">
         <h3>Supervised Services</h3>
@@ -676,6 +697,27 @@ async function refreshIdentityContinuity() {
     }
 }
 
+async function refreshIdentityHistory() {
+    try {
+        const res = await fetch("/api/proof/identity/history", {cache: "no-store"});
+        if (!res.ok) return;
+        const payload = await res.json();
+        const entries = payload.entries || [];
+        document.getElementById("identity-history-count").textContent = entries.length;
+        const body = document.getElementById("identity-history-body");
+        body.innerHTML = entries.slice(-6).map((row) => `
+            <tr>
+                <td>${row.generated_at || ""}</td>
+                <td>${row.status || ""}</td>
+                <td>${row.overall_score ?? ""}</td>
+                <td>${row.recent_sessions ?? 0}</td>
+            </tr>
+        `).join("");
+    } catch (err) {
+        // ignore transient refresh failures
+    }
+}
+
 async function syncSessionBridge() {
     try {
         const res = await fetch("/api/session-bridge/sync", {method: "POST"});
@@ -719,6 +761,7 @@ setInterval(refreshDocsBatchStatus, 5000);
 setInterval(refreshSessionBridge, 15000);
 setInterval(refreshProofBundle, 15000);
 setInterval(refreshIdentityContinuity, 15000);
+setInterval(refreshIdentityHistory, 15000);
 refreshScheduler();
 refreshServices();
 refreshDocsTree();
@@ -727,5 +770,6 @@ refreshDocsBatchStatus();
 refreshSessionBridge();
 refreshProofBundle();
 refreshIdentityContinuity();
+refreshIdentityHistory();
 </script>
 {% endblock %}

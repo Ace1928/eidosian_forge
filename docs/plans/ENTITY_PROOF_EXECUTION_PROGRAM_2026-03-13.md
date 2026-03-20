@@ -81,6 +81,7 @@ The missing layer is a canonical external-proof contract that:
 - [~] Wire at least one mainstream external suite into reproducible import or execution flows:
   - [x] import contract for upstream results
   - [x] bounded official AgencyBench sample-reference import path
+  - [x] bounded official AgentBench leaderboard-reference import path
   - [x] at least one live imported suite artifact on the mainline runtime
   - [x] optional bounded local execution harness for one suite
   - [x] second live external benchmark artifact beyond the first proof run
@@ -108,3 +109,4 @@ The missing layer is a canonical external-proof contract that:
 1. stabilize the `qwen3.5:2b` live benchmark execution path so `local_agent` scenario runs can replace deterministic fallback as publication-grade evidence
 2. add identity continuity scorecards across upgrade boundaries
 3. extend proof freshness/reporting so newly verified dashboard and continuity-control-plane state is reflected in the published bundle
+4. bring AgentBench leaderboard reference into the main proof layer as the second mainstream imported suite

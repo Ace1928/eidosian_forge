@@ -65,7 +65,6 @@ logger = logging.getLogger("eidos_dashboard")
 def _now_utc_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
-
 # --- App Setup ---
 app = FastAPI(title="Eidosian Atlas", version="1.0.0")
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
@@ -319,6 +318,28 @@ def get_latest_identity_continuity_scorecard() -> Dict[str, Any]:
     return payload
 
 
+def get_identity_continuity_history(limit: int = 12) -> List[Dict[str, Any]]:
+    rows: List[Dict[str, Any]] = []
+    for path in sorted(PROOF_REPORT_DIR.glob("identity_continuity_scorecard_*.json"), reverse=True):
+        if path.name.endswith("_latest.json"):
+            continue
+        payload = _read_json(path, {})
+        if not isinstance(payload, dict) or not payload:
+            continue
+        rows.append(
+            {
+                "generated_at": payload.get("generated_at") or payload.get("ts") or "",
+                "overall_score": payload.get("overall_score"),
+                "status": payload.get("status", ""),
+                "recent_sessions": ((payload.get("session_bridge") or {}).get("recent_sessions", 0)),
+                "path": str(path.relative_to(FORGE_ROOT)),
+            }
+        )
+        if len(rows) >= max(1, int(limit)):
+            break
+    return list(reversed(rows))
+
+
 def _write_docs_batch_status(payload: Dict[str, Any]) -> None:
     DOCS_BATCH_STATUS.parent.mkdir(parents=True, exist_ok=True)
     DOCS_BATCH_STATUS.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
@@ -478,7 +499,7 @@ async def _service_command(action: str, service: str | None = None) -> Dict[str,
             "services": [],
         }
     result = subprocess.run(
-        [str(SERVICES_SCRIPT), action, *([service] if service else [])],
+        [str(SERVICES_SCRIPT), action, *( [service] if service else [] )],
         cwd=str(FORGE_ROOT),
         env=env,
         capture_output=True,
@@ -784,6 +805,7 @@ async def api_runtime():
     snapshot["proof"] = get_latest_proof_report()
     snapshot["proof_bundle"] = get_latest_proof_bundle_manifest()
     snapshot["identity_continuity"] = get_latest_identity_continuity_scorecard()
+    snapshot["identity_history"] = get_identity_continuity_history()
     return snapshot
 
 
@@ -809,6 +831,14 @@ async def api_proof_identity_latest():
     if payload:
         return payload
     raise HTTPException(status_code=404, detail="No identity continuity scorecard found")
+
+
+@app.get("/api/proof/identity/history")
+async def api_proof_identity_history(limit: int = 12):
+    return {
+        "contract": "eidos.identity_continuity_history.v1",
+        "entries": get_identity_continuity_history(limit=limit),
+    }
 
 
 @app.get("/api/services")

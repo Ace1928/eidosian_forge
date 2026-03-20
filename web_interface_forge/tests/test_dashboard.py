@@ -122,9 +122,7 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         {
             "contract": "eidos.session_context.v1",
             "session_id": "qwenchat:test",
-            "recent_sessions": [
-                {"session_id": "codex:abc", "interface": "codex", "events": [{"summary": "recent codex"}]}
-            ],
+            "recent_sessions": [{"session_id": "codex:abc", "interface": "codex", "events": [{"summary": "recent codex"}]}],
         },
     )
     _write_json(
@@ -148,6 +146,26 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         tmp_path / "reports" / "proof" / "identity_continuity_scorecard_latest.json",
         {
             "contract": "eidos.identity_continuity_scorecard.v1",
+            "overall_score": 0.93,
+            "status": "green",
+            "session_bridge": {"recent_sessions": 2},
+        },
+    )
+    _write_json(
+        tmp_path / "reports" / "proof" / "identity_continuity_scorecard_20260320_010101.json",
+        {
+            "contract": "eidos.identity_continuity_scorecard.v1",
+            "generated_at": "2026-03-20T01:01:01Z",
+            "overall_score": 0.88,
+            "status": "yellow",
+            "session_bridge": {"recent_sessions": 1},
+        },
+    )
+    _write_json(
+        tmp_path / "reports" / "proof" / "identity_continuity_scorecard_20260320_020202.json",
+        {
+            "contract": "eidos.identity_continuity_scorecard.v1",
+            "generated_at": "2026-03-20T02:02:02Z",
             "overall_score": 0.93,
             "status": "green",
             "session_bridge": {"recent_sessions": 2},
@@ -195,9 +213,7 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(dashboard, "DIRECTORY_DOCS_STATUS", runtime_dir / "directory_docs_status.json")
     monkeypatch.setattr(dashboard, "DIRECTORY_DOCS_HISTORY", runtime_dir / "directory_docs_history.json")
     monkeypatch.setattr(dashboard, "SESSION_BRIDGE_CONTEXT", runtime_dir / "session_bridge" / "latest_context.json")
-    monkeypatch.setattr(
-        dashboard, "SESSION_BRIDGE_IMPORT_STATUS", runtime_dir / "session_bridge" / "import_status.json"
-    )
+    monkeypatch.setattr(dashboard, "SESSION_BRIDGE_IMPORT_STATUS", runtime_dir / "session_bridge" / "import_status.json")
     service_script = tmp_path / "eidos_termux_services.sh"
     service_script.write_text(
         "#!/bin/sh\n" "printf 'Atlas: runit run: /tmp/service: (pid 1) 10s; run: log: (pid 2) 10s\\n'\n",
@@ -225,6 +241,7 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         assert runtime_payload["session_bridge"]["context"]["session_id"] == "qwenchat:test"
         assert runtime_payload["proof_bundle"]["bundle_root"] == "20260320_033604"
         assert runtime_payload["identity_continuity"]["overall_score"] == 0.93
+        assert len(runtime_payload["identity_history"]) == 2
         local_agent_resp = client.get("/api/runtime/local-agent")
         assert local_agent_resp.status_code == 200
         assert local_agent_resp.json()["status"]["profile"] == "observer"
@@ -243,6 +260,10 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         identity_resp = client.get("/api/proof/identity/latest")
         assert identity_resp.status_code == 200
         assert identity_resp.json()["overall_score"] == 0.93
+        identity_history_resp = client.get("/api/proof/identity/history")
+        assert identity_history_resp.status_code == 200
+        assert len(identity_history_resp.json()["entries"]) == 2
+        assert identity_history_resp.json()["entries"][-1]["overall_score"] == 0.93
         session_bridge_resp = client.get("/api/session-bridge")
         assert session_bridge_resp.status_code == 200
         assert session_bridge_resp.json()["context"]["session_id"] == "qwenchat:test"
@@ -365,11 +386,7 @@ def test_services_api_invalid_target() -> None:
 
 
 def test_session_bridge_sync_route(monkeypatch) -> None:
-    monkeypatch.setattr(
-        dashboard,
-        "get_session_bridge_status",
-        lambda: {"contract": "eidos.session_bridge.status.v1", "recent_sessions": []},
-    )
+    monkeypatch.setattr(dashboard, "get_session_bridge_status", lambda: {"contract": "eidos.session_bridge.status.v1", "recent_sessions": []})
 
     def _fake_sync_external_sessions(min_interval_sec: float = 0.0):
         return {"gemini": {"imported": 1}, "codex": {"imported": 2}}

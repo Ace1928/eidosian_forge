@@ -184,6 +184,19 @@ Use `scripts/import_agencybench_reference.py` to aggregate the official sample `
 - `reports/external_benchmarks/agencybench/agencybench_<stamp>.json`
 - `reports/external_benchmarks/agencybench/latest.json`
 
+## AgentBench Reference Import
+Use `scripts/import_agentbench_reference.py` to normalize the official published AgentBench leaderboard CSV into the proof pipeline as a second mainstream external benchmark reference.
+
+### Run
+```bash
+./eidosian_venv/bin/python scripts/import_agentbench_reference.py \
+  --csv docs/external_references/2026-03-20-agentbench/AgentBench-leaderboard.csv
+```
+
+### Outputs
+- `reports/external_benchmarks/agentbench/agentbench_<stamp>.json`
+- `reports/external_benchmarks/agentbench/latest.json`
+
 ## AgencyBench Eidos Live Runs
 Use `scripts/run_agencybench_eidos.py` to generate real Eidos-run benchmark artifacts against selected official AgencyBench scenarios.
 

@@ -163,6 +163,7 @@ Primary source targets:
   - migration/replay reproducibility doctrine
   - benchmark freshness/regression policy
   - GitHub workflow execution and benchmark-operation references for live AgencyBench scenario execution
+  - AgentBench leaderboard/reference artifacts
 
 ### Wave C: UX / operator plane / runtime control
 - [~] official docs for current dashboard stack
@@ -218,3 +219,4 @@ For every saved source set:
 - `docs/external_references/2026-03-13-proof-governance/`
 - `docs/external_references/2026-03-13-agencybench/`
 - `docs/external_references/2026-03-13-github-cli-agencybench-live/`
+- `docs/external_references/2026-03-20-agentbench/`
