@@ -121,10 +121,15 @@ class MemoryIntrospector:
             total_importance += mem.importance
             total_access += mem.access_count
 
-            if mem.created_at < oldest:
-                oldest = mem.created_at
-            if mem.created_at > newest:
-                newest = mem.created_at
+            # Normalize created_at for comparison
+            created_at = mem.created_at
+            if created_at.tzinfo is None:
+                created_at = created_at.replace(tzinfo=timezone.utc)
+
+            if created_at < oldest:
+                oldest = created_at
+            if created_at > newest:
+                newest = created_at
 
         stats.by_tier = tier_counts
         stats.by_namespace = namespace_counts
@@ -292,7 +297,7 @@ class MemoryIntrospector:
 
         lines = [
             "# Memory System Introspection Report",
-            f"Generated: {datetime.now().isoformat()}",
+            f"Generated: {datetime.now(timezone.utc).isoformat()}",
             "",
             "## Statistics",
             f"- Total memories: {stats.total_memories}",

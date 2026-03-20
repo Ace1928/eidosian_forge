@@ -147,6 +147,7 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
 - [ ] Add LLM-assisted enrichment policies for selective high-value memories.
 - [~] Add community drift tracking, tier-health tracking, and quality scoring.
 - [~] Feed memory trends into autonomy, consciousness, Atlas, and scheduler policy.
+- [x] Normalize timezone handling across tier persistence and introspection so live/report comparisons remain stable across runtimes.
 
 ### Phase 6: Knowledge Forge and Native GraphRAG Completion
 - [~] Complete GraphRAG-native indexing parity for code, docs, memory, lexicon, references, and artifacts.
@@ -216,6 +217,7 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
 - [x] Add governed local-agent execution as a first-class runtime surface.
 - [x] Add explicit unit coverage for new consciousness runtime modules (`default_mode`, `metacognition`, `motor`) and reconcile newly added routers against focused tests.
 - [x] Add cross-interface continuity import/synchronization across Codex, Gemini, qwenchat, and local-agent session surfaces.
+- [x] Make narrative anchoring and desire-state introspection explicit, configurable, and test-covered instead of hidden inline behavior.
 
 ### Phase 12: Atlas and Operator UX
 - [~] Expand Atlas into the operator control plane for:

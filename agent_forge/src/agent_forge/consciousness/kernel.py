@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import importlib
 import json
 import random
 import uuid
@@ -22,9 +23,8 @@ from .modules.intero import InteroModule
 from .modules.knowledge_bridge import KnowledgeBridgeModule
 from .modules.memory_bridge import MemoryBridgeModule
 from .modules.meta import MetaModule
-from .modules.motor import MotorModule
 from .modules.metacognition import MetacognitionModule
-from .modules.default_mode import DefaultModeModule
+from .modules.motor import MotorModule
 from .modules.phenomenology_probe import PhenomenologyProbeModule
 from .modules.policy import PolicyModule
 from .modules.report import ReportModule
@@ -442,6 +442,84 @@ class ConsciousnessKernel:
             global_winner=self._last_winner,
         )
 
+    @staticmethod
+    def _resolve_forge_root() -> Path:
+        for parent in Path(__file__).resolve().parents:
+            if (parent / "agent_forge").exists() and (parent / "narrative_forge").exists():
+                return parent
+        return Path(__file__).resolve().parents[4]
+
+    def _build_narrative_engine(self):
+        import sys
+
+        forge_root = self._resolve_forge_root()
+        narrative_src = forge_root / "narrative_forge" / "src"
+        if narrative_src.exists():
+            text = str(narrative_src)
+            if text not in sys.path:
+                sys.path.insert(0, text)
+
+        engine_module = importlib.import_module("narrative_forge.engine")
+        provider = str(self.config.get("kernel_narrative_anchor_provider") or "ollama")
+        model_name = str(self.config.get("kernel_narrative_anchor_model") or "qwen3.5:2b")
+        think_interval = max(30, int(self.config.get("kernel_narrative_anchor_think_interval") or 600))
+        memory_path = self.config.get("kernel_narrative_anchor_memory_path")
+        kwargs: dict[str, Any] = {
+            "provider": provider,
+            "model_name": model_name,
+            "think_interval": think_interval,
+        }
+        if memory_path:
+            kwargs["memory_path"] = str(memory_path)
+        return engine_module.NarrativeEngine(**kwargs)
+
+    def _should_anchor_narrative(self, ctx: TickContext) -> bool:
+        if not bool(self.config.get("kernel_narrative_anchor_enabled", False)):
+            return False
+        interval = max(0, int(self.config.get("kernel_narrative_anchor_interval_beats") or 0))
+        trigger_on_ignite = bool(self.config.get("kernel_narrative_anchor_on_ignite", True))
+        next_beat = int(self.beat_count) + 1
+        interval_due = interval > 0 and next_beat % interval == 0
+        ignite_due = trigger_on_ignite and any(evt.get("type") == "gw.ignite" for evt in ctx.emitted_events)
+        return interval_due or ignite_due
+
+    def _anchor_narrative(self) -> None:
+        """Invoke the narrative engine to anchor current cognitive state."""
+        try:
+            engine = self._build_narrative_engine()
+        except Exception as exc:
+            bus.append(
+                self.state_dir,
+                "consciousness.narrative_anchor_error",
+                {"stage": "build", "error": str(exc)},
+                tags=["consciousness", "narrative", "error"],
+            )
+            return
+
+        anchor_result = ""
+        try:
+            anchor_result = str(engine.anchor_cycle(state_dir=str(self.state_dir)))
+            bus.append(
+                self.state_dir,
+                "consciousness.narrative_anchor",
+                {"state_dir": str(self.state_dir), "result": anchor_result[:400]},
+                tags=["consciousness", "narrative", "anchor"],
+            )
+        except Exception as exc:
+            bus.append(
+                self.state_dir,
+                "consciousness.narrative_anchor_error",
+                {"stage": "anchor", "error": str(exc)},
+                tags=["consciousness", "narrative", "error"],
+            )
+        finally:
+            try:
+                shutdown = getattr(engine, "shutdown", None)
+                if callable(shutdown):
+                    shutdown()
+            except Exception:
+                pass
+
     def tick(self) -> KernelResult:
         now = datetime.now(timezone.utc)
         self._refresh_perturbations(now)
@@ -476,6 +554,9 @@ class ConsciousnessKernel:
         self.beat_count += 1
         self.state_store.set_meta("beat_count", self.beat_count)
         self.state_store.flush()
+
+        if self._should_anchor_narrative(ctx):
+            self._anchor_narrative()
 
         return KernelResult(
             ts=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),

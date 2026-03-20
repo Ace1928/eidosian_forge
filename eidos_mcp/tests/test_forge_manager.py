@@ -27,6 +27,7 @@ def forge_manager(mock_mcp):
 def test_forge_manager_initialization(forge_manager, mock_mcp):
     assert forge_manager.mcp == mock_mcp
     assert len(forge_manager.router_modules) > 0
+    assert "eidos_mcp.routers.desire" in forge_manager.router_modules
 
 
 @patch("importlib.import_module")
@@ -35,6 +36,7 @@ def test_register_routers(mock_import, forge_manager):
     # Verify we at least tried to import one of our routers
     assert mock_import.called
     mock_import.assert_any_call("eidos_mcp.routers.gis")
+    mock_import.assert_any_call("eidos_mcp.routers.desire")
 
 
 @patch("eidos_mcp.forge_manager.list_tool_metadata")

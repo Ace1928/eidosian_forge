@@ -21,7 +21,7 @@ import threading
 import uuid
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
@@ -64,8 +64,8 @@ class TieredMemoryItem:
 
     content: str
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    created_at: datetime = field(default_factory=datetime.now)
-    last_accessed: datetime = field(default_factory=datetime.now)
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    last_accessed: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     access_count: int = 0
     tier: MemoryTier = MemoryTier.SHORT_TERM
     namespace: MemoryNamespace = MemoryNamespace.TASK
@@ -80,7 +80,7 @@ class TieredMemoryItem:
     @eidosian()
     def touch(self) -> None:
         """Update access timestamp and count."""
-        self.last_accessed = datetime.now()
+        self.last_accessed = datetime.now(timezone.utc)
         self.access_count += 1
 
     @eidosian()
@@ -88,7 +88,12 @@ class TieredMemoryItem:
         """Check if memory has expired based on TTL."""
         if self.ttl_seconds is None:
             return False
-        age = (datetime.now() - self.created_at).total_seconds()
+        
+        created_at = self.created_at
+        if created_at.tzinfo is None:
+            created_at = created_at.replace(tzinfo=timezone.utc)
+            
+        age = (datetime.now(timezone.utc) - created_at).total_seconds()
         return age > self.ttl_seconds
 
     @eidosian()
@@ -536,11 +541,15 @@ class TieredMemorySystem:
     ) -> Dict[str, Any]:
         """Compression implementation that assumes the persistence lock is held."""
 
-        cutoff = datetime.now() - timedelta(days=older_than_days)
+        cutoff = datetime.now(timezone.utc) - timedelta(days=older_than_days)
         candidates: List[TieredMemoryItem] = []
         for tier in (MemoryTier.WORKING, MemoryTier.LONG_TERM):
             for item in self.tiers[tier].values():
-                if item.created_at > cutoff:
+                created_at = item.created_at
+                if created_at.tzinfo is None:
+                    created_at = created_at.replace(tzinfo=timezone.utc)
+                    
+                if created_at > cutoff:
                     continue
                 if item.metadata.get("is_compressed"):
                     continue
@@ -620,7 +629,7 @@ class TieredMemorySystem:
                     "cluster_size": len(cluster),
                     "older_than_days": older_than_days,
                     "similarity_threshold": similarity_threshold,
-                    "compressed_at": datetime.now().isoformat(),
+                    "compressed_at": datetime.now(timezone.utc).isoformat(),
                 },
                 embedding=None,
             )
@@ -633,7 +642,7 @@ class TieredMemorySystem:
                 if source_item is None:
                     continue
                 source_item.metadata["compressed_into"] = summary_id
-                source_item.metadata["compressed_at"] = datetime.now().isoformat()
+                source_item.metadata["compressed_at"] = datetime.now(timezone.utc).isoformat()
                 source_item.tags.add("compressed_source")
                 touched_tiers.add(source_item.tier)
                 source_marked += 1
@@ -875,7 +884,7 @@ class TieredMemorySystem:
             existing.tags.update(normalized_tags)
             existing.metadata = self._merge_metadata(existing.metadata, normalized_metadata)
             existing.importance = max(existing.importance, importance)
-            existing.last_accessed = datetime.now()
+            existing.last_accessed = datetime.now(timezone.utc)
             if existing.embedding is None and embedding:
                 existing.embedding = embedding
             self._persist_tier(existing.tier)
@@ -948,11 +957,26 @@ class TieredMemorySystem:
         )
 
     def _merge_items(self, disk_item: TieredMemoryItem, local_item: TieredMemoryItem) -> TieredMemoryItem:
+        # Normalize datetimes for comparison
+        dt_a_created = disk_item.created_at
+        if dt_a_created.tzinfo is None:
+            dt_a_created = dt_a_created.replace(tzinfo=timezone.utc)
+        dt_b_created = local_item.created_at
+        if dt_b_created.tzinfo is None:
+            dt_b_created = dt_b_created.replace(tzinfo=timezone.utc)
+
+        dt_a_accessed = disk_item.last_accessed
+        if dt_a_accessed.tzinfo is None:
+            dt_a_accessed = dt_a_accessed.replace(tzinfo=timezone.utc)
+        dt_b_accessed = local_item.last_accessed
+        if dt_b_accessed.tzinfo is None:
+            dt_b_accessed = dt_b_accessed.replace(tzinfo=timezone.utc)
+
         merged = TieredMemoryItem(
             id=local_item.id,
             content=local_item.content or disk_item.content,
-            created_at=min(disk_item.created_at, local_item.created_at),
-            last_accessed=max(disk_item.last_accessed, local_item.last_accessed),
+            created_at=min(dt_a_created, dt_b_created),
+            last_accessed=max(dt_a_accessed, dt_b_accessed),
             access_count=max(disk_item.access_count, local_item.access_count),
             tier=local_item.tier,
             namespace=local_item.namespace,

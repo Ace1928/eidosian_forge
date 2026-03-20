@@ -17,8 +17,8 @@ export EIDOS_FORGE_ROOT="${FORGE_ROOT}"
 DEFAULT_PORT="$("${VENV_PYTHON}" "${PORT_REGISTRY_SCRIPT}" get --service eidos_atlas_dashboard --field port --default 8936 2>/dev/null || echo 8936)"
 export EIDOS_DASHBOARD_PORT="${EIDOS_DASHBOARD_PORT:-${DEFAULT_PORT}}"
 
-# Ensure PYTHONPATH includes the src directory so the module can be found
-export PYTHONPATH="${FORGE_ROOT}/web_interface_forge/src:${PYTHONPATH:-}"
+# Ensure bootstrap imports resolve before module import time.
+export PYTHONPATH="${FORGE_ROOT}/web_interface_forge/src:${FORGE_ROOT}/lib:${FORGE_ROOT}/doc_forge/src:${FORGE_ROOT}/agent_forge/src:${PYTHONPATH:-}"
 
 echo "[dashboard] Starting Eidosian Atlas on port ${EIDOS_DASHBOARD_PORT}..."
 exec "${VENV_PYTHON}" -m uvicorn "${DASHBOARD_MODULE}" --host 0.0.0.0 --port "${EIDOS_DASHBOARD_PORT}" --log-level info
