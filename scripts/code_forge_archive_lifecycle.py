@@ -60,6 +60,11 @@ def _append_jsonl(path: Path, payload: dict[str, Any]) -> None:
         handle.write(json.dumps(payload, ensure_ascii=False) + "\n")
 
 
+def _write_runtime_status(payload: dict[str, Any]) -> None:
+    _write_json(STATUS_PATH, payload)
+    _append_jsonl(HISTORY_PATH, payload)
+
+
 def _default_policy() -> dict[str, Any]:
     return {
         "contract": "eidos.code_forge_retention_policy.v1",
@@ -117,11 +122,12 @@ def _batch_provenance_state(output_dir: Path, batch_id: str) -> dict[str, bool]:
 
 def _retirement_manifests(output_dir: Path) -> dict[str, dict[str, Any]]:
     manifests: dict[str, dict[str, Any]] = {}
-    for path in (output_dir / "retirements").glob("*/retirement_manifest.json"):
+    retirements_dir = output_dir / "retirements"
+    for path in retirements_dir.glob("*/retirement_manifest.json"):
         payload = _load_json(path)
         if isinstance(payload, dict) and payload.get("repo_key"):
             manifests[str(payload.get("repo_key"))] = payload
-    latest = _load_json(RETIREMENTS_LATEST)
+    latest = _load_json(retirements_dir / "latest.json")
     if isinstance(latest, dict):
         for row in list(latest.get("retirements") or []):
             if isinstance(row, dict) and row.get("repo_key"):
@@ -254,6 +260,34 @@ def build_repo_status_report(
     return report
 
 
+def _ensure_archive_plan(
+    *,
+    repo_root: Path,
+    archive_root: Path,
+    output_dir: Path,
+    refresh: bool = False,
+) -> dict[str, Any]:
+    repo_index_path = output_dir / "repo_index.json"
+    batch_plan_path = output_dir / "archive_ingestion_batches.json"
+    state_path = output_dir / "archive_ingestion_state.json"
+    if refresh or not (repo_index_path.exists() and batch_plan_path.exists() and state_path.exists()):
+        return build_archive_plan_report(
+            repo_root=repo_root,
+            archive_root=archive_root,
+            output_dir=output_dir,
+            refresh=True,
+        )
+    latest_plan = _load_json(repo_root / "reports" / "code_forge_archive_plan" / "latest.json")
+    if isinstance(latest_plan, dict) and latest_plan:
+        return latest_plan
+    return build_archive_plan_report(
+        repo_root=repo_root,
+        archive_root=archive_root,
+        output_dir=output_dir,
+        refresh=False,
+    )
+
+
 def run_archive_wave(
     *,
     repo_root: Path,
@@ -262,6 +296,7 @@ def run_archive_wave(
     repo_keys: list[str] | None,
     batch_limit: int | None,
     progress_every: int,
+    retry_failed: bool = False,
 ) -> dict[str, Any]:
     repo_root = repo_root.resolve()
     archive_root = archive_root.resolve()
@@ -290,6 +325,7 @@ def run_archive_wave(
             include_repo_keys=repo_keys or None,
             batch_limit=batch_limit,
             progress_every=max(1, int(progress_every)),
+            retry_failed=bool(retry_failed),
         )
     finally:
         close = getattr(db, "close", None)
@@ -305,6 +341,7 @@ def run_archive_wave(
         "output_dir": str(output_dir),
         "selected_batches": result.get("selected_batches"),
         "completed_batches": result.get("completed"),
+        "retry_failed": bool(retry_failed),
         "failed_batches": result.get("failed"),
         "skipped_batches": result.get("skipped"),
         "summary_path": str(output_dir / "archive_ingestion_wave_summary.json"),
@@ -462,6 +499,8 @@ def main() -> int:
     common.add_argument("--report-dir", default=str(DEFAULT_REPORT_DIR))
 
     status_p = subparsers.add_parser("status", parents=[common])
+    status_p.add_argument("--repo-key", action="append", default=[])
+    status_p.add_argument("--refresh", action="store_true")
     status_p.set_defaults(func="status")
 
     set_mode_p = subparsers.add_parser("set-mode", parents=[common])
@@ -474,11 +513,14 @@ def main() -> int:
     wave_p.add_argument("--repo-key", action="append", default=[])
     wave_p.add_argument("--batch-limit", type=int, default=None)
     wave_p.add_argument("--progress-every", type=int, default=200)
+    wave_p.add_argument("--refresh", action="store_true")
+    wave_p.add_argument("--retry-failed", action="store_true")
     wave_p.set_defaults(func="run_wave")
 
     retire_p = subparsers.add_parser("retire", parents=[common])
     retire_p.add_argument("--repo-key", action="append", default=[])
     retire_p.add_argument("--dry-run", action="store_true")
+    retire_p.add_argument("--refresh", action="store_true")
     retire_p.set_defaults(func="retire")
 
     restore_p = subparsers.add_parser("restore", parents=[common])
@@ -491,41 +533,107 @@ def main() -> int:
     output_dir = Path(args.output_dir).resolve()
     report_dir = Path(args.report_dir).resolve()
 
-    if args.func == "status":
-        build_archive_plan_report(repo_root=repo_root, archive_root=archive_root, output_dir=output_dir, refresh=True)
-        payload = build_repo_status_report(repo_root=repo_root, archive_root=archive_root, output_dir=output_dir, report_dir=report_dir)
-    elif args.func == "set_mode":
-        payload = set_repo_mode(output_dir / "repo_retention_policy.json", args.repo_key, args.mode, args.reason)
-    elif args.func == "run_wave":
-        build_archive_plan_report(repo_root=repo_root, archive_root=archive_root, output_dir=output_dir, refresh=True)
-        payload = run_archive_wave(
-            repo_root=repo_root,
-            archive_root=archive_root,
-            output_dir=output_dir,
-            repo_keys=list(args.repo_key or []),
-            batch_limit=args.batch_limit,
-            progress_every=args.progress_every,
-        )
-    elif args.func == "retire":
-        build_archive_plan_report(repo_root=repo_root, archive_root=archive_root, output_dir=output_dir, refresh=True)
-        payload = retire_repos(
-            repo_root=repo_root,
-            archive_root=archive_root,
-            output_dir=output_dir,
-            report_dir=report_dir,
-            repo_keys=list(args.repo_key or []),
-            dry_run=bool(args.dry_run),
-        )
-    else:
-        payload = restore_repo(
-            repo_root=repo_root,
-            archive_root=archive_root,
-            output_dir=output_dir,
-            repo_key=str(args.repo_key),
-        )
+    running = {
+        "contract": "eidos.code_forge_archive_lifecycle.status.v1",
+        "status": "running",
+        "started_at": _now_iso(),
+        "phase": args.func,
+        "archive_root": str(archive_root),
+        "output_dir": str(output_dir),
+        "report_dir": str(report_dir),
+    }
+    _write_runtime_status(running)
+    try:
+        if args.func == "status":
+            _ensure_archive_plan(
+                repo_root=repo_root,
+                archive_root=archive_root,
+                output_dir=output_dir,
+                refresh=bool(args.refresh),
+            )
+            payload = build_repo_status_report(repo_root=repo_root, archive_root=archive_root, output_dir=output_dir, report_dir=report_dir)
+            selected = {str(item) for item in list(args.repo_key or []) if str(item).strip()}
+            if selected:
+                payload = dict(payload)
+                payload["repos"] = [row for row in list(payload.get("repos") or []) if str(row.get("repo_key") or "") in selected]
+                payload["repo_count"] = len(payload["repos"])
+                payload["summary"] = {
+                    "ingest_and_keep": sum(1 for row in payload["repos"] if row.get("mode") == "ingest_and_keep"),
+                    "ingest_and_remove": sum(1 for row in payload["repos"] if row.get("mode") == "ingest_and_remove"),
+                    "retirement_ready": sum(1 for row in payload["repos"] if row.get("retirement_ready")),
+                    "retired": sum(1 for row in payload["repos"] if row.get("retired")),
+                }
+                payload["selected_repo_keys"] = sorted(selected)
+        elif args.func == "set_mode":
+            payload = set_repo_mode(output_dir / "repo_retention_policy.json", args.repo_key, args.mode, args.reason)
+        elif args.func == "run_wave":
+            _ensure_archive_plan(
+                repo_root=repo_root,
+                archive_root=archive_root,
+                output_dir=output_dir,
+                refresh=bool(args.refresh),
+            )
+            payload = run_archive_wave(
+                repo_root=repo_root,
+                archive_root=archive_root,
+                output_dir=output_dir,
+                repo_keys=list(args.repo_key or []),
+                batch_limit=args.batch_limit,
+                progress_every=args.progress_every,
+                retry_failed=bool(args.retry_failed),
+            )
+        elif args.func == "retire":
+            _ensure_archive_plan(
+                repo_root=repo_root,
+                archive_root=archive_root,
+                output_dir=output_dir,
+                refresh=bool(args.refresh),
+            )
+            payload = retire_repos(
+                repo_root=repo_root,
+                archive_root=archive_root,
+                output_dir=output_dir,
+                report_dir=report_dir,
+                repo_keys=list(args.repo_key or []),
+                dry_run=bool(args.dry_run),
+            )
+        else:
+            payload = restore_repo(
+                repo_root=repo_root,
+                archive_root=archive_root,
+                output_dir=output_dir,
+                repo_key=str(args.repo_key),
+            )
 
-    print(json.dumps(payload, indent=2, sort_keys=True))
-    return 0
+        completed = {
+            "contract": "eidos.code_forge_archive_lifecycle.status.v1",
+            "status": "completed",
+            "started_at": running["started_at"],
+            "finished_at": _now_iso(),
+            "phase": args.func,
+            "archive_root": str(archive_root),
+            "output_dir": str(output_dir),
+            "report_dir": str(report_dir),
+            "repo_count": int(payload.get("repo_count") or len(payload.get("repos") or [])) if isinstance(payload, dict) else None,
+            "selected_repo_keys": list(args.repo_key or []) if hasattr(args, "repo_key") else [],
+        }
+        _write_runtime_status(completed)
+        print(json.dumps(payload, indent=2, sort_keys=True))
+        return 0
+    except Exception as exc:
+        failed = {
+            "contract": "eidos.code_forge_archive_lifecycle.status.v1",
+            "status": "error",
+            "started_at": running["started_at"],
+            "finished_at": _now_iso(),
+            "phase": args.func,
+            "archive_root": str(archive_root),
+            "output_dir": str(output_dir),
+            "report_dir": str(report_dir),
+            "error": str(exc),
+        }
+        _write_runtime_status(failed)
+        raise
 
 
 if __name__ == "__main__":

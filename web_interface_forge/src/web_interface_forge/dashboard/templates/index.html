@@ -392,6 +392,28 @@
         </div>
     </div>
     <div class="card">
+        <h3>Code Forge Provenance Audit</h3>
+        <div class="stat-value" id="provenance-audit-status">{{ runtime_snapshot.get('code_forge_provenance_audit', {}).get('status', 'idle')|upper }}</div>
+        <div class="stat-label">
+            links:
+            <span id="provenance-audit-links">{{ runtime_snapshot.get('code_forge_provenance_audit', {}).get('link_file_count', '') }}</span>
+            · registries:
+            <span id="provenance-audit-registries">{{ runtime_snapshot.get('code_forge_provenance_audit', {}).get('registry_file_count', '') }}</span>
+        </div>
+        <div class="stat-label">
+            invalid:
+            <span id="provenance-audit-invalid">{{ runtime_snapshot.get('code_forge_provenance_audit', {}).get('invalid_file_count', '') }}</span>
+            · report:
+            <span id="provenance-audit-report">{{ runtime_snapshot.get('code_forge_provenance_audit', {}).get('latest_report', '') or 'n/a' }}</span>
+        </div>
+        <div class="stat-label">
+            <button onclick="triggerCodeForgeProvenanceAudit()">Run Provenance Audit</button>
+            · <a href="/api/code-forge/provenance-audit/status" target="_blank">Job JSON</a>
+            · <a href="/api/code-forge/provenance-audit/history" target="_blank">History JSON</a>
+            · <a href="/browse/forge/reports/code_forge_provenance_audit/" target="_blank">Reports</a>
+        </div>
+    </div>
+    <div class="card">
         <h3>Dependabot</h3>
         <div class="stat-value">{{ runtime_snapshot.get('security', {}).get('totals', {}).get('open', 0) }}</div>
         <div class="stat-label">
@@ -515,6 +537,28 @@
         {% endif %}
     </div>
     <div class="card">
+        <h3>Code Forge Provenance Audit History</h3>
+        {% if runtime_snapshot.get('code_forge_provenance_audit_history') %}
+        <table>
+            <thead>
+                <tr><th>Status</th><th>Links</th><th>Registries</th><th>Finished</th></tr>
+            </thead>
+            <tbody id="provenance-audit-history-body">
+                {% for row in runtime_snapshot.get('code_forge_provenance_audit_history', [])[:6] %}
+                <tr>
+                    <td>{{ row.get('status', 'unknown') }}</td>
+                    <td>{{ row.get('link_file_count', '') }}</td>
+                    <td>{{ row.get('registry_file_count', '') }}</td>
+                    <td>{{ row.get('finished_at', '')[:19].replace('T', ' ') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No provenance audit history available.</p>
+        {% endif %}
+    </div>
+    <div class="card">
         <h3>Supervised Services</h3>
         <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
             <select id="service-target">
@@ -528,8 +572,12 @@
                 <option value="ollama-embedding">ollama-embedding</option>
             </select>
             <button onclick="serviceAction('start')">Start</button>
+            <button onclick="serviceAction('pause')">Pause</button>
+            <button onclick="serviceAction('resume')">Resume</button>
             <button onclick="serviceAction('restart')">Restart</button>
             <button onclick="serviceAction('stop')">Stop</button>
+            <button onclick="serviceAction('low-load')">Low Load</button>
+            <button onclick="serviceAction('restore-standard')">Restore Standard</button>
             <button onclick="refreshServices()">Refresh</button>
         </div>
         <table>
@@ -576,6 +624,27 @@
                 <tr><th>Termux API</th><td>{{ runtime_snapshot.get('capabilities', {}).get('has_termux_api', false) }}</td></tr>
                 <tr><th>Dashboard URL</th><td>{{ runtime_snapshot.get('capabilities', {}).get('default_dashboard_url', '') }}</td></tr>
                 <tr><th>Booted At</th><td>{{ runtime_snapshot.get('boot', {}).get('booted_at', 'n/a') }}</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="card">
+        <h3>Archive Forge Lifecycle</h3>
+        <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+            <button onclick="triggerArchivePlan(true)">Refresh Plan</button>
+            <button onclick="triggerArchiveLifecycleStatus(false)">Lifecycle Status</button>
+            <button onclick="triggerArchiveWave('eidos_v1_concept', 5, false, false)">Wave eidos_v1_concept</button>
+            <button onclick="triggerArchiveWave('eidos_v1_concept', 5, false, true)">Retry Failed Wave</button>
+            <button onclick="window.open('/api/code-forge/archive-plan', '_blank')">Plan JSON</button>
+            <button onclick="window.open('/api/code-forge/archive-lifecycle', '_blank')">Lifecycle JSON</button>
+        </div>
+        <table>
+            <tbody>
+                <tr><th>Plan Status</th><td id="archive-plan-status">{{ runtime_snapshot.get('archive_plan', {}).get('status', 'idle') }}</td></tr>
+                <tr><th>Archive Files</th><td id="archive-plan-files">{{ runtime_snapshot.get('archive_plan', {}).get('archive_files_total', runtime_snapshot.get('archive_plan_report', {}).get('archive_files_total', 0)) }}</td></tr>
+                <tr><th>Batches</th><td id="archive-plan-batches">{{ runtime_snapshot.get('archive_plan', {}).get('batch_count', runtime_snapshot.get('archive_plan_report', {}).get('batch_count', 0)) }}</td></tr>
+                <tr><th>Lifecycle Status</th><td id="archive-lifecycle-status">{{ runtime_snapshot.get('archive_lifecycle', {}).get('status', 'idle') }}</td></tr>
+                <tr><th>Repos</th><td id="archive-lifecycle-repos">{{ runtime_snapshot.get('archive_lifecycle_report', {}).get('repo_count', runtime_snapshot.get('archive_lifecycle', {}).get('repo_count', 0)) }}</td></tr>
+                <tr><th>Ready / Retired</th><td id="archive-lifecycle-ready">{{ runtime_snapshot.get('archive_lifecycle_report', {}).get('summary', {}).get('retirement_ready', 0) }} / {{ runtime_snapshot.get('archive_lifecycle_report', {}).get('summary', {}).get('retired', 0) }}</td></tr>
             </tbody>
         </table>
     </div>
@@ -960,6 +1029,68 @@ async function serviceAction(action) {
         await fetch(url, {method: "POST"});
     } finally {
         await refreshServices();
+        await refreshRuntimeServices();
+    }
+}
+
+async function refreshArchiveState() {
+    try {
+        const [planRes, lifecycleRes] = await Promise.all([
+            fetch('/api/code-forge/archive-plan', {cache: 'no-store'}),
+            fetch('/api/code-forge/archive-lifecycle', {cache: 'no-store'}),
+        ]);
+        if (planRes.ok) {
+            const payload = await planRes.json();
+            const status = payload.status || {};
+            const report = payload.report || {};
+            document.getElementById('archive-plan-status').textContent = status.status || 'idle';
+            document.getElementById('archive-plan-files').textContent = status.archive_files_total ?? report.archive_files_total ?? 0;
+            document.getElementById('archive-plan-batches').textContent = status.batch_count ?? report.batch_count ?? 0;
+        }
+        if (lifecycleRes.ok) {
+            const payload = await lifecycleRes.json();
+            const status = payload.status || {};
+            const report = payload.report || {};
+            const summary = report.summary || {};
+            document.getElementById('archive-lifecycle-status').textContent = status.status || 'idle';
+            document.getElementById('archive-lifecycle-repos').textContent = report.repo_count ?? status.repo_count ?? 0;
+            document.getElementById('archive-lifecycle-ready').textContent = `${summary.retirement_ready ?? 0} / ${summary.retired ?? 0}`;
+        }
+    } catch (err) {
+        // ignore transient refresh failures
+    }
+}
+
+async function triggerArchivePlan(refresh) {
+    try {
+        await fetch(`/api/code-forge/archive-plan?background=true&refresh=${refresh ? 'true' : 'false'}`, {method: 'POST'});
+    } finally {
+        await refreshArchiveState();
+        await refreshRuntimeServices();
+    }
+}
+
+async function triggerArchiveLifecycleStatus(refresh) {
+    try {
+        await fetch(`/api/code-forge/archive-lifecycle/status?background=true&refresh=${refresh ? 'true' : 'false'}`, {method: 'POST'});
+    } finally {
+        await refreshArchiveState();
+        await refreshRuntimeServices();
+    }
+}
+
+async function triggerArchiveWave(repoKey, batchLimit, refresh, retryFailed) {
+    try {
+        const params = new URLSearchParams();
+        params.set('background', 'true');
+        params.set('repo_key', repoKey || '');
+        params.set('batch_limit', String(batchLimit || 5));
+        params.set('refresh', refresh ? 'true' : 'false');
+        params.set('retry_failed', retryFailed ? 'true' : 'false');
+        await fetch(`/api/code-forge/archive-lifecycle/run-wave?${params.toString()}`, {method: 'POST'});
+    } finally {
+        await refreshArchiveState();
+        await refreshRuntimeServices();
     }
 }
 
@@ -1407,6 +1538,50 @@ async function triggerRuntimeArtifactAudit() {
     }
 }
 
+async function refreshCodeForgeProvenanceAuditStatus() {
+    try {
+        const res = await fetch("/api/code-forge/provenance-audit/status", {cache: "no-store"});
+        if (!res.ok) return;
+        const payload = await res.json();
+        document.getElementById("provenance-audit-status").textContent = String(payload.status || "idle").toUpperCase();
+        document.getElementById("provenance-audit-links").textContent = payload.link_file_count ?? "";
+        document.getElementById("provenance-audit-registries").textContent = payload.registry_file_count ?? "";
+        document.getElementById("provenance-audit-invalid").textContent = payload.invalid_file_count ?? "";
+        document.getElementById("provenance-audit-report").textContent = payload.latest_report || "n/a";
+    } catch (err) {
+        // ignore transient refresh failures
+    }
+}
+
+async function refreshCodeForgeProvenanceAuditHistory() {
+    try {
+        const res = await fetch("/api/code-forge/provenance-audit/history", {cache: "no-store"});
+        if (!res.ok) return;
+        const payload = await res.json();
+        const body = document.getElementById("provenance-audit-history-body");
+        if (!body) return;
+        body.innerHTML = (payload.entries || []).slice(0, 6).map((row) => `
+            <tr>
+                <td>${escapeHtml(row.status || "unknown")}</td>
+                <td>${escapeHtml(row.link_file_count ?? "")}</td>
+                <td>${escapeHtml(row.registry_file_count ?? "")}</td>
+                <td>${escapeHtml(String(row.finished_at || "").slice(0, 19).replace("T", " "))}</td>
+            </tr>
+        `).join("");
+    } catch (err) {
+        // ignore transient refresh failures
+    }
+}
+
+async function triggerCodeForgeProvenanceAudit() {
+    try {
+        await fetch("/api/code-forge/provenance-audit?background=true", {method: "POST"});
+    } finally {
+        await refreshCodeForgeProvenanceAuditStatus();
+        await refreshCodeForgeProvenanceAuditHistory();
+    }
+}
+
 async function syncSessionBridge() {
     try {
         const res = await fetch("/api/session-bridge/sync", {method: "POST"});
@@ -1461,10 +1636,14 @@ setInterval(refreshRuntimeBenchmarkRunStatus, 10000);
 setInterval(refreshRuntimeBenchmarkRunHistory, 15000);
 setInterval(refreshRuntimeArtifactAuditStatus, 10000);
 setInterval(refreshRuntimeArtifactAuditHistory, 15000);
+setInterval(refreshCodeForgeProvenanceAuditStatus, 10000);
+setInterval(refreshCodeForgeProvenanceAuditHistory, 15000);
 setInterval(refreshRuntimeServices, 10000);
+setInterval(refreshArchiveState, 12000);
 refreshScheduler();
 refreshServices();
 refreshRuntimeServices();
+refreshArchiveState();
 refreshDocsTree();
 refreshDocsHistory();
 refreshDocsBatchStatus();
@@ -1482,5 +1661,7 @@ refreshRuntimeBenchmarkRunStatus();
 refreshRuntimeBenchmarkRunHistory();
 refreshRuntimeArtifactAuditStatus();
 refreshRuntimeArtifactAuditHistory();
+refreshCodeForgeProvenanceAuditStatus();
+refreshCodeForgeProvenanceAuditHistory();
 </script>
 {% endblock %}

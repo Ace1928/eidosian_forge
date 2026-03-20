@@ -124,3 +124,74 @@ def test_retire_repo_moves_source_reversibly(tmp_path: Path) -> None:
     assert Path(rec["retired_root"]).exists()
     assert Path(rec["reconstruction_manifest_path"]).exists()
     assert Path(rec["parity_report_path"]).exists()
+
+
+def test_ensure_archive_plan_reuses_existing_report(tmp_path: Path) -> None:
+    plan_mod = _load_module("code_forge_archive_plan", "code_forge_archive_plan.py")
+    life_mod = _load_module("code_forge_archive_lifecycle", "code_forge_archive_lifecycle.py")
+
+    repo = tmp_path / "repo"
+    archive = repo / "archive_forge"
+    output_dir = repo / "data" / "code_forge" / "archive_ingestion" / "latest"
+    report_dir = repo / "reports" / "code_forge_archive_plan"
+    (archive / "repo_keep" / "src").mkdir(parents=True, exist_ok=True)
+    (archive / "repo_keep" / "src" / "a.py").write_text("def a():\n    return 1\n", encoding="utf-8")
+
+    report = plan_mod.write_archive_plan_report(
+        repo_root=repo,
+        archive_root=archive,
+        output_dir=output_dir,
+        report_dir=report_dir,
+        refresh=True,
+        max_files_per_batch=1,
+        max_bytes_per_batch=4096,
+    )
+
+    original = life_mod.build_archive_plan_report
+    def _boom(*args, **kwargs):
+        raise AssertionError("unexpected refresh")
+    life_mod.build_archive_plan_report = _boom
+    try:
+        payload = life_mod._ensure_archive_plan(
+            repo_root=repo,
+            archive_root=archive,
+            output_dir=output_dir,
+            refresh=False,
+        )
+    finally:
+        life_mod.build_archive_plan_report = original
+
+    assert payload["archive_files_total"] == report["report"]["archive_files_total"]
+    assert payload["batch_count"] == report["report"]["batch_count"]
+
+
+def test_run_archive_wave_can_retry_failed_batches(tmp_path: Path, monkeypatch) -> None:
+    life_mod = _load_module("code_forge_archive_lifecycle", "code_forge_archive_lifecycle.py")
+
+    repo = tmp_path / "repo"
+    archive = repo / "archive_forge"
+    output_dir = repo / "data" / "code_forge" / "archive_ingestion" / "latest"
+    (archive / "repo_a" / "src").mkdir(parents=True, exist_ok=True)
+    (archive / "repo_a" / "src" / "a.py").write_text("def a():\n    return 1\n", encoding="utf-8")
+
+    captured = {}
+
+    def _fake_run_archive_ingestion_batches(**kwargs):
+        captured.update(kwargs)
+        return {"selected_batches": 1, "completed": 1, "failed": 0, "skipped": 0}
+
+    monkeypatch.setattr(life_mod, "run_archive_ingestion_batches", _fake_run_archive_ingestion_batches)
+
+    payload = life_mod.run_archive_wave(
+        repo_root=repo,
+        archive_root=archive,
+        output_dir=output_dir,
+        repo_keys=["repo_a"],
+        batch_limit=1,
+        progress_every=1,
+        retry_failed=True,
+    )
+
+    assert payload["retry_failed"] is True
+    assert captured["retry_failed"] is True
+    assert captured["include_repo_keys"] == ["repo_a"]

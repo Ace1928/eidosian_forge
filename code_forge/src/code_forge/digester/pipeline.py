@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
+import traceback
 from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -309,6 +310,13 @@ def initialize_archive_ingestion_state(
                 "attempts": 0,
                 "last_error": None,
                 "updated_at": None,
+                "content_signature": None,
+                "signature_file_count": int(batch.get("file_count") or 0),
+                "signature_present_files": 0,
+                "signature_missing_files": 0,
+                "signature_total_bytes": int(batch.get("total_bytes") or 0),
+                "signature_checked_at": None,
+                "summary_path": None,
             }
             for batch in batches
             if isinstance(batch, dict) and batch.get("batch_id")
@@ -326,12 +334,95 @@ def load_archive_ingestion_state(output_dir: Path) -> dict[str, Any]:
     return json.loads(state_path.read_text(encoding="utf-8"))
 
 
+def _compute_batch_signature(root_path: Path, paths: Iterable[str]) -> dict[str, Any]:
+    root_path = Path(root_path).resolve()
+    normalized = sorted({str(path).replace("\\", "/").lstrip("./") for path in paths if str(path).strip()})
+    digest = hashlib.sha256()
+    present_files = 0
+    missing_files = 0
+    total_bytes = 0
+
+    for rel_path in normalized:
+        file_path = (root_path / rel_path).resolve()
+        if not file_path.exists() or not file_path.is_file():
+            digest.update(f"{rel_path}|missing\n".encode("utf-8"))
+            missing_files += 1
+            continue
+        stat = file_path.stat()
+        size = int(stat.st_size)
+        mtime_ns = int(getattr(stat, "st_mtime_ns", int(stat.st_mtime * 1_000_000_000)))
+        digest.update(f"{rel_path}|{size}|{mtime_ns}\n".encode("utf-8"))
+        present_files += 1
+        total_bytes += size
+
+    return {
+        "content_signature": digest.hexdigest(),
+        "signature_file_count": len(normalized),
+        "signature_present_files": present_files,
+        "signature_missing_files": missing_files,
+        "signature_total_bytes": total_bytes,
+        "signature_checked_at": _utc_now(),
+    }
+
+
+def refresh_archive_ingestion_state(
+    output_dir: Path,
+    *,
+    root_path: Path,
+    batch_plan: dict[str, Any],
+    include_routes: Optional[Iterable[str]] = None,
+    include_repo_keys: Optional[Iterable[str]] = None,
+) -> dict[str, Any]:
+    output_dir = Path(output_dir)
+    payload = load_archive_ingestion_state(output_dir)
+    batches = payload.get("batches") or {}
+    allowed_routes = {str(route) for route in (include_routes or []) if str(route).strip()}
+    allowed_repo_keys = {str(repo_key) for repo_key in (include_repo_keys or []) if str(repo_key).strip()}
+    changed = False
+
+    for batch in list(batch_plan.get("batches") or []):
+        if not isinstance(batch, dict):
+            continue
+        batch_id = str(batch.get("batch_id") or "")
+        if not batch_id:
+            continue
+        if allowed_routes and str(batch.get("route") or "") not in allowed_routes:
+            continue
+        if allowed_repo_keys and str(batch.get("repo_key") or "") not in allowed_repo_keys:
+            continue
+        state_batch = batches.get(batch_id)
+        if not isinstance(state_batch, dict):
+            continue
+        signature = _compute_batch_signature(Path(root_path), list(batch.get("paths") or []))
+        previous_signature = str(state_batch.get("content_signature") or "")
+        previous_missing = int(state_batch.get("signature_missing_files") or 0)
+        current_signature = str(signature.get("content_signature") or "")
+        current_missing = int(signature.get("signature_missing_files") or 0)
+        status = str(state_batch.get("status") or "pending")
+        if status in {"completed", "skipped"} and (current_signature != previous_signature or current_missing != previous_missing):
+            state_batch["status"] = "pending"
+            state_batch["last_error"] = None
+            changed = True
+        for key, value in signature.items():
+            if state_batch.get(key) != value:
+                state_batch[key] = value
+                changed = True
+
+    if changed:
+        payload["completed_count"] = sum(1 for item in batches.values() if str(item.get("status")) == "completed")
+        (output_dir / "archive_ingestion_state.json").write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    return payload
+
+
 def update_archive_ingestion_state(
     output_dir: Path,
     *,
     batch_id: str,
     status: str,
     error: str | None = None,
+    root_path: Path | None = None,
+    batch_paths: Optional[Iterable[str]] = None,
+    summary_path: str | None = None,
 ) -> dict[str, Any]:
     output_dir = Path(output_dir)
     state_path = output_dir / "archive_ingestion_state.json"
@@ -346,6 +437,10 @@ def update_archive_ingestion_state(
     batch["attempts"] = int(batch.get("attempts") or 0) + 1
     batch["last_error"] = error
     batch["updated_at"] = _utc_now()
+    if summary_path is not None:
+        batch["summary_path"] = str(summary_path)
+    if root_path is not None and batch_paths is not None:
+        batch.update(_compute_batch_signature(Path(root_path), batch_paths))
     payload["completed_count"] = sum(1 for item in batches.values() if str(item.get("status")) == "completed")
     state_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     return payload
@@ -387,6 +482,7 @@ def _process_document_batch(
     output_dir: Path,
     kb_path: Path,
 ) -> dict[str, Any]:
+    output_dir.mkdir(parents=True, exist_ok=True)
     tika, ingester = _load_tika_ingester(kb_path)
     batch_id = str(batch.get("batch_id") or "")
     results: list[dict[str, Any]] = []
@@ -450,6 +546,7 @@ def _process_metadata_batch(
     output_dir: Path,
     kb_path: Path,
 ) -> dict[str, Any]:
+    output_dir.mkdir(parents=True, exist_ok=True)
     from knowledge_forge.core.graph import KnowledgeForge
 
     kb = KnowledgeForge(persistence_path=kb_path)
@@ -468,24 +565,30 @@ def _process_metadata_batch(
             errors.append({"path": str(rel_path), "error": str(exc)})
             continue
 
-        node = kb.add_knowledge(
-            content=text[:8000],
-            concepts=["archive_metadata", source_path.suffix.lstrip(".") or "metadata"],
-            tags=[
-                "archive_forge",
-                "knowledge_metadata",
-                f"archive_batch:{batch_id}",
-                f"type:{source_path.suffix.lstrip('.') or 'unknown'}",
-            ],
-            metadata={
-                "source": "archive_forge",
-                "path": str(rel_path),
-                "route": "knowledge_metadata",
-                "batch_id": batch_id,
-            },
-        )
-        files_processed += 1
-        nodes_created += 1
+        node = None
+        node_error = None
+        try:
+            node = kb.add_knowledge(
+                content=text[:8000],
+                concepts=["archive_metadata", source_path.suffix.lstrip(".") or "metadata"],
+                tags=[
+                    "archive_forge",
+                    "knowledge_metadata",
+                    f"archive_batch:{batch_id}",
+                    f"type:{source_path.suffix.lstrip('.') or 'unknown'}",
+                ],
+                metadata={
+                    "source": "archive_forge",
+                    "path": str(rel_path),
+                    "route": "knowledge_metadata",
+                    "batch_id": batch_id,
+                },
+            )
+            files_processed += 1
+            nodes_created += 1
+        except Exception as exc:
+            node_error = str(exc)
+            errors.append({"path": str(rel_path), "error": node_error, "stage": "knowledge_forge"})
 
         lexicon_payload = {"status": "skipped"}
         if text.strip():
@@ -496,7 +599,8 @@ def _process_metadata_batch(
         results.append(
             {
                 "path": str(rel_path),
-                "node_id": node.id,
+                "node_id": node.id if node is not None else None,
+                "node_error": node_error,
                 "lexicon": lexicon_payload,
             }
         )
@@ -554,6 +658,14 @@ def run_archive_ingestion_batches(
     else:
         state = initialize_archive_ingestion_state(batch_plan, output_dir)
 
+    state = refresh_archive_ingestion_state(
+        output_dir,
+        root_path=Path(root_path),
+        batch_plan=batch_plan,
+        include_routes=include_routes,
+        include_repo_keys=include_repo_keys,
+    )
+
     allowed_statuses = {"pending"}
     if retry_failed:
         allowed_statuses.add("failed")
@@ -588,7 +700,13 @@ def run_archive_ingestion_batches(
         batch_route = str(batch.get("route") or "manual_review")
         batch_dir = output_dir / "batches" / batch_id
         batch_dir.mkdir(parents=True, exist_ok=True)
-        update_archive_ingestion_state(output_dir, batch_id=batch_id, status="in_progress")
+        update_archive_ingestion_state(
+            output_dir,
+            batch_id=batch_id,
+            status="in_progress",
+            root_path=Path(root_path),
+            batch_paths=list(batch.get("paths") or []),
+        )
 
         try:
             if batch_route == "code_forge":
@@ -630,26 +748,51 @@ def run_archive_ingestion_batches(
                 }
                 (batch_dir / "batch_summary.json").write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
                 skipped += 1
-                update_archive_ingestion_state(output_dir, batch_id=batch_id, status="skipped")
+                update_archive_ingestion_state(
+                    output_dir,
+                    batch_id=batch_id,
+                    status="skipped",
+                    root_path=Path(root_path),
+                    batch_paths=list(batch.get("paths") or []),
+                    summary_path=str(batch_dir / "batch_summary.json"),
+                )
                 runs.append(payload)
                 continue
 
             (batch_dir / "batch_summary.json").write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-            update_archive_ingestion_state(output_dir, batch_id=batch_id, status="completed")
+            update_archive_ingestion_state(
+                output_dir,
+                batch_id=batch_id,
+                status="completed",
+                root_path=Path(root_path),
+                batch_paths=list(batch.get("paths") or []),
+                summary_path=str(batch_dir / "batch_summary.json"),
+            )
             completed += 1
             runs.append(payload)
         except Exception as exc:
             failed += 1
-            update_archive_ingestion_state(output_dir, batch_id=batch_id, status="failed", error=str(exc))
-            runs.append(
-                {
-                    "generated_at": _utc_now(),
-                    "batch_id": batch_id,
-                    "route": batch_route,
-                    "status": "failed",
-                    "error": str(exc),
-                }
+            error_payload = {
+                "generated_at": _utc_now(),
+                "batch_id": batch_id,
+                "route": batch_route,
+                "status": "failed",
+                "error": str(exc),
+                "traceback": traceback.format_exc(),
+                "paths": list(batch.get("paths") or []),
+            }
+            error_path = batch_dir / "batch_error.json"
+            error_path.write_text(json.dumps(error_payload, indent=2) + "\n", encoding="utf-8")
+            update_archive_ingestion_state(
+                output_dir,
+                batch_id=batch_id,
+                status="failed",
+                error=str(exc),
+                root_path=Path(root_path),
+                batch_paths=list(batch.get("paths") or []),
+                summary_path=str(error_path),
             )
+            runs.append(dict(error_payload, error_path=str(error_path)))
 
     state = load_archive_ingestion_state(output_dir)
     summary = {
@@ -1288,39 +1431,68 @@ def run_archive_digester(
             if effective and str(effective.get("run_id") or ""):
                 integration_run_id = str(effective["run_id"])
 
+    integration_errors: list[dict[str, Any]] = []
+
     knowledge_sync = None
     if sync_knowledge_path is not None:
-        knowledge_sync = sync_units_to_knowledge_forge(
-            db=db,
-            kb_path=Path(sync_knowledge_path),
-            limit=max(1, int(graph_export_limit)),
-            min_token_count=5,
-            run_id=integration_run_id,
-            include_node_links=True,
-            node_links_limit=100,
-        )
+        try:
+            knowledge_sync = sync_units_to_knowledge_forge(
+                db=db,
+                kb_path=Path(sync_knowledge_path),
+                limit=max(1, int(graph_export_limit)),
+                min_token_count=5,
+                run_id=integration_run_id,
+                include_node_links=True,
+                node_links_limit=100,
+            )
+        except Exception as exc:
+            knowledge_sync = {
+                "status": "error",
+                "error": str(exc),
+                "kb_path": str(Path(sync_knowledge_path)),
+                "run_id": integration_run_id,
+            }
+            integration_errors.append({"stage": "knowledge_sync", "error": str(exc)})
 
     memory_sync = None
     if sync_memory_path is not None:
-        memory_sync = sync_units_to_memory_forge(
-            db=db,
-            memory_path=Path(sync_memory_path),
-            limit=max(1, int(graph_export_limit)),
-            min_token_count=8,
-            run_id=integration_run_id,
-            include_memory_links=True,
-            memory_links_limit=100,
-        )
+        try:
+            memory_sync = sync_units_to_memory_forge(
+                db=db,
+                memory_path=Path(sync_memory_path),
+                limit=max(1, int(graph_export_limit)),
+                min_token_count=8,
+                run_id=integration_run_id,
+                include_memory_links=True,
+                memory_links_limit=100,
+            )
+        except Exception as exc:
+            memory_sync = {
+                "status": "error",
+                "error": str(exc),
+                "memory_path": str(Path(sync_memory_path)),
+                "run_id": integration_run_id,
+            }
+            integration_errors.append({"stage": "memory_sync", "error": str(exc)})
 
     graphrag_export = None
     if graphrag_output_dir is not None:
-        graphrag_export = export_units_for_graphrag(
-            db=db,
-            output_dir=Path(graphrag_output_dir),
-            limit=max(1, int(graph_export_limit)),
-            min_token_count=5,
-            run_id=integration_run_id,
-        )
+        try:
+            graphrag_export = export_units_for_graphrag(
+                db=db,
+                output_dir=Path(graphrag_output_dir),
+                limit=max(1, int(graph_export_limit)),
+                min_token_count=5,
+                run_id=integration_run_id,
+            )
+        except Exception as exc:
+            graphrag_export = {
+                "status": "error",
+                "error": str(exc),
+                "output_dir": str(Path(graphrag_output_dir)),
+                "run_id": integration_run_id,
+            }
+            integration_errors.append({"stage": "graphrag_export", "error": str(exc)})
 
     summary: dict[str, Any] = {
         "generated_at": _utc_now(),
@@ -1338,6 +1510,7 @@ def run_archive_digester(
         "knowledge_sync": knowledge_sync,
         "memory_sync": memory_sync,
         "graphrag_export": graphrag_export,
+        "integration_errors": integration_errors,
         "relationship_counts": db.relationship_counts(),
         "dependency_graph_summary": dependency_graph.get("summary", {}),
         "integration_policy": normalized_policy,

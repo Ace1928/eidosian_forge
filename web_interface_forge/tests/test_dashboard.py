@@ -313,6 +313,18 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
             "finished_at": "2026-03-20T00:45:00Z",
         },
     )
+    _write_json(
+        runtime_dir / "code_forge_provenance_audit_status.json",
+        {
+            "contract": "eidos.code_forge_provenance_audit.status.v1",
+            "status": "completed",
+            "link_file_count": 0,
+            "registry_file_count": 0,
+            "invalid_file_count": 0,
+            "latest_report": "reports/code_forge_provenance_audit/latest.json",
+            "finished_at": "2026-03-20T00:46:00Z",
+        },
+    )
     (runtime_dir / "runtime_artifact_audit_history.jsonl").write_text(
         json.dumps(
             {
@@ -326,6 +338,19 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         + "\n",
         encoding="utf-8",
     )
+    (runtime_dir / "code_forge_provenance_audit_history.jsonl").write_text(
+        json.dumps(
+            {
+                "contract": "eidos.code_forge_provenance_audit.status.v1",
+                "status": "completed",
+                "link_file_count": 0,
+                "registry_file_count": 0,
+                "finished_at": "2026-03-20T00:46:00Z",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     _write_json(
         tmp_path / "reports" / "runtime_artifact_audit" / "latest.json",
         {
@@ -334,8 +359,21 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
             "live_generated_count": 9,
         },
     )
+    _write_json(
+        tmp_path / "reports" / "code_forge_provenance_audit" / "latest.json",
+        {
+            "contract": "eidos.code_forge_provenance_audit.v1",
+            "link_file_count": 0,
+            "registry_file_count": 0,
+            "invalid_file_count": 0,
+        },
+    )
     (tmp_path / "reports" / "runtime_artifact_audit" / "latest.md").write_text(
         "# Runtime Artifact Audit\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "reports" / "code_forge_provenance_audit" / "latest.md").write_text(
+        "# Code Forge Provenance Audit\n",
         encoding="utf-8",
     )
     _write_json(
@@ -459,9 +497,16 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(dashboard, "RUNTIME_BENCHMARK_RUN_HISTORY", runtime_dir / "runtime_benchmark_run_history.jsonl")
     monkeypatch.setattr(dashboard, "RUNTIME_ARTIFACT_AUDIT_STATUS", runtime_dir / "runtime_artifact_audit_status.json")
     monkeypatch.setattr(dashboard, "RUNTIME_ARTIFACT_AUDIT_HISTORY", runtime_dir / "runtime_artifact_audit_history.jsonl")
+    monkeypatch.setattr(dashboard, "CODE_FORGE_PROVENANCE_AUDIT_STATUS", runtime_dir / "code_forge_provenance_audit_status.json")
+    monkeypatch.setattr(dashboard, "CODE_FORGE_PROVENANCE_AUDIT_HISTORY", runtime_dir / "code_forge_provenance_audit_history.jsonl")
+    monkeypatch.setattr(dashboard, "CODE_FORGE_ARCHIVE_PLAN_STATUS", runtime_dir / "code_forge_archive_plan_status.json")
+    monkeypatch.setattr(dashboard, "CODE_FORGE_ARCHIVE_PLAN_HISTORY", runtime_dir / "code_forge_archive_plan_history.jsonl")
+    monkeypatch.setattr(dashboard, "CODE_FORGE_ARCHIVE_LIFECYCLE_STATUS", runtime_dir / "code_forge_archive_lifecycle_status.json")
+    monkeypatch.setattr(dashboard, "CODE_FORGE_ARCHIVE_LIFECYCLE_HISTORY", runtime_dir / "code_forge_archive_lifecycle_history.jsonl")
     monkeypatch.setattr(dashboard, "SESSION_BRIDGE_CONTEXT", runtime_dir / "session_bridge" / "latest_context.json")
     monkeypatch.setattr(dashboard, "SESSION_BRIDGE_IMPORT_STATUS", runtime_dir / "session_bridge" / "import_status.json")
     monkeypatch.setattr(dashboard, "RUNTIME_ARTIFACT_REPORT_DIR", tmp_path / "reports" / "runtime_artifact_audit")
+    monkeypatch.setattr(dashboard, "CODE_FORGE_PROVENANCE_REPORT_DIR", tmp_path / "reports" / "code_forge_provenance_audit")
     service_script = tmp_path / "eidos_termux_services.sh"
     service_script.write_text(
         "#!/bin/sh\n" "printf 'Atlas: runit run: /tmp/service: (pid 1) 10s; run: log: (pid 2) 10s\\n'\n",
@@ -490,10 +535,12 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         assert "Proof Refresh" in html
         assert "Benchmark Run" in html
         assert "Runtime Artifact Audit" in html
+        assert "Code Forge Provenance Audit" in html
         assert "Docs Batch History" in html
         assert "Proof Refresh History" in html
         assert "Benchmark Run History" in html
         assert "Runtime Artifact Audit History" in html
+        assert "Code Forge Provenance Audit History" in html
         assert "Doc Processor History" in html
         assert "Qwenchat History" in html
         assert "Living Pipeline History" in html
@@ -711,6 +758,24 @@ def test_services_api_parses_status(monkeypatch, tmp_path: Path) -> None:
         assert payload["services"][0]["running"] is True
 
 
+
+
+def test_services_api_parses_paused_status(monkeypatch, tmp_path: Path) -> None:
+    service_script = tmp_path / "eidos_termux_services.sh"
+    service_script.write_text(
+        "#!/bin/sh\n"
+        "printf 'Eidos Scheduler: paused(runit run: /tmp/service: (pid 1) 10s, paused; run: log: (pid 2) 10s)\\n'\n",
+        encoding="utf-8",
+    )
+    service_script.chmod(0o755)
+    monkeypatch.setattr(dashboard, "SERVICES_SCRIPT", service_script)
+    with TestClient(dashboard.app) as client:
+        resp = client.get("/api/services")
+        assert resp.status_code == 200
+        payload = resp.json()
+        assert payload["services"][0]["name"] == "Eidos Scheduler"
+        assert payload["services"][0]["running"] is False
+        assert payload["services"][0]["paused"] is True
 def test_services_api_accepts_targeted_restart(monkeypatch) -> None:
     recorded = {}
 
@@ -727,6 +792,25 @@ def test_services_api_accepts_targeted_restart(monkeypatch) -> None:
         assert payload["queued"] is True
         assert payload["service"] == "atlas"
         assert recorded == {"action": "restart", "service": "atlas"}
+
+
+
+def test_services_api_accepts_targeted_pause(monkeypatch) -> None:
+    recorded = {}
+
+    async def _fake_service_command(action: str, service: str | None = None):
+        recorded["action"] = action
+        recorded["service"] = service
+        return {"action": action, "service": service or "all", "accepted": True, "queued": True, "ok": True}
+
+    monkeypatch.setattr(dashboard, "_service_command", _fake_service_command)
+    with TestClient(dashboard.app) as client:
+        resp = client.post("/api/services/pause", params={"service": "scheduler"})
+        assert resp.status_code == 200
+        payload = resp.json()
+        assert payload["queued"] is True
+        assert payload["service"] == "scheduler"
+        assert recorded == {"action": "pause", "service": "scheduler"}
 
 
 def test_scheduler_api(monkeypatch, tmp_path: Path) -> None:
@@ -823,3 +907,79 @@ def test_consciousness_api_reads_runtime_health(monkeypatch) -> None:
         payload = resp.json()
         assert payload["status"] == "ok"
         assert payload["beat_count"] == 7
+
+
+def test_code_forge_provenance_api_defaults(monkeypatch, tmp_path: Path) -> None:
+    runtime_dir = tmp_path / "data" / "runtime"
+    monkeypatch.setattr(dashboard, "CODE_FORGE_PROVENANCE_AUDIT_STATUS", runtime_dir / "code_forge_provenance_audit_status.json")
+    monkeypatch.setattr(dashboard, "CODE_FORGE_PROVENANCE_AUDIT_HISTORY", runtime_dir / "code_forge_provenance_audit_history.jsonl")
+    with TestClient(dashboard.app) as client:
+        resp = client.get("/api/code-forge/provenance-audit/status")
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "idle"
+        hist = client.get("/api/code-forge/provenance-audit/history")
+        assert hist.status_code == 200
+        assert hist.json()["entries"] == []
+
+
+
+def test_services_api_accepts_low_load(monkeypatch) -> None:
+    recorded = {}
+
+    async def _fake_service_command(action: str, service: str | None = None):
+        recorded["action"] = action
+        recorded["service"] = service
+        return {"action": action, "service": service or "all", "accepted": True, "queued": True, "ok": True}
+
+    monkeypatch.setattr(dashboard, "_service_command", _fake_service_command)
+    with TestClient(dashboard.app) as client:
+        resp = client.post("/api/services/low-load")
+        assert resp.status_code == 200
+        payload = resp.json()
+        assert payload["queued"] is True
+        assert payload["service"] == "all"
+        assert recorded == {"action": "low-load", "service": ""}
+
+
+def test_code_forge_archive_routes(tmp_path: Path, monkeypatch) -> None:
+    runtime_dir = tmp_path / "data" / "runtime"
+    plan_report_dir = tmp_path / "reports" / "code_forge_archive_plan"
+    lifecycle_report_dir = tmp_path / "reports" / "code_forge_archive_lifecycle"
+    monkeypatch.setattr(dashboard, "CODE_FORGE_ARCHIVE_PLAN_STATUS", runtime_dir / "code_forge_archive_plan_status.json")
+    monkeypatch.setattr(dashboard, "CODE_FORGE_ARCHIVE_PLAN_HISTORY", runtime_dir / "code_forge_archive_plan_history.jsonl")
+    monkeypatch.setattr(dashboard, "CODE_FORGE_ARCHIVE_LIFECYCLE_STATUS", runtime_dir / "code_forge_archive_lifecycle_status.json")
+    monkeypatch.setattr(dashboard, "CODE_FORGE_ARCHIVE_LIFECYCLE_HISTORY", runtime_dir / "code_forge_archive_lifecycle_history.jsonl")
+    monkeypatch.setattr(dashboard, "CODE_FORGE_ARCHIVE_PLAN_REPORT_DIR", plan_report_dir)
+    monkeypatch.setattr(dashboard, "CODE_FORGE_ARCHIVE_LIFECYCLE_REPORT_DIR", lifecycle_report_dir)
+    _write_json(runtime_dir / "code_forge_archive_plan_status.json", {"status": "completed", "archive_files_total": 12, "batch_count": 3})
+    (runtime_dir / "code_forge_archive_plan_history.jsonl").write_text(json.dumps({"status": "completed"}) + "\n", encoding="utf-8")
+    _write_json(runtime_dir / "code_forge_archive_lifecycle_status.json", {"status": "completed", "repo_count": 2})
+    (runtime_dir / "code_forge_archive_lifecycle_history.jsonl").write_text(json.dumps({"status": "completed", "phase": "status"}) + "\n", encoding="utf-8")
+    _write_json(plan_report_dir / "latest.json", {"archive_files_total": 12, "batch_count": 3})
+    _write_json(lifecycle_report_dir / "latest.json", {"repo_count": 2, "summary": {"retirement_ready": 1, "retired": 0}})
+
+    with TestClient(dashboard.app) as client:
+        plan = client.get("/api/code-forge/archive-plan")
+        assert plan.status_code == 200
+        assert plan.json()["status"]["status"] == "completed"
+        lifecycle = client.get("/api/code-forge/archive-lifecycle")
+        assert lifecycle.status_code == 200
+        assert lifecycle.json()["report"]["summary"]["retirement_ready"] == 1
+
+
+def test_code_forge_archive_wave_route_accepts_retry_failed(monkeypatch) -> None:
+    recorded = {}
+
+    def _fake_wave_job(**kwargs):
+        recorded.update(kwargs)
+
+    monkeypatch.setattr(dashboard, "_run_code_forge_archive_wave_job", _fake_wave_job)
+    monkeypatch.setattr(dashboard.threading.Thread, "start", lambda self: self._target(*self._args, **self._kwargs))
+
+    with TestClient(dashboard.app) as client:
+        resp = client.post("/api/code-forge/archive-lifecycle/run-wave?repo_key=eidos_v1_concept&batch_limit=5&retry_failed=true&background=true")
+        assert resp.status_code == 200
+        payload = resp.json()
+        assert payload["retry_failed"] is True
+        assert recorded["retry_failed"] is True
+        assert recorded["repo_keys"] == ["eidos_v1_concept"]

@@ -436,3 +436,198 @@ def test_triage_profile_hot_path_preserves_duplicate_candidate(tmp_path: Path) -
     assert by_file_profile["src/a.py"]["rule_id"].startswith("RULE_H")
     if by_file_no_profile.get("src/a.py", {}).get("label") == "delete_candidate":
         assert by_file_profile["src/a.py"]["label"] != "delete_candidate"
+
+
+def test_run_archive_ingestion_batches_requeues_completed_batch_when_files_change(tmp_path: Path, monkeypatch) -> None:
+    archive = tmp_path / "archive_like"
+    archive.mkdir()
+    (archive / "repo_a" / "src").mkdir(parents=True)
+    source = archive / "repo_a" / "src" / "a.py"
+    source.write_text("def a():\n    return 1\n", encoding="utf-8")
+
+    db = CodeLibraryDB(tmp_path / "library.sqlite")
+    runner = IngestionRunner(db=db, runs_dir=tmp_path / "runs")
+    output = tmp_path / "digester"
+    kb = tmp_path / "kb.json"
+
+    plan = {
+        "generated_at": "now",
+        "root_path": str(archive),
+        "files_total": 1,
+        "batch_count": 1,
+        "route_counts": {"code_forge": 1},
+        "batches": [
+            {
+                "batch_id": "batch_a",
+                "repo_key": "repo_a",
+                "route": "code_forge",
+                "category": "source",
+                "sequence": 1,
+                "file_count": 1,
+                "total_bytes": 16,
+                "extensions": [".py"],
+                "paths": ["repo_a/src/a.py"],
+                "status": "pending",
+            }
+        ],
+    }
+    output.mkdir(parents=True, exist_ok=True)
+    (output / "archive_ingestion_batches.json").write_text(json.dumps(plan, indent=2) + "\n", encoding="utf-8")
+    initialize_archive_ingestion_state(plan, output)
+
+    calls: list[list[str]] = []
+
+    def _fake_run_archive_digester(**kwargs):
+        calls.append(list(kwargs.get("include_paths") or []))
+        return {
+            "generated_at": "now",
+            "route": "code_forge",
+            "ingestion_stats": {"files_processed": len(kwargs.get("include_paths") or [])},
+        }
+
+    monkeypatch.setattr(digester_pipeline, "run_archive_digester", _fake_run_archive_digester)
+
+    first = run_archive_ingestion_batches(
+        root_path=archive,
+        db=db,
+        runner=runner,
+        output_dir=output,
+        kb_path=kb,
+        include_routes=["code_forge"],
+        include_repo_keys=["repo_a"],
+    )
+    assert first["completed"] == 1
+
+    source.write_text("def a():\n    return 2\n", encoding="utf-8")
+
+    second = run_archive_ingestion_batches(
+        root_path=archive,
+        db=db,
+        runner=runner,
+        output_dir=output,
+        kb_path=kb,
+        include_routes=["code_forge"],
+        include_repo_keys=["repo_a"],
+    )
+
+    assert second["selected_batches"] == 1
+    assert calls == [["repo_a/src/a.py"], ["repo_a/src/a.py"]]
+    state = load_archive_ingestion_state(output)
+    assert state["batches"]["batch_a"]["status"] == "completed"
+    assert state["batches"]["batch_a"]["content_signature"]
+
+
+def test_run_archive_ingestion_batches_writes_batch_error_artifact(tmp_path: Path, monkeypatch) -> None:
+    archive = tmp_path / "archive_like"
+    archive.mkdir()
+    (archive / "repo_a" / "src").mkdir(parents=True)
+    (archive / "repo_a" / "src" / "a.py").write_text("def a():\n    return 1\n", encoding="utf-8")
+
+    db = CodeLibraryDB(tmp_path / "library.sqlite")
+    runner = IngestionRunner(db=db, runs_dir=tmp_path / "runs")
+    output = tmp_path / "digester"
+    kb = tmp_path / "kb.json"
+
+    plan = {
+        "generated_at": "now",
+        "root_path": str(archive),
+        "files_total": 1,
+        "batch_count": 1,
+        "route_counts": {"code_forge": 1},
+        "batches": [
+            {
+                "batch_id": "batch_a",
+                "repo_key": "repo_a",
+                "route": "code_forge",
+                "category": "source",
+                "sequence": 1,
+                "file_count": 1,
+                "total_bytes": 16,
+                "extensions": [".py"],
+                "paths": ["repo_a/src/a.py"],
+                "status": "pending",
+            }
+        ],
+    }
+    output.mkdir(parents=True, exist_ok=True)
+    (output / "archive_ingestion_batches.json").write_text(json.dumps(plan, indent=2) + "\n", encoding="utf-8")
+    initialize_archive_ingestion_state(plan, output)
+
+    def _boom(**kwargs):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(digester_pipeline, "run_archive_digester", _boom)
+
+    summary = run_archive_ingestion_batches(
+        root_path=archive,
+        db=db,
+        runner=runner,
+        output_dir=output,
+        kb_path=kb,
+        include_routes=["code_forge"],
+        include_repo_keys=["repo_a"],
+    )
+
+    assert summary["failed"] == 1
+    error_path = output / "batches" / "batch_a" / "batch_error.json"
+    assert error_path.exists()
+    payload = json.loads(error_path.read_text(encoding="utf-8"))
+    assert payload["error"] == "boom"
+    assert "RuntimeError: boom" in payload["traceback"]
+    state = load_archive_ingestion_state(output)
+    assert state["batches"]["batch_a"]["status"] == "failed"
+    assert state["batches"]["batch_a"]["summary_path"].endswith("batch_error.json")
+
+
+def test_run_archive_digester_degrades_when_knowledge_sync_unavailable(tmp_path: Path, monkeypatch) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _make_repo(repo)
+
+    db = CodeLibraryDB(tmp_path / "library.sqlite")
+    runner = IngestionRunner(db=db, runs_dir=tmp_path / "runs")
+    out = tmp_path / "output"
+    kb = tmp_path / "kb.json"
+
+    monkeypatch.setattr(digester_pipeline, "sync_units_to_knowledge_forge", lambda **kwargs: (_ for _ in ()).throw(ConnectionError("embedding offline")))
+
+    payload = run_archive_digester(
+        root_path=repo,
+        db=db,
+        runner=runner,
+        output_dir=out,
+        mode="analysis",
+        extensions=[".py"],
+        progress_every=1,
+        sync_knowledge_path=kb,
+    )
+
+    assert payload["ingestion_stats"]["files_processed"] >= 1
+    assert payload["knowledge_sync"]["status"] == "error"
+    assert payload["integration_errors"][0]["stage"] == "knowledge_sync"
+
+
+def test_process_metadata_batch_degrades_when_knowledge_forge_is_unavailable(tmp_path: Path, monkeypatch) -> None:
+    archive = tmp_path / "archive_like"
+    archive.mkdir()
+    (archive / "meta").mkdir()
+    (archive / "meta" / "index.json").write_text('{"name": "guide", "status": "ready"}\n', encoding="utf-8")
+    output = tmp_path / "digester"
+    kb = tmp_path / "kb.json"
+
+    from knowledge_forge.core.graph import KnowledgeForge
+
+    monkeypatch.setattr(KnowledgeForge, "add_knowledge", lambda *args, **kwargs: (_ for _ in ()).throw(ConnectionError("embedding offline")))
+    monkeypatch.setattr(digester_pipeline, "_word_forge_seed_from_text", lambda text: {"status": "success", "nodes_added": 1, "edges_added": 0})
+
+    payload = digester_pipeline._process_metadata_batch(
+        root_path=archive,
+        batch={"batch_id": "batch_meta", "route": "knowledge_metadata", "paths": ["meta/index.json"]},
+        output_dir=output,
+        kb_path=kb,
+    )
+
+    assert payload["files_processed"] == 0
+    assert payload["errors"][0]["stage"] == "knowledge_forge"
+    assert payload["results"][0]["node_id"] is None
+    assert payload["results"][0]["node_error"] == "embedding offline"
