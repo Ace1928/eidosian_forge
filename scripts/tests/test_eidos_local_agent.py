@@ -331,7 +331,9 @@ def test_run_cycle_success_records_transport_and_resources(monkeypatch, tmp_path
     assert result["resource_count"] == 1
     assert result["tool_contract_count"] >= 1
     assert ingested == [("health check", "done")]
-    history_rows = [json.loads(line) for line in (tmp_path / "runtime" / "history.jsonl").read_text(encoding="utf-8").splitlines()]
+    history_rows = [
+        json.loads(line) for line in (tmp_path / "runtime" / "history.jsonl").read_text(encoding="utf-8").splitlines()
+    ]
     assert history_rows[-1]["session_id"] == result["session_id"]
 
 

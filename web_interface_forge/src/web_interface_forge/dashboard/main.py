@@ -64,6 +64,7 @@ logger = logging.getLogger("eidos_dashboard")
 def _now_utc_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
+
 # --- App Setup ---
 app = FastAPI(title="Eidosian Atlas", version="1.0.0")
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
@@ -460,7 +461,7 @@ async def _service_command(action: str, service: str | None = None) -> Dict[str,
             "services": [],
         }
     result = subprocess.run(
-        [str(SERVICES_SCRIPT), action, *( [service] if service else [] )],
+        [str(SERVICES_SCRIPT), action, *([service] if service else [])],
         cwd=str(FORGE_ROOT),
         env=env,
         capture_output=True,
@@ -820,6 +821,8 @@ async def api_consciousness():
     except Exception as e:
         logger.error(f"Error getting consciousness health: {e}")
         return {"status": "error", "error": str(e)}
+
+
 @app.get("/health")
 async def health():
     return {"status": "ok", "service": "eidos_atlas"}

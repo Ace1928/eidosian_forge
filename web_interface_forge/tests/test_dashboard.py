@@ -122,7 +122,9 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         {
             "contract": "eidos.session_context.v1",
             "session_id": "qwenchat:test",
-            "recent_sessions": [{"session_id": "codex:abc", "interface": "codex", "events": [{"summary": "recent codex"}]}],
+            "recent_sessions": [
+                {"session_id": "codex:abc", "interface": "codex", "events": [{"summary": "recent codex"}]}
+            ],
         },
     )
     _write_json(
@@ -173,7 +175,9 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(dashboard, "DIRECTORY_DOCS_STATUS", runtime_dir / "directory_docs_status.json")
     monkeypatch.setattr(dashboard, "DIRECTORY_DOCS_HISTORY", runtime_dir / "directory_docs_history.json")
     monkeypatch.setattr(dashboard, "SESSION_BRIDGE_CONTEXT", runtime_dir / "session_bridge" / "latest_context.json")
-    monkeypatch.setattr(dashboard, "SESSION_BRIDGE_IMPORT_STATUS", runtime_dir / "session_bridge" / "import_status.json")
+    monkeypatch.setattr(
+        dashboard, "SESSION_BRIDGE_IMPORT_STATUS", runtime_dir / "session_bridge" / "import_status.json"
+    )
     service_script = tmp_path / "eidos_termux_services.sh"
     service_script.write_text(
         "#!/bin/sh\n" "printf 'Atlas: runit run: /tmp/service: (pid 1) 10s; run: log: (pid 2) 10s\\n'\n",
@@ -333,7 +337,11 @@ def test_services_api_invalid_target() -> None:
 
 
 def test_session_bridge_sync_route(monkeypatch) -> None:
-    monkeypatch.setattr(dashboard, "get_session_bridge_status", lambda: {"contract": "eidos.session_bridge.status.v1", "recent_sessions": []})
+    monkeypatch.setattr(
+        dashboard,
+        "get_session_bridge_status",
+        lambda: {"contract": "eidos.session_bridge.status.v1", "recent_sessions": []},
+    )
 
     def _fake_sync_external_sessions(min_interval_sec: float = 0.0):
         return {"gemini": {"imported": 1}, "codex": {"imported": 2}}

@@ -5,7 +5,6 @@ import json
 import tarfile
 from pathlib import Path
 
-
 _MODULE_PATH = Path(__file__).resolve().parents[1] / "export_entity_proof_bundle.py"
 _SPEC = importlib.util.spec_from_file_location("export_entity_proof_bundle", _MODULE_PATH)
 assert _SPEC and _SPEC.loader

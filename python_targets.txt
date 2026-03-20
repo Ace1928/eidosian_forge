@@ -1,3 +1,12 @@
-agent_forge/src/agent_forge/consciousness/kernel.py
-agent_forge/src/agent_forge/consciousness/modules/default_mode.py
-agent_forge/src/agent_forge/consciousness/modules/motor.py
+doc_forge/src/doc_forge/scribe/directory_docs.py
+doc_forge/src/doc_forge/scribe/tests/test_directory_docs.py
+lib/eidosian_agent/local_mcp_agent.py
+lib/eidosian_runtime/__init__.py
+lib/eidosian_runtime/session_bridge.py
+lib/tests/test_session_bridge.py
+scripts/export_entity_proof_bundle.py
+scripts/qwenchat.py
+scripts/tests/test_eidos_local_agent.py
+scripts/tests/test_export_entity_proof_bundle.py
+web_interface_forge/src/web_interface_forge/dashboard/main.py
+web_interface_forge/tests/test_dashboard.py

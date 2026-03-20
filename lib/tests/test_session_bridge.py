@@ -92,7 +92,10 @@ def test_build_session_context_syncs_external_sessions(tmp_path: Path) -> None:
     home = tmp_path / "home"
     journal = home / ".gemini" / "context_memory" / "user.journal.jsonl"
     journal.parent.mkdir(parents=True, exist_ok=True)
-    journal.write_text(json.dumps({"id": "g1", "text": "gemini continuity", "scope": "global", "op": "upsert"}) + "\n", encoding="utf-8")
+    journal.write_text(
+        json.dumps({"id": "g1", "text": "gemini continuity", "scope": "global", "op": "upsert"}) + "\n",
+        encoding="utf-8",
+    )
 
     from eidosian_runtime import session_bridge as mod
 
