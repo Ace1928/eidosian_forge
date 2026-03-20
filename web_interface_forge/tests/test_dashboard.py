@@ -336,6 +336,8 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         assert "Local Agent" in html
         assert "Qwenchat" in html
         assert "Living Pipeline" in html
+        assert "Qwenchat History" in html
+        assert "Living Pipeline History" in html
         runtime_resp = client.get("/api/runtime")
         assert runtime_resp.status_code == 200
         runtime_payload = runtime_resp.json()

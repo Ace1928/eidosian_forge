@@ -491,6 +491,8 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
     runtime_slice_path, runtime_slice = _latest_glob(reports_root / "runtime", "local_agent_scheduler_slice_*.json")
     docs_status = _load_json(runtime_root / "directory_docs_status.json") or {}
     local_agent_status = _load_json(runtime_root / "local_mcp_agent" / "status.json") or {}
+    qwenchat_status = _load_json(runtime_root / "qwenchat" / "status.json") or {}
+    living_pipeline_status = _load_json(runtime_root / "living_pipeline_status.json") or {}
     coordinator_status = _load_json(runtime_root / "forge_coordinator_status.json") or {}
     coordinator_history = _load_json(runtime_root / "forge_runtime_trends.json") or {}
     scheduler_status = _load_json(runtime_root / "eidos_scheduler_status.json") or {}
@@ -762,6 +764,36 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
         )
     else:
         observability_gaps.append("No local-agent status artifact found.")
+    if qwenchat_status:
+        observability_score += 0.08
+        observability_paths.append(str(runtime_root / "qwenchat" / "status.json"))
+        observability_strengths.append(
+            f"Qwenchat status is persisted with phase `{qwenchat_status.get('phase')}`."
+        )
+    else:
+        observability_gaps.append("No qwenchat runtime status artifact found.")
+    if living_pipeline_status:
+        observability_score += 0.08
+        observability_paths.append(str(runtime_root / "living_pipeline_status.json"))
+        observability_strengths.append(
+            f"Living pipeline status is persisted with phase `{living_pipeline_status.get('phase')}`."
+        )
+    else:
+        observability_gaps.append("No living pipeline status artifact found.")
+    qwenchat_history_path = runtime_root / "qwenchat" / "history.jsonl"
+    if qwenchat_history_path.exists():
+        observability_score += 0.04
+        observability_paths.append(str(qwenchat_history_path))
+        observability_strengths.append("Qwenchat history ledger exists.")
+    else:
+        observability_gaps.append("No qwenchat history ledger found.")
+    living_pipeline_history_path = runtime_root / "living_pipeline_history.jsonl"
+    if living_pipeline_history_path.exists():
+        observability_score += 0.04
+        observability_paths.append(str(living_pipeline_history_path))
+        observability_strengths.append("Living pipeline history ledger exists.")
+    else:
+        observability_gaps.append("No living pipeline history ledger found.")
     if session_bridge.get("imported_records", 0) > 0 or session_bridge.get("recent_sessions", 0) > 0:
         observability_score += 0.1
         observability_paths.extend(
@@ -990,6 +1022,10 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
             "coordinator_owner": coordinator_status.get("owner"),
             "scheduler_state": scheduler_status.get("state"),
             "local_agent_status": local_agent_status.get("status"),
+            "qwenchat_status": qwenchat_status.get("status"),
+            "qwenchat_phase": qwenchat_status.get("phase"),
+            "living_pipeline_status": living_pipeline_status.get("status"),
+            "living_pipeline_phase": living_pipeline_status.get("phase"),
             "directory_docs_missing_readme_count": _safe_int(docs_status.get("missing_readme_count")),
             "directory_docs_review_pending_count": _safe_int(docs_status.get("review_pending_count")),
             "runtime_history_count": len(history_entries),
@@ -1058,6 +1094,14 @@ def render_markdown(report: dict[str, Any]) -> str:
             )
     else:
         lines.append("- No runtime benchmark status artifacts found.")
+    lines.extend(["", "## Runtime Services", ""])
+    runtime = report.get("runtime") or {}
+    lines.append(f"- `scheduler_state`: `{runtime.get('scheduler_state')}`")
+    lines.append(f"- `local_agent_status`: `{runtime.get('local_agent_status')}`")
+    lines.append(f"- `qwenchat_status`: `{runtime.get('qwenchat_status')}`")
+    lines.append(f"- `qwenchat_phase`: `{runtime.get('qwenchat_phase')}`")
+    lines.append(f"- `living_pipeline_status`: `{runtime.get('living_pipeline_status')}`")
+    lines.append(f"- `living_pipeline_phase`: `{runtime.get('living_pipeline_phase')}`")
     lines.extend(["", "## External Benchmark Coverage", ""])
     ext = report.get("external_benchmark_coverage") or {}
     for name, present in sorted(ext.items()):

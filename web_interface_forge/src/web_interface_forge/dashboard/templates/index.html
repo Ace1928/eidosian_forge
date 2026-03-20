@@ -558,6 +558,60 @@
         <p>No local-agent history available.</p>
         {% endif %}
     </div>
+    <div class="card">
+        <h3>Qwenchat History</h3>
+        {% if qwenchat_history %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Status</th>
+                    <th>Phase</th>
+                    <th>Model</th>
+                    <th>Updated</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in qwenchat_history %}
+                <tr>
+                    <td>{{ row.get('status', 'unknown') }}</td>
+                    <td>{{ row.get('phase', '') }}</td>
+                    <td>{{ row.get('model', 'n/a') }}</td>
+                    <td>{{ row.get('generated_at', '')[:19].replace('T', ' ') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No qwenchat history available.</p>
+        {% endif %}
+    </div>
+    <div class="card">
+        <h3>Living Pipeline History</h3>
+        {% if living_pipeline_history %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Status</th>
+                    <th>Phase</th>
+                    <th>Run</th>
+                    <th>Records</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in living_pipeline_history %}
+                <tr>
+                    <td>{{ row.get('status', 'unknown') }}</td>
+                    <td>{{ row.get('phase', '') }}</td>
+                    <td>{{ row.get('run_id', '') }}</td>
+                    <td>{{ row.get('records_total', '') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No living pipeline history available.</p>
+        {% endif %}
+    </div>
 </div>
 
 <script>

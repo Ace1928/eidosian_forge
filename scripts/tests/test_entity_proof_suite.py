@@ -66,9 +66,14 @@ def test_build_proof_report_flags_missing_external_benchmarks(tmp_path: Path) ->
         repo / "data" / "runtime" / "directory_docs_status.json", {"missing_readme_count": 0, "review_pending_count": 2}
     )
     _write_json(repo / "data" / "runtime" / "local_mcp_agent" / "status.json", {"status": "success"})
+    _write_json(repo / "data" / "runtime" / "qwenchat" / "status.json", {"status": "running", "phase": "interactive"})
+    (repo / "data" / "runtime" / "qwenchat").mkdir(parents=True, exist_ok=True)
+    (repo / "data" / "runtime" / "qwenchat" / "history.jsonl").write_text("{}\n", encoding="utf-8")
     _write_json(repo / "data" / "runtime" / "forge_coordinator_status.json", {"state": "running", "owner": "scheduler"})
     _write_json(repo / "data" / "runtime" / "forge_runtime_trends.json", {"entries": [{"state": "running"}]})
     _write_json(repo / "data" / "runtime" / "eidos_scheduler_status.json", {"state": "sleeping"})
+    _write_json(repo / "data" / "runtime" / "living_pipeline_status.json", {"status": "running", "phase": "graphrag"})
+    (repo / "data" / "runtime" / "living_pipeline_history.jsonl").write_text("{}\n", encoding="utf-8")
     _write_json(repo / "data" / "runtime" / "platform_capabilities.json", {"platform": "termux"})
 
     gates = repo / "agent_forge" / "src" / "agent_forge" / "autonomy" / "gates.py"
@@ -87,6 +92,8 @@ def test_build_proof_report_flags_missing_external_benchmarks(tmp_path: Path) ->
     assert any("AgentBench" in gap or "WebArena" in gap or "OSWorld" in gap for gap in gaps)
     categories = {row["category"]: row for row in report["categories"]}
     assert categories["governed_self_modification"]["score"] > 0.0
+    assert report["runtime"]["qwenchat_phase"] == "interactive"
+    assert report["runtime"]["living_pipeline_phase"] == "graphrag"
     assert categories["adversarial_robustness"]["status"] == "red"
 
 
@@ -252,3 +259,4 @@ def test_main_writes_latest_scorecard_files(tmp_path: Path, monkeypatch) -> None
     assert "## Proof History" in markdown
     assert "## Session Bridge" in markdown
     assert "## Runtime Benchmark Results" in markdown
+    assert "## Runtime Services" in markdown

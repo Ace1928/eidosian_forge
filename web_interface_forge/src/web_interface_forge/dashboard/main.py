@@ -328,6 +328,14 @@ def _read_jsonl_rows(path: Path, limit: int = 12) -> List[Dict[str, Any]]:
     return rows
 
 
+def get_qwenchat_history(limit: int = 12) -> List[Dict[str, Any]]:
+    return _read_jsonl_rows(QWENCHAT_HISTORY, limit=limit)
+
+
+def get_living_pipeline_history(limit: int = 12) -> List[Dict[str, Any]]:
+    return _read_jsonl_rows(LIVING_PIPELINE_HISTORY, limit=limit)
+
+
 def get_runtime_history(limit: int = 24) -> List[Dict[str, Any]]:
     payload = _read_json(COORDINATOR_HISTORY, {})
     rows = payload.get("entries", [])
@@ -766,6 +774,8 @@ async def dashboard(request: Request):
     docs_history = get_docs_history(limit=24)
     runtime_snapshot = get_runtime_snapshot()
     local_agent_history = get_local_agent_history()
+    qwenchat_history = get_qwenchat_history()
+    living_pipeline_history = get_living_pipeline_history()
     proof_snapshot = get_latest_proof_report()
     proof_summary = get_proof_summary()
 
@@ -786,6 +796,8 @@ async def dashboard(request: Request):
             "docs_history": docs_history,
             "runtime_snapshot": runtime_snapshot,
             "local_agent_history": local_agent_history,
+            "qwenchat_history": qwenchat_history,
+            "living_pipeline_history": living_pipeline_history,
             "proof_snapshot": proof_snapshot,
             "proof_summary": proof_summary,
             "service_snapshot": await _service_command("status"),
@@ -1100,7 +1112,7 @@ async def api_local_agent_status():
 async def api_qwenchat_status():
     return {
         "status": _read_json(QWENCHAT_STATUS, {}),
-        "history": _read_jsonl_rows(QWENCHAT_HISTORY),
+        "history": get_qwenchat_history(),
     }
 
 
@@ -1108,7 +1120,7 @@ async def api_qwenchat_status():
 async def api_living_pipeline_status():
     return {
         "status": _read_json(LIVING_PIPELINE_STATUS, {}),
-        "history": _read_jsonl_rows(LIVING_PIPELINE_HISTORY),
+        "history": get_living_pipeline_history(),
     }
 
 
