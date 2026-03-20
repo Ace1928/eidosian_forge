@@ -159,6 +159,23 @@ def test_build_proof_report_tracks_freshness_regression_and_external_results(tmp
         },
     )
     _write_json(
+        repo / "reports" / "model_domain_suite" / "model_domain_suite_latest.json",
+        {"winner": "qwen35@off"},
+    )
+    _write_json(
+        repo / "reports" / "graphrag" / "qualitative_assessment_20260320.json",
+        {"aggregate": {"overall_score": 0.81}},
+    )
+    _write_json(
+        repo / "reports" / "consciousness_benchmarks" / "benchmark_20260320.json",
+        {"scores": {"composite": 0.5}, "capability": {"agency": 1.0, "boundary_stability": 1.0}},
+    )
+    _write_json(
+        repo / "reports" / "consciousness_validation" / "validation_20260320.json",
+        {"scores": {"rac_ap_index": 0.51}, "security_boundary": {"pass_ratio": 0.0, "mean_robustness": 0.82, "attack_success_rate": 1.0}},
+    )
+    _write_json(repo / "reports" / "runtime" / "local_agent_scheduler_slice_20260320.json", {"ok": True})
+    _write_json(
         repo / "data" / "runtime" / "session_bridge" / "latest_context.json",
         {"recent_sessions": [{"session_id": "codex:1"}]},
     )
@@ -176,8 +193,10 @@ def test_build_proof_report_tracks_freshness_regression_and_external_results(tmp
     assert report["external_benchmark_results"][0]["execution_mode"] == "imported_reference"
     assert report["identity_continuity_scorecard"]["overall_score"] == 0.77
     assert report["identity_continuity_history"]["trend"] == "stable"
-    assert report["session_bridge"]["imported_records"] == 3
+    assert report["session_bridge"]["imported_records"] == 2
     assert report["proof_history"]["sample_count"] == 1
+    categories = {row["category"]: row for row in report["categories"]}
+    assert categories["external_validity"]["score"] <= 1.0
     assert report["freshness"]["status"] in {"yellow", "red"}
     assert report["regression"]["status"] == "regressed"
     assert any(row["category"] == "regression" for row in report["top_gaps"])

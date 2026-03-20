@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import subprocess
+import sys
 import time
 from pathlib import Path
 from typing import Any, Iterable
@@ -154,10 +155,11 @@ def _category(
     gaps: list[str],
     evidence_paths: list[str],
 ) -> dict[str, Any]:
+    normalized_score = round(min(1.0, max(0.0, float(score))), 6)
     return {
         "category": name,
-        "score": round(float(score), 6),
-        "status": _status_from_score(score),
+        "score": normalized_score,
+        "status": _status_from_score(normalized_score),
         "strengths": strengths,
         "gaps": gaps,
         "evidence_paths": sorted({path for path in evidence_paths if path}),
@@ -266,17 +268,33 @@ def _session_bridge_summary(runtime_root: Path) -> dict[str, Any]:
     context = _load_json(runtime_root / "session_bridge" / "latest_context.json") or {}
     import_status = _load_json(runtime_root / "session_bridge" / "import_status.json") or {}
     recent_sessions = context.get("recent_sessions") if isinstance(context.get("recent_sessions"), list) else []
-    gemini = import_status.get("gemini") if isinstance(import_status.get("gemini"), dict) else {}
-    codex = import_status.get("codex") if isinstance(import_status.get("codex"), dict) else {}
-    codex_threads = codex.get("threads") if isinstance(codex.get("threads"), dict) else {}
-    gemini_records = len(gemini.get("imported_ids") or [])
-    codex_records = sum(_safe_int(value) for value in codex_threads.values())
+    lib_root = runtime_root.parents[1] / "lib"
+    if str(lib_root) not in sys.path:
+        sys.path.insert(0, str(lib_root))
+    try:
+        from eidosian_runtime.session_bridge import summarize_import_status  # type: ignore
+
+        summary = summarize_import_status(import_status)
+    except Exception:
+        gemini = import_status.get("gemini") if isinstance(import_status.get("gemini"), dict) else {}
+        codex = import_status.get("codex") if isinstance(import_status.get("codex"), dict) else {}
+        codex_threads = codex.get("threads") if isinstance(codex.get("threads"), dict) else {}
+        summary = {
+            "last_sync_at": import_status.get("last_sync_at"),
+            "gemini_records": len(gemini.get("imported_ids") or []),
+            "codex_records": len(codex_threads),
+            "codex_thread_count": len(codex_threads),
+            "codex_last_imported_count": _safe_int(codex.get("last_imported_count")),
+            "imported_records": len(gemini.get("imported_ids") or []) + len(codex_threads),
+        }
     return {
-        "last_sync_at": import_status.get("last_sync_at"),
+        "last_sync_at": summary.get("last_sync_at"),
         "recent_sessions": len(recent_sessions),
-        "gemini_records": gemini_records,
-        "codex_records": codex_records,
-        "imported_records": gemini_records + codex_records,
+        "gemini_records": summary.get("gemini_records", 0),
+        "codex_records": summary.get("codex_records", 0),
+        "codex_thread_count": summary.get("codex_thread_count", 0),
+        "codex_last_imported_count": summary.get("codex_last_imported_count", 0),
+        "imported_records": summary.get("imported_records", 0),
     }
 
 
@@ -448,6 +466,16 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
     coordinator_history = _load_json(runtime_root / "forge_runtime_trends.json") or {}
     scheduler_status = _load_json(runtime_root / "eidos_scheduler_status.json") or {}
     capabilities = _load_json(runtime_root / "platform_capabilities.json") or {}
+    if not capabilities:
+        lib_root = repo_root / "lib"
+        if str(lib_root) not in sys.path:
+            sys.path.insert(0, str(lib_root))
+        try:
+            from eidosian_runtime import write_runtime_capabilities  # type: ignore
+
+            capabilities = write_runtime_capabilities(runtime_root / "platform_capabilities.json")
+        except Exception:
+            capabilities = {}
     migration_path, migration_payload = _latest_json(
         [
             proof_root / "migration_replay_scorecard_latest.json",

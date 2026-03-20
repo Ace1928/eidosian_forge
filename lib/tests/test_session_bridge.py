@@ -9,6 +9,7 @@ from eidosian_runtime.session_bridge import (
     import_codex_rollouts,
     import_gemini_journal,
     read_session_events,
+    summarize_import_status,
 )
 
 
@@ -92,10 +93,7 @@ def test_build_session_context_syncs_external_sessions(tmp_path: Path) -> None:
     home = tmp_path / "home"
     journal = home / ".gemini" / "context_memory" / "user.journal.jsonl"
     journal.parent.mkdir(parents=True, exist_ok=True)
-    journal.write_text(
-        json.dumps({"id": "g1", "text": "gemini continuity", "scope": "global", "op": "upsert"}) + "\n",
-        encoding="utf-8",
-    )
+    journal.write_text(json.dumps({"id": "g1", "text": "gemini continuity", "scope": "global", "op": "upsert"}) + "\n", encoding="utf-8")
 
     from eidosian_runtime import session_bridge as mod
 
@@ -106,3 +104,22 @@ def test_build_session_context_syncs_external_sessions(tmp_path: Path) -> None:
     payload = build_session_context(interface="qwenchat", query="continuity", session_id="qwenchat:test")
     assert payload["recent_sessions"]
     assert (tmp_path / "latest_context.json").exists()
+
+
+def test_summarize_import_status_treats_codex_thread_values_as_versions_not_counts() -> None:
+    payload = summarize_import_status(
+        {
+            "last_sync_at": "2026-03-20T00:00:00Z",
+            "gemini": {"imported_ids": ["g1", "g2"]},
+            "codex": {
+                "threads": {
+                    "thread-a": 1773975905,
+                    "thread-b": 1772214073,
+                }
+            },
+        }
+    )
+    assert payload["gemini_records"] == 2
+    assert payload["codex_records"] == 2
+    assert payload["codex_thread_count"] == 2
+    assert payload["imported_records"] == 4

@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import shutil
+import sys
 import tarfile
 import time
 from pathlib import Path
@@ -147,26 +148,38 @@ def export_bundle(repo_root: Path, output_root: Path) -> dict[str, Any]:
     identity_payload = _load_json(proof_root / "identity_continuity_scorecard_latest.json")
     session_context_payload = _load_json(runtime_root / "session_bridge" / "latest_context.json")
     session_import_payload = _load_json(runtime_root / "session_bridge" / "import_status.json")
-    codex_threads = (
-        (session_import_payload.get("codex") or {}).get("threads")
-        if isinstance((session_import_payload.get("codex") or {}), dict)
-        else {}
-    )
-    gemini_imported = (
-        (session_import_payload.get("gemini") or {}).get("imported_ids")
-        if isinstance((session_import_payload.get("gemini") or {}), dict)
-        else []
-    )
-    session_bridge_summary = {
-        "last_sync_at": session_import_payload.get("last_sync_at"),
-        "recent_sessions": len(session_context_payload.get("recent_sessions") or [])
+    lib_root = repo_root / "lib"
+    if str(lib_root) not in sys.path:
+        sys.path.insert(0, str(lib_root))
+    try:
+        from eidosian_runtime.session_bridge import summarize_import_status  # type: ignore
+
+        session_bridge_summary = summarize_import_status(session_import_payload)
+    except Exception:
+        codex_threads = (
+            (session_import_payload.get("codex") or {}).get("threads")
+            if isinstance((session_import_payload.get("codex") or {}), dict)
+            else {}
+        )
+        gemini_imported = (
+            (session_import_payload.get("gemini") or {}).get("imported_ids")
+            if isinstance((session_import_payload.get("gemini") or {}), dict)
+            else []
+        )
+        session_bridge_summary = {
+            "last_sync_at": session_import_payload.get("last_sync_at"),
+            "codex_records": len(codex_threads) if isinstance(codex_threads, dict) else 0,
+            "gemini_records": len(gemini_imported) if isinstance(gemini_imported, list) else 0,
+            "codex_thread_count": len(codex_threads) if isinstance(codex_threads, dict) else 0,
+            "codex_last_imported_count": _safe_int((session_import_payload.get("codex") or {}).get("last_imported_count")),
+        }
+        session_bridge_summary["imported_records"] = (
+            session_bridge_summary["codex_records"] + session_bridge_summary["gemini_records"]
+        )
+    session_bridge_summary["recent_sessions"] = (
+        len(session_context_payload.get("recent_sessions") or [])
         if isinstance(session_context_payload.get("recent_sessions"), list)
-        else 0,
-        "codex_records": sum(_safe_int(value) for value in codex_threads.values()) if isinstance(codex_threads, dict) else 0,
-        "gemini_records": len(gemini_imported) if isinstance(gemini_imported, list) else 0,
-    }
-    session_bridge_summary["imported_records"] = (
-        session_bridge_summary["codex_records"] + session_bridge_summary["gemini_records"]
+        else 0
     )
 
     manifest = {

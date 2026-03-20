@@ -721,12 +721,12 @@ async function refreshSessionBridge() {
         const res = await fetch("/api/session-bridge", {cache: "no-store"});
         if (!res.ok) return;
         const payload = await res.json();
-        const importStatus = payload.import_status || {};
-        const geminiImported = (importStatus.gemini?.imported_ids || []).length;
-        const codexImported = Object.keys(importStatus.codex?.threads || {}).length;
+        const summary = payload.summary || {};
+        const geminiImported = summary.gemini_records ?? 0;
+        const codexImported = summary.codex_records ?? 0;
         document.getElementById("session-bridge-count").textContent = (payload.recent_sessions || []).length;
         document.getElementById("session-bridge-imported").textContent = geminiImported + codexImported;
-        document.getElementById("session-bridge-sync").textContent = importStatus.last_sync_at || "n/a";
+        document.getElementById("session-bridge-sync").textContent = summary.last_sync_at || "n/a";
         document.getElementById("session-bridge-codex").textContent = codexImported;
         document.getElementById("session-bridge-gemini").textContent = geminiImported;
     } catch (err) {

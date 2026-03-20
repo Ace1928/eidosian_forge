@@ -397,12 +397,10 @@ def get_proof_summary() -> Dict[str, Any]:
             "recent_sessions": len(session_bridge.get("recent_sessions") or [])
             if isinstance(session_bridge.get("recent_sessions"), list)
             else 0,
-            "last_sync_at": ((session_bridge.get("import_status") or {}).get("last_sync_at")),
-            "codex_records": sum(
-                int(value)
-                for value in ((session_bridge.get("import_status") or {}).get("codex", {}).get("threads", {}) or {}).values()
-            ),
-            "gemini_records": len((session_bridge.get("import_status") or {}).get("gemini", {}).get("imported_ids", []) or []),
+            "last_sync_at": ((session_bridge.get("summary") or {}).get("last_sync_at")),
+            "codex_records": ((session_bridge.get("summary") or {}).get("codex_records", 0)),
+            "gemini_records": ((session_bridge.get("summary") or {}).get("gemini_records", 0)),
+            "imported_records": ((session_bridge.get("summary") or {}).get("imported_records", 0)),
         },
         "identity_trend": history.get("trend"),
         "identity_delta": history.get("delta_from_previous"),
@@ -447,11 +445,13 @@ def get_session_bridge_status() -> Dict[str, Any]:
         "import_status": _read_json(SESSION_BRIDGE_IMPORT_STATUS, {}),
     }
     try:
-        from eidosian_runtime.session_bridge import recent_session_digest  # type: ignore
+        from eidosian_runtime.session_bridge import recent_session_digest, summarize_import_status  # type: ignore
 
         payload["recent_sessions"] = recent_session_digest(limit=6)
+        payload["summary"] = summarize_import_status(payload.get("import_status"))
     except Exception as exc:
         payload["recent_sessions"] = []
+        payload["summary"] = {}
         payload["error"] = str(exc)
     return payload
 

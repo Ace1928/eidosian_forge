@@ -72,7 +72,7 @@ def test_export_bundle_collects_latest_proof_and_benchmarks(tmp_path: Path) -> N
     assert manifest["migration_summary"]["status"] == "green"
     assert manifest["identity_summary"]["history"]["trend"] == "stable"
     assert len(manifest["identity_summary"]["recent_history"]) == 1
-    assert manifest["session_bridge_summary"]["imported_records"] == 3
+    assert manifest["session_bridge_summary"]["imported_records"] == 2
     assert manifest["benchmarks"][0]["suite"] == "agencybench"
     assert manifest["missing"] == []
     assert any(item["label"] == "identity_continuity_json" for item in manifest["files"])
