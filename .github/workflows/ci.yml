@@ -161,7 +161,7 @@ jobs:
           
           if [ -n "$FORMAT_FAIL" ]; then
             echo "::warning::Python formatting drift detected. Continuing (non-blocking) for monorepo stability."
-            echo "::notice::Run Auto Format workflow to reconcile global formatting debt."
+            echo "::notice::Run the manual Format Audit workflow or local formatters to reconcile formatting drift."
           fi
 
       - name: 📦 Set up Node.js
