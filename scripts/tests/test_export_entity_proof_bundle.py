@@ -60,6 +60,11 @@ def test_export_bundle_collects_latest_proof_and_benchmarks(tmp_path: Path) -> N
         json.dumps({"last_sync_at": "2026-03-20T03:00:00Z", "gemini": {"imported_ids": ["g1"]}, "codex": {"threads": {"t1": 2}}}),
     )
     _write(
+        repo_root / "doc_forge" / "runtime" / "processor_status.json",
+        json.dumps({"status": "running", "phase": "processing"}),
+    )
+    _write(repo_root / "doc_forge" / "runtime" / "processor_history.jsonl", "{}\n")
+    _write(
         repo_root / "data" / "runtime" / "qwenchat" / "status.json",
         json.dumps({"status": "running", "phase": "interactive"}),
     )
@@ -102,6 +107,7 @@ def test_export_bundle_collects_latest_proof_and_benchmarks(tmp_path: Path) -> N
     assert manifest["identity_summary"]["history"]["trend"] == "stable"
     assert len(manifest["identity_summary"]["recent_history"]) == 1
     assert manifest["session_bridge_summary"]["imported_records"] == 2
+    assert manifest["runtime_service_summary"]["doc_processor_phase"] == "processing"
     assert manifest["runtime_service_summary"]["qwenchat_phase"] == "interactive"
     assert manifest["runtime_service_summary"]["living_pipeline_phase"] == "graphrag"
     assert manifest["benchmarks"][0]["suite"] == "agencybench"
@@ -117,6 +123,7 @@ def test_export_bundle_collects_latest_proof_and_benchmarks(tmp_path: Path) -> N
     assert any(name.endswith("manifest.json") for name in names)
     assert any(name.endswith("external_benchmarks/agencybench/latest.json") for name in names)
     assert any(name.endswith("runtime/session_bridge/latest_context.json") for name in names)
+    assert any(name.endswith("runtime/doc_processor/status.json") for name in names)
     assert any(name.endswith("runtime/qwenchat/status.json") for name in names)
     assert any(name.endswith("runtime/living_pipeline_status.json") for name in names)
     assert any(name.endswith("runtime_benchmarks/agencybench/scenario2/20260320_010203/status.json") for name in names)

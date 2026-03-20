@@ -23,12 +23,27 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
     _write_json(
         runtime / "processor_status.json",
         {
+            "contract": "eidos.doc_processor.status.v1",
             "status": "running",
+            "phase": "processing",
             "processed": 12,
             "remaining": 4,
             "average_quality_score": 0.88,
             "last_approved": "foo/bar.py",
         },
+    )
+    (runtime / "processor_history.jsonl").write_text(
+        json.dumps(
+            {
+                "contract": "eidos.doc_processor.status.v1",
+                "status": "running",
+                "phase": "processing",
+                "processed": 12,
+                "generated_at": "2026-03-20T00:00:00Z",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
     )
     _write_json(
         runtime / "doc_index.json",
@@ -296,6 +311,7 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(dashboard, "DOC_FINAL", final_docs)
     monkeypatch.setattr(dashboard, "DOC_INDEX", runtime / "doc_index.json")
     monkeypatch.setattr(dashboard, "DOC_STATUS", runtime / "processor_status.json")
+    monkeypatch.setattr(dashboard, "DOC_HISTORY", runtime / "processor_history.jsonl")
     monkeypatch.setattr(dashboard, "FORGE_ROOT", tmp_path)
     monkeypatch.setattr(dashboard, "HOME_ROOT", tmp_path)
     monkeypatch.setattr(dashboard, "RUNTIME_DIR", runtime_dir)
@@ -334,14 +350,17 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         assert "foo/bar.py" in html
         assert "Indexed Docs" in html
         assert "Local Agent" in html
+        assert "Doc Processor" in html
         assert "Qwenchat" in html
         assert "Living Pipeline" in html
+        assert "Doc Processor History" in html
         assert "Qwenchat History" in html
         assert "Living Pipeline History" in html
         runtime_resp = client.get("/api/runtime")
         assert runtime_resp.status_code == 200
         runtime_payload = runtime_resp.json()
         assert runtime_payload["local_agent"]["status"] == "success"
+        assert runtime_payload["doc_processor"]["phase"] == "processing"
         assert runtime_payload["qwenchat"]["phase"] == "interactive"
         assert runtime_payload["living_pipeline"]["phase"] == "graphrag"
         assert runtime_payload["directory_docs"]["missing_readme_count"] == 2
@@ -359,6 +378,10 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         local_agent_resp = client.get("/api/runtime/local-agent")
         assert local_agent_resp.status_code == 200
         assert local_agent_resp.json()["status"]["profile"] == "observer"
+        doc_processor_resp = client.get("/api/runtime/doc-processor")
+        assert doc_processor_resp.status_code == 200
+        assert doc_processor_resp.json()["status"]["phase"] == "processing"
+        assert doc_processor_resp.json()["history"][0]["processed"] == 12
         qwenchat_resp = client.get("/api/runtime/qwenchat")
         assert qwenchat_resp.status_code == 200
         assert qwenchat_resp.json()["status"]["session_id"] == "qwenchat:test"

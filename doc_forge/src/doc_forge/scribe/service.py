@@ -125,7 +125,7 @@ class DocProcessor:
         self.generator = DocGenerator(cfg)
         self.judges = FederatedJudge(cfg)
         self.model_server = ManagedModelServer(cfg)
-        self.state = ProcessorState(cfg.state_path, cfg.status_path, cfg.index_path)
+        self.state = ProcessorState(cfg.state_path, cfg.status_path, cfg.index_path, cfg.history_path)
         self.state.update("model", str(cfg.llm_model_path))
         self.state.update("completion_url", cfg.completion_url)
 
@@ -217,6 +217,7 @@ class DocProcessor:
 
     def _run_loop(self) -> None:
         self.state.update("status", "starting")
+        self.state.update("phase", "starting")
         self.state.persist()
 
         while not self.stop_event.is_set():
@@ -224,9 +225,11 @@ class DocProcessor:
                 try:
                     self.model_server.start()
                     self.state.update("status", "running")
+                    self.state.update("phase", "llm_ready")
                     self.state.update("last_error", "")
                 except Exception as exc:
                     self.state.update("status", "waiting_for_llm")
+                    self.state.update("phase", "waiting_for_llm")
                     self.state.update("last_error", f"{type(exc).__name__}: {exc}")
                     self.state.persist()
                     time.sleep(max(2.0, self.cfg.loop_sleep_s))
@@ -235,6 +238,7 @@ class DocProcessor:
             elif self.cfg.dry_run:
                 if self.state.get("status") == "starting":
                     self.state.update("status", "running")
+                    self.state.update("phase", "dry_run_ready")
                     self.state.persist()
 
             candidates = self._scan_candidates()
@@ -256,10 +260,12 @@ class DocProcessor:
 
             if not pending:
                 self.state.update("status", "idle")
+                self.state.update("phase", "idle")
                 self.state.persist()
                 time.sleep(max(2.0, self.cfg.loop_sleep_s))
                 if self.state.get("status") == "idle":
                     self.state.update("status", "running")
+                    self.state.update("phase", "scan")
                 continue
 
             for path, rel, digest in pending:
@@ -281,6 +287,8 @@ class DocProcessor:
                 self.state.data["doc_type_frequency"][doc_type] = (
                     self.state.data["doc_type_frequency"].get(doc_type, 0) + 1
                 )
+                self.state.update("phase", "processing")
+                self.state.update("active_document", rel_key)
 
                 try:
                     source_text, metadata = self.extractor.extract(path)
@@ -380,6 +388,7 @@ class DocProcessor:
                 time.sleep(self.cfg.loop_sleep_s)
 
         self.state.update("status", "stopped")
+        self.state.update("phase", "stopped")
         self.state.persist()
 
 

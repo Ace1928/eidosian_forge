@@ -19,6 +19,7 @@ class ScribeConfig:
     index_path: Path
     state_path: Path
     status_path: Path
+    history_path: Path
     host: str
     port: int
     completion_url: str
@@ -98,6 +99,7 @@ class ScribeConfig:
             index_path=runtime_root / "doc_index.json",
             state_path=runtime_root / "processor_state.json",
             status_path=runtime_root / "processor_status.json",
+            history_path=runtime_root / "processor_history.jsonl",
             host=host or os.environ.get("EIDOS_DOC_FORGE_HOST", "127.0.0.1"),
             port=port if port is not None else int(os.environ.get("EIDOS_DOC_FORGE_PORT", str(default_port))),
             completion_url=os.environ.get(

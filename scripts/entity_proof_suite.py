@@ -490,6 +490,7 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
     linux_audit_path, linux_audit = _latest_glob(reports_root, "linux_audit_*.json")
     runtime_slice_path, runtime_slice = _latest_glob(reports_root / "runtime", "local_agent_scheduler_slice_*.json")
     docs_status = _load_json(runtime_root / "directory_docs_status.json") or {}
+    doc_processor_status = _load_json(repo_root / "doc_forge" / "runtime" / "processor_status.json") or {}
     local_agent_status = _load_json(runtime_root / "local_mcp_agent" / "status.json") or {}
     qwenchat_status = _load_json(runtime_root / "qwenchat" / "status.json") or {}
     living_pipeline_status = _load_json(runtime_root / "living_pipeline_status.json") or {}
@@ -764,6 +765,21 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
         )
     else:
         observability_gaps.append("No local-agent status artifact found.")
+    if doc_processor_status:
+        observability_score += 0.08
+        observability_paths.append(str(repo_root / "doc_forge" / "runtime" / "processor_status.json"))
+        observability_strengths.append(
+            f"Doc processor status is persisted with phase `{doc_processor_status.get('phase')}`."
+        )
+    else:
+        observability_gaps.append("No doc-processor runtime status artifact found.")
+    doc_processor_history_path = repo_root / "doc_forge" / "runtime" / "processor_history.jsonl"
+    if doc_processor_history_path.exists():
+        observability_score += 0.04
+        observability_paths.append(str(doc_processor_history_path))
+        observability_strengths.append("Doc processor history ledger exists.")
+    else:
+        observability_gaps.append("No doc-processor history ledger found.")
     if qwenchat_status:
         observability_score += 0.08
         observability_paths.append(str(runtime_root / "qwenchat" / "status.json"))
@@ -1021,6 +1037,8 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
             "coordinator_state": coordinator_status.get("state"),
             "coordinator_owner": coordinator_status.get("owner"),
             "scheduler_state": scheduler_status.get("state"),
+            "doc_processor_status": doc_processor_status.get("status"),
+            "doc_processor_phase": doc_processor_status.get("phase"),
             "local_agent_status": local_agent_status.get("status"),
             "qwenchat_status": qwenchat_status.get("status"),
             "qwenchat_phase": qwenchat_status.get("phase"),
@@ -1097,6 +1115,8 @@ def render_markdown(report: dict[str, Any]) -> str:
     lines.extend(["", "## Runtime Services", ""])
     runtime = report.get("runtime") or {}
     lines.append(f"- `scheduler_state`: `{runtime.get('scheduler_state')}`")
+    lines.append(f"- `doc_processor_status`: `{runtime.get('doc_processor_status')}`")
+    lines.append(f"- `doc_processor_phase`: `{runtime.get('doc_processor_phase')}`")
     lines.append(f"- `local_agent_status`: `{runtime.get('local_agent_status')}`")
     lines.append(f"- `qwenchat_status`: `{runtime.get('qwenchat_status')}`")
     lines.append(f"- `qwenchat_phase`: `{runtime.get('qwenchat_phase')}`")

@@ -44,12 +44,14 @@ def read_json(path: Path, default: dict[str, Any]) -> dict[str, Any]:
 
 
 class ProcessorState:
-    def __init__(self, state_path: Path, status_path: Path, index_path: Path):
+    def __init__(self, state_path: Path, status_path: Path, index_path: Path, history_path: Path | None = None):
         self.state_path = state_path
         self.status_path = status_path
         self.index_path = index_path
+        self.history_path = history_path
         self.lock = threading.Lock()
         self.data = self._load()
+        self._maybe_seed_history()
 
     def _default_state(self) -> Dict[str, Any]:
         return {
@@ -95,8 +97,12 @@ class ProcessorState:
         eta = round(remaining * avg_seconds, 2) if avg_seconds > 0 else None
 
         status_payload = {
+            "contract": "eidos.doc_processor.status.v1",
+            "component": "doc_processor",
             "status": str(snapshot.get("status", "unknown")),
+            "phase": str(snapshot.get("phase", snapshot.get("status", "unknown"))),
             "started_at": str(snapshot.get("started_at", now_iso())),
+            "generated_at": now_iso(),
             "total_discovered": total,
             "processed": processed,
             "approved": int(snapshot.get("approved", 0)),
@@ -115,6 +121,20 @@ class ProcessorState:
         }
         atomic_write_json(self.status_path, status_payload)
         atomic_write_json(self.index_path, {"entries": snapshot.get("index", [])})
+        if self.history_path is not None:
+            self.history_path.parent.mkdir(parents=True, exist_ok=True)
+            with self.history_path.open("a", encoding="utf-8") as handle:
+                handle.write(json.dumps(status_payload, ensure_ascii=False) + "\n")
+
+    def _maybe_seed_history(self) -> None:
+        if self.history_path is None or self.history_path.exists() or not self.status_path.exists():
+            return
+        payload = read_json(self.status_path, {})
+        if not payload:
+            return
+        self.history_path.parent.mkdir(parents=True, exist_ok=True)
+        with self.history_path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(payload, ensure_ascii=False) + "\n")
 
     def update(self, key: str, value: Any) -> None:
         with self.lock:

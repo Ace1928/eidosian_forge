@@ -65,6 +65,8 @@ def test_build_proof_report_flags_missing_external_benchmarks(tmp_path: Path) ->
     _write_json(
         repo / "data" / "runtime" / "directory_docs_status.json", {"missing_readme_count": 0, "review_pending_count": 2}
     )
+    _write_json(repo / "doc_forge" / "runtime" / "processor_status.json", {"status": "running", "phase": "processing"})
+    (repo / "doc_forge" / "runtime" / "processor_history.jsonl").write_text("{}\n", encoding="utf-8")
     _write_json(repo / "data" / "runtime" / "local_mcp_agent" / "status.json", {"status": "success"})
     _write_json(repo / "data" / "runtime" / "qwenchat" / "status.json", {"status": "running", "phase": "interactive"})
     (repo / "data" / "runtime" / "qwenchat").mkdir(parents=True, exist_ok=True)
@@ -92,6 +94,7 @@ def test_build_proof_report_flags_missing_external_benchmarks(tmp_path: Path) ->
     assert any("AgentBench" in gap or "WebArena" in gap or "OSWorld" in gap for gap in gaps)
     categories = {row["category"]: row for row in report["categories"]}
     assert categories["governed_self_modification"]["score"] > 0.0
+    assert report["runtime"]["doc_processor_phase"] == "processing"
     assert report["runtime"]["qwenchat_phase"] == "interactive"
     assert report["runtime"]["living_pipeline_phase"] == "graphrag"
     assert categories["adversarial_robustness"]["status"] == "red"

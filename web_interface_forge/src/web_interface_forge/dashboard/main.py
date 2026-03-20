@@ -32,6 +32,7 @@ DOC_RUNTIME = FORGE_ROOT / "doc_forge" / "runtime"
 DOC_FINAL = DOC_RUNTIME / "final_docs"
 DOC_INDEX = DOC_RUNTIME / "doc_index.json"
 DOC_STATUS = DOC_RUNTIME / "processor_status.json"
+DOC_HISTORY = DOC_RUNTIME / "processor_history.jsonl"
 RUNTIME_DIR = FORGE_ROOT / "data" / "runtime"
 HOME_ROOT = Path(os.environ.get("HOME", "/data/data/com.termux/files/home")).resolve()
 LOCAL_AGENT_STATUS = RUNTIME_DIR / "local_mcp_agent" / "status.json"
@@ -253,6 +254,7 @@ def get_runtime_snapshot() -> Dict[str, Any]:
     local_agent = _read_json(LOCAL_AGENT_STATUS, {})
     qwenchat = _read_json(QWENCHAT_STATUS, {})
     living_pipeline = _read_json(LIVING_PIPELINE_STATUS, {})
+    doc_processor = _read_json(DOC_STATUS, {})
     boot_status = _read_json(BOOT_STATUS, {})
     capabilities = _read_json(CAPABILITIES_STATUS, {})
     directory_docs = _read_json(DIRECTORY_DOCS_STATUS, {})
@@ -266,6 +268,7 @@ def get_runtime_snapshot() -> Dict[str, Any]:
         "local_agent": local_agent,
         "qwenchat": qwenchat,
         "living_pipeline": living_pipeline,
+        "doc_processor": doc_processor,
         "boot": boot_status,
         "capabilities": capabilities,
         "directory_docs": directory_docs,
@@ -334,6 +337,10 @@ def get_qwenchat_history(limit: int = 12) -> List[Dict[str, Any]]:
 
 def get_living_pipeline_history(limit: int = 12) -> List[Dict[str, Any]]:
     return _read_jsonl_rows(LIVING_PIPELINE_HISTORY, limit=limit)
+
+
+def get_doc_processor_history(limit: int = 12) -> List[Dict[str, Any]]:
+    return _read_jsonl_rows(DOC_HISTORY, limit=limit)
 
 
 def get_runtime_history(limit: int = 24) -> List[Dict[str, Any]]:
@@ -774,6 +781,7 @@ async def dashboard(request: Request):
     docs_history = get_docs_history(limit=24)
     runtime_snapshot = get_runtime_snapshot()
     local_agent_history = get_local_agent_history()
+    doc_processor_history = get_doc_processor_history()
     qwenchat_history = get_qwenchat_history()
     living_pipeline_history = get_living_pipeline_history()
     proof_snapshot = get_latest_proof_report()
@@ -796,6 +804,7 @@ async def dashboard(request: Request):
             "docs_history": docs_history,
             "runtime_snapshot": runtime_snapshot,
             "local_agent_history": local_agent_history,
+            "doc_processor_history": doc_processor_history,
             "qwenchat_history": qwenchat_history,
             "living_pipeline_history": living_pipeline_history,
             "proof_snapshot": proof_snapshot,
@@ -1105,6 +1114,14 @@ async def api_local_agent_status():
     return {
         "status": _read_json(LOCAL_AGENT_STATUS, {}),
         "history": get_local_agent_history(),
+    }
+
+
+@app.get("/api/runtime/doc-processor")
+async def api_doc_processor_status():
+    return {
+        "status": _read_json(DOC_STATUS, {}),
+        "history": get_doc_processor_history(),
     }
 
 

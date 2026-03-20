@@ -76,6 +76,11 @@
         <div class="stat-label">{{ runtime_snapshot.get('local_agent', {}).get('profile', 'n/a') }}</div>
     </div>
     <div class="card">
+        <h3>Doc Processor</h3>
+        <div class="stat-value">{{ runtime_snapshot.get('doc_processor', {}).get('status', 'unknown')|upper }}</div>
+        <div class="stat-label">{{ runtime_snapshot.get('doc_processor', {}).get('phase', 'idle') }}</div>
+    </div>
+    <div class="card">
         <h3>Qwenchat</h3>
         <div class="stat-value">{{ runtime_snapshot.get('qwenchat', {}).get('status', 'unknown')|upper }}</div>
         <div class="stat-label">{{ runtime_snapshot.get('qwenchat', {}).get('phase', 'idle') }}</div>
@@ -556,6 +561,33 @@
         </table>
         {% else %}
         <p>No local-agent history available.</p>
+        {% endif %}
+    </div>
+    <div class="card">
+        <h3>Doc Processor History</h3>
+        {% if doc_processor_history %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Status</th>
+                    <th>Phase</th>
+                    <th>Processed</th>
+                    <th>Updated</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in doc_processor_history %}
+                <tr>
+                    <td>{{ row.get('status', 'unknown') }}</td>
+                    <td>{{ row.get('phase', '') }}</td>
+                    <td>{{ row.get('processed', 0) }}</td>
+                    <td>{{ row.get('generated_at', '')[:19].replace('T', ' ') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No doc-processor history available.</p>
         {% endif %}
     </div>
     <div class="card">

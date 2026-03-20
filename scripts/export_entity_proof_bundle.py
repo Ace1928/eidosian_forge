@@ -157,6 +157,8 @@ def export_bundle(repo_root: Path, output_root: Path) -> dict[str, Any]:
     include(docs_root / "THEORY_OF_OPERATION.md", "docs/THEORY_OF_OPERATION.md", "theory_of_operation")
     include(runtime_root / "session_bridge" / "latest_context.json", "runtime/session_bridge/latest_context.json", "session_bridge_context")
     include(runtime_root / "session_bridge" / "import_status.json", "runtime/session_bridge/import_status.json", "session_bridge_import_status")
+    include(repo_root / "doc_forge" / "runtime" / "processor_status.json", "runtime/doc_processor/status.json", "doc_processor_status")
+    include(repo_root / "doc_forge" / "runtime" / "processor_history.jsonl", "runtime/doc_processor/history.jsonl", "doc_processor_history")
     include(runtime_root / "qwenchat" / "status.json", "runtime/qwenchat/status.json", "qwenchat_status")
     include(runtime_root / "qwenchat" / "history.jsonl", "runtime/qwenchat/history.jsonl", "qwenchat_history")
     include(runtime_root / "living_pipeline_status.json", "runtime/living_pipeline_status.json", "living_pipeline_status")
@@ -228,6 +230,7 @@ def export_bundle(repo_root: Path, output_root: Path) -> dict[str, Any]:
         if isinstance(session_context_payload.get("recent_sessions"), list)
         else 0
     )
+    doc_processor_status = _load_json(repo_root / "doc_forge" / "runtime" / "processor_status.json")
     qwenchat_status = _load_json(runtime_root / "qwenchat" / "status.json")
     living_pipeline_status = _load_json(runtime_root / "living_pipeline_status.json")
 
@@ -249,6 +252,8 @@ def export_bundle(repo_root: Path, output_root: Path) -> dict[str, Any]:
         },
         "session_bridge_summary": session_bridge_summary,
         "runtime_service_summary": {
+            "doc_processor_status": doc_processor_status.get("status"),
+            "doc_processor_phase": doc_processor_status.get("phase"),
             "qwenchat_status": qwenchat_status.get("status"),
             "qwenchat_phase": qwenchat_status.get("phase"),
             "living_pipeline_status": living_pipeline_status.get("status"),
