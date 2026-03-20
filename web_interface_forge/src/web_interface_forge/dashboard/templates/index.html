@@ -324,6 +324,7 @@
         <div class="stat-label">
             <button onclick="triggerProofRefresh()">Refresh Proof</button>
             · <a href="/api/proof/refresh/status" target="_blank">Job JSON</a>
+            · <a href="/api/proof/refresh/history" target="_blank">History JSON</a>
         </div>
     </div>
     <div class="card">
@@ -342,8 +343,10 @@
             <span id="benchmark-run-finished">{{ runtime_snapshot.get('runtime_benchmark_run', {}).get('finished_at', '')[:19].replace('T', ' ') }}</span>
         </div>
         <div class="stat-label">
-            <button onclick="triggerRuntimeBenchmark()">Run Scenario2</button>
+            <button onclick="triggerRuntimeBenchmark('local_agent')">Run Scenario2 Local</button>
+            <button onclick="triggerRuntimeBenchmark('deterministic')">Run Scenario2 Deterministic</button>
             · <a href="/api/benchmarks/runtime/run/status" target="_blank">Job JSON</a>
+            · <a href="/api/benchmarks/runtime/run/history" target="_blank">History JSON</a>
         </div>
     </div>
     <div class="card">
@@ -380,6 +383,50 @@
                 {% endfor %}
             </tbody>
         </table>
+    </div>
+    <div class="card">
+        <h3>Proof Refresh History</h3>
+        {% if runtime_snapshot.get('proof_refresh_history') %}
+        <table>
+            <thead>
+                <tr><th>Status</th><th>Window</th><th>Proof RC</th><th>Finished</th></tr>
+            </thead>
+            <tbody id="proof-refresh-history-body">
+                {% for row in runtime_snapshot.get('proof_refresh_history', [])[:6] %}
+                <tr>
+                    <td>{{ row.get('status', 'unknown') }}</td>
+                    <td>{{ row.get('window_days', '') }}</td>
+                    <td>{{ row.get('proof_returncode', '') }}</td>
+                    <td>{{ row.get('finished_at', '')[:19].replace('T', ' ') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No proof refresh history available.</p>
+        {% endif %}
+    </div>
+    <div class="card">
+        <h3>Benchmark Run History</h3>
+        {% if runtime_snapshot.get('runtime_benchmark_run_history') %}
+        <table>
+            <thead>
+                <tr><th>Status</th><th>Scenario</th><th>Engine</th><th>Finished</th></tr>
+            </thead>
+            <tbody id="benchmark-run-history-body">
+                {% for row in runtime_snapshot.get('runtime_benchmark_run_history', [])[:6] %}
+                <tr>
+                    <td>{{ row.get('status', 'unknown') }}</td>
+                    <td>{{ row.get('scenario', '') }}</td>
+                    <td>{{ row.get('engine', '') }}</td>
+                    <td>{{ row.get('finished_at', '')[:19].replace('T', ' ') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No benchmark run history available.</p>
+        {% endif %}
     </div>
     <div class="card">
         <h3>Supervised Services</h3>
@@ -1126,11 +1173,32 @@ async function refreshProofRefreshStatus() {
     }
 }
 
+async function refreshProofRefreshHistory() {
+    try {
+        const res = await fetch("/api/proof/refresh/history", {cache: "no-store"});
+        if (!res.ok) return;
+        const payload = await res.json();
+        const body = document.getElementById("proof-refresh-history-body");
+        if (!body) return;
+        body.innerHTML = (payload.entries || []).slice(0, 6).map((row) => `
+            <tr>
+                <td>${escapeHtml(row.status || "unknown")}</td>
+                <td>${escapeHtml(row.window_days ?? "")}</td>
+                <td>${escapeHtml(row.proof_returncode ?? "")}</td>
+                <td>${escapeHtml(String(row.finished_at || "").slice(0, 19).replace("T", " "))}</td>
+            </tr>
+        `).join("");
+    } catch (err) {
+        // ignore transient refresh failures
+    }
+}
+
 async function triggerProofRefresh() {
     try {
         await fetch("/api/proof/refresh?background=true&window_days=30", {method: "POST"});
     } finally {
         await refreshProofRefreshStatus();
+        await refreshProofRefreshHistory();
     }
 }
 
@@ -1149,11 +1217,32 @@ async function refreshRuntimeBenchmarkRunStatus() {
     }
 }
 
-async function triggerRuntimeBenchmark() {
+async function refreshRuntimeBenchmarkRunHistory() {
     try {
-        await fetch("/api/benchmarks/runtime/run?background=true&scenario=scenario2&engine=local_agent&attempts_per_step=1&timeout_sec=900&keep_alive=4h", {method: "POST"});
+        const res = await fetch("/api/benchmarks/runtime/run/history", {cache: "no-store"});
+        if (!res.ok) return;
+        const payload = await res.json();
+        const body = document.getElementById("benchmark-run-history-body");
+        if (!body) return;
+        body.innerHTML = (payload.entries || []).slice(0, 6).map((row) => `
+            <tr>
+                <td>${escapeHtml(row.status || "unknown")}</td>
+                <td>${escapeHtml(row.scenario || "")}</td>
+                <td>${escapeHtml(row.engine || "")}</td>
+                <td>${escapeHtml(String(row.finished_at || "").slice(0, 19).replace("T", " "))}</td>
+            </tr>
+        `).join("");
+    } catch (err) {
+        // ignore transient refresh failures
+    }
+}
+
+async function triggerRuntimeBenchmark(engine) {
+    try {
+        await fetch(`/api/benchmarks/runtime/run?background=true&scenario=scenario2&engine=${encodeURIComponent(engine || "local_agent")}&attempts_per_step=1&timeout_sec=900&keep_alive=4h`, {method: "POST"});
     } finally {
         await refreshRuntimeBenchmarkRunStatus();
+        await refreshRuntimeBenchmarkRunHistory();
     }
 }
 
@@ -1205,7 +1294,9 @@ setInterval(refreshProofHistory, 15000);
 setInterval(refreshExternalBenchmarks, 15000);
 setInterval(refreshRuntimeBenchmarks, 15000);
 setInterval(refreshProofRefreshStatus, 10000);
+setInterval(refreshProofRefreshHistory, 15000);
 setInterval(refreshRuntimeBenchmarkRunStatus, 10000);
+setInterval(refreshRuntimeBenchmarkRunHistory, 15000);
 setInterval(refreshRuntimeServices, 10000);
 refreshScheduler();
 refreshServices();
@@ -1221,6 +1312,8 @@ refreshProofHistory();
 refreshExternalBenchmarks();
 refreshRuntimeBenchmarks();
 refreshProofRefreshStatus();
+refreshProofRefreshHistory();
 refreshRuntimeBenchmarkRunStatus();
+refreshRuntimeBenchmarkRunHistory();
 </script>
 {% endblock %}
