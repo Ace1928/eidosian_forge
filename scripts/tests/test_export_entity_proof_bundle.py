@@ -65,6 +65,11 @@ def test_export_bundle_collects_latest_proof_and_benchmarks(tmp_path: Path) -> N
     )
     _write(repo_root / "doc_forge" / "runtime" / "processor_history.jsonl", "{}\n")
     _write(
+        repo_root / "data" / "runtime" / "eidos_scheduler_status.json",
+        json.dumps({"state": "sleeping", "current_task": "living_pipeline"}),
+    )
+    _write(repo_root / "data" / "runtime" / "eidos_scheduler_history.jsonl", "{}\n")
+    _write(
         repo_root / "data" / "runtime" / "qwenchat" / "status.json",
         json.dumps({"status": "running", "phase": "interactive"}),
     )
@@ -107,6 +112,8 @@ def test_export_bundle_collects_latest_proof_and_benchmarks(tmp_path: Path) -> N
     assert manifest["identity_summary"]["history"]["trend"] == "stable"
     assert len(manifest["identity_summary"]["recent_history"]) == 1
     assert manifest["session_bridge_summary"]["imported_records"] == 2
+    assert manifest["runtime_service_summary"]["scheduler_status"] == "sleeping"
+    assert manifest["runtime_service_summary"]["scheduler_task"] == "living_pipeline"
     assert manifest["runtime_service_summary"]["doc_processor_phase"] == "processing"
     assert manifest["runtime_service_summary"]["qwenchat_phase"] == "interactive"
     assert manifest["runtime_service_summary"]["living_pipeline_phase"] == "graphrag"
@@ -123,6 +130,7 @@ def test_export_bundle_collects_latest_proof_and_benchmarks(tmp_path: Path) -> N
     assert any(name.endswith("manifest.json") for name in names)
     assert any(name.endswith("external_benchmarks/agencybench/latest.json") for name in names)
     assert any(name.endswith("runtime/session_bridge/latest_context.json") for name in names)
+    assert any(name.endswith("runtime/scheduler/status.json") for name in names)
     assert any(name.endswith("runtime/doc_processor/status.json") for name in names)
     assert any(name.endswith("runtime/qwenchat/status.json") for name in names)
     assert any(name.endswith("runtime/living_pipeline_status.json") for name in names)

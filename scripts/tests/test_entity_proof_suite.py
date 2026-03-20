@@ -74,6 +74,7 @@ def test_build_proof_report_flags_missing_external_benchmarks(tmp_path: Path) ->
     _write_json(repo / "data" / "runtime" / "forge_coordinator_status.json", {"state": "running", "owner": "scheduler"})
     _write_json(repo / "data" / "runtime" / "forge_runtime_trends.json", {"entries": [{"state": "running"}]})
     _write_json(repo / "data" / "runtime" / "eidos_scheduler_status.json", {"state": "sleeping"})
+    (repo / "data" / "runtime" / "eidos_scheduler_history.jsonl").write_text("{}\n", encoding="utf-8")
     _write_json(repo / "data" / "runtime" / "living_pipeline_status.json", {"status": "running", "phase": "graphrag"})
     (repo / "data" / "runtime" / "living_pipeline_history.jsonl").write_text("{}\n", encoding="utf-8")
     _write_json(repo / "data" / "runtime" / "platform_capabilities.json", {"platform": "termux"})
@@ -94,6 +95,8 @@ def test_build_proof_report_flags_missing_external_benchmarks(tmp_path: Path) ->
     assert any("AgentBench" in gap or "WebArena" in gap or "OSWorld" in gap for gap in gaps)
     categories = {row["category"]: row for row in report["categories"]}
     assert categories["governed_self_modification"]["score"] > 0.0
+    assert report["runtime"]["scheduler_state"] == "sleeping"
+    assert report["runtime"]["scheduler_history_present"] is True
     assert report["runtime"]["doc_processor_phase"] == "processing"
     assert report["runtime"]["qwenchat_phase"] == "interactive"
     assert report["runtime"]["living_pipeline_phase"] == "graphrag"

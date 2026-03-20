@@ -581,6 +581,33 @@
         {% endif %}
     </div>
     <div class="card">
+        <h3>Scheduler History</h3>
+        {% if scheduler_history %}
+        <table>
+            <thead>
+                <tr>
+                    <th>State</th>
+                    <th>Task</th>
+                    <th>Cycle</th>
+                    <th>Updated</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in scheduler_history %}
+                <tr>
+                    <td>{{ row.get('state', 'unknown') }}</td>
+                    <td>{{ row.get('current_task', '') }}</td>
+                    <td>{{ row.get('cycle', 0) }}</td>
+                    <td>{{ row.get('updated_at', '')[:19].replace('T', ' ') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No scheduler history available.</p>
+        {% endif %}
+    </div>
+    <div class="card">
         <h3>Doc Processor History</h3>
         {% if doc_processor_history %}
         <table>

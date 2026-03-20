@@ -40,6 +40,7 @@ LOCAL_AGENT_HISTORY = RUNTIME_DIR / "local_mcp_agent" / "history.jsonl"
 QWENCHAT_STATUS = RUNTIME_DIR / "qwenchat" / "status.json"
 QWENCHAT_HISTORY = RUNTIME_DIR / "qwenchat" / "history.jsonl"
 SCHEDULER_STATUS = RUNTIME_DIR / "eidos_scheduler_status.json"
+SCHEDULER_HISTORY = RUNTIME_DIR / "eidos_scheduler_history.jsonl"
 LIVING_PIPELINE_STATUS = RUNTIME_DIR / "living_pipeline_status.json"
 LIVING_PIPELINE_HISTORY = RUNTIME_DIR / "living_pipeline_history.jsonl"
 COORDINATOR_STATUS = RUNTIME_DIR / "forge_coordinator_status.json"
@@ -343,16 +344,21 @@ def get_doc_processor_history(limit: int = 12) -> List[Dict[str, Any]]:
     return _read_jsonl_rows(DOC_HISTORY, limit=limit)
 
 
+def get_scheduler_history(limit: int = 12) -> List[Dict[str, Any]]:
+    return _read_jsonl_rows(SCHEDULER_HISTORY, limit=limit)
+
+
 def get_runtime_services_snapshot() -> List[Dict[str, Any]]:
     def _row(name: str, payload: Dict[str, Any], path: Path) -> Dict[str, Any]:
         return {
             "service": name,
-            "status": payload.get("status"),
-            "phase": payload.get("phase"),
+            "status": payload.get("status") or payload.get("state"),
+            "phase": payload.get("phase") or payload.get("current_task"),
             "path": str(path.relative_to(FORGE_ROOT)) if path.exists() else str(path),
         }
 
     return [
+        _row("scheduler", _read_json(SCHEDULER_STATUS, {}), SCHEDULER_STATUS),
         _row("doc_processor", _read_json(DOC_STATUS, {}), DOC_STATUS),
         _row("local_agent", _read_json(LOCAL_AGENT_STATUS, {}), LOCAL_AGENT_STATUS),
         _row("qwenchat", _read_json(QWENCHAT_STATUS, {}), QWENCHAT_STATUS),
@@ -799,6 +805,7 @@ async def dashboard(request: Request):
     runtime_snapshot = get_runtime_snapshot()
     runtime_services = get_runtime_services_snapshot()
     local_agent_history = get_local_agent_history()
+    scheduler_history = get_scheduler_history()
     doc_processor_history = get_doc_processor_history()
     qwenchat_history = get_qwenchat_history()
     living_pipeline_history = get_living_pipeline_history()
@@ -823,6 +830,7 @@ async def dashboard(request: Request):
             "runtime_snapshot": runtime_snapshot,
             "runtime_services": runtime_services,
             "local_agent_history": local_agent_history,
+            "scheduler_history": scheduler_history,
             "doc_processor_history": doc_processor_history,
             "qwenchat_history": qwenchat_history,
             "living_pipeline_history": living_pipeline_history,
@@ -1141,6 +1149,14 @@ async def api_local_agent_status():
     return {
         "status": _read_json(LOCAL_AGENT_STATUS, {}),
         "history": get_local_agent_history(),
+    }
+
+
+@app.get("/api/runtime/scheduler")
+async def api_runtime_scheduler_status():
+    return {
+        "status": _read_json(SCHEDULER_STATUS, {}),
+        "history": get_scheduler_history(),
     }
 
 

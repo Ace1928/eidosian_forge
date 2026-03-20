@@ -23,6 +23,7 @@ from eidosian_runtime import ForgeRuntimeCoordinator
 
 RUNTIME_DIR = FORGE_ROOT / "data" / "runtime"
 STATUS_PATH = RUNTIME_DIR / "eidos_scheduler_status.json"
+SCHEDULER_HISTORY_PATH = RUNTIME_DIR / "eidos_scheduler_history.jsonl"
 STATE_PATH = RUNTIME_DIR / "eidos_scheduler_state.json"
 PIPELINE_STATUS_PATH = RUNTIME_DIR / "living_pipeline_status.json"
 DIRECTORY_DOCS_STATUS_PATH = RUNTIME_DIR / "directory_docs_status.json"
@@ -38,6 +39,24 @@ def _now_utc() -> str:
 def _write_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def _write_scheduler_status(payload: dict[str, Any]) -> None:
+    _write_json(STATUS_PATH, payload)
+    SCHEDULER_HISTORY_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with SCHEDULER_HISTORY_PATH.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(payload, ensure_ascii=False) + "\n")
+
+
+def _maybe_seed_scheduler_history() -> None:
+    if SCHEDULER_HISTORY_PATH.exists() or not STATUS_PATH.exists():
+        return
+    payload = _load_json(STATUS_PATH)
+    if not payload:
+        return
+    SCHEDULER_HISTORY_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with SCHEDULER_HISTORY_PATH.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(payload, ensure_ascii=False) + "\n")
 
 
 def _load_json(path: Path) -> dict[str, Any]:
@@ -293,8 +312,7 @@ def run_scheduler_cycle(
             "directory_docs": docs_status,
             "proof": proof_status,
         }
-        _write_json(
-            STATUS_PATH,
+        _write_scheduler_status(
             _status_payload(
                 state="stopped",
                 current_task="living_pipeline",
@@ -333,7 +351,7 @@ def run_scheduler_cycle(
                 "proof": proof_status,
             },
         )
-        _write_json(STATUS_PATH, payload)
+        _write_scheduler_status(payload)
         _mark_scheduler_state(
             cycle=cycle,
             interval_sec=interval_sec,
@@ -368,8 +386,7 @@ def run_scheduler_cycle(
         },
     )
     start = time.perf_counter()
-    _write_json(
-        STATUS_PATH,
+    _write_scheduler_status(
         _status_payload(
             state="running",
             current_task="living_pipeline",
@@ -435,8 +452,7 @@ def run_scheduler_cycle(
             "directory_docs": docs_status,
             "proof": proof_status,
         }
-        _write_json(
-            STATUS_PATH,
+        _write_scheduler_status(
             _status_payload(
                 state="sleeping" if proc.returncode == 0 else "error",
                 current_task="living_pipeline",
@@ -469,8 +485,7 @@ def run_scheduler_cycle(
             "directory_docs": docs_status,
             "proof": proof_status,
         }
-        _write_json(
-            STATUS_PATH,
+        _write_scheduler_status(
             _status_payload(
                 state="timeout",
                 current_task="living_pipeline",
@@ -549,13 +564,13 @@ def apply_scheduler_control(action: str) -> dict[str, Any]:
 def main() -> int:
     global _STOP_REQUESTED
     args = parse_args()
+    _maybe_seed_scheduler_history()
     interval_sec = max(5.0, float(args.interval_sec))
     timeout_sec = max(60.0, float(args.timeout_sec))
     max_cycles = max(0, int(args.max_cycles))
     prior_status = _load_json(STATUS_PATH)
     if str(prior_status.get("state") or "") == "running" and not _pid_alive(prior_status.get("pid")):
-        _write_json(
-            STATUS_PATH,
+        _write_scheduler_status(
             _status_payload(
                 state="recovered",
                 current_task=str(prior_status.get("current_task") or "living_pipeline"),
@@ -582,8 +597,7 @@ def main() -> int:
         if persisted.get("stop_requested"):
             _STOP_REQUESTED = True
         if _STOP_REQUESTED:
-            _write_json(
-                STATUS_PATH,
+            _write_scheduler_status(
                 _status_payload(
                     state="stopped",
                     current_task="living_pipeline",
@@ -618,8 +632,7 @@ def main() -> int:
                     break
                 if not control.get("pause_requested"):
                     break
-                _write_json(
-                    STATUS_PATH,
+                _write_scheduler_status(
                     _status_payload(
                         state="paused",
                         current_task="living_pipeline",
@@ -665,8 +678,7 @@ def main() -> int:
             if _STOP_REQUESTED:
                 break
             current_state = _load_state()
-            _write_json(
-                STATUS_PATH,
+            _write_scheduler_status(
                 _status_payload(
                     state="sleeping",
                     current_task="living_pipeline",

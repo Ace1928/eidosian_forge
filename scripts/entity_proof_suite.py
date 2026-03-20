@@ -497,6 +497,7 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
     coordinator_status = _load_json(runtime_root / "forge_coordinator_status.json") or {}
     coordinator_history = _load_json(runtime_root / "forge_runtime_trends.json") or {}
     scheduler_status = _load_json(runtime_root / "eidos_scheduler_status.json") or {}
+    scheduler_history_path = runtime_root / "eidos_scheduler_history.jsonl"
     capabilities = _load_json(runtime_root / "platform_capabilities.json") or {}
     if not capabilities:
         lib_root = repo_root / "lib"
@@ -765,6 +766,20 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
         )
     else:
         observability_gaps.append("No local-agent status artifact found.")
+    if scheduler_status:
+        observability_score += 0.08
+        observability_paths.append(str(runtime_root / "eidos_scheduler_status.json"))
+        observability_strengths.append(
+            f"Scheduler status is persisted with state `{scheduler_status.get('state')}`."
+        )
+    else:
+        observability_gaps.append("No scheduler runtime status artifact found.")
+    if scheduler_history_path.exists():
+        observability_score += 0.04
+        observability_paths.append(str(scheduler_history_path))
+        observability_strengths.append("Scheduler history ledger exists.")
+    else:
+        observability_gaps.append("No scheduler history ledger found.")
     if doc_processor_status:
         observability_score += 0.08
         observability_paths.append(str(repo_root / "doc_forge" / "runtime" / "processor_status.json"))
@@ -876,6 +891,10 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
         reproducibility_score += 0.1
         reproducibility_paths.append(str(runtime_root / "eidos_scheduler_status.json"))
         reproducibility_strengths.append("Scheduler state is persisted.")
+    if scheduler_history_path.exists():
+        reproducibility_score += 0.03
+        reproducibility_paths.append(str(scheduler_history_path))
+        reproducibility_strengths.append("Scheduler history is persisted for replay context.")
     if (repo_root / "scripts" / "install_termux_runit_services.sh").exists():
         reproducibility_score += 0.1
         reproducibility_strengths.append("Service supervision installer exists.")
@@ -1037,6 +1056,8 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
             "coordinator_state": coordinator_status.get("state"),
             "coordinator_owner": coordinator_status.get("owner"),
             "scheduler_state": scheduler_status.get("state"),
+            "scheduler_task": scheduler_status.get("current_task"),
+            "scheduler_history_present": scheduler_history_path.exists(),
             "doc_processor_status": doc_processor_status.get("status"),
             "doc_processor_phase": doc_processor_status.get("phase"),
             "local_agent_status": local_agent_status.get("status"),
@@ -1115,6 +1136,8 @@ def render_markdown(report: dict[str, Any]) -> str:
     lines.extend(["", "## Runtime Services", ""])
     runtime = report.get("runtime") or {}
     lines.append(f"- `scheduler_state`: `{runtime.get('scheduler_state')}`")
+    lines.append(f"- `scheduler_task`: `{runtime.get('scheduler_task')}`")
+    lines.append(f"- `scheduler_history_present`: `{runtime.get('scheduler_history_present')}`")
     lines.append(f"- `doc_processor_status`: `{runtime.get('doc_processor_status')}`")
     lines.append(f"- `doc_processor_phase`: `{runtime.get('doc_processor_phase')}`")
     lines.append(f"- `local_agent_status`: `{runtime.get('local_agent_status')}`")

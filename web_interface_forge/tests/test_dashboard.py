@@ -136,6 +136,18 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
             "current_task": "living_pipeline",
         },
     )
+    (runtime_dir / "eidos_scheduler_history.jsonl").write_text(
+        json.dumps(
+            {
+                "state": "sleeping",
+                "current_task": "living_pipeline",
+                "cycle": 2,
+                "updated_at": "2026-03-20T00:20:00Z",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     _write_json(
         runtime_dir / "forge_coordinator_status.json",
         {
@@ -323,6 +335,7 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(dashboard, "QWENCHAT_STATUS", runtime_dir / "qwenchat" / "status.json")
     monkeypatch.setattr(dashboard, "QWENCHAT_HISTORY", runtime_dir / "qwenchat" / "history.jsonl")
     monkeypatch.setattr(dashboard, "SCHEDULER_STATUS", runtime_dir / "eidos_scheduler_status.json")
+    monkeypatch.setattr(dashboard, "SCHEDULER_HISTORY", runtime_dir / "eidos_scheduler_history.jsonl")
     monkeypatch.setattr(dashboard, "LIVING_PIPELINE_STATUS", runtime_dir / "living_pipeline_status.json")
     monkeypatch.setattr(dashboard, "LIVING_PIPELINE_HISTORY", runtime_dir / "living_pipeline_history.jsonl")
     monkeypatch.setattr(dashboard, "COORDINATOR_STATUS", runtime_dir / "forge_coordinator_status.json")
@@ -353,6 +366,7 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         assert "Doc Processor" in html
         assert "Qwenchat" in html
         assert "Living Pipeline" in html
+        assert "Scheduler History" in html
         assert "Runtime Services" in html
         assert "Doc Processor History" in html
         assert "Qwenchat History" in html
@@ -379,9 +393,14 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         runtime_services_resp = client.get("/api/runtime/services")
         assert runtime_services_resp.status_code == 200
         services = runtime_services_resp.json()["entries"]
+        assert any(row["service"] == "scheduler" and row["phase"] == "living_pipeline" for row in services)
         assert any(row["service"] == "doc_processor" and row["phase"] == "processing" for row in services)
         assert any(row["service"] == "qwenchat" and row["phase"] == "interactive" for row in services)
         assert any(row["service"] == "living_pipeline" and row["phase"] == "graphrag" for row in services)
+        scheduler_resp = client.get("/api/runtime/scheduler")
+        assert scheduler_resp.status_code == 200
+        assert scheduler_resp.json()["status"]["state"] == "sleeping"
+        assert scheduler_resp.json()["history"][0]["cycle"] == 2
         local_agent_resp = client.get("/api/runtime/local-agent")
         assert local_agent_resp.status_code == 200
         assert local_agent_resp.json()["status"]["profile"] == "observer"

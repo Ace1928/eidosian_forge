@@ -41,6 +41,7 @@ def test_run_scheduler_cycle_waits_on_coordinator(tmp_path: Path, monkeypatch) -
         metadata={"exclusive": True, "exclusive_owner": "qwenchat"},
     )
     monkeypatch.setattr(mod, "STATUS_PATH", tmp_path / "eidos_scheduler_status.json")
+    monkeypatch.setattr(mod, "SCHEDULER_HISTORY_PATH", tmp_path / "eidos_scheduler_history.jsonl")
     monkeypatch.setattr(mod, "PROOF_STATUS_PATH", tmp_path / "entity_proof_status.json")
     monkeypatch.setattr(
         mod,
@@ -72,11 +73,15 @@ def test_run_scheduler_cycle_waits_on_coordinator(tmp_path: Path, monkeypatch) -
     assert result["state"] == "waiting"
     assert result["last_result"]["reason"] == "exclusive_owner_active"
     assert result["last_result"]["proof"]["status"] == "yellow"
+    history_lines = (tmp_path / "eidos_scheduler_history.jsonl").read_text(encoding="utf-8").splitlines()
+    assert history_lines
+    assert json.loads(history_lines[-1])["state"] == "waiting"
 
 
 def test_run_scheduler_cycle_records_success(tmp_path: Path, monkeypatch) -> None:
     coordinator = ForgeRuntimeCoordinator(tmp_path / "forge_coordinator_status.json")
     monkeypatch.setattr(mod, "STATUS_PATH", tmp_path / "eidos_scheduler_status.json")
+    monkeypatch.setattr(mod, "SCHEDULER_HISTORY_PATH", tmp_path / "eidos_scheduler_history.jsonl")
     monkeypatch.setattr(mod, "PIPELINE_STATUS_PATH", tmp_path / "living_pipeline_status.json")
     monkeypatch.setattr(mod, "DIRECTORY_DOCS_STATUS_PATH", tmp_path / "directory_docs_status.json")
     monkeypatch.setattr(mod, "DIRECTORY_DOCS_HISTORY_PATH", tmp_path / "directory_docs_history.json")
@@ -123,6 +128,24 @@ def test_run_scheduler_cycle_records_success(tmp_path: Path, monkeypatch) -> Non
     saved = json.loads((tmp_path / "eidos_scheduler_status.json").read_text(encoding="utf-8"))
     assert saved["state"] == "sleeping"
     assert saved["last_result"]["records_total"] == 7
+    history_lines = (tmp_path / "eidos_scheduler_history.jsonl").read_text(encoding="utf-8").splitlines()
+    assert any(json.loads(line)["state"] == "running" for line in history_lines)
+    assert json.loads(history_lines[-1])["state"] == "sleeping"
+
+
+def test_scheduler_history_seeds_from_existing_status(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(mod, "STATUS_PATH", tmp_path / "eidos_scheduler_status.json")
+    monkeypatch.setattr(mod, "SCHEDULER_HISTORY_PATH", tmp_path / "eidos_scheduler_history.jsonl")
+    (tmp_path / "eidos_scheduler_status.json").write_text(
+        json.dumps({"state": "sleeping", "current_task": "living_pipeline"}),
+        encoding="utf-8",
+    )
+
+    mod._maybe_seed_scheduler_history()
+
+    history_lines = (tmp_path / "eidos_scheduler_history.jsonl").read_text(encoding="utf-8").splitlines()
+    assert len(history_lines) == 1
+    assert json.loads(history_lines[0])["state"] == "sleeping"
 
 
 def test_refresh_proof_status_reads_latest_proof_report(tmp_path: Path, monkeypatch) -> None:
