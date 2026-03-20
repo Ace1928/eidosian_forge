@@ -51,16 +51,20 @@ DIRECTORY_DOCS_STATUS = RUNTIME_DIR / "directory_docs_status.json"
 DIRECTORY_DOCS_HISTORY = RUNTIME_DIR / "directory_docs_history.json"
 DIRECTORY_DOCS_TREE = RUNTIME_DIR / "directory_docs_tree.json"
 DOCS_BATCH_STATUS = RUNTIME_DIR / "docs_upsert_batch_status.json"
+DOCS_BATCH_HISTORY = RUNTIME_DIR / "docs_upsert_batch_history.jsonl"
 PROOF_REFRESH_STATUS = RUNTIME_DIR / "proof_refresh_status.json"
 PROOF_REFRESH_HISTORY = RUNTIME_DIR / "proof_refresh_history.jsonl"
 RUNTIME_BENCHMARK_RUN_STATUS = RUNTIME_DIR / "runtime_benchmark_run_status.json"
 RUNTIME_BENCHMARK_RUN_HISTORY = RUNTIME_DIR / "runtime_benchmark_run_history.jsonl"
+RUNTIME_ARTIFACT_AUDIT_STATUS = RUNTIME_DIR / "runtime_artifact_audit_status.json"
+RUNTIME_ARTIFACT_AUDIT_HISTORY = RUNTIME_DIR / "runtime_artifact_audit_history.jsonl"
 SESSION_BRIDGE_DIR = RUNTIME_DIR / "session_bridge"
 SESSION_BRIDGE_CONTEXT = SESSION_BRIDGE_DIR / "latest_context.json"
 SESSION_BRIDGE_IMPORT_STATUS = SESSION_BRIDGE_DIR / "import_status.json"
 PROOF_REPORT_DIR = FORGE_ROOT / "reports" / "proof"
 PROOF_BUNDLE_DIR = FORGE_ROOT / "reports" / "proof_bundle"
 SECURITY_REPORT_DIR = FORGE_ROOT / "reports" / "security"
+RUNTIME_ARTIFACT_REPORT_DIR = FORGE_ROOT / "reports" / "runtime_artifact_audit"
 SERVICES_SCRIPT = FORGE_ROOT / "scripts" / "eidos_termux_services.sh"
 SERVICE_ACTION_LOG = RUNTIME_DIR / "atlas_service_actions.log"
 SCHEDULER_CONTROL_SCRIPT = FORGE_ROOT / "scripts" / "eidos_scheduler_control.py"
@@ -290,6 +294,10 @@ def get_runtime_snapshot() -> Dict[str, Any]:
         "proof_refresh_history": get_proof_refresh_history(),
         "runtime_benchmark_run": get_runtime_benchmark_run_status(),
         "runtime_benchmark_run_history": get_runtime_benchmark_run_history(),
+        "docs_batch": get_docs_batch_status(),
+        "docs_batch_history": get_docs_batch_history(),
+        "runtime_artifact_audit": get_runtime_artifact_audit_status(),
+        "runtime_artifact_audit_history": get_runtime_artifact_audit_history(),
         "security": (proof_summary.get("security") or {}).get("summary", {}),
         "security_plan": (proof_summary.get("security") or {}).get("plan", {}),
         "proof_summary": proof_summary,
@@ -572,6 +580,10 @@ def get_docs_batch_status() -> Dict[str, Any]:
     return _read_json(DOCS_BATCH_STATUS, {"contract": "eidos.docs_upsert_batch.status.v1", "status": "idle"})
 
 
+def get_docs_batch_history(limit: int = 12) -> List[Dict[str, Any]]:
+    return _read_jsonl_rows(DOCS_BATCH_HISTORY, limit=limit)
+
+
 def _write_job_status(path: Path, payload: Dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
@@ -602,6 +614,17 @@ def get_runtime_benchmark_run_history(limit: int = 12) -> List[Dict[str, Any]]:
     return _read_jsonl_rows(RUNTIME_BENCHMARK_RUN_HISTORY, limit=limit)
 
 
+def get_runtime_artifact_audit_status() -> Dict[str, Any]:
+    return _read_json(
+        RUNTIME_ARTIFACT_AUDIT_STATUS,
+        {"contract": "eidos.runtime_artifact_audit.status.v1", "status": "idle"},
+    )
+
+
+def get_runtime_artifact_audit_history(limit: int = 12) -> List[Dict[str, Any]]:
+    return _read_jsonl_rows(RUNTIME_ARTIFACT_AUDIT_HISTORY, limit=limit)
+
+
 def get_session_bridge_status() -> Dict[str, Any]:
     payload = {
         "contract": "eidos.session_bridge.status.v1",
@@ -624,17 +647,17 @@ def _run_docs_upsert_batch_job(*, limit: int, missing_only: bool, path_prefix: s
     from doc_forge.scribe.directory_docs import upsert_directory_batch  # type: ignore
 
     started_at = _now_utc_iso()
-    _write_docs_batch_status(
-        {
-            "contract": "eidos.docs_upsert_batch.status.v1",
-            "status": "running",
-            "started_at": started_at,
-            "limit": int(limit),
-            "missing_only": bool(missing_only),
-            "path_prefix": path_prefix,
-            "dry_run": bool(dry_run),
-        }
-    )
+    running_payload = {
+        "contract": "eidos.docs_upsert_batch.status.v1",
+        "status": "running",
+        "started_at": started_at,
+        "limit": int(limit),
+        "missing_only": bool(missing_only),
+        "path_prefix": path_prefix,
+        "dry_run": bool(dry_run),
+    }
+    _write_docs_batch_status(running_payload)
+    _append_job_history(DOCS_BATCH_HISTORY, running_payload)
     try:
         result = upsert_directory_batch(
             FORGE_ROOT,
@@ -643,33 +666,89 @@ def _run_docs_upsert_batch_job(*, limit: int, missing_only: bool, path_prefix: s
             limit=limit,
             dry_run=dry_run,
         )
-        _write_docs_batch_status(
-            {
-                "contract": "eidos.docs_upsert_batch.status.v1",
-                "status": "completed",
-                "started_at": started_at,
-                "finished_at": _now_utc_iso(),
-                "limit": int(limit),
-                "missing_only": bool(missing_only),
-                "path_prefix": path_prefix,
-                "dry_run": bool(dry_run),
-                "result": result,
-            }
-        )
+        final_payload = {
+            "contract": "eidos.docs_upsert_batch.status.v1",
+            "status": "completed",
+            "started_at": started_at,
+            "finished_at": _now_utc_iso(),
+            "limit": int(limit),
+            "missing_only": bool(missing_only),
+            "path_prefix": path_prefix,
+            "dry_run": bool(dry_run),
+            "result": result,
+        }
+        _write_docs_batch_status(final_payload)
+        _append_job_history(DOCS_BATCH_HISTORY, final_payload)
     except Exception as exc:
-        _write_docs_batch_status(
-            {
-                "contract": "eidos.docs_upsert_batch.status.v1",
-                "status": "error",
-                "started_at": started_at,
-                "finished_at": _now_utc_iso(),
-                "limit": int(limit),
-                "missing_only": bool(missing_only),
-                "path_prefix": path_prefix,
-                "dry_run": bool(dry_run),
-                "error": str(exc),
-            }
+        error_payload = {
+            "contract": "eidos.docs_upsert_batch.status.v1",
+            "status": "error",
+            "started_at": started_at,
+            "finished_at": _now_utc_iso(),
+            "limit": int(limit),
+            "missing_only": bool(missing_only),
+            "path_prefix": path_prefix,
+            "dry_run": bool(dry_run),
+            "error": str(exc),
+        }
+        _write_docs_batch_status(error_payload)
+        _append_job_history(DOCS_BATCH_HISTORY, error_payload)
+
+
+def _run_runtime_artifact_audit_job(*, policy_path: str = "") -> None:
+    started_at = _now_utc_iso()
+    running_payload = {
+        "contract": "eidos.runtime_artifact_audit.status.v1",
+        "status": "running",
+        "started_at": started_at,
+        "policy_path": policy_path,
+    }
+    _write_job_status(RUNTIME_ARTIFACT_AUDIT_STATUS, running_payload)
+    _append_job_history(RUNTIME_ARTIFACT_AUDIT_HISTORY, running_payload)
+    try:
+        from eidosian_runtime.artifact_policy import (  # type: ignore
+            audit_runtime_artifacts,
+            write_runtime_artifact_audit,
+            write_runtime_artifact_audit_markdown,
         )
+
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        report = audit_runtime_artifacts(FORGE_ROOT, policy_path=policy_path or None)
+        report["generated_at"] = _now_utc_iso()
+        report["policy_override"] = policy_path or None
+        report_json_path = RUNTIME_ARTIFACT_REPORT_DIR / f"runtime_artifact_audit_{stamp}.json"
+        report_md_path = RUNTIME_ARTIFACT_REPORT_DIR / f"runtime_artifact_audit_{stamp}.md"
+        latest_json_path = RUNTIME_ARTIFACT_REPORT_DIR / "latest.json"
+        latest_md_path = RUNTIME_ARTIFACT_REPORT_DIR / "latest.md"
+        write_runtime_artifact_audit(FORGE_ROOT, report_json_path, policy_path=policy_path or None)
+        latest_json_path.parent.mkdir(parents=True, exist_ok=True)
+        latest_json_path.write_text(report_json_path.read_text(encoding="utf-8"), encoding="utf-8")
+        write_runtime_artifact_audit_markdown(report, report_md_path)
+        latest_md_path.write_text(report_md_path.read_text(encoding="utf-8"), encoding="utf-8")
+        final_payload = {
+            "contract": "eidos.runtime_artifact_audit.status.v1",
+            "status": "completed",
+            "started_at": started_at,
+            "finished_at": _now_utc_iso(),
+            "policy_path": policy_path,
+            "tracked_violation_count": report.get("tracked_violation_count"),
+            "live_generated_count": report.get("live_generated_count"),
+            "latest_report": str(report_json_path.relative_to(FORGE_ROOT)),
+            "latest_markdown": str(report_md_path.relative_to(FORGE_ROOT)),
+        }
+        _write_job_status(RUNTIME_ARTIFACT_AUDIT_STATUS, final_payload)
+        _append_job_history(RUNTIME_ARTIFACT_AUDIT_HISTORY, final_payload)
+    except Exception as exc:
+        error_payload = {
+            "contract": "eidos.runtime_artifact_audit.status.v1",
+            "status": "error",
+            "started_at": started_at,
+            "finished_at": _now_utc_iso(),
+            "policy_path": policy_path,
+            "error": str(exc),
+        }
+        _write_job_status(RUNTIME_ARTIFACT_AUDIT_STATUS, error_payload)
+        _append_job_history(RUNTIME_ARTIFACT_AUDIT_HISTORY, error_payload)
 
 
 def _run_proof_refresh_job(*, window_days: int) -> None:
@@ -1206,6 +1285,14 @@ async def api_docs_upsert_batch_status():
     return get_docs_batch_status()
 
 
+@app.get("/api/docs/upsert-batch/history")
+async def api_docs_upsert_batch_history(limit: int = 12):
+    return {
+        "contract": "eidos.docs_upsert_batch.history.v1",
+        "entries": get_docs_batch_history(limit=limit),
+    }
+
+
 @app.get("/api/session-bridge")
 async def api_session_bridge():
     return get_session_bridge_status()
@@ -1397,6 +1484,38 @@ async def api_runtime_benchmark_run_history(limit: int = 12):
     return {
         "contract": "eidos.runtime_benchmark_run.history.v1",
         "entries": get_runtime_benchmark_run_history(limit=limit),
+    }
+
+
+@app.post("/api/runtime-artifacts/audit")
+async def api_runtime_artifacts_audit(policy_path: str = "", background: bool = True):
+    if background:
+        thread = threading.Thread(
+            target=_run_runtime_artifact_audit_job,
+            kwargs={"policy_path": policy_path},
+            daemon=True,
+        )
+        thread.start()
+        return {
+            "contract": "eidos.runtime_artifact_audit.status.v1",
+            "status": "queued",
+            "policy_path": policy_path,
+        }
+
+    _run_runtime_artifact_audit_job(policy_path=policy_path)
+    return get_runtime_artifact_audit_status()
+
+
+@app.get("/api/runtime-artifacts/audit/status")
+async def api_runtime_artifacts_audit_status():
+    return get_runtime_artifact_audit_status()
+
+
+@app.get("/api/runtime-artifacts/audit/history")
+async def api_runtime_artifacts_audit_history(limit: int = 12):
+    return {
+        "contract": "eidos.runtime_artifact_audit.history.v1",
+        "entries": get_runtime_artifact_audit_history(limit=limit),
     }
 
 

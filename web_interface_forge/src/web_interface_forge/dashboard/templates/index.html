@@ -307,6 +307,28 @@
         </div>
     </div>
     <div class="card">
+        <h3>Docs Batch</h3>
+        <div class="stat-value" id="docs-batch-status">{{ runtime_snapshot.get('docs_batch', {}).get('status', 'idle')|upper }}</div>
+        <div class="stat-label">
+            limit:
+            <span id="docs-batch-limit-view">{{ runtime_snapshot.get('docs_batch', {}).get('limit', '') }}</span>
+            · path:
+            <span id="docs-batch-path">{{ runtime_snapshot.get('docs_batch', {}).get('path_prefix', '') or 'forge' }}</span>
+        </div>
+        <div class="stat-label">
+            dry_run:
+            <span id="docs-batch-dry-run">{{ runtime_snapshot.get('docs_batch', {}).get('dry_run', False) }}</span>
+            · finished:
+            <span id="docs-batch-finished">{{ runtime_snapshot.get('docs_batch', {}).get('finished_at', '')[:19].replace('T', ' ') }}</span>
+        </div>
+        <div class="stat-label">
+            <button onclick="batchDocs(true)">Batch Preview</button>
+            <button onclick="batchDocs(false)">Batch Upsert</button>
+            · <a href="/api/docs/upsert-batch/status" target="_blank">Job JSON</a>
+            · <a href="/api/docs/upsert-batch/history" target="_blank">History JSON</a>
+        </div>
+    </div>
+    <div class="card">
         <h3>Proof Refresh</h3>
         <div class="stat-value" id="proof-refresh-status">{{ runtime_snapshot.get('proof_refresh', {}).get('status', 'idle')|upper }}</div>
         <div class="stat-label">
@@ -350,6 +372,26 @@
         </div>
     </div>
     <div class="card">
+        <h3>Runtime Artifact Audit</h3>
+        <div class="stat-value" id="runtime-audit-status">{{ runtime_snapshot.get('runtime_artifact_audit', {}).get('status', 'idle')|upper }}</div>
+        <div class="stat-label">
+            tracked:
+            <span id="runtime-audit-tracked">{{ runtime_snapshot.get('runtime_artifact_audit', {}).get('tracked_violation_count', '') }}</span>
+            · live:
+            <span id="runtime-audit-live">{{ runtime_snapshot.get('runtime_artifact_audit', {}).get('live_generated_count', '') }}</span>
+        </div>
+        <div class="stat-label">
+            report:
+            <span id="runtime-audit-report">{{ runtime_snapshot.get('runtime_artifact_audit', {}).get('latest_report', '') or 'n/a' }}</span>
+        </div>
+        <div class="stat-label">
+            <button onclick="triggerRuntimeArtifactAudit()">Run Audit</button>
+            · <a href="/api/runtime-artifacts/audit/status" target="_blank">Job JSON</a>
+            · <a href="/api/runtime-artifacts/audit/history" target="_blank">History JSON</a>
+            · <a href="/browse/forge/reports/runtime_artifact_audit/" target="_blank">Reports</a>
+        </div>
+    </div>
+    <div class="card">
         <h3>Dependabot</h3>
         <div class="stat-value">{{ runtime_snapshot.get('security', {}).get('totals', {}).get('open', 0) }}</div>
         <div class="stat-label">
@@ -383,6 +425,28 @@
                 {% endfor %}
             </tbody>
         </table>
+    </div>
+    <div class="card">
+        <h3>Docs Batch History</h3>
+        {% if runtime_snapshot.get('docs_batch_history') %}
+        <table>
+            <thead>
+                <tr><th>Status</th><th>Limit</th><th>Path</th><th>Finished</th></tr>
+            </thead>
+            <tbody id="docs-batch-history-body">
+                {% for row in runtime_snapshot.get('docs_batch_history', [])[:6] %}
+                <tr>
+                    <td>{{ row.get('status', 'unknown') }}</td>
+                    <td>{{ row.get('limit', '') }}</td>
+                    <td>{{ row.get('path_prefix', '') or 'forge' }}</td>
+                    <td>{{ row.get('finished_at', '')[:19].replace('T', ' ') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No docs batch history available.</p>
+        {% endif %}
     </div>
     <div class="card">
         <h3>Proof Refresh History</h3>
@@ -426,6 +490,28 @@
         </table>
         {% else %}
         <p>No benchmark run history available.</p>
+        {% endif %}
+    </div>
+    <div class="card">
+        <h3>Runtime Artifact Audit History</h3>
+        {% if runtime_snapshot.get('runtime_artifact_audit_history') %}
+        <table>
+            <thead>
+                <tr><th>Status</th><th>Tracked</th><th>Live</th><th>Finished</th></tr>
+            </thead>
+            <tbody id="runtime-audit-history-body">
+                {% for row in runtime_snapshot.get('runtime_artifact_audit_history', [])[:6] %}
+                <tr>
+                    <td>{{ row.get('status', 'unknown') }}</td>
+                    <td>{{ row.get('tracked_violation_count', '') }}</td>
+                    <td>{{ row.get('live_generated_count', '') }}</td>
+                    <td>{{ row.get('finished_at', '')[:19].replace('T', ' ') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No runtime artifact audit history available.</p>
         {% endif %}
     </div>
     <div class="card">
@@ -522,7 +608,9 @@
         <button onclick="batchDocs(false)">Batch Upsert</button>
     </div>
     <div class="stat-label" id="docs-batch-status-line" style="margin-bottom:12px;">
-        batch: {{ runtime_snapshot.get('docs_batch', {}).get('state', 'idle') if runtime_snapshot.get('docs_batch') else 'idle' }}
+        batch: {{ runtime_snapshot.get('docs_batch', {}).get('status', 'idle') if runtime_snapshot.get('docs_batch') else 'idle' }}
+        · <a href="/api/docs/upsert-batch/status" target="_blank">status</a>
+        · <a href="/api/docs/upsert-batch/history" target="_blank">history</a>
     </div>
     <pre id="docs-output" style="max-height:320px; overflow:auto; white-space:pre-wrap;">{{ (docs_inventory.get('missing_examples', []) or [])|join('\n') }}</pre>
 </div>
@@ -1014,6 +1102,36 @@ async function refreshDocsBatchStatus() {
         if ((status.state || status.status || "") === "completed") {
             await refreshDocs();
         }
+        const batchStatus = document.getElementById("docs-batch-status");
+        if (batchStatus) batchStatus.textContent = String(status.status || status.state || "idle").toUpperCase();
+        const batchLimit = document.getElementById("docs-batch-limit-view");
+        if (batchLimit) batchLimit.textContent = status.limit ?? "";
+        const batchPath = document.getElementById("docs-batch-path");
+        if (batchPath) batchPath.textContent = status.path_prefix || "forge";
+        const batchDryRun = document.getElementById("docs-batch-dry-run");
+        if (batchDryRun) batchDryRun.textContent = String(Boolean(status.dry_run));
+        const batchFinished = document.getElementById("docs-batch-finished");
+        if (batchFinished) batchFinished.textContent = String(status.finished_at || "").slice(0, 19).replace("T", " ");
+    } catch (err) {
+        // ignore transient refresh failures
+    }
+}
+
+async function refreshDocsBatchHistory() {
+    try {
+        const res = await fetch("/api/docs/upsert-batch/history", {cache: "no-store"});
+        if (!res.ok) return;
+        const payload = await res.json();
+        const body = document.getElementById("docs-batch-history-body");
+        if (!body) return;
+        body.innerHTML = (payload.entries || []).slice(0, 6).map((row) => `
+            <tr>
+                <td>${escapeHtml(row.status || "unknown")}</td>
+                <td>${escapeHtml(row.limit ?? "")}</td>
+                <td>${escapeHtml(row.path_prefix || "forge")}</td>
+                <td>${escapeHtml(String(row.finished_at || "").slice(0, 19).replace("T", " "))}</td>
+            </tr>
+        `).join("");
     } catch (err) {
         // ignore transient refresh failures
     }
@@ -1246,6 +1364,49 @@ async function triggerRuntimeBenchmark(engine) {
     }
 }
 
+async function refreshRuntimeArtifactAuditStatus() {
+    try {
+        const res = await fetch("/api/runtime-artifacts/audit/status", {cache: "no-store"});
+        if (!res.ok) return;
+        const payload = await res.json();
+        document.getElementById("runtime-audit-status").textContent = String(payload.status || "idle").toUpperCase();
+        document.getElementById("runtime-audit-tracked").textContent = payload.tracked_violation_count ?? "";
+        document.getElementById("runtime-audit-live").textContent = payload.live_generated_count ?? "";
+        document.getElementById("runtime-audit-report").textContent = payload.latest_report || "n/a";
+    } catch (err) {
+        // ignore transient refresh failures
+    }
+}
+
+async function refreshRuntimeArtifactAuditHistory() {
+    try {
+        const res = await fetch("/api/runtime-artifacts/audit/history", {cache: "no-store"});
+        if (!res.ok) return;
+        const payload = await res.json();
+        const body = document.getElementById("runtime-audit-history-body");
+        if (!body) return;
+        body.innerHTML = (payload.entries || []).slice(0, 6).map((row) => `
+            <tr>
+                <td>${escapeHtml(row.status || "unknown")}</td>
+                <td>${escapeHtml(row.tracked_violation_count ?? "")}</td>
+                <td>${escapeHtml(row.live_generated_count ?? "")}</td>
+                <td>${escapeHtml(String(row.finished_at || "").slice(0, 19).replace("T", " "))}</td>
+            </tr>
+        `).join("");
+    } catch (err) {
+        // ignore transient refresh failures
+    }
+}
+
+async function triggerRuntimeArtifactAudit() {
+    try {
+        await fetch("/api/runtime-artifacts/audit?background=true", {method: "POST"});
+    } finally {
+        await refreshRuntimeArtifactAuditStatus();
+        await refreshRuntimeArtifactAuditHistory();
+    }
+}
+
 async function syncSessionBridge() {
     try {
         const res = await fetch("/api/session-bridge/sync", {method: "POST"});
@@ -1286,6 +1447,7 @@ setInterval(refreshServices, 8000);
 setInterval(refreshScheduler, 8000);
 setInterval(refreshDocsHistory, 12000);
 setInterval(refreshDocsBatchStatus, 5000);
+setInterval(refreshDocsBatchHistory, 12000);
 setInterval(refreshSessionBridge, 15000);
 setInterval(refreshProofBundle, 15000);
 setInterval(refreshIdentityContinuity, 15000);
@@ -1297,6 +1459,8 @@ setInterval(refreshProofRefreshStatus, 10000);
 setInterval(refreshProofRefreshHistory, 15000);
 setInterval(refreshRuntimeBenchmarkRunStatus, 10000);
 setInterval(refreshRuntimeBenchmarkRunHistory, 15000);
+setInterval(refreshRuntimeArtifactAuditStatus, 10000);
+setInterval(refreshRuntimeArtifactAuditHistory, 15000);
 setInterval(refreshRuntimeServices, 10000);
 refreshScheduler();
 refreshServices();
@@ -1304,6 +1468,7 @@ refreshRuntimeServices();
 refreshDocsTree();
 refreshDocsHistory();
 refreshDocsBatchStatus();
+refreshDocsBatchHistory();
 refreshSessionBridge();
 refreshProofBundle();
 refreshIdentityContinuity();
@@ -1315,5 +1480,7 @@ refreshProofRefreshStatus();
 refreshProofRefreshHistory();
 refreshRuntimeBenchmarkRunStatus();
 refreshRuntimeBenchmarkRunHistory();
+refreshRuntimeArtifactAuditStatus();
+refreshRuntimeArtifactAuditHistory();
 </script>
 {% endblock %}

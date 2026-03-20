@@ -80,6 +80,29 @@ def test_export_bundle_collects_latest_proof_and_benchmarks(tmp_path: Path) -> N
     )
     _write(repo_root / "data" / "runtime" / "living_pipeline_history.jsonl", "{}\n")
     _write(
+        repo_root / "data" / "runtime" / "docs_upsert_batch_status.json",
+        json.dumps({"status": "completed", "path_prefix": "doc_forge/src/doc_forge"}),
+    )
+    _write(repo_root / "data" / "runtime" / "docs_upsert_batch_history.jsonl", "{}\n")
+    _write(
+        repo_root / "data" / "runtime" / "runtime_artifact_audit_status.json",
+        json.dumps({"status": "completed", "tracked_violation_count": 3}),
+    )
+    _write(repo_root / "data" / "runtime" / "runtime_artifact_audit_history.jsonl", "{}\n")
+    _write(
+        repo_root / "data" / "runtime" / "proof_refresh_status.json",
+        json.dumps({"status": "completed"}),
+    )
+    _write(
+        repo_root / "data" / "runtime" / "runtime_benchmark_run_status.json",
+        json.dumps({"status": "completed", "scenario": "scenario2", "engine": "local_agent"}),
+    )
+    _write(
+        repo_root / "reports" / "runtime_artifact_audit" / "latest.json",
+        json.dumps({"tracked_violation_count": 3, "live_generated_count": 9}),
+    )
+    _write(repo_root / "reports" / "runtime_artifact_audit" / "latest.md", "# Runtime Artifact Audit\n")
+    _write(
         repo_root / "data" / "runtime" / "external_benchmarks" / "agencybench" / "scenario2" / "20260320_010203" / "status.json",
         json.dumps(
             {
@@ -112,12 +135,18 @@ def test_export_bundle_collects_latest_proof_and_benchmarks(tmp_path: Path) -> N
     assert manifest["identity_summary"]["history"]["trend"] == "stable"
     assert len(manifest["identity_summary"]["recent_history"]) == 1
     assert manifest["session_bridge_summary"]["imported_records"] == 2
+    assert manifest["operator_jobs_summary"]["proof_refresh"]["status"] == "completed"
+    assert manifest["operator_jobs_summary"]["docs_batch"]["status"] == "completed"
+    assert manifest["operator_jobs_summary"]["runtime_artifact_audit"]["tracked_violation_count"] == 3
     assert manifest["runtime_service_summary"]["scheduler_status"] == "sleeping"
     assert manifest["runtime_service_summary"]["scheduler_task"] == "living_pipeline"
     assert manifest["runtime_service_summary"]["scheduler_phase"] == "cycle_complete"
     assert manifest["runtime_service_summary"]["doc_processor_phase"] == "processing"
     assert manifest["runtime_service_summary"]["qwenchat_phase"] == "interactive"
     assert manifest["runtime_service_summary"]["living_pipeline_phase"] == "graphrag"
+    assert manifest["runtime_service_summary"]["docs_batch_status"] == "completed"
+    assert manifest["runtime_service_summary"]["runtime_artifact_audit_status"] == "completed"
+    assert manifest["runtime_service_summary"]["runtime_artifact_audit_tracked_violations"] == 3
     assert manifest["benchmarks"][0]["suite"] == "agencybench"
     assert manifest["runtime_benchmarks"][0]["scenario"] == "scenario2"
     assert manifest["runtime_benchmarks"][0]["status"] == "success"
@@ -135,6 +164,9 @@ def test_export_bundle_collects_latest_proof_and_benchmarks(tmp_path: Path) -> N
     assert any(name.endswith("runtime/doc_processor/status.json") for name in names)
     assert any(name.endswith("runtime/qwenchat/status.json") for name in names)
     assert any(name.endswith("runtime/living_pipeline_status.json") for name in names)
+    assert any(name.endswith("runtime/docs_batch/status.json") for name in names)
+    assert any(name.endswith("runtime/runtime_artifact_audit/status.json") for name in names)
+    assert any(name.endswith("reports/runtime_artifact_audit/latest.json") for name in names)
     assert any(name.endswith("runtime_benchmarks/agencybench/scenario2/20260320_010203/status.json") for name in names)
 
 

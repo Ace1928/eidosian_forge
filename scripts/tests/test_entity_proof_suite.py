@@ -77,6 +77,17 @@ def test_build_proof_report_flags_missing_external_benchmarks(tmp_path: Path) ->
     (repo / "data" / "runtime" / "eidos_scheduler_history.jsonl").write_text("{}\n", encoding="utf-8")
     _write_json(repo / "data" / "runtime" / "living_pipeline_status.json", {"status": "running", "phase": "graphrag"})
     (repo / "data" / "runtime" / "living_pipeline_history.jsonl").write_text("{}\n", encoding="utf-8")
+    _write_json(repo / "data" / "runtime" / "docs_upsert_batch_status.json", {"status": "completed", "path_prefix": "doc_forge/src/doc_forge"})
+    (repo / "data" / "runtime" / "docs_upsert_batch_history.jsonl").write_text("{}\n", encoding="utf-8")
+    _write_json(repo / "data" / "runtime" / "runtime_artifact_audit_status.json", {"status": "completed", "tracked_violation_count": 3})
+    (repo / "data" / "runtime" / "runtime_artifact_audit_history.jsonl").write_text("{}\n", encoding="utf-8")
+    _write_json(repo / "data" / "runtime" / "proof_refresh_status.json", {"status": "completed"})
+    (repo / "data" / "runtime" / "proof_refresh_history.jsonl").write_text("{}\n", encoding="utf-8")
+    _write_json(
+        repo / "data" / "runtime" / "runtime_benchmark_run_status.json",
+        {"status": "completed", "scenario": "scenario2", "engine": "local_agent"},
+    )
+    (repo / "data" / "runtime" / "runtime_benchmark_run_history.jsonl").write_text("{}\n", encoding="utf-8")
     _write_json(repo / "data" / "runtime" / "platform_capabilities.json", {"platform": "termux"})
 
     gates = repo / "agent_forge" / "src" / "agent_forge" / "autonomy" / "gates.py"
@@ -101,6 +112,12 @@ def test_build_proof_report_flags_missing_external_benchmarks(tmp_path: Path) ->
     assert report["runtime"]["doc_processor_phase"] == "processing"
     assert report["runtime"]["qwenchat_phase"] == "interactive"
     assert report["runtime"]["living_pipeline_phase"] == "graphrag"
+    assert report["runtime"]["docs_batch_status"] == "completed"
+    assert report["runtime"]["docs_batch_history_present"] is True
+    assert report["runtime"]["runtime_artifact_audit_status"] == "completed"
+    assert report["runtime"]["runtime_artifact_audit_history_present"] is True
+    assert report["operator_jobs"]["proof_refresh"]["status"] == "completed"
+    assert report["operator_jobs"]["runtime_benchmark_run"]["engine"] == "local_agent"
     assert categories["adversarial_robustness"]["status"] == "red"
 
 
@@ -210,6 +227,10 @@ def test_build_proof_report_tracks_freshness_regression_and_external_results(tmp
             "generated_at": "2026-03-20T04:00:00Z",
         },
     )
+    _write_json(repo / "data" / "runtime" / "docs_upsert_batch_status.json", {"status": "completed", "path_prefix": "doc_forge/src/doc_forge"})
+    (repo / "data" / "runtime" / "docs_upsert_batch_history.jsonl").write_text("{}\n", encoding="utf-8")
+    _write_json(repo / "data" / "runtime" / "runtime_artifact_audit_status.json", {"status": "completed", "tracked_violation_count": 4})
+    (repo / "data" / "runtime" / "runtime_artifact_audit_history.jsonl").write_text("{}\n", encoding="utf-8")
     stale = repo / "reports" / "linux_audit_20260101.json"
     _write_json(stale, {"counts": {"checks_fail": 0}})
 
@@ -223,6 +244,8 @@ def test_build_proof_report_tracks_freshness_regression_and_external_results(tmp
     assert report["session_bridge"]["imported_records"] == 2
     assert report["runtime_benchmark_results"][0]["status"] == "success"
     assert report["runtime_benchmark_results"][0]["completed_count"] == 5
+    assert report["runtime"]["docs_batch_status"] == "completed"
+    assert report["runtime"]["runtime_artifact_audit_tracked_violations"] == 4
     assert report["proof_history"]["sample_count"] == 1
     categories = {row["category"]: row for row in report["categories"]}
     assert categories["external_validity"]["score"] <= 1.0

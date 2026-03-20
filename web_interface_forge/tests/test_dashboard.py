@@ -279,6 +279,66 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         encoding="utf-8",
     )
     _write_json(
+        runtime_dir / "docs_upsert_batch_status.json",
+        {
+            "contract": "eidos.docs_upsert_batch.status.v1",
+            "status": "completed",
+            "limit": 5,
+            "path_prefix": "doc_forge/src/doc_forge",
+            "dry_run": True,
+            "finished_at": "2026-03-20T00:42:00Z",
+        },
+    )
+    (runtime_dir / "docs_upsert_batch_history.jsonl").write_text(
+        json.dumps(
+            {
+                "contract": "eidos.docs_upsert_batch.status.v1",
+                "status": "completed",
+                "limit": 5,
+                "path_prefix": "doc_forge/src/doc_forge",
+                "finished_at": "2026-03-20T00:42:00Z",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    _write_json(
+        runtime_dir / "runtime_artifact_audit_status.json",
+        {
+            "contract": "eidos.runtime_artifact_audit.status.v1",
+            "status": "completed",
+            "tracked_violation_count": 3,
+            "live_generated_count": 9,
+            "latest_report": "reports/runtime_artifact_audit/runtime_artifact_audit_20260320_004500.json",
+            "finished_at": "2026-03-20T00:45:00Z",
+        },
+    )
+    (runtime_dir / "runtime_artifact_audit_history.jsonl").write_text(
+        json.dumps(
+            {
+                "contract": "eidos.runtime_artifact_audit.status.v1",
+                "status": "completed",
+                "tracked_violation_count": 3,
+                "live_generated_count": 9,
+                "finished_at": "2026-03-20T00:45:00Z",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    _write_json(
+        tmp_path / "reports" / "runtime_artifact_audit" / "latest.json",
+        {
+            "repo_root": str(tmp_path),
+            "tracked_violation_count": 3,
+            "live_generated_count": 9,
+        },
+    )
+    (tmp_path / "reports" / "runtime_artifact_audit" / "latest.md").write_text(
+        "# Runtime Artifact Audit\n",
+        encoding="utf-8",
+    )
+    _write_json(
         tmp_path / "reports" / "proof" / "entity_proof_scorecard_latest.json",
         {
             "contract": "eidos.entity_proof_scorecard.v1",
@@ -391,12 +451,17 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(dashboard, "COORDINATOR_HISTORY", runtime_dir / "forge_runtime_trends.json")
     monkeypatch.setattr(dashboard, "DIRECTORY_DOCS_STATUS", runtime_dir / "directory_docs_status.json")
     monkeypatch.setattr(dashboard, "DIRECTORY_DOCS_HISTORY", runtime_dir / "directory_docs_history.json")
+    monkeypatch.setattr(dashboard, "DOCS_BATCH_STATUS", runtime_dir / "docs_upsert_batch_status.json")
+    monkeypatch.setattr(dashboard, "DOCS_BATCH_HISTORY", runtime_dir / "docs_upsert_batch_history.jsonl")
     monkeypatch.setattr(dashboard, "PROOF_REFRESH_STATUS", runtime_dir / "proof_refresh_status.json")
     monkeypatch.setattr(dashboard, "PROOF_REFRESH_HISTORY", runtime_dir / "proof_refresh_history.jsonl")
     monkeypatch.setattr(dashboard, "RUNTIME_BENCHMARK_RUN_STATUS", runtime_dir / "runtime_benchmark_run_status.json")
     monkeypatch.setattr(dashboard, "RUNTIME_BENCHMARK_RUN_HISTORY", runtime_dir / "runtime_benchmark_run_history.jsonl")
+    monkeypatch.setattr(dashboard, "RUNTIME_ARTIFACT_AUDIT_STATUS", runtime_dir / "runtime_artifact_audit_status.json")
+    monkeypatch.setattr(dashboard, "RUNTIME_ARTIFACT_AUDIT_HISTORY", runtime_dir / "runtime_artifact_audit_history.jsonl")
     monkeypatch.setattr(dashboard, "SESSION_BRIDGE_CONTEXT", runtime_dir / "session_bridge" / "latest_context.json")
     monkeypatch.setattr(dashboard, "SESSION_BRIDGE_IMPORT_STATUS", runtime_dir / "session_bridge" / "import_status.json")
+    monkeypatch.setattr(dashboard, "RUNTIME_ARTIFACT_REPORT_DIR", tmp_path / "reports" / "runtime_artifact_audit")
     service_script = tmp_path / "eidos_termux_services.sh"
     service_script.write_text(
         "#!/bin/sh\n" "printf 'Atlas: runit run: /tmp/service: (pid 1) 10s; run: log: (pid 2) 10s\\n'\n",
@@ -421,10 +486,14 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         assert "Living Pipeline" in html
         assert "Scheduler History" in html
         assert "Runtime Services" in html
+        assert "Docs Batch" in html
         assert "Proof Refresh" in html
         assert "Benchmark Run" in html
+        assert "Runtime Artifact Audit" in html
+        assert "Docs Batch History" in html
         assert "Proof Refresh History" in html
         assert "Benchmark Run History" in html
+        assert "Runtime Artifact Audit History" in html
         assert "Doc Processor History" in html
         assert "Qwenchat History" in html
         assert "Living Pipeline History" in html
@@ -449,6 +518,10 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         assert runtime_payload["proof_refresh_history"][0]["status"] == "completed"
         assert runtime_payload["runtime_benchmark_run"]["status"] == "completed"
         assert runtime_payload["runtime_benchmark_run_history"][0]["engine"] == "local_agent"
+        assert runtime_payload["docs_batch"]["status"] == "completed"
+        assert runtime_payload["docs_batch_history"][0]["path_prefix"] == "doc_forge/src/doc_forge"
+        assert runtime_payload["runtime_artifact_audit"]["tracked_violation_count"] == 3
+        assert runtime_payload["runtime_artifact_audit_history"][0]["live_generated_count"] == 9
         assert runtime_payload["security"]["totals"]["open"] == 15
         assert runtime_payload["security_plan"]["batches"][0]["name"] == "batch-1"
         runtime_services_resp = client.get("/api/runtime/services")
@@ -474,6 +547,18 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         benchmark_run_history_resp = client.get("/api/benchmarks/runtime/run/history")
         assert benchmark_run_history_resp.status_code == 200
         assert benchmark_run_history_resp.json()["entries"][0]["engine"] == "local_agent"
+        docs_batch_status_resp = client.get("/api/docs/upsert-batch/status")
+        assert docs_batch_status_resp.status_code == 200
+        assert docs_batch_status_resp.json()["status"] == "completed"
+        docs_batch_history_resp = client.get("/api/docs/upsert-batch/history")
+        assert docs_batch_history_resp.status_code == 200
+        assert docs_batch_history_resp.json()["entries"][0]["limit"] == 5
+        runtime_audit_status_resp = client.get("/api/runtime-artifacts/audit/status")
+        assert runtime_audit_status_resp.status_code == 200
+        assert runtime_audit_status_resp.json()["tracked_violation_count"] == 3
+        runtime_audit_history_resp = client.get("/api/runtime-artifacts/audit/history")
+        assert runtime_audit_history_resp.status_code == 200
+        assert runtime_audit_history_resp.json()["entries"][0]["live_generated_count"] == 9
         local_agent_resp = client.get("/api/runtime/local-agent")
         assert local_agent_resp.status_code == 200
         assert local_agent_resp.json()["status"]["profile"] == "observer"
@@ -520,6 +605,14 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
                 {"contract": "eidos.runtime_benchmark_run.status.v1", "status": "completed", **kwargs},
             ),
         )
+        monkeypatch.setattr(
+            dashboard,
+            "_run_runtime_artifact_audit_job",
+            lambda **kwargs: _write_json(
+                runtime_dir / "runtime_artifact_audit_status.json",
+                {"contract": "eidos.runtime_artifact_audit.status.v1", "status": "completed", **kwargs},
+            ),
+        )
         proof_refresh_run = client.post("/api/proof/refresh?background=false&window_days=14")
         assert proof_refresh_run.status_code == 200
         assert proof_refresh_run.json()["window_days"] == 14
@@ -528,6 +621,9 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         )
         assert benchmark_run.status_code == 200
         assert benchmark_run.json()["scenario"] == "scenario2"
+        runtime_audit_run = client.post("/api/runtime-artifacts/audit?background=false")
+        assert runtime_audit_run.status_code == 200
+        assert runtime_audit_run.json()["status"] == "completed"
         proof_history_resp = client.get("/api/proof/history")
         assert proof_history_resp.status_code == 200
         assert len(proof_history_resp.json()["entries"]) == 1

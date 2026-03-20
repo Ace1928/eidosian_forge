@@ -494,10 +494,18 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
     local_agent_status = _load_json(runtime_root / "local_mcp_agent" / "status.json") or {}
     qwenchat_status = _load_json(runtime_root / "qwenchat" / "status.json") or {}
     living_pipeline_status = _load_json(runtime_root / "living_pipeline_status.json") or {}
+    docs_batch_status = _load_json(runtime_root / "docs_upsert_batch_status.json") or {}
+    runtime_artifact_audit_status = _load_json(runtime_root / "runtime_artifact_audit_status.json") or {}
+    proof_refresh_status = _load_json(runtime_root / "proof_refresh_status.json") or {}
+    runtime_benchmark_run_status = _load_json(runtime_root / "runtime_benchmark_run_status.json") or {}
     coordinator_status = _load_json(runtime_root / "forge_coordinator_status.json") or {}
     coordinator_history = _load_json(runtime_root / "forge_runtime_trends.json") or {}
     scheduler_status = _load_json(runtime_root / "eidos_scheduler_status.json") or {}
     scheduler_history_path = runtime_root / "eidos_scheduler_history.jsonl"
+    docs_batch_history_path = runtime_root / "docs_upsert_batch_history.jsonl"
+    runtime_artifact_audit_history_path = runtime_root / "runtime_artifact_audit_history.jsonl"
+    proof_refresh_history_path = runtime_root / "proof_refresh_history.jsonl"
+    runtime_benchmark_run_history_path = runtime_root / "runtime_benchmark_run_history.jsonl"
     capabilities = _load_json(runtime_root / "platform_capabilities.json") or {}
     if not capabilities:
         lib_root = repo_root / "lib"
@@ -853,6 +861,32 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
             observability_strengths.append("At least one benchmark run is observable while still in progress.")
     else:
         observability_gaps.append("No live runtime benchmark status artifacts found.")
+    if docs_batch_status:
+        observability_score += 0.04
+        observability_paths.append(str(runtime_root / "docs_upsert_batch_status.json"))
+        observability_strengths.append(
+            f"Docs batch operator status is persisted with state `{docs_batch_status.get('status')}`."
+        )
+    else:
+        observability_gaps.append("No docs batch operator status artifact found.")
+    if docs_batch_history_path.exists():
+        observability_score += 0.03
+        observability_paths.append(str(docs_batch_history_path))
+        observability_strengths.append("Docs batch operator history exists.")
+    else:
+        observability_gaps.append("No docs batch operator history ledger found.")
+    if runtime_artifact_audit_status:
+        observability_score += 0.04
+        observability_paths.append(str(runtime_root / "runtime_artifact_audit_status.json"))
+        observability_strengths.append("Runtime artifact audit operator status is persisted.")
+    else:
+        observability_gaps.append("No runtime artifact audit operator status artifact found.")
+    if runtime_artifact_audit_history_path.exists():
+        observability_score += 0.03
+        observability_paths.append(str(runtime_artifact_audit_history_path))
+        observability_strengths.append("Runtime artifact audit operator history exists.")
+    else:
+        observability_gaps.append("No runtime artifact audit operator history ledger found.")
     if runtime_slice:
         observability_score += 0.1
         observability_paths.append(str(runtime_slice_path))
@@ -1052,6 +1086,28 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
         ),
         "proof_history": proof_history,
         "session_bridge": session_bridge,
+        "operator_jobs": {
+            "proof_refresh": {
+                "status": proof_refresh_status.get("status"),
+                "history_present": proof_refresh_history_path.exists(),
+            },
+            "runtime_benchmark_run": {
+                "status": runtime_benchmark_run_status.get("status"),
+                "scenario": runtime_benchmark_run_status.get("scenario"),
+                "engine": runtime_benchmark_run_status.get("engine"),
+                "history_present": runtime_benchmark_run_history_path.exists(),
+            },
+            "docs_batch": {
+                "status": docs_batch_status.get("status"),
+                "path_prefix": docs_batch_status.get("path_prefix"),
+                "history_present": docs_batch_history_path.exists(),
+            },
+            "runtime_artifact_audit": {
+                "status": runtime_artifact_audit_status.get("status"),
+                "tracked_violation_count": runtime_artifact_audit_status.get("tracked_violation_count"),
+                "history_present": runtime_artifact_audit_history_path.exists(),
+            },
+        },
         "runtime": {
             "coordinator_state": coordinator_status.get("state"),
             "coordinator_owner": coordinator_status.get("owner"),
@@ -1066,6 +1122,12 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
             "qwenchat_phase": qwenchat_status.get("phase"),
             "living_pipeline_status": living_pipeline_status.get("status"),
             "living_pipeline_phase": living_pipeline_status.get("phase"),
+            "docs_batch_status": docs_batch_status.get("status"),
+            "docs_batch_path_prefix": docs_batch_status.get("path_prefix"),
+            "docs_batch_history_present": docs_batch_history_path.exists(),
+            "runtime_artifact_audit_status": runtime_artifact_audit_status.get("status"),
+            "runtime_artifact_audit_tracked_violations": runtime_artifact_audit_status.get("tracked_violation_count"),
+            "runtime_artifact_audit_history_present": runtime_artifact_audit_history_path.exists(),
             "directory_docs_missing_readme_count": _safe_int(docs_status.get("missing_readme_count")),
             "directory_docs_review_pending_count": _safe_int(docs_status.get("review_pending_count")),
             "runtime_history_count": len(history_entries),
@@ -1147,6 +1209,16 @@ def render_markdown(report: dict[str, Any]) -> str:
     lines.append(f"- `qwenchat_phase`: `{runtime.get('qwenchat_phase')}`")
     lines.append(f"- `living_pipeline_status`: `{runtime.get('living_pipeline_status')}`")
     lines.append(f"- `living_pipeline_phase`: `{runtime.get('living_pipeline_phase')}`")
+    lines.append(f"- `docs_batch_status`: `{runtime.get('docs_batch_status')}`")
+    lines.append(f"- `docs_batch_path_prefix`: `{runtime.get('docs_batch_path_prefix')}`")
+    lines.append(f"- `docs_batch_history_present`: `{runtime.get('docs_batch_history_present')}`")
+    lines.append(f"- `runtime_artifact_audit_status`: `{runtime.get('runtime_artifact_audit_status')}`")
+    lines.append(
+        f"- `runtime_artifact_audit_tracked_violations`: `{runtime.get('runtime_artifact_audit_tracked_violations')}`"
+    )
+    lines.append(
+        f"- `runtime_artifact_audit_history_present`: `{runtime.get('runtime_artifact_audit_history_present')}`"
+    )
     lines.extend(["", "## External Benchmark Coverage", ""])
     ext = report.get("external_benchmark_coverage") or {}
     for name, present in sorted(ext.items()):
@@ -1187,6 +1259,14 @@ def render_markdown(report: dict[str, Any]) -> str:
     lines.append(f"- `imported_records`: `{session_bridge.get('imported_records')}`")
     lines.append(f"- `codex_records`: `{session_bridge.get('codex_records')}`")
     lines.append(f"- `gemini_records`: `{session_bridge.get('gemini_records')}`")
+    operator_jobs = report.get("operator_jobs") or {}
+    lines.extend(["", "## Operator Jobs", ""])
+    for name, payload in sorted(operator_jobs.items()):
+        if not isinstance(payload, dict):
+            continue
+        lines.append(
+            f"- `{name}`: status=`{payload.get('status')}` history_present=`{payload.get('history_present')}`"
+        )
     lines.extend(["", "## Proof History", ""])
     proof_history = report.get("proof_history") or {}
     lines.append(f"- `trend`: `{proof_history.get('trend')}`")

@@ -165,6 +165,28 @@ def export_bundle(repo_root: Path, output_root: Path) -> dict[str, Any]:
     include(runtime_root / "qwenchat" / "history.jsonl", "runtime/qwenchat/history.jsonl", "qwenchat_history")
     include(runtime_root / "living_pipeline_status.json", "runtime/living_pipeline_status.json", "living_pipeline_status")
     include(runtime_root / "living_pipeline_history.jsonl", "runtime/living_pipeline_history.jsonl", "living_pipeline_history")
+    include(runtime_root / "docs_upsert_batch_status.json", "runtime/docs_batch/status.json", "docs_batch_status")
+    include(runtime_root / "docs_upsert_batch_history.jsonl", "runtime/docs_batch/history.jsonl", "docs_batch_history")
+    include(
+        runtime_root / "runtime_artifact_audit_status.json",
+        "runtime/runtime_artifact_audit/status.json",
+        "runtime_artifact_audit_status",
+    )
+    include(
+        runtime_root / "runtime_artifact_audit_history.jsonl",
+        "runtime/runtime_artifact_audit/history.jsonl",
+        "runtime_artifact_audit_history",
+    )
+    include(
+        repo_root / "reports" / "runtime_artifact_audit" / "latest.json",
+        "reports/runtime_artifact_audit/latest.json",
+        "runtime_artifact_audit_report",
+    )
+    include(
+        repo_root / "reports" / "runtime_artifact_audit" / "latest.md",
+        "reports/runtime_artifact_audit/latest.md",
+        "runtime_artifact_audit_markdown",
+    )
 
     benchmark_rows: list[dict[str, Any]] = []
     if benchmarks_root.exists():
@@ -236,6 +258,10 @@ def export_bundle(repo_root: Path, output_root: Path) -> dict[str, Any]:
     doc_processor_status = _load_json(repo_root / "doc_forge" / "runtime" / "processor_status.json")
     qwenchat_status = _load_json(runtime_root / "qwenchat" / "status.json")
     living_pipeline_status = _load_json(runtime_root / "living_pipeline_status.json")
+    docs_batch_status = _load_json(runtime_root / "docs_upsert_batch_status.json")
+    runtime_artifact_audit_status = _load_json(runtime_root / "runtime_artifact_audit_status.json")
+    proof_refresh_status = _load_json(runtime_root / "proof_refresh_status.json")
+    runtime_benchmark_run_status = _load_json(runtime_root / "runtime_benchmark_run_status.json")
 
     manifest = {
         "contract": "eidos.entity_proof_bundle.v1",
@@ -254,6 +280,24 @@ def export_bundle(repo_root: Path, output_root: Path) -> dict[str, Any]:
             "recent_history": recent_identity_history,
         },
         "session_bridge_summary": session_bridge_summary,
+        "operator_jobs_summary": {
+            "proof_refresh": {
+                "status": proof_refresh_status.get("status"),
+            },
+            "runtime_benchmark_run": {
+                "status": runtime_benchmark_run_status.get("status"),
+                "scenario": runtime_benchmark_run_status.get("scenario"),
+                "engine": runtime_benchmark_run_status.get("engine"),
+            },
+            "docs_batch": {
+                "status": docs_batch_status.get("status"),
+                "path_prefix": docs_batch_status.get("path_prefix"),
+            },
+            "runtime_artifact_audit": {
+                "status": runtime_artifact_audit_status.get("status"),
+                "tracked_violation_count": runtime_artifact_audit_status.get("tracked_violation_count"),
+            },
+        },
         "runtime_service_summary": {
             "scheduler_status": scheduler_status.get("state"),
             "scheduler_task": scheduler_status.get("current_task"),
@@ -264,6 +308,10 @@ def export_bundle(repo_root: Path, output_root: Path) -> dict[str, Any]:
             "qwenchat_phase": qwenchat_status.get("phase"),
             "living_pipeline_status": living_pipeline_status.get("status"),
             "living_pipeline_phase": living_pipeline_status.get("phase"),
+            "docs_batch_status": docs_batch_status.get("status"),
+            "docs_batch_path_prefix": docs_batch_status.get("path_prefix"),
+            "runtime_artifact_audit_status": runtime_artifact_audit_status.get("status"),
+            "runtime_artifact_audit_tracked_violations": runtime_artifact_audit_status.get("tracked_violation_count"),
         },
         "benchmarks": benchmark_rows,
         "runtime_benchmarks": runtime_benchmark_rows,

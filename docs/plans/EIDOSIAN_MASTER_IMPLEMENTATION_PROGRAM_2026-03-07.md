@@ -236,6 +236,8 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
 - [~] Add local-agent runtime status/history to the operator surface.
 - [~] Add execution control for supervised services and scheduler queues.
 - [~] Add documentation coverage/diff/regeneration controls to Atlas.
+  - [x] docs batch operator status/history APIs and live home-page controls
+  - [x] runtime artifact audit operator status/history APIs and live home-page controls
 
 ### Phase 13: Validation, Benchmarks, and Promotion Gates
 - [ ] Define end-to-end promotion gates for each subsystem.
@@ -308,6 +310,16 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
   - `/api/proof/external`
   - Atlas proof-history and external-benchmark tables
   - bundle inclusion of session-bridge runtime evidence
+- [x] Atlas/operator slice extended with:
+  - `/api/docs/upsert-batch/history`
+  - `/api/runtime-artifacts/audit`
+  - `/api/runtime-artifacts/audit/status`
+  - `/api/runtime-artifacts/audit/history`
+  - durable operator histories for docs regeneration and runtime artifact audits
+- [x] Proof/bundle slice extended with:
+  - docs-batch operator status/history evidence
+  - runtime-artifact-audit status/history evidence
+  - operator job summaries embedded in proof/bundle artifacts
 - [x] Runtime benchmark observability slice extended with:
   - `status.json`, `attempts.jsonl`, and `model_trace.jsonl` per live AgencyBench run
   - `/api/benchmarks/runtime`

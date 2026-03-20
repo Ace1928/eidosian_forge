@@ -240,7 +240,18 @@ Live runtime observability artifacts for non-deterministic runs:
 
 Atlas surfaces the latest live runtime benchmark state through:
 - `GET /api/benchmarks/runtime`
+- `POST /api/benchmarks/runtime/run`
+- `GET /api/benchmarks/runtime/run/status`
+- `GET /api/benchmarks/runtime/run/history`
 - the `Runtime Benchmarks` table on the Atlas home page
+
+Related operator evidence now exposed through Atlas:
+- `POST /api/proof/refresh`
+- `GET /api/proof/refresh/status`
+- `GET /api/proof/refresh/history`
+- `POST /api/runtime-artifacts/audit`
+- `GET /api/runtime-artifacts/audit/status`
+- `GET /api/runtime-artifacts/audit/history`
 
 ### Scenario 1: GitHub Workflow
 This scenario uses the official AgencyBench MCP `scenario1` GitHub workflow contract and executes it against a disposable benchmark repository under the authenticated GitHub account.

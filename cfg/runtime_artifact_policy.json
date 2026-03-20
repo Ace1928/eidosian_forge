@@ -1,0 +1,20 @@
+{
+  "tracked_generated_globs": [
+    "data/**/*.tmp",
+    "data/**/vectors/index.bin",
+    "data/runtime/**/*.jsonl",
+    "data/runtime/*_status.json",
+    "data/runtime/*_history.json",
+    "data/runtime/external_benchmarks/**",
+    "data/runtime/external_sources/**"
+  ],
+  "live_generated_globs": [
+    "data/**/*.tmp",
+    "data/**/vectors/index.bin",
+    "data/runtime/**/*.jsonl",
+    "data/runtime/*_status.json",
+    "data/runtime/*_history.json",
+    "data/runtime/external_benchmarks/**",
+    "data/runtime/external_sources/**"
+  ]
+}
