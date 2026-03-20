@@ -965,3 +965,21 @@ def test_code_forge_archive_routes(tmp_path: Path, monkeypatch) -> None:
         lifecycle = client.get("/api/code-forge/archive-lifecycle")
         assert lifecycle.status_code == 200
         assert lifecycle.json()["report"]["summary"]["retirement_ready"] == 1
+
+
+def test_code_forge_archive_wave_route_accepts_retry_failed(monkeypatch) -> None:
+    recorded = {}
+
+    def _fake_wave_job(**kwargs):
+        recorded.update(kwargs)
+
+    monkeypatch.setattr(dashboard, "_run_code_forge_archive_wave_job", _fake_wave_job)
+    monkeypatch.setattr(dashboard.threading.Thread, "start", lambda self: self._target(*self._args, **self._kwargs))
+
+    with TestClient(dashboard.app) as client:
+        resp = client.post("/api/code-forge/archive-lifecycle/run-wave?repo_key=eidos_v1_concept&batch_limit=5&retry_failed=true&background=true")
+        assert resp.status_code == 200
+        payload = resp.json()
+        assert payload["retry_failed"] is True
+        assert recorded["retry_failed"] is True
+        assert recorded["repo_keys"] == ["eidos_v1_concept"]

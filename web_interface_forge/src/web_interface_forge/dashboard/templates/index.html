@@ -632,7 +632,8 @@
         <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
             <button onclick="triggerArchivePlan(true)">Refresh Plan</button>
             <button onclick="triggerArchiveLifecycleStatus(false)">Lifecycle Status</button>
-            <button onclick="triggerArchiveWave('eidos_v1_concept', 5, false)">Wave eidos_v1_concept</button>
+            <button onclick="triggerArchiveWave('eidos_v1_concept', 5, false, false)">Wave eidos_v1_concept</button>
+            <button onclick="triggerArchiveWave('eidos_v1_concept', 5, false, true)">Retry Failed Wave</button>
             <button onclick="window.open('/api/code-forge/archive-plan', '_blank')">Plan JSON</button>
             <button onclick="window.open('/api/code-forge/archive-lifecycle', '_blank')">Lifecycle JSON</button>
         </div>
@@ -1078,13 +1079,14 @@ async function triggerArchiveLifecycleStatus(refresh) {
     }
 }
 
-async function triggerArchiveWave(repoKey, batchLimit, refresh) {
+async function triggerArchiveWave(repoKey, batchLimit, refresh, retryFailed) {
     try {
         const params = new URLSearchParams();
         params.set('background', 'true');
         params.set('repo_key', repoKey || '');
         params.set('batch_limit', String(batchLimit || 5));
         params.set('refresh', refresh ? 'true' : 'false');
+        params.set('retry_failed', retryFailed ? 'true' : 'false');
         await fetch(`/api/code-forge/archive-lifecycle/run-wave?${params.toString()}`, {method: 'POST'});
     } finally {
         await refreshArchiveState();

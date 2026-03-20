@@ -886,6 +886,8 @@ def _run_code_forge_archive_plan_job(*, refresh: bool = True) -> None:
     ]
     if refresh:
         command.append("--refresh")
+    if retry_failed:
+        command.append("--retry-failed")
     subprocess.run(
         command,
         cwd=str(FORGE_ROOT),
@@ -912,6 +914,8 @@ def _run_code_forge_archive_lifecycle_status_job(*, refresh: bool = False, repo_
         command.extend(["--repo-key", repo_key])
     if refresh:
         command.append("--refresh")
+    if retry_failed:
+        command.append("--retry-failed")
     subprocess.run(
         command,
         cwd=str(FORGE_ROOT),
@@ -923,7 +927,7 @@ def _run_code_forge_archive_lifecycle_status_job(*, refresh: bool = False, repo_
     )
 
 
-def _run_code_forge_archive_wave_job(*, repo_keys: List[str] | None = None, batch_limit: int | None = None, refresh: bool = False) -> None:
+def _run_code_forge_archive_wave_job(*, repo_keys: List[str] | None = None, batch_limit: int | None = None, refresh: bool = False, retry_failed: bool = False) -> None:
     env = os.environ.copy()
     env["EIDOS_FORGE_ROOT"] = str(FORGE_ROOT)
     python_bin = str(FORGE_ROOT / "eidosian_venv" / "bin" / "python")
@@ -940,6 +944,8 @@ def _run_code_forge_archive_wave_job(*, repo_keys: List[str] | None = None, batc
         command.extend(["--batch-limit", str(max(1, int(batch_limit)))])
     if refresh:
         command.append("--refresh")
+    if retry_failed:
+        command.append("--retry-failed")
     subprocess.run(
         command,
         cwd=str(FORGE_ROOT),
@@ -1780,12 +1786,12 @@ async def api_code_forge_archive_lifecycle_status_job(repo_key: str = "", refres
 
 
 @app.post("/api/code-forge/archive-lifecycle/run-wave")
-async def api_code_forge_archive_lifecycle_wave(repo_key: str = "", batch_limit: int = 20, refresh: bool = False, background: bool = True):
+async def api_code_forge_archive_lifecycle_wave(repo_key: str = "", batch_limit: int = 20, refresh: bool = False, retry_failed: bool = False, background: bool = True):
     repo_keys = [item.strip() for item in repo_key.split(",") if item.strip()]
     if background:
         thread = threading.Thread(
             target=_run_code_forge_archive_wave_job,
-            kwargs={"repo_keys": repo_keys, "batch_limit": batch_limit, "refresh": refresh},
+            kwargs={"repo_keys": repo_keys, "batch_limit": batch_limit, "refresh": refresh, "retry_failed": retry_failed},
             daemon=True,
         )
         thread.start()
@@ -1796,8 +1802,9 @@ async def api_code_forge_archive_lifecycle_wave(repo_key: str = "", batch_limit:
             "refresh": bool(refresh),
             "repo_keys": repo_keys,
             "batch_limit": int(batch_limit),
+            "retry_failed": bool(retry_failed),
         }
-    _run_code_forge_archive_wave_job(repo_keys=repo_keys, batch_limit=batch_limit, refresh=refresh)
+    _run_code_forge_archive_wave_job(repo_keys=repo_keys, batch_limit=batch_limit, refresh=refresh, retry_failed=retry_failed)
     return get_code_forge_archive_lifecycle_status()
 
 

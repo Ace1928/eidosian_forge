@@ -296,6 +296,7 @@ def run_archive_wave(
     repo_keys: list[str] | None,
     batch_limit: int | None,
     progress_every: int,
+    retry_failed: bool = False,
 ) -> dict[str, Any]:
     repo_root = repo_root.resolve()
     archive_root = archive_root.resolve()
@@ -324,6 +325,7 @@ def run_archive_wave(
             include_repo_keys=repo_keys or None,
             batch_limit=batch_limit,
             progress_every=max(1, int(progress_every)),
+            retry_failed=bool(retry_failed),
         )
     finally:
         close = getattr(db, "close", None)
@@ -339,6 +341,7 @@ def run_archive_wave(
         "output_dir": str(output_dir),
         "selected_batches": result.get("selected_batches"),
         "completed_batches": result.get("completed"),
+        "retry_failed": bool(retry_failed),
         "failed_batches": result.get("failed"),
         "skipped_batches": result.get("skipped"),
         "summary_path": str(output_dir / "archive_ingestion_wave_summary.json"),
@@ -511,6 +514,7 @@ def main() -> int:
     wave_p.add_argument("--batch-limit", type=int, default=None)
     wave_p.add_argument("--progress-every", type=int, default=200)
     wave_p.add_argument("--refresh", action="store_true")
+    wave_p.add_argument("--retry-failed", action="store_true")
     wave_p.set_defaults(func="run_wave")
 
     retire_p = subparsers.add_parser("retire", parents=[common])
@@ -576,6 +580,7 @@ def main() -> int:
                 repo_keys=list(args.repo_key or []),
                 batch_limit=args.batch_limit,
                 progress_every=args.progress_every,
+                retry_failed=bool(args.retry_failed),
             )
         elif args.func == "retire":
             _ensure_archive_plan(
