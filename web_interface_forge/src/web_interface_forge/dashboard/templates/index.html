@@ -537,6 +537,23 @@
         </table>
     </div>
     <div class="card">
+        <h3>Runtime Services</h3>
+        <table>
+            <thead>
+                <tr><th>Service</th><th>Status</th><th>Phase</th></tr>
+            </thead>
+            <tbody id="runtime-services-body">
+                {% for row in runtime_services %}
+                <tr>
+                    <td>{{ row.get('service', '') }}</td>
+                    <td>{{ row.get('status', 'unknown') }}</td>
+                    <td>{{ row.get('phase', '') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="card">
         <h3>Local Agent History</h3>
         {% if local_agent_history %}
         <table>
@@ -707,6 +724,24 @@ async function refreshServices() {
         for (const row of (payload.services || [])) {
             const tr = document.createElement("tr");
             tr.innerHTML = `<td>${row.name}</td><td>${row.state}</td>`;
+            body.appendChild(tr);
+        }
+    } catch (err) {
+        // ignore transient refresh failures
+    }
+}
+
+async function refreshRuntimeServices() {
+    try {
+        const res = await fetch("/api/runtime/services", {cache: "no-store"});
+        if (!res.ok) return;
+        const payload = await res.json();
+        const body = document.getElementById("runtime-services-body");
+        if (!body) return;
+        body.innerHTML = "";
+        for (const row of (payload.entries || [])) {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `<td>${escapeHtml(row.service || "")}</td><td>${escapeHtml(row.status || "unknown")}</td><td>${escapeHtml(row.phase || "")}</td>`;
             body.appendChild(tr);
         }
     } catch (err) {
@@ -1056,8 +1091,10 @@ setInterval(refreshIdentityHistory, 15000);
 setInterval(refreshProofHistory, 15000);
 setInterval(refreshExternalBenchmarks, 15000);
 setInterval(refreshRuntimeBenchmarks, 15000);
+setInterval(refreshRuntimeServices, 10000);
 refreshScheduler();
 refreshServices();
+refreshRuntimeServices();
 refreshDocsTree();
 refreshDocsHistory();
 refreshDocsBatchStatus();

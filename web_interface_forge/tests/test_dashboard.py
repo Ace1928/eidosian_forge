@@ -353,6 +353,7 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         assert "Doc Processor" in html
         assert "Qwenchat" in html
         assert "Living Pipeline" in html
+        assert "Runtime Services" in html
         assert "Doc Processor History" in html
         assert "Qwenchat History" in html
         assert "Living Pipeline History" in html
@@ -375,6 +376,12 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         assert runtime_payload["runtime_benchmarks"][0]["scenario"] == "scenario2"
         assert runtime_payload["security"]["totals"]["open"] == 15
         assert runtime_payload["security_plan"]["batches"][0]["name"] == "batch-1"
+        runtime_services_resp = client.get("/api/runtime/services")
+        assert runtime_services_resp.status_code == 200
+        services = runtime_services_resp.json()["entries"]
+        assert any(row["service"] == "doc_processor" and row["phase"] == "processing" for row in services)
+        assert any(row["service"] == "qwenchat" and row["phase"] == "interactive" for row in services)
+        assert any(row["service"] == "living_pipeline" and row["phase"] == "graphrag" for row in services)
         local_agent_resp = client.get("/api/runtime/local-agent")
         assert local_agent_resp.status_code == 200
         assert local_agent_resp.json()["status"]["profile"] == "observer"

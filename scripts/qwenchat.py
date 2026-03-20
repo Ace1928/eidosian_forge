@@ -112,11 +112,13 @@ def acquire_chat_lease(
     *,
     model: str,
     poll_interval: float,
+    preempt_after_sec: float = 20.0,
     out: Any = sys.stderr,
 ) -> str:
     owner = 'qwenchat'
     requested_models = [{'family': 'ollama', 'model': model, 'role': 'interactive_chat'}]
     last_message = ''
+    waited_sec = 0.0
     while True:
         decision = coordinator.can_allocate(owner=owner, requested_models=requested_models, allow_same_owner=False)
         if decision.get('allowed'):
@@ -129,11 +131,32 @@ def acquire_chat_lease(
             )
             return owner
         payload = coordinator.read()
+        metadata = payload.get('metadata') if isinstance(payload.get('metadata'), dict) else {}
+        active_owner = str(payload.get('owner') or '').strip()
+        if (
+            waited_sec >= max(5.0, float(preempt_after_sec))
+            and active_owner == 'local_mcp_agent:observer'
+            and not bool(metadata.get('exclusive'))
+            and str(metadata.get('mode') or '') == 'local_agent_cycle'
+            and str(metadata.get('profile') or '') == 'observer'
+        ):
+            coordinator.clear_owner(
+                active_owner,
+                metadata={
+                    'exclusive': False,
+                    'released_reason': 'interactive_qwenchat_preempted_observer',
+                    'released_by': owner,
+                },
+            )
+            waited_sec = 0.0
+            continue
         message = _wait_message(decision, payload)
         if message != last_message:
             print(f'[qwenchat] {message}', file=out)
             last_message = message
-        time.sleep(max(1.0, float(poll_interval)))
+        sleep_sec = max(1.0, float(poll_interval))
+        time.sleep(sleep_sec)
+        waited_sec += sleep_sec
 
 
 def _heartbeat_loop(

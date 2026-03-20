@@ -71,3 +71,31 @@ def test_coordinator_recovers_dead_pid_owner(tmp_path: Path) -> None:
     payload = coordinator.read()
     assert payload["owner"] == ""
     assert payload["state"] == "idle"
+
+
+def test_qwenchat_preempts_observer_after_grace(tmp_path: Path, monkeypatch) -> None:
+    coordinator = ForgeRuntimeCoordinator(tmp_path / "forge_coordinator_status.json")
+    coordinator.heartbeat(
+        owner="local_mcp_agent:observer",
+        task="local_agent:observer",
+        state="running",
+        active_models=[{"family": "ollama", "model": "qwen3.5:2b", "role": "local_agent:observer"}],
+        metadata={"exclusive": False, "mode": "local_agent_cycle", "profile": "observer", "pid": 1},
+    )
+    sleeps: list[float] = []
+
+    def _fake_sleep(value: float) -> None:
+        sleeps.append(value)
+
+    monkeypatch.setattr(mod.time, "sleep", _fake_sleep)
+    owner = mod.acquire_chat_lease(
+        coordinator,
+        model="qwen3.5:2b",
+        poll_interval=5.0,
+        preempt_after_sec=5.0,
+        out=sys.stderr,
+    )
+    assert owner == "qwenchat"
+    payload = coordinator.read()
+    assert payload["owner"] == "qwenchat"
+    assert sleeps == [5.0]

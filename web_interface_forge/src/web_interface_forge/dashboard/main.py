@@ -343,6 +343,23 @@ def get_doc_processor_history(limit: int = 12) -> List[Dict[str, Any]]:
     return _read_jsonl_rows(DOC_HISTORY, limit=limit)
 
 
+def get_runtime_services_snapshot() -> List[Dict[str, Any]]:
+    def _row(name: str, payload: Dict[str, Any], path: Path) -> Dict[str, Any]:
+        return {
+            "service": name,
+            "status": payload.get("status"),
+            "phase": payload.get("phase"),
+            "path": str(path.relative_to(FORGE_ROOT)) if path.exists() else str(path),
+        }
+
+    return [
+        _row("doc_processor", _read_json(DOC_STATUS, {}), DOC_STATUS),
+        _row("local_agent", _read_json(LOCAL_AGENT_STATUS, {}), LOCAL_AGENT_STATUS),
+        _row("qwenchat", _read_json(QWENCHAT_STATUS, {}), QWENCHAT_STATUS),
+        _row("living_pipeline", _read_json(LIVING_PIPELINE_STATUS, {}), LIVING_PIPELINE_STATUS),
+    ]
+
+
 def get_runtime_history(limit: int = 24) -> List[Dict[str, Any]]:
     payload = _read_json(COORDINATOR_HISTORY, {})
     rows = payload.get("entries", [])
@@ -780,6 +797,7 @@ async def dashboard(request: Request):
     docs_tree = _docs_tree(limit=40, refresh=False)
     docs_history = get_docs_history(limit=24)
     runtime_snapshot = get_runtime_snapshot()
+    runtime_services = get_runtime_services_snapshot()
     local_agent_history = get_local_agent_history()
     doc_processor_history = get_doc_processor_history()
     qwenchat_history = get_qwenchat_history()
@@ -803,6 +821,7 @@ async def dashboard(request: Request):
             "docs_tree": docs_tree,
             "docs_history": docs_history,
             "runtime_snapshot": runtime_snapshot,
+            "runtime_services": runtime_services,
             "local_agent_history": local_agent_history,
             "doc_processor_history": doc_processor_history,
             "qwenchat_history": qwenchat_history,
@@ -1005,6 +1024,14 @@ async def api_runtime():
     snapshot = get_runtime_snapshot()
     snapshot["history"] = get_runtime_history()
     return snapshot
+
+
+@app.get("/api/runtime/services")
+async def api_runtime_services():
+    return {
+        "contract": "eidos.runtime_services_snapshot.v1",
+        "entries": get_runtime_services_snapshot(),
+    }
 
 
 @app.get("/api/proof/latest")
