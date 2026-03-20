@@ -76,6 +76,15 @@
         <div class="stat-label">{{ runtime_snapshot.get('local_agent', {}).get('profile', 'n/a') }}</div>
     </div>
     <div class="card">
+        <h3>Consciousness</h3>
+        <div class="stat-value" id="cog-unity">1.0</div>
+        <div class="stat-label">Unity Index</div>
+        <div class="stat-label">
+            Beats: <span id="cog-beats">0</span> · 
+            Errors: <span id="cog-errors">0</span>
+        </div>
+    </div>
+    <div class="card">
         <h3>Control Plane</h3>
         <div class="stat-value"><a href="/browse/forge/">FORGE</a></div>
         <div class="stat-label"><a href="/browse/home/">Home Browser</a> · <a href="/api/services" target="_blank">Service Status</a></div>
@@ -124,6 +133,19 @@
             <span id="session-bridge-gemini">{{ runtime_snapshot.get('session_bridge', {}).get('gemini_records', 0) }}</span>
         </div>
     </div>
+    <div class="card">
+        <h3>Identity Continuity</h3>
+        <div class="stat-value" id="identity-score">{{ runtime_snapshot.get('identity_continuity', {}).get('overall_score', 'n/a') }}</div>
+        <div class="stat-label">
+            status:
+            <span id="identity-status">{{ runtime_snapshot.get('identity_continuity', {}).get('status', 'missing') }}</span>
+            · sessions:
+            <span id="identity-sessions">{{ runtime_snapshot.get('identity_continuity', {}).get('session_bridge', {}).get('recent_sessions', 0) }}</span>
+        </div>
+        <div class="stat-label">
+            <a href="/api/proof/identity/latest" target="_blank">Identity Scorecard JSON</a>
+        </div>
+    </div>
 </div>
 
 <div class="grid">
@@ -146,6 +168,20 @@
                 {% endfor %}
             </tbody>
         </table>
+    </div>
+    <div class="card">
+        <h3>Proof Bundle</h3>
+        <div class="stat-value" id="proof-bundle-benchmarks">{{ (runtime_snapshot.get('proof_bundle', {}).get('benchmarks', []) or [])|length }}</div>
+        <div class="stat-label">
+            missing:
+            <span id="proof-bundle-missing">{{ (runtime_snapshot.get('proof_bundle', {}).get('missing', []) or [])|length }}</span>
+            · bundle:
+            <span id="proof-bundle-root">{{ runtime_snapshot.get('proof_bundle', {}).get('bundle_root', 'n/a') }}</span>
+        </div>
+        <div class="stat-label">
+            <a href="/api/proof/bundle/latest" target="_blank">Latest Bundle Manifest</a>
+            · <a href="/browse/forge/reports/proof_bundle/">Browse Bundles</a>
+        </div>
     </div>
     <div class="card">
         <h3>Supervised Services</h3>
@@ -401,11 +437,21 @@ async function refreshDocStatus() {
         document.getElementById("live-eta").textContent = status.eta_seconds ?? "n/a";
         document.getElementById("live-approved").textContent = status.last_approved || "n/a";
         document.getElementById("live-indexed").textContent = data.index_count ?? 0;
-    } catch (err) {
-        // Keep existing values on fetch errors.
-    }
+    } catch (err) {}
+}
+
+async function refreshConsciousness() {
+    try {
+        const res = await fetch("/api/consciousness", {cache: "no-store"});
+        if (!res.ok) return;
+        const data = await res.json();
+        document.getElementById("cog-beats").textContent = data.beat_count ?? 0;
+        document.getElementById("cog-errors").textContent = data.watchdog?.total_errors ?? 0;
+        // If we had unity index in the health summary, we'd update it here.
+    } catch (err) {}
 }
 setInterval(refreshDocStatus, 5000);
+setInterval(refreshConsciousness, 5000);
 
 async function refreshServices() {
     try {
@@ -603,6 +649,33 @@ async function refreshSessionBridge() {
     }
 }
 
+async function refreshProofBundle() {
+    try {
+        const res = await fetch("/api/proof/bundle/latest", {cache: "no-store"});
+        if (!res.ok) return;
+        const payload = await res.json();
+        document.getElementById("proof-bundle-benchmarks").textContent = (payload.benchmarks || []).length;
+        document.getElementById("proof-bundle-missing").textContent = (payload.missing || []).length;
+        document.getElementById("proof-bundle-root").textContent = payload.bundle_root || "n/a";
+    } catch (err) {
+        // ignore transient refresh failures
+    }
+}
+
+async function refreshIdentityContinuity() {
+    try {
+        const res = await fetch("/api/proof/identity/latest", {cache: "no-store"});
+        if (!res.ok) return;
+        const payload = await res.json();
+        document.getElementById("identity-score").textContent = payload.overall_score ?? "n/a";
+        document.getElementById("identity-status").textContent = payload.status || "missing";
+        document.getElementById("identity-sessions").textContent =
+            payload.session_bridge?.recent_sessions ?? 0;
+    } catch (err) {
+        // ignore transient refresh failures
+    }
+}
+
 async function syncSessionBridge() {
     try {
         const res = await fetch("/api/session-bridge/sync", {method: "POST"});
@@ -644,11 +717,15 @@ setInterval(refreshScheduler, 8000);
 setInterval(refreshDocsHistory, 12000);
 setInterval(refreshDocsBatchStatus, 5000);
 setInterval(refreshSessionBridge, 15000);
+setInterval(refreshProofBundle, 15000);
+setInterval(refreshIdentityContinuity, 15000);
 refreshScheduler();
 refreshServices();
 refreshDocsTree();
 refreshDocsHistory();
 refreshDocsBatchStatus();
 refreshSessionBridge();
+refreshProofBundle();
+refreshIdentityContinuity();
 </script>
 {% endblock %}

@@ -31,6 +31,11 @@ def test_export_bundle_collects_latest_proof_and_benchmarks(tmp_path: Path) -> N
         json.dumps({"overall_score": 0.8, "status": "green"}),
     )
     _write(repo_root / "reports" / "proof" / "migration_replay_scorecard_latest.md", "# migration\n")
+    _write(
+        repo_root / "reports" / "proof" / "identity_continuity_scorecard_latest.json",
+        json.dumps({"overall_score": 0.77, "status": "yellow"}),
+    )
+    _write(repo_root / "reports" / "proof" / "identity_continuity_scorecard_latest.md", "# identity\n")
     _write(repo_root / "docs" / "THEORY_OF_OPERATION.md", "# theory\n")
     _write(
         repo_root / "reports" / "external_benchmarks" / "agencybench" / "latest.json",
@@ -49,6 +54,7 @@ def test_export_bundle_collects_latest_proof_and_benchmarks(tmp_path: Path) -> N
     assert manifest["migration_summary"]["status"] == "green"
     assert manifest["benchmarks"][0]["suite"] == "agencybench"
     assert manifest["missing"] == []
+    assert any(item["label"] == "identity_continuity_json" for item in manifest["files"])
     with tarfile.open(bundle_path, "r:gz") as archive:
         names = archive.getnames()
     assert any(name.endswith("manifest.json") for name in names)

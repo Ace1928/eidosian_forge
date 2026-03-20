@@ -82,6 +82,14 @@ def _latest_glob(root: Path, pattern: str) -> tuple[Path | None, dict[str, Any] 
     return _latest_json(sorted(root.glob(pattern)))
 
 
+def _latest_named_json(root: Path, latest_name: str, pattern: str) -> tuple[Path | None, dict[str, Any] | None]:
+    latest = root / latest_name
+    payload = _load_json(latest)
+    if payload:
+        return latest, payload
+    return _latest_glob(root, pattern)
+
+
 def _path_age_days(path: Path | None) -> float | None:
     if path is None or not path.exists():
         return None
@@ -382,6 +390,11 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
             proof_root / "migration_replay_scorecard_latest.json",
         ]
     )
+    identity_score_path, identity_score = _latest_named_json(
+        proof_root,
+        "identity_continuity_scorecard_latest.json",
+        "identity_continuity_scorecard_*.json",
+    )
     external_results = _load_external_benchmark_results(repo_root)
 
     benchmark_score = 0.0
@@ -508,6 +521,14 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
         continuity_strengths.append("Trial delta fields are available for perturbation comparison.")
     if _safe_float(continuity.get("perspective_coherence_index")) > 0.5:
         continuity_score += 0.05
+    if identity_score:
+        continuity_paths.append(str(identity_score_path))
+        continuity_score += min(0.15, _safe_float(identity_score.get("overall_score")) * 0.15)
+        continuity_strengths.append(
+            f"Identity continuity scorecard is present with score `{_safe_float(identity_score.get('overall_score'))}`."
+        )
+    else:
+        continuity_gaps.append("No dedicated identity continuity scorecard artifact found.")
     if _safe_float(continuity.get("continuity_index")) <= 0.0:
         continuity_gaps.append("Phenomenological continuity remains weak or zero in the latest surfaced metrics.")
 
@@ -703,6 +724,7 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
         "linux_audit": _artifact_state(linux_audit_path, window_days=window_days),
         "runtime_slice": _artifact_state(runtime_slice_path, window_days=window_days),
         "migration_replay": _artifact_state(migration_path, window_days=window_days),
+        "identity_continuity": _artifact_state(identity_score_path, window_days=window_days),
     }
     freshness = _freshness_summary(artifact_inventory, window_days=window_days)
     if freshness["status"] == "yellow":
@@ -769,6 +791,7 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
         "freshness": freshness,
         "regression": regression,
         "continuity_metrics": continuity,
+        "identity_continuity_scorecard": identity_score or {},
         "runtime": {
             "coordinator_state": coordinator_status.get("state"),
             "coordinator_owner": coordinator_status.get("owner"),
