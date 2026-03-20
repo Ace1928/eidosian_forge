@@ -320,6 +320,85 @@ def test_run_archive_ingestion_batches_processes_code_doc_and_metadata_routes(tm
     assert {"code_forge", "document_pipeline", "knowledge_metadata"}.issubset(routes)
 
 
+def test_run_archive_ingestion_batches_filters_repo_keys(tmp_path: Path, monkeypatch) -> None:
+    archive = tmp_path / "archive_like"
+    archive.mkdir()
+    (archive / "repo_a" / "src").mkdir(parents=True)
+    (archive / "repo_b" / "src").mkdir(parents=True)
+    (archive / "repo_a" / "src" / "a.py").write_text("def a():\n    return 1\n", encoding="utf-8")
+    (archive / "repo_b" / "src" / "b.py").write_text("def b():\n    return 2\n", encoding="utf-8")
+
+    db = CodeLibraryDB(tmp_path / "library.sqlite")
+    runner = IngestionRunner(db=db, runs_dir=tmp_path / "runs")
+    output = tmp_path / "digester"
+    kb = tmp_path / "kb.json"
+
+    plan = {
+        "generated_at": "now",
+        "root_path": str(archive),
+        "files_total": 2,
+        "batch_count": 2,
+        "route_counts": {"code_forge": 2},
+        "batches": [
+            {
+                "batch_id": "batch_a",
+                "repo_key": "repo_a",
+                "route": "code_forge",
+                "category": "source",
+                "sequence": 1,
+                "file_count": 1,
+                "total_bytes": 16,
+                "extensions": [".py"],
+                "paths": ["repo_a/src/a.py"],
+                "status": "pending",
+            },
+            {
+                "batch_id": "batch_b",
+                "repo_key": "repo_b",
+                "route": "code_forge",
+                "category": "source",
+                "sequence": 1,
+                "file_count": 1,
+                "total_bytes": 16,
+                "extensions": [".py"],
+                "paths": ["repo_b/src/b.py"],
+                "status": "pending",
+            },
+        ],
+    }
+    output.mkdir(parents=True, exist_ok=True)
+    (output / "archive_ingestion_batches.json").write_text(json.dumps(plan, indent=2) + "\n", encoding="utf-8")
+    initialize_archive_ingestion_state(plan, output)
+
+    calls: list[list[str]] = []
+
+    def _fake_run_archive_digester(**kwargs):
+        calls.append(list(kwargs.get("include_paths") or []))
+        return {
+            "generated_at": "now",
+            "route": "code_forge",
+            "ingestion_stats": {"files_processed": len(kwargs.get("include_paths") or [])},
+        }
+
+    monkeypatch.setattr(digester_pipeline, "run_archive_digester", _fake_run_archive_digester)
+
+    summary = run_archive_ingestion_batches(
+        root_path=archive,
+        db=db,
+        runner=runner,
+        output_dir=output,
+        kb_path=kb,
+        include_routes=["code_forge"],
+        include_repo_keys=["repo_b"],
+    )
+
+    assert summary["selected_batches"] == 1
+    assert calls == [["repo_b/src/b.py"]]
+    state = load_archive_ingestion_state(output)
+    assert state["batches"]["batch_a"]["status"] == "pending"
+    assert state["batches"]["batch_b"]["status"] == "completed"
+
+
 def test_triage_profile_hot_path_preserves_duplicate_candidate(tmp_path: Path) -> None:
     repo = tmp_path / "repo"
     repo.mkdir()

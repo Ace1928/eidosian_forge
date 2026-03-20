@@ -526,6 +526,7 @@ def run_archive_ingestion_batches(
     batch_limit: Optional[int] = None,
     retry_failed: bool = False,
     include_routes: Optional[Iterable[str]] = None,
+    include_repo_keys: Optional[Iterable[str]] = None,
     extensions: Optional[Iterable[str]] = None,
     exclude_patterns: Optional[Iterable[str]] = None,
     max_files: Optional[int] = None,
@@ -557,6 +558,7 @@ def run_archive_ingestion_batches(
     if retry_failed:
         allowed_statuses.add("failed")
     allowed_routes = {str(route) for route in (include_routes or []) if str(route).strip()}
+    allowed_repo_keys = {str(repo_key) for repo_key in (include_repo_keys or []) if str(repo_key).strip()}
 
     selected_batches: list[dict[str, Any]] = []
     for batch in list(batch_plan.get("batches") or []):
@@ -569,6 +571,8 @@ def run_archive_ingestion_batches(
         if str(batch_state.get("status") or "pending") not in allowed_statuses:
             continue
         if allowed_routes and str(batch.get("route") or "") not in allowed_routes:
+            continue
+        if allowed_repo_keys and str(batch.get("repo_key") or "") not in allowed_repo_keys:
             continue
         selected_batches.append(batch)
 

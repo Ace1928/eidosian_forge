@@ -430,3 +430,9 @@ For each completed item:
 - ingest any new source/reference material,
 - store a lesson or memory if the step changed the operating model,
 - commit and push a narrow change set.
+
+- [x] Added repo-scoped archive lifecycle modes for Code Forge:
+  - `ingest_and_keep` for standing library expansion
+  - `ingest_and_remove` for reversible retirement after parity/provenance gates
+- [x] Added fast metadata-first archive planning so full `archive_forge` scans reopen only changed batches instead of recomputing heavyweight content hashes.
+- [x] Added repo-filtered archive wave execution and reversible restore/retire scripts to support controlled archive burn-down.
