@@ -15,6 +15,13 @@ from typing import Any, AsyncIterator
 import httpx
 from eidosian_core.ports import get_service_url
 from eidosian_runtime import ForgeRuntimeCoordinator
+from eidosian_runtime.session_bridge import (
+    append_session_event,
+    build_session_context,
+    ingest_session_content,
+    new_session_id,
+    render_context_packet,
+)
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.session import ClientSession as SessionType
 from mcp.client.stdio import stdio_client
@@ -485,6 +492,20 @@ class LocalMcpAgent:
             "You must stay inside the exposed tool contract and stop when you have enough evidence to answer."
         )
 
+    def _continuity_context(self, objective: str, *, session_id: str) -> str:
+        try:
+            payload = build_session_context(
+                interface="local_mcp_agent",
+                query=objective,
+                session_id=session_id,
+            )
+            text = render_context_packet(payload)
+        except Exception:
+            return ""
+        if not text or text == "No recent Eidos continuity context available.":
+            return ""
+        return text
+
     def _write_status(self, payload: dict[str, Any]) -> None:
         self.status_path.parent.mkdir(parents=True, exist_ok=True)
         self.status_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -545,18 +566,27 @@ class LocalMcpAgent:
     async def run_cycle(self, objective: str, *, timeout_sec: float = 1800.0) -> dict[str, Any]:
         profile = self.profile
         owner = self._owner()
+        session_id = new_session_id("local_mcp_agent")
         call_counts: dict[str, int] = {}
         mutating_calls = 0
         total_tool_calls = 0
         total_tool_latency_ms = 0
         cycle_log: list[dict[str, Any]] = []
         final_message = ""
+        continuity_context = ""
         effective_thinking_mode = profile.thinking_mode
         mcp_transport = ""
         list_tools_ms = 0
         resource_count = 0
         resource_sample: list[dict[str, str]] = []
         tool_contract_count = 0
+        append_session_event(
+            interface="local_mcp_agent",
+            session_id=session_id,
+            event_type="start",
+            summary=f"local agent cycle started for {profile.name}",
+            metadata={"objective": objective[:300], "profile": profile.name},
+        )
         allocation = self.coordinator.can_allocate(
             owner=owner, requested_models=self._lease_models(), allow_same_owner=False
         )
@@ -576,12 +606,27 @@ class LocalMcpAgent:
                 "status": "blocked",
                 "blocked_reason": allocation.get("reason"),
                 "objective": objective,
+                "session_id": session_id,
                 "profile": profile.name,
                 "owner": owner,
                 "created_at": _now_utc(),
             }
             self._write_status(result)
             self._append_history(result)
+            append_session_event(
+                interface="local_mcp_agent",
+                session_id=session_id,
+                event_type="blocked",
+                summary=str(allocation.get("reason") or "blocked"),
+                metadata={"profile": profile.name},
+            )
+            append_session_event(
+                interface="local_mcp_agent",
+                session_id=session_id,
+                event_type="end",
+                summary="local agent cycle ended blocked",
+                metadata={"profile": profile.name},
+            )
             return result
 
         self.coordinator.heartbeat(
@@ -593,6 +638,7 @@ class LocalMcpAgent:
         )
 
         try:
+            continuity_context = self._continuity_context(objective, session_id=session_id)
             messages: list[dict[str, Any]] = [
                 {"role": "system", "content": self._system_prompt()},
                 {
@@ -605,6 +651,14 @@ class LocalMcpAgent:
                     ),
                 },
             ]
+            if continuity_context:
+                messages.insert(
+                    1,
+                    {
+                        "role": "system",
+                        "content": "Shared Eidos continuity context:\n" + continuity_context,
+                    },
+                )
             async with open_mcp_session(self.forge_root, url=self.mcp_url) as opened:
                 session, mcp_transport = opened
                 list_started = time.perf_counter()
@@ -686,8 +740,10 @@ class LocalMcpAgent:
                     "status": "success",
                     "created_at": _now_utc(),
                     "objective": objective,
+                    "session_id": session_id,
                     "profile": profile.name,
                     "thinking_mode": profile.thinking_mode,
+                    "continuity_context_chars": len(continuity_context),
                     "effective_thinking_mode": effective_thinking_mode,
                     "mcp_transport": mcp_transport,
                     "list_tools_ms": list_tools_ms,
@@ -703,6 +759,21 @@ class LocalMcpAgent:
                 }
                 self._write_status(result)
                 self._append_history(result)
+                append_session_event(
+                    interface="local_mcp_agent",
+                    session_id=session_id,
+                    event_type="response",
+                    summary=final_message[:200] or "local agent cycle completed",
+                    metadata={"profile": profile.name, "status": "success"},
+                )
+                ingest_session_content(objective, final_message or None)
+                append_session_event(
+                    interface="local_mcp_agent",
+                    session_id=session_id,
+                    event_type="end",
+                    summary="local agent cycle ended success",
+                    metadata={"profile": profile.name},
+                )
                 return result
         except Exception as exc:
             error_chain = _exception_chain(exc)
@@ -714,8 +785,10 @@ class LocalMcpAgent:
                 "status": status,
                 "created_at": _now_utc(),
                 "objective": objective,
+                "session_id": session_id,
                 "profile": profile.name,
                 "thinking_mode": profile.thinking_mode,
+                "continuity_context_chars": len(continuity_context),
                 "effective_thinking_mode": effective_thinking_mode,
                 "mcp_transport": mcp_transport,
                 "list_tools_ms": list_tools_ms,
@@ -733,6 +806,20 @@ class LocalMcpAgent:
             }
             self._write_status(result)
             self._append_history(result)
+            append_session_event(
+                interface="local_mcp_agent",
+                session_id=session_id,
+                event_type="error",
+                summary=(joined_error or str(exc))[:200],
+                metadata={"profile": profile.name, "status": status},
+            )
+            append_session_event(
+                interface="local_mcp_agent",
+                session_id=session_id,
+                event_type="end",
+                summary=f"local agent cycle ended {status}",
+                metadata={"profile": profile.name},
+            )
             return result
         finally:
             self.coordinator.clear_owner(

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import subprocess
+import sys
+import types
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -115,6 +117,22 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
             ]
         },
     )
+    _write_json(
+        runtime_dir / "session_bridge" / "latest_context.json",
+        {
+            "contract": "eidos.session_context.v1",
+            "session_id": "qwenchat:test",
+            "recent_sessions": [{"session_id": "codex:abc", "interface": "codex", "events": [{"summary": "recent codex"}]}],
+        },
+    )
+    _write_json(
+        runtime_dir / "session_bridge" / "import_status.json",
+        {
+            "gemini": {"imported_ids": ["a1"]},
+            "codex": {"threads": {"t1": 1}},
+            "last_sync_at": "2026-03-20T00:00:00+00:00",
+        },
+    )
     target = tmp_path / "doc_forge" / "src" / "doc_forge" / "scribe"
     target.mkdir(parents=True, exist_ok=True)
     (target / "service.py").write_text(
@@ -154,6 +172,8 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(dashboard, "COORDINATOR_HISTORY", runtime_dir / "forge_runtime_trends.json")
     monkeypatch.setattr(dashboard, "DIRECTORY_DOCS_STATUS", runtime_dir / "directory_docs_status.json")
     monkeypatch.setattr(dashboard, "DIRECTORY_DOCS_HISTORY", runtime_dir / "directory_docs_history.json")
+    monkeypatch.setattr(dashboard, "SESSION_BRIDGE_CONTEXT", runtime_dir / "session_bridge" / "latest_context.json")
+    monkeypatch.setattr(dashboard, "SESSION_BRIDGE_IMPORT_STATUS", runtime_dir / "session_bridge" / "import_status.json")
     service_script = tmp_path / "eidos_termux_services.sh"
     service_script.write_text(
         "#!/bin/sh\n" "printf 'Atlas: runit run: /tmp/service: (pid 1) 10s; run: log: (pid 2) 10s\\n'\n",
@@ -178,6 +198,7 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         runtime_payload = runtime_resp.json()
         assert runtime_payload["local_agent"]["status"] == "success"
         assert runtime_payload["directory_docs"]["missing_readme_count"] == 2
+        assert runtime_payload["session_bridge"]["context"]["session_id"] == "qwenchat:test"
         local_agent_resp = client.get("/api/runtime/local-agent")
         assert local_agent_resp.status_code == 200
         assert local_agent_resp.json()["status"]["profile"] == "observer"
@@ -190,6 +211,9 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         docs_history_resp = client.get("/api/docs/history")
         assert docs_history_resp.status_code == 200
         assert len(docs_history_resp.json()["entries"]) == 2
+        session_bridge_resp = client.get("/api/session-bridge")
+        assert session_bridge_resp.status_code == 200
+        assert session_bridge_resp.json()["context"]["session_id"] == "qwenchat:test"
         render_resp = client.get("/api/docs/render", params={"path": "doc_forge/src/doc_forge/scribe"})
         assert render_resp.status_code == 200
         assert "GET /health" in render_resp.json()["content"]
@@ -198,6 +222,14 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         batch_resp = client.post("/api/docs/upsert-batch", params={"limit": 5, "dry_run": True})
         assert batch_resp.status_code == 200
         assert batch_resp.json()["contract"] == "eidos.docs_upsert_batch.v2"
+        queued_resp = client.post(
+            "/api/docs/upsert-batch",
+            params={"limit": 5, "dry_run": True, "background": True, "path_prefix": "doc_forge/src/doc_forge"},
+        )
+        assert queued_resp.status_code == 200
+        assert queued_resp.json()["status"] == "queued"
+        batch_status = client.get("/api/docs/upsert-batch/status")
+        assert batch_status.status_code == 200
         readme_resp = client.get("/api/docs/readme", params={"path": "doc_forge/src/doc_forge/scribe"})
         assert readme_resp.status_code == 200
         assert "GET /health" in readme_resp.json()["content"]
@@ -245,6 +277,24 @@ def test_services_api_parses_status(monkeypatch, tmp_path: Path) -> None:
         assert payload["services"][0]["running"] is True
 
 
+def test_services_api_accepts_targeted_restart(monkeypatch) -> None:
+    recorded = {}
+
+    async def _fake_service_command(action: str, service: str | None = None):
+        recorded["action"] = action
+        recorded["service"] = service
+        return {"action": action, "service": service or "all", "accepted": True, "queued": True, "ok": True}
+
+    monkeypatch.setattr(dashboard, "_service_command", _fake_service_command)
+    with TestClient(dashboard.app) as client:
+        resp = client.post("/api/services/restart", params={"service": "atlas"})
+        assert resp.status_code == 200
+        payload = resp.json()
+        assert payload["queued"] is True
+        assert payload["service"] == "atlas"
+        assert recorded == {"action": "restart", "service": "atlas"}
+
+
 def test_scheduler_api(monkeypatch, tmp_path: Path) -> None:
     scheduler_script = tmp_path / "eidos_scheduler_control.py"
     scheduler_script.write_text(
@@ -274,3 +324,68 @@ def test_scheduler_api_invalid_action() -> None:
     with TestClient(dashboard.app) as client:
         resp = client.post("/api/scheduler/invalid")
         assert resp.status_code == 400
+
+
+def test_services_api_invalid_target() -> None:
+    with TestClient(dashboard.app) as client:
+        resp = client.post("/api/services/restart", params={"service": "bad-target"})
+        assert resp.status_code == 400
+
+
+def test_session_bridge_sync_route(monkeypatch) -> None:
+    monkeypatch.setattr(dashboard, "get_session_bridge_status", lambda: {"contract": "eidos.session_bridge.status.v1", "recent_sessions": []})
+
+    def _fake_sync_external_sessions(min_interval_sec: float = 0.0):
+        return {"gemini": {"imported": 1}, "codex": {"imported": 2}}
+
+    import eidosian_runtime.session_bridge as bridge_mod
+
+    monkeypatch.setattr(bridge_mod, "sync_external_sessions", _fake_sync_external_sessions)
+    with TestClient(dashboard.app) as client:
+        resp = client.post("/api/session-bridge/sync")
+        assert resp.status_code == 200
+        payload = resp.json()
+        assert payload["sync_result"]["gemini"]["imported"] == 1
+
+
+def test_system_stats_degrade_partially(monkeypatch) -> None:
+    class _Mem:
+        percent = 52.0
+        used = 4 * 1024**3
+        total = 8 * 1024**3
+
+    class _Disk:
+        percent = 61.0
+        free = 12 * 1024**3
+
+    monkeypatch.setattr(dashboard.psutil, "cpu_percent", lambda interval=None: (_ for _ in ()).throw(PermissionError()))
+    monkeypatch.setattr(dashboard.psutil, "virtual_memory", lambda: _Mem())
+    monkeypatch.setattr(dashboard.psutil, "disk_usage", lambda path: _Disk())
+    monkeypatch.setattr(dashboard.psutil, "boot_time", lambda: 123456)
+
+    payload = dashboard.get_system_stats()
+    assert payload["cpu"] is None
+    assert payload["ram_percent"] == 52.0
+    assert payload["disk_percent"] == 61.0
+    assert payload["uptime"] == 123456
+
+
+def test_consciousness_api_reads_runtime_health(monkeypatch) -> None:
+    kernel_module = types.ModuleType("agent_forge.consciousness.kernel")
+
+    class _Kernel:
+        @staticmethod
+        def read_runtime_health(path):
+            return {"beat_count": 7, "path": str(path)}
+
+    kernel_module.ConsciousnessKernel = _Kernel
+    monkeypatch.setitem(sys.modules, "agent_forge", types.ModuleType("agent_forge"))
+    monkeypatch.setitem(sys.modules, "agent_forge.consciousness", types.ModuleType("agent_forge.consciousness"))
+    monkeypatch.setitem(sys.modules, "agent_forge.consciousness.kernel", kernel_module)
+
+    with TestClient(dashboard.app) as client:
+        resp = client.get("/api/consciousness")
+        assert resp.status_code == 200
+        payload = resp.json()
+        assert payload["status"] == "ok"
+        assert payload["beat_count"] == 7

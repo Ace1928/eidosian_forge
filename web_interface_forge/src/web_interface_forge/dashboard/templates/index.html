@@ -108,6 +108,22 @@
         </div>
         <div class="stat-label"><a href="/api/proof/latest" target="_blank">Latest Proof JSON</a></div>
     </div>
+    <div class="card">
+        <h3>Session Bridge</h3>
+        <div class="stat-value" id="session-bridge-count">{{ runtime_snapshot.get('session_bridge', {}).get('recent_sessions', 0) }}</div>
+        <div class="stat-label">
+            imports:
+            <span id="session-bridge-imported">{{ runtime_snapshot.get('session_bridge', {}).get('imported_records', 0) }}</span>
+            · last sync:
+            <span id="session-bridge-sync">{{ runtime_snapshot.get('session_bridge', {}).get('last_sync_at', 'n/a') }}</span>
+        </div>
+        <div class="stat-label">
+            codex:
+            <span id="session-bridge-codex">{{ runtime_snapshot.get('session_bridge', {}).get('codex_records', 0) }}</span>
+            · gemini:
+            <span id="session-bridge-gemini">{{ runtime_snapshot.get('session_bridge', {}).get('gemini_records', 0) }}</span>
+        </div>
+    </div>
 </div>
 
 <div class="grid">
@@ -134,6 +150,16 @@
     <div class="card">
         <h3>Supervised Services</h3>
         <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+            <select id="service-target">
+                <option value="">all services</option>
+                <option value="atlas">atlas</option>
+                <option value="mcp">mcp</option>
+                <option value="doc-forge">doc-forge</option>
+                <option value="scheduler">scheduler</option>
+                <option value="local-agent">local-agent</option>
+                <option value="ollama-qwen">ollama-qwen</option>
+                <option value="ollama-embedding">ollama-embedding</option>
+            </select>
             <button onclick="serviceAction('start')">Start</button>
             <button onclick="serviceAction('restart')">Restart</button>
             <button onclick="serviceAction('stop')">Stop</button>
@@ -198,6 +224,7 @@
         <button onclick="window.open('/api/docs/coverage?limit=50', '_blank')">Coverage JSON</button>
         <button onclick="window.open('/api/docs/tree?limit=100', '_blank')">Tree JSON</button>
         <button onclick="window.open('/api/docs/history?limit=100', '_blank')">History JSON</button>
+        <button onclick="syncSessionBridge()">Sync Sessions</button>
     </div>
     <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
         <input id="docs-path-input" type="text" placeholder="directory path, e.g. doc_forge/src/doc_forge/scribe" style="min-width:340px;">
@@ -212,6 +239,9 @@
         <button onclick="upsertDocsReadme()">Upsert</button>
         <button onclick="batchDocs(true)">Batch Preview</button>
         <button onclick="batchDocs(false)">Batch Upsert</button>
+    </div>
+    <div class="stat-label" id="docs-batch-status-line" style="margin-bottom:12px;">
+        batch: {{ runtime_snapshot.get('docs_batch', {}).get('state', 'idle') if runtime_snapshot.get('docs_batch') else 'idle' }}
     </div>
     <pre id="docs-output" style="max-height:320px; overflow:auto; white-space:pre-wrap;">{{ (docs_inventory.get('missing_examples', []) or [])|join('\n') }}</pre>
 </div>
@@ -342,6 +372,19 @@
 </div>
 
 <script>
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+}
+
+function selectedServiceTarget() {
+    return document.getElementById("service-target")?.value?.trim() || "";
+}
+
 async function refreshDocStatus() {
     try {
         const res = await fetch("/api/doc/status", {cache: "no-store"});
@@ -366,7 +409,11 @@ setInterval(refreshDocStatus, 5000);
 
 async function refreshServices() {
     try {
-        const res = await fetch("/api/services", {cache: "no-store"});
+        const params = new URLSearchParams();
+        const service = selectedServiceTarget();
+        if (service) params.set("service", service);
+        const url = params.size ? `/api/services?${params.toString()}` : "/api/services";
+        const res = await fetch(url, {cache: "no-store"});
         if (!res.ok) return;
         const payload = await res.json();
         const body = document.getElementById("service-table-body");
@@ -384,7 +431,11 @@ async function refreshServices() {
 
 async function serviceAction(action) {
     try {
-        await fetch(`/api/services/${action}`, {method: "POST"});
+        const params = new URLSearchParams();
+        const service = selectedServiceTarget();
+        if (service) params.set("service", service);
+        const url = params.size ? `/api/services/${action}?${params.toString()}` : `/api/services/${action}`;
+        await fetch(url, {method: "POST"});
     } finally {
         await refreshServices();
     }
@@ -463,15 +514,14 @@ async function batchDocs(dryRun) {
         limit: String(docsBatchLimit()),
         missing_only: String(docsMissingOnly()),
         dry_run: String(Boolean(dryRun)),
+        background: "true",
     });
     const path = docsPath();
     if (path) params.set("path_prefix", path);
     const res = await fetch(`/api/docs/upsert-batch?${params.toString()}`, {method: "POST"});
     const payload = await res.json();
     document.getElementById("docs-output").textContent = JSON.stringify(payload, null, 2);
-    await refreshDocs();
-    await refreshDocsTree();
-    await refreshDocsHistory();
+    await refreshDocsBatchStatus();
 }
 
 async function refreshDocsTree() {
@@ -483,7 +533,8 @@ async function refreshDocsTree() {
         body.innerHTML = "";
         for (const row of (payload.nodes || []).slice(0, 24)) {
             const tr = document.createElement("tr");
-            tr.innerHTML = `<td><button onclick="setDocsPath('${row.path}')">${row.path}</button></td><td>${row.has_readme}</td><td>${row.tracked_files}</td><td>${row.tests_present}</td>`;
+            const safePath = escapeHtml(row.path);
+            tr.innerHTML = `<td><button onclick="setDocsPath(${JSON.stringify(row.path)})">${safePath}</button></td><td>${row.has_readme}</td><td>${row.tracked_files}</td><td>${row.tests_present}</td>`;
             body.appendChild(tr);
         }
     } catch (err) {
@@ -505,6 +556,60 @@ async function refreshDocsHistory() {
         }
     } catch (err) {
         // ignore transient refresh failures
+    }
+}
+
+async function refreshDocsBatchStatus() {
+    try {
+        const res = await fetch("/api/docs/upsert-batch/status", {cache: "no-store"});
+        if (!res.ok) return;
+        const payload = await res.json();
+        const line = document.getElementById("docs-batch-status-line");
+        if (!line) return;
+        const status = typeof payload.status === "object" && payload.status !== null ? payload.status : payload;
+        const summary = [
+            `batch: ${status.state || 'idle'}`,
+            `dry_run=${Boolean(status.dry_run)}`,
+            `processed=${status.processed ?? 0}`,
+            `changed=${status.changed ?? status.changed_count ?? status.result?.changed_count ?? 0}`,
+            `failed=${status.failed ?? 0}`,
+        ];
+        if (status.path_prefix) summary.push(`path=${status.path_prefix}`);
+        if (status.updated_at || status.finished_at) summary.push(`updated=${status.updated_at || status.finished_at}`);
+        line.textContent = summary.join(" · ");
+        if ((status.state || status.status || "") === "completed") {
+            await refreshDocs();
+        }
+    } catch (err) {
+        // ignore transient refresh failures
+    }
+}
+
+async function refreshSessionBridge() {
+    try {
+        const res = await fetch("/api/session-bridge", {cache: "no-store"});
+        if (!res.ok) return;
+        const payload = await res.json();
+        const importStatus = payload.import_status || {};
+        const geminiImported = (importStatus.gemini?.imported_ids || []).length;
+        const codexImported = Object.keys(importStatus.codex?.threads || {}).length;
+        document.getElementById("session-bridge-count").textContent = (payload.recent_sessions || []).length;
+        document.getElementById("session-bridge-imported").textContent = geminiImported + codexImported;
+        document.getElementById("session-bridge-sync").textContent = importStatus.last_sync_at || "n/a";
+        document.getElementById("session-bridge-codex").textContent = codexImported;
+        document.getElementById("session-bridge-gemini").textContent = geminiImported;
+    } catch (err) {
+        // ignore transient refresh failures
+    }
+}
+
+async function syncSessionBridge() {
+    try {
+        const res = await fetch("/api/session-bridge/sync", {method: "POST"});
+        const payload = await res.json();
+        document.getElementById("docs-output").textContent = JSON.stringify(payload, null, 2);
+    } finally {
+        await refreshSessionBridge();
     }
 }
 
@@ -537,8 +642,13 @@ async function schedulerAction(action) {
 setInterval(refreshServices, 8000);
 setInterval(refreshScheduler, 8000);
 setInterval(refreshDocsHistory, 12000);
+setInterval(refreshDocsBatchStatus, 5000);
+setInterval(refreshSessionBridge, 15000);
 refreshScheduler();
+refreshServices();
 refreshDocsTree();
 refreshDocsHistory();
+refreshDocsBatchStatus();
+refreshSessionBridge();
 </script>
 {% endblock %}

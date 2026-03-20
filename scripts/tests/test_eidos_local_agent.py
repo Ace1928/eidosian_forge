@@ -310,6 +310,11 @@ def test_run_cycle_success_records_transport_and_resources(monkeypatch, tmp_path
         return {"message": {"content": "done"}, "effective_thinking_mode": "on"}
 
     monkeypatch.setattr(mod, "open_mcp_session", _fake_session_ctx)
+    monkeypatch.setattr(mod, "build_session_context", lambda **kwargs: {"recent_sessions": [], "suggestions": {}})
+    monkeypatch.setattr(mod, "render_context_packet", lambda payload: "Recent Eidos sessions:\n- codex: prior task")
+    ingested: list[tuple[str, str | None]] = []
+    monkeypatch.setattr(mod, "ingest_session_content", lambda query, response=None: ingested.append((query, response)))
+    monkeypatch.setattr(mod, "append_session_event", lambda **kwargs: kwargs)
 
     coordinator = ForgeRuntimeCoordinator(tmp_path / "forge_coordinator_status.json")
     agent = LocalMcpAgent(
@@ -320,9 +325,49 @@ def test_run_cycle_success_records_transport_and_resources(monkeypatch, tmp_path
     monkeypatch.setattr(agent, "_request_step", _fake_request_step)
     result = asyncio.run(agent.run_cycle("health check", timeout_sec=1.0))
     assert result["status"] == "success"
+    assert result["session_id"].startswith("local_mcp_agent:")
+    assert result["continuity_context_chars"] > 0
     assert result["mcp_transport"] == "stdio"
     assert result["resource_count"] == 1
     assert result["tool_contract_count"] >= 1
+    assert ingested == [("health check", "done")]
+    history_rows = [json.loads(line) for line in (tmp_path / "runtime" / "history.jsonl").read_text(encoding="utf-8").splitlines()]
+    assert history_rows[-1]["session_id"] == result["session_id"]
+
+
+def test_run_cycle_records_session_events(monkeypatch, tmp_path: Path) -> None:
+    import eidosian_agent.local_mcp_agent as mod
+    from eidosian_agent.local_mcp_agent import LocalMcpAgent
+    from eidosian_runtime import ForgeRuntimeCoordinator
+
+    @asynccontextmanager
+    async def _fake_session_ctx(_root, url=None):
+        yield _FakeSession([_Tool("diagnostics_ping", "Ping", {"type": "object", "properties": {}})], {}), "stdio"
+
+    async def _fake_request_step(*args, **kwargs):
+        return {"message": {"content": "done"}, "effective_thinking_mode": "on"}
+
+    monkeypatch.setattr(mod, "open_mcp_session", _fake_session_ctx)
+    monkeypatch.setattr(mod, "build_session_context", lambda **kwargs: {"recent_sessions": [], "suggestions": {}})
+    monkeypatch.setattr(mod, "render_context_packet", lambda payload: "Continuity context")
+    monkeypatch.setattr(mod, "ingest_session_content", lambda query, response=None: None)
+    recorded: list[dict[str, str]] = []
+    monkeypatch.setattr(mod, "append_session_event", lambda **kwargs: recorded.append(kwargs) or kwargs)
+
+    coordinator = ForgeRuntimeCoordinator(tmp_path / "forge_coordinator_status.json")
+    runtime_dir = tmp_path / "runtime"
+    agent = LocalMcpAgent(
+        coordinator=coordinator,
+        profile=load_profile(ROOT / "cfg" / "local_agent_profiles.json"),
+        runtime_dir=runtime_dir,
+    )
+    monkeypatch.setattr(agent, "_request_step", _fake_request_step)
+    result = asyncio.run(agent.run_cycle("health check", timeout_sec=1.0))
+    matching = [row for row in recorded if row.get("session_id") == result["session_id"]]
+    event_types = [row["event_type"] for row in matching]
+    assert "start" in event_types
+    assert "response" in event_types
+    assert event_types[-1] == "end"
 
 
 def test_run_cycle_can_read_allowed_resource(monkeypatch, tmp_path: Path) -> None:

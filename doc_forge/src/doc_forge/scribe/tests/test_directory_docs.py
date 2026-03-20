@@ -236,3 +236,32 @@ def test_inventory_summary_can_scope_to_selected_paths(temp_forge_root: Path) ->
     paths = {row["path"] for row in payload["records"]}
     assert "doc_forge/src/doc_forge/scribe" in paths
     assert "doc_forge/src/doc_forge/utils" not in paths
+
+
+def test_scoped_inventory_limits_reference_scan(monkeypatch, temp_forge_root: Path) -> None:
+    from doc_forge.scribe import directory_docs as mod
+
+    calls: list[set[str] | None] = []
+
+    def _fake_git_ls_files(repo_root: Path, selected_paths: set[str] | None = None) -> list[str]:
+        calls.append(None if selected_paths is None else set(selected_paths))
+        if selected_paths and "code_forge/src/code_forge/library" in selected_paths:
+            return ["code_forge/src/code_forge/library/db.py"]
+        return ["code_forge/tests/test_library_db.py"]
+
+    monkeypatch.setattr(mod, "_git_ls_files", _fake_git_ls_files)
+    monkeypatch.setattr(
+        mod,
+        "load_policy",
+        lambda repo_root: {
+            "documented_prefixes": ["code_forge"],
+            "excluded_prefixes": [],
+            "excluded_segments": [],
+            "excluded_test_prefixes": [],
+            "path_overrides": {},
+        },
+    )
+    payload = inventory_summary(temp_forge_root, selected_paths={"code_forge/src/code_forge/library"})
+    assert payload["required_directory_count"] >= 1
+    assert calls[0] == {"code_forge/src/code_forge/library"}
+    assert calls[1] == {"code_forge", "code_forge/src", "code_forge/tests", "code_forge/src/code_forge/library"}

@@ -66,6 +66,12 @@ The missing layer is a canonical external-proof contract that:
   - `reports/proof/entity_proof_scorecard_20260313_072818.json`
   - overall score: `0.703282`
   - status: `yellow`
+- [x] Added publishable proof-bundle export:
+  - `scripts/export_entity_proof_bundle.py`
+  - `reports/proof_bundle/latest_manifest.json`
+  - `reports/proof_bundle/latest_bundle.txt`
+- [x] Added canonical theory-of-operation document:
+  - `docs/THEORY_OF_OPERATION.md`
 
 ## Open Work
 
@@ -87,7 +93,7 @@ The missing layer is a canonical external-proof contract that:
 - [x] Add a canonical theory-of-operation document and make it part of the proof bundle.
 - [ ] Promote self-modification governance from basic gates to change classes, staged deployment, and rollback-verified approval thresholds.
 - [ ] Add explicit identity continuity scorecards across upgrades, not just raw continuity metrics.
-- [ ] Add benchmark artifact publication for external review bundles.
+- [x] Add benchmark artifact publication for external review bundles.
 
 ## Validation
 
@@ -97,5 +103,5 @@ The missing layer is a canonical external-proof contract that:
 ## Next Execution Slice
 
 1. stabilize the `qwen3.5:2b` live benchmark execution path so `local_agent` scenario runs can replace deterministic fallback as publication-grade evidence
-2. add publishable proof-bundle export with scorecard, migration scorecard, theory of operation, and benchmark manifests
-3. add identity continuity scorecards across upgrade boundaries
+2. add identity continuity scorecards across upgrade boundaries
+3. extend proof freshness/reporting so newly verified dashboard and continuity-control-plane state is reflected in the published bundle

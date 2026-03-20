@@ -3,8 +3,10 @@ import logging
 import os
 import subprocess
 import sys
+import threading
+from asyncio import to_thread
 from dataclasses import asdict
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -21,6 +23,7 @@ FORGE_ROOT = Path(os.environ.get("EIDOS_FORGE_ROOT", "/data/data/com.termux/file
 for extra in (
     FORGE_ROOT / "lib",
     FORGE_ROOT / "doc_forge" / "src",
+    FORGE_ROOT / "agent_forge" / "src",
 ):
     text = str(extra)
     if extra.exists() and text not in sys.path:
@@ -41,8 +44,13 @@ CAPABILITIES_STATUS = RUNTIME_DIR / "platform_capabilities.json"
 DIRECTORY_DOCS_STATUS = RUNTIME_DIR / "directory_docs_status.json"
 DIRECTORY_DOCS_HISTORY = RUNTIME_DIR / "directory_docs_history.json"
 DIRECTORY_DOCS_TREE = RUNTIME_DIR / "directory_docs_tree.json"
+DOCS_BATCH_STATUS = RUNTIME_DIR / "docs_upsert_batch_status.json"
+SESSION_BRIDGE_DIR = RUNTIME_DIR / "session_bridge"
+SESSION_BRIDGE_CONTEXT = SESSION_BRIDGE_DIR / "latest_context.json"
+SESSION_BRIDGE_IMPORT_STATUS = SESSION_BRIDGE_DIR / "import_status.json"
 PROOF_REPORT_DIR = FORGE_ROOT / "reports" / "proof"
 SERVICES_SCRIPT = FORGE_ROOT / "scripts" / "eidos_termux_services.sh"
+SERVICE_ACTION_LOG = RUNTIME_DIR / "atlas_service_actions.log"
 SCHEDULER_CONTROL_SCRIPT = FORGE_ROOT / "scripts" / "eidos_scheduler_control.py"
 TEMPLATES_DIR = Path(__file__).parent / "templates"
 STATIC_DIR = Path(__file__).parent / "static"
@@ -51,6 +59,10 @@ STATIC_DIR.mkdir(parents=True, exist_ok=True)
 # --- Logging ---
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("eidos_dashboard")
+
+
+def _now_utc_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
 # --- App Setup ---
 app = FastAPI(title="Eidosian Atlas", version="1.0.0")
@@ -61,22 +73,38 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 
 def get_system_stats() -> Dict[str, Any]:
+    payload: Dict[str, Any] = {}
     try:
-        cpu = psutil.cpu_percent(interval=None)
-        mem = psutil.virtual_memory()
-        disk = psutil.disk_usage(str(FORGE_ROOT))
-        return {
-            "cpu": cpu,
-            "ram_percent": mem.percent,
-            "ram_used_gb": round(mem.used / (1024**3), 2),
-            "ram_total_gb": round(mem.total / (1024**3), 2),
-            "disk_percent": disk.percent,
-            "disk_free_gb": round(disk.free / (1024**3), 2),
-            "uptime": int(psutil.boot_time()),
-        }
+        payload["cpu"] = psutil.cpu_percent(interval=None)
     except Exception as e:
-        logger.error(f"Error getting system stats: {e}")
-        return {}
+        logger.warning(f"Unable to read CPU percent: {e}")
+        payload["cpu"] = None
+    try:
+        mem = psutil.virtual_memory()
+        payload.update(
+            {
+                "ram_percent": mem.percent,
+                "ram_used_gb": round(mem.used / (1024**3), 2),
+                "ram_total_gb": round(mem.total / (1024**3), 2),
+            }
+        )
+    except Exception as e:
+        logger.warning(f"Unable to read memory stats: {e}")
+    try:
+        disk = psutil.disk_usage(str(FORGE_ROOT))
+        payload.update(
+            {
+                "disk_percent": disk.percent,
+                "disk_free_gb": round(disk.free / (1024**3), 2),
+            }
+        )
+    except Exception as e:
+        logger.warning(f"Unable to read disk stats: {e}")
+    try:
+        payload["uptime"] = int(psutil.boot_time())
+    except Exception as e:
+        logger.warning(f"Unable to read boot time: {e}")
+    return payload
 
 
 def _read_json(path: Path, default: Dict[str, Any]) -> Dict[str, Any]:
@@ -220,6 +248,7 @@ def get_runtime_snapshot() -> Dict[str, Any]:
     boot_status = _read_json(BOOT_STATUS, {})
     capabilities = _read_json(CAPABILITIES_STATUS, {})
     directory_docs = _read_json(DIRECTORY_DOCS_STATUS, {})
+    session_bridge = get_session_bridge_status()
     if not capabilities:
         capabilities = asdict(collect_runtime_capabilities())
     return {
@@ -230,6 +259,7 @@ def get_runtime_snapshot() -> Dict[str, Any]:
         "capabilities": capabilities,
         "directory_docs": directory_docs,
         "directory_docs_history": get_docs_history(limit=12),
+        "session_bridge": session_bridge,
     }
 
 
@@ -271,6 +301,83 @@ def get_latest_proof_report() -> Dict[str, Any]:
     return payload
 
 
+def _write_docs_batch_status(payload: Dict[str, Any]) -> None:
+    DOCS_BATCH_STATUS.parent.mkdir(parents=True, exist_ok=True)
+    DOCS_BATCH_STATUS.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
+def get_docs_batch_status() -> Dict[str, Any]:
+    return _read_json(DOCS_BATCH_STATUS, {"contract": "eidos.docs_upsert_batch.status.v1", "status": "idle"})
+
+
+def get_session_bridge_status() -> Dict[str, Any]:
+    payload = {
+        "contract": "eidos.session_bridge.status.v1",
+        "context": _read_json(SESSION_BRIDGE_CONTEXT, {}),
+        "import_status": _read_json(SESSION_BRIDGE_IMPORT_STATUS, {}),
+    }
+    try:
+        from eidosian_runtime.session_bridge import recent_session_digest  # type: ignore
+
+        payload["recent_sessions"] = recent_session_digest(limit=6)
+    except Exception as exc:
+        payload["recent_sessions"] = []
+        payload["error"] = str(exc)
+    return payload
+
+
+def _run_docs_upsert_batch_job(*, limit: int, missing_only: bool, path_prefix: str, dry_run: bool) -> None:
+    from doc_forge.scribe.directory_docs import upsert_directory_batch  # type: ignore
+
+    started_at = _now_utc_iso()
+    _write_docs_batch_status(
+        {
+            "contract": "eidos.docs_upsert_batch.status.v1",
+            "status": "running",
+            "started_at": started_at,
+            "limit": int(limit),
+            "missing_only": bool(missing_only),
+            "path_prefix": path_prefix,
+            "dry_run": bool(dry_run),
+        }
+    )
+    try:
+        result = upsert_directory_batch(
+            FORGE_ROOT,
+            path_prefix=path_prefix,
+            missing_only=missing_only,
+            limit=limit,
+            dry_run=dry_run,
+        )
+        _write_docs_batch_status(
+            {
+                "contract": "eidos.docs_upsert_batch.status.v1",
+                "status": "completed",
+                "started_at": started_at,
+                "finished_at": _now_utc_iso(),
+                "limit": int(limit),
+                "missing_only": bool(missing_only),
+                "path_prefix": path_prefix,
+                "dry_run": bool(dry_run),
+                "result": result,
+            }
+        )
+    except Exception as exc:
+        _write_docs_batch_status(
+            {
+                "contract": "eidos.docs_upsert_batch.status.v1",
+                "status": "error",
+                "started_at": started_at,
+                "finished_at": _now_utc_iso(),
+                "limit": int(limit),
+                "missing_only": bool(missing_only),
+                "path_prefix": path_prefix,
+                "dry_run": bool(dry_run),
+                "error": str(exc),
+            }
+        )
+
+
 def get_file_tree(path: Path, root: Path) -> List[Dict[str, Any]]:
     tree = []
     try:
@@ -302,16 +409,58 @@ def _resolve_browse_root(domain: str) -> Path:
     return DOC_FINAL
 
 
-def _service_command(action: str) -> Dict[str, Any]:
+def _run_service_action_async(action: str, service: str | None = None) -> None:
+    env = os.environ.copy()
+    env["EIDOS_FORGE_ROOT"] = str(FORGE_ROOT)
+    SERVICE_ACTION_LOG.parent.mkdir(parents=True, exist_ok=True)
+    command = [str(SERVICES_SCRIPT), action]
+    if service:
+        command.append(service)
+    with SERVICE_ACTION_LOG.open("a", encoding="utf-8") as handle:
+        subprocess.Popen(
+            command,
+            cwd=str(FORGE_ROOT),
+            env=env,
+            stdout=handle,
+            stderr=subprocess.STDOUT,
+        )
+
+
+async def _service_command(action: str, service: str | None = None) -> Dict[str, Any]:
     allowed = {"start", "stop", "restart", "status"}
     if action not in allowed:
         raise HTTPException(status_code=400, detail="Invalid service action")
     if not SERVICES_SCRIPT.exists():
         raise HTTPException(status_code=503, detail="Service controller unavailable")
+    allowed_services = {
+        None,
+        "",
+        "all",
+        "ollama-qwen",
+        "ollama-embedding",
+        "mcp",
+        "doc-forge",
+        "atlas",
+        "scheduler",
+        "local-agent",
+    }
+    service = (service or "").strip() or None
+    if service not in allowed_services:
+        raise HTTPException(status_code=400, detail="Invalid service target")
     env = os.environ.copy()
     env["EIDOS_FORGE_ROOT"] = str(FORGE_ROOT)
+    if action != "status":
+        await to_thread(_run_service_action_async, action, service)
+        return {
+            "action": action,
+            "service": service or "all",
+            "accepted": True,
+            "queued": True,
+            "ok": True,
+            "services": [],
+        }
     result = subprocess.run(
-        [str(SERVICES_SCRIPT), action],
+        [str(SERVICES_SCRIPT), action, *( [service] if service else [] )],
         cwd=str(FORGE_ROOT),
         env=env,
         capture_output=True,
@@ -321,6 +470,7 @@ def _service_command(action: str) -> Dict[str, Any]:
     )
     return {
         "action": action,
+        "service": service or "all",
         "returncode": result.returncode,
         "stdout": result.stdout,
         "stderr": result.stderr,
@@ -418,7 +568,7 @@ async def dashboard(request: Request):
             "runtime_snapshot": runtime_snapshot,
             "local_agent_history": local_agent_history,
             "proof_snapshot": proof_snapshot,
-            "service_snapshot": _service_command("status"),
+            "service_snapshot": await _service_command("status"),
         },
     )
 
@@ -545,8 +695,30 @@ async def api_docs_upsert_batch(
     missing_only: bool = True,
     path_prefix: str = "",
     dry_run: bool = False,
+    background: bool = False,
 ):
     from doc_forge.scribe.directory_docs import upsert_directory_batch  # type: ignore
+
+    if background:
+        thread = threading.Thread(
+            target=_run_docs_upsert_batch_job,
+            kwargs={
+                "limit": limit,
+                "missing_only": missing_only,
+                "path_prefix": path_prefix,
+                "dry_run": dry_run,
+            },
+            daemon=True,
+        )
+        thread.start()
+        return {
+            "contract": "eidos.docs_upsert_batch.status.v1",
+            "status": "queued",
+            "limit": int(limit),
+            "missing_only": bool(missing_only),
+            "path_prefix": path_prefix,
+            "dry_run": bool(dry_run),
+        }
 
     return upsert_directory_batch(
         FORGE_ROOT,
@@ -555,6 +727,26 @@ async def api_docs_upsert_batch(
         limit=limit,
         dry_run=dry_run,
     )
+
+
+@app.get("/api/docs/upsert-batch/status")
+async def api_docs_upsert_batch_status():
+    return get_docs_batch_status()
+
+
+@app.get("/api/session-bridge")
+async def api_session_bridge():
+    return get_session_bridge_status()
+
+
+@app.post("/api/session-bridge/sync")
+async def api_session_bridge_sync():
+    from eidosian_runtime.session_bridge import sync_external_sessions  # type: ignore
+
+    result = sync_external_sessions(min_interval_sec=0.0)
+    payload = get_session_bridge_status()
+    payload["sync_result"] = result
+    return payload
 
 
 @app.post("/api/docs/refresh")
@@ -584,13 +776,13 @@ async def api_proof_latest():
 
 
 @app.get("/api/services")
-async def api_services():
-    return _service_command("status")
+async def api_services(service: str = ""):
+    return await _service_command("status", service)
 
 
 @app.post("/api/services/{action}")
-async def api_services_action(action: str):
-    return _service_command(action)
+async def api_services_action(action: str, service: str = ""):
+    return await _service_command(action, service)
 
 
 @app.get("/api/capabilities")
@@ -616,6 +808,18 @@ async def api_local_agent_status():
     }
 
 
+@app.get("/api/consciousness")
+async def api_consciousness():
+    """Retrieve the latest metrics from the Consciousness Kernel."""
+    try:
+        from agent_forge.consciousness.kernel import ConsciousnessKernel
+
+        payload = ConsciousnessKernel.read_runtime_health(FORGE_ROOT / "state")
+        payload["status"] = "ok"
+        return payload
+    except Exception as e:
+        logger.error(f"Error getting consciousness health: {e}")
+        return {"status": "error", "error": str(e)}
 @app.get("/health")
 async def health():
     return {"status": "ok", "service": "eidos_atlas"}

@@ -236,6 +236,20 @@ def _matches_selected_prefix(rel_dir: str, selected_paths: set[str]) -> bool:
     return False
 
 
+def _selected_reference_paths(selected_paths: set[str]) -> set[str]:
+    expanded = {p for p in selected_paths if p}
+    for rel_dir in list(expanded):
+        parts = Path(rel_dir).parts
+        if not parts:
+            continue
+        top = parts[0]
+        expanded.add(top)
+        expanded.add(f"{top}/tests")
+        if len(parts) >= 2:
+            expanded.add(f"{top}/{parts[1]}")
+    return {p.strip("/") for p in expanded if p.strip("/")}
+
+
 def _is_excluded_test_candidate(rel_file: str, policy: dict[str, Any]) -> bool:
     if _is_excluded(rel_file, policy):
         return True
@@ -388,7 +402,11 @@ def inventory_directories(
     policy = policy or load_policy(repo_root)
     selected_paths = {p.strip().strip("/") for p in (selected_paths or set()) if p.strip()}
     tracked_files = _git_ls_files(repo_root, selected_paths=selected_paths or None)
-    all_tracked_files = tracked_files if not selected_paths else _git_ls_files(repo_root)
+    all_tracked_files = (
+        tracked_files
+        if not selected_paths
+        else _git_ls_files(repo_root, selected_paths=_selected_reference_paths(selected_paths))
+    )
     dir_to_files: dict[str, list[str]] = {}
     dir_children: dict[str, set[str]] = {}
     dirs: set[str] = set()

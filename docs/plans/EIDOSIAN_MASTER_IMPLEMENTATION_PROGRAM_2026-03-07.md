@@ -97,6 +97,7 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
 - [~] Keep one canonical shell bootstrap contract across Termux and Linux.
 - [~] Finish boot/resume semantics and ensure resumable services restart cleanly.
 - [~] Standardize temp/runtime/cache/data paths across Termux and Linux.
+- [x] Define and audit runtime/generated artifact boundaries so generated state is distinguishable from source.
 - [x] Build a capability registry for platform differences instead of littering checks across code.
 - [x] Integrate boot/service/runtime state into Atlas and the scheduler.
 
@@ -213,6 +214,8 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
 - [~] Feed the same state into consciousness broadcasts and metrics.
 - [~] Add explicit backlog and resume semantics for unfinished ingestion waves.
 - [x] Add governed local-agent execution as a first-class runtime surface.
+- [x] Add explicit unit coverage for new consciousness runtime modules (`default_mode`, `metacognition`, `motor`) and reconcile newly added routers against focused tests.
+- [x] Add cross-interface continuity import/synchronization across Codex, Gemini, qwenchat, and local-agent session surfaces.
 
 ### Phase 12: Atlas and Operator UX
 - [~] Expand Atlas into the operator control plane for:
