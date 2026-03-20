@@ -1057,6 +1057,7 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
             "coordinator_owner": coordinator_status.get("owner"),
             "scheduler_state": scheduler_status.get("state"),
             "scheduler_task": scheduler_status.get("current_task"),
+            "scheduler_phase": scheduler_status.get("phase"),
             "scheduler_history_present": scheduler_history_path.exists(),
             "doc_processor_status": doc_processor_status.get("status"),
             "doc_processor_phase": doc_processor_status.get("phase"),
@@ -1137,6 +1138,7 @@ def render_markdown(report: dict[str, Any]) -> str:
     runtime = report.get("runtime") or {}
     lines.append(f"- `scheduler_state`: `{runtime.get('scheduler_state')}`")
     lines.append(f"- `scheduler_task`: `{runtime.get('scheduler_task')}`")
+    lines.append(f"- `scheduler_phase`: `{runtime.get('scheduler_phase')}`")
     lines.append(f"- `scheduler_history_present`: `{runtime.get('scheduler_history_present')}`")
     lines.append(f"- `doc_processor_status`: `{runtime.get('doc_processor_status')}`")
     lines.append(f"- `doc_processor_phase`: `{runtime.get('doc_processor_phase')}`")

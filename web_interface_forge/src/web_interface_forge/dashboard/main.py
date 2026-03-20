@@ -51,6 +51,8 @@ DIRECTORY_DOCS_STATUS = RUNTIME_DIR / "directory_docs_status.json"
 DIRECTORY_DOCS_HISTORY = RUNTIME_DIR / "directory_docs_history.json"
 DIRECTORY_DOCS_TREE = RUNTIME_DIR / "directory_docs_tree.json"
 DOCS_BATCH_STATUS = RUNTIME_DIR / "docs_upsert_batch_status.json"
+PROOF_REFRESH_STATUS = RUNTIME_DIR / "proof_refresh_status.json"
+RUNTIME_BENCHMARK_RUN_STATUS = RUNTIME_DIR / "runtime_benchmark_run_status.json"
 SESSION_BRIDGE_DIR = RUNTIME_DIR / "session_bridge"
 SESSION_BRIDGE_CONTEXT = SESSION_BRIDGE_DIR / "latest_context.json"
 SESSION_BRIDGE_IMPORT_STATUS = SESSION_BRIDGE_DIR / "import_status.json"
@@ -282,6 +284,8 @@ def get_runtime_snapshot() -> Dict[str, Any]:
         "proof_history": proof_summary.get("proof_history", []),
         "external_benchmarks": proof_summary.get("external_benchmarks", []),
         "runtime_benchmarks": proof_summary.get("runtime_benchmarks", []),
+        "proof_refresh": get_proof_refresh_status(),
+        "runtime_benchmark_run": get_runtime_benchmark_run_status(),
         "security": (proof_summary.get("security") or {}).get("summary", {}),
         "security_plan": (proof_summary.get("security") or {}).get("plan", {}),
         "proof_summary": proof_summary,
@@ -564,6 +568,22 @@ def get_docs_batch_status() -> Dict[str, Any]:
     return _read_json(DOCS_BATCH_STATUS, {"contract": "eidos.docs_upsert_batch.status.v1", "status": "idle"})
 
 
+def _write_job_status(path: Path, payload: Dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
+def get_proof_refresh_status() -> Dict[str, Any]:
+    return _read_json(PROOF_REFRESH_STATUS, {"contract": "eidos.proof_refresh.status.v1", "status": "idle"})
+
+
+def get_runtime_benchmark_run_status() -> Dict[str, Any]:
+    return _read_json(
+        RUNTIME_BENCHMARK_RUN_STATUS,
+        {"contract": "eidos.runtime_benchmark_run.status.v1", "status": "idle"},
+    )
+
+
 def get_session_bridge_status() -> Dict[str, Any]:
     payload = {
         "contract": "eidos.session_bridge.status.v1",
@@ -631,6 +651,178 @@ def _run_docs_upsert_batch_job(*, limit: int, missing_only: bool, path_prefix: s
                 "dry_run": bool(dry_run),
                 "error": str(exc),
             }
+        )
+
+
+def _run_proof_refresh_job(*, window_days: int) -> None:
+    started_at = _now_utc_iso()
+    _write_job_status(
+        PROOF_REFRESH_STATUS,
+        {
+            "contract": "eidos.proof_refresh.status.v1",
+            "status": "running",
+            "started_at": started_at,
+            "window_days": int(window_days),
+        },
+    )
+    env = os.environ.copy()
+    env["EIDOS_FORGE_ROOT"] = str(FORGE_ROOT)
+    python_bin = str(FORGE_ROOT / "eidosian_venv" / "bin" / "python")
+    try:
+        proof = subprocess.run(
+            [
+                python_bin,
+                str(FORGE_ROOT / "scripts" / "entity_proof_suite.py"),
+                "--repo-root",
+                str(FORGE_ROOT),
+                "--window-days",
+                str(max(1, int(window_days))),
+            ],
+            cwd=str(FORGE_ROOT),
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=900,
+            check=False,
+        )
+        bundle = subprocess.run(
+            [
+                python_bin,
+                str(FORGE_ROOT / "scripts" / "export_entity_proof_bundle.py"),
+                "--repo-root",
+                str(FORGE_ROOT),
+            ],
+            cwd=str(FORGE_ROOT),
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=900,
+            check=False,
+        )
+        _write_job_status(
+            PROOF_REFRESH_STATUS,
+            {
+                "contract": "eidos.proof_refresh.status.v1",
+                "status": "completed" if proof.returncode == 0 and bundle.returncode == 0 else "error",
+                "started_at": started_at,
+                "finished_at": _now_utc_iso(),
+                "window_days": int(window_days),
+                "proof_returncode": proof.returncode,
+                "bundle_returncode": bundle.returncode,
+                "proof_stdout": proof.stdout[-4000:],
+                "proof_stderr": proof.stderr[-4000:],
+                "bundle_stdout": bundle.stdout[-4000:],
+                "bundle_stderr": bundle.stderr[-4000:],
+                "latest_proof": get_latest_proof_report(),
+                "latest_bundle": get_latest_proof_bundle_manifest(),
+            },
+        )
+    except Exception as exc:
+        _write_job_status(
+            PROOF_REFRESH_STATUS,
+            {
+                "contract": "eidos.proof_refresh.status.v1",
+                "status": "error",
+                "started_at": started_at,
+                "finished_at": _now_utc_iso(),
+                "window_days": int(window_days),
+                "error": str(exc),
+            },
+        )
+
+
+def _run_runtime_benchmark_job(
+    *,
+    scenario: str,
+    engine: str,
+    model: str,
+    attempts_per_step: int,
+    timeout_sec: float,
+    keep_alive: str,
+) -> None:
+    started_at = _now_utc_iso()
+    _write_job_status(
+        RUNTIME_BENCHMARK_RUN_STATUS,
+        {
+            "contract": "eidos.runtime_benchmark_run.status.v1",
+            "status": "running",
+            "started_at": started_at,
+            "scenario": scenario,
+            "engine": engine,
+            "model": model,
+            "attempts_per_step": int(attempts_per_step),
+            "timeout_sec": float(timeout_sec),
+            "keep_alive": keep_alive,
+        },
+    )
+    env = os.environ.copy()
+    env["EIDOS_FORGE_ROOT"] = str(FORGE_ROOT)
+    python_bin = str(FORGE_ROOT / "eidosian_venv" / "bin" / "python")
+    try:
+        result = subprocess.run(
+            [
+                python_bin,
+                str(FORGE_ROOT / "scripts" / "run_agencybench_eidos.py"),
+                "--scenario",
+                scenario,
+                "--engine",
+                engine,
+                "--model",
+                model,
+                "--attempts-per-step",
+                str(max(1, int(attempts_per_step))),
+                "--timeout-sec",
+                str(max(60.0, float(timeout_sec))),
+                "--keep-alive",
+                keep_alive,
+            ],
+            cwd=str(FORGE_ROOT),
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=max(120.0, float(timeout_sec)) + 300.0,
+            check=False,
+        )
+        payload: Dict[str, Any] = {}
+        try:
+            payload = json.loads(result.stdout) if result.stdout.strip() else {}
+        except Exception:
+            payload = {}
+        _write_job_status(
+            RUNTIME_BENCHMARK_RUN_STATUS,
+            {
+                "contract": "eidos.runtime_benchmark_run.status.v1",
+                "status": "completed" if result.returncode == 0 else "error",
+                "started_at": started_at,
+                "finished_at": _now_utc_iso(),
+                "scenario": scenario,
+                "engine": engine,
+                "model": model,
+                "attempts_per_step": int(attempts_per_step),
+                "timeout_sec": float(timeout_sec),
+                "keep_alive": keep_alive,
+                "returncode": result.returncode,
+                "stdout": result.stdout[-4000:],
+                "stderr": result.stderr[-4000:],
+                "result": payload if isinstance(payload, dict) else {},
+            },
+        )
+    except Exception as exc:
+        _write_job_status(
+            RUNTIME_BENCHMARK_RUN_STATUS,
+            {
+                "contract": "eidos.runtime_benchmark_run.status.v1",
+                "status": "error",
+                "started_at": started_at,
+                "finished_at": _now_utc_iso(),
+                "scenario": scenario,
+                "engine": engine,
+                "model": model,
+                "attempts_per_step": int(attempts_per_step),
+                "timeout_sec": float(timeout_sec),
+                "keep_alive": keep_alive,
+                "error": str(exc),
+            },
         )
 
 
@@ -1066,6 +1258,29 @@ async def api_proof_history(limit: int = 12):
     }
 
 
+@app.post("/api/proof/refresh")
+async def api_proof_refresh(window_days: int = 30, background: bool = True):
+    if background:
+        thread = threading.Thread(
+            target=_run_proof_refresh_job,
+            kwargs={"window_days": window_days},
+            daemon=True,
+        )
+        thread.start()
+        return {
+            "contract": "eidos.proof_refresh.status.v1",
+            "status": "queued",
+            "window_days": int(window_days),
+        }
+    _run_proof_refresh_job(window_days=window_days)
+    return get_proof_refresh_status()
+
+
+@app.get("/api/proof/refresh/status")
+async def api_proof_refresh_status():
+    return get_proof_refresh_status()
+
+
 @app.get("/api/proof/bundle/latest")
 async def api_proof_bundle_latest():
     payload = get_latest_proof_bundle_manifest()
@@ -1104,6 +1319,57 @@ async def api_runtime_benchmarks(limit: int = 12):
         "contract": "eidos.runtime_benchmark_snapshot.v1",
         "entries": get_runtime_benchmark_statuses(limit=limit),
     }
+
+
+@app.post("/api/benchmarks/runtime/run")
+async def api_runtime_benchmark_run(
+    scenario: str = "scenario2",
+    engine: str = "local_agent",
+    model: str = "qwen3.5:2b",
+    attempts_per_step: int = 1,
+    timeout_sec: float = 900.0,
+    keep_alive: str = "4h",
+    background: bool = True,
+):
+    if scenario not in {"scenario1", "scenario2"}:
+        raise HTTPException(status_code=400, detail="Invalid benchmark scenario")
+    if engine not in {"local_agent", "deterministic"}:
+        raise HTTPException(status_code=400, detail="Invalid benchmark engine")
+    if background:
+        thread = threading.Thread(
+            target=_run_runtime_benchmark_job,
+            kwargs={
+                "scenario": scenario,
+                "engine": engine,
+                "model": model,
+                "attempts_per_step": attempts_per_step,
+                "timeout_sec": timeout_sec,
+                "keep_alive": keep_alive,
+            },
+            daemon=True,
+        )
+        thread.start()
+        return {
+            "contract": "eidos.runtime_benchmark_run.status.v1",
+            "status": "queued",
+            "scenario": scenario,
+            "engine": engine,
+            "model": model,
+        }
+    _run_runtime_benchmark_job(
+        scenario=scenario,
+        engine=engine,
+        model=model,
+        attempts_per_step=attempts_per_step,
+        timeout_sec=timeout_sec,
+        keep_alive=keep_alive,
+    )
+    return get_runtime_benchmark_run_status()
+
+
+@app.get("/api/benchmarks/runtime/run/status")
+async def api_runtime_benchmark_run_status():
+    return get_runtime_benchmark_run_status()
 
 
 @app.get("/api/security/dependabot")

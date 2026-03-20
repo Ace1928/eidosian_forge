@@ -134,6 +134,7 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         {
             "state": "sleeping",
             "current_task": "living_pipeline",
+            "phase": "cycle_complete",
         },
     )
     (runtime_dir / "eidos_scheduler_history.jsonl").write_text(
@@ -227,6 +228,28 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
             "benchmarks": [{"suite": "agencybench"}],
             "missing": [],
             "session_bridge_summary": {"imported_records": 3},
+        },
+    )
+    _write_json(
+        runtime_dir / "proof_refresh_status.json",
+        {
+            "contract": "eidos.proof_refresh.status.v1",
+            "status": "completed",
+            "window_days": 30,
+            "proof_returncode": 0,
+            "bundle_returncode": 0,
+            "started_at": "2026-03-20T00:30:00Z",
+        },
+    )
+    _write_json(
+        runtime_dir / "runtime_benchmark_run_status.json",
+        {
+            "contract": "eidos.runtime_benchmark_run.status.v1",
+            "status": "completed",
+            "scenario": "scenario2",
+            "engine": "local_agent",
+            "returncode": 0,
+            "finished_at": "2026-03-20T00:40:00Z",
         },
     )
     _write_json(
@@ -342,6 +365,8 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(dashboard, "COORDINATOR_HISTORY", runtime_dir / "forge_runtime_trends.json")
     monkeypatch.setattr(dashboard, "DIRECTORY_DOCS_STATUS", runtime_dir / "directory_docs_status.json")
     monkeypatch.setattr(dashboard, "DIRECTORY_DOCS_HISTORY", runtime_dir / "directory_docs_history.json")
+    monkeypatch.setattr(dashboard, "PROOF_REFRESH_STATUS", runtime_dir / "proof_refresh_status.json")
+    monkeypatch.setattr(dashboard, "RUNTIME_BENCHMARK_RUN_STATUS", runtime_dir / "runtime_benchmark_run_status.json")
     monkeypatch.setattr(dashboard, "SESSION_BRIDGE_CONTEXT", runtime_dir / "session_bridge" / "latest_context.json")
     monkeypatch.setattr(dashboard, "SESSION_BRIDGE_IMPORT_STATUS", runtime_dir / "session_bridge" / "import_status.json")
     service_script = tmp_path / "eidos_termux_services.sh"
@@ -368,6 +393,8 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         assert "Living Pipeline" in html
         assert "Scheduler History" in html
         assert "Runtime Services" in html
+        assert "Proof Refresh" in html
+        assert "Benchmark Run" in html
         assert "Doc Processor History" in html
         assert "Qwenchat History" in html
         assert "Living Pipeline History" in html
@@ -388,12 +415,14 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         assert len(runtime_payload["proof_history"]) == 1
         assert runtime_payload["external_benchmarks"] == []
         assert runtime_payload["runtime_benchmarks"][0]["scenario"] == "scenario2"
+        assert runtime_payload["proof_refresh"]["status"] == "completed"
+        assert runtime_payload["runtime_benchmark_run"]["status"] == "completed"
         assert runtime_payload["security"]["totals"]["open"] == 15
         assert runtime_payload["security_plan"]["batches"][0]["name"] == "batch-1"
         runtime_services_resp = client.get("/api/runtime/services")
         assert runtime_services_resp.status_code == 200
         services = runtime_services_resp.json()["entries"]
-        assert any(row["service"] == "scheduler" and row["phase"] == "living_pipeline" for row in services)
+        assert any(row["service"] == "scheduler" and row["phase"] == "cycle_complete" for row in services)
         assert any(row["service"] == "doc_processor" and row["phase"] == "processing" for row in services)
         assert any(row["service"] == "qwenchat" and row["phase"] == "interactive" for row in services)
         assert any(row["service"] == "living_pipeline" and row["phase"] == "graphrag" for row in services)
@@ -401,6 +430,12 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         assert scheduler_resp.status_code == 200
         assert scheduler_resp.json()["status"]["state"] == "sleeping"
         assert scheduler_resp.json()["history"][0]["cycle"] == 2
+        proof_refresh_resp = client.get("/api/proof/refresh/status")
+        assert proof_refresh_resp.status_code == 200
+        assert proof_refresh_resp.json()["status"] == "completed"
+        benchmark_run_resp = client.get("/api/benchmarks/runtime/run/status")
+        assert benchmark_run_resp.status_code == 200
+        assert benchmark_run_resp.json()["scenario"] == "scenario2"
         local_agent_resp = client.get("/api/runtime/local-agent")
         assert local_agent_resp.status_code == 200
         assert local_agent_resp.json()["status"]["profile"] == "observer"
@@ -431,6 +466,30 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         proof_summary_resp = client.get("/api/proof/summary")
         assert proof_summary_resp.status_code == 200
         assert proof_summary_resp.json()["proof"]["overall"]["score"] == 0.74
+        monkeypatch.setattr(
+            dashboard,
+            "_run_proof_refresh_job",
+            lambda *, window_days: _write_json(
+                runtime_dir / "proof_refresh_status.json",
+                {"contract": "eidos.proof_refresh.status.v1", "status": "completed", "window_days": window_days},
+            ),
+        )
+        monkeypatch.setattr(
+            dashboard,
+            "_run_runtime_benchmark_job",
+            lambda **kwargs: _write_json(
+                runtime_dir / "runtime_benchmark_run_status.json",
+                {"contract": "eidos.runtime_benchmark_run.status.v1", "status": "completed", **kwargs},
+            ),
+        )
+        proof_refresh_run = client.post("/api/proof/refresh?background=false&window_days=14")
+        assert proof_refresh_run.status_code == 200
+        assert proof_refresh_run.json()["window_days"] == 14
+        benchmark_run = client.post(
+            "/api/benchmarks/runtime/run?background=false&scenario=scenario2&engine=local_agent&attempts_per_step=1&timeout_sec=900&keep_alive=4h"
+        )
+        assert benchmark_run.status_code == 200
+        assert benchmark_run.json()["scenario"] == "scenario2"
         proof_history_resp = client.get("/api/proof/history")
         assert proof_history_resp.status_code == 200
         assert len(proof_history_resp.json()["entries"]) == 1

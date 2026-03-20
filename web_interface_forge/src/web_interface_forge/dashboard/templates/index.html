@@ -307,6 +307,46 @@
         </div>
     </div>
     <div class="card">
+        <h3>Proof Refresh</h3>
+        <div class="stat-value" id="proof-refresh-status">{{ runtime_snapshot.get('proof_refresh', {}).get('status', 'idle')|upper }}</div>
+        <div class="stat-label">
+            window:
+            <span id="proof-refresh-window">{{ runtime_snapshot.get('proof_refresh', {}).get('window_days', 30) }}</span>
+            · started:
+            <span id="proof-refresh-started">{{ runtime_snapshot.get('proof_refresh', {}).get('started_at', '')[:19].replace('T', ' ') }}</span>
+        </div>
+        <div class="stat-label">
+            proof rc:
+            <span id="proof-refresh-proof-rc">{{ runtime_snapshot.get('proof_refresh', {}).get('proof_returncode', '') }}</span>
+            · bundle rc:
+            <span id="proof-refresh-bundle-rc">{{ runtime_snapshot.get('proof_refresh', {}).get('bundle_returncode', '') }}</span>
+        </div>
+        <div class="stat-label">
+            <button onclick="triggerProofRefresh()">Refresh Proof</button>
+            · <a href="/api/proof/refresh/status" target="_blank">Job JSON</a>
+        </div>
+    </div>
+    <div class="card">
+        <h3>Benchmark Run</h3>
+        <div class="stat-value" id="benchmark-run-status">{{ runtime_snapshot.get('runtime_benchmark_run', {}).get('status', 'idle')|upper }}</div>
+        <div class="stat-label">
+            scenario:
+            <span id="benchmark-run-scenario">{{ runtime_snapshot.get('runtime_benchmark_run', {}).get('scenario', 'scenario2') }}</span>
+            · engine:
+            <span id="benchmark-run-engine">{{ runtime_snapshot.get('runtime_benchmark_run', {}).get('engine', 'local_agent') }}</span>
+        </div>
+        <div class="stat-label">
+            returncode:
+            <span id="benchmark-run-returncode">{{ runtime_snapshot.get('runtime_benchmark_run', {}).get('returncode', '') }}</span>
+            · finished:
+            <span id="benchmark-run-finished">{{ runtime_snapshot.get('runtime_benchmark_run', {}).get('finished_at', '')[:19].replace('T', ' ') }}</span>
+        </div>
+        <div class="stat-label">
+            <button onclick="triggerRuntimeBenchmark()">Run Scenario2</button>
+            · <a href="/api/benchmarks/runtime/run/status" target="_blank">Job JSON</a>
+        </div>
+    </div>
+    <div class="card">
         <h3>Dependabot</h3>
         <div class="stat-value">{{ runtime_snapshot.get('security', {}).get('totals', {}).get('open', 0) }}</div>
         <div class="stat-label">
@@ -1071,6 +1111,52 @@ async function refreshRuntimeBenchmarks() {
     }
 }
 
+async function refreshProofRefreshStatus() {
+    try {
+        const res = await fetch("/api/proof/refresh/status", {cache: "no-store"});
+        if (!res.ok) return;
+        const payload = await res.json();
+        document.getElementById("proof-refresh-status").textContent = String(payload.status || "idle").toUpperCase();
+        document.getElementById("proof-refresh-window").textContent = payload.window_days ?? 30;
+        document.getElementById("proof-refresh-started").textContent = (payload.started_at || "").slice(0, 19).replace("T", " ");
+        document.getElementById("proof-refresh-proof-rc").textContent = payload.proof_returncode ?? "";
+        document.getElementById("proof-refresh-bundle-rc").textContent = payload.bundle_returncode ?? "";
+    } catch (err) {
+        // ignore transient refresh failures
+    }
+}
+
+async function triggerProofRefresh() {
+    try {
+        await fetch("/api/proof/refresh?background=true&window_days=30", {method: "POST"});
+    } finally {
+        await refreshProofRefreshStatus();
+    }
+}
+
+async function refreshRuntimeBenchmarkRunStatus() {
+    try {
+        const res = await fetch("/api/benchmarks/runtime/run/status", {cache: "no-store"});
+        if (!res.ok) return;
+        const payload = await res.json();
+        document.getElementById("benchmark-run-status").textContent = String(payload.status || "idle").toUpperCase();
+        document.getElementById("benchmark-run-scenario").textContent = payload.scenario || "scenario2";
+        document.getElementById("benchmark-run-engine").textContent = payload.engine || "local_agent";
+        document.getElementById("benchmark-run-returncode").textContent = payload.returncode ?? "";
+        document.getElementById("benchmark-run-finished").textContent = (payload.finished_at || "").slice(0, 19).replace("T", " ");
+    } catch (err) {
+        // ignore transient refresh failures
+    }
+}
+
+async function triggerRuntimeBenchmark() {
+    try {
+        await fetch("/api/benchmarks/runtime/run?background=true&scenario=scenario2&engine=local_agent&attempts_per_step=1&timeout_sec=900&keep_alive=4h", {method: "POST"});
+    } finally {
+        await refreshRuntimeBenchmarkRunStatus();
+    }
+}
+
 async function syncSessionBridge() {
     try {
         const res = await fetch("/api/session-bridge/sync", {method: "POST"});
@@ -1118,6 +1204,8 @@ setInterval(refreshIdentityHistory, 15000);
 setInterval(refreshProofHistory, 15000);
 setInterval(refreshExternalBenchmarks, 15000);
 setInterval(refreshRuntimeBenchmarks, 15000);
+setInterval(refreshProofRefreshStatus, 10000);
+setInterval(refreshRuntimeBenchmarkRunStatus, 10000);
 setInterval(refreshRuntimeServices, 10000);
 refreshScheduler();
 refreshServices();
@@ -1132,5 +1220,7 @@ refreshIdentityHistory();
 refreshProofHistory();
 refreshExternalBenchmarks();
 refreshRuntimeBenchmarks();
+refreshProofRefreshStatus();
+refreshRuntimeBenchmarkRunStatus();
 </script>
 {% endblock %}

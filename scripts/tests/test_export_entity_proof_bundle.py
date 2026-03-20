@@ -66,7 +66,7 @@ def test_export_bundle_collects_latest_proof_and_benchmarks(tmp_path: Path) -> N
     _write(repo_root / "doc_forge" / "runtime" / "processor_history.jsonl", "{}\n")
     _write(
         repo_root / "data" / "runtime" / "eidos_scheduler_status.json",
-        json.dumps({"state": "sleeping", "current_task": "living_pipeline"}),
+        json.dumps({"state": "sleeping", "current_task": "living_pipeline", "phase": "cycle_complete"}),
     )
     _write(repo_root / "data" / "runtime" / "eidos_scheduler_history.jsonl", "{}\n")
     _write(
@@ -114,6 +114,7 @@ def test_export_bundle_collects_latest_proof_and_benchmarks(tmp_path: Path) -> N
     assert manifest["session_bridge_summary"]["imported_records"] == 2
     assert manifest["runtime_service_summary"]["scheduler_status"] == "sleeping"
     assert manifest["runtime_service_summary"]["scheduler_task"] == "living_pipeline"
+    assert manifest["runtime_service_summary"]["scheduler_phase"] == "cycle_complete"
     assert manifest["runtime_service_summary"]["doc_processor_phase"] == "processing"
     assert manifest["runtime_service_summary"]["qwenchat_phase"] == "interactive"
     assert manifest["runtime_service_summary"]["living_pipeline_phase"] == "graphrag"

@@ -257,6 +257,7 @@ def export_bundle(repo_root: Path, output_root: Path) -> dict[str, Any]:
         "runtime_service_summary": {
             "scheduler_status": scheduler_status.get("state"),
             "scheduler_task": scheduler_status.get("current_task"),
+            "scheduler_phase": scheduler_status.get("phase"),
             "doc_processor_status": doc_processor_status.get("status"),
             "doc_processor_phase": doc_processor_status.get("phase"),
             "qwenchat_status": qwenchat_status.get("status"),

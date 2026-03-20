@@ -71,6 +71,7 @@ def test_run_scheduler_cycle_waits_on_coordinator(tmp_path: Path, monkeypatch) -
         cycle=1,
     )
     assert result["state"] == "waiting"
+    assert result["phase"] == "waiting_for_budget"
     assert result["last_result"]["reason"] == "exclusive_owner_active"
     assert result["last_result"]["proof"]["status"] == "yellow"
     history_lines = (tmp_path / "eidos_scheduler_history.jsonl").read_text(encoding="utf-8").splitlines()
@@ -127,6 +128,7 @@ def test_run_scheduler_cycle_records_success(tmp_path: Path, monkeypatch) -> Non
     assert result["proof"]["status"] == "green"
     saved = json.loads((tmp_path / "eidos_scheduler_status.json").read_text(encoding="utf-8"))
     assert saved["state"] == "sleeping"
+    assert saved["phase"] == "cycle_complete"
     assert saved["last_result"]["records_total"] == 7
     history_lines = (tmp_path / "eidos_scheduler_history.jsonl").read_text(encoding="utf-8").splitlines()
     assert any(json.loads(line)["state"] == "running" for line in history_lines)

@@ -200,6 +200,7 @@ def _status_payload(
     *,
     state: str,
     current_task: str,
+    phase: str | None = None,
     interval_sec: float,
     cycle: int,
     next_run_in_seconds: float = 0.0,
@@ -213,6 +214,7 @@ def _status_payload(
         "state": state,
         "owner": _owner(),
         "current_task": current_task,
+        "phase": str(phase or current_task or state),
         "cycle": int(cycle),
         "interval_sec": float(interval_sec),
         "next_run_in_seconds": max(0.0, float(next_run_in_seconds)),
@@ -316,6 +318,7 @@ def run_scheduler_cycle(
             _status_payload(
                 state="stopped",
                 current_task="living_pipeline",
+                phase="stop_requested",
                 interval_sec=interval_sec,
                 cycle=cycle,
                 next_run_in_seconds=0.0,
@@ -341,6 +344,7 @@ def run_scheduler_cycle(
         payload = _status_payload(
             state="waiting",
             current_task="living_pipeline",
+            phase="waiting_for_budget",
             interval_sec=interval_sec,
             cycle=cycle,
             next_run_in_seconds=interval_sec,
@@ -390,6 +394,7 @@ def run_scheduler_cycle(
         _status_payload(
             state="running",
             current_task="living_pipeline",
+            phase="launching_pipeline",
             interval_sec=interval_sec,
             cycle=cycle,
             next_run_in_seconds=0.0,
@@ -456,6 +461,7 @@ def run_scheduler_cycle(
             _status_payload(
                 state="sleeping" if proc.returncode == 0 else "error",
                 current_task="living_pipeline",
+                phase="cycle_complete" if proc.returncode == 0 else "pipeline_error",
                 interval_sec=interval_sec,
                 cycle=cycle,
                 next_run_in_seconds=interval_sec,
@@ -489,6 +495,7 @@ def run_scheduler_cycle(
             _status_payload(
                 state="timeout",
                 current_task="living_pipeline",
+                phase="pipeline_timeout",
                 interval_sec=interval_sec,
                 cycle=cycle,
                 next_run_in_seconds=interval_sec,
@@ -574,6 +581,7 @@ def main() -> int:
             _status_payload(
                 state="recovered",
                 current_task=str(prior_status.get("current_task") or "living_pipeline"),
+                phase="recovered_stale_status",
                 interval_sec=interval_sec,
                 cycle=int(prior_status.get("cycle") or 0),
                 next_run_in_seconds=0.0,
@@ -601,6 +609,7 @@ def main() -> int:
                 _status_payload(
                     state="stopped",
                     current_task="living_pipeline",
+                    phase="stop_requested",
                     interval_sec=interval_sec,
                     cycle=cycle,
                     next_run_in_seconds=0.0,
@@ -636,6 +645,7 @@ def main() -> int:
                     _status_payload(
                         state="paused",
                         current_task="living_pipeline",
+                        phase="paused",
                         interval_sec=interval_sec,
                         cycle=cycle,
                         next_run_in_seconds=0.0,
@@ -682,6 +692,7 @@ def main() -> int:
                 _status_payload(
                     state="sleeping",
                     current_task="living_pipeline",
+                    phase="sleeping",
                     interval_sec=interval_sec,
                     cycle=cycle,
                     next_run_in_seconds=sleep_remaining,
