@@ -262,6 +262,69 @@ def _load_external_benchmark_results(repo_root: Path) -> list[dict[str, Any]]:
     return rows
 
 
+def _session_bridge_summary(runtime_root: Path) -> dict[str, Any]:
+    context = _load_json(runtime_root / "session_bridge" / "latest_context.json") or {}
+    import_status = _load_json(runtime_root / "session_bridge" / "import_status.json") or {}
+    recent_sessions = context.get("recent_sessions") if isinstance(context.get("recent_sessions"), list) else []
+    gemini = import_status.get("gemini") if isinstance(import_status.get("gemini"), dict) else {}
+    codex = import_status.get("codex") if isinstance(import_status.get("codex"), dict) else {}
+    codex_threads = codex.get("threads") if isinstance(codex.get("threads"), dict) else {}
+    gemini_records = len(gemini.get("imported_ids") or [])
+    codex_records = sum(_safe_int(value) for value in codex_threads.values())
+    return {
+        "last_sync_at": import_status.get("last_sync_at"),
+        "recent_sessions": len(recent_sessions),
+        "gemini_records": gemini_records,
+        "codex_records": codex_records,
+        "imported_records": gemini_records + codex_records,
+    }
+
+
+def _proof_history_summary(report_root: Path, limit: int = 6) -> dict[str, Any]:
+    entries: list[dict[str, Any]] = []
+    for path in sorted(report_root.glob("entity_proof_scorecard_*.json"), reverse=True):
+        if path.name == "entity_proof_scorecard_latest.json":
+            continue
+        payload = _load_json(path)
+        if not payload or payload.get("contract") != "eidos.entity_proof_scorecard.v1":
+            continue
+        overall = payload.get("overall") if isinstance(payload.get("overall"), dict) else {}
+        freshness = payload.get("freshness") if isinstance(payload.get("freshness"), dict) else {}
+        regression = payload.get("regression") if isinstance(payload.get("regression"), dict) else {}
+        entries.append(
+            {
+                "generated_at": payload.get("generated_at") or "",
+                "overall_score": _safe_float(overall.get("score")),
+                "status": str(overall.get("status") or ""),
+                "freshness_status": str(freshness.get("status") or ""),
+                "regression_status": str(regression.get("status") or ""),
+                "path": str(path),
+            }
+        )
+        if len(entries) >= max(1, int(limit)):
+            break
+    entries = list(reversed(entries))
+    previous = entries[-2] if len(entries) >= 2 else {}
+    latest = entries[-1] if entries else {}
+    delta = None
+    if latest and previous:
+        delta = round(_safe_float(latest.get("overall_score")) - _safe_float(previous.get("overall_score")), 6)
+    trend = "insufficient_history"
+    if delta is not None:
+        if delta > 0.02:
+            trend = "improved"
+        elif delta < -0.02:
+            trend = "regressed"
+        else:
+            trend = "stable"
+    return {
+        "entries": entries,
+        "sample_count": len(entries),
+        "delta_from_previous": delta,
+        "trend": trend,
+    }
+
+
 def _freshness_summary(
     artifacts: dict[str, dict[str, Any]],
     *,
@@ -396,6 +459,8 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
         "identity_continuity_scorecard_*.json",
     )
     external_results = _load_external_benchmark_results(repo_root)
+    session_bridge = _session_bridge_summary(runtime_root)
+    proof_history = _proof_history_summary(proof_root)
 
     benchmark_score = 0.0
     benchmark_strengths: list[str] = []
@@ -618,6 +683,19 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
         )
     else:
         observability_gaps.append("No local-agent status artifact found.")
+    if session_bridge.get("imported_records", 0) > 0 or session_bridge.get("recent_sessions", 0) > 0:
+        observability_score += 0.1
+        observability_paths.extend(
+            [
+                str(runtime_root / "session_bridge" / "latest_context.json"),
+                str(runtime_root / "session_bridge" / "import_status.json"),
+            ]
+        )
+        observability_strengths.append(
+            f"Session bridge evidence is present with `{session_bridge.get('imported_records', 0)}` imported records and `{session_bridge.get('recent_sessions', 0)}` recent sessions."
+        )
+    else:
+        observability_gaps.append("Session bridge evidence is absent or empty.")
     if docs_status:
         observability_score += 0.1
         observability_paths.append(str(runtime_root / "directory_docs_status.json"))
@@ -664,6 +742,9 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
         reproducibility_score += 0.1
         reproducibility_strengths.append("Service supervision installer exists.")
         reproducibility_paths.append(str(repo_root / "scripts" / "install_termux_runit_services.sh"))
+    if session_bridge.get("imported_records", 0) > 0:
+        reproducibility_score += 0.05
+        reproducibility_strengths.append("Cross-interface session import evidence exists via the session bridge.")
     reproducibility_gaps.append("Cross-machine replay and migration scorecards are not yet artifacted.")
     dirty = _git_dirty(repo_root)
     if dirty is False:
@@ -811,6 +892,8 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
         "identity_continuity_history": (
             (identity_score or {}).get("history") if isinstance((identity_score or {}).get("history"), dict) else {}
         ),
+        "proof_history": proof_history,
+        "session_bridge": session_bridge,
         "runtime": {
             "coordinator_state": coordinator_status.get("state"),
             "coordinator_owner": coordinator_status.get("owner"),
@@ -819,6 +902,8 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
             "directory_docs_missing_readme_count": _safe_int(docs_status.get("missing_readme_count")),
             "directory_docs_review_pending_count": _safe_int(docs_status.get("review_pending_count")),
             "runtime_history_count": len(history_entries),
+            "session_bridge_recent_sessions": session_bridge.get("recent_sessions", 0),
+            "session_bridge_imported_records": session_bridge.get("imported_records", 0),
         },
         "categories": categories,
         "overall": {
@@ -900,6 +985,31 @@ def render_markdown(report: dict[str, Any]) -> str:
         )
         for row in recent_entries[:6]:
             lines.append(f"| {row.get('generated_at')} | {row.get('status')} | {row.get('overall_score')} |")
+    session_bridge = report.get("session_bridge") or {}
+    lines.extend(["", "## Session Bridge", ""])
+    lines.append(f"- `last_sync_at`: `{session_bridge.get('last_sync_at')}`")
+    lines.append(f"- `recent_sessions`: `{session_bridge.get('recent_sessions')}`")
+    lines.append(f"- `imported_records`: `{session_bridge.get('imported_records')}`")
+    lines.append(f"- `codex_records`: `{session_bridge.get('codex_records')}`")
+    lines.append(f"- `gemini_records`: `{session_bridge.get('gemini_records')}`")
+    lines.extend(["", "## Proof History", ""])
+    proof_history = report.get("proof_history") or {}
+    lines.append(f"- `trend`: `{proof_history.get('trend')}`")
+    lines.append(f"- `delta_from_previous`: `{proof_history.get('delta_from_previous')}`")
+    lines.append(f"- `sample_count`: `{proof_history.get('sample_count')}`")
+    proof_entries = proof_history.get("entries") if isinstance(proof_history.get("entries"), list) else []
+    if proof_entries:
+        lines.extend(
+            [
+                "",
+                "| Generated | Status | Score | Freshness | Regression |",
+                "| --- | --- | ---: | --- | --- |",
+            ]
+        )
+        for row in proof_entries[-6:]:
+            lines.append(
+                f"| {row.get('generated_at')} | {row.get('status')} | {row.get('overall_score')} | {row.get('freshness_status')} | {row.get('regression_status')} |"
+            )
     lines.extend(["", "## Continuity Metrics", ""])
     for key, value in sorted((report.get("continuity_metrics") or {}).items()):
         lines.append(f"- `{key}`: `{value}`")

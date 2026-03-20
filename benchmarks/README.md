@@ -144,6 +144,8 @@ Use `scripts/entity_proof_suite.py` to aggregate the latest benchmark, continuit
 - regression deltas against the previous scorecard
 - imported external benchmark evidence under `reports/external_benchmarks/<suite>/latest.json`
 - migration/replay reproducibility evidence from `scripts/migration_replay_scorecard.py`
+- session-bridge continuity/import evidence from `data/runtime/session_bridge/*.json`
+- recent proof-history deltas from prior `reports/proof/entity_proof_scorecard_*.json` artifacts
 
 ### Outputs
 - `reports/proof/entity_proof_scorecard_<stamp>.json`
@@ -157,6 +159,8 @@ Use `scripts/entity_proof_suite.py` to aggregate the latest benchmark, continuit
 - turn internal benchmark fragments into a publishable proof surface
 - include identity continuity trend/delta history, not just a single-point score
 - publish external benchmark result tables directly in the proof markdown, not only JSON artifacts
+- publish recent proof-history trend rows directly in the proof markdown
+- keep cross-interface continuity evidence visible in the proof bundle and manifest
 
 ## External Benchmark Import
 Use `scripts/import_external_benchmark.py` to normalize upstream external-suite results into the proof pipeline.

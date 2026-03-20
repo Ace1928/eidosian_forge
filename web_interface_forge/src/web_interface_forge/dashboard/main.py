@@ -250,6 +250,7 @@ def get_runtime_snapshot() -> Dict[str, Any]:
     capabilities = _read_json(CAPABILITIES_STATUS, {})
     directory_docs = _read_json(DIRECTORY_DOCS_STATUS, {})
     session_bridge = get_session_bridge_status()
+    proof_summary = get_proof_summary()
     if not capabilities:
         capabilities = asdict(collect_runtime_capabilities())
     return {
@@ -261,6 +262,13 @@ def get_runtime_snapshot() -> Dict[str, Any]:
         "directory_docs": directory_docs,
         "directory_docs_history": get_docs_history(limit=12),
         "session_bridge": session_bridge,
+        "proof": proof_summary.get("proof", {}),
+        "proof_bundle": proof_summary.get("bundle", {}),
+        "identity_continuity": proof_summary.get("identity", {}),
+        "identity_history": proof_summary.get("identity_history", []),
+        "proof_history": proof_summary.get("proof_history", []),
+        "external_benchmarks": proof_summary.get("external_benchmarks", []),
+        "proof_summary": proof_summary,
     }
 
 
@@ -302,6 +310,56 @@ def get_latest_proof_report() -> Dict[str, Any]:
     return payload
 
 
+def get_proof_history(limit: int = 12) -> List[Dict[str, Any]]:
+    rows: List[Dict[str, Any]] = []
+    for path in sorted(PROOF_REPORT_DIR.glob("entity_proof_scorecard_*.json"), reverse=True):
+        if path.name.endswith("_latest.json"):
+            continue
+        payload = _read_json(path, {})
+        if not payload:
+            continue
+        overall = payload.get("overall") if isinstance(payload.get("overall"), dict) else {}
+        freshness = payload.get("freshness") if isinstance(payload.get("freshness"), dict) else {}
+        regression = payload.get("regression") if isinstance(payload.get("regression"), dict) else {}
+        rows.append(
+            {
+                "generated_at": payload.get("generated_at") or "",
+                "overall_score": overall.get("score"),
+                "status": overall.get("status", ""),
+                "freshness_status": freshness.get("status", ""),
+                "regression_status": regression.get("status", ""),
+                "path": str(path.relative_to(FORGE_ROOT)),
+            }
+        )
+        if len(rows) >= max(1, int(limit)):
+            break
+    return list(reversed(rows))
+
+
+def get_external_benchmark_results(limit: int = 12) -> List[Dict[str, Any]]:
+    rows: List[Dict[str, Any]] = []
+    root = FORGE_ROOT / "reports" / "external_benchmarks"
+    if not root.exists():
+        return rows
+    for latest in sorted(root.glob("*/latest.json")):
+        payload = _read_json(latest, {})
+        if not payload:
+            continue
+        rows.append(
+            {
+                "suite": payload.get("suite") or latest.parent.name,
+                "score": payload.get("score"),
+                "status": payload.get("status", ""),
+                "participant": payload.get("participant", ""),
+                "execution_mode": payload.get("execution_mode", ""),
+                "generated_at": payload.get("generated_at", ""),
+                "path": str(latest.relative_to(FORGE_ROOT)),
+            }
+        )
+    rows.sort(key=lambda row: str(row.get("generated_at") or ""), reverse=True)
+    return rows[: max(1, int(limit))]
+
+
 def get_latest_proof_bundle_manifest() -> Dict[str, Any]:
     latest = PROOF_BUNDLE_DIR / "latest_manifest.json"
     payload = _read_json(latest, {})
@@ -316,6 +374,39 @@ def get_latest_identity_continuity_scorecard() -> Dict[str, Any]:
     if not isinstance(payload, dict):
         return {}
     return payload
+
+
+def get_proof_summary() -> Dict[str, Any]:
+    proof = get_latest_proof_report()
+    bundle = get_latest_proof_bundle_manifest()
+    identity = get_latest_identity_continuity_scorecard()
+    identity_history = get_identity_continuity_history(limit=12)
+    proof_history = get_proof_history(limit=12)
+    external = get_external_benchmark_results(limit=12)
+    session_bridge = get_session_bridge_status()
+    history = identity.get("history") if isinstance(identity.get("history"), dict) else {}
+    return {
+        "contract": "eidos.proof.summary.v1",
+        "proof": proof,
+        "bundle": bundle,
+        "identity": identity,
+        "identity_history": identity_history,
+        "proof_history": proof_history,
+        "external_benchmarks": external,
+        "session_bridge": {
+            "recent_sessions": len(session_bridge.get("recent_sessions") or [])
+            if isinstance(session_bridge.get("recent_sessions"), list)
+            else 0,
+            "last_sync_at": ((session_bridge.get("import_status") or {}).get("last_sync_at")),
+            "codex_records": sum(
+                int(value)
+                for value in ((session_bridge.get("import_status") or {}).get("codex", {}).get("threads", {}) or {}).values()
+            ),
+            "gemini_records": len((session_bridge.get("import_status") or {}).get("gemini", {}).get("imported_ids", []) or []),
+        },
+        "identity_trend": history.get("trend"),
+        "identity_delta": history.get("delta_from_previous"),
+    }
 
 
 def get_identity_continuity_history(limit: int = 12) -> List[Dict[str, Any]]:
@@ -588,6 +679,7 @@ async def dashboard(request: Request):
     runtime_snapshot = get_runtime_snapshot()
     local_agent_history = get_local_agent_history()
     proof_snapshot = get_latest_proof_report()
+    proof_summary = get_proof_summary()
 
     return templates.TemplateResponse(
         request,
@@ -607,6 +699,7 @@ async def dashboard(request: Request):
             "runtime_snapshot": runtime_snapshot,
             "local_agent_history": local_agent_history,
             "proof_snapshot": proof_snapshot,
+            "proof_summary": proof_summary,
             "service_snapshot": await _service_command("status"),
         },
     )
@@ -802,10 +895,6 @@ async def api_docs_history(limit: int = 60):
 async def api_runtime():
     snapshot = get_runtime_snapshot()
     snapshot["history"] = get_runtime_history()
-    snapshot["proof"] = get_latest_proof_report()
-    snapshot["proof_bundle"] = get_latest_proof_bundle_manifest()
-    snapshot["identity_continuity"] = get_latest_identity_continuity_scorecard()
-    snapshot["identity_history"] = get_identity_continuity_history()
     return snapshot
 
 
@@ -815,6 +904,22 @@ async def api_proof_latest():
     if payload:
         return payload
     raise HTTPException(status_code=404, detail="No proof report found")
+
+
+@app.get("/api/proof/summary")
+async def api_proof_summary():
+    payload = get_proof_summary()
+    if payload.get("proof"):
+        return payload
+    raise HTTPException(status_code=404, detail="No proof summary found")
+
+
+@app.get("/api/proof/history")
+async def api_proof_history(limit: int = 12):
+    return {
+        "contract": "eidos.proof.history.v1",
+        "entries": get_proof_history(limit=limit),
+    }
 
 
 @app.get("/api/proof/bundle/latest")
@@ -838,6 +943,14 @@ async def api_proof_identity_history(limit: int = 12):
     return {
         "contract": "eidos.identity_continuity_history.v1",
         "entries": get_identity_continuity_history(limit=limit),
+    }
+
+
+@app.get("/api/proof/external")
+async def api_proof_external(limit: int = 12):
+    return {
+        "contract": "eidos.external_benchmark_snapshot.v1",
+        "entries": get_external_benchmark_results(limit=limit),
     }
 
 

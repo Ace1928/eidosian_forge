@@ -115,7 +115,11 @@
             freshness: {{ proof_snapshot.get('freshness', {}).get('status', 'unknown') }}
             · regression: {{ proof_snapshot.get('regression', {}).get('status', 'unknown') }}
         </div>
-        <div class="stat-label"><a href="/api/proof/latest" target="_blank">Latest Proof JSON</a></div>
+        <div class="stat-label">
+            <a href="/api/proof/latest" target="_blank">Latest Proof JSON</a>
+            · <a href="/api/proof/summary" target="_blank">Proof Summary JSON</a>
+            · <a href="/api/proof/history" target="_blank">Proof History JSON</a>
+        </div>
     </div>
     <div class="card">
         <h3>Session Bridge</h3>
@@ -202,6 +206,8 @@
         <div class="stat-label">
             <a href="/api/proof/bundle/latest" target="_blank">Latest Bundle Manifest</a>
             · <a href="/browse/forge/reports/proof_bundle/">Browse Bundles</a>
+            · session imports:
+            <span id="proof-bundle-session-imports">{{ runtime_snapshot.get('proof_bundle', {}).get('session_bridge_summary', {}).get('imported_records', 0) }}</span>
         </div>
     </div>
     <div class="card">
@@ -221,6 +227,46 @@
                 {% endfor %}
             </tbody>
         </table>
+    </div>
+    <div class="card">
+        <h3>Proof History</h3>
+        <table>
+            <thead>
+                <tr><th>Generated</th><th>Status</th><th>Score</th><th>Freshness</th><th>Regression</th></tr>
+            </thead>
+            <tbody id="proof-history-body">
+                {% for row in runtime_snapshot.get('proof_history', [])[-6:] %}
+                <tr>
+                    <td>{{ row.get('generated_at') }}</td>
+                    <td>{{ row.get('status') }}</td>
+                    <td>{{ row.get('overall_score') }}</td>
+                    <td>{{ row.get('freshness_status') }}</td>
+                    <td>{{ row.get('regression_status') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="card">
+        <h3>External Benchmarks</h3>
+        <table>
+            <thead>
+                <tr><th>Suite</th><th>Mode</th><th>Status</th><th>Score</th></tr>
+            </thead>
+            <tbody id="external-benchmarks-body">
+                {% for row in runtime_snapshot.get('external_benchmarks', [])[:8] %}
+                <tr>
+                    <td>{{ row.get('suite') }}</td>
+                    <td>{{ row.get('execution_mode') }}</td>
+                    <td>{{ row.get('status') }}</td>
+                    <td>{{ row.get('score') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="stat-label">
+            <a href="/api/proof/external" target="_blank">External Benchmark JSON</a>
+        </div>
     </div>
     <div class="card">
         <h3>Supervised Services</h3>
@@ -701,6 +747,8 @@ async function refreshProofBundle() {
         document.getElementById("proof-bundle-identity-trend").textContent = payload.identity_summary?.history?.trend || "n/a";
         document.getElementById("proof-bundle-identity-delta").textContent =
             payload.identity_summary?.history?.delta_from_previous ?? "n/a";
+        document.getElementById("proof-bundle-session-imports").textContent =
+            payload.session_bridge_summary?.imported_records ?? 0;
     } catch (err) {
         // ignore transient refresh failures
     }
@@ -738,6 +786,47 @@ async function refreshIdentityHistory() {
                 <td>${row.status || ""}</td>
                 <td>${row.overall_score ?? ""}</td>
                 <td>${row.recent_sessions ?? 0}</td>
+            </tr>
+        `).join("");
+    } catch (err) {
+        // ignore transient refresh failures
+    }
+}
+
+async function refreshProofHistory() {
+    try {
+        const res = await fetch("/api/proof/history", {cache: "no-store"});
+        if (!res.ok) return;
+        const payload = await res.json();
+        const entries = payload.entries || [];
+        const body = document.getElementById("proof-history-body");
+        body.innerHTML = entries.slice(-6).map((row) => `
+            <tr>
+                <td>${row.generated_at || ""}</td>
+                <td>${row.status || ""}</td>
+                <td>${row.overall_score ?? ""}</td>
+                <td>${row.freshness_status || ""}</td>
+                <td>${row.regression_status || ""}</td>
+            </tr>
+        `).join("");
+    } catch (err) {
+        // ignore transient refresh failures
+    }
+}
+
+async function refreshExternalBenchmarks() {
+    try {
+        const res = await fetch("/api/proof/external", {cache: "no-store"});
+        if (!res.ok) return;
+        const payload = await res.json();
+        const entries = payload.entries || [];
+        const body = document.getElementById("external-benchmarks-body");
+        body.innerHTML = entries.slice(0, 8).map((row) => `
+            <tr>
+                <td>${row.suite || ""}</td>
+                <td>${row.execution_mode || ""}</td>
+                <td>${row.status || ""}</td>
+                <td>${row.score ?? ""}</td>
             </tr>
         `).join("");
     } catch (err) {
@@ -789,6 +878,8 @@ setInterval(refreshSessionBridge, 15000);
 setInterval(refreshProofBundle, 15000);
 setInterval(refreshIdentityContinuity, 15000);
 setInterval(refreshIdentityHistory, 15000);
+setInterval(refreshProofHistory, 15000);
+setInterval(refreshExternalBenchmarks, 15000);
 refreshScheduler();
 refreshServices();
 refreshDocsTree();
@@ -798,5 +889,7 @@ refreshSessionBridge();
 refreshProofBundle();
 refreshIdentityContinuity();
 refreshIdentityHistory();
+refreshProofHistory();
+refreshExternalBenchmarks();
 </script>
 {% endblock %}

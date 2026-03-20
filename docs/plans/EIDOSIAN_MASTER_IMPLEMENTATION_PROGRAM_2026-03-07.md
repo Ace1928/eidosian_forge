@@ -263,6 +263,8 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
   - [x] live imported mainstream external benchmark evidence
   - [x] second mainstream imported benchmark suite evidence
   - [x] identity continuity trend/history included in proof artifacts
+  - [x] proof history trend/delta included in proof artifacts
+  - [x] session-bridge continuity evidence included in proof artifacts and bundle
 
 ## Immediate Execution Order
 
@@ -298,6 +300,12 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
   - migration/replay scorecard contract
   - scheduler runtime proof normalization
   - identity continuity history/trend publication in scorecards and bundles
+- [x] Atlas/proof slice extended with:
+  - `/api/proof/summary`
+  - `/api/proof/history`
+  - `/api/proof/external`
+  - Atlas proof-history and external-benchmark tables
+  - bundle inclusion of session-bridge runtime evidence
 - [x] Initial primary-source set saved and ingested:
   - `docs/external_references/2026-03-07-master-program/`
 - [x] Phase 1 implementation slice started:

@@ -51,6 +51,14 @@ def test_export_bundle_collects_latest_proof_and_benchmarks(tmp_path: Path) -> N
         repo_root / "reports" / "external_benchmarks" / "agencybench" / "latest.json",
         json.dumps({"suite": "agencybench", "score": 1.0, "status": "green"}),
     )
+    _write(
+        repo_root / "data" / "runtime" / "session_bridge" / "latest_context.json",
+        json.dumps({"recent_sessions": [{"session_id": "codex:1"}]}),
+    )
+    _write(
+        repo_root / "data" / "runtime" / "session_bridge" / "import_status.json",
+        json.dumps({"last_sync_at": "2026-03-20T03:00:00Z", "gemini": {"imported_ids": ["g1"]}, "codex": {"threads": {"t1": 2}}}),
+    )
 
     result = export_bundle(repo_root, repo_root / "reports" / "proof_bundle")
 
@@ -64,14 +72,17 @@ def test_export_bundle_collects_latest_proof_and_benchmarks(tmp_path: Path) -> N
     assert manifest["migration_summary"]["status"] == "green"
     assert manifest["identity_summary"]["history"]["trend"] == "stable"
     assert len(manifest["identity_summary"]["recent_history"]) == 1
+    assert manifest["session_bridge_summary"]["imported_records"] == 3
     assert manifest["benchmarks"][0]["suite"] == "agencybench"
     assert manifest["missing"] == []
     assert any(item["label"] == "identity_continuity_json" for item in manifest["files"])
     assert any(item["label"].startswith("identity_history:") for item in manifest["files"])
+    assert any(item["label"] == "session_bridge_context" for item in manifest["files"])
     with tarfile.open(bundle_path, "r:gz") as archive:
         names = archive.getnames()
     assert any(name.endswith("manifest.json") for name in names)
     assert any(name.endswith("external_benchmarks/agencybench/latest.json") for name in names)
+    assert any(name.endswith("runtime/session_bridge/latest_context.json") for name in names)
 
 
 def test_export_bundle_reports_missing_artifacts(tmp_path: Path) -> None:

@@ -24,6 +24,13 @@ def _load_json(path: Path) -> dict[str, Any]:
     return payload if isinstance(payload, dict) else {}
 
 
+def _safe_int(value: Any, default: int = 0) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
 def _copy(src: Path, dst: Path) -> str:
     dst.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(src, dst)
@@ -45,6 +52,7 @@ def export_bundle(repo_root: Path, output_root: Path) -> dict[str, Any]:
     proof_root = repo_root / "reports" / "proof"
     docs_root = repo_root / "docs"
     benchmarks_root = repo_root / "reports" / "external_benchmarks"
+    runtime_root = repo_root / "data" / "runtime"
 
     files: list[dict[str, Any]] = []
     missing: list[str] = []
@@ -104,6 +112,8 @@ def export_bundle(repo_root: Path, output_root: Path) -> dict[str, Any]:
             }
         )
     include(docs_root / "THEORY_OF_OPERATION.md", "docs/THEORY_OF_OPERATION.md", "theory_of_operation")
+    include(runtime_root / "session_bridge" / "latest_context.json", "runtime/session_bridge/latest_context.json", "session_bridge_context")
+    include(runtime_root / "session_bridge" / "import_status.json", "runtime/session_bridge/import_status.json", "session_bridge_import_status")
 
     benchmark_rows: list[dict[str, Any]] = []
     if benchmarks_root.exists():
@@ -135,6 +145,29 @@ def export_bundle(repo_root: Path, output_root: Path) -> dict[str, Any]:
     proof_payload = _load_json(proof_root / "entity_proof_scorecard_latest.json")
     migration_payload = _load_json(proof_root / "migration_replay_scorecard_latest.json")
     identity_payload = _load_json(proof_root / "identity_continuity_scorecard_latest.json")
+    session_context_payload = _load_json(runtime_root / "session_bridge" / "latest_context.json")
+    session_import_payload = _load_json(runtime_root / "session_bridge" / "import_status.json")
+    codex_threads = (
+        (session_import_payload.get("codex") or {}).get("threads")
+        if isinstance((session_import_payload.get("codex") or {}), dict)
+        else {}
+    )
+    gemini_imported = (
+        (session_import_payload.get("gemini") or {}).get("imported_ids")
+        if isinstance((session_import_payload.get("gemini") or {}), dict)
+        else []
+    )
+    session_bridge_summary = {
+        "last_sync_at": session_import_payload.get("last_sync_at"),
+        "recent_sessions": len(session_context_payload.get("recent_sessions") or [])
+        if isinstance(session_context_payload.get("recent_sessions"), list)
+        else 0,
+        "codex_records": sum(_safe_int(value) for value in codex_threads.values()) if isinstance(codex_threads, dict) else 0,
+        "gemini_records": len(gemini_imported) if isinstance(gemini_imported, list) else 0,
+    }
+    session_bridge_summary["imported_records"] = (
+        session_bridge_summary["codex_records"] + session_bridge_summary["gemini_records"]
+    )
 
     manifest = {
         "contract": "eidos.entity_proof_bundle.v1",
@@ -152,6 +185,7 @@ def export_bundle(repo_root: Path, output_root: Path) -> dict[str, Any]:
             "history": identity_payload.get("history") if isinstance(identity_payload.get("history"), dict) else {},
             "recent_history": recent_identity_history,
         },
+        "session_bridge_summary": session_bridge_summary,
         "benchmarks": benchmark_rows,
         "files": files,
         "missing": sorted(set(missing)),

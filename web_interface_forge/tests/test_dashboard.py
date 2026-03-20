@@ -140,6 +140,27 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
             "bundle_root": "20260320_033604",
             "benchmarks": [{"suite": "agencybench"}],
             "missing": [],
+            "session_bridge_summary": {"imported_records": 3},
+        },
+    )
+    _write_json(
+        tmp_path / "reports" / "proof" / "entity_proof_scorecard_latest.json",
+        {
+            "contract": "eidos.entity_proof_scorecard.v1",
+            "overall": {"score": 0.74, "status": "yellow"},
+            "freshness": {"status": "yellow"},
+            "regression": {"status": "stable"},
+            "categories": [{"category": "external_validity", "status": "yellow", "score": 0.7}],
+        },
+    )
+    _write_json(
+        tmp_path / "reports" / "proof" / "entity_proof_scorecard_20260320_000000.json",
+        {
+            "contract": "eidos.entity_proof_scorecard.v1",
+            "generated_at": "2026-03-20T00:00:00Z",
+            "overall": {"score": 0.71, "status": "yellow"},
+            "freshness": {"status": "yellow"},
+            "regression": {"status": "stable"},
         },
     )
     _write_json(
@@ -241,9 +262,12 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         assert runtime_payload["directory_docs"]["missing_readme_count"] == 2
         assert runtime_payload["session_bridge"]["context"]["session_id"] == "qwenchat:test"
         assert runtime_payload["proof_bundle"]["bundle_root"] == "20260320_033604"
+        assert runtime_payload["proof"]["overall"]["score"] == 0.74
         assert runtime_payload["identity_continuity"]["overall_score"] == 0.93
         assert runtime_payload["identity_continuity"]["history"]["trend"] == "improved"
         assert len(runtime_payload["identity_history"]) == 2
+        assert len(runtime_payload["proof_history"]) == 1
+        assert runtime_payload["external_benchmarks"] == []
         local_agent_resp = client.get("/api/runtime/local-agent")
         assert local_agent_resp.status_code == 200
         assert local_agent_resp.json()["status"]["profile"] == "observer"
@@ -259,6 +283,12 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         proof_bundle_resp = client.get("/api/proof/bundle/latest")
         assert proof_bundle_resp.status_code == 200
         assert proof_bundle_resp.json()["bundle_root"] == "20260320_033604"
+        proof_summary_resp = client.get("/api/proof/summary")
+        assert proof_summary_resp.status_code == 200
+        assert proof_summary_resp.json()["proof"]["overall"]["score"] == 0.74
+        proof_history_resp = client.get("/api/proof/history")
+        assert proof_history_resp.status_code == 200
+        assert len(proof_history_resp.json()["entries"]) == 1
         identity_resp = client.get("/api/proof/identity/latest")
         assert identity_resp.status_code == 200
         assert identity_resp.json()["overall_score"] == 0.93
@@ -267,6 +297,9 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         assert identity_history_resp.status_code == 200
         assert len(identity_history_resp.json()["entries"]) == 2
         assert identity_history_resp.json()["entries"][-1]["overall_score"] == 0.93
+        external_resp = client.get("/api/proof/external")
+        assert external_resp.status_code == 200
+        assert external_resp.json()["entries"] == []
         session_bridge_resp = client.get("/api/session-bridge")
         assert session_bridge_resp.status_code == 200
         assert session_bridge_resp.json()["context"]["session_id"] == "qwenchat:test"

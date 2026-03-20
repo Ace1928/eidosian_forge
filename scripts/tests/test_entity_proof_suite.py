@@ -158,6 +158,14 @@ def test_build_proof_report_tracks_freshness_regression_and_external_results(tmp
             "history": {"trend": "stable", "delta_from_previous": 0.01, "sample_count": 3},
         },
     )
+    _write_json(
+        repo / "data" / "runtime" / "session_bridge" / "latest_context.json",
+        {"recent_sessions": [{"session_id": "codex:1"}]},
+    )
+    _write_json(
+        repo / "data" / "runtime" / "session_bridge" / "import_status.json",
+        {"last_sync_at": "2026-03-20T03:00:00Z", "gemini": {"imported_ids": ["g1"]}, "codex": {"threads": {"t1": 2}}},
+    )
     stale = repo / "reports" / "linux_audit_20260101.json"
     _write_json(stale, {"counts": {"checks_fail": 0}})
 
@@ -168,6 +176,8 @@ def test_build_proof_report_tracks_freshness_regression_and_external_results(tmp
     assert report["external_benchmark_results"][0]["execution_mode"] == "imported_reference"
     assert report["identity_continuity_scorecard"]["overall_score"] == 0.77
     assert report["identity_continuity_history"]["trend"] == "stable"
+    assert report["session_bridge"]["imported_records"] == 3
+    assert report["proof_history"]["sample_count"] == 1
     assert report["freshness"]["status"] in {"yellow", "red"}
     assert report["regression"]["status"] == "regressed"
     assert any(row["category"] == "regression" for row in report["top_gaps"])
@@ -204,3 +214,6 @@ def test_main_writes_latest_scorecard_files(tmp_path: Path, monkeypatch) -> None
     payload = json.loads(latest_json.read_text(encoding="utf-8"))
     assert payload["contract"] == "eidos.entity_proof_scorecard.v1"
     assert "overall" in payload
+    markdown = latest_md.read_text(encoding="utf-8")
+    assert "## Proof History" in markdown
+    assert "## Session Bridge" in markdown
