@@ -6,6 +6,7 @@ from eidosian_core import eidosian
 
 from ..core import tool
 from ..state import FORGE_DIR
+from ._param_coercion import coerce_string_list
 
 try:
     from glyph_forge.services.image_to_glyph import image_to_glyph
@@ -25,14 +26,21 @@ def glyph_text_to_banner(
     style: str = "minimal",
     font: Optional[str] = None,
     width: Optional[int] = None,
-    effects: Optional[List[str]] = None,
+    effects: Optional[List[str] | str] = None,
     color: bool = False,
 ) -> str:
     """
     Generate a styled ASCII banner using the Glyph Forge engine.
     Supports various fonts, styles, and special effects.
     """
-    return text_to_banner(text=text, style=style, font=font, width=width, effects=effects, color=color)
+    return text_to_banner(
+        text=text,
+        style=style,
+        font=font,
+        width=width,
+        effects=coerce_string_list(effects),
+        color=color,
+    )
 
 
 @eidosian()

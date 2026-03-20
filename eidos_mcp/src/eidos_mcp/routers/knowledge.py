@@ -25,6 +25,7 @@ from ..transactions import (
     find_latest_transaction_for_path,
     load_transaction,
 )
+from ._param_coercion import coerce_string_list, coerce_tag_list
 
 FORGE_DIR = Path(os.environ.get("EIDOS_FORGE_DIR", str(FORGE_ROOT))).resolve()
 
@@ -107,20 +108,25 @@ def memory_search(query: str) -> str:
         "type": "object",
         "properties": {
             "fact": {"type": "string"},
-            "tags": {"type": "array", "items": {"type": "string"}},
+            "tags": {
+                "oneOf": [
+                    {"type": "array", "items": {"type": "string"}},
+                    {"type": "string"},
+                ]
+            },
         },
         "required": ["fact", "tags"],
     },
 )
 @eidosian()
-def kb_add_fact(fact: str, tags: List[str]) -> str:
+def kb_add_fact(fact: str, tags: List[str] | str) -> str:
     """Add fact to Knowledge Graph."""
     persistence_path = getattr(kb, "persistence_path", None)
     if not isinstance(persistence_path, Path):
         persistence_path = None
 
     with begin_transaction("kb_add", [persistence_path]) as txn:
-        node = kb.add_knowledge(fact, tags=tags)
+        node = kb.add_knowledge(fact, tags=coerce_tag_list(tags))
         return f"Added node: {node.id} ({txn.id})"
 
 
@@ -267,14 +273,19 @@ def kb_restore(transaction_id: Optional[str] = None) -> str:
         "type": "object",
         "properties": {
             "memory_path": {"type": "string"},
-            "tags": {"type": "array", "items": {"type": "string"}},
+            "tags": {
+                "oneOf": [
+                    {"type": "array", "items": {"type": "string"}},
+                    {"type": "string"},
+                ]
+            },
         },
         "required": ["memory_path"],
     },
 )
 @eidosian()
-def kb_ingest_memory(memory_path: str, tags: Optional[List[str]] = None) -> str:
-    result = memory_ingestor.ingest_memory_file(Path(memory_path), tags=tags or [])
+def kb_ingest_memory(memory_path: str, tags: Optional[List[str] | str] = None) -> str:
+    result = memory_ingestor.ingest_memory_file(Path(memory_path), tags=coerce_tag_list(tags))
     return str(result)
 
 
@@ -371,11 +382,22 @@ def rag_query(query: str) -> str:
 @tool(
     name="grag_index",
     description="Run a GraphRAG incremental index over scan roots.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "scan_roots": {
+                "oneOf": [
+                    {"type": "array", "items": {"type": "string"}},
+                    {"type": "string"},
+                ]
+            }
+        },
+    },
 )
 @eidosian()
-def grag_index(scan_roots: Optional[List[str]] = None) -> str:
+def grag_index(scan_roots: Optional[List[str] | str] = None) -> str:
     """Run a GraphRAG incremental index over scan roots."""
-    roots = scan_roots or [str(FORGE_DIR)]
+    roots = coerce_string_list(scan_roots) or [str(FORGE_DIR)]
     root_paths = [Path(p) for p in roots]
     return str(grag.run_incremental_index(root_paths))
 
@@ -513,13 +535,17 @@ def unified_context_search(
                 "description": "ID of the memory to promote",
             },
             "concepts": {
-                "type": "array",
-                "items": {"type": "string"},
+                "oneOf": [
+                    {"type": "array", "items": {"type": "string"}},
+                    {"type": "string"},
+                ],
                 "description": "Concepts to associate with the knowledge node",
             },
             "tags": {
-                "type": "array",
-                "items": {"type": "string"},
+                "oneOf": [
+                    {"type": "array", "items": {"type": "string"}},
+                    {"type": "string"},
+                ],
                 "description": "Additional tags for the knowledge node",
             },
         },
@@ -529,15 +555,19 @@ def unified_context_search(
 @eidosian()
 def promote_memory_to_knowledge(
     memory_id: str,
-    concepts: Optional[List[str]] = None,
-    tags: Optional[List[str]] = None,
+    concepts: Optional[List[str] | str] = None,
+    tags: Optional[List[str] | str] = None,
 ) -> str:
     """Promote a memory to a knowledge node."""
     bridge = _get_bridge()
     if not bridge:
         return "Error: Knowledge-memory bridge not available"
 
-    node_id = bridge.promote_memory_to_knowledge(memory_id, concepts=concepts, tags=tags)
+    node_id = bridge.promote_memory_to_knowledge(
+        memory_id,
+        concepts=coerce_string_list(concepts),
+        tags=coerce_tag_list(tags),
+    )
     if node_id:
         return f"Memory promoted to knowledge node: {node_id}"
     return f"Error: Could not promote memory {memory_id}"
@@ -567,7 +597,12 @@ def bridge_stats() -> str:
         "type": "object",
         "properties": {
             "run_graphrag": {"type": "boolean"},
-            "queries": {"type": "array", "items": {"type": "string"}},
+            "queries": {
+                "oneOf": [
+                    {"type": "array", "items": {"type": "string"}},
+                    {"type": "string"},
+                ]
+            },
             "code_max_files": {"type": "integer"},
             "max_file_bytes": {"type": "integer"},
             "max_chars_per_doc": {"type": "integer"},
@@ -577,7 +612,7 @@ def bridge_stats() -> str:
 @eidosian()
 def living_knowledge_pipeline_run(
     run_graphrag: bool = False,
-    queries: Optional[List[str]] = None,
+    queries: Optional[List[str] | str] = None,
     code_max_files: Optional[int] = None,
     max_file_bytes: int = 2_000_000,
     max_chars_per_doc: int = 20_000,
@@ -607,7 +642,7 @@ def living_knowledge_pipeline_run(
         cmd.extend(["--code-max-files", str(code_max_files)])
     if run_graphrag:
         cmd.append("--run-graphrag")
-    for query in queries or []:
+    for query in coerce_string_list(queries):
         cmd.extend(["--query", query])
 
     proc = subprocess.run(cmd, text=True, capture_output=True, check=False, cwd=FORGE_DIR)

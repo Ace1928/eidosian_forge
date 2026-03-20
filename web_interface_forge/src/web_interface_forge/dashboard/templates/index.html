@@ -188,6 +188,18 @@
             <span id="proof-bundle-root">{{ runtime_snapshot.get('proof_bundle', {}).get('bundle_root', 'n/a') }}</span>
         </div>
         <div class="stat-label">
+            proof:
+            <span id="proof-bundle-score">{{ runtime_snapshot.get('proof_bundle', {}).get('proof_summary', {}).get('score', 'n/a') }}</span>
+            · status:
+            <span id="proof-bundle-status">{{ runtime_snapshot.get('proof_bundle', {}).get('proof_summary', {}).get('status', 'n/a') }}</span>
+        </div>
+        <div class="stat-label">
+            identity trend:
+            <span id="proof-bundle-identity-trend">{{ runtime_snapshot.get('proof_bundle', {}).get('identity_summary', {}).get('history', {}).get('trend', 'n/a') }}</span>
+            · delta:
+            <span id="proof-bundle-identity-delta">{{ runtime_snapshot.get('proof_bundle', {}).get('identity_summary', {}).get('history', {}).get('delta_from_previous', 'n/a') }}</span>
+        </div>
+        <div class="stat-label">
             <a href="/api/proof/bundle/latest" target="_blank">Latest Bundle Manifest</a>
             · <a href="/browse/forge/reports/proof_bundle/">Browse Bundles</a>
         </div>
@@ -684,6 +696,11 @@ async function refreshProofBundle() {
         document.getElementById("proof-bundle-benchmarks").textContent = (payload.benchmarks || []).length;
         document.getElementById("proof-bundle-missing").textContent = (payload.missing || []).length;
         document.getElementById("proof-bundle-root").textContent = payload.bundle_root || "n/a";
+        document.getElementById("proof-bundle-score").textContent = payload.proof_summary?.score ?? "n/a";
+        document.getElementById("proof-bundle-status").textContent = payload.proof_summary?.status || "n/a";
+        document.getElementById("proof-bundle-identity-trend").textContent = payload.identity_summary?.history?.trend || "n/a";
+        document.getElementById("proof-bundle-identity-delta").textContent =
+            payload.identity_summary?.history?.delta_from_previous ?? "n/a";
     } catch (err) {
         // ignore transient refresh failures
     }

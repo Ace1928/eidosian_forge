@@ -219,6 +219,7 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
 - [x] Add explicit unit coverage for new consciousness runtime modules (`default_mode`, `metacognition`, `motor`) and reconcile newly added routers against focused tests.
 - [x] Add cross-interface continuity import/synchronization across Codex, Gemini, qwenchat, and local-agent session surfaces.
 - [x] Make narrative anchoring and desire-state introspection explicit, configurable, and test-covered instead of hidden inline behavior.
+- [~] Normalize MCP boundary coercion so list-like router parameters tolerate stable cross-client inputs instead of brittle schema mismatches.
 
 ### Phase 12: Atlas and Operator UX
 - [~] Expand Atlas into the operator control plane for:
@@ -296,6 +297,7 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
   - AgencyBench official sample-reference import path and artifact
   - migration/replay scorecard contract
   - scheduler runtime proof normalization
+  - identity continuity history/trend publication in scorecards and bundles
 - [x] Initial primary-source set saved and ingested:
   - `docs/external_references/2026-03-07-master-program/`
 - [x] Phase 1 implementation slice started:

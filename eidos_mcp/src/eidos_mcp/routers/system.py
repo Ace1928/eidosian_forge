@@ -11,6 +11,7 @@ from eidosian_core import eidosian
 
 from .. import FORGE_ROOT
 from ..forge_loader import ensure_forge_import
+from ._param_coercion import coerce_string_list
 from ..transactions import (
     begin_transaction,
     check_idempotency,
@@ -283,7 +284,12 @@ def file_restore(file_path: str, transaction_id: Optional[str] = None) -> str:
             "cwd": {"type": "string"},
             "timeout_sec": {"type": "integer"},
             "safe_mode": {"type": "boolean"},
-            "transaction_paths": {"type": "array", "items": {"type": "string"}},
+            "transaction_paths": {
+                "oneOf": [
+                    {"type": "array", "items": {"type": "string"}},
+                    {"type": "string"},
+                ]
+            },
             "verify_command": {"type": "string"},
             "idempotency_key": {"type": "string"},
         },
@@ -296,15 +302,16 @@ def run_shell_command(
     cwd: Optional[str] = None,
     timeout_sec: Optional[int] = None,
     safe_mode: bool = True,
-    transaction_paths: Optional[List[str]] = None,
+    transaction_paths: Optional[List[str] | str] = None,
     verify_command: Optional[str] = None,
     idempotency_key: Optional[str] = None,
 ) -> str:
     """Execute shell command."""
     diag.log_event("INFO", "Shell Exec", command=command, cwd=cwd)
     targets: List[Path] = []
-    if transaction_paths:
-        for raw in transaction_paths:
+    normalized_transaction_paths = coerce_string_list(transaction_paths)
+    if normalized_transaction_paths:
+        for raw in normalized_transaction_paths:
             resolved = _resolve_path(raw)
             if not _is_allowed(resolved):
                 return json.dumps({"error": "Path not allowed", "path": str(resolved)})
@@ -368,7 +375,7 @@ def run_shell_command(
             "stderr": result.stderr,
             "exit_code": result.returncode,
             "transaction_id": txn.id if txn else None,
-            "rolled_back": txn.status == "ROLLED_BACK",
+            "rolled_back": getattr(txn, "status", "") == "ROLLED_BACK",
         }
         return json.dumps(payload)
 

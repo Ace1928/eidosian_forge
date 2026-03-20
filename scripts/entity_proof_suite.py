@@ -852,6 +852,21 @@ def render_markdown(report: dict[str, Any]) -> str:
     lines.extend(["", "## Top Gaps", ""])
     for row in report.get("top_gaps") or []:
         lines.append(f"- `{row.get('category')}`: {row.get('gap')}")
+    lines.extend(["", "## External Benchmark Results", ""])
+    benchmark_rows = report.get("external_benchmark_results") or []
+    if benchmark_rows:
+        lines.extend(
+            [
+                "| Suite | Mode | Status | Score | Participant |",
+                "| --- | --- | --- | ---: | --- |",
+            ]
+        )
+        for row in benchmark_rows:
+            lines.append(
+                f"| {row.get('suite')} | {row.get('execution_mode')} | {row.get('status')} | {row.get('score')} | {row.get('participant')} |"
+            )
+    else:
+        lines.append("- No external benchmark artifacts found.")
     lines.extend(["", "## External Benchmark Coverage", ""])
     ext = report.get("external_benchmark_coverage") or {}
     for name, present in sorted(ext.items()):
@@ -866,6 +881,25 @@ def render_markdown(report: dict[str, Any]) -> str:
     regression = report.get("regression") or {}
     lines.append(f"- `status`: `{regression.get('status')}`")
     lines.append(f"- `overall_delta`: `{regression.get('overall_delta')}`")
+    lines.extend(["", "## Identity Continuity History", ""])
+    identity = report.get("identity_continuity_scorecard") or {}
+    identity_history = report.get("identity_continuity_history") or {}
+    lines.append(f"- `status`: `{identity.get('status')}`")
+    lines.append(f"- `overall_score`: `{identity.get('overall_score')}`")
+    lines.append(f"- `trend`: `{identity_history.get('trend')}`")
+    lines.append(f"- `delta_from_previous`: `{identity_history.get('delta_from_previous')}`")
+    lines.append(f"- `sample_count`: `{identity_history.get('sample_count')}`")
+    recent_entries = identity_history.get("recent_entries") if isinstance(identity_history.get("recent_entries"), list) else []
+    if recent_entries:
+        lines.extend(
+            [
+                "",
+                "| Generated | Status | Score |",
+                "| --- | --- | ---: |",
+            ]
+        )
+        for row in recent_entries[:6]:
+            lines.append(f"| {row.get('generated_at')} | {row.get('status')} | {row.get('overall_score')} |")
     lines.extend(["", "## Continuity Metrics", ""])
     for key, value in sorted((report.get("continuity_metrics") or {}).items()):
         lines.append(f"- `{key}`: `{value}`")

@@ -7,6 +7,7 @@ from eidosian_core import eidosian
 
 from ..core import tool
 from ..state import FORGE_DIR
+from ._param_coercion import coerce_string_list
 
 try:
     from repo_forge.generators import docs, project
@@ -35,7 +36,7 @@ def repo_create_scaffold(language: str, base_path: Optional[str] = None, overwri
 @eidosian()
 @tool(name="repo_create_docs", description="Generate a comprehensive documentation structure.")
 def repo_create_docs(
-    base_path: Optional[str] = None, languages: Optional[List[str]] = None, overwrite: bool = True
+    base_path: Optional[str] = None, languages: Optional[List[str] | str] = None, overwrite: bool = True
 ) -> Dict[str, Any]:
     """
     Creates a full Eidosian documentation hierarchy (manual, auto, assets, etc.).
@@ -46,4 +47,8 @@ def repo_create_docs(
         overwrite: Whether to overwrite existing index files.
     """
     root = Path(base_path) if base_path else FORGE_DIR.parent
-    return docs.create_documentation_structure(base_path=root, languages=languages, overwrite=overwrite)
+    return docs.create_documentation_structure(
+        base_path=root,
+        languages=coerce_string_list(languages),
+        overwrite=overwrite,
+    )

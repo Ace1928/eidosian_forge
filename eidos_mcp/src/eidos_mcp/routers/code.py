@@ -16,6 +16,7 @@ from eidosian_core import eidosian
 from .. import FORGE_ROOT
 from ..core import tool
 from ..forge_loader import ensure_forge_import
+from ._param_coercion import coerce_string_list
 
 ensure_forge_import("code_forge")
 
@@ -59,8 +60,10 @@ def _get_analyzer():
         "properties": {
             "query": {"type": "string", "description": "Search query"},
             "element_types": {
-                "type": "array",
-                "items": {"type": "string", "enum": ["function", "class", "method", "module"]},
+                "oneOf": [
+                    {"type": "array", "items": {"type": "string", "enum": ["function", "class", "method", "module"]}},
+                    {"type": "string"},
+                ],
                 "description": "Filter by element types (default: all)",
             },
             "limit": {"type": "integer", "description": "Maximum results (default: 10)"},
@@ -71,7 +74,7 @@ def _get_analyzer():
 @eidosian()
 def code_search(
     query: str,
-    element_types: Optional[List[str]] = None,
+    element_types: Optional[List[str] | str] = None,
     limit: int = 10,
 ) -> str:
     """Search the code index."""
@@ -79,7 +82,7 @@ def code_search(
     if not indexer:
         return "Error: Code indexer not available"
 
-    results = indexer.search(query, element_types=element_types)
+    results = indexer.search(query, element_types=coerce_string_list(element_types))
 
     if not results:
         return f"No code elements found matching '{query}'"
