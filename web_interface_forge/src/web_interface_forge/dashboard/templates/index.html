@@ -292,6 +292,41 @@
         </div>
     </div>
     <div class="card">
+        <h3>Dependabot</h3>
+        <div class="stat-value">{{ runtime_snapshot.get('security', {}).get('totals', {}).get('open', 0) }}</div>
+        <div class="stat-label">
+            critical:
+            {{ runtime_snapshot.get('security', {}).get('open_by_severity', {}).get('critical', 0) }}
+            · high:
+            {{ runtime_snapshot.get('security', {}).get('open_by_severity', {}).get('high', 0) }}
+        </div>
+        <div class="stat-label">
+            summary:
+            {{ runtime_snapshot.get('security', {}).get('_path', 'n/a') }}
+        </div>
+        <div class="stat-label">
+            plan:
+            {{ runtime_snapshot.get('security_plan', {}).get('_path', 'n/a') }}
+        </div>
+        <div class="stat-label">
+            <a href="/api/security/dependabot" target="_blank">Dependabot JSON</a>
+            · <a href="/browse/forge/reports/security/">Browse Security Reports</a>
+        </div>
+        <table>
+            <thead>
+                <tr><th>Package</th><th>Count</th></tr>
+            </thead>
+            <tbody>
+                {% for row in runtime_snapshot.get('security', {}).get('top_packages', [])[:6] %}
+                <tr>
+                    <td>{{ row[0] }}</td>
+                    <td>{{ row[1] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="card">
         <h3>Supervised Services</h3>
         <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
             <select id="service-target">

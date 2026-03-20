@@ -256,6 +256,7 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
   - scheduler throughput,
   - service resiliency.
 - [ ] Require green CI, green targeted regression suites, and artifact publication before promotion/deletion actions.
+- [~] Reduce live Dependabot exposure through deterministic manifest remediation and operator-visible alert reporting.
 - [~] Add an externally legible proof scorecard that aggregates capability, continuity, governance, observability, reproducibility, and adversarial evidence into one reportable contract.
 - [~] Add freshness/regression proof policy and migration/replay contracts:
   - [x] freshness degradation for stale evidence
@@ -312,6 +313,11 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
   - `/api/benchmarks/runtime`
   - Atlas runtime benchmark table
   - proof scorecard and bundle inclusion of runtime benchmark status evidence
+- [x] Security observability slice extended with:
+  - deterministic Dependabot manifest remediation for current open Python/npm surfaces
+  - `reports/security/dependabot_open_summary_2026-03-20.json`
+  - `reports/security/dependabot_remediation_plan_2026-03-20.{json,md}`
+  - Atlas `/api/security/dependabot` plus home-page summary card
 - [x] Initial primary-source set saved and ingested:
   - `docs/external_references/2026-03-07-master-program/`
 - [x] Phase 1 implementation slice started:

@@ -50,6 +50,7 @@ SESSION_BRIDGE_CONTEXT = SESSION_BRIDGE_DIR / "latest_context.json"
 SESSION_BRIDGE_IMPORT_STATUS = SESSION_BRIDGE_DIR / "import_status.json"
 PROOF_REPORT_DIR = FORGE_ROOT / "reports" / "proof"
 PROOF_BUNDLE_DIR = FORGE_ROOT / "reports" / "proof_bundle"
+SECURITY_REPORT_DIR = FORGE_ROOT / "reports" / "security"
 SERVICES_SCRIPT = FORGE_ROOT / "scripts" / "eidos_termux_services.sh"
 SERVICE_ACTION_LOG = RUNTIME_DIR / "atlas_service_actions.log"
 SCHEDULER_CONTROL_SCRIPT = FORGE_ROOT / "scripts" / "eidos_scheduler_control.py"
@@ -269,6 +270,8 @@ def get_runtime_snapshot() -> Dict[str, Any]:
         "proof_history": proof_summary.get("proof_history", []),
         "external_benchmarks": proof_summary.get("external_benchmarks", []),
         "runtime_benchmarks": proof_summary.get("runtime_benchmarks", []),
+        "security": (proof_summary.get("security") or {}).get("summary", {}),
+        "security_plan": (proof_summary.get("security") or {}).get("plan", {}),
         "proof_summary": proof_summary,
     }
 
@@ -405,6 +408,24 @@ def get_latest_identity_continuity_scorecard() -> Dict[str, Any]:
     return payload
 
 
+def get_latest_dependabot_summary() -> Dict[str, Any]:
+    for path in sorted(SECURITY_REPORT_DIR.glob("dependabot_open_summary_*.json"), reverse=True):
+        payload = _read_json(path, {})
+        if payload:
+            payload["_path"] = str(path.relative_to(FORGE_ROOT))
+            return payload
+    return {}
+
+
+def get_latest_dependabot_plan() -> Dict[str, Any]:
+    for path in sorted(SECURITY_REPORT_DIR.glob("dependabot_remediation_plan_*.json"), reverse=True):
+        payload = _read_json(path, {})
+        if payload:
+            payload["_path"] = str(path.relative_to(FORGE_ROOT))
+            return payload
+    return {}
+
+
 def get_proof_summary() -> Dict[str, Any]:
     proof = get_latest_proof_report()
     bundle = get_latest_proof_bundle_manifest()
@@ -414,6 +435,8 @@ def get_proof_summary() -> Dict[str, Any]:
     external = get_external_benchmark_results(limit=12)
     runtime_benchmarks = get_runtime_benchmark_statuses(limit=12)
     session_bridge = get_session_bridge_status()
+    security = get_latest_dependabot_summary()
+    security_plan = get_latest_dependabot_plan()
     history = identity.get("history") if isinstance(identity.get("history"), dict) else {}
     return {
         "contract": "eidos.proof.summary.v1",
@@ -424,6 +447,10 @@ def get_proof_summary() -> Dict[str, Any]:
         "proof_history": proof_history,
         "external_benchmarks": external,
         "runtime_benchmarks": runtime_benchmarks,
+        "security": {
+            "summary": security,
+            "plan": security_plan,
+        },
         "session_bridge": {
             "recent_sessions": len(session_bridge.get("recent_sessions") or [])
             if isinstance(session_bridge.get("recent_sessions"), list)
@@ -991,6 +1018,19 @@ async def api_runtime_benchmarks(limit: int = 12):
         "contract": "eidos.runtime_benchmark_snapshot.v1",
         "entries": get_runtime_benchmark_statuses(limit=limit),
     }
+
+
+@app.get("/api/security/dependabot")
+async def api_security_dependabot():
+    summary = get_latest_dependabot_summary()
+    plan = get_latest_dependabot_plan()
+    if summary:
+        return {
+            "contract": "eidos.security.dependabot_snapshot.v1",
+            "summary": summary,
+            "plan": plan,
+        }
+    raise HTTPException(status_code=404, detail="No Dependabot summary found")
 
 
 @app.get("/api/services")

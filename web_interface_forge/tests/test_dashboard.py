@@ -208,6 +208,21 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
             "session_bridge": {"recent_sessions": 2},
         },
     )
+    _write_json(
+        tmp_path / "reports" / "security" / "dependabot_open_summary_2026-03-20.json",
+        {
+            "totals": {"alerts": 15, "open": 15, "fixed": 0},
+            "open_by_severity": {"critical": 1, "high": 10, "medium": 3, "low": 1},
+            "top_packages": [["nltk", 3], ["authlib", 3], ["PyJWT", 2]],
+        },
+    )
+    _write_json(
+        tmp_path / "reports" / "security" / "dependabot_remediation_plan_2026-03-20.json",
+        {
+            "repo": "Ace1928/eidosian_forge",
+            "batches": [{"name": "batch-1", "alerts": [232, 235, 243]}],
+        },
+    )
     target = tmp_path / "doc_forge" / "src" / "doc_forge" / "scribe"
     target.mkdir(parents=True, exist_ok=True)
     (target / "service.py").write_text(
@@ -242,6 +257,7 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(dashboard, "RUNTIME_DIR", runtime_dir)
     monkeypatch.setattr(dashboard, "PROOF_REPORT_DIR", tmp_path / "reports" / "proof")
     monkeypatch.setattr(dashboard, "PROOF_BUNDLE_DIR", tmp_path / "reports" / "proof_bundle")
+    monkeypatch.setattr(dashboard, "SECURITY_REPORT_DIR", tmp_path / "reports" / "security")
     monkeypatch.setattr(dashboard, "LOCAL_AGENT_STATUS", runtime_dir / "local_mcp_agent" / "status.json")
     monkeypatch.setattr(dashboard, "LOCAL_AGENT_HISTORY", runtime_dir / "local_mcp_agent" / "history.jsonl")
     monkeypatch.setattr(dashboard, "SCHEDULER_STATUS", runtime_dir / "eidos_scheduler_status.json")
@@ -284,6 +300,8 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         assert len(runtime_payload["proof_history"]) == 1
         assert runtime_payload["external_benchmarks"] == []
         assert runtime_payload["runtime_benchmarks"][0]["scenario"] == "scenario2"
+        assert runtime_payload["security"]["totals"]["open"] == 15
+        assert runtime_payload["security_plan"]["batches"][0]["name"] == "batch-1"
         local_agent_resp = client.get("/api/runtime/local-agent")
         assert local_agent_resp.status_code == 200
         assert local_agent_resp.json()["status"]["profile"] == "observer"
@@ -319,6 +337,10 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         runtime_bench_resp = client.get("/api/benchmarks/runtime")
         assert runtime_bench_resp.status_code == 200
         assert runtime_bench_resp.json()["entries"][0]["engine"] == "local_agent"
+        security_resp = client.get("/api/security/dependabot")
+        assert security_resp.status_code == 200
+        assert security_resp.json()["summary"]["totals"]["open"] == 15
+        assert security_resp.json()["plan"]["batches"][0]["alerts"] == [232, 235, 243]
         session_bridge_resp = client.get("/api/session-bridge")
         assert session_bridge_resp.status_code == 200
         assert session_bridge_resp.json()["context"]["session_id"] == "qwenchat:test"
