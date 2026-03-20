@@ -58,6 +58,28 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
             "created_at": "2026-03-07T00:00:00+00:00",
         },
     )
+    _write_json(
+        runtime_dir / "qwenchat" / "status.json",
+        {
+            "contract": "eidos.qwenchat.status.v1",
+            "status": "running",
+            "phase": "interactive",
+            "session_id": "qwenchat:test",
+            "model": "qwen3.5:2b",
+        },
+    )
+    (runtime_dir / "qwenchat" / "history.jsonl").write_text(
+        json.dumps(
+            {
+                "contract": "eidos.qwenchat.status.v1",
+                "status": "running",
+                "phase": "interactive",
+                "session_id": "qwenchat:test",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     (runtime_dir / "local_mcp_agent" / "history.jsonl").write_text(
         json.dumps(
             {
@@ -65,6 +87,28 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
                 "tool_calls": 1,
                 "mcp_transport": "stdio",
                 "created_at": "2026-03-07T00:00:00+00:00",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    _write_json(
+        runtime_dir / "living_pipeline_status.json",
+        {
+            "contract": "eidos.living_pipeline.status.v1",
+            "status": "running",
+            "phase": "graphrag",
+            "run_id": "20260320_010203",
+            "records_total": 42,
+        },
+    )
+    (runtime_dir / "living_pipeline_history.jsonl").write_text(
+        json.dumps(
+            {
+                "contract": "eidos.living_pipeline.status.v1",
+                "status": "running",
+                "phase": "graphrag",
+                "run_id": "20260320_010203",
             }
         )
         + "\n",
@@ -260,7 +304,11 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(dashboard, "SECURITY_REPORT_DIR", tmp_path / "reports" / "security")
     monkeypatch.setattr(dashboard, "LOCAL_AGENT_STATUS", runtime_dir / "local_mcp_agent" / "status.json")
     monkeypatch.setattr(dashboard, "LOCAL_AGENT_HISTORY", runtime_dir / "local_mcp_agent" / "history.jsonl")
+    monkeypatch.setattr(dashboard, "QWENCHAT_STATUS", runtime_dir / "qwenchat" / "status.json")
+    monkeypatch.setattr(dashboard, "QWENCHAT_HISTORY", runtime_dir / "qwenchat" / "history.jsonl")
     monkeypatch.setattr(dashboard, "SCHEDULER_STATUS", runtime_dir / "eidos_scheduler_status.json")
+    monkeypatch.setattr(dashboard, "LIVING_PIPELINE_STATUS", runtime_dir / "living_pipeline_status.json")
+    monkeypatch.setattr(dashboard, "LIVING_PIPELINE_HISTORY", runtime_dir / "living_pipeline_history.jsonl")
     monkeypatch.setattr(dashboard, "COORDINATOR_STATUS", runtime_dir / "forge_coordinator_status.json")
     monkeypatch.setattr(dashboard, "COORDINATOR_HISTORY", runtime_dir / "forge_runtime_trends.json")
     monkeypatch.setattr(dashboard, "DIRECTORY_DOCS_STATUS", runtime_dir / "directory_docs_status.json")
@@ -286,10 +334,14 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         assert "foo/bar.py" in html
         assert "Indexed Docs" in html
         assert "Local Agent" in html
+        assert "Qwenchat" in html
+        assert "Living Pipeline" in html
         runtime_resp = client.get("/api/runtime")
         assert runtime_resp.status_code == 200
         runtime_payload = runtime_resp.json()
         assert runtime_payload["local_agent"]["status"] == "success"
+        assert runtime_payload["qwenchat"]["phase"] == "interactive"
+        assert runtime_payload["living_pipeline"]["phase"] == "graphrag"
         assert runtime_payload["directory_docs"]["missing_readme_count"] == 2
         assert runtime_payload["session_bridge"]["context"]["session_id"] == "qwenchat:test"
         assert runtime_payload["proof_bundle"]["bundle_root"] == "20260320_033604"
@@ -305,6 +357,14 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         local_agent_resp = client.get("/api/runtime/local-agent")
         assert local_agent_resp.status_code == 200
         assert local_agent_resp.json()["status"]["profile"] == "observer"
+        qwenchat_resp = client.get("/api/runtime/qwenchat")
+        assert qwenchat_resp.status_code == 200
+        assert qwenchat_resp.json()["status"]["session_id"] == "qwenchat:test"
+        assert qwenchat_resp.json()["history"][0]["phase"] == "interactive"
+        living_resp = client.get("/api/runtime/living-pipeline")
+        assert living_resp.status_code == 200
+        assert living_resp.json()["status"]["run_id"] == "20260320_010203"
+        assert living_resp.json()["history"][0]["phase"] == "graphrag"
         docs_resp = client.get("/api/docs/coverage")
         assert docs_resp.status_code == 200
         assert docs_resp.json()["missing_readme_count"] == 2

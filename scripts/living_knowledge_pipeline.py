@@ -39,6 +39,7 @@ from code_forge.ingest.runner import IngestionRunner
 from code_forge.library.db import CodeLibraryDB
 from eidosian_core import eidosian
 from eidosian_core.ports import get_service_port
+from eidosian_runtime import write_runtime_status
 
 from knowledge_forge import GraphRAGIntegration
 
@@ -84,6 +85,10 @@ EXCLUDE_SEGMENTS = {
     "dist",
     "build",
 }
+
+RUNTIME_DIR = FORGE_ROOT / "data" / "runtime"
+LIVING_PIPELINE_STATUS_PATH = RUNTIME_DIR / "living_pipeline_status.json"
+LIVING_PIPELINE_HISTORY_PATH = RUNTIME_DIR / "living_pipeline_history.jsonl"
 
 TEXT_PROMPT = """You are generating strict JSON community reports from source text.
 Use only facts present in the text. Never use placeholders or template content.
@@ -160,6 +165,25 @@ def _simhash64(text: str) -> int:
 
 def _hamming_distance64(a: int, b: int) -> int:
     return int((a ^ b).bit_count())
+
+
+def _write_living_pipeline_status(
+    *,
+    status: str,
+    phase: str = "",
+    message: str = "",
+    **extra: Any,
+) -> dict[str, Any]:
+    return write_runtime_status(
+        LIVING_PIPELINE_STATUS_PATH,
+        contract="eidos.living_pipeline.status.v1",
+        component="living_knowledge_pipeline",
+        status=status,
+        phase=phase,
+        message=message,
+        history_path=LIVING_PIPELINE_HISTORY_PATH,
+        **extra,
+    )
 
 
 @eidosian()
@@ -734,87 +758,147 @@ def run_pipeline(
     if stage_dir.exists():
         shutil.rmtree(stage_dir)
     stage_dir.mkdir(parents=True, exist_ok=True)
-
-    code_report = run_code_analysis(repo_root, run_root, max_files=code_max_files)
-    repo_records = stage_repo_text_documents(repo_root, stage_dir, max_file_bytes, max_chars_per_doc)
-    memory_records = stage_memory_and_kb_documents(repo_root, stage_dir, max_chars_per_doc)
-    records = repo_records + memory_records
-
-    exact_duplicates = group_exact_duplicates(records)
-    near_duplicates = detect_near_duplicates(records)
-    drift = compare_with_previous_run(run_root, records)
-
-    workspace_input = workspace_root / "input"
-    if workspace_input.exists():
-        shutil.rmtree(workspace_input)
-    workspace_input.mkdir(parents=True, exist_ok=True)
-    for rec in records:
-        src = Path(rec.staged_path)
-        dest = workspace_input / src.relative_to(stage_dir)
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(src, dest)
-
-    graphrag_result: dict[str, Any] = {"indexed": False, "queries": []}
-    if run_graphrag:
-        llm_port = get_service_port("graphrag_llm", default=8081, env_keys=("EIDOS_GRAPHRAG_LLM_PORT",))
-        embed_port = get_service_port("graphrag_embedding", default=8082, env_keys=("EIDOS_GRAPHRAG_EMBED_PORT",))
-        llm_fallback = _pick_sweep_model(repo_root, repo_root / "models" / "Qwen3.5-2B-Instruct-Q4_K_M.gguf")
-        llm_model = _pick_selected_model(repo_root, "graphrag", "completion_model", llm_fallback)
-        embed_model = _pick_selected_model(
-            repo_root,
-            "graphrag",
-            "embedding_model",
-            repo_root / "models" / "nomic-embed-text-v1.5.Q4_K_M.gguf",
-        )
-        _write_workspace_settings(workspace_root, llm_port=llm_port, embed_port=embed_port)
-        runtimes: list[tuple[subprocess.Popen[Any], Any]] = []
-        try:
-            runtimes.append(_start_server(llm_model, llm_port, embedding=False))
-            runtimes.append(_start_server(embed_model, embed_port, embedding=True))
-            index_result = _run_graphrag_index(workspace_root, method=method, scan_roots=[workspace_input])
-            graphrag_result["indexed"] = True
-            graphrag_result["llm_model"] = str(llm_model)
-            graphrag_result["embed_model"] = str(embed_model)
-            graphrag_result["index_result"] = index_result
-            for query in queries:
-                answer = _run_graphrag_query(workspace_root, query, method="global")
-                graphrag_result["queries"].append({"query": query, "answer": answer})
-        finally:
-            _stop_servers(runtimes)
-
-    manifest = {
-        "contract": "living_knowledge.pipeline.v1",
-        "generated_at": _now_utc(),
-        "run_id": run_id,
-        "repo_root": str(repo_root),
-        "output_root": str(output_root),
-        "workspace_root": str(workspace_root),
-        "records_total": len(records),
-        "records_by_kind": dict(Counter(r.kind for r in records)),
-        "exact_duplicate_groups": len(exact_duplicates),
-        "near_duplicate_pairs": len(near_duplicates),
-        "drift": drift,
-        "code_analysis": {
-            "run_id": code_report.get("run_stats", {}).get("run_id"),
-            "files_processed": code_report.get("run_stats", {}).get("files_processed"),
-            "units_created": code_report.get("run_stats", {}).get("units_created"),
-            "total_units": code_report.get("total_units"),
-            "duplicate_group_count": code_report.get("duplicate_group_count"),
-        },
-        "graphrag": graphrag_result,
-        "source_hashes": {r.source_path: r.sha256 for r in records},
-    }
-
-    (run_root / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
-    (run_root / "records.jsonl").write_text(
-        "".join(json.dumps(asdict(r), ensure_ascii=False) + "\n" for r in records),
-        encoding="utf-8",
+    _write_living_pipeline_status(
+        status="running",
+        phase="initialize",
+        message="starting living knowledge pipeline",
+        run_id=run_id,
+        repo_root=str(repo_root),
+        output_root=str(output_root),
+        workspace_root=str(workspace_root),
+        run_root=str(run_root),
     )
-    (run_root / "duplicates_exact.json").write_text(json.dumps(exact_duplicates, indent=2) + "\n", encoding="utf-8")
-    (run_root / "duplicates_near.json").write_text(json.dumps(near_duplicates, indent=2) + "\n", encoding="utf-8")
-    (run_root / "drift.json").write_text(json.dumps(drift, indent=2) + "\n", encoding="utf-8")
-    (output_root / "latest_run").write_text(run_id + "\n", encoding="utf-8")
-    return manifest
+    try:
+        _write_living_pipeline_status(
+            status="running",
+            phase="code_analysis",
+            message="running code analysis",
+            run_id=run_id,
+            run_root=str(run_root),
+        )
+        code_report = run_code_analysis(repo_root, run_root, max_files=code_max_files)
+        _write_living_pipeline_status(
+            status="running",
+            phase="staging",
+            message="staging repository, memory, and knowledge records",
+            run_id=run_id,
+            run_root=str(run_root),
+        )
+        repo_records = stage_repo_text_documents(repo_root, stage_dir, max_file_bytes, max_chars_per_doc)
+        memory_records = stage_memory_and_kb_documents(repo_root, stage_dir, max_chars_per_doc)
+        records = repo_records + memory_records
+
+        exact_duplicates = group_exact_duplicates(records)
+        near_duplicates = detect_near_duplicates(records)
+        drift = compare_with_previous_run(run_root, records)
+
+        workspace_input = workspace_root / "input"
+        if workspace_input.exists():
+            shutil.rmtree(workspace_input)
+        workspace_input.mkdir(parents=True, exist_ok=True)
+        for rec in records:
+            src = Path(rec.staged_path)
+            dest = workspace_input / src.relative_to(stage_dir)
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src, dest)
+
+        graphrag_result: dict[str, Any] = {"indexed": False, "queries": []}
+        if run_graphrag:
+            _write_living_pipeline_status(
+                status="running",
+                phase="graphrag",
+                message="running GraphRAG indexing and queries",
+                run_id=run_id,
+                run_root=str(run_root),
+                records_total=len(records),
+            )
+            llm_port = get_service_port("graphrag_llm", default=8081, env_keys=("EIDOS_GRAPHRAG_LLM_PORT",))
+            embed_port = get_service_port("graphrag_embedding", default=8082, env_keys=("EIDOS_GRAPHRAG_EMBED_PORT",))
+            llm_fallback = _pick_sweep_model(repo_root, repo_root / "models" / "Qwen3.5-2B-Instruct-Q4_K_M.gguf")
+            llm_model = _pick_selected_model(repo_root, "graphrag", "completion_model", llm_fallback)
+            embed_model = _pick_selected_model(
+                repo_root,
+                "graphrag",
+                "embedding_model",
+                repo_root / "models" / "nomic-embed-text-v1.5.Q4_K_M.gguf",
+            )
+            _write_workspace_settings(workspace_root, llm_port=llm_port, embed_port=embed_port)
+            runtimes: list[tuple[subprocess.Popen[Any], Any]] = []
+            try:
+                runtimes.append(_start_server(llm_model, llm_port, embedding=False))
+                runtimes.append(_start_server(embed_model, embed_port, embedding=True))
+                index_result = _run_graphrag_index(workspace_root, method=method, scan_roots=[workspace_input])
+                graphrag_result["indexed"] = True
+                graphrag_result["llm_model"] = str(llm_model)
+                graphrag_result["embed_model"] = str(embed_model)
+                graphrag_result["index_result"] = index_result
+                for query in queries:
+                    answer = _run_graphrag_query(workspace_root, query, method="global")
+                    graphrag_result["queries"].append({"query": query, "answer": answer})
+            finally:
+                _stop_servers(runtimes)
+
+        manifest = {
+            "contract": "living_knowledge.pipeline.v1",
+            "generated_at": _now_utc(),
+            "run_id": run_id,
+            "repo_root": str(repo_root),
+            "output_root": str(output_root),
+            "workspace_root": str(workspace_root),
+            "records_total": len(records),
+            "records_by_kind": dict(Counter(r.kind for r in records)),
+            "exact_duplicate_groups": len(exact_duplicates),
+            "near_duplicate_pairs": len(near_duplicates),
+            "drift": drift,
+            "code_analysis": {
+                "run_id": code_report.get("run_stats", {}).get("run_id"),
+                "files_processed": code_report.get("run_stats", {}).get("files_processed"),
+                "units_created": code_report.get("run_stats", {}).get("units_created"),
+                "total_units": code_report.get("total_units"),
+                "duplicate_group_count": code_report.get("duplicate_group_count"),
+            },
+            "graphrag": graphrag_result,
+            "source_hashes": {r.source_path: r.sha256 for r in records},
+        }
+
+        _write_living_pipeline_status(
+            status="running",
+            phase="finalize",
+            message="writing living knowledge pipeline artifacts",
+            run_id=run_id,
+            run_root=str(run_root),
+            records_total=len(records),
+        )
+        (run_root / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+        (run_root / "records.jsonl").write_text(
+            "".join(json.dumps(asdict(r), ensure_ascii=False) + "\n" for r in records),
+            encoding="utf-8",
+        )
+        (run_root / "duplicates_exact.json").write_text(json.dumps(exact_duplicates, indent=2) + "\n", encoding="utf-8")
+        (run_root / "duplicates_near.json").write_text(json.dumps(near_duplicates, indent=2) + "\n", encoding="utf-8")
+        (run_root / "drift.json").write_text(json.dumps(drift, indent=2) + "\n", encoding="utf-8")
+        (output_root / "latest_run").write_text(run_id + "\n", encoding="utf-8")
+        _write_living_pipeline_status(
+            status="success",
+            phase="completed",
+            message="living knowledge pipeline completed",
+            run_id=run_id,
+            run_root=str(run_root),
+            records_total=len(records),
+            exact_duplicate_groups=len(exact_duplicates),
+            near_duplicate_pairs=len(near_duplicates),
+            graphrag_indexed=bool(graphrag_result.get("indexed")),
+        )
+        return manifest
+    except Exception as exc:
+        _write_living_pipeline_status(
+            status="error",
+            phase="failed",
+            message=str(exc),
+            run_id=run_id,
+            run_root=str(run_root),
+        )
+        raise
 
 
 @eidosian()

@@ -36,7 +36,11 @@ RUNTIME_DIR = FORGE_ROOT / "data" / "runtime"
 HOME_ROOT = Path(os.environ.get("HOME", "/data/data/com.termux/files/home")).resolve()
 LOCAL_AGENT_STATUS = RUNTIME_DIR / "local_mcp_agent" / "status.json"
 LOCAL_AGENT_HISTORY = RUNTIME_DIR / "local_mcp_agent" / "history.jsonl"
+QWENCHAT_STATUS = RUNTIME_DIR / "qwenchat" / "status.json"
+QWENCHAT_HISTORY = RUNTIME_DIR / "qwenchat" / "history.jsonl"
 SCHEDULER_STATUS = RUNTIME_DIR / "eidos_scheduler_status.json"
+LIVING_PIPELINE_STATUS = RUNTIME_DIR / "living_pipeline_status.json"
+LIVING_PIPELINE_HISTORY = RUNTIME_DIR / "living_pipeline_history.jsonl"
 COORDINATOR_STATUS = RUNTIME_DIR / "forge_coordinator_status.json"
 COORDINATOR_HISTORY = RUNTIME_DIR / "forge_runtime_trends.json"
 BOOT_STATUS = RUNTIME_DIR / "termux_boot_status.json"
@@ -247,6 +251,8 @@ def get_runtime_snapshot() -> Dict[str, Any]:
     coordinator = _read_json(COORDINATOR_STATUS, {})
     scheduler = _read_json(SCHEDULER_STATUS, {})
     local_agent = _read_json(LOCAL_AGENT_STATUS, {})
+    qwenchat = _read_json(QWENCHAT_STATUS, {})
+    living_pipeline = _read_json(LIVING_PIPELINE_STATUS, {})
     boot_status = _read_json(BOOT_STATUS, {})
     capabilities = _read_json(CAPABILITIES_STATUS, {})
     directory_docs = _read_json(DIRECTORY_DOCS_STATUS, {})
@@ -258,6 +264,8 @@ def get_runtime_snapshot() -> Dict[str, Any]:
         "coordinator": coordinator,
         "scheduler": scheduler,
         "local_agent": local_agent,
+        "qwenchat": qwenchat,
+        "living_pipeline": living_pipeline,
         "boot": boot_status,
         "capabilities": capabilities,
         "directory_docs": directory_docs,
@@ -282,6 +290,28 @@ def get_local_agent_history(limit: int = 12) -> List[Dict[str, Any]]:
         return rows
     try:
         lines = LOCAL_AGENT_HISTORY.read_text(encoding="utf-8").splitlines()
+    except Exception:
+        return rows
+    for line in reversed(lines):
+        if not line.strip():
+            continue
+        try:
+            payload = json.loads(line)
+        except Exception:
+            continue
+        if isinstance(payload, dict):
+            rows.append(payload)
+        if len(rows) >= max(1, int(limit)):
+            break
+    return rows
+
+
+def _read_jsonl_rows(path: Path, limit: int = 12) -> List[Dict[str, Any]]:
+    rows: List[Dict[str, Any]] = []
+    if not path.exists():
+        return rows
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
     except Exception:
         return rows
     for line in reversed(lines):
@@ -1063,6 +1093,22 @@ async def api_local_agent_status():
     return {
         "status": _read_json(LOCAL_AGENT_STATUS, {}),
         "history": get_local_agent_history(),
+    }
+
+
+@app.get("/api/runtime/qwenchat")
+async def api_qwenchat_status():
+    return {
+        "status": _read_json(QWENCHAT_STATUS, {}),
+        "history": _read_jsonl_rows(QWENCHAT_HISTORY),
+    }
+
+
+@app.get("/api/runtime/living-pipeline")
+async def api_living_pipeline_status():
+    return {
+        "status": _read_json(LIVING_PIPELINE_STATUS, {}),
+        "history": _read_jsonl_rows(LIVING_PIPELINE_HISTORY),
     }
 
 

@@ -76,6 +76,16 @@
         <div class="stat-label">{{ runtime_snapshot.get('local_agent', {}).get('profile', 'n/a') }}</div>
     </div>
     <div class="card">
+        <h3>Qwenchat</h3>
+        <div class="stat-value">{{ runtime_snapshot.get('qwenchat', {}).get('status', 'unknown')|upper }}</div>
+        <div class="stat-label">{{ runtime_snapshot.get('qwenchat', {}).get('phase', 'idle') }}</div>
+    </div>
+    <div class="card">
+        <h3>Living Pipeline</h3>
+        <div class="stat-value">{{ runtime_snapshot.get('living_pipeline', {}).get('status', 'unknown')|upper }}</div>
+        <div class="stat-label">{{ runtime_snapshot.get('living_pipeline', {}).get('phase', 'idle') }}</div>
+    </div>
+    <div class="card">
         <h3>Consciousness</h3>
         <div class="stat-value" id="cog-unity">1.0</div>
         <div class="stat-label">Unity Index</div>
