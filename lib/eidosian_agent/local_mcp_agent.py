@@ -515,6 +515,44 @@ class LocalMcpAgent:
         with self.history_path.open("a", encoding="utf-8") as handle:
             handle.write(json.dumps(payload, ensure_ascii=False, default=str) + "\n")
 
+    def _write_running_status(
+        self,
+        *,
+        session_id: str,
+        objective: str,
+        phase: str,
+        message: str,
+        tool_calls: int,
+        mutating_calls: int,
+        cycle_log: list[dict[str, Any]],
+        continuity_context: str,
+        mcp_transport: str,
+        resource_count: int,
+        tool_contract_count: int,
+        effective_thinking_mode: str,
+    ) -> None:
+        self._write_status(
+            {
+                "contract": "eidos.local_mcp_agent.result.v1",
+                "status": "running",
+                "created_at": _now_utc(),
+                "objective": objective,
+                "session_id": session_id,
+                "profile": self.profile.name,
+                "thinking_mode": self.profile.thinking_mode,
+                "effective_thinking_mode": effective_thinking_mode,
+                "phase": phase,
+                "message": message,
+                "continuity_context_chars": len(continuity_context),
+                "mcp_transport": mcp_transport,
+                "resource_count": resource_count,
+                "tool_contract_count": tool_contract_count,
+                "tool_calls": tool_calls,
+                "mutating_calls": mutating_calls,
+                "cycle_log_tail": cycle_log[-5:],
+            }
+        )
+
     async def _chat_payload(
         self,
         *,
@@ -587,6 +625,20 @@ class LocalMcpAgent:
             summary=f"local agent cycle started for {profile.name}",
             metadata={"objective": objective[:300], "profile": profile.name},
         )
+        self._write_running_status(
+            session_id=session_id,
+            objective=objective,
+            phase="allocating",
+            message="Acquiring model budget.",
+            tool_calls=0,
+            mutating_calls=0,
+            cycle_log=[],
+            continuity_context="",
+            mcp_transport="",
+            resource_count=0,
+            tool_contract_count=0,
+            effective_thinking_mode=effective_thinking_mode,
+        )
         allocation = self.coordinator.can_allocate(
             owner=owner, requested_models=self._lease_models(), allow_same_owner=False
         )
@@ -639,6 +691,20 @@ class LocalMcpAgent:
 
         try:
             continuity_context = self._continuity_context(objective, session_id=session_id)
+            self._write_running_status(
+                session_id=session_id,
+                objective=objective,
+                phase="continuity_context",
+                message="Built continuity context and preparing MCP session.",
+                tool_calls=total_tool_calls,
+                mutating_calls=mutating_calls,
+                cycle_log=cycle_log,
+                continuity_context=continuity_context,
+                mcp_transport=mcp_transport,
+                resource_count=resource_count,
+                tool_contract_count=tool_contract_count,
+                effective_thinking_mode=effective_thinking_mode,
+            )
             messages: list[dict[str, Any]] = [
                 {"role": "system", "content": self._system_prompt()},
                 {
@@ -669,6 +735,20 @@ class LocalMcpAgent:
                 resource_sample = resources[:6]
                 tool_contracts, missing_tools = build_tool_contracts(list(discovered.tools), profile)
                 tool_contract_count = len(tool_contracts)
+                self._write_running_status(
+                    session_id=session_id,
+                    objective=objective,
+                    phase="ready",
+                    message="MCP session ready; awaiting model action.",
+                    tool_calls=total_tool_calls,
+                    mutating_calls=mutating_calls,
+                    cycle_log=cycle_log,
+                    continuity_context=continuity_context,
+                    mcp_transport=mcp_transport,
+                    resource_count=resource_count,
+                    tool_contract_count=tool_contract_count,
+                    effective_thinking_mode=effective_thinking_mode,
+                )
                 if resource_sample:
                     resource_lines = []
                     for resource in resource_sample[:4]:
@@ -684,6 +764,20 @@ class LocalMcpAgent:
                 for step_index in range(profile.max_steps):
                     if total_tool_calls >= profile.max_tool_calls:
                         break
+                    self._write_running_status(
+                        session_id=session_id,
+                        objective=objective,
+                        phase="model_request",
+                        message=f"Requesting model step {step_index + 1}.",
+                        tool_calls=total_tool_calls,
+                        mutating_calls=mutating_calls,
+                        cycle_log=cycle_log,
+                        continuity_context=continuity_context,
+                        mcp_transport=mcp_transport,
+                        resource_count=resource_count,
+                        tool_contract_count=tool_contract_count,
+                        effective_thinking_mode=effective_thinking_mode,
+                    )
                     raw_response = await self._request_step(
                         messages=messages, tools=tool_contracts, timeout_sec=timeout_sec
                     )
@@ -713,6 +807,20 @@ class LocalMcpAgent:
                             if mutating_calls > profile.max_mutating_calls:
                                 raise ToolPolicyError(f"mutating_call_budget_exceeded:{name}")
                         total_tool_calls += 1
+                        self._write_running_status(
+                            session_id=session_id,
+                            objective=objective,
+                            phase="tool_call",
+                            message=f"Calling tool {name}.",
+                            tool_calls=total_tool_calls,
+                            mutating_calls=mutating_calls,
+                            cycle_log=cycle_log,
+                            continuity_context=continuity_context,
+                            mcp_transport=mcp_transport,
+                            resource_count=resource_count,
+                            tool_contract_count=tool_contract_count,
+                            effective_thinking_mode=effective_thinking_mode,
+                        )
                         tool_started = time.perf_counter()
                         if str(profile.allowed_tools[name].get("synthetic") or "") == "resource_read":
                             observation = await _read_resource(

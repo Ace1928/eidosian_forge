@@ -23,7 +23,7 @@ from eidos_scheduler import apply_scheduler_control
 from eidosian_agent.local_mcp_agent import LocalMcpAgent, normalize_profile
 from eidosian_runtime import ForgeRuntimeCoordinator
 
-DEFAULT_AGENCYBENCH_ROOT = Path("/data/data/com.termux/files/usr/tmp/eidos-agencybench-22810")
+DEFAULT_AGENCYBENCH_ROOT = REPO_ROOT / "data" / "runtime" / "external_sources" / "AgencyBench"
 RUNTIME_ROOT = REPO_ROOT / "data" / "runtime" / "external_benchmarks" / "agencybench"
 REPORT_ROOT = REPO_ROOT / "reports" / "external_benchmarks"
 
@@ -64,6 +64,29 @@ def _now_iso() -> str:
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 
+def resolve_agencybench_root(candidate: str | Path | None = None) -> Path:
+    candidates: list[Path] = []
+    if candidate:
+        candidates.append(Path(candidate).expanduser().resolve())
+    candidates.extend(
+        [
+            DEFAULT_AGENCYBENCH_ROOT.resolve(),
+            REPO_ROOT / "data" / "runtime" / "external_sources" / "AgencyBench",
+            Path("/data/data/com.termux/files/usr/tmp/eidos-agencybench-22810"),
+            Path("/data/data/com.termux/files/usr/tmp/AgencyBench"),
+        ]
+    )
+    seen: set[str] = set()
+    for root in candidates:
+        text = str(root)
+        if text in seen:
+            continue
+        seen.add(text)
+        if (root / SCENARIO2.source_dir).exists():
+            return root
+    return Path(candidate).expanduser().resolve() if candidate else DEFAULT_AGENCYBENCH_ROOT.resolve()
+
+
 def _write_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -72,6 +95,43 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
 def _write_text(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
+
+
+def _append_jsonl(path: Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(payload, ensure_ascii=False, default=str) + "\n")
+
+
+def _benchmark_status(
+    *,
+    scenario: str,
+    engine: str,
+    model: str,
+    status: str,
+    stop_reason: str,
+    completed: list[str],
+    attempts: list[dict[str, Any]],
+    budget: dict[str, Any],
+    workspace: Path,
+    run_root: Path,
+) -> dict[str, Any]:
+    return {
+        "contract": "eidos.agencybench_runtime_status.v1",
+        "generated_at": _now_iso(),
+        "scenario": scenario,
+        "engine": engine,
+        "model": model,
+        "status": status,
+        "stop_reason": stop_reason,
+        "completed_subtasks": list(completed),
+        "completed_count": len(completed),
+        "attempt_count": len(attempts),
+        "last_attempt": attempts[-1] if attempts else None,
+        "budget": budget,
+        "workspace": str(workspace),
+        "run_root": str(run_root),
+    }
 
 
 def _scheduler_pause_requested() -> bool:
@@ -877,6 +937,9 @@ def run_scenario2(
     run_root = RUNTIME_ROOT / SCENARIO2.name / stamp
     workspace = SCENARIO2.workspace_prep(scenario_root, run_root)
     policy_path = run_root / "policy.json"
+    status_path = run_root / "status.json"
+    attempts_path = run_root / "attempts.jsonl"
+    model_trace_path = run_root / "model_trace.jsonl"
     _write_json(policy_path, _build_scenario2_policy(workspace))
     description_text = _description_text(scenario_root / "description.json")
     profile = None
@@ -908,6 +971,21 @@ def run_scenario2(
         "stale_recoveries": 0,
         "decision": {"reason": "ok"},
     }
+    _write_json(
+        status_path,
+        _benchmark_status(
+            scenario=SCENARIO2.name,
+            engine=engine,
+            model=model,
+            status="running",
+            stop_reason="starting",
+            completed=completed,
+            attempts=attempts,
+            budget=budget,
+            workspace=workspace,
+            run_root=run_root,
+        ),
+    )
     try:
         if engine == "local_agent":
             assert coordinator is not None and profile is not None and agent is not None
@@ -944,9 +1022,61 @@ def run_scenario2(
                         "agent_result": result,
                     }
                     attempts.append(attempt_row)
+                    _append_jsonl(
+                        attempts_path,
+                        {
+                            "generated_at": _now_iso(),
+                            **attempt_row,
+                        },
+                    )
+                    if isinstance(result, dict):
+                        cycle_log = result.get("cycle_log")
+                        if isinstance(cycle_log, list) and cycle_log:
+                            _append_jsonl(
+                                model_trace_path,
+                                {
+                                    "generated_at": _now_iso(),
+                                    "step": step.key,
+                                    "attempt_index": attempt_index,
+                                    "final_message": result.get("final_message", ""),
+                                    "status": result.get("status", ""),
+                                    "tool_calls": result.get("tool_calls", 0),
+                                    "cycle_log": cycle_log,
+                                },
+                            )
+                    _write_json(
+                        status_path,
+                        _benchmark_status(
+                            scenario=SCENARIO2.name,
+                            engine=engine,
+                            model=model,
+                            status="running",
+                            stop_reason=f"{step.key}_attempt_{attempt_index}",
+                            completed=completed,
+                            attempts=attempts,
+                            budget=budget,
+                            workspace=workspace,
+                            run_root=run_root,
+                        ),
+                    )
                     if ok:
                         completed.append(step.key)
                         step_success = True
+                        _write_json(
+                            status_path,
+                            _benchmark_status(
+                                scenario=SCENARIO2.name,
+                                engine=engine,
+                                model=model,
+                                status="running",
+                                stop_reason=f"{step.key}_completed",
+                                completed=completed,
+                                attempts=attempts,
+                                budget=budget,
+                                workspace=workspace,
+                                run_root=run_root,
+                            ),
+                        )
                         break
                     feedback = message
                 if not step_success:
@@ -992,6 +1122,12 @@ def run_scenario2(
         "attempts": attempts,
         "verification": verification_rows,
         "scenario_source": str(scenario_root),
+        "runtime_artifacts": {
+            "status": str(status_path),
+            "attempts": str(attempts_path),
+            "model_trace": str(model_trace_path),
+            "policy": str(policy_path),
+        },
     }
     normalized = {
         "contract": "eidos.external_benchmark_result.v1",
@@ -1031,6 +1167,21 @@ def run_scenario2(
     _write_json(latest_detailed, detailed)
     _write_json(stamped_json, normalized)
     _write_json(latest_json, normalized)
+    _write_json(
+        status_path,
+        _benchmark_status(
+            scenario=SCENARIO2.name,
+            engine=engine,
+            model=model,
+            status=final_status,
+            stop_reason=stop_reason,
+            completed=completed,
+            attempts=attempts,
+            budget=budget,
+            workspace=workspace,
+            run_root=run_root,
+        ),
+    )
     _write_text(
         report_dir / f"{suite_name}_{stamp}.md",
         "\n".join(
@@ -1057,7 +1208,13 @@ def run_scenario2(
     return {
         "detailed": detailed,
         "normalized": normalized,
-        "paths": {"latest": str(latest_json), "latest_detailed": str(latest_detailed)},
+        "paths": {
+            "latest": str(latest_json),
+            "latest_detailed": str(latest_detailed),
+            "runtime_status": str(status_path),
+            "attempts": str(attempts_path),
+            "model_trace": str(model_trace_path),
+        },
     }
 
 
@@ -1198,7 +1355,7 @@ def main() -> int:
     args = parser.parse_args()
 
     repo_root = Path(args.repo_root).resolve()
-    agencybench_root = Path(args.agencybench_root).resolve()
+    agencybench_root = resolve_agencybench_root(args.agencybench_root)
     if args.scenario == "scenario2":
         result = run_scenario2(
             agencybench_root=agencybench_root,

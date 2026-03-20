@@ -251,6 +251,7 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
   - [x] imported AgentBench leaderboard reference artifact
   - [x] live AgencyBench scenario2 deterministic artifact
   - [x] live AgencyBench scenario1 deterministic artifact
+  - [x] live runtime benchmark observability artifacts and Atlas/API surfaces
   - [ ] live non-deterministic model-driven external benchmark artifact
   - scheduler throughput,
   - service resiliency.
@@ -306,6 +307,11 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
   - `/api/proof/external`
   - Atlas proof-history and external-benchmark tables
   - bundle inclusion of session-bridge runtime evidence
+- [x] Runtime benchmark observability slice extended with:
+  - `status.json`, `attempts.jsonl`, and `model_trace.jsonl` per live AgencyBench run
+  - `/api/benchmarks/runtime`
+  - Atlas runtime benchmark table
+  - proof scorecard and bundle inclusion of runtime benchmark status evidence
 - [x] Initial primary-source set saved and ingested:
   - `docs/external_references/2026-03-07-master-program/`
 - [x] Phase 1 implementation slice started:

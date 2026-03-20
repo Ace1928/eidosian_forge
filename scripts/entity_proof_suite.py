@@ -264,6 +264,35 @@ def _load_external_benchmark_results(repo_root: Path) -> list[dict[str, Any]]:
     return rows
 
 
+def _load_runtime_benchmark_results(runtime_root: Path, limit: int = 12) -> list[dict[str, Any]]:
+    benchmark_root = runtime_root / "external_benchmarks"
+    rows: list[dict[str, Any]] = []
+    if not benchmark_root.exists():
+        return rows
+    for status_path in sorted(benchmark_root.glob("**/status.json"), reverse=True):
+        payload = _load_json(status_path)
+        if not payload:
+            continue
+        completed = payload.get("completed_subtasks")
+        rows.append(
+            {
+                "scenario": str(payload.get("scenario") or status_path.parent.parent.name),
+                "engine": str(payload.get("engine") or ""),
+                "model": str(payload.get("model") or ""),
+                "status": str(payload.get("status") or ""),
+                "stop_reason": str(payload.get("stop_reason") or ""),
+                "completed_count": _safe_int(payload.get("completed_count")),
+                "attempt_count": _safe_int(payload.get("attempt_count")),
+                "updated_at": str(payload.get("generated_at") or ""),
+                "path": str(status_path),
+                "completed_subtasks": completed if isinstance(completed, list) else [],
+            }
+        )
+        if len(rows) >= max(1, int(limit)):
+            break
+    return rows
+
+
 def _session_bridge_summary(runtime_root: Path) -> dict[str, Any]:
     context = _load_json(runtime_root / "session_bridge" / "latest_context.json") or {}
     import_status = _load_json(runtime_root / "session_bridge" / "import_status.json") or {}
@@ -487,6 +516,7 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
         "identity_continuity_scorecard_*.json",
     )
     external_results = _load_external_benchmark_results(repo_root)
+    runtime_benchmarks = _load_runtime_benchmark_results(runtime_root)
     session_bridge = _session_bridge_summary(runtime_root)
     proof_history = _proof_history_summary(proof_root)
 
@@ -578,6 +608,27 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
             benchmark_gaps.append(
                 "Only imported reference external benchmark baselines are present; no Eidos-run local or remote external suite artifact exists yet."
             )
+    if runtime_benchmarks:
+        benchmark_score += min(0.12, len(runtime_benchmarks) * 0.02)
+        benchmark_paths.extend(str(row["path"]) for row in runtime_benchmarks if row.get("path"))
+        succeeded = [row for row in runtime_benchmarks if str(row.get("status") or "") == "success"]
+        running = [row for row in runtime_benchmarks if str(row.get("status") or "") == "running"]
+        benchmark_strengths.append(
+            f"Runtime benchmark traces exist for `{len(runtime_benchmarks)}` live benchmark runs."
+        )
+        if succeeded:
+            benchmark_score += min(0.08, len(succeeded) * 0.03)
+            benchmark_strengths.append(
+                f"`{len(succeeded)}` runtime benchmark runs completed successfully with live status artifacts."
+            )
+        elif running:
+            benchmark_strengths.append(
+                f"`{len(running)}` runtime benchmark runs are currently active and observable."
+            )
+        else:
+            benchmark_gaps.append("Runtime benchmark traces exist, but none currently show a successful completion.")
+    else:
+        benchmark_gaps.append("No runtime benchmark status artifacts found under data/runtime/external_benchmarks.")
 
     continuity = _continuity_summary(core_bench, trial)
     continuity_score = 0.0
@@ -728,6 +779,17 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
         observability_score += 0.1
         observability_paths.append(str(runtime_root / "directory_docs_status.json"))
         observability_strengths.append("Documentation drift metrics are persisted into runtime state.")
+    if runtime_benchmarks:
+        observability_score += min(0.12, len(runtime_benchmarks) * 0.02)
+        observability_paths.extend(str(row["path"]) for row in runtime_benchmarks if row.get("path"))
+        observability_strengths.append(
+            f"Runtime benchmark status artifacts expose `{len(runtime_benchmarks)}` recent live benchmark runs."
+        )
+        if any(str(row.get("status") or "") == "running" for row in runtime_benchmarks):
+            observability_score += 0.03
+            observability_strengths.append("At least one benchmark run is observable while still in progress.")
+    else:
+        observability_gaps.append("No live runtime benchmark status artifacts found.")
     if runtime_slice:
         observability_score += 0.1
         observability_paths.append(str(runtime_slice_path))
@@ -912,6 +974,7 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
         },
         "artifacts": artifact_inventory,
         "external_benchmark_results": external_results,
+        "runtime_benchmark_results": runtime_benchmarks,
         "external_benchmark_coverage": external_coverage,
         "freshness": freshness,
         "regression": regression,
@@ -980,6 +1043,21 @@ def render_markdown(report: dict[str, Any]) -> str:
             )
     else:
         lines.append("- No external benchmark artifacts found.")
+    lines.extend(["", "## Runtime Benchmark Results", ""])
+    runtime_rows = report.get("runtime_benchmark_results") or []
+    if runtime_rows:
+        lines.extend(
+            [
+                "| Scenario | Engine | Status | Completed | Attempts | Updated |",
+                "| --- | --- | --- | ---: | ---: | --- |",
+            ]
+        )
+        for row in runtime_rows[:8]:
+            lines.append(
+                f"| {row.get('scenario')} | {row.get('engine')} | {row.get('status')} | {row.get('completed_count')} | {row.get('attempt_count')} | {row.get('updated_at')} |"
+            )
+    else:
+        lines.append("- No runtime benchmark status artifacts found.")
     lines.extend(["", "## External Benchmark Coverage", ""])
     ext = report.get("external_benchmark_coverage") or {}
     for name, present in sorted(ext.items()):

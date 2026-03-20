@@ -269,6 +269,29 @@
         </div>
     </div>
     <div class="card">
+        <h3>Runtime Benchmarks</h3>
+        <table>
+            <thead>
+                <tr><th>Scenario</th><th>Engine</th><th>Status</th><th>Done</th><th>Attempts</th></tr>
+            </thead>
+            <tbody id="runtime-benchmarks-body">
+                {% for row in runtime_snapshot.get('runtime_benchmarks', [])[:8] %}
+                <tr>
+                    <td>{{ row.get('scenario') }}</td>
+                    <td>{{ row.get('engine') }}</td>
+                    <td>{{ row.get('status') }}</td>
+                    <td>{{ row.get('completed_count') }}</td>
+                    <td>{{ row.get('attempt_count') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="stat-label">
+            <a href="/api/benchmarks/runtime" target="_blank">Runtime Benchmark JSON</a>
+            · <a href="/browse/forge/data/runtime/external_benchmarks/">Browse Runtime Runs</a>
+        </div>
+    </div>
+    <div class="card">
         <h3>Supervised Services</h3>
         <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
             <select id="service-target">
@@ -834,6 +857,27 @@ async function refreshExternalBenchmarks() {
     }
 }
 
+async function refreshRuntimeBenchmarks() {
+    try {
+        const res = await fetch("/api/benchmarks/runtime", {cache: "no-store"});
+        if (!res.ok) return;
+        const payload = await res.json();
+        const entries = payload.entries || [];
+        const body = document.getElementById("runtime-benchmarks-body");
+        body.innerHTML = entries.slice(0, 8).map((row) => `
+            <tr>
+                <td>${row.scenario || ""}</td>
+                <td>${row.engine || ""}</td>
+                <td>${row.status || ""}</td>
+                <td>${row.completed_count ?? 0}</td>
+                <td>${row.attempt_count ?? 0}</td>
+            </tr>
+        `).join("");
+    } catch (err) {
+        // ignore transient refresh failures
+    }
+}
+
 async function syncSessionBridge() {
     try {
         const res = await fetch("/api/session-bridge/sync", {method: "POST"});
@@ -880,6 +924,7 @@ setInterval(refreshIdentityContinuity, 15000);
 setInterval(refreshIdentityHistory, 15000);
 setInterval(refreshProofHistory, 15000);
 setInterval(refreshExternalBenchmarks, 15000);
+setInterval(refreshRuntimeBenchmarks, 15000);
 refreshScheduler();
 refreshServices();
 refreshDocsTree();
@@ -891,5 +936,6 @@ refreshIdentityContinuity();
 refreshIdentityHistory();
 refreshProofHistory();
 refreshExternalBenchmarks();
+refreshRuntimeBenchmarks();
 </script>
 {% endblock %}

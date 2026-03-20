@@ -183,6 +183,19 @@ def test_build_proof_report_tracks_freshness_regression_and_external_results(tmp
         repo / "data" / "runtime" / "session_bridge" / "import_status.json",
         {"last_sync_at": "2026-03-20T03:00:00Z", "gemini": {"imported_ids": ["g1"]}, "codex": {"threads": {"t1": 2}}},
     )
+    _write_json(
+        repo / "data" / "runtime" / "external_benchmarks" / "agencybench" / "scenario2" / "20260320_010203" / "status.json",
+        {
+            "scenario": "scenario2",
+            "engine": "local_agent",
+            "model": "qwen3.5:2b",
+            "status": "success",
+            "stop_reason": "completed",
+            "completed_count": 5,
+            "attempt_count": 5,
+            "generated_at": "2026-03-20T04:00:00Z",
+        },
+    )
     stale = repo / "reports" / "linux_audit_20260101.json"
     _write_json(stale, {"counts": {"checks_fail": 0}})
 
@@ -194,6 +207,8 @@ def test_build_proof_report_tracks_freshness_regression_and_external_results(tmp
     assert report["identity_continuity_scorecard"]["overall_score"] == 0.77
     assert report["identity_continuity_history"]["trend"] == "stable"
     assert report["session_bridge"]["imported_records"] == 2
+    assert report["runtime_benchmark_results"][0]["status"] == "success"
+    assert report["runtime_benchmark_results"][0]["completed_count"] == 5
     assert report["proof_history"]["sample_count"] == 1
     categories = {row["category"]: row for row in report["categories"]}
     assert categories["external_validity"]["score"] <= 1.0
@@ -236,3 +251,4 @@ def test_main_writes_latest_scorecard_files(tmp_path: Path, monkeypatch) -> None
     markdown = latest_md.read_text(encoding="utf-8")
     assert "## Proof History" in markdown
     assert "## Session Bridge" in markdown
+    assert "## Runtime Benchmark Results" in markdown

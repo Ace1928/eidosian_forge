@@ -45,6 +45,48 @@ def _rel(path: Path, root: Path) -> str:
         return str(path)
 
 
+def _runtime_benchmark_rows(runtime_root: Path, repo_root: Path, bundle_root: Path, files: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    benchmark_root = runtime_root / "external_benchmarks"
+    if not benchmark_root.exists():
+        return rows
+    for status_path in sorted(benchmark_root.glob("**/status.json"), reverse=True)[:6]:
+        payload = _load_json(status_path)
+        if not payload:
+            continue
+        run_dir = status_path.parent
+        bundle_dir = bundle_root / "runtime_benchmarks" / run_dir.relative_to(benchmark_root)
+        copied: list[str] = []
+        for extra_name in ("status.json", "attempts.jsonl", "model_trace.jsonl", "policy.json"):
+            src = run_dir / extra_name
+            if not src.exists():
+                continue
+            target = bundle_dir / extra_name
+            _copy(src, target)
+            copied.append(_rel(target, bundle_root))
+            files.append(
+                {
+                    "label": f"runtime_benchmark:{run_dir.name}:{extra_name}",
+                    "source": _rel(src, repo_root),
+                    "bundle_path": _rel(target, bundle_root),
+                }
+            )
+        rows.append(
+            {
+                "scenario": payload.get("scenario") or run_dir.parent.name,
+                "engine": payload.get("engine"),
+                "model": payload.get("model"),
+                "status": payload.get("status"),
+                "stop_reason": payload.get("stop_reason"),
+                "completed_count": _safe_int(payload.get("completed_count")),
+                "attempt_count": _safe_int(payload.get("attempt_count")),
+                "updated_at": payload.get("generated_at"),
+                "bundle_files": copied,
+            }
+        )
+    return rows
+
+
 def export_bundle(repo_root: Path, output_root: Path) -> dict[str, Any]:
     stamp = _now_stamp()
     bundle_root = output_root / stamp
@@ -142,6 +184,7 @@ def export_bundle(repo_root: Path, output_root: Path) -> dict[str, Any]:
             )
     else:
         missing.append("external_benchmarks_root")
+    runtime_benchmark_rows = _runtime_benchmark_rows(runtime_root, repo_root, bundle_root, files)
 
     proof_payload = _load_json(proof_root / "entity_proof_scorecard_latest.json")
     migration_payload = _load_json(proof_root / "migration_replay_scorecard_latest.json")
@@ -200,6 +243,7 @@ def export_bundle(repo_root: Path, output_root: Path) -> dict[str, Any]:
         },
         "session_bridge_summary": session_bridge_summary,
         "benchmarks": benchmark_rows,
+        "runtime_benchmarks": runtime_benchmark_rows,
         "files": files,
         "missing": sorted(set(missing)),
     }

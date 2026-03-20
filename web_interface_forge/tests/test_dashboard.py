@@ -134,6 +134,21 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         },
     )
     _write_json(
+        runtime_dir / "external_benchmarks" / "agencybench" / "scenario2" / "20260320_000000" / "status.json",
+        {
+            "contract": "eidos.agencybench_runtime_status.v1",
+            "scenario": "scenario2",
+            "engine": "local_agent",
+            "model": "qwen3.5:2b",
+            "status": "running",
+            "stop_reason": "subtask1_attempt_1",
+            "completed_count": 1,
+            "attempt_count": 1,
+            "generated_at": "2026-03-20T00:10:00Z",
+            "run_root": str(runtime_dir / "external_benchmarks" / "agencybench" / "scenario2" / "20260320_000000"),
+        },
+    )
+    _write_json(
         tmp_path / "reports" / "proof_bundle" / "latest_manifest.json",
         {
             "contract": "eidos.entity_proof_bundle.v1",
@@ -268,6 +283,7 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         assert len(runtime_payload["identity_history"]) == 2
         assert len(runtime_payload["proof_history"]) == 1
         assert runtime_payload["external_benchmarks"] == []
+        assert runtime_payload["runtime_benchmarks"][0]["scenario"] == "scenario2"
         local_agent_resp = client.get("/api/runtime/local-agent")
         assert local_agent_resp.status_code == 200
         assert local_agent_resp.json()["status"]["profile"] == "observer"
@@ -300,6 +316,9 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         external_resp = client.get("/api/proof/external")
         assert external_resp.status_code == 200
         assert external_resp.json()["entries"] == []
+        runtime_bench_resp = client.get("/api/benchmarks/runtime")
+        assert runtime_bench_resp.status_code == 200
+        assert runtime_bench_resp.json()["entries"][0]["engine"] == "local_agent"
         session_bridge_resp = client.get("/api/session-bridge")
         assert session_bridge_resp.status_code == 200
         assert session_bridge_resp.json()["context"]["session_id"] == "qwenchat:test"

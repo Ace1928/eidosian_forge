@@ -233,6 +233,15 @@ Bounded local-agent run:
 Current live artifact:
 - `reports/external_benchmarks/agencybench_eidos_scenario2_deterministic/latest.json`
 
+Live runtime observability artifacts for non-deterministic runs:
+- `data/runtime/external_benchmarks/agencybench/<scenario>/<stamp>/status.json`
+- `data/runtime/external_benchmarks/agencybench/<scenario>/<stamp>/attempts.jsonl`
+- `data/runtime/external_benchmarks/agencybench/<scenario>/<stamp>/model_trace.jsonl`
+
+Atlas surfaces the latest live runtime benchmark state through:
+- `GET /api/benchmarks/runtime`
+- the `Runtime Benchmarks` table on the Atlas home page
+
 ### Scenario 1: GitHub Workflow
 This scenario uses the official AgencyBench MCP `scenario1` GitHub workflow contract and executes it against a disposable benchmark repository under the authenticated GitHub account.
 

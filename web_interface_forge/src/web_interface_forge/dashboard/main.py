@@ -268,6 +268,7 @@ def get_runtime_snapshot() -> Dict[str, Any]:
         "identity_history": proof_summary.get("identity_history", []),
         "proof_history": proof_summary.get("proof_history", []),
         "external_benchmarks": proof_summary.get("external_benchmarks", []),
+        "runtime_benchmarks": proof_summary.get("runtime_benchmarks", []),
         "proof_summary": proof_summary,
     }
 
@@ -360,6 +361,34 @@ def get_external_benchmark_results(limit: int = 12) -> List[Dict[str, Any]]:
     return rows[: max(1, int(limit))]
 
 
+def get_runtime_benchmark_statuses(limit: int = 12) -> List[Dict[str, Any]]:
+    rows: List[Dict[str, Any]] = []
+    root = FORGE_ROOT / "data" / "runtime" / "external_benchmarks" / "agencybench"
+    if not root.exists():
+        return rows
+    for status_path in sorted(root.glob("**/status.json"), key=lambda p: p.stat().st_mtime, reverse=True):
+        payload = _read_json(status_path, {})
+        if not payload:
+            continue
+        rows.append(
+            {
+                "scenario": payload.get("scenario") or status_path.parent.name,
+                "engine": payload.get("engine", ""),
+                "model": payload.get("model", ""),
+                "status": payload.get("status", ""),
+                "stop_reason": payload.get("stop_reason", ""),
+                "completed_count": payload.get("completed_count", 0),
+                "attempt_count": payload.get("attempt_count", 0),
+                "generated_at": payload.get("generated_at", ""),
+                "path": str(status_path.relative_to(FORGE_ROOT)),
+                "run_root": payload.get("run_root", ""),
+            }
+        )
+        if len(rows) >= max(1, int(limit)):
+            break
+    return rows
+
+
 def get_latest_proof_bundle_manifest() -> Dict[str, Any]:
     latest = PROOF_BUNDLE_DIR / "latest_manifest.json"
     payload = _read_json(latest, {})
@@ -383,6 +412,7 @@ def get_proof_summary() -> Dict[str, Any]:
     identity_history = get_identity_continuity_history(limit=12)
     proof_history = get_proof_history(limit=12)
     external = get_external_benchmark_results(limit=12)
+    runtime_benchmarks = get_runtime_benchmark_statuses(limit=12)
     session_bridge = get_session_bridge_status()
     history = identity.get("history") if isinstance(identity.get("history"), dict) else {}
     return {
@@ -393,6 +423,7 @@ def get_proof_summary() -> Dict[str, Any]:
         "identity_history": identity_history,
         "proof_history": proof_history,
         "external_benchmarks": external,
+        "runtime_benchmarks": runtime_benchmarks,
         "session_bridge": {
             "recent_sessions": len(session_bridge.get("recent_sessions") or [])
             if isinstance(session_bridge.get("recent_sessions"), list)
@@ -951,6 +982,14 @@ async def api_proof_external(limit: int = 12):
     return {
         "contract": "eidos.external_benchmark_snapshot.v1",
         "entries": get_external_benchmark_results(limit=limit),
+    }
+
+
+@app.get("/api/benchmarks/runtime")
+async def api_runtime_benchmarks(limit: int = 12):
+    return {
+        "contract": "eidos.runtime_benchmark_snapshot.v1",
+        "entries": get_runtime_benchmark_statuses(limit=limit),
     }
 
 

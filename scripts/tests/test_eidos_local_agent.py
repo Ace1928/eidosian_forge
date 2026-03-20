@@ -16,6 +16,7 @@ for extra in (LIB_ROOT, ROOT / "eidos_mcp" / "src"):
         sys.path.insert(0, value)
 
 from eidosian_agent.local_mcp_agent import (
+    LocalMcpAgent,
     build_tool_contracts,
     load_profile,
     normalize_profile,
@@ -146,6 +147,31 @@ def test_contract_schema_restricts_to_allowed_keys() -> None:
     assert set(schema["properties"].keys()) == {"query"}
     assert schema["additionalProperties"] is False
     assert schema["properties"]["query"]["maxLength"] == 32
+
+
+def test_running_status_writes_live_phase_payload(tmp_path: Path) -> None:
+    agent = LocalMcpAgent(runtime_dir=tmp_path / "runtime", profile=normalize_profile("observer", {}))
+    agent._write_running_status(
+        session_id="local_mcp_agent:test",
+        objective="observe runtime",
+        phase="model_request",
+        message="Waiting on model response.",
+        tool_calls=2,
+        mutating_calls=0,
+        cycle_log=[{"event": "tool_call", "tool": "kb_search"}],
+        continuity_context="recent memory context",
+        mcp_transport="streamable_http",
+        resource_count=3,
+        tool_contract_count=4,
+        effective_thinking_mode="off",
+    )
+    payload = json.loads((tmp_path / "runtime" / "status.json").read_text(encoding="utf-8"))
+    assert payload["status"] == "running"
+    assert payload["phase"] == "model_request"
+    assert payload["tool_calls"] == 2
+    assert payload["resource_count"] == 3
+    assert payload["tool_contract_count"] == 4
+    assert payload["effective_thinking_mode"] == "off"
 
 
 def test_validate_tool_arguments_rejects_extra_keys() -> None:
@@ -331,9 +357,7 @@ def test_run_cycle_success_records_transport_and_resources(monkeypatch, tmp_path
     assert result["resource_count"] == 1
     assert result["tool_contract_count"] >= 1
     assert ingested == [("health check", "done")]
-    history_rows = [
-        json.loads(line) for line in (tmp_path / "runtime" / "history.jsonl").read_text(encoding="utf-8").splitlines()
-    ]
+    history_rows = [json.loads(line) for line in (tmp_path / "runtime" / "history.jsonl").read_text(encoding="utf-8").splitlines()]
     assert history_rows[-1]["session_id"] == result["session_id"]
 
 

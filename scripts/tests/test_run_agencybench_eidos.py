@@ -198,6 +198,14 @@ def test_verify_scenario2_contracts(tmp_path: Path) -> None:
         assert ok, msg
 
 
+def test_resolve_agencybench_root_prefers_existing_fixture(monkeypatch, tmp_path: Path) -> None:
+    module = _load_module()
+    fixture_root = _build_scenario2_fixture(tmp_path / "agencybench")
+    monkeypatch.setattr(module, "DEFAULT_AGENCYBENCH_ROOT", tmp_path / "missing-default")
+    resolved = module.resolve_agencybench_root(fixture_root)
+    assert resolved == fixture_root.resolve()
+
+
 def test_run_scenario2_writes_external_benchmark_artifacts(tmp_path: Path, monkeypatch) -> None:
     module = _load_module()
     fixture_root = _build_scenario2_fixture(tmp_path / "agencybench")
@@ -214,10 +222,18 @@ def test_run_scenario2_writes_external_benchmark_artifacts(tmp_path: Path, monke
     )
     assert result["normalized"]["score"] == 1.0
     latest = tmp_path / "reports" / f"{module.SCENARIO2.suite_name}_deterministic" / "latest.json"
+    runtime_status = Path(result["paths"]["runtime_status"])
+    attempts_path = Path(result["paths"]["attempts"])
     assert latest.exists()
+    assert runtime_status.exists()
+    assert attempts_path.exists()
     payload = json.loads(latest.read_text(encoding="utf-8"))
+    status_payload = json.loads(runtime_status.read_text(encoding="utf-8"))
     assert payload["execution_mode"] == "local_run"
     assert payload["metrics"]["tasks_passed"] == 5
+    assert status_payload["status"] == "success"
+    assert status_payload["completed_count"] == 5
+    assert len(attempts_path.read_text(encoding="utf-8").splitlines()) == 5
 
 
 def test_verify_scenario1_contracts(monkeypatch) -> None:
