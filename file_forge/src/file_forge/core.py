@@ -12,6 +12,8 @@ import subprocess
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Set
 
+from .library import FileLibraryDB, index_path
+
 class FileForge:
     """
     Manages filesystem operations with Eidosian precision.
@@ -111,6 +113,146 @@ class FileForge:
                 if fnmatch.fnmatch(name, pattern):
                     matches.append(Path(root) / name)
         return matches
+
+    def default_library_path(self) -> Path:
+        return (self.base_path / ".file_forge" / "library.sqlite").resolve()
+
+    @eidosian()
+    def index_directory(
+        self,
+        directory: Path,
+        *,
+        db_path: Optional[Path] = None,
+        remove_after_ingest: bool = False,
+        max_files: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        target_dir = Path(directory).resolve()
+        db = FileLibraryDB(db_path or self.default_library_path())
+        indexed = 0
+        skipped = 0
+        removed = 0
+        files: List[Dict[str, Any]] = []
+        for file_path in sorted(target_dir.rglob("*")):
+            if not file_path.is_file():
+                continue
+            result = index_path(db=db, file_path=file_path)
+            files.append(result)
+            if result.get("status") == "indexed":
+                indexed += 1
+                if remove_after_ingest:
+                    file_path.unlink()
+                    removed += 1
+            else:
+                skipped += 1
+            if max_files is not None and len(files) >= max(0, int(max_files)):
+                break
+        return {
+            "status": "success",
+            "directory": str(target_dir),
+            "db_path": str(Path(db_path or self.default_library_path()).resolve()),
+            "indexed": indexed,
+            "skipped": skipped,
+            "removed": removed,
+            "results": files,
+        }
+
+    @eidosian()
+    def restore_indexed_file(
+        self,
+        file_path: Path,
+        *,
+        target_path: Optional[Path] = None,
+        db_path: Optional[Path] = None,
+    ) -> Path:
+        db = FileLibraryDB(db_path or self.default_library_path())
+        source = Path(file_path).resolve()
+        target = Path(target_path).resolve() if target_path is not None else source
+        return db.restore_file(file_path=source, target_path=target)
+
+
+    @eidosian()
+    def restore_directory(
+        self,
+        source_root: Path,
+        *,
+        target_root: Path,
+        db_path: Optional[Path] = None,
+        overwrite: bool = False,
+        max_files: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        db = FileLibraryDB(db_path or self.default_library_path())
+        source_root = Path(source_root).resolve()
+        target_root = Path(target_root).resolve()
+        restored = 0
+        skipped_existing = 0
+        overwritten_existing = 0
+        missing_records = 0
+        missing_blobs = 0
+        results: List[Dict[str, Any]] = []
+        count = 0
+
+        for record in db.iter_file_records(path_prefix=source_root):
+            if max_files is not None and count >= max(0, int(max_files)):
+                break
+            count += 1
+            path_text = str(record.get("file_path") or "")
+            if not path_text:
+                continue
+            original = Path(path_text).resolve()
+            try:
+                rel_path = original.relative_to(source_root)
+            except ValueError:
+                continue
+            target = (target_root / rel_path).resolve()
+            if target.exists():
+                if not overwrite:
+                    skipped_existing += 1
+                    results.append({
+                        "status": "skipped_existing",
+                        "file_path": str(original),
+                        "target_path": str(target),
+                    })
+                    continue
+                overwritten_existing += 1
+            if not record.get("content_hash"):
+                missing_records += 1
+                results.append({
+                    "status": "missing_record",
+                    "file_path": str(original),
+                    "target_path": str(target),
+                })
+                continue
+            blob = db.get_blob(str(record.get("content_hash") or ""))
+            if blob is None:
+                missing_blobs += 1
+                results.append({
+                    "status": "missing_blob",
+                    "file_path": str(original),
+                    "target_path": str(target),
+                    "content_hash": str(record.get("content_hash") or ""),
+                })
+                continue
+            target.parent.mkdir(parents=True, exist_ok=True)
+            restored_path = db.restore_file(file_path=original, target_path=target)
+            restored += 1
+            results.append({
+                "status": "restored",
+                "file_path": str(original),
+                "target_path": str(restored_path),
+            })
+
+        return {
+            "status": "success",
+            "source_root": str(source_root),
+            "target_root": str(target_root),
+            "db_path": str(Path(db_path or self.default_library_path()).resolve()),
+            "restored": restored,
+            "skipped_existing": skipped_existing,
+            "overwritten_existing": overwritten_existing,
+            "missing_records": missing_records,
+            "missing_blobs": missing_blobs,
+            "results": results,
+        }
 
     @eidosian()
     def ensure_structure(self, structure: Dict[str, Any], root: Optional[Path] = None):

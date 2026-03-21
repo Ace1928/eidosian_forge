@@ -12,7 +12,7 @@ from typing import Any, Iterable, Optional
 from code_forge.analyzer.generic_analyzer import GenericCodeAnalyzer
 from code_forge.digester.drift import build_drift_report_from_output
 from code_forge.digester.schema import validate_output_dir
-from code_forge.ingest.runner import IngestionRunner
+from code_forge.ingest.runner import ANALYSIS_VERSION, IngestionRunner
 from code_forge.integration.memory import sync_units_to_memory_forge
 from code_forge.integration.pipeline import export_units_for_graphrag, sync_units_to_knowledge_forge
 from code_forge.integration.provenance import write_provenance_links
@@ -23,6 +23,13 @@ from code_forge.integration.provenance_registry import (
 from code_forge.library.db import CodeLibraryDB
 
 TRIAGE_RULESET_VERSION = "code_forge_triage_ruleset_v3_2026_02_23"
+ARCHIVE_ROUTE_CONTRACT_VERSIONS = {
+    "code_forge": "archive_code_forge_route_v1",
+    "document_pipeline": "archive_document_pipeline_route_v2",
+    "knowledge_metadata": "archive_knowledge_metadata_route_v2",
+    "defer_binary": "archive_defer_binary_route_v1",
+    "manual_review": "archive_manual_review_route_v1",
+}
 TRIAGE_THRESHOLDS = {
     "unit_count_min": 1,
     "delete_candidate_duplicate_pressure": 2.0,
@@ -317,6 +324,7 @@ def initialize_archive_ingestion_state(
                 "signature_total_bytes": int(batch.get("total_bytes") or 0),
                 "signature_checked_at": None,
                 "summary_path": None,
+                "route_contract_version": _route_contract_version(str(batch.get("route") or "")),
             }
             for batch in batches
             if isinstance(batch, dict) and batch.get("batch_id")
@@ -332,6 +340,10 @@ def load_archive_ingestion_state(output_dir: Path) -> dict[str, Any]:
     if not state_path.exists():
         raise FileNotFoundError(f"missing archive ingestion state: {state_path}")
     return json.loads(state_path.read_text(encoding="utf-8"))
+
+
+def _route_contract_version(route: str) -> str:
+    return str(ARCHIVE_ROUTE_CONTRACT_VERSIONS.get(str(route or ""), "archive_route_unknown_v1"))
 
 
 def _compute_batch_signature(root_path: Path, paths: Iterable[str]) -> dict[str, Any]:
@@ -398,10 +410,19 @@ def refresh_archive_ingestion_state(
         previous_missing = int(state_batch.get("signature_missing_files") or 0)
         current_signature = str(signature.get("content_signature") or "")
         current_missing = int(signature.get("signature_missing_files") or 0)
+        current_route_version = _route_contract_version(str(batch.get("route") or ""))
+        previous_route_version = str(state_batch.get("route_contract_version") or "")
         status = str(state_batch.get("status") or "pending")
-        if status in {"completed", "skipped"} and (current_signature != previous_signature or current_missing != previous_missing):
+        if status in {"completed", "skipped"} and (
+            current_signature != previous_signature
+            or current_missing != previous_missing
+            or current_route_version != previous_route_version
+        ):
             state_batch["status"] = "pending"
             state_batch["last_error"] = None
+            changed = True
+        if state_batch.get("route_contract_version") != current_route_version:
+            state_batch["route_contract_version"] = current_route_version
             changed = True
         for key, value in signature.items():
             if state_batch.get(key) != value:
@@ -437,6 +458,7 @@ def update_archive_ingestion_state(
     batch["attempts"] = int(batch.get("attempts") or 0) + 1
     batch["last_error"] = error
     batch["updated_at"] = _utc_now()
+    batch["route_contract_version"] = _route_contract_version(str(batch.get("route") or ""))
     if summary_path is not None:
         batch["summary_path"] = str(summary_path)
     if root_path is not None and batch_paths is not None:
@@ -475,16 +497,37 @@ def _load_tika_ingester(kb_path: Path):
     return tika, TikaKnowledgeIngester(tika=tika, knowledge_forge=kb)
 
 
+def _capture_reversible_file(*, db: CodeLibraryDB, source_path: Path) -> dict[str, Any]:
+    payload = source_path.read_bytes()
+    text_content: str | None = None
+    encoding: str | None = None
+    try:
+        text_content = payload.decode("utf-8")
+        encoding = "utf-8"
+    except UnicodeDecodeError:
+        text_content = None
+        encoding = None
+    content_hash = db.add_blob(payload, text_content=text_content, encoding=encoding)
+    db.update_file_record(str(source_path.resolve()), content_hash, ANALYSIS_VERSION)
+    return {
+        "content_hash": content_hash,
+        "byte_count": len(payload),
+        "encoding": encoding,
+    }
+
+
 def _process_document_batch(
     *,
     root_path: Path,
     batch: dict[str, Any],
     output_dir: Path,
     kb_path: Path,
+    db: Optional[CodeLibraryDB] = None,
 ) -> dict[str, Any]:
     output_dir.mkdir(parents=True, exist_ok=True)
     tika, ingester = _load_tika_ingester(kb_path)
     batch_id = str(batch.get("batch_id") or "")
+    root_path = Path(root_path).resolve()
     results: list[dict[str, Any]] = []
     files_processed = 0
     nodes_created = 0
@@ -492,7 +535,8 @@ def _process_document_batch(
     errors: list[dict[str, Any]] = []
 
     for rel_path in list(batch.get("paths") or []):
-        source_path = Path(root_path) / str(rel_path)
+        source_path = (root_path / str(rel_path)).resolve()
+        capture_payload = _capture_reversible_file(db=db, source_path=source_path) if db is not None else {"status": "skipped", "reason": "db_unavailable"}
         ingest_payload = ingester.ingest_file(
             source_path,
             tags=["archive_forge", "document_pipeline", f"archive_batch:{batch_id}"],
@@ -519,6 +563,7 @@ def _process_document_batch(
         results.append(
             {
                 "path": str(rel_path),
+                "capture": capture_payload,
                 "ingest": ingest_payload,
                 "extract_status": extract_payload.get("status"),
                 "lexicon": lexicon_payload,
@@ -529,13 +574,47 @@ def _process_document_batch(
         "generated_at": _utc_now(),
         "batch_id": batch_id,
         "route": batch.get("route"),
+        "root_path": str(root_path),
         "files_processed": files_processed,
         "nodes_created": nodes_created,
         "lexicon_nodes_added": lexicon_updates,
         "results": results,
         "errors": errors,
+        "provenance_path": None,
+        "provenance_registry_path": None,
     }
-    (output_dir / "document_batch_summary.json").write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    summary_path = output_dir / "document_batch_summary.json"
+    summary_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    provenance = write_provenance_links(
+        output_path=output_dir / "provenance_links.json",
+        stage="archive_document_batch",
+        root_path=root_path,
+        source_run_id=batch_id,
+        integration_policy="batch_route",
+        integration_run_id=None,
+        artifact_paths=[("document_batch_summary", summary_path)],
+        knowledge_sync={"node_links": []},
+        memory_sync={"memory_links": []},
+        graphrag_export=None,
+        extra={
+            "route": str(batch.get("route") or "document_pipeline"),
+            "files_processed": files_processed,
+            "nodes_created": nodes_created,
+        },
+    )
+    payload["provenance_path"] = provenance.get("path")
+    registry = write_provenance_registry(
+        output_path=output_dir / "provenance_registry.json",
+        provenance_payload=provenance,
+        stage_summary_payload=payload,
+        drift_payload=None,
+        benchmark_payload=load_latest_benchmark_for_root(
+            root_path=root_path,
+            search_roots=[output_dir, output_dir.parent, root_path, root_path / "reports"],
+        ),
+    )
+    payload["provenance_registry_path"] = registry.get("path")
+    summary_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     return payload
 
 
@@ -545,12 +624,14 @@ def _process_metadata_batch(
     batch: dict[str, Any],
     output_dir: Path,
     kb_path: Path,
+    db: Optional[CodeLibraryDB] = None,
 ) -> dict[str, Any]:
     output_dir.mkdir(parents=True, exist_ok=True)
     from knowledge_forge.core.graph import KnowledgeForge
 
     kb = KnowledgeForge(persistence_path=kb_path)
     batch_id = str(batch.get("batch_id") or "")
+    root_path = Path(root_path).resolve()
     results: list[dict[str, Any]] = []
     files_processed = 0
     nodes_created = 0
@@ -558,7 +639,8 @@ def _process_metadata_batch(
     errors: list[dict[str, Any]] = []
 
     for rel_path in list(batch.get("paths") or []):
-        source_path = Path(root_path) / str(rel_path)
+        source_path = (root_path / str(rel_path)).resolve()
+        capture_payload = _capture_reversible_file(db=db, source_path=source_path) if db is not None else {"status": "skipped", "reason": "db_unavailable"}
         try:
             text = source_path.read_text(encoding="utf-8", errors="ignore")
         except OSError as exc:
@@ -599,6 +681,7 @@ def _process_metadata_batch(
         results.append(
             {
                 "path": str(rel_path),
+                "capture": capture_payload,
                 "node_id": node.id if node is not None else None,
                 "node_error": node_error,
                 "lexicon": lexicon_payload,
@@ -609,13 +692,47 @@ def _process_metadata_batch(
         "generated_at": _utc_now(),
         "batch_id": batch_id,
         "route": batch.get("route"),
+        "root_path": str(root_path),
         "files_processed": files_processed,
         "nodes_created": nodes_created,
         "lexicon_nodes_added": lexicon_updates,
         "results": results,
         "errors": errors,
+        "provenance_path": None,
+        "provenance_registry_path": None,
     }
-    (output_dir / "metadata_batch_summary.json").write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    summary_path = output_dir / "metadata_batch_summary.json"
+    summary_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    provenance = write_provenance_links(
+        output_path=output_dir / "provenance_links.json",
+        stage="archive_metadata_batch",
+        root_path=root_path,
+        source_run_id=batch_id,
+        integration_policy="batch_route",
+        integration_run_id=None,
+        artifact_paths=[("metadata_batch_summary", summary_path)],
+        knowledge_sync={"node_links": []},
+        memory_sync={"memory_links": []},
+        graphrag_export=None,
+        extra={
+            "route": str(batch.get("route") or "knowledge_metadata"),
+            "files_processed": files_processed,
+            "nodes_created": nodes_created,
+        },
+    )
+    payload["provenance_path"] = provenance.get("path")
+    registry = write_provenance_registry(
+        output_path=output_dir / "provenance_registry.json",
+        provenance_payload=provenance,
+        stage_summary_payload=payload,
+        drift_payload=None,
+        benchmark_payload=load_latest_benchmark_for_root(
+            root_path=root_path,
+            search_roots=[output_dir, output_dir.parent, root_path, root_path / "reports"],
+        ),
+    )
+    payload["provenance_registry_path"] = registry.get("path")
+    summary_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     return payload
 
 
@@ -729,6 +846,7 @@ def run_archive_ingestion_batches(
                     batch=batch,
                     output_dir=batch_dir,
                     kb_path=kb_path,
+                    db=db,
                 )
             elif batch_route == "knowledge_metadata":
                 payload = _process_metadata_batch(
@@ -736,6 +854,7 @@ def run_archive_ingestion_batches(
                     batch=batch,
                     output_dir=batch_dir,
                     kb_path=kb_path,
+                    db=db,
                 )
             else:
                 payload = {

@@ -63,6 +63,20 @@ results = ff.search_content("TODO: fix this", directory=Path("./src"))
 - **Agent Forge**: Provides safe manipulation primitives for embedded agents.
 - **Archive Forge**: Supplies deduplication logic for storage reduction.
 
+## 🧬 Eidosian Substrate
+
+`file_forge` now has a reversible file-library substrate alongside the utility API:
+- SQLite-backed blob and metadata storage for arbitrary files
+- deterministic vector rows for lightweight similarity/search surfaces
+- forge links describing how a file should bridge into `code_forge`, `knowledge_forge`, `word_forge`, and `memory_forge`
+- reversible restore from indexed blobs
+- incremental indexing that skips unchanged files
+- optional `ingest_and_remove` style operation via `--remove-after-ingest`
+- subtree restoration via `file-forge restore-tree`
+- archive-lifecycle participation as the reversible substrate for non-code and off-plan files
+
+This is now the byte-faithful file substrate used by the archive lifecycle alongside Code Forge rather than only helper functions.
+
 ## 🎯 Master Plan & Evolution
 
 ### Immediate Goals
@@ -75,3 +89,15 @@ results = ff.search_content("TODO: fix this", directory=Path("./src"))
 
 ---
 *Generated and maintained by Eidos.*
+
+## Unified Role
+
+- `word_forge`: living lexicon and term graph
+- `memory_forge`: living memory and continuity substrate
+- `knowledge_forge`: living facts, lessons, and evidence graph
+- `code_forge`: living code abstraction and provenance substrate
+- `file_forge`: living file and byte-faithful reversibility substrate
+- `scribe` / `doc_forge`: living documentation processor
+- `atlas`: operator-facing unified control plane
+
+In the current contract, File Forge is the layer that makes full-source-tree retirement possible even when the Code Forge plan is intentionally narrower than the repository filesystem.
