@@ -93,6 +93,11 @@ _write_count() {
     printf '%s\n' "${1:-0}" > "${SHELL_COUNT_FILE}"
 }
 
+_reset_shell_count() {
+    _write_count 0
+    _log "interactive shell refcount reset to 0."
+}
+
 _port_listening() {
     local port="$1"
     if command -v ss >/dev/null 2>&1; then
@@ -316,7 +321,7 @@ _status_service() {
     if [ -n "${port}" ] && _port_listening "${port}" && [ "${status}" = "stopped" ]; then
         status="running(external port=${port})"
     fi
-    if [ -n "${health_url}" ] && _http_ok "${health_url}" && [ "${status}" = "stopped" ]; then
+    if [ -n "${health_url}" ] && ! { [ "${service_name}" = "Eidos Atlas Dashboard" ] && _is_truthy "${EIDOS_SKIP_ATLAS_HEALTH_CHECK:-0}"; } && _http_ok "${health_url}" && [ "${status}" = "stopped" ]; then
         status="running(external health=${health_url})"
     fi
     if [ "${status}" = "stopped" ] && [ -n "${runit_status}" ]; then
@@ -455,6 +460,9 @@ case "${cmd}" in
         "$0" stop "${service_target}"
         "$0" start "${service_target}"
         ;;
+    shell-reset)
+        _reset_shell_count
+        ;;
     install-runit)
         exec "${FORGE_ROOT}/scripts/install_termux_runit_services.sh"
         ;;
@@ -469,7 +477,7 @@ case "${cmd}" in
         printf 'Interactive shell refcount: %s\n' "$(_read_count)"
         ;;
     *)
-        echo "Usage: $0 {start-shell|exit-shell|start|stop|restart|install-runit|status} [all|ollama-qwen|ollama-embedding|mcp|doc-forge|atlas|scheduler|local-agent]" >&2
+        echo "Usage: $0 {start-shell|exit-shell|shell-reset|start|stop|pause|resume|restart|low-load|restore-standard|install-runit|status} [all|ollama-qwen|ollama-embedding|mcp|doc-forge|atlas|scheduler|local-agent]" >&2
         exit 2
         ;;
 esac

@@ -121,6 +121,25 @@
         <div class="stat-label"><a href="/browse/home/">Home Browser</a> · <a href="/api/services" target="_blank">Service Status</a></div>
     </div>
     <div class="card">
+        <h3>Atlas Access</h3>
+        <div class="stat-value"><a href="{{ atlas_access.get('browse_loopback', '/browse/') }}" target="_blank">BROWSE</a></div>
+        <div class="stat-label">
+            <a href="{{ atlas_access.get('browse_loopback', '/browse/') }}" target="_blank">127.0.0.1</a>
+            · <a href="{{ atlas_access.get('browse_localhost', '/browse/') }}" target="_blank">localhost</a>
+        </div>
+        <div class="stat-label">
+            LAN:
+            {% if atlas_access.get('browse_lan') %}
+            <a href="{{ atlas_access.get('browse_lan') }}" target="_blank">{{ atlas_access.get('lan_ip') }}</a>
+            {% else %}
+            unavailable
+            {% endif %}
+        </div>
+        <div class="actions" style="margin-top:10px;">
+            <button type="button" onclick="serviceAction('shell-reset')">Reset Shell Count</button>
+        </div>
+    </div>
+    <div class="card">
         <h3>Directory Docs</h3>
         <div class="stat-value" id="docs-coverage-ratio">{{ "%.1f"|format((docs_inventory.get('status', docs_inventory).get('coverage_ratio', 0.0) * 100)) }}%</div>
         <div class="stat-label">

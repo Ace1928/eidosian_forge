@@ -6,6 +6,7 @@ import os
 import pty
 import select
 import signal
+import socket
 import struct
 import subprocess
 import sys
@@ -125,6 +126,39 @@ def _build_forge_subprocess_env() -> Dict[str, str]:
             merged.append(path)
     env["PYTHONPATH"] = os.pathsep.join(merged)
     return env
+
+def _detect_lan_ip() -> str | None:
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe:
+            probe.connect(("8.8.8.8", 80))
+            ip = probe.getsockname()[0]
+            if ip and not ip.startswith("127."):
+                return ip
+    except Exception:
+        pass
+    try:
+        ip = socket.gethostbyname(socket.gethostname())
+        if ip and not ip.startswith("127."):
+            return ip
+    except Exception:
+        pass
+    return None
+
+
+def _atlas_access_snapshot(request: Request) -> Dict[str, Any]:
+    port = request.url.port or int(os.environ.get("EIDOS_DASHBOARD_PORT", 8936))
+    lan_ip = _detect_lan_ip()
+    return {
+        "contract": "eidos.atlas_access.v1",
+        "port": port,
+        "browse_localhost": f"http://localhost:{port}/browse/",
+        "browse_loopback": f"http://127.0.0.1:{port}/browse/",
+        "browse_lan": f"http://{lan_ip}:{port}/browse/" if lan_ip else "",
+        "api_localhost": f"http://localhost:{port}/api/system",
+        "api_loopback": f"http://127.0.0.1:{port}/api/system",
+        "lan_ip": lan_ip or "",
+    }
+
 
 
 SHELL_SESSIONS: Dict[str, Dict[str, Any]] = {}
@@ -592,6 +626,34 @@ def get_runtime_snapshot() -> Dict[str, Any]:
         "security_plan": (proof_summary.get("security") or {}).get("plan", {}),
         "proof_summary": proof_summary,
     }
+
+
+def get_runtime_snapshot_compact() -> Dict[str, Any]:
+    snapshot = get_runtime_snapshot()
+    compact: Dict[str, Any] = {}
+    for key in (
+        "scheduler", "local_agent", "qwenchat", "living_pipeline", "doc_processor",
+        "file_forge", "file_forge_index", "shell", "archive_plan", "archive_lifecycle",
+        "session_bridge", "identity_continuity", "identity_history", "boot", "capabilities",
+        "docs_batch", "proof_refresh", "runtime_benchmark_run", "runtime_artifact_audit",
+        "code_forge_provenance_audit", "security", "security_plan", "proof_summary",
+        "coordinator", "runtime_benchmark_run_history", "docs_batch_history",
+        "runtime_artifact_audit_history", "code_forge_provenance_audit_history",
+        "archive_lifecycle_history", "archive_lifecycle_report", "archive_lifecycle_retirements",
+    ):
+        if key in snapshot:
+            compact[key] = snapshot[key]
+    for key, limit in {
+        "identity_history": 5,
+        "runtime_benchmark_run_history": 6,
+        "docs_batch_history": 6,
+        "runtime_artifact_audit_history": 6,
+        "code_forge_provenance_audit_history": 6,
+        "archive_lifecycle_history": 8,
+    }.items():
+        if isinstance(compact.get(key), list):
+            compact[key] = compact[key][:limit]
+    return compact
 
 
 def get_local_agent_history(limit: int = 12) -> List[Dict[str, Any]]:
@@ -1633,7 +1695,7 @@ def _run_service_action_async(action: str, service: str | None = None) -> None:
 
 
 async def _service_command(action: str, service: str | None = None) -> Dict[str, Any]:
-    allowed = {"start", "stop", "pause", "resume", "restart", "status", "low-load", "restore-standard"}
+    allowed = {"start", "stop", "pause", "resume", "restart", "status", "low-load", "restore-standard", "shell-reset"}
     if action not in allowed:
         raise HTTPException(status_code=400, detail="Invalid service action")
     if not SERVICES_SCRIPT.exists():
@@ -1654,6 +1716,8 @@ async def _service_command(action: str, service: str | None = None) -> Dict[str,
     if service not in allowed_services:
         raise HTTPException(status_code=400, detail="Invalid service target")
     env = _build_forge_subprocess_env()
+    if action == "status":
+        env["EIDOS_SKIP_ATLAS_HEALTH_CHECK"] = "1"
     if action != "status":
         await to_thread(_run_service_action_async, action, service)
         return {
@@ -1751,8 +1815,9 @@ async def dashboard(request: Request):
     docs_suppressed = _docs_inventory(limit=12, suppressed_only=True)
     docs_tree = _docs_tree(limit=40, refresh=False)
     docs_history = get_docs_history(limit=24)
-    runtime_snapshot = get_runtime_snapshot()
+    runtime_snapshot = get_runtime_snapshot_compact()
     runtime_services = get_runtime_services_snapshot()
+    atlas_access = _atlas_access_snapshot(request)
     code_forge_provenance_audit_history = get_code_forge_provenance_audit_history()
     local_agent_history = get_local_agent_history()
     scheduler_history = get_scheduler_history()
@@ -1788,6 +1853,7 @@ async def dashboard(request: Request):
             "proof_snapshot": proof_snapshot,
             "proof_summary": proof_summary,
             "service_snapshot": await _service_command("status"),
+            "atlas_access": atlas_access,
         },
     )
 
