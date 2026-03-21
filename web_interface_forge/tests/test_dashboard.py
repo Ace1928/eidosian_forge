@@ -3,10 +3,12 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+import time
 import types
 from pathlib import Path
 
 from fastapi.testclient import TestClient
+from file_forge import FileForge
 from web_interface_forge.dashboard import main as dashboard
 
 
@@ -62,6 +64,8 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
 
     (final_docs / "foo").mkdir(parents=True, exist_ok=True)
     (final_docs / "foo" / "bar.py.md").write_text("# Example\n", encoding="utf-8")
+    file_forge_db = tmp_path / "data" / "file_forge" / "library.sqlite"
+    FileForge(base_path=tmp_path).index_directory(runtime, db_path=file_forge_db)
     runtime_dir = tmp_path / "data" / "runtime"
     _write_json(
         runtime_dir / "local_mcp_agent" / "status.json",
@@ -474,6 +478,9 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(dashboard, "FORGE_ROOT", tmp_path)
     monkeypatch.setattr(dashboard, "HOME_ROOT", tmp_path)
     monkeypatch.setattr(dashboard, "RUNTIME_DIR", runtime_dir)
+    monkeypatch.setattr(dashboard, "FILE_FORGE_DB", file_forge_db)
+    monkeypatch.setattr(dashboard, "FILE_FORGE_INDEX_STATUS", runtime_dir / "file_forge_index_status.json")
+    monkeypatch.setattr(dashboard, "FILE_FORGE_INDEX_HISTORY", runtime_dir / "file_forge_index_history.jsonl")
     monkeypatch.setattr(dashboard, "PROOF_REPORT_DIR", tmp_path / "reports" / "proof")
     monkeypatch.setattr(dashboard, "PROOF_BUNDLE_DIR", tmp_path / "reports" / "proof_bundle")
     monkeypatch.setattr(dashboard, "SECURITY_REPORT_DIR", tmp_path / "reports" / "security")
@@ -543,10 +550,13 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         assert "Code Forge Provenance Audit History" in html
         assert "Doc Processor History" in html
         assert "Qwenchat History" in html
+        assert "Operator Shell" in html
+        assert "File Forge Operator" in html
         assert "Living Pipeline History" in html
         runtime_resp = client.get("/api/runtime")
         assert runtime_resp.status_code == 200
         runtime_payload = runtime_resp.json()
+        assert runtime_payload["file_forge"]["total_files"] >= 1
         assert runtime_payload["local_agent"]["status"] == "success"
         assert runtime_payload["doc_processor"]["phase"] == "processing"
         assert runtime_payload["qwenchat"]["phase"] == "interactive"
@@ -576,6 +586,7 @@ def test_doc_status_api_and_index_page(monkeypatch, tmp_path: Path) -> None:
         services = runtime_services_resp.json()["entries"]
         assert any(row["service"] == "scheduler" and row["phase"] == "cycle_complete" for row in services)
         assert any(row["service"] == "doc_processor" and row["phase"] == "processing" for row in services)
+        assert any(row["service"] == "file_forge" for row in services)
         assert any(row["service"] == "qwenchat" and row["phase"] == "interactive" for row in services)
         assert any(row["service"] == "living_pipeline" and row["phase"] == "graphrag" for row in services)
         scheduler_resp = client.get("/api/runtime/scheduler")
@@ -951,12 +962,14 @@ def test_code_forge_archive_routes(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setattr(dashboard, "CODE_FORGE_ARCHIVE_LIFECYCLE_HISTORY", runtime_dir / "code_forge_archive_lifecycle_history.jsonl")
     monkeypatch.setattr(dashboard, "CODE_FORGE_ARCHIVE_PLAN_REPORT_DIR", plan_report_dir)
     monkeypatch.setattr(dashboard, "CODE_FORGE_ARCHIVE_LIFECYCLE_REPORT_DIR", lifecycle_report_dir)
+    monkeypatch.setattr(dashboard, "CODE_FORGE_ARCHIVE_RETIREMENTS_LATEST", tmp_path / "data" / "code_forge" / "archive_ingestion" / "latest" / "retirements" / "latest.json")
     _write_json(runtime_dir / "code_forge_archive_plan_status.json", {"status": "completed", "archive_files_total": 12, "batch_count": 3})
     (runtime_dir / "code_forge_archive_plan_history.jsonl").write_text(json.dumps({"status": "completed"}) + "\n", encoding="utf-8")
     _write_json(runtime_dir / "code_forge_archive_lifecycle_status.json", {"status": "completed", "repo_count": 2})
     (runtime_dir / "code_forge_archive_lifecycle_history.jsonl").write_text(json.dumps({"status": "completed", "phase": "status"}) + "\n", encoding="utf-8")
     _write_json(plan_report_dir / "latest.json", {"archive_files_total": 12, "batch_count": 3})
     _write_json(lifecycle_report_dir / "latest.json", {"repo_count": 2, "summary": {"retirement_ready": 1, "retired": 0}})
+    _write_json(tmp_path / "data" / "code_forge" / "archive_ingestion" / "latest" / "retirements" / "latest.json", {"generated_at": "2026-03-21T00:00:00Z", "retirements": []})
 
     with TestClient(dashboard.app) as client:
         plan = client.get("/api/code-forge/archive-plan")
@@ -983,3 +996,88 @@ def test_code_forge_archive_wave_route_accepts_retry_failed(monkeypatch) -> None
         assert payload["retry_failed"] is True
         assert recorded["retry_failed"] is True
         assert recorded["repo_keys"] == ["eidos_v1_concept"]
+
+
+def test_code_forge_archive_preview_prune_and_restore_routes(monkeypatch) -> None:
+    recorded = {}
+
+    def _fake_preview_job(**kwargs):
+        recorded["preview"] = kwargs
+
+    def _fake_prune_job(**kwargs):
+        recorded["prune"] = kwargs
+
+    def _fake_restore_job(**kwargs):
+        recorded["restore"] = kwargs
+
+    monkeypatch.setattr(dashboard, "_run_code_forge_archive_preview_job", _fake_preview_job)
+    monkeypatch.setattr(dashboard, "_run_code_forge_archive_prune_job", _fake_prune_job)
+    monkeypatch.setattr(dashboard, "_run_code_forge_archive_restore_job", _fake_restore_job)
+    monkeypatch.setattr(dashboard.threading.Thread, "start", lambda self: self._target(*self._args, **self._kwargs))
+
+    with TestClient(dashboard.app) as client:
+        resp = client.post("/api/code-forge/archive-lifecycle/preview-retire?repo_key=eidos_v1_concept&assume_remove_mode=true&background=true")
+        assert resp.status_code == 200
+        assert resp.json()["phase"] == "preview_retire"
+        assert recorded["preview"]["repo_keys"] == ["eidos_v1_concept"]
+        assert recorded["preview"]["assume_remove_mode"] is True
+
+        prune = client.post("/api/code-forge/archive-lifecycle/prune-retired?repo_key=eidos_v1_concept&background=true")
+        assert prune.status_code == 200
+        assert prune.json()["phase"] == "prune_retired"
+        assert recorded["prune"]["repo_keys"] == ["eidos_v1_concept"]
+        assert recorded["prune"]["dry_run"] is False
+
+        restore = client.post("/api/code-forge/archive-lifecycle/restore?repo_key=eidos_v1_concept&background=true")
+        assert restore.status_code == 200
+        assert restore.json()["phase"] == "restore"
+        assert recorded["restore"]["repo_key"] == "eidos_v1_concept"
+
+
+
+def test_build_forge_subprocess_env_includes_code_and_gis_paths(monkeypatch) -> None:
+    monkeypatch.setenv("PYTHONPATH", "/tmp/custom-path")
+    env = dashboard._build_forge_subprocess_env()
+    pythonpath = env["PYTHONPATH"].split(":")
+    assert str(dashboard.FORGE_ROOT / "code_forge" / "src") in pythonpath
+    assert str(dashboard.FORGE_ROOT / "gis_forge" / "src") in pythonpath
+    assert env["EIDOS_FORGE_ROOT"] == str(dashboard.FORGE_ROOT)
+
+
+def test_file_forge_and_shell_apis(monkeypatch, tmp_path: Path) -> None:
+    runtime_dir = tmp_path / "data" / "runtime"
+    runtime_dir.mkdir(parents=True, exist_ok=True)
+    file_forge_db = tmp_path / "data" / "file_forge" / "library.sqlite"
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    (workspace / "note.txt").write_text("hello\n", encoding="utf-8")
+    FileForge(base_path=tmp_path).index_directory(workspace, db_path=file_forge_db)
+
+    monkeypatch.setattr(dashboard, "FORGE_ROOT", tmp_path)
+    monkeypatch.setattr(dashboard, "HOME_ROOT", tmp_path)
+    monkeypatch.setattr(dashboard, "RUNTIME_DIR", runtime_dir)
+    monkeypatch.setattr(dashboard, "FILE_FORGE_DB", file_forge_db)
+    monkeypatch.setattr(dashboard, "FILE_FORGE_INDEX_STATUS", runtime_dir / "file_forge_index_status.json")
+    monkeypatch.setattr(dashboard, "FILE_FORGE_INDEX_HISTORY", runtime_dir / "file_forge_index_history.jsonl")
+
+    with TestClient(dashboard.app) as client:
+        runtime_resp = client.get("/api/runtime/file-forge")
+        assert runtime_resp.status_code == 200
+        assert runtime_resp.json()["summary"]["total_files"] == 1
+
+        index_resp = client.post("/api/file-forge/index", params={"background": False, "path": "workspace"})
+        assert index_resp.status_code == 200
+        assert index_resp.json()["status"] == "completed"
+
+        shell_resp = client.post("/api/shell/start", params={"cwd": ".", "cols": 80, "rows": 24})
+        assert shell_resp.status_code == 200
+        session_id = shell_resp.json()["session_id"]
+        write_resp = client.post(
+            "/api/shell/input",
+            params={"session_id": session_id, "text": "printf 'hello-shell\n'\nexit\n"},
+        )
+        assert write_resp.status_code == 200
+        time.sleep(0.2)
+        read_resp = client.get("/api/shell/read", params={"session_id": session_id, "max_bytes": 8192})
+        assert read_resp.status_code == 200
+        assert "hello-shell" in read_resp.json().get("output", "")

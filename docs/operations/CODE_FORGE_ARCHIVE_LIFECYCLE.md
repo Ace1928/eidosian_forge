@@ -193,3 +193,11 @@ Per retired repo, the run records:
 - File Forge is the byte-faithful reversible layer for documents, configs, workspace files, and any other source-tree artifacts outside the Code Forge plan.
 - Preview/retire/restore operations now reconstruct from the union of both libraries, with File Forge allowed to overwrite stale reconstructed bytes so parity is exact.
 - Live validation on `archive_forge/eidos_v1_concept` now reaches `retirement_ready=true` and `parity_pass=true` in preview mode under this unified contract.
+
+
+## Prune Retired Trees
+
+- `prune-retired` verifies that a retired repo can be reconstructed from Code Forge + File Forge before deleting the stored retired tree.
+- This is the storage-reclaim step for `ingest_and_remove`.
+- After pruning, `restore` reconstructs the repo back into `archive_forge/<repo_key>` from the forge libraries instead of depending on the stored retired tree.
+- Atlas exposes the same operation through `POST /api/code-forge/archive-lifecycle/prune-retired`.

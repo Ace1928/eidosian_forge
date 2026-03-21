@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import argparse
+import fcntl
 import json
 import os
 import shutil
 import sys
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
@@ -44,6 +46,23 @@ POLICY_PATH = DEFAULT_OUTPUT_DIR / "repo_retention_policy.json"
 RETIREMENTS_DIR = DEFAULT_OUTPUT_DIR / "retirements"
 RETIREMENTS_LATEST = RETIREMENTS_DIR / "latest.json"
 RETIREMENTS_HISTORY = RETIREMENTS_DIR / "history.jsonl"
+LOCK_PATH = RUNTIME_DIR / "code_forge_archive_lifecycle.lock"
+
+
+@contextmanager
+def _lifecycle_lock() -> Any:
+    LOCK_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with LOCK_PATH.open("w", encoding="utf-8") as handle:
+        try:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as exc:
+            raise RuntimeError(f"archive lifecycle operation already running: {LOCK_PATH}") from exc
+        handle.write(_now_iso() + "\n")
+        handle.flush()
+        try:
+            yield handle
+        finally:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
 
 
 def _now_iso() -> str:
@@ -134,14 +153,43 @@ def _retirement_manifests(output_dir: Path) -> dict[str, dict[str, Any]]:
     retirements_dir = output_dir / "retirements"
     for path in retirements_dir.glob("*/retirement_manifest.json"):
         payload = _load_json(path)
-        if isinstance(payload, dict) and payload.get("repo_key"):
-            manifests[str(payload.get("repo_key"))] = payload
+        if isinstance(payload, dict):
+            for row in list(payload.get("retirements") or []):
+                if isinstance(row, dict) and row.get("repo_key"):
+                    manifests[str(row.get("repo_key"))] = row
     latest = _load_json(retirements_dir / "latest.json")
     if isinstance(latest, dict):
         for row in list(latest.get("retirements") or []):
             if isinstance(row, dict) and row.get("repo_key"):
                 manifests.setdefault(str(row.get("repo_key")), row)
     return manifests
+
+
+def _update_retirement_records(output_dir: Path, repo_key: str, updates: dict[str, Any]) -> None:
+    retirements_dir = output_dir / "retirements"
+    targets = sorted(retirements_dir.glob("*/retirement_manifest.json"))
+    targets.append(retirements_dir / "latest.json")
+    for path in targets:
+        payload = _load_json(path)
+        if not isinstance(payload, dict):
+            continue
+        rows = payload.get("retirements")
+        if not isinstance(rows, list):
+            continue
+        changed = False
+        for row in rows:
+            if isinstance(row, dict) and str(row.get("repo_key") or "") == repo_key:
+                row.update(updates)
+                changed = True
+        if changed:
+            _write_json(path, payload)
+
+
+def _tree_bytes(root: Path) -> int:
+    root = root.resolve()
+    if not root.exists():
+        return 0
+    return sum(path.stat().st_size for path in root.rglob("*") if path.is_file())
 
 
 def _retirement_ready_for_row(row: dict[str, Any], *, effective_mode: str | None = None) -> bool:
@@ -179,8 +227,6 @@ def _retirement_blockers_for_row(row: dict[str, Any], *, effective_mode: str | N
         blockers.append(f"provenance_links {provenance_links}/{batch_count}")
     if provenance_registries < batch_count:
         blockers.append(f"provenance_registries {provenance_registries}/{batch_count}")
-    if file_records < file_count:
-        blockers.append(f"file_records {file_records}/{file_count}")
     if source_tree_file_count > 0 and reversible_file_count < source_tree_file_count:
         blockers.append(f"reversible_files {reversible_file_count}/{source_tree_file_count}")
     if source_tree_unindexed_count > 0 and source_tree_unindexed_reversible_count < source_tree_unindexed_count:
@@ -783,10 +829,119 @@ def retire_repos(
             "dry_run": bool(dry_run),
             "retirements": results,
         }
-        _write_json(run_dir / "retirement_manifest.json", payload)
-        RETIREMENTS_DIR.mkdir(parents=True, exist_ok=True)
-        RETIREMENTS_LATEST.write_text((run_dir / "retirement_manifest.json").read_text(encoding="utf-8"), encoding="utf-8")
-        _append_jsonl(RETIREMENTS_HISTORY, payload)
+        manifest_path = run_dir / "retirement_manifest.json"
+        _write_json(manifest_path, payload)
+        retirements_dir = output_dir / "retirements"
+        latest_path = retirements_dir / "latest.json"
+        history_path = retirements_dir / "history.jsonl"
+        retirements_dir.mkdir(parents=True, exist_ok=True)
+        latest_path.write_text(manifest_path.read_text(encoding="utf-8"), encoding="utf-8")
+        _append_jsonl(history_path, payload)
+        return payload
+    finally:
+        close = getattr(db, "close", None)
+        if callable(close):
+            close()
+        file_close = getattr(file_db, "close", None)
+        if callable(file_close):
+            file_close()
+
+
+def prune_retired_repos(
+    *,
+    repo_root: Path,
+    archive_root: Path,
+    output_dir: Path,
+    repo_keys: list[str] | None,
+    dry_run: bool = False,
+) -> dict[str, Any]:
+    repo_root = repo_root.resolve()
+    archive_root = archive_root.resolve()
+    output_dir = output_dir.resolve()
+    manifests = _retirement_manifests(output_dir)
+    selected_keys = sorted({str(key) for key in (repo_keys or list(manifests)) if str(key).strip()})
+    db = CodeLibraryDB(repo_root / "data" / "code_forge" / "library.sqlite")
+    file_db = FileLibraryDB(_file_forge_db_path(repo_root))
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    run_dir = output_dir / "retirements" / f"prune_{stamp}"
+    try:
+        results: list[dict[str, Any]] = []
+        for repo_key in selected_keys:
+            manifest = manifests.get(repo_key) or {}
+            source_root = Path(str(manifest.get("source_root") or archive_root / repo_key)).resolve()
+            retired_root = Path(str(manifest.get("retired_root") or "")).resolve() if manifest.get("retired_root") else None
+            rec: dict[str, Any] = {
+                "repo_key": repo_key,
+                "source_root": str(source_root),
+                "retired_root": str(retired_root) if retired_root else None,
+                "dry_run": bool(dry_run),
+            }
+            if not manifest:
+                rec["status"] = "skipped"
+                rec["reason"] = "no retirement manifest found"
+                results.append(rec)
+                continue
+            if source_root.exists():
+                rec["status"] = "skipped"
+                rec["reason"] = "source tree still exists; repo is not in retired state"
+                results.append(rec)
+                continue
+            if not retired_root or not retired_root.exists():
+                rec["status"] = "skipped"
+                rec["reason"] = "retired tree already absent"
+                rec["retired_root_pruned"] = True
+                results.append(rec)
+                continue
+            reconstruction_root = run_dir / "reconstruction" / repo_key
+            parity_path = run_dir / "parity" / repo_key / "parity_report.json"
+            reconstruct_manifest = _build_unified_reconstruction(
+                repo_root=repo_root,
+                code_db=db,
+                file_db=file_db,
+                source_root=source_root,
+                output_dir=reconstruction_root,
+                strict=True,
+            )
+            parity = compare_tree_parity(
+                source_root=retired_root,
+                reconstructed_root=reconstruction_root,
+                report_path=parity_path,
+            )
+            rec["reconstruction_manifest_path"] = reconstruct_manifest.get("manifest_path")
+            rec["parity_report_path"] = str(parity_path)
+            rec["parity_pass"] = bool(parity.get("pass"))
+            if not rec["parity_pass"]:
+                rec["status"] = "failed"
+                rec["reason"] = "retired-tree parity failed"
+                results.append(rec)
+                continue
+            reclaimed_bytes = _tree_bytes(retired_root)
+            rec["storage_reclaimed_bytes"] = reclaimed_bytes
+            if not dry_run:
+                shutil.rmtree(retired_root)
+                updates = {
+                    "retired_root_pruned": True,
+                    "retired_root_pruned_at": _now_iso(),
+                    "retired_root_exists": False,
+                    "storage_reclaimed_bytes": reclaimed_bytes,
+                    "reconstruction_manifest_path": reconstruct_manifest.get("manifest_path"),
+                    "parity_report_path": str(parity_path),
+                }
+                _update_retirement_records(output_dir, repo_key, updates)
+            rec["status"] = "pruned" if not dry_run else "dry_run"
+            rec["retired_root_pruned"] = not dry_run
+            results.append(rec)
+        payload = {
+            "contract": "eidos.code_forge_archive_prune.v1",
+            "generated_at": _now_iso(),
+            "repo_root": str(repo_root),
+            "archive_root": str(archive_root),
+            "output_dir": str(output_dir),
+            "dry_run": bool(dry_run),
+            "pruned": results,
+            "repo_count": len(results),
+        }
+        _write_json(run_dir / "prune_manifest.json", payload)
         return payload
     finally:
         close = getattr(db, "close", None)
@@ -845,8 +1000,12 @@ def restore_repo(
             file_close = getattr(file_db, "close", None)
             if callable(file_close):
                 file_close()
+        source_root.parent.mkdir(parents=True, exist_ok=True)
+        if source_root.exists():
+            shutil.rmtree(source_root)
+        shutil.move(str(reconstruction_root), str(source_root))
         restored["reconstructed"] = True
-        restored["reconstruction_output_dir"] = str(reconstruction_root)
+        restored["reconstruction_output_dir"] = str(source_root)
     _write_json(output_dir / "retirements" / f"restore_{repo_key}.json", restored)
     return restored
 
@@ -892,6 +1051,11 @@ def main() -> int:
     retire_p.add_argument("--refresh", action="store_true")
     retire_p.set_defaults(func="retire")
 
+    prune_p = subparsers.add_parser("prune-retired", parents=[common])
+    prune_p.add_argument("--repo-key", action="append", default=[])
+    prune_p.add_argument("--dry-run", action="store_true")
+    prune_p.set_defaults(func="prune_retired")
+
     restore_p = subparsers.add_parser("restore", parents=[common])
     restore_p.add_argument("--repo-key", required=True)
     restore_p.set_defaults(func="restore")
@@ -911,83 +1075,102 @@ def main() -> int:
         "output_dir": str(output_dir),
         "report_dir": str(report_dir),
     }
+    running["lock_path"] = str(LOCK_PATH)
     _write_runtime_status(running)
     try:
-        if args.func == "status":
-            _ensure_archive_plan(
-                repo_root=repo_root,
-                archive_root=archive_root,
-                output_dir=output_dir,
-                refresh=bool(args.refresh),
-            )
-            payload = build_repo_status_report(repo_root=repo_root, archive_root=archive_root, output_dir=output_dir, report_dir=report_dir, repo_keys=list(args.repo_key or []))
-            selected = {str(item) for item in list(args.repo_key or []) if str(item).strip()}
-            if selected:
-                payload = dict(payload)
-                payload["repos"] = [row for row in list(payload.get("repos") or []) if str(row.get("repo_key") or "") in selected]
-                payload["repo_count"] = len(payload["repos"])
-                payload["summary"] = {
-                    "ingest_and_keep": sum(1 for row in payload["repos"] if row.get("mode") == "ingest_and_keep"),
-                    "ingest_and_remove": sum(1 for row in payload["repos"] if row.get("mode") == "ingest_and_remove"),
-                    "retirement_ready": sum(1 for row in payload["repos"] if row.get("retirement_ready")),
-                    "retired": sum(1 for row in payload["repos"] if row.get("retired")),
-                }
-                payload["selected_repo_keys"] = sorted(selected)
-        elif args.func == "set_mode":
-            payload = set_repo_mode(output_dir / "repo_retention_policy.json", args.repo_key, args.mode, args.reason)
-        elif args.func == "run_wave":
-            _ensure_archive_plan(
-                repo_root=repo_root,
-                archive_root=archive_root,
-                output_dir=output_dir,
-                refresh=bool(args.refresh),
-            )
-            payload = run_archive_wave(
-                repo_root=repo_root,
-                archive_root=archive_root,
-                output_dir=output_dir,
-                repo_keys=list(args.repo_key or []),
-                batch_limit=args.batch_limit,
-                progress_every=args.progress_every,
-                retry_failed=bool(args.retry_failed),
-            )
-        elif args.func == "preview_retire":
-            _ensure_archive_plan(
-                repo_root=repo_root,
-                archive_root=archive_root,
-                output_dir=output_dir,
-                refresh=bool(args.refresh),
-            )
-            payload = preview_retire_repos(
-                repo_root=repo_root,
-                archive_root=archive_root,
-                output_dir=output_dir,
-                report_dir=report_dir,
-                repo_keys=list(args.repo_key or []),
-                assume_remove_mode=bool(args.assume_remove_mode),
-            )
-        elif args.func == "retire":
-            _ensure_archive_plan(
-                repo_root=repo_root,
-                archive_root=archive_root,
-                output_dir=output_dir,
-                refresh=bool(args.refresh),
-            )
-            payload = retire_repos(
-                repo_root=repo_root,
-                archive_root=archive_root,
-                output_dir=output_dir,
-                report_dir=report_dir,
-                repo_keys=list(args.repo_key or []),
-                dry_run=bool(args.dry_run),
-            )
-        else:
-            payload = restore_repo(
-                repo_root=repo_root,
-                archive_root=archive_root,
-                output_dir=output_dir,
-                repo_key=str(args.repo_key),
-            )
+        with _lifecycle_lock():
+            if args.func == "status":
+                _ensure_archive_plan(
+                    repo_root=repo_root,
+                    archive_root=archive_root,
+                    output_dir=output_dir,
+                    refresh=bool(args.refresh),
+                )
+                payload = build_repo_status_report(
+                    repo_root=repo_root,
+                    archive_root=archive_root,
+                    output_dir=output_dir,
+                    report_dir=report_dir,
+                    repo_keys=list(args.repo_key or []),
+                )
+                selected = {str(item) for item in list(args.repo_key or []) if str(item).strip()}
+                if selected:
+                    payload = dict(payload)
+                    payload["repos"] = [
+                        row for row in list(payload.get("repos") or [])
+                        if str(row.get("repo_key") or "") in selected
+                    ]
+                    payload["repo_count"] = len(payload["repos"])
+                    payload["summary"] = {
+                        "ingest_and_keep": sum(1 for row in payload["repos"] if row.get("mode") == "ingest_and_keep"),
+                        "ingest_and_remove": sum(1 for row in payload["repos"] if row.get("mode") == "ingest_and_remove"),
+                        "retirement_ready": sum(1 for row in payload["repos"] if row.get("retirement_ready")),
+                        "retired": sum(1 for row in payload["repos"] if row.get("retired")),
+                    }
+                    payload["selected_repo_keys"] = sorted(selected)
+            elif args.func == "set_mode":
+                payload = set_repo_mode(output_dir / "repo_retention_policy.json", args.repo_key, args.mode, args.reason)
+            elif args.func == "run_wave":
+                _ensure_archive_plan(
+                    repo_root=repo_root,
+                    archive_root=archive_root,
+                    output_dir=output_dir,
+                    refresh=bool(args.refresh),
+                )
+                payload = run_archive_wave(
+                    repo_root=repo_root,
+                    archive_root=archive_root,
+                    output_dir=output_dir,
+                    repo_keys=list(args.repo_key or []),
+                    batch_limit=args.batch_limit,
+                    progress_every=args.progress_every,
+                    retry_failed=bool(args.retry_failed),
+                )
+            elif args.func == "preview_retire":
+                _ensure_archive_plan(
+                    repo_root=repo_root,
+                    archive_root=archive_root,
+                    output_dir=output_dir,
+                    refresh=bool(args.refresh),
+                )
+                payload = preview_retire_repos(
+                    repo_root=repo_root,
+                    archive_root=archive_root,
+                    output_dir=output_dir,
+                    report_dir=report_dir,
+                    repo_keys=list(args.repo_key or []),
+                    assume_remove_mode=bool(args.assume_remove_mode),
+                )
+            elif args.func == "retire":
+                _ensure_archive_plan(
+                    repo_root=repo_root,
+                    archive_root=archive_root,
+                    output_dir=output_dir,
+                    refresh=bool(args.refresh),
+                )
+                payload = retire_repos(
+                    repo_root=repo_root,
+                    archive_root=archive_root,
+                    output_dir=output_dir,
+                    report_dir=report_dir,
+                    repo_keys=list(args.repo_key or []),
+                    dry_run=bool(args.dry_run),
+                )
+            elif args.func == "prune_retired":
+                payload = prune_retired_repos(
+                    repo_root=repo_root,
+                    archive_root=archive_root,
+                    output_dir=output_dir,
+                    repo_keys=list(args.repo_key or []),
+                    dry_run=bool(args.dry_run),
+                )
+            else:
+                payload = restore_repo(
+                    repo_root=repo_root,
+                    archive_root=archive_root,
+                    output_dir=output_dir,
+                    repo_key=str(args.repo_key),
+                )
 
         completed = {
             "contract": "eidos.code_forge_archive_lifecycle.status.v1",

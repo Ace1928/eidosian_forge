@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from doc_forge.scribe.service import DocProcessor, create_app
 from fastapi.testclient import TestClient
+from file_forge.library import FileLibraryDB
 
 
 @pytest.fixture
@@ -20,6 +21,41 @@ def mock_processor(mock_config):
         proc.model_server.is_ready.return_value = True
 
         yield proc
+
+
+def test_processor_indexes_artifacts_into_file_forge(mock_config):
+    with patch("doc_forge.scribe.service.ManagedModelServer"), patch(
+        "doc_forge.scribe.service.DocumentExtractor"
+    ), patch("doc_forge.scribe.service.DocGenerator"), patch("doc_forge.scribe.service.FederatedJudge"):
+        proc = DocProcessor(mock_config)
+        proc.extractor.extract.return_value = ("source", {"doc_type": "py"})
+        proc.generator.generate.return_value = "# Doc"
+        proc.judges.evaluate.return_value = {"approved": True, "aggregate_score": 0.9}
+        proc.model_server.is_ready.return_value = True
+
+        source = proc.cfg.source_root / "pkg" / "test.py"
+        source.parent.mkdir(parents=True, exist_ok=True)
+        source.write_text("print(\'hi\')\n", encoding="utf-8")
+        proc._scan_candidates = MagicMock(return_value=[source])
+        proc.stop_event.is_set = MagicMock(side_effect=[False, False, True])
+
+        with patch("time.sleep"):
+            proc._run_loop()
+
+        db = FileLibraryDB(proc.file_forge_db_path)
+        final_path = proc.cfg.final_root / "pkg" / "test.py.md"
+        judgment_path = proc.cfg.judgments_root / "pkg" / "test.py.json"
+        source_record = db.get_file_record(source)
+        final_record = db.get_file_record(final_path)
+        judgment_record = db.get_file_record(judgment_path)
+
+        assert source_record is not None
+        assert final_record is not None
+        assert judgment_record is not None
+        assert proc.state.get("files")["pkg/test.py"]["file_forge"]["indexed"] >= 1
+        summary = db.summary(path_prefix=proc.cfg.runtime_root)
+        assert summary["total_files"] >= 2
+        assert any(row["forge"] == "doc_forge" for row in db.list_links(final_path))
 
 
 def test_processor_loop_lifecycle(mock_processor):

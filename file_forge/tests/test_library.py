@@ -104,3 +104,22 @@ def test_restore_directory_can_overwrite_existing_targets(tmp_path: Path) -> Non
     assert result["restored"] == 1
     assert result["overwritten_existing"] == 1
     assert (restored_root / "note.txt").read_text(encoding="utf-8") == "alpha\n"
+
+
+def test_summary_reports_counts_and_doc_forge_links(tmp_path: Path) -> None:
+    root = tmp_path / "repo"
+    runtime = root / "doc_forge" / "runtime" / "final_docs"
+    runtime.mkdir(parents=True)
+    target = runtime / "guide.md"
+    target.write_text("# Guide\n", encoding="utf-8")
+
+    forge = FileForge(base_path=tmp_path)
+    db_path = tmp_path / "file_library.sqlite"
+    forge.index_directory(root, db_path=db_path)
+
+    db = FileLibraryDB(db_path)
+    summary = db.summary(path_prefix=root)
+
+    assert summary["total_files"] == 1
+    assert any(row["forge"] == "doc_forge" for row in summary["by_forge"])
+    assert summary["recent_files"][0]["kind"] == "document"

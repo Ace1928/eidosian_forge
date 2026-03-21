@@ -89,6 +89,8 @@ def derive_file_links(path: Path, *, kind: str, text_preview: str = "") -> list[
     if kind in {"document", "config", "generic", "code"}:
         links.append({"forge": "word_forge", "relation": "lexicon_seed", "detail": {"kind": kind}})
     lowered = f"{path.as_posix()}\n{text_preview[:512]}".lower()
+    if "/doc_forge/runtime/" in lowered or "/final_docs/" in lowered or "/judgments/" in lowered:
+        links.append({"forge": "doc_forge", "relation": "documents", "detail": {"kind": kind}})
     if any(token in lowered for token in ("lesson", "memory", "journal", "continuity", "identity", "reflection")):
         links.append({"forge": "memory_forge", "relation": "memory_candidate", "detail": {"signal": "path_or_content"}})
     return links
@@ -343,6 +345,113 @@ class FileLibraryDB:
                 (path_text,),
             ).fetchall()
         return [{"src_path": row[0], "dst_path": row[1], "rel_type": row[2]} for row in rows]
+
+    def summary(self, *, path_prefix: Optional[str | Path] = None, recent_limit: int = 8) -> dict[str, Any]:
+        prefix = str(Path(path_prefix).resolve()) if path_prefix else ""
+        recent_limit = max(1, int(recent_limit))
+        if prefix:
+            record_where = "WHERE file_path = ? OR file_path LIKE ?"
+            record_params: list[Any] = [prefix, f"{prefix}/%"]
+            link_where = (
+                "WHERE file_path IN (SELECT file_path FROM file_records WHERE file_path = ? OR file_path LIKE ?)"
+            )
+            link_params: list[Any] = [prefix, f"{prefix}/%"]
+            rel_where = (
+                "WHERE src_path IN (SELECT file_path FROM file_records WHERE file_path = ? OR file_path LIKE ?)"
+            )
+            rel_params: list[Any] = [prefix, f"{prefix}/%"]
+        else:
+            record_where = ""
+            record_params = []
+            link_where = ""
+            link_params = []
+            rel_where = ""
+            rel_params = []
+
+        with self._connect() as conn:
+            total_files = int(
+                conn.execute(
+                    f"SELECT COUNT(*) FROM file_records {record_where}",
+                    tuple(record_params),
+                ).fetchone()[0]
+            )
+            total_blobs = int(conn.execute("SELECT COUNT(*) FROM file_blobs").fetchone()[0])
+            total_vectors = int(
+                conn.execute(
+                    f"SELECT COUNT(*) FROM file_vectors WHERE file_path IN (SELECT file_path FROM file_records {record_where})"
+                    if record_where
+                    else "SELECT COUNT(*) FROM file_vectors",
+                    tuple(record_params) if record_where else (),
+                ).fetchone()[0]
+            )
+            total_links = int(
+                conn.execute(
+                    f"SELECT COUNT(*) FROM file_links {link_where}",
+                    tuple(link_params),
+                ).fetchone()[0]
+            )
+            total_relationships = int(
+                conn.execute(
+                    f"SELECT COUNT(*) FROM file_relationships {rel_where}",
+                    tuple(rel_params),
+                ).fetchone()[0]
+            )
+            by_kind_rows = conn.execute(
+                f"SELECT kind, COUNT(*) FROM file_records {record_where} GROUP BY kind ORDER BY COUNT(*) DESC, kind ASC",
+                tuple(record_params),
+            ).fetchall()
+            by_forge_rows = conn.execute(
+                f"SELECT forge_name, COUNT(*) FROM file_links {link_where} GROUP BY forge_name ORDER BY COUNT(*) DESC, forge_name ASC",
+                tuple(link_params),
+            ).fetchall()
+            recent_rows = conn.execute(
+                f"""
+                SELECT file_path, kind, updated_at, size_bytes, content_hash
+                FROM file_records
+                {record_where}
+                ORDER BY updated_at DESC, file_path ASC
+                LIMIT ?
+                """,
+                tuple(record_params + [recent_limit]),
+            ).fetchall()
+            duplicate_groups = int(
+                conn.execute(
+                    f"""
+                    SELECT COUNT(*)
+                    FROM (
+                        SELECT content_hash
+                        FROM file_records
+                        {record_where}
+                        GROUP BY content_hash
+                        HAVING COUNT(*) > 1
+                    )
+                    """,
+                    tuple(record_params),
+                ).fetchone()[0]
+            )
+
+        return {
+            "db_path": str(self.db_path.resolve()),
+            "path_prefix": prefix or None,
+            "total_files": total_files,
+            "total_blobs": total_blobs,
+            "total_vectors": total_vectors,
+            "total_links": total_links,
+            "total_relationships": total_relationships,
+            "duplicate_groups": duplicate_groups,
+            "by_kind": [{"kind": row[0], "count": int(row[1])} for row in by_kind_rows],
+            "by_forge": [{"forge": row[0], "count": int(row[1])} for row in by_forge_rows],
+            "recent_files": [
+                {
+                    "file_path": row[0],
+                    "kind": row[1],
+                    "updated_at": row[2],
+                    "size_bytes": int(row[3]),
+                    "content_hash": row[4],
+                }
+                for row in recent_rows
+            ],
+        }
 
     def restore_file(self, *, file_path: str | Path, target_path: str | Path) -> Path:
         record = self.get_file_record(file_path)
