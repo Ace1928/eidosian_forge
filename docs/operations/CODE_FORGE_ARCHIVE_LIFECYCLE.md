@@ -4,8 +4,8 @@
 
 Define the operational contract for ingesting `archive_forge` into Code Forge in two explicit modes:
 
-- `ingest_and_keep`: ingest archive content into the Code Forge library and keep the source repository in place.
-- `ingest_and_remove`: ingest archive content into the Code Forge library, verify reversible reconstruction/parity, and then retire the source repository by moving it into a reversible retirement store.
+- `ingest_and_keep`: ingest archive content into the Code Forge and File Forge libraries and keep the source repository in place.
+- `ingest_and_remove`: ingest archive content into the unified Code Forge + File Forge library substrate, verify reversible reconstruction/parity, and then retire the source repository by moving it into a reversible retirement store.
 
 This contract exists so archive reduction is governed, incremental, and reversible rather than ad hoc.
 
@@ -19,8 +19,9 @@ This contract exists so archive reduction is governed, incremental, and reversib
   - all repo batches are completed
   - no repo batches are failed or pending
   - matching provenance artifacts exist for each repo batch
-  - Code Forge file records exist for the repo paths
-  - reconstruction parity passes
+  - planned Code Forge file records exist for repo-indexed paths
+  - File Forge covers any source-tree files outside the Code Forge plan
+  - unified reconstruction parity passes against the full source tree
 - Retirement is reversible: repositories are moved into a retirement store, not destructively deleted.
 
 ## Primary Scripts
@@ -110,6 +111,25 @@ Retire repos that are fully ready:
 ./eidosian_venv/bin/python scripts/code_forge_archive_lifecycle.py retire --repo-key <repo_key>
 ```
 
+Preview retirement readiness and reconstruction parity without mutating retention policy:
+
+```sh
+./eidosian_venv/bin/python scripts/code_forge_archive_lifecycle.py preview-retire --repo-key <repo_key> --assume-remove-mode
+```
+
+Targeted `status` and `preview-retire` requests are now repo-scoped internally, so checking one repo does not rebuild the full archive-wide lifecycle report first.
+
+Preview output now distinguishes between:
+
+- `captured_file_count`: files seen by any successful Code Forge route for that repo
+- `file_record_count`: repo-indexed files reconstructable from the Code Forge library itself
+- `file_forge_record_count`: files currently reversible from File Forge
+- `reversible_file_count`: full source-tree files reversible from the union of Code Forge and File Forge
+- `uncaptured_file_count`: repo-indexed files not yet captured by any Code Forge route
+- `missing_file_count`: repo-indexed files not yet reconstructable from Code Forge
+- `source_tree_unindexed_count`: source-tree files outside the Code Forge plan
+- `source_tree_unindexed_reversible_count`: unindexed source-tree files currently covered by File Forge
+
 Dry-run retirement without moving sources:
 
 ```sh
@@ -145,21 +165,39 @@ Per retired repo, the run records:
 - incremental refresh avoids re-opening unaffected work
 - code and metadata ingestion now degrade gracefully when embedding-backed sync is unavailable, so low-load library capture can continue and record integration errors instead of hard-failing the whole wave
 - retirement is gated by provenance and parity, not just completion counters
+- lifecycle previews now surface concrete blockers and sample paths instead of only a boolean readiness flag
 - recovery path is explicit and scriptable
 
 ## Current Weaknesses
 
 - planner refresh still has to walk the archive tree; it is lighter than full hashing, but still proportional to archive size
 - degraded knowledge sync preserves capture progress but still logs noisy connection errors while embedding services are intentionally paused
-- Atlas now exposes archive plan/lifecycle state and can trigger cached status refreshes and bounded waves, but repo-mode editing/retirement review still need deeper operator UX
+- Atlas now exposes archive plan/lifecycle state, repo-mode editing, bounded waves, preview-retire actions, dry-run retirement actions, and restore actions
 - removal from raw archive storage is reversible retirement, not final garbage collection
 - deleted files inside a kept repo are currently preserved as historical library evidence rather than purged from Code Forge
 
 ## Next Integration Work
 
-- expand Atlas from current archive plan/lifecycle actions into full repo-mode editing, retirement dry-runs, and restore flows
+- continue widening Atlas from archive plan/lifecycle actions into richer retirement review, provenance drill-down, and restore validation flows
 - feed archive plan/lifecycle runtime evidence into proof/bundle scoring once live ingestion waves are producing reversible provenance at scale
+- keep tightening reconstructable coverage so non-code/document/config routes can eventually participate in reversible retirement guarantees, not only capture guarantees
 - add proof/bundle coverage for archive lifecycle readiness and retirement evidence
 - add cleaner low-load/no-embedding logging modes so intentional degraded sync does not flood operator logs
 - add explicit repository reconstruction benchmarks for retired repos
 - add a final garbage-collection layer only after retirement manifests are aged, reviewed, and backed up
+
+## Unified Reconstruction Notes
+
+- `run-wave` now performs repo-scoped File Forge indexing after Code Forge batch execution.
+- Code Forge remains the semantic/code abstraction layer and provenance surface.
+- File Forge is the byte-faithful reversible layer for documents, configs, workspace files, and any other source-tree artifacts outside the Code Forge plan.
+- Preview/retire/restore operations now reconstruct from the union of both libraries, with File Forge allowed to overwrite stale reconstructed bytes so parity is exact.
+- Live validation on `archive_forge/eidos_v1_concept` now reaches `retirement_ready=true` and `parity_pass=true` in preview mode under this unified contract.
+
+
+## Prune Retired Trees
+
+- `prune-retired` verifies that a retired repo can be reconstructed from Code Forge + File Forge before deleting the stored retired tree.
+- This is the storage-reclaim step for `ingest_and_remove`.
+- After pruning, `restore` reconstructs the repo back into `archive_forge/<repo_key>` from the forge libraries instead of depending on the stored retired tree.
+- Atlas exposes the same operation through `POST /api/code-forge/archive-lifecycle/prune-retired`.

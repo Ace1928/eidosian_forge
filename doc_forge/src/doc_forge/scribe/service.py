@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import os
 import subprocess
+import sys
 import threading
 import time
 from collections import deque
@@ -29,6 +30,16 @@ from .extract import DocumentExtractor, extract_terms
 from .generate import DocGenerator
 from .judge import FederatedJudge
 from .state import ProcessorState, atomic_write_json, now_iso, read_json
+
+FILE_FORGE_SRC = Path(__file__).resolve().parents[4] / "file_forge" / "src"
+if FILE_FORGE_SRC.exists() and str(FILE_FORGE_SRC) not in sys.path:
+    sys.path.insert(0, str(FILE_FORGE_SRC))
+
+try:
+    from file_forge.library import FileLibraryDB, index_path  # type: ignore
+except Exception:  # pragma: no cover - production fallback when file_forge path is unavailable
+    FileLibraryDB = None  # type: ignore[assignment]
+    index_path = None  # type: ignore[assignment]
 
 
 def _atlas_dashboard_url() -> str:
@@ -125,13 +136,17 @@ class DocProcessor:
         self.generator = DocGenerator(cfg)
         self.judges = FederatedJudge(cfg)
         self.model_server = ManagedModelServer(cfg)
-        self.state = ProcessorState(cfg.state_path, cfg.status_path, cfg.index_path)
+        self.state = ProcessorState(cfg.state_path, cfg.status_path, cfg.index_path, cfg.history_path)
         self.state.update("model", str(cfg.llm_model_path))
         self.state.update("completion_url", cfg.completion_url)
 
         self.stop_event = threading.Event()
         self.thread: threading.Thread | None = None
         self.recent_docs: deque[dict[str, Any]] = deque(maxlen=80)
+        self.file_forge_db_path = (cfg.forge_root / "data" / "file_forge" / "library.sqlite").resolve()
+        self.file_forge_available = FileLibraryDB is not None and index_path is not None
+        self.state.update("file_forge_db_path", str(self.file_forge_db_path))
+        self.state.update("file_forge_available", bool(self.file_forge_available))
 
         # Exclusion config
         self.excluded_prefixes = [
@@ -215,8 +230,57 @@ class DocProcessor:
         out.sort()
         return out
 
+    def _relative_to_forge(self, path: Path) -> str:
+        try:
+            return str(path.resolve().relative_to(self.cfg.forge_root.resolve()))
+        except Exception:
+            return str(path.resolve())
+
+    def _index_file_forge_artifacts(self, *, source_path: Path, artifact_paths: list[Path]) -> dict[str, Any]:
+        artifact_rows = [source_path, *artifact_paths]
+        payload: dict[str, Any] = {
+            "status": "skipped",
+            "db_path": str(self.file_forge_db_path),
+            "paths": [self._relative_to_forge(item) for item in artifact_rows if item.exists()],
+            "results": [],
+        }
+        if not self.file_forge_available:
+            payload["status"] = "unavailable"
+            return payload
+
+        db = FileLibraryDB(self.file_forge_db_path)
+        results: list[dict[str, Any]] = []
+        indexed = 0
+        skipped = 0
+        for candidate in artifact_rows:
+            if not candidate.exists():
+                continue
+            result = index_path(db=db, file_path=candidate)
+            result["file_path"] = self._relative_to_forge(Path(result.get("file_path") or candidate))
+            results.append(result)
+            if result.get("status") == "indexed":
+                indexed += 1
+            else:
+                skipped += 1
+
+        payload.update(
+            {
+                "status": "indexed" if indexed else ("skipped" if results else "empty"),
+                "indexed": indexed,
+                "skipped": skipped,
+                "results": results,
+                "summary": db.summary(path_prefix=self.cfg.runtime_root, recent_limit=6),
+                "updated_at": now_iso(),
+            }
+        )
+        self.state.update("file_forge_last_sync", payload["updated_at"])
+        self.state.update("file_forge_last_status", payload["status"])
+        self.state.update("file_forge_last_indexed", indexed)
+        return payload
+
     def _run_loop(self) -> None:
         self.state.update("status", "starting")
+        self.state.update("phase", "starting")
         self.state.persist()
 
         while not self.stop_event.is_set():
@@ -224,9 +288,11 @@ class DocProcessor:
                 try:
                     self.model_server.start()
                     self.state.update("status", "running")
+                    self.state.update("phase", "llm_ready")
                     self.state.update("last_error", "")
                 except Exception as exc:
                     self.state.update("status", "waiting_for_llm")
+                    self.state.update("phase", "waiting_for_llm")
                     self.state.update("last_error", f"{type(exc).__name__}: {exc}")
                     self.state.persist()
                     time.sleep(max(2.0, self.cfg.loop_sleep_s))
@@ -235,6 +301,7 @@ class DocProcessor:
             elif self.cfg.dry_run:
                 if self.state.get("status") == "starting":
                     self.state.update("status", "running")
+                    self.state.update("phase", "dry_run_ready")
                     self.state.persist()
 
             candidates = self._scan_candidates()
@@ -256,10 +323,12 @@ class DocProcessor:
 
             if not pending:
                 self.state.update("status", "idle")
+                self.state.update("phase", "idle")
                 self.state.persist()
                 time.sleep(max(2.0, self.cfg.loop_sleep_s))
                 if self.state.get("status") == "idle":
                     self.state.update("status", "running")
+                    self.state.update("phase", "scan")
                 continue
 
             for path, rel, digest in pending:
@@ -281,6 +350,8 @@ class DocProcessor:
                 self.state.data["doc_type_frequency"][doc_type] = (
                     self.state.data["doc_type_frequency"].get(doc_type, 0) + 1
                 )
+                self.state.update("phase", "processing")
+                self.state.update("active_document", rel_key)
 
                 try:
                     source_text, metadata = self.extractor.extract(path)
@@ -315,6 +386,7 @@ class DocProcessor:
 
                     approved = bool(scorecard.get("approved", False))
                     status = "approved" if approved else "rejected"
+                    file_forge_sync: dict[str, Any]
 
                     if approved:
                         final_path.write_text(markdown, encoding="utf-8")
@@ -329,16 +401,26 @@ class DocProcessor:
                             "updated_at": now_iso(),
                             "tags": tags,
                             "doc_type": metadata.get("doc_type", "unknown"),
+                            "judgment": str(judgment_path.relative_to(self.cfg.runtime_root)),
+                            "stage": str(stage_path.relative_to(self.cfg.runtime_root)),
                         }
                         with self.state.lock:
                             current_index = [e for e in self.state.data.get("index", []) if e.get("source") != rel_key]
                             current_index.append(index_entry)
                             current_index.sort(key=lambda x: x.get("source", ""))
                             self.state.data["index"] = current_index
+                        file_forge_sync = self._index_file_forge_artifacts(
+                            source_path=path,
+                            artifact_paths=[stage_path, judgment_path, final_path],
+                        )
                     else:
                         rejected_path.write_text(markdown, encoding="utf-8")
                         with self.state.lock:
                             self.state.data["rejected"] += 1
+                        file_forge_sync = self._index_file_forge_artifacts(
+                            source_path=path,
+                            artifact_paths=[stage_path, judgment_path, rejected_path],
+                        )
 
                     elapsed = round(time.perf_counter() - started, 4)
                     self.state.update_running_average("average_seconds_per_document", elapsed, "duration_samples")
@@ -353,6 +435,7 @@ class DocProcessor:
                             "updated_at": now_iso(),
                             "duration_seconds": elapsed,
                             "tags": tags,
+                            "file_forge": file_forge_sync,
                         }
                         history_entry = {
                             "source": rel_key,
@@ -360,6 +443,8 @@ class DocProcessor:
                             "score": quality,
                             "duration_seconds": elapsed,
                             "updated_at": now_iso(),
+                            "file_forge_status": file_forge_sync.get("status"),
+                            "file_forge_indexed": file_forge_sync.get("indexed", 0),
                         }
                         self.state.data["history"] = (self.state.data.get("history", []) + [history_entry])[-500:]
 
@@ -380,6 +465,7 @@ class DocProcessor:
                 time.sleep(self.cfg.loop_sleep_s)
 
         self.state.update("status", "stopped")
+        self.state.update("phase", "stopped")
         self.state.persist()
 
 

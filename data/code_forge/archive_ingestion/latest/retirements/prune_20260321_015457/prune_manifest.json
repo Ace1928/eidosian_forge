@@ -1,0 +1,23 @@
+{
+  "contract": "eidos.code_forge_archive_prune.v1",
+  "generated_at": "2026-03-21T01:54:57.819676+00:00",
+  "repo_root": "/data/data/com.termux/files/home/eidosian_forge",
+  "archive_root": "/data/data/com.termux/files/home/eidosian_forge/archive_forge",
+  "output_dir": "/data/data/com.termux/files/home/eidosian_forge/data/code_forge/archive_ingestion/latest",
+  "dry_run": false,
+  "pruned": [
+    {
+      "repo_key": "eidos_v1_concept",
+      "source_root": "/data/data/com.termux/files/home/eidosian_forge/archive_forge/eidos_v1_concept",
+      "retired_root": "/data/data/com.termux/files/home/eidosian_forge/data/code_forge/archive_ingestion/latest/retirements/20260321_014801/stored/eidos_v1_concept",
+      "dry_run": false,
+      "reconstruction_manifest_path": "/data/data/com.termux/files/home/eidosian_forge/data/code_forge/archive_ingestion/latest/retirements/prune_20260321_015457/reconstruction/eidos_v1_concept_combined_reconstruction_manifest.json",
+      "parity_report_path": "/data/data/com.termux/files/home/eidosian_forge/data/code_forge/archive_ingestion/latest/retirements/prune_20260321_015457/parity/eidos_v1_concept/parity_report.json",
+      "parity_pass": true,
+      "storage_reclaimed_bytes": 1035250,
+      "status": "pruned",
+      "retired_root_pruned": true
+    }
+  ],
+  "repo_count": 1
+}

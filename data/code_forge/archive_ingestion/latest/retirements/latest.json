@@ -1,0 +1,27 @@
+{
+  "contract": "eidos.code_forge_archive_retire.v1",
+  "generated_at": "2026-03-21T01:48:03.000682+00:00",
+  "repo_root": "/data/data/com.termux/files/home/eidosian_forge",
+  "archive_root": "/data/data/com.termux/files/home/eidosian_forge/archive_forge",
+  "output_dir": "/data/data/com.termux/files/home/eidosian_forge/data/code_forge/archive_ingestion/latest",
+  "dry_run": false,
+  "retirements": [
+    {
+      "repo_key": "eidos_v1_concept",
+      "mode": "ingest_and_remove",
+      "source_root": "/data/data/com.termux/files/home/eidosian_forge/archive_forge/eidos_v1_concept",
+      "dry_run": false,
+      "retirement_ready": true,
+      "reconstruction_manifest_path": "/data/data/com.termux/files/home/eidosian_forge/data/code_forge/archive_ingestion/latest/retirements/prune_20260321_015457/reconstruction/eidos_v1_concept_combined_reconstruction_manifest.json",
+      "parity_report_path": "/data/data/com.termux/files/home/eidosian_forge/data/code_forge/archive_ingestion/latest/retirements/prune_20260321_015457/parity/eidos_v1_concept/parity_report.json",
+      "parity_pass": true,
+      "status": "retired",
+      "retired_root": "/data/data/com.termux/files/home/eidosian_forge/data/code_forge/archive_ingestion/latest/retirements/20260321_014801/stored/eidos_v1_concept",
+      "restore_command": "./eidosian_venv/bin/python scripts/code_forge_archive_lifecycle.py restore --repo-key eidos_v1_concept",
+      "retired_root_pruned": true,
+      "retired_root_pruned_at": "2026-03-21T01:54:57.818950+00:00",
+      "retired_root_exists": false,
+      "storage_reclaimed_bytes": 1035250
+    }
+  ]
+}

@@ -172,7 +172,7 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
 - [ ] Add canonical extraction and abstraction workflows for reusable library synthesis.
 - [ ] Add standardization passes for naming, signatures, ownership, provenance, and test linkage.
 - [~] Improve vectorized search, reverse lookup, snippet extraction, and dependency graph navigation.
-- [ ] Ensure archive-derived code can be ingested into the library and then safely retired from raw archive storage when replacement gates pass.
+- [~] Ensure archive-derived code and adjacent file surfaces can be ingested into the unified Code Forge + File Forge library and then safely retired from raw archive storage when replacement gates pass.
 
 ### Phase 8: Archive Forge Reduction Program
 - [~] Classify `archive_forge` into ingestion batches by source, type, and expected retention strategy.
@@ -181,6 +181,8 @@ Unify all existing forge plans, TODOs, roadmaps, backlog trackers, and active in
 - [~] Ingest reference/metadata/manifests into GIS/knowledge provenance stores.
 - [~] Add promotion/deletion gates so raw archive content is only removed after abstraction and evidence thresholds are met.
 - [~] Track archive burn-down with artifacts, dashboards, and repo-level retirement status.
+- [x] Added File Forge as the reversible byte-faithful companion to Code Forge for archive retirement parity on off-plan files.
+- [x] Unified archive preview/retire/restore flows now reconstruct from Code Forge + File Forge together, with live parity success on `archive_forge/eidos_v1_concept` preview.
 
 ### Phase 9: Document, Tika, and Crawl Completion
 - [~] Harden Tika and crawl ingestion for all supported local and fetched artifacts.
@@ -445,3 +447,8 @@ For each completed item:
 - [x] Added cached repo-level archive lifecycle status plus low-load service profiles so archive operations can run without forcing a full metadata rescan or keeping heavy services online.
 - [x] Exposed archive plan/lifecycle operator actions in Atlas for plan refreshes, cached status runs, and bounded repo waves.
 - [x] Added repo-filtered archive wave execution and reversible restore/retire scripts to support controlled archive burn-down.
+
+
+- Code Forge/File Forge archive lifecycle now supports verified storage reclamation via `prune-retired`, so `ingest_and_remove` can actually shrink archive footprint after reversible capture.
+- Atlas now exposes live Termux shell sessions, File Forge summary/index controls, and archive prune operations directly from the dashboard.
+- Git LFS coverage has been extended beyond Code Forge into File Forge and shared vector/database assets.

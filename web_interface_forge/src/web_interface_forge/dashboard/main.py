@@ -1,9 +1,17 @@
+import atexit
+import fcntl
 import json
 import logging
 import os
+import pty
+import select
+import signal
+import struct
 import subprocess
 import sys
+import termios
 import threading
+import uuid
 from asyncio import to_thread
 from dataclasses import asdict
 from datetime import datetime, timezone
@@ -20,14 +28,27 @@ from fastapi.templating import Jinja2Templates
 
 # --- Configuration ---
 FORGE_ROOT = Path(os.environ.get("EIDOS_FORGE_ROOT", "/data/data/com.termux/files/home/eidosian_forge")).resolve()
-for extra in (
+FORGE_IMPORT_PATHS = (
+    FORGE_ROOT / "web_interface_forge" / "src",
     FORGE_ROOT / "lib",
     FORGE_ROOT / "doc_forge" / "src",
     FORGE_ROOT / "agent_forge" / "src",
-):
-    text = str(extra)
-    if extra.exists() and text not in sys.path:
-        sys.path.insert(0, text)
+    FORGE_ROOT / "code_forge" / "src",
+    FORGE_ROOT / "file_forge" / "src",
+    FORGE_ROOT / "gis_forge" / "src",
+    FORGE_ROOT / "memory_forge" / "src",
+    FORGE_ROOT / "narrative_forge" / "src",
+    FORGE_ROOT / "eidos_mcp" / "src",
+    FORGE_ROOT / "neural_forge" / "src",
+)
+for extra in FORGE_IMPORT_PATHS:
+    extra_text = str(extra)
+    if extra.exists() and extra_text not in sys.path:
+        sys.path.insert(0, extra_text)
+
+from file_forge import FileForge  # type: ignore
+from file_forge.library import FileLibraryDB  # type: ignore
+
 DOC_RUNTIME = FORGE_ROOT / "doc_forge" / "runtime"
 DOC_FINAL = DOC_RUNTIME / "final_docs"
 DOC_INDEX = DOC_RUNTIME / "doc_index.json"
@@ -64,6 +85,9 @@ CODE_FORGE_ARCHIVE_PLAN_STATUS = RUNTIME_DIR / "code_forge_archive_plan_status.j
 CODE_FORGE_ARCHIVE_PLAN_HISTORY = RUNTIME_DIR / "code_forge_archive_plan_history.jsonl"
 CODE_FORGE_ARCHIVE_LIFECYCLE_STATUS = RUNTIME_DIR / "code_forge_archive_lifecycle_status.json"
 CODE_FORGE_ARCHIVE_LIFECYCLE_HISTORY = RUNTIME_DIR / "code_forge_archive_lifecycle_history.jsonl"
+FILE_FORGE_INDEX_STATUS = RUNTIME_DIR / "file_forge_index_status.json"
+FILE_FORGE_INDEX_HISTORY = RUNTIME_DIR / "file_forge_index_history.jsonl"
+FILE_FORGE_DB = FORGE_ROOT / "data" / "file_forge" / "library.sqlite"
 SESSION_BRIDGE_DIR = RUNTIME_DIR / "session_bridge"
 SESSION_BRIDGE_CONTEXT = SESSION_BRIDGE_DIR / "latest_context.json"
 SESSION_BRIDGE_IMPORT_STATUS = SESSION_BRIDGE_DIR / "import_status.json"
@@ -74,6 +98,7 @@ RUNTIME_ARTIFACT_REPORT_DIR = FORGE_ROOT / "reports" / "runtime_artifact_audit"
 CODE_FORGE_PROVENANCE_REPORT_DIR = FORGE_ROOT / "reports" / "code_forge_provenance_audit"
 CODE_FORGE_ARCHIVE_PLAN_REPORT_DIR = FORGE_ROOT / "reports" / "code_forge_archive_plan"
 CODE_FORGE_ARCHIVE_LIFECYCLE_REPORT_DIR = FORGE_ROOT / "reports" / "code_forge_archive_lifecycle"
+CODE_FORGE_ARCHIVE_RETIREMENTS_LATEST = FORGE_ROOT / "data" / "code_forge" / "archive_ingestion" / "latest" / "retirements" / "latest.json"
 SERVICES_SCRIPT = FORGE_ROOT / "scripts" / "eidos_termux_services.sh"
 SERVICE_ACTION_LOG = RUNTIME_DIR / "atlas_service_actions.log"
 SCHEDULER_CONTROL_SCRIPT = FORGE_ROOT / "scripts" / "eidos_scheduler_control.py"
@@ -88,6 +113,209 @@ logger = logging.getLogger("eidos_dashboard")
 
 def _now_utc_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _build_forge_subprocess_env() -> Dict[str, str]:
+    env = os.environ.copy()
+    env["EIDOS_FORGE_ROOT"] = str(FORGE_ROOT)
+    existing = [p for p in str(env.get("PYTHONPATH") or "").split(os.pathsep) if p]
+    merged: list[str] = []
+    for path in [str(p) for p in FORGE_IMPORT_PATHS if p.exists()] + existing:
+        if path and path not in merged:
+            merged.append(path)
+    env["PYTHONPATH"] = os.pathsep.join(merged)
+    return env
+
+
+SHELL_SESSIONS: Dict[str, Dict[str, Any]] = {}
+SHELL_SESSIONS_LOCK = threading.Lock()
+
+
+def _resolve_operator_path(raw_path: str = "", *, allow_home: bool = True) -> Path:
+    candidate = (FORGE_ROOT / raw_path).resolve() if raw_path and not raw_path.startswith("/") else Path(raw_path or FORGE_ROOT).resolve()
+    allowed_roots = [FORGE_ROOT.resolve()]
+    if allow_home:
+        allowed_roots.append(HOME_ROOT.resolve())
+    for root in allowed_roots:
+        try:
+            candidate.relative_to(root)
+            return candidate
+        except Exception:
+            continue
+    raise HTTPException(status_code=403, detail="Path is outside allowed operator roots")
+
+
+def _shell_binary() -> str:
+    candidate = os.environ.get("SHELL", "").strip() or "/bin/sh"
+    if Path(candidate).exists():
+        return candidate
+    return "/bin/sh" if Path("/bin/sh").exists() else candidate
+
+
+def _set_pty_size(fd: int, cols: int, rows: int) -> None:
+    cols = max(20, int(cols))
+    rows = max(8, int(rows))
+    fcntl.ioctl(fd, termios.TIOCSWINSZ, struct.pack("HHHH", rows, cols, 0, 0))
+
+
+def _spawn_shell_session(*, cwd: str = "", cols: int = 120, rows: int = 28) -> Dict[str, Any]:
+    target_cwd = _resolve_operator_path(cwd or str(FORGE_ROOT), allow_home=True)
+    master_fd, slave_fd = pty.openpty()
+    _set_pty_size(master_fd, cols=cols, rows=rows)
+    flags = fcntl.fcntl(master_fd, fcntl.F_GETFL)
+    fcntl.fcntl(master_fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
+    env = _build_forge_subprocess_env()
+    env.setdefault("TERM", "xterm-256color")
+    env.setdefault("HOME", str(HOME_ROOT))
+    proc = subprocess.Popen(
+        [_shell_binary()],
+        stdin=slave_fd,
+        stdout=slave_fd,
+        stderr=slave_fd,
+        cwd=str(target_cwd),
+        env=env,
+        start_new_session=True,
+        close_fds=True,
+    )
+    os.close(slave_fd)
+    session_id = f"shell:{uuid.uuid4().hex[:12]}"
+    payload = {
+        "contract": "eidos.atlas_shell_session.v1",
+        "session_id": session_id,
+        "shell": _shell_binary(),
+        "cwd": str(target_cwd),
+        "status": "running",
+        "phase": "interactive",
+        "started_at": _now_utc_iso(),
+        "pid": proc.pid,
+        "fd": master_fd,
+        "process": proc,
+    }
+    with SHELL_SESSIONS_LOCK:
+        SHELL_SESSIONS[session_id] = payload
+    return _shell_session_payload(session_id)
+
+
+def _shell_session_payload(session_id: str, *, include_output: bool = False, max_bytes: int = 16384) -> Dict[str, Any]:
+    with SHELL_SESSIONS_LOCK:
+        session = SHELL_SESSIONS.get(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="shell session not found")
+    proc: subprocess.Popen[Any] = session["process"]
+    alive = proc.poll() is None
+    if not alive:
+        session["status"] = "exited"
+        session["phase"] = "completed"
+    payload = {
+        "contract": "eidos.atlas_shell_session.v1",
+        "session_id": session_id,
+        "shell": session.get("shell"),
+        "cwd": session.get("cwd"),
+        "status": session.get("status", "running"),
+        "phase": session.get("phase", "interactive"),
+        "started_at": session.get("started_at"),
+        "pid": session.get("pid"),
+        "returncode": proc.poll(),
+    }
+    if include_output:
+        chunks: list[str] = []
+        remaining = max(256, int(max_bytes))
+        while remaining > 0:
+            try:
+                ready, _, _ = select.select([session["fd"]], [], [], 0)
+            except Exception:
+                break
+            if not ready:
+                break
+            try:
+                data = os.read(session["fd"], min(4096, remaining))
+            except BlockingIOError:
+                break
+            except OSError:
+                break
+            if not data:
+                break
+            chunks.append(data.decode("utf-8", errors="replace"))
+            remaining -= len(data)
+        payload["output"] = "".join(chunks)
+    return payload
+
+
+def _write_shell_input(session_id: str, text: str) -> Dict[str, Any]:
+    with SHELL_SESSIONS_LOCK:
+        session = SHELL_SESSIONS.get(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="shell session not found")
+    proc: subprocess.Popen[Any] = session["process"]
+    if proc.poll() is not None:
+        session["status"] = "exited"
+        session["phase"] = "completed"
+        return _shell_session_payload(session_id)
+    os.write(session["fd"], text.encode("utf-8"))
+    return _shell_session_payload(session_id)
+
+
+def _resize_shell_session(session_id: str, *, cols: int, rows: int) -> Dict[str, Any]:
+    with SHELL_SESSIONS_LOCK:
+        session = SHELL_SESSIONS.get(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="shell session not found")
+    _set_pty_size(session["fd"], cols=cols, rows=rows)
+    return _shell_session_payload(session_id)
+
+
+def _stop_shell_session(session_id: str) -> Dict[str, Any]:
+    with SHELL_SESSIONS_LOCK:
+        session = SHELL_SESSIONS.pop(session_id, None)
+    if not session:
+        raise HTTPException(status_code=404, detail="shell session not found")
+    proc: subprocess.Popen[Any] = session["process"]
+    if proc.poll() is None:
+        try:
+            os.killpg(proc.pid, signal.SIGTERM)
+        except Exception:
+            proc.terminate()
+        try:
+            proc.wait(timeout=3)
+        except subprocess.TimeoutExpired:
+            try:
+                os.killpg(proc.pid, signal.SIGKILL)
+            except Exception:
+                proc.kill()
+    try:
+        os.close(session["fd"])
+    except Exception:
+        pass
+    session["status"] = "stopped"
+    session["phase"] = "completed"
+    return {
+        "contract": "eidos.atlas_shell_session.v1",
+        "session_id": session_id,
+        "status": "stopped",
+        "returncode": proc.poll(),
+    }
+
+
+def _shell_sessions_snapshot() -> Dict[str, Any]:
+    entries = []
+    with SHELL_SESSIONS_LOCK:
+        session_ids = list(SHELL_SESSIONS.keys())
+    for session_id in session_ids:
+        entries.append(_shell_session_payload(session_id))
+    return {"contract": "eidos.atlas_shell_snapshot.v1", "entries": entries}
+
+
+def _cleanup_shell_sessions() -> None:
+    with SHELL_SESSIONS_LOCK:
+        session_ids = list(SHELL_SESSIONS.keys())
+    for session_id in session_ids:
+        try:
+            _stop_shell_session(session_id)
+        except Exception:
+            continue
+
+
+atexit.register(_cleanup_shell_sessions)
 
 # --- App Setup ---
 app = FastAPI(title="Eidosian Atlas", version="1.0.0")
@@ -170,6 +398,43 @@ def get_doc_snapshot() -> Dict[str, Any]:
         "index_count": len(entries),
         "recent_docs": recent_docs,
     }
+
+
+def get_file_forge_index_status() -> Dict[str, Any]:
+    return _read_json(FILE_FORGE_INDEX_STATUS, {"contract": "eidos.file_forge.index.status.v1", "status": "idle"})
+
+
+def get_file_forge_index_history(limit: int = 12) -> List[Dict[str, Any]]:
+    return _read_jsonl_rows(FILE_FORGE_INDEX_HISTORY, limit=limit)
+
+
+def get_file_forge_summary(path_prefix: str = "", recent_limit: int = 8) -> Dict[str, Any]:
+    payload: Dict[str, Any] = {
+        "contract": "eidos.file_forge.summary.v1",
+        "status": "missing",
+        "db_path": str(FILE_FORGE_DB),
+        "path_prefix": path_prefix or None,
+        "latest_index": get_file_forge_index_status(),
+        "recent_files": [],
+        "by_kind": [],
+        "by_forge": [],
+    }
+    if not FILE_FORGE_DB.exists():
+        return payload
+    summary = FileLibraryDB(FILE_FORGE_DB).summary(
+        path_prefix=_resolve_operator_path(path_prefix, allow_home=True) if path_prefix else None,
+        recent_limit=recent_limit,
+    )
+    for row in summary.get("recent_files", []):
+        file_path = Path(str(row.get("file_path") or ""))
+        try:
+            row["file_path"] = str(file_path.relative_to(FORGE_ROOT))
+        except Exception:
+            row["file_path"] = str(file_path)
+    payload.update(summary)
+    payload["status"] = "ready"
+    payload["db_exists"] = True
+    return payload
 
 
 def _docs_inventory(
@@ -273,6 +538,7 @@ def get_runtime_snapshot() -> Dict[str, Any]:
     qwenchat = _read_json(QWENCHAT_STATUS, {})
     living_pipeline = _read_json(LIVING_PIPELINE_STATUS, {})
     doc_processor = _read_json(DOC_STATUS, {})
+    file_forge = get_file_forge_summary(recent_limit=6)
     boot_status = _read_json(BOOT_STATUS, {})
     capabilities = _read_json(CAPABILITIES_STATUS, {})
     directory_docs = _read_json(DIRECTORY_DOCS_STATUS, {})
@@ -289,12 +555,17 @@ def get_runtime_snapshot() -> Dict[str, Any]:
         "qwenchat": qwenchat,
         "living_pipeline": living_pipeline,
         "doc_processor": doc_processor,
+        "file_forge": file_forge,
+        "file_forge_index": get_file_forge_index_status(),
+        "file_forge_index_history": get_file_forge_index_history(),
+        "shell": _shell_sessions_snapshot(),
         "archive_plan": archive_plan,
         "archive_lifecycle": archive_lifecycle,
         "archive_plan_history": get_code_forge_archive_plan_history(),
         "archive_lifecycle_history": get_code_forge_archive_lifecycle_history(),
         "archive_plan_report": get_latest_code_forge_archive_plan(),
         "archive_lifecycle_report": get_latest_code_forge_archive_lifecycle(),
+        "archive_lifecycle_retirements": get_latest_code_forge_archive_retirements(),
         "boot": boot_status,
         "capabilities": capabilities,
         "directory_docs": directory_docs,
@@ -392,15 +663,29 @@ def get_runtime_services_snapshot() -> List[Dict[str, Any]]:
             "path": str(path.relative_to(FORGE_ROOT)) if path.exists() else str(path),
         }
 
-    return [
+    rows = [
         _row("scheduler", _read_json(SCHEDULER_STATUS, {}), SCHEDULER_STATUS),
         _row("doc_processor", _read_json(DOC_STATUS, {}), DOC_STATUS),
+        {
+            "service": "file_forge",
+            "status": get_file_forge_summary().get("status"),
+            "phase": get_file_forge_index_status().get("status"),
+            "path": str(FILE_FORGE_DB.relative_to(FORGE_ROOT)) if FILE_FORGE_DB.exists() else str(FILE_FORGE_DB),
+        },
         _row("local_agent", _read_json(LOCAL_AGENT_STATUS, {}), LOCAL_AGENT_STATUS),
         _row("qwenchat", _read_json(QWENCHAT_STATUS, {}), QWENCHAT_STATUS),
         _row("living_pipeline", _read_json(LIVING_PIPELINE_STATUS, {}), LIVING_PIPELINE_STATUS),
         _row("archive_plan", _read_json(CODE_FORGE_ARCHIVE_PLAN_STATUS, {}), CODE_FORGE_ARCHIVE_PLAN_STATUS),
         _row("archive_lifecycle", _read_json(CODE_FORGE_ARCHIVE_LIFECYCLE_STATUS, {}), CODE_FORGE_ARCHIVE_LIFECYCLE_STATUS),
     ]
+    shell_entries = _shell_sessions_snapshot().get("entries", [])
+    rows.append({
+        "service": "atlas_shell",
+        "status": "running" if shell_entries else "idle",
+        "phase": shell_entries[0].get("phase") if shell_entries else "ready",
+        "path": str(FORGE_ROOT),
+    })
+    return rows
 
 
 def get_runtime_history(limit: int = 24) -> List[Dict[str, Any]]:
@@ -687,6 +972,14 @@ def get_latest_code_forge_archive_lifecycle() -> Dict[str, Any]:
     return _read_json(CODE_FORGE_ARCHIVE_LIFECYCLE_REPORT_DIR / "latest.json", {})
 
 
+def get_latest_code_forge_archive_retirements() -> Dict[str, Any]:
+    payload = _read_json(CODE_FORGE_ARCHIVE_RETIREMENTS_LATEST, {})
+    repo_root = str(payload.get("repo_root") or "")
+    if repo_root and Path(repo_root).resolve() != FORGE_ROOT.resolve():
+        return {}
+    return payload
+
+
 def get_session_bridge_status() -> Dict[str, Any]:
     payload = {
         "contract": "eidos.session_bridge.status.v1",
@@ -813,6 +1106,59 @@ def _run_runtime_artifact_audit_job(*, policy_path: str = "") -> None:
         _append_job_history(RUNTIME_ARTIFACT_AUDIT_HISTORY, error_payload)
 
 
+def _run_file_forge_index_job(*, target_path: str, remove_after_ingest: bool = False, max_files: int = 0) -> None:
+    started_at = _now_utc_iso()
+    running_payload = {
+        "contract": "eidos.file_forge.index.status.v1",
+        "status": "running",
+        "started_at": started_at,
+        "target_path": target_path,
+        "remove_after_ingest": bool(remove_after_ingest),
+        "max_files": int(max_files),
+    }
+    _write_job_status(FILE_FORGE_INDEX_STATUS, running_payload)
+    _append_job_history(FILE_FORGE_INDEX_HISTORY, running_payload)
+    try:
+        resolved = _resolve_operator_path(target_path or str(FORGE_ROOT), allow_home=True)
+        if not resolved.exists() or not resolved.is_dir():
+            raise FileNotFoundError(f"directory not found: {resolved}")
+        forge = FileForge(base_path=FORGE_ROOT)
+        result = forge.index_directory(
+            resolved,
+            db_path=FILE_FORGE_DB,
+            remove_after_ingest=remove_after_ingest,
+            max_files=max_files or None,
+        )
+        final_payload = {
+            "contract": "eidos.file_forge.index.status.v1",
+            "status": "completed",
+            "started_at": started_at,
+            "finished_at": _now_utc_iso(),
+            "target_path": str(resolved),
+            "remove_after_ingest": bool(remove_after_ingest),
+            "max_files": int(max_files),
+            "indexed": result.get("indexed", 0),
+            "skipped": result.get("skipped", 0),
+            "removed": result.get("removed", 0),
+            "db_path": result.get("db_path", str(FILE_FORGE_DB)),
+        }
+        _write_job_status(FILE_FORGE_INDEX_STATUS, final_payload)
+        _append_job_history(FILE_FORGE_INDEX_HISTORY, final_payload)
+    except Exception as exc:
+        error_payload = {
+            "contract": "eidos.file_forge.index.status.v1",
+            "status": "error",
+            "started_at": started_at,
+            "finished_at": _now_utc_iso(),
+            "target_path": target_path,
+            "remove_after_ingest": bool(remove_after_ingest),
+            "max_files": int(max_files),
+            "error": str(exc),
+        }
+        _write_job_status(FILE_FORGE_INDEX_STATUS, error_payload)
+        _append_job_history(FILE_FORGE_INDEX_HISTORY, error_payload)
+
+
 def _run_code_forge_provenance_audit_job(*, limit: int = 12) -> None:
     started_at = _now_utc_iso()
     running_payload = {
@@ -823,8 +1169,7 @@ def _run_code_forge_provenance_audit_job(*, limit: int = 12) -> None:
     }
     _write_job_status(CODE_FORGE_PROVENANCE_AUDIT_STATUS, running_payload)
     _append_job_history(CODE_FORGE_PROVENANCE_AUDIT_HISTORY, running_payload)
-    env = os.environ.copy()
-    env["EIDOS_FORGE_ROOT"] = str(FORGE_ROOT)
+    env = _build_forge_subprocess_env()
     python_bin = str(FORGE_ROOT / "eidosian_venv" / "bin" / "python")
     try:
         result = subprocess.run(
@@ -875,8 +1220,7 @@ def _run_code_forge_provenance_audit_job(*, limit: int = 12) -> None:
 
 
 def _run_code_forge_archive_plan_job(*, refresh: bool = True) -> None:
-    env = os.environ.copy()
-    env["EIDOS_FORGE_ROOT"] = str(FORGE_ROOT)
+    env = _build_forge_subprocess_env()
     python_bin = str(FORGE_ROOT / "eidosian_venv" / "bin" / "python")
     command = [
         python_bin,
@@ -886,8 +1230,6 @@ def _run_code_forge_archive_plan_job(*, refresh: bool = True) -> None:
     ]
     if refresh:
         command.append("--refresh")
-    if retry_failed:
-        command.append("--retry-failed")
     subprocess.run(
         command,
         cwd=str(FORGE_ROOT),
@@ -900,8 +1242,7 @@ def _run_code_forge_archive_plan_job(*, refresh: bool = True) -> None:
 
 
 def _run_code_forge_archive_lifecycle_status_job(*, refresh: bool = False, repo_keys: List[str] | None = None) -> None:
-    env = os.environ.copy()
-    env["EIDOS_FORGE_ROOT"] = str(FORGE_ROOT)
+    env = _build_forge_subprocess_env()
     python_bin = str(FORGE_ROOT / "eidosian_venv" / "bin" / "python")
     command = [
         python_bin,
@@ -914,8 +1255,6 @@ def _run_code_forge_archive_lifecycle_status_job(*, refresh: bool = False, repo_
         command.extend(["--repo-key", repo_key])
     if refresh:
         command.append("--refresh")
-    if retry_failed:
-        command.append("--retry-failed")
     subprocess.run(
         command,
         cwd=str(FORGE_ROOT),
@@ -928,8 +1267,7 @@ def _run_code_forge_archive_lifecycle_status_job(*, refresh: bool = False, repo_
 
 
 def _run_code_forge_archive_wave_job(*, repo_keys: List[str] | None = None, batch_limit: int | None = None, refresh: bool = False, retry_failed: bool = False) -> None:
-    env = os.environ.copy()
-    env["EIDOS_FORGE_ROOT"] = str(FORGE_ROOT)
+    env = _build_forge_subprocess_env()
     python_bin = str(FORGE_ROOT / "eidosian_venv" / "bin" / "python")
     command = [
         python_bin,
@@ -957,6 +1295,132 @@ def _run_code_forge_archive_wave_job(*, repo_keys: List[str] | None = None, batc
     )
 
 
+def _run_code_forge_archive_lifecycle_cli(*args: str, timeout: int = 3600) -> Dict[str, Any]:
+    env = _build_forge_subprocess_env()
+    python_bin = str(FORGE_ROOT / "eidosian_venv" / "bin" / "python")
+    result = subprocess.run(
+        [python_bin, str(FORGE_ROOT / "scripts" / "code_forge_archive_lifecycle.py"), *args],
+        cwd=str(FORGE_ROOT),
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+        check=False,
+    )
+    payload: Dict[str, Any] = {}
+    try:
+        payload = json.loads(result.stdout or "{}")
+    except Exception:
+        payload = {}
+    return {
+        "ok": result.returncode == 0,
+        "returncode": result.returncode,
+        "payload": payload,
+        "stderr": result.stderr[-4000:],
+    }
+
+
+def _run_code_forge_archive_preview_job(*, repo_keys: List[str] | None = None, refresh: bool = False, assume_remove_mode: bool = False) -> None:
+    env = _build_forge_subprocess_env()
+    python_bin = str(FORGE_ROOT / "eidosian_venv" / "bin" / "python")
+    command = [
+        python_bin,
+        str(FORGE_ROOT / "scripts" / "code_forge_archive_lifecycle.py"),
+        "preview-retire",
+        "--repo-root",
+        str(FORGE_ROOT),
+    ]
+    for repo_key in repo_keys or []:
+        command.extend(["--repo-key", repo_key])
+    if refresh:
+        command.append("--refresh")
+    if assume_remove_mode:
+        command.append("--assume-remove-mode")
+    subprocess.run(
+        command,
+        cwd=str(FORGE_ROOT),
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=3600,
+        check=False,
+    )
+
+
+def _run_code_forge_archive_retire_job(*, repo_keys: List[str] | None = None, refresh: bool = False, dry_run: bool = True) -> None:
+    env = _build_forge_subprocess_env()
+    python_bin = str(FORGE_ROOT / "eidosian_venv" / "bin" / "python")
+    command = [
+        python_bin,
+        str(FORGE_ROOT / "scripts" / "code_forge_archive_lifecycle.py"),
+        "retire",
+        "--repo-root",
+        str(FORGE_ROOT),
+    ]
+    for repo_key in repo_keys or []:
+        command.extend(["--repo-key", repo_key])
+    if refresh:
+        command.append("--refresh")
+    if dry_run:
+        command.append("--dry-run")
+    subprocess.run(
+        command,
+        cwd=str(FORGE_ROOT),
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=3600,
+        check=False,
+    )
+
+
+def _run_code_forge_archive_restore_job(*, repo_key: str) -> None:
+    env = _build_forge_subprocess_env()
+    python_bin = str(FORGE_ROOT / "eidosian_venv" / "bin" / "python")
+    subprocess.run(
+        [
+            python_bin,
+            str(FORGE_ROOT / "scripts" / "code_forge_archive_lifecycle.py"),
+            "restore",
+            "--repo-root",
+            str(FORGE_ROOT),
+            "--repo-key",
+            repo_key,
+        ],
+        cwd=str(FORGE_ROOT),
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=3600,
+        check=False,
+    )
+
+
+def _run_code_forge_archive_prune_job(*, repo_keys: List[str] | None = None, dry_run: bool = False) -> None:
+    env = _build_forge_subprocess_env()
+    python_bin = str(FORGE_ROOT / "eidosian_venv" / "bin" / "python")
+    command = [
+        python_bin,
+        str(FORGE_ROOT / "scripts" / "code_forge_archive_lifecycle.py"),
+        "prune-retired",
+        "--repo-root",
+        str(FORGE_ROOT),
+    ]
+    for repo_key in repo_keys or []:
+        command.extend(["--repo-key", repo_key])
+    if dry_run:
+        command.append("--dry-run")
+    subprocess.run(
+        command,
+        cwd=str(FORGE_ROOT),
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=3600,
+        check=False,
+    )
+
+
 def _run_proof_refresh_job(*, window_days: int) -> None:
     started_at = _now_utc_iso()
     running_payload = {
@@ -967,8 +1431,7 @@ def _run_proof_refresh_job(*, window_days: int) -> None:
     }
     _write_job_status(PROOF_REFRESH_STATUS, running_payload)
     _append_job_history(PROOF_REFRESH_HISTORY, running_payload)
-    env = os.environ.copy()
-    env["EIDOS_FORGE_ROOT"] = str(FORGE_ROOT)
+    env = _build_forge_subprocess_env()
     python_bin = str(FORGE_ROOT / "eidosian_venv" / "bin" / "python")
     try:
         proof = subprocess.run(
@@ -1054,8 +1517,7 @@ def _run_runtime_benchmark_job(
     }
     _write_job_status(RUNTIME_BENCHMARK_RUN_STATUS, running_payload)
     _append_job_history(RUNTIME_BENCHMARK_RUN_HISTORY, running_payload)
-    env = os.environ.copy()
-    env["EIDOS_FORGE_ROOT"] = str(FORGE_ROOT)
+    env = _build_forge_subprocess_env()
     python_bin = str(FORGE_ROOT / "eidosian_venv" / "bin" / "python")
     try:
         result = subprocess.run(
@@ -1155,8 +1617,7 @@ def _resolve_browse_root(domain: str) -> Path:
 
 
 def _run_service_action_async(action: str, service: str | None = None) -> None:
-    env = os.environ.copy()
-    env["EIDOS_FORGE_ROOT"] = str(FORGE_ROOT)
+    env = _build_forge_subprocess_env()
     SERVICE_ACTION_LOG.parent.mkdir(parents=True, exist_ok=True)
     command = [str(SERVICES_SCRIPT), action]
     if service:
@@ -1192,8 +1653,7 @@ async def _service_command(action: str, service: str | None = None) -> Dict[str,
     service = (service or "").strip() or None
     if service not in allowed_services:
         raise HTTPException(status_code=400, detail="Invalid service target")
-    env = os.environ.copy()
-    env["EIDOS_FORGE_ROOT"] = str(FORGE_ROOT)
+    env = _build_forge_subprocess_env()
     if action != "status":
         await to_thread(_run_service_action_async, action, service)
         return {
@@ -1230,8 +1690,7 @@ def _scheduler_command(action: str) -> Dict[str, Any]:
         raise HTTPException(status_code=400, detail="Invalid scheduler action")
     if not SCHEDULER_CONTROL_SCRIPT.exists():
         raise HTTPException(status_code=503, detail="Scheduler controller unavailable")
-    env = os.environ.copy()
-    env["EIDOS_FORGE_ROOT"] = str(FORGE_ROOT)
+    env = _build_forge_subprocess_env()
     result = subprocess.run(
         [
             str(FORGE_ROOT / "eidosian_venv" / "bin" / "python"),
@@ -1761,6 +2220,7 @@ async def api_code_forge_archive_lifecycle(limit: int = 12):
         "status": get_code_forge_archive_lifecycle_status(),
         "history": get_code_forge_archive_lifecycle_history(limit=limit),
         "report": get_latest_code_forge_archive_lifecycle(),
+        "retirements": get_latest_code_forge_archive_retirements(),
     }
 
 
@@ -1812,41 +2272,126 @@ async def api_code_forge_archive_lifecycle_wave(repo_key: str = "", batch_limit:
 async def api_code_forge_archive_lifecycle_set_mode(repo_key: str, mode: str, reason: str = ""):
     if mode not in {"ingest_and_keep", "ingest_and_remove"}:
         raise HTTPException(status_code=400, detail="Invalid lifecycle mode")
-    env = os.environ.copy()
-    env["EIDOS_FORGE_ROOT"] = str(FORGE_ROOT)
-    python_bin = str(FORGE_ROOT / "eidosian_venv" / "bin" / "python")
-    result = subprocess.run(
-        [
-            python_bin,
-            str(FORGE_ROOT / "scripts" / "code_forge_archive_lifecycle.py"),
-            "set-mode",
-            "--repo-root",
-            str(FORGE_ROOT),
-            "--repo-key",
-            repo_key,
-            "--mode",
-            mode,
-            "--reason",
-            reason,
-        ],
-        cwd=str(FORGE_ROOT),
-        env=env,
-        capture_output=True,
-        text=True,
+    return _run_code_forge_archive_lifecycle_cli(
+        "set-mode",
+        "--repo-root",
+        str(FORGE_ROOT),
+        "--repo-key",
+        repo_key,
+        "--mode",
+        mode,
+        "--reason",
+        reason,
         timeout=300,
-        check=False,
     )
-    payload: Dict[str, Any] = {}
-    try:
-        payload = json.loads(result.stdout or "{}")
-    except Exception:
-        payload = {}
-    return {
-        "ok": result.returncode == 0,
-        "returncode": result.returncode,
-        "payload": payload,
-        "stderr": result.stderr[-4000:],
-    }
+
+
+@app.post("/api/code-forge/archive-lifecycle/preview-retire")
+async def api_code_forge_archive_lifecycle_preview_retire(repo_key: str = "", refresh: bool = False, assume_remove_mode: bool = False, background: bool = True):
+    repo_keys = [item.strip() for item in repo_key.split(",") if item.strip()]
+    if background:
+        thread = threading.Thread(
+            target=_run_code_forge_archive_preview_job,
+            kwargs={"repo_keys": repo_keys, "refresh": refresh, "assume_remove_mode": assume_remove_mode},
+            daemon=True,
+        )
+        thread.start()
+        return {
+            "contract": "eidos.code_forge_archive_lifecycle.status.v1",
+            "status": "queued",
+            "phase": "preview_retire",
+            "refresh": bool(refresh),
+            "repo_keys": repo_keys,
+            "assume_remove_mode": bool(assume_remove_mode),
+        }
+    args = ["preview-retire", "--repo-root", str(FORGE_ROOT)]
+    for item in repo_keys:
+        args.extend(["--repo-key", item])
+    if refresh:
+        args.append("--refresh")
+    if assume_remove_mode:
+        args.append("--assume-remove-mode")
+    return _run_code_forge_archive_lifecycle_cli(*args)
+
+
+@app.post("/api/code-forge/archive-lifecycle/retire")
+async def api_code_forge_archive_lifecycle_retire(repo_key: str = "", refresh: bool = False, dry_run: bool = True, background: bool = True):
+    repo_keys = [item.strip() for item in repo_key.split(",") if item.strip()]
+    if background:
+        thread = threading.Thread(
+            target=_run_code_forge_archive_retire_job,
+            kwargs={"repo_keys": repo_keys, "refresh": refresh, "dry_run": dry_run},
+            daemon=True,
+        )
+        thread.start()
+        return {
+            "contract": "eidos.code_forge_archive_lifecycle.status.v1",
+            "status": "queued",
+            "phase": "retire",
+            "refresh": bool(refresh),
+            "repo_keys": repo_keys,
+            "dry_run": bool(dry_run),
+        }
+    args = ["retire", "--repo-root", str(FORGE_ROOT)]
+    for item in repo_keys:
+        args.extend(["--repo-key", item])
+    if refresh:
+        args.append("--refresh")
+    if dry_run:
+        args.append("--dry-run")
+    return _run_code_forge_archive_lifecycle_cli(*args)
+
+
+@app.post("/api/code-forge/archive-lifecycle/prune-retired")
+async def api_code_forge_archive_lifecycle_prune(repo_key: str = "", dry_run: bool = False, background: bool = True):
+    repo_keys = [item.strip() for item in repo_key.split(",") if item.strip()]
+    if background:
+        thread = threading.Thread(
+            target=_run_code_forge_archive_prune_job,
+            kwargs={"repo_keys": repo_keys, "dry_run": dry_run},
+            daemon=True,
+        )
+        thread.start()
+        return {
+            "contract": "eidos.code_forge_archive_lifecycle.status.v1",
+            "status": "queued",
+            "phase": "prune_retired",
+            "repo_keys": repo_keys,
+            "dry_run": bool(dry_run),
+        }
+    args = ["prune-retired", "--repo-root", str(FORGE_ROOT)]
+    for item in repo_keys:
+        args.extend(["--repo-key", item])
+    if dry_run:
+        args.append("--dry-run")
+    return _run_code_forge_archive_lifecycle_cli(*args)
+
+
+@app.post("/api/code-forge/archive-lifecycle/restore")
+async def api_code_forge_archive_lifecycle_restore(repo_key: str, background: bool = True):
+    repo_key = repo_key.strip()
+    if not repo_key:
+        raise HTTPException(status_code=400, detail="repo_key is required")
+    if background:
+        thread = threading.Thread(
+            target=_run_code_forge_archive_restore_job,
+            kwargs={"repo_key": repo_key},
+            daemon=True,
+        )
+        thread.start()
+        return {
+            "contract": "eidos.code_forge_archive_lifecycle.status.v1",
+            "status": "queued",
+            "phase": "restore",
+            "repo_keys": [repo_key],
+        }
+    return _run_code_forge_archive_lifecycle_cli(
+        "restore",
+        "--repo-root",
+        str(FORGE_ROOT),
+        "--repo-key",
+        repo_key,
+    )
 
 
 @app.post("/api/runtime-artifacts/audit")
@@ -1957,6 +2502,77 @@ async def api_living_pipeline_status():
         "status": _read_json(LIVING_PIPELINE_STATUS, {}),
         "history": get_living_pipeline_history(),
     }
+
+
+@app.get("/api/runtime/file-forge")
+async def api_file_forge_runtime_status(path_prefix: str = ""):
+    return {
+        "summary": get_file_forge_summary(path_prefix=path_prefix, recent_limit=12),
+        "index_status": get_file_forge_index_status(),
+        "index_history": get_file_forge_index_history(),
+    }
+
+
+@app.post("/api/file-forge/index")
+async def api_file_forge_index(path: str = "", remove_after_ingest: bool = False, max_files: int = 0, background: bool = True):
+    if background:
+        thread = threading.Thread(
+            target=_run_file_forge_index_job,
+            kwargs={"target_path": path, "remove_after_ingest": remove_after_ingest, "max_files": max_files},
+            daemon=True,
+        )
+        thread.start()
+        return {
+            "contract": "eidos.file_forge.index.status.v1",
+            "status": "queued",
+            "target_path": path,
+            "remove_after_ingest": bool(remove_after_ingest),
+            "max_files": int(max_files),
+        }
+    _run_file_forge_index_job(target_path=path, remove_after_ingest=remove_after_ingest, max_files=max_files)
+    return get_file_forge_index_status()
+
+
+@app.get("/api/file-forge/index/status")
+async def api_file_forge_index_status():
+    return get_file_forge_index_status()
+
+
+@app.get("/api/file-forge/index/history")
+async def api_file_forge_index_history(limit: int = 12):
+    return {"contract": "eidos.file_forge.index.history.v1", "entries": get_file_forge_index_history(limit=limit)}
+
+
+@app.post("/api/shell/start")
+async def api_shell_start(cwd: str = "", cols: int = 120, rows: int = 28):
+    return _spawn_shell_session(cwd=cwd, cols=cols, rows=rows)
+
+
+@app.get("/api/shell/status")
+async def api_shell_status(session_id: str = ""):
+    if session_id.strip():
+        return _shell_session_payload(session_id.strip())
+    return _shell_sessions_snapshot()
+
+
+@app.get("/api/shell/read")
+async def api_shell_read(session_id: str, max_bytes: int = 16384):
+    return _shell_session_payload(session_id, include_output=True, max_bytes=max_bytes)
+
+
+@app.post("/api/shell/input")
+async def api_shell_input(session_id: str, text: str):
+    return _write_shell_input(session_id, text)
+
+
+@app.post("/api/shell/resize")
+async def api_shell_resize(session_id: str, cols: int = 120, rows: int = 28):
+    return _resize_shell_session(session_id, cols=cols, rows=rows)
+
+
+@app.post("/api/shell/stop")
+async def api_shell_stop(session_id: str):
+    return _stop_shell_session(session_id)
 
 
 @app.get("/api/consciousness")

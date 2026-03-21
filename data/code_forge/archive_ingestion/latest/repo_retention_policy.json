@@ -1,0 +1,12 @@
+{
+  "contract": "eidos.code_forge_retention_policy.v1",
+  "generated_at": "2026-03-21T01:46:55.092861+00:00",
+  "default_mode": "ingest_and_keep",
+  "repos": {
+    "eidos_v1_concept": {
+      "mode": "ingest_and_remove",
+      "updated_at": "2026-03-21T01:46:55.092849+00:00",
+      "reason": "validated reversible retirement"
+    }
+  }
+}
