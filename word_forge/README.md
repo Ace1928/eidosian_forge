@@ -34,12 +34,13 @@
 
 ### Local LLM Backend
 
-- **Default local backend**: `gguf:models/Qwen3.5-0.8B-Q4_K_M.gguf` when present.
-- **Fallback backend**: `qwen/qwen3.5-2b-instruct` when no local GGUF is available.
+- **Default local backend**: `gguf:models/Qwen3.5-2B-IQ4_XS.gguf` when present.
+- **Lower-memory fallback**: `gguf:models/Qwen3.5-0.8B-Q4_K_M.gguf` when the 2B artifact is unavailable.
+- **Remote fallback backend**: `qwen/qwen3.5-2b-instruct` when no local GGUF is available.
 - **Runtime override**: set `EIDOS_WORD_FORGE_LLM_MODEL` to an Ollama model, Hugging Face model name, or `gguf:/path/to/model.gguf`.
 - **llama.cpp override**: set `EIDOS_WORD_FORGE_LLAMA_CLI` if `llama-cli` lives outside the standard forge paths.
 
-Word Forge now prefers the smallest practical local Qwen 3.5 GGUF for low-latency structured lexical tasks, while keeping heavier model paths available as explicit overrides.
+Word Forge now prefers the smallest practical Qwen 3.5 GGUF that still clears structured lexical tasks reliably, while keeping lighter and heavier model paths available as explicit overrides.
 
 ### Lexical Ingestion (CLI)
 

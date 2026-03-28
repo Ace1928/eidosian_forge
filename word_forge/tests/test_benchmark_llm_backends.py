@@ -15,6 +15,7 @@ SPEC.loader.exec_module(MODULE)
 PromptCase = MODULE.PromptCase
 benchmark_model = MODULE.benchmark_model
 extract_json_object = MODULE.extract_json_object
+recommend_model = MODULE.recommend_model
 score_case = MODULE.score_case
 
 
@@ -50,4 +51,16 @@ def test_benchmark_model_uses_supplied_model_state(monkeypatch) -> None:
     report = benchmark_model("gguf:/tmp/demo.gguf")
     assert report["initialized"] is True
     assert report["score"] == 1.0
+    assert report["total_latency_s"] >= 0.0
     assert len(report["cases"]) == 3
+
+
+def test_recommend_model_prefers_score_then_latency() -> None:
+    chosen = recommend_model(
+        [
+            {"model": "slow-best", "initialized": True, "score": 1.0, "total_latency_s": 30.0},
+            {"model": "fast-best", "initialized": True, "score": 1.0, "total_latency_s": 10.0},
+            {"model": "worse", "initialized": True, "score": 0.8, "total_latency_s": 1.0},
+        ]
+    )
+    assert chosen == {"model": "fast-best", "score": 1.0, "total_latency_s": 10.0}

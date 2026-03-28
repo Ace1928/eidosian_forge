@@ -17,9 +17,10 @@ OLLAMA_GENERATE_URL = get_service_url(
 FORGE_ROOT = Path(__file__).resolve().parents[4]
 DEFAULT_REMOTE_MODEL = "qwen/qwen3.5-2b-instruct"
 DEFAULT_LOCAL_GGUF_CANDIDATES = (
+    FORGE_ROOT / "models" / "Qwen3.5-2B-IQ4_XS.gguf",
+    FORGE_ROOT / "models" / "Qwen3.5-2B-Q4_K_M.gguf",
     FORGE_ROOT / "models" / "Qwen3.5-0.8B-Q4_K_M.gguf",
     FORGE_ROOT / "models" / "Qwen3.5-0.8B-IQ4_XS.gguf",
-    FORGE_ROOT / "models" / "Qwen3.5-2B-Instruct-Q4_K_M.gguf",
     FORGE_ROOT / "models" / "Qwen2.5-0.5B-Instruct-Q8_0.gguf",
 )
 DEFAULT_LLAMA_CLI_CANDIDATES = (

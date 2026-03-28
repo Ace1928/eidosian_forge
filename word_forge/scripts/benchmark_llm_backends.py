@@ -114,7 +114,28 @@ def benchmark_model(model_name: str, max_new_tokens: int = 96) -> Dict[str, Any]
         "model": model_name,
         "initialized": True,
         "score": overall,
+        "total_latency_s": round(sum(item["latency_s"] for item in results), 3),
         "cases": results,
+    }
+
+
+def recommend_model(models: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    viable = [model for model in models if model.get("initialized")]
+    if not viable:
+        return None
+    ranked = sorted(
+        viable,
+        key=lambda item: (
+            -float(item.get("score", 0.0)),
+            float(item.get("total_latency_s", 10_000.0)),
+            item.get("model", ""),
+        ),
+    )
+    winner = ranked[0]
+    return {
+        "model": winner["model"],
+        "score": winner["score"],
+        "total_latency_s": winner.get("total_latency_s"),
     }
 
 
@@ -126,9 +147,11 @@ def main() -> int:
     args = parser.parse_args()
 
     models = args.models or [default_word_forge_model_name()]
+    model_reports = [benchmark_model(model_name, max_new_tokens=args.max_new_tokens) for model_name in models]
     report = {
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "models": [benchmark_model(model_name, max_new_tokens=args.max_new_tokens) for model_name in models],
+        "models": model_reports,
+        "recommended_model": recommend_model(model_reports),
     }
 
     if args.json_out:

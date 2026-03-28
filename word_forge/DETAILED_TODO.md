@@ -138,6 +138,8 @@ Item Format:
 
 ### 2.2 Linguistic & Phrase Foundation [P0-P1]
 
+- [x] **Local Qwen3.5 GGUF selection** - Promote a tested local llama.cpp backend for structured lexical tasks
+  - Status: Complete (March 28) - `Qwen3.5-2B-IQ4_XS.gguf` promoted after benchmark comparison against `Qwen3.5-0.8B-Q4_K_M.gguf`
 - [x] **`src/word_forge/linguistics/`** - G2P, Phonetics, and Prosody engines
   - Status: Complete (March 27) - LLM-G2P, PhoneticsManager, ProsodyEngine integrated
 - [x] **`src/word_forge/phrases/`** - Phrase inventory and component tracking
@@ -146,6 +148,7 @@ Item Format:
   - Status: Complete (March 27) - LLM-based extraction pass in TermExtractor
 - [ ] **FastText Integration** - Implement aligned vector ingestion for translation bootstrapping
 - [ ] **Polyglot Integration** - Morphological decomposition for lexemes
+- [ ] **Structured JSON repair path** - Add a light repair/validation pass for malformed LLM JSON before task failure
 
 ---
 
