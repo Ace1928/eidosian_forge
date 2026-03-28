@@ -503,6 +503,11 @@ class ConversationWorker(Thread):
         if self.logger:
             self.logger.info("ConversationWorker initialized")
 
+    @property
+    def name(self) -> str:
+        """Return the name of the worker."""
+        return "ConversationWorker"
+
     @eidosian()
     def start(self) -> None:
         """

@@ -1,0 +1,46 @@
+<div class="card">
+    <h3>Documentation Control</h3>
+    <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+        <button onclick="refreshDocs()">Refresh Coverage</button>
+        <button onclick="syncSessionBridge()">Sync Sessions</button>
+    </div>
+    <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+        <input id="docs-path-input" type="text" placeholder="directory path, e.g. doc_forge/src/doc_forge/scribe" style="min-width:340px;">
+        <input id="docs-batch-limit" type="number" min="1" max="200" value="20" style="width:90px;">
+        <button onclick="readDocsReadme()">Current README</button>
+        <button onclick="renderDocsReadme()">Render</button>
+        <button onclick="upsertDocsReadme()">Upsert</button>
+        <button onclick="batchDocs(false)">Batch Upsert</button>
+    </div>
+    <div class="stat-label" id="docs-batch-status-line" style="margin-bottom:12px;">
+        batch: {{ runtime_snapshot.get('docs_batch', {}).get('status', 'idle') if runtime_snapshot.get('docs_batch') else 'idle' }}
+    </div>
+    <pre id="docs-output" style="max-height:320px; overflow:auto; white-space:pre-wrap;">{{ (docs_inventory.get('missing_examples', []) or [])|join('\n') }}</pre>
+</div>
+<div class="card">
+    <h3>Recent Documents</h3>
+    {% if recent_docs %}
+    <table>
+        <thead>
+            <tr>
+                <th>Source</th>
+                <th>Score</th>
+                <th>Type</th>
+                <th>Updated</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for doc in recent_docs %}
+            <tr>
+                <td><a href="/browse/{{ doc.get('document', '') }}">{{ doc.get('source', 'Unknown') }}</a></td>
+                <td>{{ "%.2f"|format(doc.get('score', 0)) }}</td>
+                <td>{{ doc.get('doc_type', 'unknown') }}</td>
+                <td>{{ doc.get('updated_at', '')[:16].replace('T', ' ') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No recent documents found or index unavailable.</p>
+    {% endif %}
+</div>

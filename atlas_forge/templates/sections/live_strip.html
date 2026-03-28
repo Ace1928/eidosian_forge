@@ -1,0 +1,10 @@
+<div class="live-strip">
+    <div class="live-item">Model<strong id="live-model">{{ doc_status.get('model', 'n/a') }}</strong></div>
+    <div class="live-item">Processed<strong id="live-processed">{{ doc_status.get('processed', 0) }}</strong></div>
+    <div class="live-item">Remaining<strong id="live-remaining">{{ doc_status.get('remaining', 0) }}</strong></div>
+    <div class="live-item">Avg Score<strong id="live-score">{{ "%.3f"|format(doc_status.get('average_quality_score', 0.0)) }}</strong></div>
+    <div class="live-item">Avg Seconds/Doc<strong id="live-avg-sec">{{ "%.2f"|format(doc_status.get('average_seconds_per_document', 0.0)) }}</strong></div>
+    <div class="live-item">ETA (s)<strong id="live-eta">{{ doc_status.get('eta_seconds', 'n/a') }}</strong></div>
+    <div class="live-item">Last Approved<strong id="live-approved">{{ doc_status.get('last_approved', 'n/a') }}</strong></div>
+    <div class="live-item">Indexed Docs<strong id="live-indexed">{{ doc_index_count }}</strong></div>
+</div>

@@ -1,0 +1,20 @@
+
+{% extends "base.html" %}
+
+{% block title %}{{ filename }} | Eidosian Atlas{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/browse/">root</a> <span>/</span>
+    {% for part in path.split('/')[:-1] %}
+        {% if part and part != '.' %}
+            <a href="/browse/{{ part }}">{{ part }}</a> <span>/</span>
+        {% endif %}
+    {% endfor %}
+    <span>{{ filename }}</span>
+</div>
+
+<div class="card markdown-body">
+    {{ content | safe }}
+</div>
+{% endblock %}

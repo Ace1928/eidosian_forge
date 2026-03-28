@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+
+{% block title %}Graphs | Eidosian Atlas{% endblock %}
+
+{% block head %}
+<script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+<style>
+    .graph-layout {
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        gap: 20px;
+        height: 80vh;
+        margin-top: 20px;
+    }
+    .sidebar {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 20px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+    #graph-container {
+        background-color: var(--bg);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        position: relative;
+    }
+    .control-group h4 {
+        margin: 0 0 10px;
+        font-size: 0.85rem;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .filter-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+    }
+    .filter-item input { width: auto; margin: 0; }
+    .node-details-fixed {
+        background: var(--panel-strong);
+        border: 1px solid var(--accent);
+        padding: 15px;
+        border-radius: 12px;
+        font-size: 0.85rem;
+    }
+    .search-box {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        z-index: 10;
+        width: 250px;
+    }
+    .search-box input {
+        background: rgba(15, 34, 50, 0.85);
+        backdrop-filter: blur(4px);
+    }
+    .legend-dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="hero-card" style="padding: 15px 22px; margin-bottom: 0;">
+    <h1>Semantic Command Center</h1>
+    <p class="lede">Unified visualization of Knowledge, Memory, and Code artifacts.</p>
+</div>
+
+<div class="graph-layout">
+    <div class="sidebar">
+        <div class="control-group">
+            <h4>Data Sources</h4>
+            <div class="filter-item"><input type="checkbox" id="filter-kb" checked onchange="updateFilters()"> <span class="legend-dot" style="background:#4fd1c5"></span> Knowledge</div>
+            <div class="filter-item"><input type="checkbox" id="filter-mem" checked onchange="updateFilters()"> <span class="legend-dot" style="background:#f472b6"></span> Memory</div>
+            <div class="filter-item"><input type="checkbox" id="filter-file" checked onchange="updateFilters()"> <span class="legend-dot" style="background:#94a3b8"></span> Files</div>
+            <div class="filter-item"><input type="checkbox" id="filter-word" onchange="toggleWordGraph()"> <span class="legend-dot" style="background:#fbbf24"></span> Lexicon (Word Forge)</div>
+        </div>
+
+        <div class="control-group">
+            <h4>Physics</h4>
+            <div class="filter-item"><input type="checkbox" id="physics-enabled" checked onchange="togglePhysics()"> Enable Physics</div>
+            <label style="font-size:0.75rem; color:var(--muted)">Gravity</label>
+            <input type="range" min="-5000" max="-100" value="-2000" oninput="updatePhysics('gravity', this.value)">
+            <label style="font-size:0.75rem; color:var(--muted)">Spring Length</label>
+            <input type="range" min="10" max="300" value="95" oninput="updatePhysics('spring', this.value)">
+        </div>
+
+        <div class="control-group">
+            <h4>Actions</h4>
+            <button onclick="clusterByGroup()" style="width:100%; margin-bottom:10px;">Cluster by Forge</button>
+            <button onclick="resetGraph()" style="width:100%; background:var(--surface-2)">Reset View</button>
+        </div>
+
+        <div id="node-info-pane" class="node-details-fixed">
+            <h4>Node Details</h4>
+            <p id="details-placeholder">Select a node to inspect its properties.</p>
+            <div id="details-content" style="display:none">
+                <p><strong>ID:</strong> <span id="det-id"></span></p>
+                <p><strong>Type:</strong> <span id="det-type"></span></p>
+                <div id="det-meta" style="max-height:200px; overflow:auto; background:rgba(0,0,0,0.2); padding:8px; border-radius:6px; font-family:monospace; font-size:0.75rem;"></div>
+                <div id="det-actions" style="margin-top:12px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="graph-container">
+        <div class="search-box">
+            <input type="text" id="node-search" placeholder="Search nodes..." onkeyup="searchNodes(this.value)">
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    let network = null;
+    let rawData = { nodes: [], edges: [] };
+    let currentNodes = new vis.DataSet([]);
+    let currentEdges = new vis.DataSet([]);
+    let isWordGraph = false;
+
+    async function loadGraphData() {
+        const endpoint = isWordGraph ? '/api/graph/word' : '/api/graph/knowledge';
+        const res = await fetch(endpoint);
+        rawData = await res.json();
+        
+        currentNodes.clear();
+        currentEdges.clear();
+        currentNodes.add(rawData.nodes);
+        currentEdges.add(rawData.edges);
+
+        if (!network) initNetwork();
+    }
+
+    function initNetwork() {
+        const container = document.getElementById('graph-container');
+        const data = { nodes: currentNodes, edges: currentEdges };
+        const options = {
+            nodes: { shape: 'dot', size: 16, font: { color: '#edf7ff', size: 12, face: 'JetBrains Mono' } },
+            edges: { color: { color: 'rgba(149, 191, 214, 0.25)', highlight: '#4fd1c5' }, width: 1 },
+            physics: {
+                barnesHut: { gravitationalConstant: -2000, centralGravity: 0.3, springLength: 95 },
+                stabilization: { iterations: 100 }
+            },
+            groups: {
+                knowledge: { color: { background: '#4fd1c5', border: '#7dd3fc' } },
+                memory: { color: { background: '#f472b6', border: '#edf7ff' } },
+                file: { color: { background: '#94a3b8', border: '#edf7ff' } },
+                lexicon: { color: { background: '#fbbf24', border: '#edf7ff' } }
+            },
+            interaction: { hover: true, hideEdgesOnDrag: true }
+        };
+        network = new vis.Network(container, data, options);
+
+        network.on("selectNode", (params) => {
+            const nodeId = params.nodes[0];
+            const node = currentNodes.get(nodeId);
+            showDetails(node);
+        });
+
+        network.on("doubleClick", (params) => {
+            if (params.nodes.length > 0) {
+                expandNode(params.nodes[0]);
+            }
+        });
+    }
+
+    async function expandNode(nodeId) {
+        const res = await fetch(`/api/graph/neighbors/${encodeURIComponent(nodeId)}`);
+        const data = await res.json();
+        
+        if (data.nodes && data.nodes.length > 0) {
+            // Only add nodes that don't already exist
+            const newNodes = data.nodes.filter(n => !currentNodes.get(n.id));
+            currentNodes.add(newNodes);
+            currentEdges.add(data.edges);
+            
+            // Highlight the expansion
+            network.fit({ nodes: [nodeId, ...newNodes.map(n => n.id)], animation: true });
+        }
+    }
+
+    function showDetails(node) {
+        if (!node) return;
+        document.getElementById('details-placeholder').style.display = 'none';
+        document.getElementById('details-content').style.display = 'block';
+        document.getElementById('det-id').textContent = node.id;
+        document.getElementById('det-type').textContent = node.group;
+        document.getElementById('det-meta').textContent = JSON.stringify(node.metadata || {}, null, 2);
+        
+        const actions = document.getElementById('det-actions');
+        actions.innerHTML = '';
+        if (node.id.startsWith('file:')) {
+            const path = node.id.replace('file:', '');
+            const btn = document.createElement('button');
+            btn.textContent = 'Browse File';
+            btn.style.width = '100%';
+            btn.onclick = () => window.open(`/browse/forge/${path}`, '_blank');
+            actions.appendChild(btn);
+        }
+    }
+
+    function updateFilters() {
+        const showKb = document.getElementById('filter-kb').checked;
+        const showMem = document.getElementById('filter-mem').checked;
+        const showFile = document.getElementById('filter-file').checked;
+
+        const filteredNodes = rawData.nodes.filter(n => {
+            if (n.id.startsWith('kb:') && !showKb) return false;
+            if (n.id.startsWith('mem:') && !showMem) return false;
+            if (n.id.startsWith('file:') && !showFile) return false;
+            return true;
+        });
+
+        currentNodes.clear();
+        currentNodes.add(filteredNodes);
+    }
+
+    function toggleWordGraph() {
+        isWordGraph = document.getElementById('filter-word').checked;
+        loadGraphData();
+    }
+
+    function togglePhysics() {
+        network.setOptions({ physics: { enabled: document.getElementById('physics-enabled').checked } });
+    }
+
+    function updatePhysics(type, value) {
+        if (type === 'gravity') {
+            network.setOptions({ physics: { barnesHut: { gravitationalConstant: parseInt(value) } } });
+        } else if (type === 'spring') {
+            network.setOptions({ physics: { barnesHut: { springLength: parseInt(value) } } });
+        }
+    }
+
+    function searchNodes(query) {
+        if (!query) {
+            network.fit();
+            return;
+        }
+        const match = currentNodes.get({
+            filter: (item) => item.label.toLowerCase().includes(query.toLowerCase()) || 
+                             item.title.toLowerCase().includes(query.toLowerCase())
+        });
+        if (match.length > 0) {
+            network.focus(match[0].id, { scale: 1.5, animation: true });
+            network.selectNodes([match[0].id]);
+            showDetails(match[0]);
+        }
+    }
+
+    function clusterByGroup() {
+        const groups = ['knowledge', 'memory', 'file', 'lexicon'];
+        groups.forEach(group => {
+            network.cluster({
+                joinCondition: (options) => options.group === group,
+                clusterNodeProperties: { id: `cluster:${group}`, label: group.toUpperCase(), shape: 'database', color: '#163249', allowSingleNodeCluster: false }
+            });
+        });
+    }
+
+    function resetGraph() {
+        if (network) network.setData({ nodes: currentNodes, edges: currentEdges });
+        network.fit();
+    }
+
+    loadGraphData();
+</script>
+{% endblock %}

@@ -1,0 +1,51 @@
+<div class="card">
+    <h3>File Forge Operator</h3>
+    <p class="lede">Incremental reversible file indexing across source, documentation, artifacts, and runtime outputs.</p>
+    <div class="form-grid">
+        <div>
+            <label for="file-forge-path">Index Path</label>
+            <input id="file-forge-path" value="eidosian_forge/doc_forge/runtime" placeholder="eidosian_forge/archive_forge/repo">
+        </div>
+        <div>
+            <label for="file-forge-max-files">Max Files</label>
+            <input id="file-forge-max-files" type="number" value="0">
+        </div>
+        <div>
+            <label for="file-forge-remove">Mode</label>
+            <select id="file-forge-remove">
+                <option value="false" selected>Ingest And Keep</option>
+                <option value="true">Ingest And Remove</option>
+            </select>
+        </div>
+    </div>
+    <div class="actions" style="margin-top:12px;">
+        <button type="button" onclick="runFileForgeIndex()">Run Index</button>
+        <button type="button" onclick="refreshFileForge()">Refresh Summary</button>
+        <button type="button" onclick="window.open('/api/runtime/file-forge', '_blank')">Status JSON</button>
+        <button type="button" onclick="window.open('/browse/forge/data/file_forge/', '_blank')">Browse Data</button>
+    </div>
+    <table>
+        <tbody>
+            <tr><th>Total Files</th><td id="file-forge-total-files-table">{{ runtime_snapshot.get('file_forge', {}).get('total_files', 0) }}</td></tr>
+            <tr><th>Total Links</th><td id="file-forge-total-links">{{ runtime_snapshot.get('file_forge', {}).get('total_links', 0) }}</td></tr>
+            <tr><th>duplicate Groups</th><td id="file-forge-duplicates">{{ runtime_snapshot.get('file_forge', {}).get('duplicate_groups', 0) }}</td></tr>
+            <tr><th>Latest Job</th><td id="file-forge-latest-job">{{ runtime_snapshot.get('file_forge_index', {}).get('status', 'idle') }}</td></tr>
+        </tbody>
+    </table>
+    <div class="scroll-x">
+        <table>
+            <thead>
+                <tr><th>Recent File</th><th>Kind</th><th>Updated</th></tr>
+            </thead>
+            <tbody id="file-forge-recent-body">
+                {% for row in runtime_snapshot.get('file_forge', {}).get('recent_files', [])[:6] %}
+                <tr>
+                    <td class="mono">{{ row.get('file_path', '') }}</td>
+                    <td>{{ row.get('kind', '') }}</td>
+                    <td>{{ row.get('updated_at', '')[:19].replace('T', ' ') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>

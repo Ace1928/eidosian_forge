@@ -29,6 +29,7 @@ Example:
 import logging  # Import logging
 import os
 import re
+import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from functools import lru_cache
@@ -43,10 +44,19 @@ from nltk.stem import WordNetLemmatizer  # type: ignore
 
 from word_forge.configs.config_essentials import LexicalDataset
 from word_forge.database.database_manager import DBManager
+from word_forge.emotion.emotion_manager import EmotionManager
+from word_forge.linguistics.g2p_manager import G2PManager, LLMG2PProvider
+from word_forge.linguistics.morphology import MorphologyManager
+from word_forge.linguistics.phonetics_manager import PhoneticsManager
+from word_forge.linguistics.prosody import ProsodyEngine
 from word_forge.parser.language_model import ModelState
 from word_forge.parser.lexical_functions import create_lexical_dataset
+from word_forge.parser.structured_validator import validated_query
+from word_forge.phrases.phrase_manager import PhraseManager
 from word_forge.queue.queue_manager import QueueManager
 from word_forge.utils.nltk_utils import ensure_nltk_data
+from word_forge.utils.result import Result, failure, success
+from word_forge.utils import metrics
 
 logger = logging.getLogger(__name__)
 
@@ -119,9 +129,10 @@ class TermExtractor:
     # Class-level flag to track whether NER is available
     _ner_available: bool = True
 
-    def __init__(self) -> None:
+    def __init__(self, model_state: Optional[ModelState] = None) -> None:
         """Initialize the term extractor with necessary NLP components."""
         ensure_nltk_data()
+        self.llm_state = model_state
         self._stop_words: FrozenSet[str] = frozenset(nltk.corpus.stopwords.words("english"))  # type: ignore
         self._common_words: FrozenSet[str] = frozenset(
             [
@@ -200,6 +211,12 @@ class TermExtractor:
             # Extract semantically related terms via WordNet
             semantic_terms = self._extract_semantic_terms(frozenset(discovered_terms))
             discovered_terms.update(semantic_terms)
+            
+            # LLM-based extraction for domain terms and complex entities
+            if self.llm_state:
+                llm_terms = self._extract_llm_terms(text_to_parse, original_term)
+                multiword_expressions.update(llm_terms.get("phrases", []))
+                named_entities.update(llm_terms.get("entities", []))
 
         except Exception as e:
             # Fallback to regex-only results if NLP processing fails
@@ -217,6 +234,29 @@ class TermExtractor:
         priority_terms, standard_terms = self._score_and_sort_terms(filtered_terms)
 
         return priority_terms, standard_terms
+
+    def _extract_llm_terms(self, text: str, term: str) -> Dict[str, List[str]]:
+        """Extract domain-specific terms and entities using LLM."""
+        prompt = (
+            f"Analyze the following text related to '{term}'.\n"
+            f"Text: {text}\n\n"
+            "Identify high-value domain-specific terminology, named entities, and complex idiomatic phrases.\n"
+            "Provide a JSON object with the following schema:\n"
+            "{\n"
+            '  "phrases": ["list of strings"],\n'
+            '  "entities": ["list of strings"]\n'
+            "}\n"
+            "Return ONLY valid JSON."
+        )
+        
+        result = validated_query(
+            model_state=self.llm_state,
+            prompt=prompt,
+            context_word=term,
+            max_retries=1
+        )
+        
+        return result.unwrap() if result.is_success else {"phrases": [], "entities": []}
 
     def _process_sentence(
         self,
@@ -490,16 +530,26 @@ class ParserRefiner:
         self.db_manager = db_manager or DBManager()
         self.queue_manager = queue_manager if queue_manager is not None else QueueManager[str]()
         self.resources = LexicalResources(data_dir)
-        self.term_extractor = TermExtractor()
-        self.stats = ProcessingStatistics()
-
+        
         self.llm_state = llm_state or ModelState(model_name or "qwen/qwen3.5-2b-instruct")
+        self.term_extractor = TermExtractor(model_state=self.llm_state)
+        self.stats = ProcessingStatistics()
+        
+        # Initialize linguistic and phrase managers
+        self.phonetics_manager = PhoneticsManager(self.db_manager)
+        self.g2p_manager = G2PManager(primary_provider=LLMG2PProvider(self.llm_state))
+        self.phrase_manager = PhraseManager(self.db_manager)
+        self.morphology_manager = MorphologyManager(self.db_manager)
+        
+        # Initialize emotional and prosody engines
+        self.emotion_manager = EmotionManager(self.db_manager)
+        self.prosody_engine = ProsodyEngine(model_state=self.llm_state)
 
         # Initialize thread pool for parallel processing
         self._executor = ThreadPoolExecutor(max_workers=5)
 
     @eidosian()
-    def process_word(self, term: str) -> bool:
+    def process_word(self, term: str) -> Result[bool, str]:
         """
         Process a word using the integrated lexical resources.
 
@@ -509,12 +559,13 @@ class ParserRefiner:
             term: The word to process
 
         Returns:
-            Boolean indicating whether processing was successful
+            Result[bool, str]: Ok(True) on success, Err(error_msg) on failure
         """
         term_lower = term.strip().lower()
         if not term_lower:
-            return False
+            return failure("Empty term provided")
 
+        start_time = time.time()
         try:
             self.stats.increment_processed()
 
@@ -543,17 +594,65 @@ class ParserRefiner:
                 usage_examples=usage_examples,
             )
 
-            # Process relationships and discovered terms in parallel tasks
+            # Retrieve word_id for background tasks
+            word_id = self.db_manager.get_word_id(term_lower)
+
+            # Process relationships, linguistics, and phrases in parallel tasks
             self._executor.submit(self._process_relationships, term_lower, dataset)
+            self._executor.submit(self._process_linguistics, word_id, term_lower, full_definition)
             self._executor.submit(self._discover_new_terms, term_lower, full_definition, usage_examples)
 
             self.stats.increment_successful()
-            return True
 
+            # Record metrics
+            metrics.record_word_processed()
+            metrics.observe_latency(time.time() - start_time)
+
+            return success(True)
         except Exception as e:
             self.stats.increment_error()
+            metrics.record_error()
             logger.error(f"Error processing word '{term_lower}': {str(e)}", exc_info=True)
-            return False
+            return failure(str(e))
+    def _process_linguistics(self, word_id: int, term: str, definition: str) -> None:
+        """
+        Extract and store phonetic and morphological information for a word.
+
+        Args:
+            word_id: Database ID of the word
+            term: The word text
+            definition: The word's definition (for context)
+        """
+        logger.debug(f"Starting linguistic processing for '{term}' (ID: {word_id})")
+        try:
+            # 1. Phonetic extraction
+            g2p_result = self.g2p_manager.convert(term, context=definition)
+
+            if g2p_result.get("ipa"):
+                self.phonetics_manager.upsert_phonetics(
+                    word_id=word_id,
+                    ipa=g2p_result["ipa"],
+                    arpabet=g2p_result.get("arpabet"),
+                    stress_pattern=g2p_result.get("stress_pattern"),
+                    source="LLM-G2P",
+                )
+                logger.info(f"Phonetics stored for '{term}': {g2p_result['ipa']}")
+            else:
+                logger.warning(f"No IPA generated for '{term}'")
+
+            # 2. Morphological decomposition
+            morpheme_texts = self.morphology_manager.decompose(term)
+            if morpheme_texts:
+                morpheme_ids = []
+                for m_text in morpheme_texts:
+                    m_id = self.morphology_manager.upsert_morpheme(m_text)
+                    morpheme_ids.append(m_id)
+                
+                self.morphology_manager.set_word_morphemes(word_id, morpheme_ids)
+                logger.info(f"Morphemes stored for '{term}': {' + '.join(morpheme_texts)}")
+
+        except Exception as e:
+            logger.error(f"Linguistic processing failed for '{term}': {e}", exc_info=True)
 
     def _extract_all_definitions(self, dataset: LexicalDataset) -> List[str]:
         """
@@ -709,7 +808,7 @@ class ParserRefiner:
 
     def _discover_new_terms(self, term: str, definition: str, examples: List[str]) -> None:
         """
-        Discover and enqueue new terms from definitions and examples using advanced NLP techniques.
+        Discover and enqueue new terms and phrases from definitions and examples.
 
         Args:
             term: The base term being processed
@@ -718,15 +817,42 @@ class ParserRefiner:
         """
         priority_terms, standard_terms = self.term_extractor.extract_terms(definition, examples, term)
 
-        # Enqueue priority terms first (multiword expressions and specialized terms)
-        for new_term in priority_terms:
+        # Enqueue terms for the processing queue
+        for new_term in priority_terms + standard_terms:
             if new_term != term.lower():
                 self.queue_manager.enqueue(new_term)
 
-        # Then enqueue other discovered terms
-        for new_term in standard_terms:
-            if new_term != term.lower():
-                self.queue_manager.enqueue(new_term)
+        # Handle phrases specifically for the phrase inventory
+        for discovered_term in priority_terms:
+            if " " in discovered_term:
+                try:
+                    # Analyze emotional context
+                    valence, arousal = self.emotion_manager.analyze_text_emotion(discovered_term)
+                    
+                    # Generate prosody priors
+                    priors = self.prosody_engine.generate_priors(discovered_term, valence, arousal)
+
+                    # Upsert the phrase record with prosody and affect links
+                    phrase_id = self.phrase_manager.upsert_phrase(
+                        text=discovered_term,
+                        prosody_priors=priors,
+                        affect_link=f"V:{valence:.2f},A:{arousal:.2f}",
+                        novelty_score=1.0,
+                    )
+
+                    # Identify components
+                    component_words = discovered_term.split()
+                    component_ids = []
+                    for cw in component_words:
+                        # Ensure the component word exists in the database
+                        if not self.db_manager.word_exists(cw):
+                            self.db_manager.insert_or_update_word(term=cw)
+                        component_ids.append(self.db_manager.get_word_id(cw))
+                    
+                    # Link components
+                    self.phrase_manager.set_phrase_components(phrase_id, component_ids)
+                except Exception as e:
+                    logger.error(f"Failed to process phrase '{discovered_term}': {e}")
 
     @eidosian()
     def get_stats(self) -> Dict[str, int]:

@@ -110,6 +110,7 @@ class GraphWorker(threading.Thread):
         output_path: Optional[str] = None,
         visualization_path: Optional[str] = None,
         daemon: bool = True,
+        generate_visualization: bool = True,
     ) -> None:
         """
         Initialize the graph worker with configuration parameters.
@@ -120,6 +121,7 @@ class GraphWorker(threading.Thread):
             output_path: Path where the graph will be saved (defaults to config).
             visualization_path: Path where visualization will be saved (defaults to config).
             daemon: Whether thread should be daemonic (auto-terminate when main exits).
+            generate_visualization: Whether update cycles should emit HTML visualizations.
         """
         super().__init__(daemon=daemon, name="GraphWorkerThread")  # Give the thread a name
         self.graph_manager = graph_manager
@@ -144,6 +146,7 @@ class GraphWorker(threading.Thread):
         if vis_path.suffix.lower() != ".html":  # Ensure HTML extension
             vis_path = vis_path / "lexical_graph.html" if vis_path.is_dir() else vis_path.with_suffix(".html")
         self.visualization_path = str(vis_path)
+        self.generate_visualization = generate_visualization
 
         # Internal state and control flags
         self._stop_event = threading.Event()  # Use Event for clearer stop signal
@@ -161,6 +164,11 @@ class GraphWorker(threading.Thread):
         self.logger.debug(
             f"GraphWorker initialized: Poll={self.poll_interval}s, Output='{self.output_path}', Viz='{self.visualization_path}'"
         )
+
+    @property
+    def name(self) -> str:
+        """Return the name of the worker."""
+        return "GraphWorker"
 
     @eidosian()
     def pause(self) -> None:
@@ -288,16 +296,17 @@ class GraphWorker(threading.Thread):
             raise GraphSaveError(f"Unexpected error during graph save: {e}", e) from e
 
         # 5. Generate Visualization (non-critical, log warnings)
-        try:
-            self._generate_visualization()
-        except (GraphVisualizationError, GraphLayoutError, ImportError) as e:
-            self.logger.warning(f"Visualization generation failed: {e}")
-            # Optionally store this as a non-fatal error in status
-        except Exception as e:  # Catch unexpected errors during visualization
-            self.logger.warning(
-                f"Unexpected error during visualization: {e}",
-                exc_info=self.logger.isEnabledFor(logging.DEBUG),
-            )
+        if self.generate_visualization:
+            try:
+                self._generate_visualization()
+            except (GraphVisualizationError, GraphLayoutError, ImportError) as e:
+                self.logger.warning(f"Visualization generation failed: {e}")
+                # Optionally store this as a non-fatal error in status
+            except Exception as e:  # Catch unexpected errors during visualization
+                self.logger.warning(
+                    f"Unexpected error during visualization: {e}",
+                    exc_info=self.logger.isEnabledFor(logging.DEBUG),
+                )
 
         # Track successful update
         with self._status_lock:

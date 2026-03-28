@@ -25,6 +25,7 @@ from typing import Any, Callable, Dict, List, Optional, TypedDict, Union
 from word_forge.database.database_manager import DBManager
 from word_forge.parser.parser_refiner import ParserRefiner
 from word_forge.queue.queue_manager import QueueProcessor, Result
+from word_forge.utils.result import Result as EidosResult
 
 
 class ProcessingError(Exception):
@@ -353,7 +354,14 @@ class WordProcessor(QueueProcessor[str]):
             initial_queue_size = self.parser_refiner.queue_manager.size
 
             # Process the term
-            self.parser_refiner.process_word(term)
+            eidos_result: EidosResult[bool, str] = self.parser_refiner.process_word(term)
+            
+            if eidos_result.is_failure:
+                return ProcessingResult.error(
+                    term,
+                    ProcessingStatus.PARSER_ERROR,
+                    eidos_result.error  # type: ignore
+                )
 
             # Calculate new terms found (use property, not method call)
             new_terms_count = self.parser_refiner.queue_manager.size - initial_queue_size
@@ -576,6 +584,20 @@ class ParallelWordProcessor:
 
         self._workers = []
         self.logger.info("Stopped parallel word processor")
+
+    def is_alive(self) -> bool:
+        """Check if any worker threads are still running."""
+        return any(w.is_alive() for w in self._workers)
+
+    def join(self, timeout: Optional[float] = None) -> None:
+        """Join all worker threads."""
+        for w in self._workers:
+            w.join(timeout)
+
+    @property
+    def name(self) -> str:
+        """Return the name of the worker pool."""
+        return "WordProcessorPool"
 
     def _worker_loop(self) -> None:
         """

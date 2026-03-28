@@ -376,6 +376,11 @@ class DatabaseWorker(threading.Thread):
         # Configure logging
         self.logger = logger or logging.getLogger(__name__)
 
+    @property
+    def name(self) -> str:
+        """Return the name of the worker."""
+        return "DatabaseWorker"
+
     @eidosian()
     def run(self) -> None:
         """

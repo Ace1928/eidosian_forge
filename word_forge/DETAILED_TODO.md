@@ -41,7 +41,8 @@ Item Format:
 ## Table of Contents
 
 1. [MVP Deliverables](#1-mvp-deliverables)
-2. [Code Quality](#2-code-quality)
+2. [Phase 1 Elevation (March 2026)](#2-phase-1-elevation-march-2026)
+3. [Code Quality](#3-code-quality)
 3. [Type Safety](#3-type-safety)
 4. [Documentation](#4-documentation)
 5. [Testing](#5-testing)
@@ -120,7 +121,35 @@ Item Format:
 
 ---
 
-## 2. Code Quality
+## 2. Phase 1 Elevation (March 2026)
+
+> **Source**: Audit and Improvement Plan (March 27, 2026)  
+> **Goal**: Establish foundation for production-quality Eidosian Forge.
+
+### 2.1 Core Infrastructure [P0]
+
+- [x] **`src/word_forge/utils/result.py`** - Implement `Result` monad (Ok/Err types)
+  - Impact: Unified error handling and composability
+- [~] **Refactor `DBManager`** - Update to use `Result` pattern for all queries
+- [~] **Refactor `ParserRefiner`** - Update to use `Result` pattern for processing
+- [ ] **DB Migration Research** - Evaluate PostgreSQL + pgvector vs Neo4j
+- [x] **WorkerManager Design** - Design unified thread/process lifecycle management
+- [~] **Prometheus Integration** - Implement basic throughput and error metrics
+
+### 2.2 Linguistic & Phrase Foundation [P0-P1]
+
+- [x] **`src/word_forge/linguistics/`** - G2P, Phonetics, and Prosody engines
+  - Status: Complete (March 27) - LLM-G2P, PhoneticsManager, ProsodyEngine integrated
+- [x] **`src/word_forge/phrases/`** - Phrase inventory and component tracking
+  - Status: Complete (March 27) - PhraseManager with novelty and realization tracking
+- [x] **`src/word_forge/parser/parser_refiner.py`** - Enhanced MWE and Entity discovery
+  - Status: Complete (March 27) - LLM-based extraction pass in TermExtractor
+- [ ] **FastText Integration** - Implement aligned vector ingestion for translation bootstrapping
+- [ ] **Polyglot Integration** - Morphological decomposition for lexemes
+
+---
+
+## 3. Code Quality
 
 ### 2.1 Docstrings [P1]
 

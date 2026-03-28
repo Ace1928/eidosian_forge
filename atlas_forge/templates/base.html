@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Eidosian Atlas{% endblock %}</title>
+    <style>
+        :root {
+            --bg: #081019;
+            --panel: rgba(14, 28, 40, 0.88);
+            --panel-strong: rgba(18, 36, 52, 0.96);
+            --surface: #0f2232;
+            --surface-2: #163249;
+            --text: #edf7ff;
+            --muted: #98b3c8;
+            --accent: #4fd1c5;
+            --accent-2: #7dd3fc;
+            --line: rgba(149, 191, 214, 0.18);
+            --success: #34d399;
+            --warning: #fbbf24;
+            --danger: #fb7185;
+            --shadow: 0 18px 60px rgba(0, 0, 0, 0.34);
+            --radius: 18px;
+        }
+        * { box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            margin: 0;
+            color: var(--text);
+            font-family: "Avenir Next", "Segoe UI", sans-serif;
+            line-height: 1.55;
+            background:
+                radial-gradient(circle at top left, rgba(79, 209, 197, 0.16), transparent 24%),
+                radial-gradient(circle at top right, rgba(125, 211, 252, 0.10), transparent 28%),
+                linear-gradient(180deg, #061018 0%, #0a1722 46%, #081019 100%);
+            min-height: 100vh;
+        }
+        a { color: var(--accent-2); text-decoration: none; }
+        a:hover { color: var(--accent); }
+        .container { max-width: 1440px; margin: 0 auto; padding: 0 16px; }
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(18px);
+            background: rgba(6, 16, 24, 0.82);
+            border-bottom: 1px solid var(--line);
+        }
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 14px 0;
+            flex-wrap: wrap;
+        }
+        .logo-wrap { display: flex; flex-direction: column; gap: 2px; }
+        .logo {
+            font-size: 1.25rem;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+        }
+        .logo span { color: var(--accent); }
+        .tagline { font-size: 0.85rem; color: var(--muted); }
+        .nav-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .nav-links a {
+            padding: 10px 14px;
+            border-radius: 999px;
+            border: 1px solid var(--line);
+            background: rgba(255, 255, 255, 0.03);
+            font-weight: 600;
+            color: var(--text);
+        }
+        .nav-links a:hover {
+            border-color: rgba(79, 209, 197, 0.35);
+            background: rgba(79, 209, 197, 0.08);
+        }
+        main.container { padding-top: 22px; padding-bottom: 32px; }
+        .hero {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .hero-card,
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+        .hero-card {
+            padding: 22px;
+        }
+        .hero-card h1 {
+            margin: 0 0 8px;
+            font-size: clamp(1.5rem, 3vw, 2.4rem);
+            line-height: 1.1;
+        }
+        .hero-card p,
+        .lede { color: var(--muted); margin: 0; }
+        .hero-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 16px;
+        }
+        .meta-pill,
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            border: 1px solid transparent;
+        }
+        .meta-pill {
+            background: rgba(255,255,255,0.05);
+            color: var(--muted);
+            border-color: var(--line);
+        }
+        .status-running { background: rgba(52, 211, 153, 0.14); color: var(--success); border-color: rgba(52, 211, 153, 0.28); }
+        .status-stopped { background: rgba(251, 113, 133, 0.14); color: var(--danger); border-color: rgba(251, 113, 133, 0.28); }
+        .status-unknown { background: rgba(251, 191, 36, 0.14); color: var(--warning); border-color: rgba(251, 191, 36, 0.28); }
+        .card { padding: 18px; margin-bottom: 18px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+        h1, h2, h3 { margin-top: 0; }
+        h2 { font-size: 1.1rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+        .stat-value { font-size: clamp(1.5rem, 4vw, 2.3rem); font-weight: 800; color: var(--accent-2); }
+        .stat-label { font-size: 0.82rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+        .actions, .inline-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+        button, input, select, textarea {
+            font: inherit;
+            color: var(--text);
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+        }
+        button {
+            cursor: pointer;
+            padding: 10px 14px;
+            font-weight: 700;
+            background: linear-gradient(180deg, rgba(79, 209, 197, 0.18), rgba(125, 211, 252, 0.08));
+        }
+        button:hover { border-color: rgba(79, 209, 197, 0.38); }
+        input, select, textarea { width: 100%; padding: 10px 12px; }
+        textarea { min-height: 108px; resize: vertical; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+        .mono, code, pre, .markdown-body code { font-family: "JetBrains Mono", "Consolas", monospace; }
+        .mono { word-break: break-word; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 0.94rem;
+        }
+        th, td {
+            padding: 11px 10px;
+            text-align: left;
+            border-bottom: 1px solid var(--line);
+            vertical-align: top;
+        }
+        th { color: var(--muted); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; }
+        tr:hover { background: rgba(255,255,255,0.025); }
+        .scroll-x { overflow-x: auto; }
+        .terminal {
+            background: #07131d;
+            border: 1px solid rgba(125, 211, 252, 0.16);
+            border-radius: 14px;
+            padding: 14px;
+            min-height: 320px;
+            max-height: 52vh;
+            overflow: auto;
+            white-space: pre-wrap;
+            font-size: 0.88rem;
+        }
+        .section-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 0 0 18px;
+        }
+        .section-nav a {
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--line);
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+        .section-nav a:hover { color: var(--text); border-color: rgba(79, 209, 197, 0.35); }
+        .markdown-body { font-size: 1rem; }
+        .markdown-body pre { background-color: #0d161f; padding: 15px; border-radius: 12px; overflow-x: auto; border: 1px solid var(--line); }
+        .markdown-body code { font-size: 0.9em; background-color: rgba(255,255,255,0.08); padding: 2px 4px; border-radius: 4px; }
+        .markdown-body pre code { background-color: transparent; padding: 0; }
+        .markdown-body h1, .markdown-body h2 { border-bottom: 1px solid var(--line); padding-bottom: 0.3em; }
+        .markdown-body blockquote { border-left: 4px solid var(--accent); padding-left: 15px; color: var(--muted); margin-left: 0; }
+        .breadcrumb { margin-bottom: 20px; font-size: 0.9rem; color: var(--muted); }
+        .breadcrumb a { color: var(--muted); }
+        .breadcrumb a:hover { color: var(--accent); }
+        .breadcrumb span { margin: 0 5px; }
+        footer { text-align: center; padding: 32px 0 40px; color: var(--muted); font-size: 0.9rem; border-top: 1px solid var(--line); margin-top: 36px; }
+        @media (max-width: 900px) {
+            .hero { grid-template-columns: 1fr; }
+            .container { padding: 0 12px; }
+            .card, .hero-card { padding: 16px; }
+            th, td { padding: 9px 8px; }
+        }
+    </style>
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <header>
+        <div class="container header-content">
+            <div class="logo-wrap">
+                <div class="logo">EIDOSIAN <span>ATLAS</span></div>
+                <div class="tagline">Unified operator plane for the living forge.</div>
+            </div>
+            <nav class="nav-links">
+                <a href="/">Dashboard</a>
+                <a href="/identity">Identity</a>
+                <a href="/graphs">Graphs</a>
+                <a href="/browse/docs/">Docs</a>
+                <a href="/browse/forge/">Forge</a>
+                <a href="/browse/home/">Home</a>
+                <a href="/api/system" target="_blank">API</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        <p>Eidosian Forge © 2026. Precision, continuity, and reversible systems.</p>
+    </footer>
+</body>
+</html>

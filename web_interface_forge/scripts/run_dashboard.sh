@@ -1,24 +1,14 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/bash
+# run_dashboard.sh - LEGACY WRAPPER
+# This script is now a legacy wrapper for the new Atlas Forge dashboard.
 
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-FORGE_ROOT="$(cd -- "${SCRIPT_DIR}/../.." && pwd)"
+FORGE_ROOT="${EIDOS_FORGE_ROOT:-/data/data/com.termux/files/home/eidosian_forge}"
+NEW_SCRIPT="${FORGE_ROOT}/atlas_forge/scripts/run_atlas.sh"
 
-VENV_PYTHON="${FORGE_ROOT}/eidosian_venv/bin/python"
-DASHBOARD_MODULE="web_interface_forge.dashboard.main:app"
-PORT_REGISTRY_SCRIPT="${FORGE_ROOT}/scripts/port_registry.py"
-
-if [ ! -x "${VENV_PYTHON}" ]; then
-  echo "[dashboard] missing python: ${VENV_PYTHON}" >&2
-  exit 1
+if [ -x "${NEW_SCRIPT}" ]; then
+    echo "[legacy] Delegating to new Atlas Forge script..."
+    exec "${NEW_SCRIPT}" "$@"
+else
+    echo "[error] New Atlas Forge script not found at ${NEW_SCRIPT}"
+    exit 1
 fi
-
-export EIDOS_FORGE_ROOT="${FORGE_ROOT}"
-DEFAULT_PORT="$("${VENV_PYTHON}" "${PORT_REGISTRY_SCRIPT}" get --service eidos_atlas_dashboard --field port --default 8936 2>/dev/null || echo 8936)"
-export EIDOS_DASHBOARD_PORT="${EIDOS_DASHBOARD_PORT:-${DEFAULT_PORT}}"
-
-# Ensure bootstrap imports resolve before module import time.
-export PYTHONPATH="${FORGE_ROOT}/web_interface_forge/src:${FORGE_ROOT}/lib:${FORGE_ROOT}/doc_forge/src:${FORGE_ROOT}/agent_forge/src:${FORGE_ROOT}/code_forge/src:${FORGE_ROOT}/file_forge/src:${FORGE_ROOT}/gis_forge/src:${FORGE_ROOT}/memory_forge/src:${FORGE_ROOT}/narrative_forge/src:${FORGE_ROOT}/eidos_mcp/src:${FORGE_ROOT}/neural_forge/src:${PYTHONPATH:-}"
-
-echo "[dashboard] Starting Eidosian Atlas on port ${EIDOS_DASHBOARD_PORT}..."
-exec "${VENV_PYTHON}" -m uvicorn "${DASHBOARD_MODULE}" --host 0.0.0.0 --port "${EIDOS_DASHBOARD_PORT}" --log-level info

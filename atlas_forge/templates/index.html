@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | Eidosian Atlas{% endblock %}
+
+{% block head %}
+<style>
+    .live-strip {
+        position: sticky;
+        top: 78px;
+        z-index: 90;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 10px;
+        margin-bottom: 20px;
+        padding: 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: linear-gradient(90deg, rgba(79,209,197,0.12), rgba(18,36,52,0.92));
+        backdrop-filter: blur(2px);
+    }
+    .live-item {
+        font-size: 0.85rem;
+        color: var(--muted);
+    }
+    .live-item strong {
+        display: block;
+        color: var(--text);
+        font-size: 1rem;
+        margin-top: 2px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="section-nav">
+    <a href="#operator-shell">Shell</a>
+    <a href="#file-forge">File Forge</a>
+    <a href="#archive-lifecycle">Archive Lifecycle</a>
+    <a href="#runtime-services">Runtime Services</a>
+    <a href="#proof-plane">Proof</a>
+</div>
+
+{% include "sections/live_strip.html" %}
+
+{% if runtime_snapshot is defined and runtime_snapshot %}
+    {% include "sections/status_grid.html" %}
+    <div class="grid">
+        {% include "sections/operator_shell.html" %}
+        {% include "sections/file_forge_operator.html" %}
+    </div>
+    {% include "sections/proof_plane.html" %}
+    {% include "sections/documentation_control.html" %}
+{% else %}
+    <div class="card error">
+        <h3>Runtime Snapshot Unavailable</h3>
+        <p>Ensure the Atlas service has sufficient permissions and all backend dependencies are satisfied.</p>
+    </div>
+{% endif %}
+
+<script>
+{# (Keeping the script here for now to ensure it works, will modularize later) #}
+{% include "sections/dashboard_scripts.js" %}
+</script>
+{% endblock %}

@@ -192,9 +192,92 @@ class ModelState:
             print("Text generation skipped: torch not available")
             return None
 
-        # Safety check - both must be initialized
         if self.tokenizer is None or self.model is None:
             print("Error: Tokenizer or model is None after initialization attempt.")
+            return None
+
+        try:
+            input_tokens: Dict[str, torch.Tensor] = self.tokenizer(prompt, return_tensors="pt")  # type: ignore
+
+            input_ids_tensor = input_tokens.get("input_ids")
+            if input_ids_tensor is None:
+                raise ValueError("Tokenizer did not return 'input_ids'")
+            if not isinstance(input_ids_tensor, torch.Tensor):
+                raise TypeError(f"Expected input_ids to be a Tensor, got {type(input_ids_tensor)}")
+            input_ids = input_ids_tensor.to(self.device)
+
+            attention_mask_tensor = input_tokens.get("attention_mask")
+            attention_mask = None
+            if attention_mask_tensor is not None:
+                if not isinstance(attention_mask_tensor, torch.Tensor):
+                    raise TypeError(f"Expected attention_mask to be a Tensor, got {type(attention_mask_tensor)}")
+                attention_mask = attention_mask_tensor.to(self.device)
+
+            gen_kwargs: Dict[str, Any] = {
+                "temperature": temperature,
+                "num_beams": num_beams,
+                "do_sample": temperature > 0,
+            }
+
+            input_length = input_ids.shape[1] if hasattr(input_ids, "shape") else 0
+            model_max_length = 2048
+            model_config: Optional[PretrainedConfig] = getattr(self.model, "config", None)
+            if model_config and hasattr(model_config, "max_position_embeddings"):
+                model_max_length = getattr(model_config, "max_position_embeddings", model_max_length)
+
+            if max_new_tokens is None:
+                gen_kwargs["max_length"] = model_max_length
+            else:
+                gen_kwargs["max_length"] = min(input_length + max_new_tokens, model_max_length)
+
+            pad_token_id: Optional[Union[int, List[int]]] = self.tokenizer.pad_token_id  # type: ignore
+            eos_token_id: Optional[Union[int, List[int]]] = self.tokenizer.eos_token_id  # type: ignore
+
+            if pad_token_id is None:
+                if eos_token_id is not None:
+                    gen_kwargs["pad_token_id"] = eos_token_id[0] if isinstance(eos_token_id, list) else eos_token_id
+                else:
+                    print("Warning: Tokenizer lacks both pad_token_id and eos_token_id. Generation might be unstable.")
+            else:
+                gen_kwargs["pad_token_id"] = pad_token_id[0] if isinstance(pad_token_id, list) else pad_token_id
+
+            if eos_token_id is not None:
+                gen_kwargs["eos_token_id"] = eos_token_id[0] if isinstance(eos_token_id, list) else eos_token_id
+
+            with torch.no_grad():
+                outputs: torch.Tensor = self.model.generate(  # type: ignore
+                    input_ids=input_ids,
+                    attention_mask=attention_mask,
+                    **gen_kwargs,
+                )
+
+            output_sequence: Optional[torch.Tensor] = None
+            if isinstance(outputs, torch.Tensor):
+                output_sequence = outputs
+            elif hasattr(outputs, "sequences"):
+                output_sequence = getattr(outputs, "sequences", None)
+
+            if output_sequence is None or not isinstance(output_sequence, torch.Tensor):
+                print(f"Warning: Could not extract output sequences from model.generate output type: {type(outputs)}")
+                newly_generated_ids = torch.tensor([], dtype=torch.long, device=self.device)
+            else:
+                first_sequence = (
+                    output_sequence[0] if output_sequence.ndim > 1 and output_sequence.shape[0] > 0 else output_sequence
+                )
+                if first_sequence.shape[0] > input_length:
+                    newly_generated_ids = first_sequence[input_length:]
+                else:
+                    newly_generated_ids = torch.tensor([], dtype=torch.long, device=self.device)
+
+            result = self.tokenizer.decode(newly_generated_ids, skip_special_tokens=True)  # type: ignore
+            return result.strip()
+
+        except Exception as e:
+            self._inference_failures += 1
+            if self._inference_failures >= self._max_failures:
+                self._failure_threshold_reached = True
+                print(f"Failure threshold ({self._max_failures}) reached. Disabling model.")
+            print(f"Text generation failed: {str(e)}")
             return None
 
     def _generate_text_ollama(
@@ -244,98 +327,6 @@ class ModelState:
                 self._failure_threshold_reached = True
                 print(f"Failure threshold ({self._max_failures}) reached. Disabling model.")
             print(f"Ollama generation failed: {str(e)}")
-            return None
-        try:
-            # Create input tensors
-            input_tokens: Dict[str, torch.Tensor] = self.tokenizer(prompt, return_tensors="pt")  # type: ignore
-
-            # Safely access 'input_ids' and 'attention_mask'
-            input_ids_tensor = input_tokens.get("input_ids")
-            if input_ids_tensor is None:
-                raise ValueError("Tokenizer did not return 'input_ids'")
-            if not isinstance(input_ids_tensor, torch.Tensor):
-                raise TypeError(f"Expected input_ids to be a Tensor, got {type(input_ids_tensor)}")
-            input_ids = input_ids_tensor.to(self.device)
-
-            attention_mask_tensor = input_tokens.get("attention_mask")
-            attention_mask = None
-            if attention_mask_tensor is not None:
-                if not isinstance(attention_mask_tensor, torch.Tensor):
-                    raise TypeError(f"Expected attention_mask to be a Tensor, got {type(attention_mask_tensor)}")
-                attention_mask = attention_mask_tensor.to(self.device)
-
-            # Configure generation parameters
-            gen_kwargs: Dict[str, Any] = {
-                "temperature": temperature,
-                "num_beams": num_beams,
-                "do_sample": temperature > 0,
-            }
-
-            # Calculate max_length carefully
-            input_length = input_ids.shape[1] if hasattr(input_ids, "shape") else 0
-            model_max_length = 2048
-            model_config: Optional[PretrainedConfig] = getattr(self.model, "config", None)
-            if model_config and hasattr(model_config, "max_position_embeddings"):
-                model_max_length = getattr(model_config, "max_position_embeddings", model_max_length)
-
-            if max_new_tokens is None:
-                gen_kwargs["max_length"] = model_max_length
-            else:
-                gen_kwargs["max_length"] = min(input_length + max_new_tokens, model_max_length)
-
-            # Handle pad_token_id carefully
-            pad_token_id: Optional[Union[int, List[int]]] = self.tokenizer.pad_token_id  # type: ignore
-            eos_token_id: Optional[Union[int, List[int]]] = self.tokenizer.eos_token_id  # type: ignore
-
-            if pad_token_id is None:
-                if eos_token_id is not None:
-                    gen_kwargs["pad_token_id"] = eos_token_id[0] if isinstance(eos_token_id, list) else eos_token_id
-                else:
-                    print("Warning: Tokenizer lacks both pad_token_id and eos_token_id. Generation might be unstable.")
-            else:
-                gen_kwargs["pad_token_id"] = pad_token_id[0] if isinstance(pad_token_id, list) else pad_token_id
-
-            if eos_token_id is not None:
-                gen_kwargs["eos_token_id"] = eos_token_id[0] if isinstance(eos_token_id, list) else eos_token_id
-
-            # Generate text
-            with torch.no_grad():
-                outputs: torch.Tensor = self.model.generate(  # type: ignore
-                    input_ids=input_ids,
-                    attention_mask=attention_mask,
-                    **gen_kwargs,
-                )
-
-            # Process the output
-            output_sequence: Optional[torch.Tensor] = None
-            if isinstance(outputs, torch.Tensor):
-                output_sequence = outputs
-            elif hasattr(outputs, "sequences"):
-                output_sequence = getattr(outputs, "sequences", None)
-
-            if output_sequence is None or not isinstance(output_sequence, torch.Tensor):
-                print(f"Warning: Could not extract output sequences from model.generate output type: {type(outputs)}")
-                newly_generated_ids = torch.tensor([], dtype=torch.long, device=self.device)
-            else:
-                first_sequence = (
-                    output_sequence[0] if output_sequence.ndim > 1 and output_sequence.shape[0] > 0 else output_sequence
-                )
-
-                if first_sequence.shape[0] > input_length:
-                    newly_generated_ids = first_sequence[input_length:]
-                else:
-                    newly_generated_ids = torch.tensor([], dtype=torch.long, device=self.device)
-
-            result = self.tokenizer.decode(newly_generated_ids, skip_special_tokens=True)  # type: ignore
-
-            return result.strip()
-
-        except Exception as e:
-            self._inference_failures += 1
-            if self._inference_failures >= self._max_failures:
-                self._failure_threshold_reached = True
-                print(f"Failure threshold ({self._max_failures}) reached. Disabling model.")
-            print(f"Text generation failed: {str(e)}")
             return None
 
     @eidosian()

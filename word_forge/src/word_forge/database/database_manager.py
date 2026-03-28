@@ -85,6 +85,7 @@ from typing import (
 )
 
 from word_forge.config import config
+from word_forge.utils.result import Result, failure, success
 
 
 class DatabaseError(Exception):
@@ -440,6 +441,91 @@ CREATE TABLE IF NOT EXISTS language_map (
 )
 """
 
+SQL_CREATE_PHONETICS_TABLE = """
+CREATE TABLE IF NOT EXISTS phonetics (
+    id INTEGER PRIMARY KEY,
+    word_id INTEGER NOT NULL,
+    ipa TEXT NOT NULL,
+    arpabet TEXT,
+    stress_pattern TEXT,
+    source TEXT,
+    is_exception BOOLEAN DEFAULT 0,
+    last_updated REAL NOT NULL,
+    FOREIGN KEY(word_id) REFERENCES words(id),
+    UNIQUE(word_id, ipa)
+)
+"""
+
+SQL_CREATE_PRONUNCIATION_VARIANTS_TABLE = """
+CREATE TABLE IF NOT EXISTS pronunciation_variants (
+    id INTEGER PRIMARY KEY,
+    phonetic_id INTEGER NOT NULL,
+    variant_ipa TEXT NOT NULL,
+    context TEXT,
+    frequency_weight REAL DEFAULT 1.0,
+    FOREIGN KEY(phonetic_id) REFERENCES phonetics(id)
+)
+"""
+
+SQL_CREATE_PHRASES_TABLE = """
+CREATE TABLE IF NOT EXISTS phrases (
+    id INTEGER PRIMARY KEY,
+    text TEXT UNIQUE NOT NULL,
+    phoneme_template TEXT,
+    prosody_priors TEXT, -- JSON blob
+    affect_link TEXT,
+    is_recurring BOOLEAN DEFAULT 0,
+    novelty_score REAL DEFAULT 0.0,
+    last_seen REAL NOT NULL
+)
+"""
+
+SQL_CREATE_PHRASE_COMPONENTS_TABLE = """
+CREATE TABLE IF NOT EXISTS phrase_components (
+    phrase_id INTEGER NOT NULL,
+    word_id INTEGER NOT NULL,
+    position INTEGER NOT NULL,
+    PRIMARY KEY(phrase_id, position),
+    FOREIGN KEY(phrase_id) REFERENCES phrases(id),
+    FOREIGN KEY(word_id) REFERENCES words(id)
+)
+"""
+
+SQL_CREATE_PHRASE_REALIZATIONS_TABLE = """
+CREATE TABLE IF NOT EXISTS phrase_realizations (
+    id INTEGER PRIMARY KEY,
+    phrase_id INTEGER NOT NULL,
+    speaker_id TEXT NOT NULL,
+    realization_ipa TEXT,
+    prosody_actuals TEXT, -- JSON blob
+    count INTEGER DEFAULT 1,
+    last_realized REAL NOT NULL,
+    FOREIGN KEY(phrase_id) REFERENCES phrases(id),
+    UNIQUE(phrase_id, speaker_id)
+)
+"""
+
+SQL_CREATE_MORPHEMES_TABLE = """
+CREATE TABLE IF NOT EXISTS morphemes (
+    id INTEGER PRIMARY KEY,
+    text TEXT UNIQUE NOT NULL,
+    type TEXT, -- prefix, suffix, root
+    meaning TEXT,
+    last_updated REAL NOT NULL
+)
+"""
+
+SQL_CREATE_WORD_MORPHEMES_TABLE = """
+CREATE TABLE IF NOT EXISTS word_morphemes (
+    word_id INTEGER NOT NULL,
+    morpheme_id INTEGER NOT NULL,
+    position INTEGER NOT NULL,
+    PRIMARY KEY(word_id, position),
+    FOREIGN KEY(word_id) REFERENCES words(id),
+    FOREIGN KEY(morpheme_id) REFERENCES morphemes(id)
+)
+"""
+
 SQL_CREATE_LEXEME_INDEX = """
 CREATE INDEX IF NOT EXISTS idx_lexemes_lang ON lexemes(lang)
 """
@@ -634,6 +720,15 @@ class DBManager:
                 conn.execute(SQL_CREATE_LEXEMES_TABLE)
                 conn.execute(SQL_CREATE_TRANSLATIONS_TABLE)
                 conn.execute(SQL_CREATE_LANGUAGE_MAP_TABLE)
+                
+                # Create phonetic and phrase tables
+                conn.execute(SQL_CREATE_PHONETICS_TABLE)
+                conn.execute(SQL_CREATE_PRONUNCIATION_VARIANTS_TABLE)
+                conn.execute(SQL_CREATE_PHRASES_TABLE)
+                conn.execute(SQL_CREATE_PHRASE_COMPONENTS_TABLE)
+                conn.execute(SQL_CREATE_PHRASE_REALIZATIONS_TABLE)
+                conn.execute(SQL_CREATE_MORPHEMES_TABLE)
+                conn.execute(SQL_CREATE_WORD_MORPHEMES_TABLE)
 
                 # Create indexes for performance
                 conn.execute(SQL_CREATE_WORD_ID_INDEX)
@@ -641,6 +736,13 @@ class DBManager:
                 conn.execute(SQL_CREATE_UNIQUE_EMOTIONAL_RELATIONSHIP_INDEX)
                 conn.execute(SQL_CREATE_LEXEME_INDEX)
                 conn.execute(SQL_CREATE_TRANSLATION_INDEX)
+                
+                # Create phonetic/phrase/morpheme indexes
+                conn.execute("CREATE INDEX IF NOT EXISTS idx_phonetics_word ON phonetics(word_id)")
+                conn.execute("CREATE INDEX IF NOT EXISTS idx_phrases_text ON phrases(text)")
+                conn.execute("CREATE INDEX IF NOT EXISTS idx_phrase_comp_phrase ON phrase_components(phrase_id)")
+                conn.execute("CREATE INDEX IF NOT EXISTS idx_morphemes_text ON morphemes(text)")
+                conn.execute("CREATE INDEX IF NOT EXISTS idx_word_morphemes_word ON word_morphemes(word_id)")
 
                 # Configure database settings
                 conn.execute(SQL_PRAGMA_FOREIGN_KEYS)
@@ -999,6 +1101,25 @@ class DBManager:
             return cast(int, result)
         except QueryError as e:
             raise QueryError(f"Database error while retrieving ID for term '{term}'", e)
+
+    @eidosian()
+    def get_word_id_safe(self, term: str) -> Result[int, str]:
+        """
+        Get word ID returning a Result monad instead of raising exceptions.
+
+        Args:
+            term: Word to look up
+
+        Returns:
+            Result[int, str]: Ok(word_id) on success, Err(error_msg) on failure
+        """
+        try:
+            word_id = self.get_word_id(term)
+            return success(word_id)
+        except TermNotFoundError:
+            return failure(f"Term not found: {term}")
+        except Exception as e:
+            return failure(str(e))
 
     @eidosian()
     def word_exists(self, term: str) -> bool:

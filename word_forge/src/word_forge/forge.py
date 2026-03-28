@@ -28,6 +28,7 @@ import time
 from typing import TYPE_CHECKING, Callable, Iterable, List, Optional
 
 from eidosian_core import eidosian
+from word_forge.utils import metrics
 
 if TYPE_CHECKING:  # pragma: no cover - imported for typing only
     from word_forge.database.database_manager import DBManager
@@ -110,6 +111,7 @@ def start(
     """
 
     from word_forge.configs.config_essentials import measure_execution
+    from word_forge.config import config
     from word_forge.database.database_manager import DBManager
     from word_forge.graph.graph_manager import GraphManager
     from word_forge.graph.graph_worker import GraphWorker
@@ -121,11 +123,15 @@ def start(
         WorkerPoolConfig,
     )
     from word_forge.queue.worker_manager import WorkerManager
+    from word_forge.utils import metrics
     from word_forge.vectorizer.vector_store import VectorStore
     from word_forge.vectorizer.vector_worker import VectorWorker
 
     _setup_logging()
     LOGGER.info("Starting Word Forge")
+    
+    # Initialize metrics
+    metrics.initialize_metrics(port=getattr(config, "metrics_port", 8000))
 
     db_manager = DBManager(db_path=db_path)
     queue_manager: QueueManager[str] = QueueManager()
@@ -142,7 +148,7 @@ def start(
     graph_manager = GraphManager(db_manager=db_manager)
     graph_worker = GraphWorker(graph_manager=graph_manager)
 
-    vector_store = VectorStore(db_manager=db_manager, model_name=vector_model)
+    vector_store = VectorStore(db_manager=db_manager, model_name=vector_model, storage_type="memory", demo_mode=True)
     vector_worker = VectorWorker(
         db=db_manager,
         vector_store=vector_store,
@@ -158,19 +164,33 @@ def start(
     for term in seeds:
         queue_manager.enqueue(term)
 
-    with measure_execution("forge.start", {"workers": worker_count}) as metrics:
+    with measure_execution("forge.start", {"workers": worker_count}) as exec_metrics:
         manager.start_all()
         LOGGER.info(
             "Workers started in %.1fms",
-            metrics.duration_ms,
+            exec_metrics.duration_ms,
         )
 
     start_time = time.time()
     last_report = start_time
     try:
         while True:
+            current_time = time.time()
+            elapsed_min = (current_time - start_time) / 60.0
+            
+            if run_minutes is not None and elapsed_min >= run_minutes:
+                LOGGER.info("Time limit reached (%.1f min). Shutting down.", run_minutes)
+                break
+
             time.sleep(MAIN_LOOP_SLEEP_INTERVAL)
-            if time.time() - last_report >= PROGRESS_REPORT_INTERVAL:
+            
+            # Autonomous health monitoring
+            manager.monitor_health()
+            
+            # Update queue metrics
+            metrics.update_queue_size(queue_manager.size)
+
+            if current_time - last_report >= PROGRESS_REPORT_INTERVAL:
                 status = worker_pool.get_status()
                 stats = status["stats"]
                 LOGGER.info(
@@ -189,13 +209,14 @@ def start(
                         graph_status.get("state", "unknown"),
                     )
                 last_report = time.time()
-            if run_minutes is not None and (time.time() - start_time) > run_minutes * 60:
-                break
+
             if run_minutes is None and queue_manager.is_empty and not manager.any_alive():
+                LOGGER.info("Queue empty and all workers finished. Shutting down.")
                 break
     except KeyboardInterrupt:
         LOGGER.info("Interrupted by user")
     finally:
+        LOGGER.info("Initiating graceful shutdown...")
         manager.stop_all()
         queue_manager.stop()
         parser_refiner.shutdown()
@@ -619,7 +640,12 @@ def run_graph_build(
     else:
         db_manager = graph_manager.db_manager
 
-    worker = GraphWorker(graph_manager=graph_manager, poll_interval=poll_interval, daemon=False)
+    worker = GraphWorker(
+        graph_manager=graph_manager,
+        poll_interval=poll_interval,
+        daemon=False,
+        generate_visualization=False,
+    )
     manager = WorkerManager(logger=LOGGER)
     manager.register(worker)
     LOGGER.info("Starting graph build worker")
@@ -628,7 +654,7 @@ def run_graph_build(
         manager.start_all()
         completed = _wait_for_condition(
             "graph build",
-            lambda: worker.get_status()["update_count"] > 0,
+            lambda: worker.get_status()["update_count"] > 0 or graph_manager.get_node_count() > 0,
             timeout=timeout,
         )
         return completed
@@ -689,6 +715,7 @@ def run_vector_index(
     _setup_logging()
     from word_forge.database.database_manager import DBManager
     from word_forge.queue.worker_manager import WorkerManager
+    from word_forge.utils import metrics
     from word_forge.vectorizer.vector_store import VectorStore
     from word_forge.vectorizer.vector_worker import VectorWorker
 

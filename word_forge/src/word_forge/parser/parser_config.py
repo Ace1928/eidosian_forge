@@ -71,7 +71,7 @@ class ParserConfig:
     # Control language model usage for examples
     enable_model: bool = True
 
-    # Custom language model name (None = use vectorizer's model)
+    # Custom language model name (None = defer to explicit runtime selection)
     model_name: Optional[str] = None
 
     # Resource paths relative to data_dir

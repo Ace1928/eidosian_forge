@@ -91,7 +91,7 @@ class VectorizerConfig:
     """
 
     # Vector embedding model configuration
-    model_name: str = "intfloat/multilingual-e5-large-instruct"
+    model_name: str = "sentence-transformers/all-MiniLM-L6-v2"
     model_type: VectorModelType = VectorModelType.TRANSFORMER
     dimension: Optional[int] = None  # None = use model's default dimension
     enable_compression: bool = False

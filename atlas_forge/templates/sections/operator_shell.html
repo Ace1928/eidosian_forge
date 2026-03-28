@@ -1,0 +1,39 @@
+<div class="card" id="operator-shell">
+    <h3>Operator Shell</h3>
+    <p class="lede">Direct Termux or host shell access through Atlas. Start a session, send commands, and inspect output without leaving the operator plane.</p>
+    <div class="form-grid">
+        <div>
+            <label for="shell-cwd">Working Directory</label>
+            <input id="shell-cwd" value="eidosian_forge" placeholder="eidosian_forge">
+        </div>
+        <div>
+            <label for="shell-cols">Columns</label>
+            <input id="shell-cols" type="number" value="120">
+        </div>
+        <div>
+            <label for="shell-rows">Rows</label>
+            <input id="shell-rows" type="number" value="28">
+        </div>
+    </div>
+    <div class="actions" style="margin-top:12px;">
+        <button type="button" onclick="startShellSession()">Start Shell</button>
+        <button type="button" onclick="stopShellSession()">Stop Shell</button>
+        <button type="button" onclick="readShellOutput()">Refresh Output</button>
+    </div>
+    <div class="stat-label" style="margin-top:10px;">session: <span id="shell-session-id">none</span> · status: <span id="shell-status">idle</span></div>
+    <pre class="terminal mono" id="shell-output">Shell not started.</pre>
+    <div class="form-grid">
+        <div style="grid-column: 1 / -1;">
+            <label for="shell-input">Input</label>
+            <textarea id="shell-input" class="mono" placeholder="ls
+pwd
+python -V"></textarea>
+        </div>
+    </div>
+    <div class="actions" style="margin-top:12px;">
+        <button type="button" onclick="sendShellInput()">Send Input</button>
+        <button type="button" onclick="sendShellCommand('pwd')">pwd</button>
+        <button type="button" onclick="sendShellCommand('ls')">ls</button>
+        <button type="button" onclick="sendShellCommand('cd eidosian_forge && git status --short')">git status</button>
+    </div>
+</div>

@@ -1,0 +1,60 @@
+<div class="grid" id="proof-plane">
+    <div class="card">
+        <h3>Proof Scorecard</h3>
+        <div class="stat-label" style="margin-bottom:12px;">
+            External validity, continuity, governance, observability, reproducibility, and adversarial robustness.
+        </div>
+        <table>
+            <thead>
+                <tr><th>Category</th><th>Status</th><th>Score</th></tr>
+            </thead>
+            <tbody>
+                {% for row in proof_snapshot.get('categories', []) %}
+                <tr>
+                    <td>{{ row.get('category') }}</td>
+                    <td>{{ row.get('status') }}</td>
+                    <td>{{ row.get('score') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="card">
+        <h3>Proof Bundle</h3>
+        <div class="stat-value" id="proof-bundle-benchmarks">{{ (runtime_snapshot.get('proof_bundle', {}).get('benchmarks', []) or [])|length }}</div>
+        <div class="stat-label">
+            missing:
+            <span id="proof-bundle-missing">{{ (runtime_snapshot.get('proof_bundle', {}).get('missing', []) or [])|length }}</span>
+            · bundle:
+            <span id="proof-bundle-root">{{ runtime_snapshot.get('proof_bundle', {}).get('bundle_root', 'n/a') }}</span>
+        </div>
+        <div class="stat-label">
+            proof:
+            <span id="proof-bundle-score">{{ runtime_snapshot.get('proof_bundle', {}).get('proof_summary', {}).get('score', 'n/a') }}</span>
+            · status:
+            <span id="proof-bundle-status">{{ runtime_snapshot.get('proof_bundle', {}).get('proof_summary', {}).get('status', 'n/a') }}</span>
+        </div>
+        <div class="stat-label">
+            <a href="/api/proof/bundle/latest" target="_blank">Latest Bundle Manifest</a>
+            · <a href="/browse/forge/reports/proof_bundle/">Browse Bundles</a>
+        </div>
+    </div>
+    <div class="card">
+        <h3>Identity History</h3>
+        <table>
+            <thead>
+                <tr><th>Generated</th><th>Status</th><th>Score</th><th>Sessions</th></tr>
+            </thead>
+            <tbody id="identity-history-body">
+                {% for row in runtime_snapshot.get('identity_history', [])[-6:] %}
+                <tr>
+                    <td>{{ row.get('generated_at') }}</td>
+                    <td>{{ row.get('status') }}</td>
+                    <td>{{ row.get('overall_score') }}</td>
+                    <td>{{ row.get('recent_sessions') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,77 @@
+<div class="grid">
+    <div class="card">
+        <h3>System Load</h3>
+        <div class="stat-value">{{ sys_stats.get('cpu', 0) }}%</div>
+        <div class="stat-label">CPU</div>
+    </div>
+    <div class="card">
+        <h3>Memory Usage</h3>
+        <div class="stat-value">{{ sys_stats.get('ram_percent', 0) }}%</div>
+        <div class="stat-label">{{ sys_stats.get('ram_used_gb', 0) }} / {{ sys_stats.get('ram_total_gb', 0) }} GB</div>
+    </div>
+    <div class="card">
+        <h3>Disk Usage</h3>
+        <div class="stat-value">{{ sys_stats.get('disk_percent', 0) }}%</div>
+        <div class="stat-label">{{ sys_stats.get('disk_free_gb', 0) }} GB Free</div>
+    </div>
+    <div class="card">
+        <h3>Forge Status</h3>
+        <div class="stat-value">{{ forge_status.get('doc_forge', 'unknown')|upper }}</div>
+        <div class="stat-label">Doc Forge</div>
+    </div>
+    <div class="card">
+        <h3>Scheduler</h3>
+        <div class="stat-value">{{ runtime_snapshot.get('scheduler', {}).get('state', 'unknown')|upper }}</div>
+        <div class="stat-label">{{ runtime_snapshot.get('scheduler', {}).get('current_task', 'idle') }}</div>
+    </div>
+    <div class="card">
+        <h3>Local Agent</h3>
+        <div class="stat-value">{{ runtime_snapshot.get('local_agent', {}).get('status', 'unknown')|upper }}</div>
+        <div class="stat-label">{{ runtime_snapshot.get('local_agent', {}).get('profile', 'n/a') }}</div>
+    </div>
+    <div class="card">
+        <h3>Doc Processor</h3>
+        <div class="stat-value">{{ runtime_snapshot.get('doc_processor', {}).get('status', 'unknown')|upper }}</div>
+        <div class="stat-label">{{ runtime_snapshot.get('doc_processor', {}).get('phase', 'idle') }}</div>
+    </div>
+    <div class="card">
+        <h3>Qwenchat</h3>
+        <div class="stat-value">{{ runtime_snapshot.get('qwenchat', {}).get('status', 'unknown')|upper }}</div>
+        <div class="stat-label">{{ runtime_snapshot.get('qwenchat', {}).get('phase', 'idle') }}</div>
+    </div>
+    <div class="card">
+        <h3>Living Pipeline</h3>
+        <div class="stat-value">{{ runtime_snapshot.get('living_pipeline', {}).get('status', 'unknown')|upper }}</div>
+        <div class="stat-label">{{ runtime_snapshot.get('living_pipeline', {}).get('phase', 'idle') }}</div>
+    </div>
+    <div class="card" id="file-forge-summary">
+        <h3>File Forge</h3>
+        <div class="stat-value" id="file-forge-total-files">{{ runtime_snapshot.get('file_forge', {}).get('total_files', 0) }}</div>
+        <div class="stat-label">Indexed Files</div>
+        <div class="stat-label">
+            kinds: <span id="file-forge-kind-count">{{ runtime_snapshot.get('file_forge', {}).get('by_kind', [])|length }}</span>
+            · last job: <span id="file-forge-job-status">{{ runtime_snapshot.get('file_forge_index', {}).get('status', 'idle') }}</span>
+        </div>
+    </div>
+    <div class="card">
+        <h3>Control Plane</h3>
+        <div class="stat-value"><a href="/browse/forge/">FORGE</a></div>
+        <div class="stat-label"><a href="/browse/home/">Home Browser</a> · <a href="/api/services" target="_blank">Service Status</a></div>
+    </div>
+    <div class="card">
+        <h3>Atlas Access</h3>
+        <div class="stat-value"><a href="{{ atlas_access.get('browse_loopback', '/browse/') }}" target="_blank">BROWSE</a></div>
+        <div class="stat-label">
+            <a href="{{ atlas_access.get('browse_loopback', '/browse/') }}" target="_blank">127.0.0.1</a>
+            · <a href="{{ atlas_access.get('browse_localhost', '/browse/') }}" target="_blank">localhost</a>
+        </div>
+        <div class="stat-label">
+            LAN:
+            {% if atlas_access.get('browse_lan') %}
+            <a href="{{ atlas_access.get('browse_lan') }}" target="_blank">{{ atlas_access.get('lan_ip') }}</a>
+            {% else %}
+            unavailable
+            {% endif %}
+        </div>
+    </div>
+</div>
