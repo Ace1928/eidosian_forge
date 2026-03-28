@@ -88,6 +88,7 @@
             <div class="filter-item"><input type="checkbox" id="filter-multilingual" checked onchange="updateFilters()"> <span class="legend-dot" style="background:#60a5fa"></span> Multilingual Lexemes</div>
             <div class="filter-item"><input type="checkbox" id="filter-translation" checked onchange="updateFilters()"> <span class="legend-dot" style="background:#34d399"></span> Translations</div>
             <div class="filter-item"><input type="checkbox" id="filter-word-knowledge" checked onchange="updateFilters()"> <span class="legend-dot" style="background:#4fd1c5"></span> Word↔Knowledge Bridge</div>
+            <div class="filter-item"><input type="checkbox" id="filter-code" checked onchange="updateFilters()"> <span class="legend-dot" style="background:#c084fc"></span> Code Provenance</div>
         </div>
 
         <div class="control-group">
@@ -229,6 +230,7 @@
         const showMultilingual = document.getElementById('filter-multilingual').checked;
         const showTranslation = document.getElementById('filter-translation').checked;
         const showWordKnowledge = document.getElementById('filter-word-knowledge').checked;
+        const showCode = document.getElementById('filter-code').checked;
 
         const filteredNodes = rawData.nodes.filter(n => {
             if (n.id.startsWith('kb:') && !showKb) return false;
@@ -237,6 +239,7 @@
             if ((n.group === 'multilingual') && !showMultilingual) return false;
             if ((n.group === 'translation') && !showTranslation) return false;
             if (isWordGraph && n.id.startsWith('kb:') && !showWordKnowledge) return false;
+            if ((n.group === 'code') && !showCode) return false;
             return true;
         });
 
