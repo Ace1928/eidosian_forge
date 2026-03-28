@@ -48,6 +48,13 @@ Start the autonomous processing pipeline with seed terms:
 word_forge start intelligence consciousness --minutes 10 --workers 4
 ```
 
+### LLM Backend Benchmark
+
+```bash
+./eidosian_venv/bin/python word_forge/scripts/benchmark_llm_backends.py \
+  --model gguf:models/Qwen3.5-0.8B-Q4_K_M.gguf
+```
+
 ### Semantic Graph (Python)
 
 ```python
