@@ -155,6 +155,10 @@ def export_bundle(repo_root: Path, output_root: Path) -> dict[str, Any]:
             }
         )
     include(docs_root / "THEORY_OF_OPERATION.md", "docs/THEORY_OF_OPERATION.md", "theory_of_operation")
+    include(repo_root / "reports" / "word_forge_bridge_audit" / "latest.json", "reports/word_forge_bridge_audit/latest.json", "word_forge_bridge_report")
+    include(repo_root / "reports" / "word_forge_bridge_audit" / "latest.md", "reports/word_forge_bridge_audit/latest.md", "word_forge_bridge_markdown")
+    include(runtime_root / "word_forge_bridge_audit_status.json", "runtime/word_forge_bridge_audit/status.json", "word_forge_bridge_status")
+    include(runtime_root / "word_forge_bridge_audit_history.jsonl", "runtime/word_forge_bridge_audit/history.jsonl", "word_forge_bridge_history")
     include(runtime_root / "session_bridge" / "latest_context.json", "runtime/session_bridge/latest_context.json", "session_bridge_context")
     include(runtime_root / "session_bridge" / "import_status.json", "runtime/session_bridge/import_status.json", "session_bridge_import_status")
     include(repo_root / "doc_forge" / "runtime" / "processor_status.json", "runtime/doc_processor/status.json", "doc_processor_status")
@@ -258,6 +262,25 @@ def export_bundle(repo_root: Path, output_root: Path) -> dict[str, Any]:
     doc_processor_status = _load_json(repo_root / "doc_forge" / "runtime" / "processor_status.json")
     qwenchat_status = _load_json(runtime_root / "qwenchat" / "status.json")
     living_pipeline_status = _load_json(runtime_root / "living_pipeline_status.json")
+    word_forge_bridge_status = _load_json(runtime_root / "word_forge_bridge_audit_status.json")
+    word_forge_bridge_payload = _load_json(repo_root / "reports" / "word_forge_bridge_audit" / "latest.json")
+    word_forge_communities: dict[str, Any] = {}
+    try:
+        atlas_src = repo_root / "atlas_forge" / "src"
+        if str(atlas_src) not in sys.path:
+            sys.path.insert(0, str(atlas_src))
+        from atlas_forge.word_graph import build_word_graph_payload, summarize_word_graph_communities  # type: ignore
+
+        graph_payload = build_word_graph_payload(
+            db_path=repo_root / "word_forge" / "data" / "word_forge.sqlite",
+            forge_root=repo_root,
+            kb_payload=_load_json(repo_root / "data" / "kb.json") or {},
+            code_report=_load_json(repo_root / "reports" / "code_forge_provenance_audit" / "latest.json") or {},
+            file_summary={"db_path": str(repo_root / "data" / "file_forge" / "library.db"), "recent_files": []},
+        )
+        word_forge_communities = summarize_word_graph_communities(graph_payload, limit=8)
+    except Exception:
+        word_forge_communities = {}
     docs_batch_status = _load_json(runtime_root / "docs_upsert_batch_status.json")
     runtime_artifact_audit_status = _load_json(runtime_root / "runtime_artifact_audit_status.json")
     proof_refresh_status = _load_json(runtime_root / "proof_refresh_status.json")
@@ -280,6 +303,13 @@ def export_bundle(repo_root: Path, output_root: Path) -> dict[str, Any]:
             "recent_history": recent_identity_history,
         },
         "session_bridge_summary": session_bridge_summary,
+        "word_forge_bridge_summary": {
+            "fully_bridged": ((word_forge_bridge_payload or {}).get("bridge_counts") or {}).get("fully_bridged"),
+            "partially_bridged": ((word_forge_bridge_payload or {}).get("bridge_counts") or {}).get("partially_bridged"),
+            "candidate_term_count": ((word_forge_bridge_payload or {}).get("bridge_quality") or {}).get("candidate_term_count"),
+            "fully_bridged_ratio": ((word_forge_bridge_payload or {}).get("bridge_quality") or {}).get("fully_bridged_ratio"),
+            "community_count": (word_forge_communities or {}).get("community_count") or ((word_forge_bridge_payload or {}).get("community_summary") or {}).get("community_count"),
+        },
         "operator_jobs_summary": {
             "proof_refresh": {
                 "status": proof_refresh_status.get("status"),
@@ -299,6 +329,12 @@ def export_bundle(repo_root: Path, output_root: Path) -> dict[str, Any]:
             },
         },
         "runtime_service_summary": {
+            "word_forge_bridge": {
+                "status": word_forge_bridge_status.get("status"),
+                "phase": word_forge_bridge_status.get("phase"),
+                "fully_bridged": ((word_forge_bridge_payload or {}).get("bridge_counts") or {}).get("fully_bridged"),
+                "community_count": (word_forge_communities or {}).get("community_count") or ((word_forge_bridge_payload or {}).get("community_summary") or {}).get("community_count"),
+            },
             "scheduler_status": scheduler_status.get("state"),
             "scheduler_task": scheduler_status.get("current_task"),
             "scheduler_phase": scheduler_status.get("phase"),

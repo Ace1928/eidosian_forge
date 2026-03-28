@@ -142,12 +142,16 @@ def get_word_forge_bridge_summary() -> Dict[str, Any]:
     community_summary = summarize_word_graph_communities(get_word_graph(), limit=8)
     latest_completed = next((row for row in reversed(history) if isinstance(row, dict) and row.get("status") == "completed"), {})
     previous_completed = next((row for row in reversed(history[:-1]) if isinstance(row, dict) and row.get("status") == "completed"), {}) if len(history) > 1 else {}
+    latest_report = latest if isinstance(latest, dict) else {}
+    bridge_counts = latest_report.get("bridge_counts", {}) if isinstance(latest_report.get("bridge_counts"), dict) else {}
+    bridge_quality = latest_report.get("bridge_quality", {}) if isinstance(latest_report.get("bridge_quality"), dict) else {}
     return {
         "contract": "eidos.word_forge.bridge.summary.v1",
         "status": _read_json(WORD_FORGE_BRIDGE_AUDIT_STATUS, {"status": "idle"}),
         "history": history,
-        "latest_report": latest,
-        "bridge_quality": latest.get("bridge_quality", {}) if isinstance(latest, dict) else {},
+        "latest_report": latest_report,
+        "bridge_counts": bridge_counts,
+        "bridge_quality": bridge_quality,
         "history_summary": {
             "run_count": len(history),
             "last_completed_at": latest_completed.get("finished_at") or latest_completed.get("generated_at") or "",
@@ -549,7 +553,7 @@ def get_node_neighbors(node_id: str) -> Dict[str, Any]:
                 forge_root=FORGE_ROOT,
                 kb_payload=_read_json(FORGE_ROOT / "data" / "kb.json", {}),
                 code_report=_read_json(CODE_FORGE_PROVENANCE_REPORT_DIR / "latest.json", {}),
-                file_summary=get_file_forge_summary(recent_limit=24),
+                file_summary=get_file_forge_summary(recent_limit=48),
             )
             if word_graph_neighbors.get("nodes"):
                 return word_graph_neighbors
@@ -721,7 +725,7 @@ def get_word_graph() -> Dict[str, Any]:
             forge_root=FORGE_ROOT,
             kb_payload=_read_json(FORGE_ROOT / "data" / "kb.json", {}),
             code_report=_read_json(CODE_FORGE_PROVENANCE_REPORT_DIR / "latest.json", {}),
-            file_summary=get_file_forge_summary(recent_limit=16),
+            file_summary=get_file_forge_summary(recent_limit=48),
         )
     except Exception as e:
         logger.error(f"Word Graph Error: {e}")

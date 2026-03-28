@@ -1,17 +1,18 @@
 # Eidos Entity Proof Scorecard
 
-- Generated: `2026-03-20T11:38:05Z`
+- Generated: `2026-03-28T22:41:21Z`
 - Repo root: `/data/data/com.termux/files/home/eidosian_forge`
-- Git head: `3c7b4e1201ba5fe959647f178b9b7a01ee7d2a48`
+- Git head: `31a17f3ac36b808a593b3d86433dc19e707092ba`
 - Worktree dirty: `None`
 - Overall status: `yellow`
-- Overall score: `0.78625`
+- Overall score: `0.741786`
 
 ## Categories
 
 | Category | Status | Score |
 | --- | --- | ---: |
 | external_validity | green | 0.95 |
+| lexical_bridge | red | 0.475 |
 | identity_continuity | green | 1.0 |
 | governed_self_modification | green | 0.9 |
 | observability | green | 1.0 |
@@ -20,9 +21,11 @@
 
 ## Top Gaps
 
+- `regression`: Overall proof score regressed by `-0.044464` versus `/data/data/com.termux/files/home/eidosian_forge/reports/proof/entity_proof_scorecard_20260328_223950.json`.
 - `external_validity`: Evidence freshness degraded: 0 stale and 1 missing artifacts within a 30-day window.
 - `identity_continuity`: Phenomenological continuity remains weak or zero in the latest surfaced metrics.
 - `governed_self_modification`: Change classes, staged deployment, and constitutional approval thresholds are still incomplete.
+- `observability`: Local agent is currently blocked with reason `instance_budget_exceeded`.
 - `operational_reproducibility`: Cross-machine replay and migration scorecards are not yet artifacted.
 - `operational_reproducibility`: Evidence freshness degraded: 0 stale and 1 missing artifacts within a 30-day window.
 - `adversarial_robustness`: Red-team pass ratio is weak at `0.0`.
@@ -51,13 +54,13 @@
 
 ## Runtime Services
 
-- `scheduler_state`: `sleeping`
+- `scheduler_state`: `stopped`
 - `scheduler_task`: `living_pipeline`
-- `scheduler_phase`: `None`
+- `scheduler_phase`: `stop_requested`
 - `scheduler_history_present`: `True`
 - `doc_processor_status`: `starting`
 - `doc_processor_phase`: `None`
-- `local_agent_status`: `timeout`
+- `local_agent_status`: `blocked`
 - `qwenchat_status`: `error`
 - `qwenchat_phase`: `completed`
 - `living_pipeline_status`: `running`
@@ -89,8 +92,8 @@
 
 ## Regression
 
-- `status`: `stable`
-- `overall_delta`: `0.0`
+- `status`: `regressed`
+- `overall_delta`: `-0.044464`
 
 ## Identity Continuity History
 
@@ -108,12 +111,28 @@
 | 2026-03-20T04:01:28Z | green | 0.9375 |
 | 2026-03-20T03:59:37Z | green | 0.9375 |
 
+## Word Forge Bridge
+
+- `fully_bridged`: `1`
+- `partially_bridged`: `7`
+- `any_bridged`: `8`
+- `candidate_term_count`: `8`
+- `fully_bridged_ratio`: `0.125`
+- `community_count`: `4`
+
+| Anchor | Layers | Neighbors |
+| --- | --- | ---: |
+| atlas | knowledge, multilingual | 6 |
+| integration | knowledge, multilingual | 5 |
+| pipeline | knowledge, multilingual | 3 |
+| archive | knowledge, multilingual | 2 |
+
 ## Session Bridge
 
-- `last_sync_at`: `2026-03-20T09:28:11.416901+00:00`
-- `recent_sessions`: `6`
-- `imported_records`: `43`
-- `codex_records`: `32`
+- `last_sync_at`: `2026-03-21T13:04:44.359949+00:00`
+- `recent_sessions`: `4`
+- `imported_records`: `83`
+- `codex_records`: `72`
 - `gemini_records`: `11`
 
 ## Operator Jobs
@@ -131,12 +150,12 @@
 
 | Generated | Status | Score | Freshness | Regression |
 | --- | --- | ---: | --- | --- |
-| 2026-03-20T09:22:12Z | yellow | 0.774583 | yellow | stable |
-| 2026-03-20T09:31:32Z | yellow | 0.78125 | yellow | stable |
-| 2026-03-20T09:45:26Z | yellow | 0.78625 | yellow | stable |
-| 2026-03-20T10:03:20Z | yellow | 0.78625 | yellow | stable |
-| 2026-03-20T10:15:28Z | yellow | 0.78625 | yellow | stable |
 | 2026-03-20T11:32:19Z | yellow | 0.78625 | yellow | stable |
+| 2026-03-20T11:38:05Z | yellow | 0.78625 | yellow | stable |
+| 2026-03-20T13:07:13Z | yellow | 0.78625 | yellow | stable |
+| 2026-03-20T13:08:15Z | yellow | 0.78625 | yellow | stable |
+| 2026-03-28T22:36:56Z | yellow | 0.78625 | yellow | stable |
+| 2026-03-28T22:39:50Z | yellow | 0.78625 | yellow | stable |
 
 ## Continuity Metrics
 

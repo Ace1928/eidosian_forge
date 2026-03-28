@@ -80,29 +80,92 @@ def _translation_rows(conn: sqlite3.Connection, *, limit: int = 260) -> list[sql
 
 def _coerce_code_entries(code_report: Optional[dict[str, Any]], forge_root: Path, *, limit: int = 20) -> list[dict[str, Any]]:
     latest_entries = (code_report or {}).get("latest_entries") or []
-    if isinstance(latest_entries, list) and latest_entries:
-        return [entry for entry in latest_entries if isinstance(entry, dict)][:limit]
+    coerced: list[dict[str, Any]] = []
+    if isinstance(latest_entries, list):
+        for entry in latest_entries:
+            if isinstance(entry, dict):
+                coerced.append(entry)
+                if len(coerced) >= limit:
+                    return coerced[:limit]
 
-    scanned: list[dict[str, Any]] = []
     for path in sorted((forge_root / "data" / "code_forge").rglob("provenance_*.json")):
         try:
-            import json
             payload = json.loads(path.read_text(encoding="utf-8"))
         except Exception:
             continue
         if not isinstance(payload, dict):
             continue
-        scanned.append(
-            {
-                "path": str(payload.get("path") or payload.get("root_path") or path.parent),
-                "root_path": str(payload.get("root_path") or ""),
-                "stage": str(payload.get("stage") or "code"),
-                "generated_at": str(payload.get("generated_at") or ""),
-            }
-        )
-        if len(scanned) >= limit:
-            break
-    return scanned
+        base_entry = {
+            "path": str(payload.get("path") or payload.get("root_path") or path.parent),
+            "root_path": str(payload.get("root_path") or ""),
+            "stage": str(payload.get("stage") or "code"),
+            "generated_at": str(payload.get("generated_at") or ""),
+        }
+        coerced.append(base_entry)
+        artifacts = payload.get("artifacts") if isinstance(payload.get("artifacts"), list) else []
+        for artifact in artifacts:
+            if not isinstance(artifact, dict):
+                continue
+            artifact_path = str(artifact.get("path") or "")
+            if not artifact_path:
+                continue
+            coerced.append(
+                {
+                    "path": artifact_path,
+                    "root_path": str(payload.get("root_path") or ""),
+                    "stage": str(artifact.get("artifact_kind") or payload.get("stage") or "code"),
+                    "generated_at": str(payload.get("generated_at") or ""),
+                }
+            )
+            if len(coerced) >= limit:
+                return coerced[:limit]
+        if len(coerced) >= limit:
+            return coerced[:limit]
+    return coerced[:limit]
+
+
+def _coerce_file_entries(
+    file_summary: Optional[dict[str, Any]],
+    forge_root: Path,
+    *,
+    bridge_terms: set[str],
+    limit: int = 32,
+) -> list[dict[str, Any]]:
+    recent_files = (file_summary or {}).get("recent_files") or []
+    entries: list[dict[str, Any]] = [entry for entry in recent_files if isinstance(entry, dict)]
+    if len(entries) >= limit:
+        return entries[:limit]
+
+    db_path_text = str((file_summary or {}).get("db_path") or (forge_root / "data" / "file_forge" / "library.db"))
+    try:
+        from file_forge.library import FileLibraryDB  # type: ignore
+
+        db = FileLibraryDB(Path(db_path_text))
+        existing_paths = {str(entry.get("file_path") or "") for entry in entries}
+        matched: list[dict[str, Any]] = []
+        for row in db.iter_file_records(limit=5000):
+            if not isinstance(row, dict):
+                continue
+            file_path = str(row.get("file_path") or "")
+            if not file_path or file_path in existing_paths:
+                continue
+            if bridge_terms and not (bridge_terms & _tokenize(file_path)):
+                continue
+            matched.append(
+                {
+                    "file_path": file_path,
+                    "kind": str(row.get("kind") or "unknown"),
+                    "updated_at": row.get("updated_at") or row.get("modified_ns") or "",
+                    "size_bytes": int(row.get("size_bytes") or 0),
+                    "content_hash": row.get("content_hash"),
+                }
+            )
+            if len(entries) + len(matched) >= limit:
+                break
+        entries.extend(matched)
+    except Exception:
+        pass
+    return entries[:limit]
 
 
 def build_word_graph_payload(
@@ -254,7 +317,7 @@ def build_word_graph_payload(
                 add_edge(src, kb_node_id, "knowledge_tag")
         matched_terms += 1
 
-    latest_entries = _coerce_code_entries(code_report, forge_root, limit=20)
+    latest_entries = _coerce_code_entries(code_report, forge_root, limit=40)
     for index, entry in enumerate(latest_entries[:20]):
         path_text = str(entry.get("path") or entry.get("root_path") or f"code_entry_{index}")
         stage = str(entry.get("stage") or "code")
@@ -279,8 +342,8 @@ def build_word_graph_payload(
             if src in node_ids:
                 add_edge(src, code_id, "code_provenance")
 
-    recent_files = (file_summary or {}).get("recent_files") or []
-    for entry in recent_files[:16]:
+    recent_files = _coerce_file_entries(file_summary, forge_root, bridge_terms=bridge_terms, limit=48)
+    for entry in recent_files[:48]:
         path_text = str(entry.get("file_path") or "")
         if not path_text:
             continue

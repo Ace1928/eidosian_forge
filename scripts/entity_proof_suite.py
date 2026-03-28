@@ -531,6 +531,25 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
     runtime_benchmarks = _load_runtime_benchmark_results(runtime_root)
     session_bridge = _session_bridge_summary(runtime_root)
     proof_history = _proof_history_summary(proof_root)
+    word_forge_bridge = _load_json(reports_root / "word_forge_bridge_audit" / "latest.json") or {}
+    word_forge_communities: dict[str, Any] = {}
+    try:
+        import sys as _sys
+        atlas_src = repo_root / "atlas_forge" / "src"
+        if str(atlas_src) not in _sys.path:
+            _sys.path.insert(0, str(atlas_src))
+        from atlas_forge.word_graph import build_word_graph_payload, summarize_word_graph_communities  # type: ignore
+
+        graph_payload = build_word_graph_payload(
+            db_path=repo_root / "word_forge" / "data" / "word_forge.sqlite",
+            forge_root=repo_root,
+            kb_payload=_load_json(repo_root / "data" / "kb.json") or {},
+            code_report=_load_json(repo_root / "reports" / "code_forge_provenance_audit" / "latest.json") or {},
+            file_summary={"db_path": str(repo_root / "data" / "file_forge" / "library.db"), "recent_files": []},
+        )
+        word_forge_communities = summarize_word_graph_communities(graph_payload, limit=8)
+    except Exception:
+        word_forge_communities = {}
 
     benchmark_score = 0.0
     benchmark_strengths: list[str] = []
@@ -982,8 +1001,38 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
     else:
         robustness_gaps.append("No usable stress benchmark artifact found.")
 
+    lexical_bridge_score = 0.0
+    lexical_bridge_strengths: list[str] = []
+    lexical_bridge_gaps: list[str] = []
+    lexical_bridge_paths: list[str] = []
+
+    if word_forge_bridge:
+        lexical_bridge_paths.append(str(reports_root / "word_forge_bridge_audit" / "latest.json"))
+        bridge_counts = word_forge_bridge.get("bridge_counts") if isinstance(word_forge_bridge.get("bridge_counts"), dict) else {}
+        bridge_quality = word_forge_bridge.get("bridge_quality") if isinstance(word_forge_bridge.get("bridge_quality"), dict) else {}
+        lexical_bridge_score += min(0.35, _safe_float(bridge_quality.get("fully_bridged_ratio")) * 0.35)
+        lexical_bridge_score += min(0.25, _safe_float(bridge_quality.get("partially_bridged_ratio")) * 0.25)
+        lexical_bridge_score += min(0.15, min(1.0, _safe_int(bridge_counts.get("code", 0)) / 3.0) * 0.15)
+        lexical_bridge_score += min(0.1, min(1.0, _safe_int(bridge_counts.get("knowledge", 0)) / 8.0) * 0.1)
+        lexical_bridge_strengths.append(
+            f"Word Forge bridge audit present with `{_safe_int(bridge_counts.get('fully_bridged', 0))}` fully bridged terms and full ratio `{_safe_float(bridge_quality.get('fully_bridged_ratio'))}`."
+        )
+    else:
+        lexical_bridge_gaps.append("No Word Forge bridge audit artifact found.")
+
+    bridge_communities = word_forge_communities if isinstance(word_forge_communities, dict) and word_forge_communities else ((word_forge_bridge.get("community_summary") if isinstance(word_forge_bridge.get("community_summary"), dict) else {}))
+    if bridge_communities:
+        community_count = _safe_int(bridge_communities.get("community_count"))
+        lexical_bridge_score += min(0.15, min(1.0, community_count / 8.0) * 0.15)
+        lexical_bridge_strengths.append(
+            f"Atlas word graph communities present with `{community_count}` multi-layer bridge communities."
+        )
+    else:
+        lexical_bridge_gaps.append("No multi-layer Word Forge bridge communities surfaced.")
+
     categories = [
         _category("external_validity", benchmark_score, benchmark_strengths, benchmark_gaps, benchmark_paths),
+        _category("lexical_bridge", lexical_bridge_score, lexical_bridge_strengths, lexical_bridge_gaps, lexical_bridge_paths),
         _category("identity_continuity", continuity_score, continuity_strengths, continuity_gaps, continuity_paths),
         _category(
             "governed_self_modification", governance_score, governance_strengths, governance_gaps, governance_paths
@@ -1086,6 +1135,12 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
         ),
         "proof_history": proof_history,
         "session_bridge": session_bridge,
+        "word_forge_bridge": {
+            "bridge_counts": (word_forge_bridge.get("bridge_counts") if isinstance(word_forge_bridge.get("bridge_counts"), dict) else {}),
+            "bridge_quality": (word_forge_bridge.get("bridge_quality") if isinstance(word_forge_bridge.get("bridge_quality"), dict) else {}),
+            "community_summary": bridge_communities,
+            "top_bridged_terms": (word_forge_bridge.get("top_bridged_terms") if isinstance(word_forge_bridge.get("top_bridged_terms"), list) else [])[:8],
+        },
         "operator_jobs": {
             "proof_refresh": {
                 "status": proof_refresh_status.get("status"),
@@ -1252,6 +1307,22 @@ def render_markdown(report: dict[str, Any]) -> str:
         )
         for row in recent_entries[:6]:
             lines.append(f"| {row.get('generated_at')} | {row.get('status')} | {row.get('overall_score')} |")
+    word_forge_bridge = report.get("word_forge_bridge") or {}
+    lines.extend(["", "## Word Forge Bridge", ""])
+    bridge_counts = word_forge_bridge.get("bridge_counts") or {}
+    bridge_quality = word_forge_bridge.get("bridge_quality") or {}
+    community_summary = word_forge_bridge.get("community_summary") or {}
+    lines.append(f"- `fully_bridged`: `{bridge_counts.get('fully_bridged')}`")
+    lines.append(f"- `partially_bridged`: `{bridge_counts.get('partially_bridged')}`")
+    lines.append(f"- `any_bridged`: `{bridge_counts.get('any_bridged')}`")
+    lines.append(f"- `candidate_term_count`: `{bridge_quality.get('candidate_term_count')}`")
+    lines.append(f"- `fully_bridged_ratio`: `{bridge_quality.get('fully_bridged_ratio')}`")
+    lines.append(f"- `community_count`: `{community_summary.get('community_count')}`")
+    top_communities = community_summary.get("top_communities") if isinstance(community_summary.get("top_communities"), list) else []
+    if top_communities:
+        lines.extend(["", "| Anchor | Layers | Neighbors |", "| --- | --- | ---: |",])
+        for row in top_communities[:6]:
+            lines.append(f"| {row.get('anchor_term')} | {', '.join(row.get('layers') or [])} | {row.get('neighbor_count')} |")
     session_bridge = report.get("session_bridge") or {}
     lines.extend(["", "## Session Bridge", ""])
     lines.append(f"- `last_sync_at`: `{session_bridge.get('last_sync_at')}`")

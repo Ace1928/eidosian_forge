@@ -94,6 +94,20 @@ def test_export_bundle_collects_latest_proof_and_benchmarks(tmp_path: Path) -> N
         json.dumps({"status": "completed"}),
     )
     _write(
+        repo_root / "reports" / "word_forge_bridge_audit" / "latest.json",
+        json.dumps({
+            "bridge_counts": {"fully_bridged": 1, "partially_bridged": 3, "any_bridged": 4},
+            "bridge_quality": {"candidate_term_count": 4, "fully_bridged_ratio": 0.25},
+            "community_summary": {"community_count": 2},
+        }),
+    )
+    _write(repo_root / "reports" / "word_forge_bridge_audit" / "latest.md", "# Word Forge Bridge\n")
+    _write(
+        repo_root / "data" / "runtime" / "word_forge_bridge_audit_status.json",
+        json.dumps({"status": "completed", "phase": "completed"}),
+    )
+    _write(repo_root / "data" / "runtime" / "word_forge_bridge_audit_history.jsonl", "{}\n")
+    _write(
         repo_root / "data" / "runtime" / "runtime_benchmark_run_status.json",
         json.dumps({"status": "completed", "scenario": "scenario2", "engine": "local_agent"}),
     )
@@ -135,6 +149,8 @@ def test_export_bundle_collects_latest_proof_and_benchmarks(tmp_path: Path) -> N
     assert manifest["identity_summary"]["history"]["trend"] == "stable"
     assert len(manifest["identity_summary"]["recent_history"]) == 1
     assert manifest["session_bridge_summary"]["imported_records"] == 2
+    assert manifest["word_forge_bridge_summary"]["fully_bridged"] == 1
+    assert manifest["word_forge_bridge_summary"]["community_count"] == 2
     assert manifest["operator_jobs_summary"]["proof_refresh"]["status"] == "completed"
     assert manifest["operator_jobs_summary"]["docs_batch"]["status"] == "completed"
     assert manifest["operator_jobs_summary"]["runtime_artifact_audit"]["tracked_violation_count"] == 3
@@ -147,6 +163,7 @@ def test_export_bundle_collects_latest_proof_and_benchmarks(tmp_path: Path) -> N
     assert manifest["runtime_service_summary"]["docs_batch_status"] == "completed"
     assert manifest["runtime_service_summary"]["runtime_artifact_audit_status"] == "completed"
     assert manifest["runtime_service_summary"]["runtime_artifact_audit_tracked_violations"] == 3
+    assert manifest["runtime_service_summary"]["word_forge_bridge"]["status"] == "completed"
     assert manifest["benchmarks"][0]["suite"] == "agencybench"
     assert manifest["runtime_benchmarks"][0]["scenario"] == "scenario2"
     assert manifest["runtime_benchmarks"][0]["status"] == "success"
@@ -154,6 +171,7 @@ def test_export_bundle_collects_latest_proof_and_benchmarks(tmp_path: Path) -> N
     assert any(item["label"] == "identity_continuity_json" for item in manifest["files"])
     assert any(item["label"].startswith("identity_history:") for item in manifest["files"])
     assert any(item["label"] == "session_bridge_context" for item in manifest["files"])
+    assert any(item["label"] == "word_forge_bridge_report" for item in manifest["files"])
     assert any(item["label"].startswith("runtime_benchmark:") for item in manifest["files"])
     with tarfile.open(bundle_path, "r:gz") as archive:
         names = archive.getnames()
@@ -166,6 +184,7 @@ def test_export_bundle_collects_latest_proof_and_benchmarks(tmp_path: Path) -> N
     assert any(name.endswith("runtime/living_pipeline_status.json") for name in names)
     assert any(name.endswith("runtime/docs_batch/status.json") for name in names)
     assert any(name.endswith("runtime/runtime_artifact_audit/status.json") for name in names)
+    assert any(name.endswith("reports/word_forge_bridge_audit/latest.json") for name in names)
     assert any(name.endswith("reports/runtime_artifact_audit/latest.json") for name in names)
     assert any(name.endswith("runtime_benchmarks/agencybench/scenario2/20260320_010203/status.json") for name in names)
 
