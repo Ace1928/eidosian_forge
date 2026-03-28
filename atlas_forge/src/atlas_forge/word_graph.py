@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import json
 import sqlite3
+from collections import Counter
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, List, Optional
 
 
 def _tokenize(text: str) -> set[str]:
@@ -27,14 +27,6 @@ def _tokenize(text: str) -> set[str]:
             if part:
                 tokens.add(part)
     return {token for token in tokens if len(token) >= 3}
-
-
-def _safe_relpath(path_text: str, forge_root: Path) -> str:
-    path = Path(path_text)
-    try:
-        return str(path.relative_to(forge_root))
-    except Exception:
-        return str(path)
 
 
 def _word_rows(conn: sqlite3.Connection, *, limit: int = 220) -> list[sqlite3.Row]:
@@ -86,6 +78,33 @@ def _translation_rows(conn: sqlite3.Connection, *, limit: int = 260) -> list[sql
     ).fetchall()
 
 
+def _coerce_code_entries(code_report: Optional[dict[str, Any]], forge_root: Path, *, limit: int = 20) -> list[dict[str, Any]]:
+    latest_entries = (code_report or {}).get("latest_entries") or []
+    if isinstance(latest_entries, list) and latest_entries:
+        return [entry for entry in latest_entries if isinstance(entry, dict)][:limit]
+
+    scanned: list[dict[str, Any]] = []
+    for path in sorted((forge_root / "data" / "code_forge").rglob("provenance_*.json")):
+        try:
+            import json
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        if not isinstance(payload, dict):
+            continue
+        scanned.append(
+            {
+                "path": str(payload.get("path") or payload.get("root_path") or path.parent),
+                "root_path": str(payload.get("root_path") or ""),
+                "stage": str(payload.get("stage") or "code"),
+                "generated_at": str(payload.get("generated_at") or ""),
+            }
+        )
+        if len(scanned) >= limit:
+            break
+    return scanned
+
+
 def build_word_graph_payload(
     *,
     db_path: Path,
@@ -107,7 +126,7 @@ def build_word_graph_payload(
     nodes: List[Dict[str, Any]] = []
     edges: List[Dict[str, Any]] = []
     node_ids: set[str] = set()
-    seen_edges: set[tuple[str, str]] = set()
+    seen_edges: set[tuple[str, str, str]] = set()
     bridge_terms: set[str] = set()
 
     def add_node(node: Dict[str, Any]) -> None:
@@ -118,8 +137,9 @@ def build_word_graph_payload(
         nodes.append(node)
 
     def add_edge(src: str, dst: str, label: str) -> None:
-        edge = tuple(sorted((src, dst)))
-        if edge in seen_edges:
+        edge = (src, dst, label)
+        reverse = (dst, src, label)
+        if edge in seen_edges or reverse in seen_edges:
             return
         seen_edges.add(edge)
         edges.append({"from": src, "to": dst, "label": label})
@@ -158,7 +178,7 @@ def build_word_graph_payload(
                 "label": f"{lemma} [{lang}]",
                 "title": f"<b>Lexeme</b><br>{lemma} ({lang})<br>{row['gloss'] or ''}",
                 "group": "multilingual",
-                "value": 12,
+                "value": 11,
                 "color": {"background": "#60a5fa", "border": "#bfdbfe"},
                 "metadata": dict(row),
             }
@@ -234,7 +254,7 @@ def build_word_graph_payload(
                 add_edge(src, kb_node_id, "knowledge_tag")
         matched_terms += 1
 
-    latest_entries = (code_report or {}).get("latest_entries") or []
+    latest_entries = _coerce_code_entries(code_report, forge_root, limit=20)
     for index, entry in enumerate(latest_entries[:20]):
         path_text = str(entry.get("path") or entry.get("root_path") or f"code_entry_{index}")
         stage = str(entry.get("stage") or "code")
@@ -285,3 +305,132 @@ def build_word_graph_payload(
                 add_edge(src, file_id, "file_path")
 
     return {"nodes": nodes, "edges": edges}
+
+
+def build_word_graph_neighbor_payload(
+    *,
+    node_id: str,
+    db_path: Path,
+    forge_root: Path,
+    kb_payload: Optional[dict[str, Any]] = None,
+    code_report: Optional[dict[str, Any]] = None,
+    file_summary: Optional[dict[str, Any]] = None,
+) -> dict[str, Any]:
+    payload = build_word_graph_payload(
+        db_path=db_path,
+        forge_root=forge_root,
+        kb_payload=kb_payload,
+        code_report=code_report,
+        file_summary=file_summary,
+    )
+    nodes_by_id = {str(node.get("id")): node for node in payload.get("nodes", []) if isinstance(node, dict)}
+    if node_id not in nodes_by_id:
+        return {"nodes": [], "edges": []}
+
+    relevant_edges: list[dict[str, Any]] = []
+    relevant_ids: set[str] = {node_id}
+    seen_edge_keys: set[tuple[str, str, str]] = set()
+
+    def collect_edge(edge: dict[str, Any]) -> None:
+        src = str(edge.get("from") or "")
+        dst = str(edge.get("to") or "")
+        label = str(edge.get("label") or "")
+        if not src or not dst:
+            return
+        key = (src, dst, label)
+        if key in seen_edge_keys:
+            return
+        seen_edge_keys.add(key)
+        relevant_edges.append(edge)
+        relevant_ids.add(src)
+        relevant_ids.add(dst)
+
+    immediate_neighbors: set[str] = set()
+    for edge in payload.get("edges", []):
+        if edge.get("from") == node_id or edge.get("to") == node_id:
+            collect_edge(edge)
+            immediate_neighbors.add(str(edge.get("to") if edge.get("from") == node_id else edge.get("from")))
+
+    if node_id.startswith(("code:", "file:", "kb:")):
+        for edge in payload.get("edges", []):
+            src = str(edge.get("from") or "")
+            dst = str(edge.get("to") or "")
+            other = None
+            if src in immediate_neighbors and dst != node_id:
+                other = dst
+            elif dst in immediate_neighbors and src != node_id:
+                other = src
+            if not other:
+                continue
+            if other.startswith(("word:", "lexeme:", "translation:", "kb:", "code:", "file:")):
+                collect_edge(edge)
+
+    return {
+        "nodes": [nodes_by_id[item] for item in sorted(relevant_ids) if item in nodes_by_id],
+        "edges": relevant_edges,
+    }
+
+
+def summarize_word_graph_communities(payload: dict[str, Any], *, limit: int = 12) -> dict[str, Any]:
+    nodes = [node for node in payload.get("nodes", []) if isinstance(node, dict)]
+    edges = [edge for edge in payload.get("edges", []) if isinstance(edge, dict)]
+    nodes_by_id = {str(node.get("id") or ""): node for node in nodes if node.get("id")}
+
+    adjacency: dict[str, set[str]] = {node_id: set() for node_id in nodes_by_id}
+    for edge in edges:
+        src = str(edge.get("from") or "")
+        dst = str(edge.get("to") or "")
+        if src in adjacency and dst in adjacency:
+            adjacency[src].add(dst)
+            adjacency[dst].add(src)
+
+    layer_totals: Counter[str] = Counter()
+    communities: list[dict[str, Any]] = []
+    layer_order = ["knowledge", "code", "file", "multilingual", "translation"]
+
+    for node_id, node in nodes_by_id.items():
+        if not node_id.startswith("word:"):
+            continue
+        neighbors = sorted(adjacency.get(node_id) or set())
+        layer_members: dict[str, list[str]] = {layer: [] for layer in layer_order}
+        for neighbor_id in neighbors:
+            neighbor = nodes_by_id.get(neighbor_id) or {}
+            group = str(neighbor.get("group") or "")
+            if group in layer_members:
+                layer_members[group].append(neighbor_id)
+        active_layers = [layer for layer in layer_order if layer_members[layer]]
+        if len(active_layers) < 2:
+            continue
+        for layer in active_layers:
+            layer_totals[layer] += 1
+        communities.append(
+            {
+                "community_id": f"word-community:{node_id.split(':', 1)[1]}",
+                "anchor_node": node_id,
+                "anchor_term": str(node.get("label") or node_id.split(":", 1)[1]),
+                "layer_count": len(active_layers),
+                "neighbor_count": len(neighbors),
+                "layers": active_layers,
+                "knowledge_nodes": len(layer_members["knowledge"]),
+                "code_nodes": len(layer_members["code"]),
+                "file_nodes": len(layer_members["file"]),
+                "multilingual_nodes": len(layer_members["multilingual"]),
+                "translation_nodes": len(layer_members["translation"]),
+                "members": {layer: layer_members[layer][:8] for layer in active_layers},
+            }
+        )
+
+    communities.sort(
+        key=lambda row: (
+            -int(row.get("layer_count") or 0),
+            -int(row.get("neighbor_count") or 0),
+            str(row.get("anchor_term") or ""),
+        )
+    )
+    top_communities = communities[: max(1, int(limit))]
+    return {
+        "contract": "eidos.atlas.word_graph.communities.v1",
+        "community_count": len(communities),
+        "layer_totals": dict(layer_totals),
+        "top_communities": top_communities,
+    }

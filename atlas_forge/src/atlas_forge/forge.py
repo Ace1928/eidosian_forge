@@ -31,7 +31,7 @@ from .config import (
     WORD_FORGE_MULTILINGUAL_REPORT_DIR, WORD_FORGE_BRIDGE_REPORT_DIR
 )
 from .utils import _read_json, _read_jsonl_rows, _resolve_operator_path
-from .word_graph import build_word_graph_payload
+from .word_graph import build_word_graph_neighbor_payload, build_word_graph_payload, summarize_word_graph_communities
 
 logger = logging.getLogger("eidos_dashboard")
 
@@ -138,11 +138,22 @@ def get_word_forge_multilingual_summary() -> Dict[str, Any]:
 
 def get_word_forge_bridge_summary() -> Dict[str, Any]:
     latest = _read_latest_report(WORD_FORGE_BRIDGE_REPORT_DIR)
+    history = _read_jsonl_rows(WORD_FORGE_BRIDGE_AUDIT_HISTORY, 12)
+    community_summary = summarize_word_graph_communities(get_word_graph(), limit=8)
+    latest_completed = next((row for row in reversed(history) if isinstance(row, dict) and row.get("status") == "completed"), {})
+    previous_completed = next((row for row in reversed(history[:-1]) if isinstance(row, dict) and row.get("status") == "completed"), {}) if len(history) > 1 else {}
     return {
         "contract": "eidos.word_forge.bridge.summary.v1",
         "status": _read_json(WORD_FORGE_BRIDGE_AUDIT_STATUS, {"status": "idle"}),
-        "history": _read_jsonl_rows(WORD_FORGE_BRIDGE_AUDIT_HISTORY, 12),
+        "history": history,
         "latest_report": latest,
+        "bridge_quality": latest.get("bridge_quality", {}) if isinstance(latest, dict) else {},
+        "history_summary": {
+            "run_count": len(history),
+            "last_completed_at": latest_completed.get("finished_at") or latest_completed.get("generated_at") or "",
+            "previous_completed_at": previous_completed.get("finished_at") or previous_completed.get("generated_at") or "",
+        },
+        "community_summary": community_summary,
     }
 
 def get_docs_history(limit: int = 60) -> List[Dict[str, Any]]:
@@ -160,6 +171,9 @@ def get_word_forge_multilingual_history(limit: int = 12) -> List[Dict[str, Any]]
 
 def get_word_forge_bridge_history(limit: int = 12) -> List[Dict[str, Any]]:
     return _read_jsonl_rows(WORD_FORGE_BRIDGE_AUDIT_HISTORY, limit)
+
+def get_word_graph_communities(limit: int = 12) -> Dict[str, Any]:
+    return summarize_word_graph_communities(get_word_graph(), limit=limit)
 
 def get_local_agent_history(limit: int = 12) -> List[Dict[str, Any]]:
     return _read_jsonl_rows(LOCAL_AGENT_HISTORY, limit)
@@ -526,6 +540,21 @@ def get_node_neighbors(node_id: str) -> Dict[str, Any]:
     edges: List[Dict[str, Any]] = []
     seen_edges = set()
     prefix, _, actual_id = node_id.partition(":")
+
+    if prefix in {"word", "lexeme", "translation", "code", "file", "kb"}:
+        try:
+            word_graph_neighbors = build_word_graph_neighbor_payload(
+                node_id=node_id,
+                db_path=WORD_FORGE_DB,
+                forge_root=FORGE_ROOT,
+                kb_payload=_read_json(FORGE_ROOT / "data" / "kb.json", {}),
+                code_report=_read_json(CODE_FORGE_PROVENANCE_REPORT_DIR / "latest.json", {}),
+                file_summary=get_file_forge_summary(recent_limit=24),
+            )
+            if word_graph_neighbors.get("nodes"):
+                return word_graph_neighbors
+        except Exception as e:
+            logger.error(f"Word graph neighbor helper error: {e}")
 
     if prefix == "kb":
         try:

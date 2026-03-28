@@ -57,6 +57,10 @@ def test_build_bridge_audit_counts_word_knowledge_and_code_matches(tmp_path: Pat
     assert report["bridge_counts"]["knowledge"] == 1
     assert report["bridge_counts"]["code"] == 1
     assert report["bridge_counts"]["fully_bridged"] == 1
+    assert report["bridge_counts"]["partially_bridged"] == 1
+    assert report["bridge_counts"]["any_bridged"] == 1
+    assert report["bridge_quality"]["candidate_term_count"] == 1
+    assert report["bridge_quality"]["fully_bridged_ratio"] == 1.0
 
 
 def test_run_bridge_audit_writes_runtime_and_latest_report(tmp_path: Path) -> None:

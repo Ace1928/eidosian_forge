@@ -2,7 +2,7 @@
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;">
         <div>
             <h3>Word Forge Multilingual & Bridge</h3>
-            <p class="muted">Incremental multilingual ingestion plus cross-forge bridge coverage into knowledge and code provenance.</p>
+            <p class="muted">Incremental multilingual ingestion plus cross-forge bridge coverage into knowledge, code provenance, file context, and graph-native bridge communities.</p>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <button type="button" onclick="runWordForgeBridgeAudit()">Run Bridge Audit</button>
@@ -19,13 +19,18 @@
             <div class="stat-label">Base aligned: <span id="wf-multi-base">{{ word_forge_multilingual.get('latest_report', {}).get('after', {}).get('base_aligned_count', 0) }}</span></div>
         </div>
         <div class="card">
-            <h4 style="margin-top:0;">Bridge Status</h4>
+            <h4 style="margin-top:0;">Bridge Coverage</h4>
             <div><strong id="wf-bridge-status">{{ word_forge_bridge.get('status', {}).get('status', 'idle') }}</strong></div>
             <div class="stat-label" id="wf-bridge-phase">{{ word_forge_bridge.get('status', {}).get('phase', 'idle') }}</div>
+            <div class="stat-label">Candidates: <span id="wf-bridge-candidates">{{ word_forge_bridge.get('bridge_quality', {}).get('candidate_term_count', 0) }}</span></div>
             <div class="stat-label">Word matches: <span id="wf-bridge-word">{{ word_forge_bridge.get('latest_report', {}).get('bridge_counts', {}).get('word', 0) }}</span></div>
             <div class="stat-label">Knowledge matches: <span id="wf-bridge-knowledge">{{ word_forge_bridge.get('latest_report', {}).get('bridge_counts', {}).get('knowledge', 0) }}</span></div>
             <div class="stat-label">Code matches: <span id="wf-bridge-code">{{ word_forge_bridge.get('latest_report', {}).get('bridge_counts', {}).get('code', 0) }}</span></div>
             <div class="stat-label">Fully bridged: <span id="wf-bridge-full">{{ word_forge_bridge.get('latest_report', {}).get('bridge_counts', {}).get('fully_bridged', 0) }}</span></div>
+            <div class="stat-label">Partially bridged: <span id="wf-bridge-partial">{{ word_forge_bridge.get('latest_report', {}).get('bridge_counts', {}).get('partially_bridged', 0) }}</span></div>
+            <div class="stat-label">Any bridged: <span id="wf-bridge-any">{{ word_forge_bridge.get('latest_report', {}).get('bridge_counts', {}).get('any_bridged', 0) }}</span></div>
+            <div class="stat-label">Full ratio: <span id="wf-bridge-ratio">{{ word_forge_bridge.get('bridge_quality', {}).get('fully_bridged_ratio', 0.0) }}</span></div>
+            <div class="stat-label">Bridge communities: <span id="wf-bridge-communities">{{ word_forge_bridge.get('community_summary', {}).get('community_count', 0) }}</span></div>
         </div>
     </div>
 
@@ -63,6 +68,25 @@
             </table>
         </div>
         <div class="card">
+            <h4 style="margin-top:0;">Recent Bridge Runs</h4>
+            <table>
+                <thead><tr><th>Status</th><th>Phase</th><th>Completed</th><th>Finished</th></tr></thead>
+                <tbody id="wf-bridge-run-history-body">
+                    {% for row in (word_forge_bridge.get('history', []) or [])[:10] %}
+                    <tr>
+                        <td>{{ row.get('status', '') }}</td>
+                        <td>{{ row.get('phase', '') }}</td>
+                        <td>{{ row.get('status', '') == 'completed' and 'yes' or 'no' }}</td>
+                        <td>{{ row.get('finished_at', row.get('started_at', ''))[:19].replace('T', ' ') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="grid" style="margin-top:12px;">
+        <div class="card">
             <h4 style="margin-top:0;">Top Bridged Terms</h4>
             <table>
                 <thead><tr><th>Term</th><th>Word</th><th>Knowledge</th><th>Code</th></tr></thead>
@@ -73,6 +97,22 @@
                         <td>{{ 1 if row.get('word_match') else 0 }}</td>
                         <td>{{ 1 if row.get('knowledge_match') else 0 }}</td>
                         <td>{{ 1 if row.get('code_match') else 0 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="card">
+            <h4 style="margin-top:0;">Top Bridge Communities</h4>
+            <table>
+                <thead><tr><th>Anchor</th><th>Layers</th><th>Neighbors</th><th>Profile</th></tr></thead>
+                <tbody id="wf-bridge-community-body">
+                    {% for row in (word_forge_bridge.get('community_summary', {}).get('top_communities', []) or [])[:10] %}
+                    <tr>
+                        <td>{{ row.get('anchor_term', '') }}</td>
+                        <td>{{ row.get('layer_count', 0) }}</td>
+                        <td>{{ row.get('neighbor_count', 0) }}</td>
+                        <td>{{ (row.get('layers', []) or [])|join(', ') }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>

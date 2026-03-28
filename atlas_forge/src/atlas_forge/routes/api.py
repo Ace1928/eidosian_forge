@@ -12,6 +12,7 @@ from ..forge import (
     get_word_forge_bridge_summary,
     get_word_forge_multilingual_history,
     get_word_forge_bridge_history,
+    get_word_graph_communities,
 )
 from ..jobs import _service_command, _scheduler_command
 from ..shell import (
@@ -117,6 +118,11 @@ async def api_knowledge_graph(max_nodes: int = 500):
 @router.get("/graph/word")
 async def api_word_graph():
     return get_word_graph()
+
+
+@router.get("/graph/word/communities")
+async def api_word_graph_communities(limit: int = 12):
+    return get_word_graph_communities(limit=max(1, min(limit, 60)))
 
 
 @router.get("/graph/neighbors/{node_id:path}")

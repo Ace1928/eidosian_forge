@@ -929,9 +929,11 @@ refreshCodeForgeProvenanceAuditHistory();
 
 async function refreshWordForgeBridge() {
     try {
-        const [multiRes, bridgeRes] = await Promise.all([
+        const [multiRes, bridgeRes, multiHistRes, bridgeHistRes] = await Promise.all([
             fetch('/api/word-forge/multilingual', {cache: 'no-store'}),
             fetch('/api/word-forge/bridge-audit', {cache: 'no-store'}),
+            fetch('/api/word-forge/multilingual/history', {cache: 'no-store'}),
+            fetch('/api/word-forge/bridge-audit/history', {cache: 'no-store'}),
         ]);
         if (multiRes.ok) {
             const payload = await multiRes.json();
@@ -948,12 +950,19 @@ async function refreshWordForgeBridge() {
             const status = payload.status || {};
             const report = payload.latest_report || {};
             const counts = report.bridge_counts || {};
+            const quality = payload.bridge_quality || report.bridge_quality || {};
+            const communities = payload.community_summary || {};
             document.getElementById('wf-bridge-status').textContent = status.status || 'idle';
             document.getElementById('wf-bridge-phase').textContent = status.phase || 'idle';
+            document.getElementById('wf-bridge-candidates').textContent = quality.candidate_term_count ?? 0;
             document.getElementById('wf-bridge-word').textContent = counts.word ?? 0;
             document.getElementById('wf-bridge-knowledge').textContent = counts.knowledge ?? 0;
             document.getElementById('wf-bridge-code').textContent = counts.code ?? 0;
             document.getElementById('wf-bridge-full').textContent = counts.fully_bridged ?? 0;
+            document.getElementById('wf-bridge-partial').textContent = counts.partially_bridged ?? 0;
+            document.getElementById('wf-bridge-any').textContent = counts.any_bridged ?? 0;
+            document.getElementById('wf-bridge-ratio').textContent = quality.fully_bridged_ratio ?? 0;
+            document.getElementById('wf-bridge-communities').textContent = communities.community_count ?? 0;
             const body = document.getElementById('wf-bridge-history-body');
             if (body) {
                 body.innerHTML = (report.top_bridged_terms || []).slice(0, 10).map((row) => `
@@ -965,8 +974,18 @@ async function refreshWordForgeBridge() {
                     </tr>
                 `).join('');
             }
+            const communityBody = document.getElementById('wf-bridge-community-body');
+            if (communityBody) {
+                communityBody.innerHTML = (communities.top_communities || []).slice(0, 10).map((row) => `
+                    <tr>
+                        <td>${escapeHtml(row.anchor_term || '')}</td>
+                        <td>${escapeHtml(String(row.layer_count ?? 0))}</td>
+                        <td>${escapeHtml(String(row.neighbor_count ?? 0))}</td>
+                        <td>${escapeHtml((row.layers || []).join(', '))}</td>
+                    </tr>
+                `).join('');
+            }
         }
-        const multiHistRes = await fetch('/api/word-forge/multilingual/history', {cache: 'no-store'});
         if (multiHistRes.ok) {
             const payload = await multiHistRes.json();
             const body = document.getElementById('wf-multi-history-body');
@@ -976,6 +995,20 @@ async function refreshWordForgeBridge() {
                         <td>${escapeHtml(row.status || '')}</td>
                         <td>${escapeHtml(row.phase || '')}</td>
                         <td>${escapeHtml(row.lexeme_delta ?? 0)}</td>
+                        <td>${escapeHtml(String(row.finished_at || row.started_at || '').slice(0, 19).replace('T', ' '))}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+        if (bridgeHistRes.ok) {
+            const payload = await bridgeHistRes.json();
+            const body = document.getElementById('wf-bridge-run-history-body');
+            if (body) {
+                body.innerHTML = (payload.entries || []).slice(0, 10).map((row) => `
+                    <tr>
+                        <td>${escapeHtml(row.status || '')}</td>
+                        <td>${escapeHtml(row.phase || '')}</td>
+                        <td>${escapeHtml((row.status || '') === 'completed' ? 'yes' : 'no')}</td>
                         <td>${escapeHtml(String(row.finished_at || row.started_at || '').slice(0, 19).replace('T', ' '))}</td>
                     </tr>
                 `).join('');

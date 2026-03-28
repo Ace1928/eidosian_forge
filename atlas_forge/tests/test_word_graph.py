@@ -3,7 +3,11 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
-from atlas_forge.word_graph import build_word_graph_payload
+from atlas_forge.word_graph import (
+    build_word_graph_neighbor_payload,
+    build_word_graph_payload,
+    summarize_word_graph_communities,
+)
 
 
 def _make_db(path: Path) -> None:
@@ -70,13 +74,9 @@ def _make_db(path: Path) -> None:
         )
 
 
-def test_build_word_graph_payload_includes_code_file_and_knowledge_bridges(tmp_path: Path) -> None:
-    db_path = tmp_path / "word_forge.sqlite"
-    _make_db(db_path)
-    payload = build_word_graph_payload(
-        db_path=db_path,
-        forge_root=tmp_path,
-        kb_payload={
+def _sample_inputs(tmp_path: Path) -> dict[str, object]:
+    return {
+        "kb_payload": {
             "nodes": {
                 "k1": {
                     "id": "k1",
@@ -86,16 +86,26 @@ def test_build_word_graph_payload_includes_code_file_and_knowledge_bridges(tmp_p
                 }
             }
         },
-        code_report={
+        "code_report": {
             "latest_entries": [
                 {"path": "archive_forge/archive_module.py", "stage": "archive_digester", "generated_at": "2026-03-28T00:00:00Z"}
             ]
         },
-        file_summary={
+        "file_summary": {
             "recent_files": [
                 {"file_path": str(tmp_path / "archive_notes.md"), "kind": "document", "updated_at": "2026-03-28T00:00:00Z"}
             ]
         },
+    }
+
+
+def test_build_word_graph_payload_includes_code_file_and_knowledge_bridges(tmp_path: Path) -> None:
+    db_path = tmp_path / "word_forge.sqlite"
+    _make_db(db_path)
+    payload = build_word_graph_payload(
+        db_path=db_path,
+        forge_root=tmp_path,
+        **_sample_inputs(tmp_path),
     )
 
     groups = {node["group"] for node in payload["nodes"]}
@@ -110,3 +120,51 @@ def test_build_word_graph_payload_includes_code_file_and_knowledge_bridges(tmp_p
     assert "knowledge_tag" in labels
     assert "code_provenance" in labels
     assert "file_path" in labels
+
+
+def test_build_word_graph_neighbor_payload_expands_code_and_file_nodes(tmp_path: Path) -> None:
+    db_path = tmp_path / "word_forge.sqlite"
+    _make_db(db_path)
+    sample = _sample_inputs(tmp_path)
+
+    code_neighbors = build_word_graph_neighbor_payload(
+        node_id="code:0:archive_forge/archive_module.py",
+        db_path=db_path,
+        forge_root=tmp_path,
+        **sample,
+    )
+    code_ids = {node["id"] for node in code_neighbors["nodes"]}
+    assert "word:archive" in code_ids
+    assert "kb:k1" in code_ids
+
+    file_node_id = f"file:{tmp_path / 'archive_notes.md'}"
+    file_neighbors = build_word_graph_neighbor_payload(
+        node_id=file_node_id,
+        db_path=db_path,
+        forge_root=tmp_path,
+        **sample,
+    )
+    file_ids = {node["id"] for node in file_neighbors["nodes"]}
+    assert "word:archive" in file_ids
+    assert "code:0:archive_forge/archive_module.py" in file_ids
+
+
+def test_summarize_word_graph_communities_detects_multi_layer_anchor_terms(tmp_path: Path) -> None:
+    db_path = tmp_path / "word_forge.sqlite"
+    _make_db(db_path)
+    payload = build_word_graph_payload(
+        db_path=db_path,
+        forge_root=tmp_path,
+        **_sample_inputs(tmp_path),
+    )
+
+    summary = summarize_word_graph_communities(payload, limit=8)
+
+    assert summary["contract"] == "eidos.atlas.word_graph.communities.v1"
+    assert summary["community_count"] >= 1
+    top = summary["top_communities"][0]
+    assert top["anchor_term"] == "archive"
+    assert top["layer_count"] >= 3
+    assert "code" in top["layers"]
+    assert "file" in top["layers"]
+    assert "knowledge" in top["layers"]

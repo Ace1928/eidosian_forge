@@ -194,8 +194,17 @@ def build_bridge_audit(repo_root: Path, db_path: Path | None = None) -> dict[str
             "knowledge": sum(1 for row in per_term if row["knowledge_match"]),
             "code": sum(1 for row in per_term if row["code_match"]),
             "fully_bridged": sum(1 for row in per_term if row["bridge_count"] >= 3),
+            "partially_bridged": sum(1 for row in per_term if row["bridge_count"] >= 2),
+            "any_bridged": sum(1 for row in per_term if row["bridge_count"] >= 1),
         }
     )
+    candidate_term_count = len(per_term)
+    bridge_quality = {
+        "candidate_term_count": candidate_term_count,
+        "fully_bridged_ratio": round((bridge_counts["fully_bridged"] / candidate_term_count), 4) if candidate_term_count else 0.0,
+        "partially_bridged_ratio": round((bridge_counts["partially_bridged"] / candidate_term_count), 4) if candidate_term_count else 0.0,
+        "any_bridged_ratio": round((bridge_counts["any_bridged"] / candidate_term_count), 4) if candidate_term_count else 0.0,
+    }
 
     return {
         "contract": "eidos.word_forge.bridge_audit.v1",
@@ -222,6 +231,7 @@ def build_bridge_audit(repo_root: Path, db_path: Path | None = None) -> dict[str
             "code_token_count": len(code_tokens),
         },
         "bridge_counts": dict(bridge_counts),
+        "bridge_quality": bridge_quality,
         "top_bridged_terms": per_term[:24],
     }
 
@@ -231,6 +241,7 @@ def render_bridge_audit_markdown(report: dict[str, Any]) -> str:
     knowledge_metrics = report.get("knowledge_metrics") or {}
     code_metrics = report.get("code_metrics") or {}
     bridge_counts = report.get("bridge_counts") or {}
+    bridge_quality = report.get("bridge_quality") or {}
     rows = report.get("top_bridged_terms") or []
     lines = [
         "# Word Forge Bridge Audit",
@@ -251,6 +262,12 @@ def render_bridge_audit_markdown(report: dict[str, Any]) -> str:
         f"- Knowledge matches: `{bridge_counts.get('knowledge', 0)}`",
         f"- Code matches: `{bridge_counts.get('code', 0)}`",
         f"- Fully bridged: `{bridge_counts.get('fully_bridged', 0)}`",
+        f"- Partially bridged: `{bridge_counts.get('partially_bridged', 0)}`",
+        f"- Any bridged: `{bridge_counts.get('any_bridged', 0)}`",
+        f"- Candidate terms: `{bridge_quality.get('candidate_term_count', 0)}`",
+        f"- Full bridge ratio: `{bridge_quality.get('fully_bridged_ratio', 0.0)}`",
+        f"- Partial bridge ratio: `{bridge_quality.get('partially_bridged_ratio', 0.0)}`",
+        f"- Any bridge ratio: `{bridge_quality.get('any_bridged_ratio', 0.0)}`",
         "",
         "## Top Bridged Terms",
         "",

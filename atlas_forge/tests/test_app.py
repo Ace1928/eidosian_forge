@@ -29,7 +29,9 @@ def test_atlas_word_forge_routes_return_payloads() -> None:
 
     bridge = client.get("/api/word-forge/bridge-audit")
     assert bridge.status_code == 200
-    assert bridge.json()["contract"] == "eidos.word_forge.bridge.summary.v1"
+    bridge_payload = bridge.json()
+    assert bridge_payload["contract"] == "eidos.word_forge.bridge.summary.v1"
+    assert "community_summary" in bridge_payload
 
     services = client.get("/api/runtime/services")
     assert services.status_code == 200
@@ -45,3 +47,14 @@ def test_atlas_word_graph_route_supports_multilingual_nodes() -> None:
     payload = response.json()
     assert "nodes" in payload
     assert "edges" in payload
+
+
+def test_atlas_word_graph_community_route_returns_payload() -> None:
+    module = import_module("atlas_forge.app")
+    client = TestClient(module.app)
+
+    response = client.get("/api/graph/word/communities")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["contract"] == "eidos.atlas.word_graph.communities.v1"
+    assert "top_communities" in payload

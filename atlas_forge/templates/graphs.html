@@ -116,6 +116,19 @@
                 <div id="det-actions" style="margin-top:12px;"></div>
             </div>
         </div>
+
+        <div class="node-details-fixed">
+            <h4>Word Bridge Communities</h4>
+            <p class="muted" style="font-size:0.8rem;">Multi-layer anchor terms bridging multilingual, knowledge, code, and file surfaces.</p>
+            <p><strong>Communities:</strong> <span id="community-count">0</span></p>
+            <p><strong>Layer Totals:</strong> <span id="community-layer-totals">n/a</span></p>
+            <div style="max-height:220px; overflow:auto;">
+                <table style="width:100%; font-size:0.8rem;">
+                    <thead><tr><th>Anchor</th><th>Layers</th><th>Neighbors</th></tr></thead>
+                    <tbody id="community-body"><tr><td colspan="3" style="color:var(--muted);">Word graph community view appears here.</td></tr></tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <div id="graph-container">
@@ -143,6 +156,8 @@
         currentEdges.add(rawData.edges);
 
         if (!network) initNetwork();
+        updateFilters();
+        await refreshWordCommunities();
     }
 
     function initNetwork() {
@@ -214,7 +229,7 @@
             btn.onclick = () => window.open(`/browse/forge/${path}`, '_blank');
             actions.appendChild(btn);
         }
-        if (node.id.startsWith('word:') || node.id.startsWith('lexeme:') || node.id.startsWith('translation:') || node.id.startsWith('kb:')) {
+        if (node.id.startsWith('word:') || node.id.startsWith('lexeme:') || node.id.startsWith('translation:') || node.id.startsWith('kb:') || node.id.startsWith('code:') || node.id.startsWith('file:')) {
             const btn = document.createElement('button');
             btn.textContent = 'Expand Neighbors';
             btn.style.width = '100%';
@@ -255,6 +270,37 @@
     function toggleWordGraph() {
         isWordGraph = document.getElementById('filter-word').checked;
         loadGraphData();
+    }
+
+    async function refreshWordCommunities() {
+        const body = document.getElementById('community-body');
+        const count = document.getElementById('community-count');
+        const totals = document.getElementById('community-layer-totals');
+        if (!body || !count || !totals) return;
+        if (!isWordGraph) {
+            count.textContent = '0';
+            totals.textContent = 'n/a';
+            body.innerHTML = '<tr><td colspan="3" style="color:var(--muted);">Enable Lexicon (Word Forge) to view bridge communities.</td></tr>';
+            return;
+        }
+        try {
+            const res = await fetch('/api/graph/word/communities?limit=10', {cache: 'no-store'});
+            if (!res.ok) return;
+            const payload = await res.json();
+            count.textContent = payload.community_count ?? 0;
+            const layerTotals = payload.layer_totals || {};
+            totals.textContent = Object.entries(layerTotals).map(([key, value]) => `${key}:${value}`).join(', ') || 'none';
+            const rows = payload.top_communities || [];
+            body.innerHTML = rows.length ? rows.map((row) => `
+                <tr>
+                    <td>${escapeHtml(row.anchor_term || '')}</td>
+                    <td>${escapeHtml((row.layers || []).join(', '))}</td>
+                    <td>${escapeHtml(String(row.neighbor_count ?? 0))}</td>
+                </tr>
+            `).join('') : '<tr><td colspan="3" style="color:var(--muted);">No multi-layer word communities yet.</td></tr>';
+        } catch (err) {
+            body.innerHTML = '<tr><td colspan="3" style="color:var(--muted);">Community refresh failed.</td></tr>';
+        }
     }
 
     function togglePhysics() {
