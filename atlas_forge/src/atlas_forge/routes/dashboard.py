@@ -10,7 +10,9 @@ from ..forge import (
     get_code_forge_provenance_audit_history, get_local_agent_history,
     get_scheduler_history, get_doc_processor_history, 
     get_qwenchat_history, get_living_pipeline_history,
-    get_identity_snapshot
+    get_identity_snapshot, get_word_forge_multilingual_summary,
+    get_word_forge_bridge_summary, get_word_forge_multilingual_history,
+    get_word_forge_bridge_history
 )
 from ..utils import _detect_lan_ip
 from ..jobs import _service_command
@@ -74,6 +76,10 @@ async def dashboard(request: Request):
                 "doc_processor_history": get_doc_processor_history(),
                 "qwenchat_history": get_qwenchat_history(),
                 "living_pipeline_history": get_living_pipeline_history(),
+                "word_forge_multilingual": get_word_forge_multilingual_summary(),
+                "word_forge_bridge": get_word_forge_bridge_summary(),
+                "word_forge_multilingual_history": get_word_forge_multilingual_history(),
+                "word_forge_bridge_history": get_word_forge_bridge_history(),
                 "proof_snapshot": proof_summary.get("proof", {}),
                 "proof_summary": proof_summary,
                 "service_snapshot": await _service_command("status"),

@@ -56,6 +56,28 @@ word_forge start intelligence consciousness --minutes 10 --workers 4
   --model gguf:models/Qwen3.5-0.8B-Q4_K_M.gguf
 ```
 
+### Multilingual Ingest
+
+```bash
+./eidosian_venv/bin/python scripts/word_forge_multilingual_ingest.py \
+  --source-path /path/to/wiktextract.jsonl \
+  --source-type wiktextract
+```
+
+- Incremental by source signature
+- Writes runtime status/history under `data/runtime/`
+- Publishes reports under `reports/word_forge_multilingual_ingest/`
+
+### Bridge Audit
+
+```bash
+./eidosian_venv/bin/python scripts/word_forge_bridge_audit.py
+```
+
+- Audits Word Forge links into multilingual base alignment, Knowledge Forge tags/content, and Code Forge provenance tokens
+- Publishes runtime status/history under `data/runtime/`
+- Publishes reports under `reports/word_forge_bridge_audit/`
+
 ### Semantic Graph (Python)
 
 ```python

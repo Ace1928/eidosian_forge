@@ -147,8 +147,13 @@ Item Format:
 - [x] **`src/word_forge/parser/parser_refiner.py`** - Enhanced MWE and Entity discovery
   - Status: Complete (March 27) - LLM-based extraction pass in TermExtractor
 - [ ] **FastText Integration** - Implement aligned vector ingestion for translation bootstrapping
+- [x] **Incremental multilingual ingest runtime** - Add a governed ingest runner with status/history/report contracts
+  - Status: Complete (March 28) - `scripts/word_forge_multilingual_ingest.py` now supports incremental Kaikki/Wiktextract ingestion with runtime artifacts and published reports
+- [x] **Cross-forge bridge audit** - Audit Word Forge alignment into Knowledge Forge and Code Forge surfaces
+  - Status: Complete (March 28) - `scripts/word_forge_bridge_audit.py` and Atlas summary routes now expose bridge counts and top bridged terms
 - [ ] **Polyglot Integration** - Morphological decomposition for lexemes
-- [ ] **Structured JSON repair path** - Add a light repair/validation pass for malformed LLM JSON before task failure
+- [x] **Structured JSON repair path** - Add task-aware validation and semantic placeholder rejection for malformed LLM JSON before task failure
+  - Status: Complete (March 28) - structured validator now uses task-specific schemas for extraction, enrichment, G2P, and prosody
 
 ---
 

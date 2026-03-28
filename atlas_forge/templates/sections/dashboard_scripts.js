@@ -133,6 +133,7 @@ async function runFileForgeIndex() {
     });
     await fetch(`/api/file-forge/index?${params.toString()}`, {method: "POST"});
     await refreshFileForge();
+refreshWordForgeBridge();
     await refreshRuntimeServices();
 }
 
@@ -899,11 +900,13 @@ setInterval(refreshCodeForgeProvenanceAuditHistory, 15000);
 setInterval(refreshRuntimeServices, 10000);
 setInterval(refreshArchiveState, 12000);
 setInterval(refreshFileForge, 15000);
+setInterval(refreshWordForgeBridge, 15000);
 refreshScheduler();
 refreshServices();
 refreshRuntimeServices();
 refreshArchiveState();
 refreshFileForge();
+refreshWordForgeBridge();
 refreshDocsTree();
 refreshDocsHistory();
 refreshDocsBatchStatus();
@@ -923,3 +926,88 @@ refreshRuntimeArtifactAuditStatus();
 refreshRuntimeArtifactAuditHistory();
 refreshCodeForgeProvenanceAuditStatus();
 refreshCodeForgeProvenanceAuditHistory();
+
+async function refreshWordForgeBridge() {
+    try {
+        const [multiRes, bridgeRes] = await Promise.all([
+            fetch('/api/word-forge/multilingual', {cache: 'no-store'}),
+            fetch('/api/word-forge/bridge-audit', {cache: 'no-store'}),
+        ]);
+        if (multiRes.ok) {
+            const payload = await multiRes.json();
+            const status = payload.status || {};
+            const report = payload.latest_report || {};
+            document.getElementById('wf-multi-status').textContent = status.status || 'idle';
+            document.getElementById('wf-multi-phase').textContent = status.phase || 'idle';
+            document.getElementById('wf-multi-lexemes').textContent = report.after?.lexeme_count ?? 0;
+            document.getElementById('wf-multi-translations').textContent = report.after?.translation_count ?? 0;
+            document.getElementById('wf-multi-base').textContent = report.after?.base_aligned_count ?? 0;
+        }
+        if (bridgeRes.ok) {
+            const payload = await bridgeRes.json();
+            const status = payload.status || {};
+            const report = payload.latest_report || {};
+            const counts = report.bridge_counts || {};
+            document.getElementById('wf-bridge-status').textContent = status.status || 'idle';
+            document.getElementById('wf-bridge-phase').textContent = status.phase || 'idle';
+            document.getElementById('wf-bridge-word').textContent = counts.word ?? 0;
+            document.getElementById('wf-bridge-knowledge').textContent = counts.knowledge ?? 0;
+            document.getElementById('wf-bridge-code').textContent = counts.code ?? 0;
+            document.getElementById('wf-bridge-full').textContent = counts.fully_bridged ?? 0;
+            const body = document.getElementById('wf-bridge-history-body');
+            if (body) {
+                body.innerHTML = (report.top_bridged_terms || []).slice(0, 10).map((row) => `
+                    <tr>
+                        <td>${escapeHtml(row.term || '')}</td>
+                        <td>${row.word_match ? 1 : 0}</td>
+                        <td>${row.knowledge_match ? 1 : 0}</td>
+                        <td>${row.code_match ? 1 : 0}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+        const multiHistRes = await fetch('/api/word-forge/multilingual/history', {cache: 'no-store'});
+        if (multiHistRes.ok) {
+            const payload = await multiHistRes.json();
+            const body = document.getElementById('wf-multi-history-body');
+            if (body) {
+                body.innerHTML = (payload.entries || []).slice(0, 10).map((row) => `
+                    <tr>
+                        <td>${escapeHtml(row.status || '')}</td>
+                        <td>${escapeHtml(row.phase || '')}</td>
+                        <td>${escapeHtml(row.lexeme_delta ?? 0)}</td>
+                        <td>${escapeHtml(String(row.finished_at || row.started_at || '').slice(0, 19).replace('T', ' '))}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+    } catch (err) {
+        // ignore transient refresh failures
+    }
+}
+
+async function runWordForgeMultilingualIngest() {
+    const sourcePath = document.getElementById('wf-source-path')?.value?.trim();
+    const sourceType = document.getElementById('wf-source-type')?.value || 'wiktextract';
+    const limitValue = document.getElementById('wf-source-limit')?.value?.trim();
+    const force = Boolean(document.getElementById('wf-source-force')?.checked);
+    if (!sourcePath) return;
+    const params = new URLSearchParams({source_path: sourcePath, source_type: sourceType});
+    if (limitValue) params.set('limit', limitValue);
+    if (force) params.set('force', 'true');
+    try {
+        await fetch(`/api/word-forge/multilingual/run?${params.toString()}`, {method: 'POST'});
+    } finally {
+        await refreshWordForgeBridge();
+        await refreshRuntimeServices();
+    }
+}
+
+async function runWordForgeBridgeAudit() {
+    try {
+        await fetch('/api/word-forge/bridge-audit/run', {method: 'POST'});
+    } finally {
+        await refreshWordForgeBridge();
+        await refreshRuntimeServices();
+    }
+}

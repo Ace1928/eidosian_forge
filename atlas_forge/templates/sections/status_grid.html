@@ -54,6 +54,18 @@
         </div>
     </div>
     <div class="card">
+        <h3>Word Forge Multilingual</h3>
+        <div class="stat-value">{{ runtime_snapshot.get('word_forge_multilingual', {}).get('status', {}).get('status', 'idle')|upper }}</div>
+        <div class="stat-label">{{ runtime_snapshot.get('word_forge_multilingual', {}).get('status', {}).get('phase', 'idle') }}</div>
+        <div class="stat-label">Lexemes: {{ runtime_snapshot.get('word_forge_multilingual', {}).get('latest_report', {}).get('after', {}).get('lexeme_count', 0) }}</div>
+    </div>
+    <div class="card">
+        <h3>Word Forge Bridge</h3>
+        <div class="stat-value">{{ runtime_snapshot.get('word_forge_bridge', {}).get('status', {}).get('status', 'idle')|upper }}</div>
+        <div class="stat-label">{{ runtime_snapshot.get('word_forge_bridge', {}).get('status', {}).get('phase', 'idle') }}</div>
+        <div class="stat-label">Fully bridged: {{ runtime_snapshot.get('word_forge_bridge', {}).get('latest_report', {}).get('bridge_counts', {}).get('fully_bridged', 0) }}</div>
+    </div>
+    <div class="card">
         <h3>Control Plane</h3>
         <div class="stat-value"><a href="/browse/forge/">FORGE</a></div>
         <div class="stat-label"><a href="/browse/home/">Home Browser</a> · <a href="/api/services" target="_blank">Service Status</a></div>

@@ -71,6 +71,11 @@ CODE_FORGE_ARCHIVE_LIFECYCLE_HISTORY = RUNTIME_DIR / "code_forge_archive_lifecyc
 FILE_FORGE_INDEX_STATUS = RUNTIME_DIR / "file_forge_index_status.json"
 FILE_FORGE_INDEX_HISTORY = RUNTIME_DIR / "file_forge_index_history.jsonl"
 FILE_FORGE_DB = FORGE_ROOT / "data" / "file_forge" / "library.sqlite"
+WORD_FORGE_DB = FORGE_ROOT / "word_forge" / "data" / "word_forge.sqlite"
+WORD_FORGE_MULTILINGUAL_INGEST_STATUS = RUNTIME_DIR / "word_forge_multilingual_ingest_status.json"
+WORD_FORGE_MULTILINGUAL_INGEST_HISTORY = RUNTIME_DIR / "word_forge_multilingual_ingest_history.jsonl"
+WORD_FORGE_BRIDGE_AUDIT_STATUS = RUNTIME_DIR / "word_forge_bridge_audit_status.json"
+WORD_FORGE_BRIDGE_AUDIT_HISTORY = RUNTIME_DIR / "word_forge_bridge_audit_history.jsonl"
 
 # --- Bridge Paths ---
 SESSION_BRIDGE_DIR = RUNTIME_DIR / "session_bridge"
@@ -86,6 +91,8 @@ CODE_FORGE_PROVENANCE_REPORT_DIR = FORGE_ROOT / "reports" / "code_forge_provenan
 CODE_FORGE_ARCHIVE_PLAN_REPORT_DIR = FORGE_ROOT / "reports" / "code_forge_archive_plan"
 CODE_FORGE_ARCHIVE_LIFECYCLE_REPORT_DIR = FORGE_ROOT / "reports" / "code_forge_archive_lifecycle"
 CODE_FORGE_ARCHIVE_RETIREMENTS_LATEST = FORGE_ROOT / "data" / "code_forge" / "archive_ingestion" / "latest" / "retirements" / "latest.json"
+WORD_FORGE_MULTILINGUAL_REPORT_DIR = FORGE_ROOT / "reports" / "word_forge_multilingual_ingest"
+WORD_FORGE_BRIDGE_REPORT_DIR = FORGE_ROOT / "reports" / "word_forge_bridge_audit"
 
 # --- Scripts & Logs ---
 SERVICES_SCRIPT = FORGE_ROOT / "scripts" / "eidos_termux_services.sh"

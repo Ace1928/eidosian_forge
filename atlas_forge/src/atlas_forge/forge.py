@@ -25,7 +25,10 @@ from .config import (
     RUNTIME_ARTIFACT_AUDIT_HISTORY, CODE_FORGE_PROVENANCE_AUDIT_STATUS,
     CODE_FORGE_PROVENANCE_AUDIT_HISTORY, CODE_FORGE_ARCHIVE_PLAN_STATUS,
     CODE_FORGE_ARCHIVE_PLAN_HISTORY, CODE_FORGE_ARCHIVE_LIFECYCLE_STATUS,
-    CODE_FORGE_ARCHIVE_LIFECYCLE_HISTORY, HOME_ROOT
+    CODE_FORGE_ARCHIVE_LIFECYCLE_HISTORY, HOME_ROOT, WORD_FORGE_DB,
+    WORD_FORGE_MULTILINGUAL_INGEST_STATUS, WORD_FORGE_MULTILINGUAL_INGEST_HISTORY,
+    WORD_FORGE_BRIDGE_AUDIT_STATUS, WORD_FORGE_BRIDGE_AUDIT_HISTORY,
+    WORD_FORGE_MULTILINGUAL_REPORT_DIR, WORD_FORGE_BRIDGE_REPORT_DIR
 )
 from .utils import _read_json, _read_jsonl_rows, _resolve_operator_path
 
@@ -119,6 +122,28 @@ def get_file_forge_summary(path_prefix: str = "", recent_limit: int = 8) -> Dict
         
     return payload
 
+def _read_latest_report(report_dir: Path) -> Dict[str, Any]:
+    return _read_json(report_dir / "latest.json", {})
+
+def get_word_forge_multilingual_summary() -> Dict[str, Any]:
+    latest = _read_latest_report(WORD_FORGE_MULTILINGUAL_REPORT_DIR)
+    return {
+        "contract": "eidos.word_forge.multilingual.summary.v1",
+        "status": _read_json(WORD_FORGE_MULTILINGUAL_INGEST_STATUS, {"status": "idle"}),
+        "history": _read_jsonl_rows(WORD_FORGE_MULTILINGUAL_INGEST_HISTORY, 12),
+        "latest_report": latest,
+        "db_path": str(WORD_FORGE_DB),
+    }
+
+def get_word_forge_bridge_summary() -> Dict[str, Any]:
+    latest = _read_latest_report(WORD_FORGE_BRIDGE_REPORT_DIR)
+    return {
+        "contract": "eidos.word_forge.bridge.summary.v1",
+        "status": _read_json(WORD_FORGE_BRIDGE_AUDIT_STATUS, {"status": "idle"}),
+        "history": _read_jsonl_rows(WORD_FORGE_BRIDGE_AUDIT_HISTORY, 12),
+        "latest_report": latest,
+    }
+
 def get_docs_history(limit: int = 60) -> List[Dict[str, Any]]:
     payload = _read_json(DIRECTORY_DOCS_HISTORY, {})
     rows = payload.get("entries", [])
@@ -128,6 +153,12 @@ def get_docs_history(limit: int = 60) -> List[Dict[str, Any]]:
 
 def get_file_forge_index_history(limit: int = 12) -> List[Dict[str, Any]]:
     return _read_jsonl_rows(FILE_FORGE_INDEX_HISTORY, limit)
+
+def get_word_forge_multilingual_history(limit: int = 12) -> List[Dict[str, Any]]:
+    return _read_jsonl_rows(WORD_FORGE_MULTILINGUAL_INGEST_HISTORY, limit)
+
+def get_word_forge_bridge_history(limit: int = 12) -> List[Dict[str, Any]]:
+    return _read_jsonl_rows(WORD_FORGE_BRIDGE_AUDIT_HISTORY, limit)
 
 def get_local_agent_history(limit: int = 12) -> List[Dict[str, Any]]:
     return _read_jsonl_rows(LOCAL_AGENT_HISTORY, limit)
@@ -328,6 +359,8 @@ def get_runtime_snapshot() -> Dict[str, Any]:
         "file_forge": file_forge,
         "file_forge_index": _read_json(FILE_FORGE_INDEX_STATUS, {"status": "idle"}),
         "file_forge_index_history": _read_jsonl_rows(FILE_FORGE_INDEX_HISTORY),
+        "word_forge_multilingual": get_word_forge_multilingual_summary(),
+        "word_forge_bridge": get_word_forge_bridge_summary(),
         "shell": _shell_sessions_snapshot(),
         "archive_plan": _read_json(CODE_FORGE_ARCHIVE_PLAN_STATUS, {"status": "idle"}),
         "archive_lifecycle": _read_json(CODE_FORGE_ARCHIVE_LIFECYCLE_STATUS, {"status": "idle"}),
@@ -355,7 +388,7 @@ def get_runtime_snapshot_compact() -> Dict[str, Any]:
     compact: Dict[str, Any] = {}
     keys = (
         "scheduler", "local_agent", "qwenchat", "living_pipeline", "doc_processor",
-        "file_forge", "file_forge_index", "shell", "archive_plan", "archive_lifecycle",
+        "file_forge", "file_forge_index", "word_forge_multilingual", "word_forge_bridge", "shell", "archive_plan", "archive_lifecycle",
         "session_bridge", "identity_continuity", "boot", "capabilities",
         "docs_batch", "proof_summary", "coordinator", "identity_history"
     )
@@ -387,6 +420,8 @@ def get_runtime_services_snapshot() -> List[Dict[str, Any]]:
         _row("local_agent", LOCAL_AGENT_STATUS),
         _row("qwenchat", QWENCHAT_STATUS),
         _row("living_pipeline", LIVING_PIPELINE_STATUS),
+        _row("word_forge_multilingual", WORD_FORGE_MULTILINGUAL_INGEST_STATUS),
+        _row("word_forge_bridge", WORD_FORGE_BRIDGE_AUDIT_STATUS),
     ]
     shell_entries = _shell_sessions_snapshot().get("entries", [])
     rows.append({
@@ -486,12 +521,11 @@ def get_unified_graph(max_nodes: int = 500) -> Dict[str, Any]:
     return {"nodes": nodes, "edges": edges}
 
 def get_node_neighbors(node_id: str) -> Dict[str, Any]:
-    nodes = []
-    edges = []
+    nodes: List[Dict[str, Any]] = []
+    edges: List[Dict[str, Any]] = []
     seen_edges = set()
-    
-    prefix, actual_id = node_id.split(":", 1) if ":" in node_id else ("", node_id)
-    
+    prefix, _, actual_id = node_id.partition(":")
+
     if prefix == "kb":
         try:
             from knowledge_forge.core.graph import KnowledgeForge
@@ -507,7 +541,7 @@ def get_node_neighbors(node_id: str) -> Dict[str, Any]:
                             "title": f"<b>Knowledge</b><br>{neighbor.content[:200]}",
                             "group": "knowledge",
                             "color": {"background": "#4fd1c5", "border": "#7dd3fc"},
-                            "metadata": neighbor.to_dict()
+                            "metadata": neighbor.to_dict(),
                         })
                         edge = tuple(sorted((node_id, f"kb:{neighbor.id}")))
                         if edge not in seen_edges:
@@ -531,7 +565,7 @@ def get_node_neighbors(node_id: str) -> Dict[str, Any]:
                             "title": f"<b>Memory</b><br>{neighbor.content[:200]}",
                             "group": "memory",
                             "color": {"background": "#f472b6", "border": "#edf7ff"},
-                            "metadata": neighbor.to_dict()
+                            "metadata": neighbor.to_dict(),
                         })
                         edge = tuple(sorted((node_id, f"mem:{neighbor.id}")))
                         if edge not in seen_edges:
@@ -540,29 +574,112 @@ def get_node_neighbors(node_id: str) -> Dict[str, Any]:
         except Exception as e:
             logger.error(f"Memory neighbor error: {e}")
 
-    elif prefix == "word":
+    elif prefix in {"word", "lexeme", "translation"}:
         try:
-            from word_forge.graph.graph_manager import GraphManager
-            gm = GraphManager()
-            if not gm.g or len(gm.g.nodes) == 0:
-                gm.load_graph()
-            if actual_id in gm.g:
-                for neighbor_id in gm.g.neighbors(actual_id):
-                    data = gm.g.nodes[neighbor_id]
-                    nodes.append({
-                        "id": f"word:{neighbor_id}",
-                        "label": str(neighbor_id),
-                        "title": f"<b>Word</b><br>{neighbor_id}",
-                        "group": "lexicon",
-                        "color": {"background": "#fbbf24", "border": "#edf7ff"},
-                        "metadata": data
-                    })
-                    edge = tuple(sorted((node_id, f"word:{neighbor_id}")))
-                    if edge not in seen_edges:
-                        edges.append({"from": edge[0], "to": edge[1], "label": "lexical"})
-                        seen_edges.add(edge)
+            import sqlite3
+            if not WORD_FORGE_DB.exists():
+                return {"nodes": [], "edges": []}
+            with sqlite3.connect(str(WORD_FORGE_DB)) as conn:
+                conn.row_factory = sqlite3.Row
+                if prefix == "word":
+                    term = actual_id
+                    rels = conn.execute(
+                        """
+                        SELECT r.related_term AS term2, r.relationship_type
+                        FROM relationships r
+                        JOIN words w ON w.id = r.word_id
+                        WHERE w.term = ?
+                        LIMIT 32
+                        """,
+                        (term,),
+                    ).fetchall()
+                    for row in rels:
+                        neighbor_term = str(row["term2"])
+                        nodes.append({
+                            "id": f"word:{neighbor_term}",
+                            "label": neighbor_term,
+                            "title": f"<b>Word</b><br>{neighbor_term}",
+                            "group": "lexicon",
+                            "color": {"background": "#fbbf24", "border": "#edf7ff"},
+                            "metadata": {"term": neighbor_term},
+                        })
+                        edge = tuple(sorted((node_id, f"word:{neighbor_term}")))
+                        if edge not in seen_edges:
+                            edges.append({"from": edge[0], "to": edge[1], "label": row["relationship_type"]})
+                            seen_edges.add(edge)
+                    lexemes = conn.execute(
+                        "SELECT lemma, lang, base_term FROM lexemes WHERE lower(base_term) = lower(?) LIMIT 24", (term,)
+                    ).fetchall()
+                    for row in lexemes:
+                        lexeme_id = f"lexeme:{row['lang']}:{row['lemma']}"
+                        nodes.append({
+                            "id": lexeme_id,
+                            "label": f"{row['lemma']} [{row['lang']}]",
+                            "title": f"<b>Lexeme</b><br>{row['lemma']} ({row['lang']})<br>Base: {row['base_term']}",
+                            "group": "multilingual",
+                            "color": {"background": "#60a5fa", "border": "#bfdbfe"},
+                            "metadata": dict(row),
+                        })
+                        edge = tuple(sorted((node_id, lexeme_id)))
+                        if edge not in seen_edges:
+                            edges.append({"from": lexeme_id, "to": node_id, "label": "base_alignment"})
+                            seen_edges.add(edge)
+                elif prefix == "lexeme":
+                    lang, _, lemma = actual_id.partition(":")
+                    row = conn.execute(
+                        "SELECT id, lemma, lang, base_term FROM lexemes WHERE lemma = ? AND lang = ?", (lemma, lang)
+                    ).fetchone()
+                    if row:
+                        if row["base_term"]:
+                            word_id = f"word:{row['base_term']}"
+                            nodes.append({
+                                "id": word_id,
+                                "label": str(row['base_term']),
+                                "title": f"<b>Word</b><br>{row['base_term']}",
+                                "group": "lexicon",
+                                "color": {"background": "#fbbf24", "border": "#edf7ff"},
+                                "metadata": {"term": row['base_term']},
+                            })
+                            edges.append({"from": node_id, "to": word_id, "label": "base_alignment"})
+                        translations = conn.execute(
+                            "SELECT target_lang, target_term, relation FROM translations WHERE lexeme_id = ? LIMIT 24", (row['id'],)
+                        ).fetchall()
+                        for tr in translations:
+                            translation_id = f"translation:{tr['target_lang']}:{tr['target_term']}"
+                            nodes.append({
+                                "id": translation_id,
+                                "label": f"{tr['target_term']} [{tr['target_lang']}]",
+                                "title": f"<b>Translation</b><br>{tr['target_term']} ({tr['target_lang']})",
+                                "group": "translation",
+                                "color": {"background": "#34d399", "border": "#a7f3d0"},
+                                "metadata": dict(tr),
+                            })
+                            edge = tuple(sorted((node_id, translation_id)))
+                            if edge not in seen_edges:
+                                edges.append({"from": node_id, "to": translation_id, "label": tr['relation']})
+                                seen_edges.add(edge)
+                elif prefix == "translation":
+                    lang, _, term = actual_id.partition(":")
+                    lexemes = conn.execute(
+                        "SELECT l.lemma, l.lang, t.relation FROM translations t JOIN lexemes l ON l.id = t.lexeme_id WHERE t.target_lang = ? AND t.target_term = ? LIMIT 24",
+                        (lang, term),
+                    ).fetchall()
+                    for row in lexemes:
+                        lexeme_id = f"lexeme:{row['lang']}:{row['lemma']}"
+                        nodes.append({
+                            "id": lexeme_id,
+                            "label": f"{row['lemma']} [{row['lang']}]",
+                            "title": f"<b>Lexeme</b><br>{row['lemma']} ({row['lang']})",
+                            "group": "multilingual",
+                            "color": {"background": "#60a5fa", "border": "#bfdbfe"},
+                            "metadata": dict(row),
+                        })
+                        edge = tuple(sorted((node_id, lexeme_id)))
+                        if edge not in seen_edges:
+                            edges.append({"from": lexeme_id, "to": node_id, "label": row['relation']})
+                            seen_edges.add(edge)
         except Exception as e:
-            logger.error(f"Word neighbor error: {e}")
+            logger.error(f"Word graph neighbor error: {e}")
 
     return {"nodes": nodes, "edges": edges}
 
@@ -570,63 +687,173 @@ def get_word_graph() -> Dict[str, Any]:
     logger.info("DEBUG: get_word_graph called")
     try:
         import sqlite3
-        from .config import FORGE_ROOT
-        db_path = FORGE_ROOT / "word_forge" / "data" / "word_forge.sqlite"
-        logger.info(f"DEBUG: db_path={db_path}")
+        db_path = WORD_FORGE_DB
         if not db_path.exists():
             return {"nodes": [], "edges": [], "error": f"Database not found: {db_path}"}
-            
-        logger.info("DEBUG: connecting to sqlite")
+
         with sqlite3.connect(str(db_path)) as conn:
             conn.row_factory = sqlite3.Row
-            logger.info("DEBUG: executing query")
-            # Words with aggregated emotional stats
-            words = conn.execute("""
-                SELECT w.term, w.part_of_speech, 
-                       AVG(er.valence) as avg_valence, 
-                       AVG(er.arousal) as avg_arousal 
+            words = conn.execute(
+                """
+                SELECT w.term, w.part_of_speech,
+                       AVG(er.valence) as avg_valence,
+                       AVG(er.arousal) as avg_arousal
                 FROM words w
                 LEFT JOIN emotional_relationships er ON w.id = er.word_id
                 GROUP BY w.id
-                LIMIT 300
-            """).fetchall()
-            logger.info(f"DEBUG: fetched {len(words)} words")
-            
-            rels = conn.execute("""
-                SELECT term1, term2, relationship_type, weight 
-                FROM relationships 
-                LIMIT 500
-            """).fetchall()
-            
-        nodes = []
+                ORDER BY w.last_refreshed DESC
+                LIMIT 220
+                """
+            ).fetchall()
+            rels = conn.execute(
+                """
+                SELECT w.term AS term1, r.related_term AS term2, r.relationship_type
+                FROM relationships r
+                JOIN words w ON w.id = r.word_id
+                ORDER BY r.id DESC
+                LIMIT 400
+                """
+            ).fetchall()
+            lexemes = conn.execute(
+                "SELECT id, lemma, lang, part_of_speech, gloss, base_term FROM lexemes ORDER BY last_refreshed DESC LIMIT 180"
+            ).fetchall()
+            translations = conn.execute(
+                """
+                SELECT l.lemma, l.lang, l.base_term, t.target_lang, t.target_term, t.relation
+                FROM translations t
+                JOIN lexemes l ON l.id = t.lexeme_id
+                ORDER BY t.last_refreshed DESC
+                LIMIT 260
+                """
+            ).fetchall()
+
+        nodes: List[Dict[str, Any]] = []
+        edges: List[Dict[str, Any]] = []
+        seen_edges = set()
+        node_ids: set[str] = set()
+        word_terms: set[str] = set()
+        bridge_terms: set[str] = set()
+
+        def add_node(node: Dict[str, Any]) -> None:
+            node_id = str(node.get("id") or "")
+            if not node_id or node_id in node_ids:
+                return
+            node_ids.add(node_id)
+            nodes.append(node)
+
         for w in words:
             valence = w['avg_valence'] or 0.0
             arousal = w['avg_arousal'] or 0.5
             red = int(255 * (1 - (valence + 1)/2))
             green = int(255 * ((valence + 1)/2))
             color = f"rgb({red}, {green}, 150)"
-            
-            nodes.append({
-                "id": f"word:{w['term']}",
-                "label": w['term'],
-                "title": f"<b>Word</b><br>{w['term']} ({w['part_of_speech']})<br>Valence: {valence:.2f}<br>Arousal: {arousal:.2f}",
+            term = str(w['term'])
+            word_terms.add(term.lower())
+            bridge_terms.add(term.lower())
+            add_node({
+                "id": f"word:{term}",
+                "label": term,
+                "title": f"<b>Word</b><br>{term} ({w['part_of_speech']})<br>Valence: {valence:.2f}<br>Arousal: {arousal:.2f}",
                 "group": "lexicon",
                 "value": 10 + (arousal * 20),
                 "color": {"background": color, "border": "#edf7ff"},
-                "metadata": dict(w)
+                "metadata": dict(w),
             })
-            
-        edges = []
-        seen_edges = set()
+
+        for row in lexemes:
+            lemma = str(row['lemma'])
+            lang = str(row['lang'])
+            base_term = str(row['base_term'] or '')
+            bridge_terms.add(lemma.lower())
+            if base_term:
+                bridge_terms.add(base_term.lower())
+            add_node({
+                "id": f"lexeme:{lang}:{lemma}",
+                "label": f"{lemma} [{lang}]",
+                "title": f"<b>Lexeme</b><br>{lemma} ({lang})<br>{row['gloss'] or ''}",
+                "group": "multilingual",
+                "value": 12,
+                "color": {"background": "#60a5fa", "border": "#bfdbfe"},
+                "metadata": dict(row),
+            })
+            if base_term:
+                word_id = f"word:{base_term}"
+                if word_id not in node_ids:
+                    add_node({
+                        "id": word_id,
+                        "label": base_term,
+                        "title": f"<b>Word</b><br>{base_term}",
+                        "group": "lexicon",
+                        "value": 12,
+                        "color": {"background": "#fbbf24", "border": "#edf7ff"},
+                        "metadata": {"term": base_term, "inferred": True},
+                    })
+                edge = tuple(sorted((f"lexeme:{lang}:{lemma}", word_id)))
+                if edge not in seen_edges:
+                    edges.append({"from": f"lexeme:{lang}:{lemma}", "to": word_id, "label": "base_alignment"})
+                    seen_edges.add(edge)
+
         for r in rels:
             u_id = f"word:{r['term1']}"
             v_id = f"word:{r['term2']}"
-            if any(n["id"] == u_id for n in nodes) and any(n["id"] == v_id for n in nodes):
+            if u_id in node_ids and v_id in node_ids:
                 edge = tuple(sorted((u_id, v_id)))
                 if edge not in seen_edges:
                     edges.append({"from": u_id, "to": v_id, "label": r['relationship_type']})
                     seen_edges.add(edge)
-                
+
+        for tr in translations:
+            source_id = f"lexeme:{tr['lang']}:{tr['lemma']}"
+            target_id = f"translation:{tr['target_lang']}:{tr['target_term']}"
+            if source_id not in node_ids:
+                continue
+            add_node({
+                "id": target_id,
+                "label": f"{tr['target_term']} [{tr['target_lang']}]",
+                "title": f"<b>Translation</b><br>{tr['target_term']} ({tr['target_lang']})",
+                "group": "translation",
+                "value": 10,
+                "color": {"background": "#34d399", "border": "#a7f3d0"},
+                "metadata": dict(tr),
+            })
+            edge = tuple(sorted((source_id, target_id)))
+            if edge not in seen_edges:
+                edges.append({"from": source_id, "to": target_id, "label": tr['relation']})
+                seen_edges.add(edge)
+
+        kb_payload = _read_json(FORGE_ROOT / "data" / "kb.json", {})
+        kb_nodes = kb_payload.get("nodes") if isinstance(kb_payload.get("nodes"), dict) else {}
+        matched_terms = 0
+        for kb_id, kb_node in list(kb_nodes.items())[:500]:
+            if matched_terms >= 32:
+                break
+            if not isinstance(kb_node, dict):
+                continue
+            metadata = kb_node.get("metadata") if isinstance(kb_node.get("metadata"), dict) else {}
+            tags = metadata.get("tags") if isinstance(metadata.get("tags"), list) else []
+            lowered_tags = {str(tag).strip().lower() for tag in tags if isinstance(tag, str)}
+            shared_terms = sorted(term for term in bridge_terms if term in lowered_tags)
+            if not shared_terms:
+                continue
+            kb_node_id = f"kb:{kb_id}"
+            add_node({
+                "id": kb_node_id,
+                "label": kb_id[:8],
+                "title": f"<b>Knowledge</b><br>{str(kb_node.get('content') or '')[:200]}",
+                "group": "knowledge",
+                "value": 14,
+                "color": {"background": "#4fd1c5", "border": "#7dd3fc"},
+                "metadata": kb_node,
+            })
+            for term in shared_terms[:2]:
+                source_id = f"word:{term}"
+                if source_id in node_ids:
+                    edge = tuple(sorted((source_id, kb_node_id)))
+                    if edge not in seen_edges:
+                        edges.append({"from": source_id, "to": kb_node_id, "label": "knowledge_tag"})
+                        seen_edges.add(edge)
+            matched_terms += 1
+
         return {"nodes": nodes, "edges": edges}
     except Exception as e:
         logger.error(f"Word Graph Error: {e}")
