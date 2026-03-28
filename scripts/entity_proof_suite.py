@@ -545,7 +545,7 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
             forge_root=repo_root,
             kb_payload=_load_json(repo_root / "data" / "kb.json") or {},
             code_report=_load_json(repo_root / "reports" / "code_forge_provenance_audit" / "latest.json") or {},
-            file_summary={"db_path": str(repo_root / "data" / "file_forge" / "library.db"), "recent_files": []},
+            file_summary={"db_path": str(repo_root / "data" / "file_forge" / "library.sqlite"), "recent_files": []},
         )
         word_forge_communities = summarize_word_graph_communities(graph_payload, limit=8)
     except Exception:
@@ -1010,12 +1010,13 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
         lexical_bridge_paths.append(str(reports_root / "word_forge_bridge_audit" / "latest.json"))
         bridge_counts = word_forge_bridge.get("bridge_counts") if isinstance(word_forge_bridge.get("bridge_counts"), dict) else {}
         bridge_quality = word_forge_bridge.get("bridge_quality") if isinstance(word_forge_bridge.get("bridge_quality"), dict) else {}
-        lexical_bridge_score += min(0.35, _safe_float(bridge_quality.get("fully_bridged_ratio")) * 0.35)
-        lexical_bridge_score += min(0.25, _safe_float(bridge_quality.get("partially_bridged_ratio")) * 0.25)
+        lexical_bridge_score += min(0.3, _safe_float(bridge_quality.get("fully_bridged_ratio")) * 0.3)
+        lexical_bridge_score += min(0.2, _safe_float(bridge_quality.get("partially_bridged_ratio")) * 0.2)
         lexical_bridge_score += min(0.15, min(1.0, _safe_int(bridge_counts.get("code", 0)) / 3.0) * 0.15)
+        lexical_bridge_score += min(0.1, min(1.0, _safe_int(bridge_counts.get("file", 0)) / 6.0) * 0.1)
         lexical_bridge_score += min(0.1, min(1.0, _safe_int(bridge_counts.get("knowledge", 0)) / 8.0) * 0.1)
         lexical_bridge_strengths.append(
-            f"Word Forge bridge audit present with `{_safe_int(bridge_counts.get('fully_bridged', 0))}` fully bridged terms and full ratio `{_safe_float(bridge_quality.get('fully_bridged_ratio'))}`."
+            f"Word Forge bridge audit present with `{_safe_int(bridge_counts.get('fully_bridged', 0))}` fully bridged terms, `{_safe_int(bridge_counts.get('code', 0))}` code matches, and `{_safe_int(bridge_counts.get('file', 0))}` file matches."
         )
     else:
         lexical_bridge_gaps.append("No Word Forge bridge audit artifact found.")

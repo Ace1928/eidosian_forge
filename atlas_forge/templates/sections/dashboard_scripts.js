@@ -958,6 +958,7 @@ async function refreshWordForgeBridge() {
             document.getElementById('wf-bridge-word').textContent = counts.word ?? 0;
             document.getElementById('wf-bridge-knowledge').textContent = counts.knowledge ?? 0;
             document.getElementById('wf-bridge-code').textContent = counts.code ?? 0;
+            document.getElementById('wf-bridge-file').textContent = counts.file ?? 0;
             document.getElementById('wf-bridge-full').textContent = counts.fully_bridged ?? 0;
             document.getElementById('wf-bridge-partial').textContent = counts.partially_bridged ?? 0;
             document.getElementById('wf-bridge-any').textContent = counts.any_bridged ?? 0;
@@ -971,6 +972,7 @@ async function refreshWordForgeBridge() {
                         <td>${row.word_match ? 1 : 0}</td>
                         <td>${row.knowledge_match ? 1 : 0}</td>
                         <td>${row.code_match ? 1 : 0}</td>
+                        <td>${row.file_match ? 1 : 0}</td>
                     </tr>
                 `).join('');
             }

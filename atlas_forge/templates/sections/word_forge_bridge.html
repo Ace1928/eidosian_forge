@@ -26,6 +26,7 @@
             <div class="stat-label">Word matches: <span id="wf-bridge-word">{{ word_forge_bridge.get('latest_report', {}).get('bridge_counts', {}).get('word', 0) }}</span></div>
             <div class="stat-label">Knowledge matches: <span id="wf-bridge-knowledge">{{ word_forge_bridge.get('latest_report', {}).get('bridge_counts', {}).get('knowledge', 0) }}</span></div>
             <div class="stat-label">Code matches: <span id="wf-bridge-code">{{ word_forge_bridge.get('latest_report', {}).get('bridge_counts', {}).get('code', 0) }}</span></div>
+            <div class="stat-label">File matches: <span id="wf-bridge-file">{{ word_forge_bridge.get('latest_report', {}).get('bridge_counts', {}).get('file', 0) }}</span></div>
             <div class="stat-label">Fully bridged: <span id="wf-bridge-full">{{ word_forge_bridge.get('latest_report', {}).get('bridge_counts', {}).get('fully_bridged', 0) }}</span></div>
             <div class="stat-label">Partially bridged: <span id="wf-bridge-partial">{{ word_forge_bridge.get('latest_report', {}).get('bridge_counts', {}).get('partially_bridged', 0) }}</span></div>
             <div class="stat-label">Any bridged: <span id="wf-bridge-any">{{ word_forge_bridge.get('latest_report', {}).get('bridge_counts', {}).get('any_bridged', 0) }}</span></div>
@@ -89,7 +90,7 @@
         <div class="card">
             <h4 style="margin-top:0;">Top Bridged Terms</h4>
             <table>
-                <thead><tr><th>Term</th><th>Word</th><th>Knowledge</th><th>Code</th></tr></thead>
+                <thead><tr><th>Term</th><th>Word</th><th>Knowledge</th><th>Code</th><th>File</th></tr></thead>
                 <tbody id="wf-bridge-history-body">
                     {% for row in (word_forge_bridge.get('latest_report', {}).get('top_bridged_terms', []) or [])[:10] %}
                     <tr>
@@ -97,6 +98,7 @@
                         <td>{{ 1 if row.get('word_match') else 0 }}</td>
                         <td>{{ 1 if row.get('knowledge_match') else 0 }}</td>
                         <td>{{ 1 if row.get('code_match') else 0 }}</td>
+                        <td>{{ 1 if row.get('file_match') else 0 }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>

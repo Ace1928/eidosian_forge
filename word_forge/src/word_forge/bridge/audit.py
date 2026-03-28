@@ -109,6 +109,36 @@ def _load_knowledge_tokens(kb_path: Path) -> dict[str, Any]:
     }
 
 
+def _load_file_tokens(repo_root: Path) -> dict[str, Any]:
+    db_path = repo_root / "data" / "file_forge" / "library.sqlite"
+    if not db_path.exists():
+        return {"file_count": 0, "path_tokens": set()}
+    try:
+        import sys
+        file_forge_src = repo_root / "file_forge" / "src"
+        lib_root = repo_root / "lib"
+        if str(file_forge_src) not in sys.path:
+            sys.path.insert(0, str(file_forge_src))
+        if str(lib_root) not in sys.path:
+            sys.path.insert(0, str(lib_root))
+        from file_forge.library import FileLibraryDB  # type: ignore
+
+        db = FileLibraryDB(db_path)
+        tokens: set[str] = set()
+        count = 0
+        for row in db.iter_file_records(limit=50000):
+            if not isinstance(row, dict):
+                continue
+            path_text = str(row.get("file_path") or "")
+            if not path_text:
+                continue
+            count += 1
+            tokens.update(_tokenize(path_text))
+        return {"file_count": count, "path_tokens": tokens}
+    except Exception:
+        return {"file_count": 0, "path_tokens": set()}
+
+
 def _load_code_tokens(repo_root: Path) -> dict[str, Any]:
     candidate_roots = [
         repo_root / "data" / "code_forge",
@@ -165,25 +195,29 @@ def build_bridge_audit(repo_root: Path, db_path: Path | None = None) -> dict[str
     word_metrics = _load_word_metrics(db_path)
     knowledge_metrics = _load_knowledge_tokens(kb_path)
     code_metrics = _load_code_tokens(repo_root)
+    file_metrics = _load_file_tokens(repo_root)
 
     base_terms = word_metrics.get("base_terms", [])
     word_terms = word_metrics.get("word_terms", set())
     knowledge_tag_tokens = knowledge_metrics.get("tag_tokens", set())
     knowledge_content_tokens = knowledge_metrics.get("content_tokens", set())
     code_tokens = code_metrics.get("code_tokens", set())
+    file_tokens = file_metrics.get("path_tokens", set())
 
     per_term = []
     for term in base_terms:
         word_match = term in word_terms
         knowledge_match = term in knowledge_tag_tokens or term in knowledge_content_tokens
         code_match = term in code_tokens
+        file_match = term in file_tokens
         per_term.append(
             {
                 "term": term,
                 "word_match": word_match,
                 "knowledge_match": knowledge_match,
                 "code_match": code_match,
-                "bridge_count": int(word_match) + int(knowledge_match) + int(code_match),
+                "file_match": file_match,
+                "bridge_count": int(word_match) + int(knowledge_match) + int(code_match) + int(file_match),
             }
         )
     per_term.sort(key=lambda row: (-int(row["bridge_count"]), row["term"]))
@@ -193,7 +227,8 @@ def build_bridge_audit(repo_root: Path, db_path: Path | None = None) -> dict[str
             "word": sum(1 for row in per_term if row["word_match"]),
             "knowledge": sum(1 for row in per_term if row["knowledge_match"]),
             "code": sum(1 for row in per_term if row["code_match"]),
-            "fully_bridged": sum(1 for row in per_term if row["bridge_count"] >= 3),
+            "file": sum(1 for row in per_term if row["file_match"]),
+            "fully_bridged": sum(1 for row in per_term if row["bridge_count"] >= 4),
             "partially_bridged": sum(1 for row in per_term if row["bridge_count"] >= 2),
             "any_bridged": sum(1 for row in per_term if row["bridge_count"] >= 1),
         }
@@ -230,6 +265,10 @@ def build_bridge_audit(repo_root: Path, db_path: Path | None = None) -> dict[str
             "provenance_stage_counts": (code_metrics.get("provenance") or {}).get("stage_counts", {}),
             "code_token_count": len(code_tokens),
         },
+        "file_metrics": {
+            "file_count": file_metrics.get("file_count", 0),
+            "path_token_count": len(file_tokens),
+        },
         "bridge_counts": dict(bridge_counts),
         "bridge_quality": bridge_quality,
         "top_bridged_terms": per_term[:24],
@@ -240,6 +279,7 @@ def render_bridge_audit_markdown(report: dict[str, Any]) -> str:
     word_metrics = report.get("word_metrics") or {}
     knowledge_metrics = report.get("knowledge_metrics") or {}
     code_metrics = report.get("code_metrics") or {}
+    file_metrics = report.get("file_metrics") or {}
     bridge_counts = report.get("bridge_counts") or {}
     bridge_quality = report.get("bridge_quality") or {}
     rows = report.get("top_bridged_terms") or []
@@ -255,12 +295,14 @@ def render_bridge_audit_markdown(report: dict[str, Any]) -> str:
         f"- Knowledge nodes: `{knowledge_metrics.get('node_count', 0)}`",
         f"- Code provenance links: `{code_metrics.get('provenance_link_file_count', 0)}`",
         f"- Code provenance registries: `{code_metrics.get('provenance_registry_file_count', 0)}`",
+        f"- File Forge files: `{file_metrics.get('file_count', 0)}`",
         "",
         "## Bridge Coverage",
         "",
         f"- Word matches: `{bridge_counts.get('word', 0)}`",
         f"- Knowledge matches: `{bridge_counts.get('knowledge', 0)}`",
         f"- Code matches: `{bridge_counts.get('code', 0)}`",
+        f"- File matches: `{bridge_counts.get('file', 0)}`",
         f"- Fully bridged: `{bridge_counts.get('fully_bridged', 0)}`",
         f"- Partially bridged: `{bridge_counts.get('partially_bridged', 0)}`",
         f"- Any bridged: `{bridge_counts.get('any_bridged', 0)}`",
@@ -271,16 +313,16 @@ def render_bridge_audit_markdown(report: dict[str, Any]) -> str:
         "",
         "## Top Bridged Terms",
         "",
-        "| Term | Word | Knowledge | Code | Bridge Count |",
-        "| --- | ---: | ---: | ---: | ---: |",
+        "| Term | Word | Knowledge | Code | File | Bridge Count |",
+        "| --- | ---: | ---: | ---: | ---: | ---: |",
     ]
     if rows:
         for row in rows:
             lines.append(
-                f"| {row.get('term')} | {int(bool(row.get('word_match')))} | {int(bool(row.get('knowledge_match')))} | {int(bool(row.get('code_match')))} | {row.get('bridge_count', 0)} |"
+                f"| {row.get('term')} | {int(bool(row.get('word_match')))} | {int(bool(row.get('knowledge_match')))} | {int(bool(row.get('code_match')))} | {int(bool(row.get('file_match')))} | {row.get('bridge_count', 0)} |"
             )
     else:
-        lines.append("| none | 0 | 0 | 0 | 0 |")
+        lines.append("| none | 0 | 0 | 0 | 0 | 0 |")
     return "\n".join(lines) + "\n"
 
 

@@ -37,6 +37,14 @@ def test_build_bridge_audit_counts_word_knowledge_and_code_matches(tmp_path: Pat
         encoding="utf-8",
     )
 
+    from file_forge.core import FileForge
+
+    forge = FileForge(base_path=repo_root)
+    archive_file = repo_root / "archive_forge" / "hello_archive.txt"
+    archive_file.parent.mkdir(parents=True, exist_ok=True)
+    archive_file.write_text("hello archive", encoding="utf-8")
+    forge.index_directory(repo_root / "archive_forge", db_path=repo_root / "data" / "file_forge" / "library.sqlite")
+
     prov_path = repo_root / "data" / "code_forge" / "run1" / "provenance_links.json"
     prov_path.parent.mkdir(parents=True, exist_ok=True)
     prov_path.write_text(
@@ -56,6 +64,7 @@ def test_build_bridge_audit_counts_word_knowledge_and_code_matches(tmp_path: Pat
     assert report["bridge_counts"]["word"] == 1
     assert report["bridge_counts"]["knowledge"] == 1
     assert report["bridge_counts"]["code"] == 1
+    assert report["bridge_counts"]["file"] == 1
     assert report["bridge_counts"]["fully_bridged"] == 1
     assert report["bridge_counts"]["partially_bridged"] == 1
     assert report["bridge_counts"]["any_bridged"] == 1

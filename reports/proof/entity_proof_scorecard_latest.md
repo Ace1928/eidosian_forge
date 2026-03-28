@@ -1,18 +1,18 @@
 # Eidos Entity Proof Scorecard
 
-- Generated: `2026-03-28T22:41:21Z`
+- Generated: `2026-03-28T22:52:37Z`
 - Repo root: `/data/data/com.termux/files/home/eidosian_forge`
-- Git head: `31a17f3ac36b808a593b3d86433dc19e707092ba`
+- Git head: `eb30019563cc320665806d079dad5e3c49c0654f`
 - Worktree dirty: `None`
 - Overall status: `yellow`
-- Overall score: `0.741786`
+- Overall score: `0.737024`
 
 ## Categories
 
 | Category | Status | Score |
 | --- | --- | ---: |
 | external_validity | green | 0.95 |
-| lexical_bridge | red | 0.475 |
+| lexical_bridge | red | 0.441667 |
 | identity_continuity | green | 1.0 |
 | governed_self_modification | green | 0.9 |
 | observability | green | 1.0 |
@@ -21,7 +21,6 @@
 
 ## Top Gaps
 
-- `regression`: Overall proof score regressed by `-0.044464` versus `/data/data/com.termux/files/home/eidosian_forge/reports/proof/entity_proof_scorecard_20260328_223950.json`.
 - `external_validity`: Evidence freshness degraded: 0 stale and 1 missing artifacts within a 30-day window.
 - `identity_continuity`: Phenomenological continuity remains weak or zero in the latest surfaced metrics.
 - `governed_self_modification`: Change classes, staged deployment, and constitutional approval thresholds are still incomplete.
@@ -92,8 +91,8 @@
 
 ## Regression
 
-- `status`: `regressed`
-- `overall_delta`: `-0.044464`
+- `status`: `stable`
+- `overall_delta`: `-0.004762`
 
 ## Identity Continuity History
 
@@ -122,10 +121,10 @@
 
 | Anchor | Layers | Neighbors |
 | --- | --- | ---: |
+| archive | knowledge, code, file, multilingual | 56 |
 | atlas | knowledge, multilingual | 6 |
 | integration | knowledge, multilingual | 5 |
 | pipeline | knowledge, multilingual | 3 |
-| archive | knowledge, multilingual | 2 |
 
 ## Session Bridge
 
@@ -150,12 +149,12 @@
 
 | Generated | Status | Score | Freshness | Regression |
 | --- | --- | ---: | --- | --- |
-| 2026-03-20T11:32:19Z | yellow | 0.78625 | yellow | stable |
-| 2026-03-20T11:38:05Z | yellow | 0.78625 | yellow | stable |
 | 2026-03-20T13:07:13Z | yellow | 0.78625 | yellow | stable |
 | 2026-03-20T13:08:15Z | yellow | 0.78625 | yellow | stable |
 | 2026-03-28T22:36:56Z | yellow | 0.78625 | yellow | stable |
 | 2026-03-28T22:39:50Z | yellow | 0.78625 | yellow | stable |
+| 2026-03-28T22:41:21Z | yellow | 0.741786 | yellow | regressed |
+| 2026-03-28T22:46:39Z | yellow | 0.741786 | yellow | stable |
 
 ## Continuity Metrics
 

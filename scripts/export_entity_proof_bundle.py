@@ -276,7 +276,7 @@ def export_bundle(repo_root: Path, output_root: Path) -> dict[str, Any]:
             forge_root=repo_root,
             kb_payload=_load_json(repo_root / "data" / "kb.json") or {},
             code_report=_load_json(repo_root / "reports" / "code_forge_provenance_audit" / "latest.json") or {},
-            file_summary={"db_path": str(repo_root / "data" / "file_forge" / "library.db"), "recent_files": []},
+            file_summary={"db_path": str(repo_root / "data" / "file_forge" / "library.sqlite"), "recent_files": []},
         )
         word_forge_communities = summarize_word_graph_communities(graph_payload, limit=8)
     except Exception:
