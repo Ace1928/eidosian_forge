@@ -34,7 +34,7 @@ from word_forge.database.database_manager import DBManager
 from word_forge.graph.graph_manager import GraphManager
 from word_forge.multilingual import ingest_kaikki_jsonl, ingest_wiktextract_jsonl
 from word_forge.multilingual.multilingual_manager import MultilingualManager
-from word_forge.parser.language_model import ModelState
+from word_forge.parser.language_model import ModelState, default_word_forge_model_name
 from word_forge.parser.lexical_functions import create_lexical_dataset, generate_comprehensive_enrichment
 from word_forge.queue.queue_manager import QueueManager, TaskPriority
 from word_forge.vectorizer.vector_store import VectorStore
@@ -173,7 +173,7 @@ class Monitor:
             "queue_size": self.queue_size,
             "last_term": self.last_term,
             "last_heartbeat": datetime.now().isoformat(),
-            "model": "qwen/qwen3.5-2b-instruct",
+            "model": default_word_forge_model_name(),
         }
         with open(self.status_file, "w") as f:
             json.dump(status_data, f, indent=2)
@@ -602,7 +602,7 @@ class LLMFillWorker(threading.Thread):
         self.db = db_manager
         self.graph = graph_manager
         self.monitor = monitor
-        self.model_state = ModelState(model_name="ollama:qwen3.5:2b-Instruct")
+        self.model_state = ModelState(model_name=default_word_forge_model_name())
         self._stop_event = threading.Event()
 
     def _entry_complete(self, entry: Dict[str, Any]) -> bool:
@@ -614,7 +614,7 @@ class LLMFillWorker(threading.Thread):
         return bool(definition and has_examples)
 
     def run(self):
-        LOGGER.info("LLMFillWorker started with qwen/qwen3.5-2b-instruct")
+        LOGGER.info("LLMFillWorker started with %s", self.model_state.get_model_name())
         if not self.model_state.initialize():
             LOGGER.error("LLM model initialization failed. LLMFillWorker stopping.")
             return

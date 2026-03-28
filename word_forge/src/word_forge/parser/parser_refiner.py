@@ -531,7 +531,7 @@ class ParserRefiner:
         self.queue_manager = queue_manager if queue_manager is not None else QueueManager[str]()
         self.resources = LexicalResources(data_dir)
         
-        self.llm_state = llm_state or ModelState(model_name or "qwen/qwen3.5-2b-instruct")
+        self.llm_state = llm_state or ModelState(model_name)
         self.term_extractor = TermExtractor(model_state=self.llm_state)
         self.stats = ProcessingStatistics()
         

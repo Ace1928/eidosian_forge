@@ -2,8 +2,8 @@
 """
 Verify Local LLM Functionality.
 
-This script instantiates the ModelState, checks if the model (qwen/qwen3.5-2b-instruct)
-can be loaded, and attempts a simple text generation task.
+This script instantiates the ModelState, checks if the default configured Word Forge
+model can be loaded, and attempts a simple text generation task.
 It verifies that timeouts and device placement are handled correctly.
 """
 

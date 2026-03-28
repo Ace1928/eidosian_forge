@@ -1,6 +1,11 @@
 # Import PathLike for model paths
+import os
+import re
+import shutil
+import subprocess
 from os import PathLike
-from typing import Any, Dict, List, Optional, Union, cast
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Sequence, Union, cast
 
 from eidosian_core import eidosian
 from eidosian_core.ports import get_service_url
@@ -8,6 +13,82 @@ from eidosian_core.ports import get_service_url
 OLLAMA_GENERATE_URL = get_service_url(
     "ollama_http", default_port=11434, default_host="localhost", default_path="/api/generate"
 )
+
+FORGE_ROOT = Path(__file__).resolve().parents[4]
+DEFAULT_REMOTE_MODEL = "qwen/qwen3.5-2b-instruct"
+DEFAULT_LOCAL_GGUF_CANDIDATES = (
+    FORGE_ROOT / "models" / "Qwen3.5-0.8B-Q4_K_M.gguf",
+    FORGE_ROOT / "models" / "Qwen3.5-0.8B-IQ4_XS.gguf",
+    FORGE_ROOT / "models" / "Qwen3.5-2B-Instruct-Q4_K_M.gguf",
+    FORGE_ROOT / "models" / "Qwen2.5-0.5B-Instruct-Q8_0.gguf",
+)
+DEFAULT_LLAMA_CLI_CANDIDATES = (
+    FORGE_ROOT / "llama.cpp" / "build" / "bin" / "llama-cli",
+    FORGE_ROOT / "llm_forge" / "bin" / "llama-cli",
+)
+
+
+def _resolve_existing_path(candidates: Sequence[Path]) -> Optional[Path]:
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return None
+
+
+def _resolve_llama_cli_path() -> Optional[Path]:
+    env_path = os.environ.get("EIDOS_WORD_FORGE_LLAMA_CLI") or os.environ.get("EIDOS_LLAMA_CPP_CLI_PATH")
+    if env_path:
+        path = Path(env_path).expanduser()
+        if path.exists():
+            return path
+    direct = _resolve_existing_path(DEFAULT_LLAMA_CLI_CANDIDATES)
+    if direct is not None:
+        return direct
+    which_path = shutil.which("llama-cli")
+    return Path(which_path) if which_path else None
+
+
+def default_word_forge_model_name() -> str:
+    override = os.environ.get("EIDOS_WORD_FORGE_LLM_MODEL")
+    if override:
+        return override
+    explicit_local = os.environ.get("EIDOS_WORD_FORGE_GGUF_MODEL")
+    if explicit_local:
+        path = Path(explicit_local).expanduser()
+        if path.exists():
+            return f"gguf:{path}"
+    local_model = _resolve_existing_path(DEFAULT_LOCAL_GGUF_CANDIDATES)
+    if local_model is not None:
+        return f"gguf:{local_model}"
+    return DEFAULT_REMOTE_MODEL
+
+
+def _coerce_gguf_model_path(model_name: str) -> Optional[Path]:
+    candidate = model_name.strip()
+    if candidate.startswith("gguf:"):
+        candidate = candidate.split("gguf:", 1)[1].strip()
+    if not candidate:
+        return None
+    if candidate.endswith(".gguf"):
+        path = Path(candidate).expanduser()
+        return path if path.exists() else None
+    return None
+
+
+def _clean_llama_cli_output(raw_output: str) -> str:
+    text = raw_output.replace("\r\n", "\n")
+    text = text.replace("Exiting...", "")
+    if "\n\n> " in text:
+        text = text.split("\n\n> ", 1)[1]
+        blocks = [block.strip() for block in text.split("\n\n") if block.strip()]
+        if len(blocks) >= 2:
+            text = blocks[1]
+        elif blocks:
+            text = blocks[-1]
+    text = text.strip()
+    text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"\s*```$", "", text)
+    return text.strip()
 
 try:  # Optional heavy dependencies
     import torch
@@ -57,11 +138,13 @@ class ModelState:
 
     def __init__(
         self,
-        model_name: str = "qwen/qwen3.5-2b-instruct",
+        model_name: Optional[str] = None,
         device: Optional[Any] = None,
     ) -> None:
-        self.model_name = model_name
+        self.model_name = model_name or default_word_forge_model_name()
         self._ollama_model: Optional[str] = None
+        self._gguf_model_path: Optional[Path] = None
+        self._llama_cli_path: Optional[Path] = None
         if torch is not None and hasattr(torch, "device"):
             self.device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
         else:
@@ -87,6 +170,9 @@ class ModelState:
     def set_model(self, model_name: str) -> None:
         """Change the model and reset initialization state."""
         self.model_name = model_name
+        self._ollama_model = None
+        self._gguf_model_path = None
+        self._llama_cli_path = None
         self._initialized = False  # Force reinitialization with new model
 
     @eidosian()
@@ -109,6 +195,16 @@ class ModelState:
                 self._ollama_model = self.model_name.split("ollama:", 1)[1].strip()
                 if not self._ollama_model:
                     raise ValueError("Ollama model name is empty")
+                self._initialized = True
+                return True
+
+            gguf_model_path = _coerce_gguf_model_path(self.model_name)
+            if gguf_model_path is not None:
+                llama_cli_path = _resolve_llama_cli_path()
+                if llama_cli_path is None:
+                    raise FileNotFoundError("llama-cli not found for GGUF model backend")
+                self._gguf_model_path = gguf_model_path
+                self._llama_cli_path = llama_cli_path
                 self._initialized = True
                 return True
 
@@ -183,6 +279,13 @@ class ModelState:
 
         if self.model_name.startswith("ollama:"):
             return self._generate_text_ollama(
+                prompt=prompt,
+                max_new_tokens=max_new_tokens,
+                temperature=temperature,
+            )
+
+        if self._gguf_model_path is not None:
+            return self._generate_text_gguf(
                 prompt=prompt,
                 max_new_tokens=max_new_tokens,
                 temperature=temperature,
@@ -328,6 +431,79 @@ class ModelState:
                 print(f"Failure threshold ({self._max_failures}) reached. Disabling model.")
             print(f"Ollama generation failed: {str(e)}")
             return None
+
+    def _generate_text_gguf(
+        self,
+        prompt: str,
+        max_new_tokens: Optional[int],
+        temperature: float,
+    ) -> Optional[str]:
+        """Generate text via local llama.cpp GGUF inference."""
+        if self._gguf_model_path is None or self._llama_cli_path is None:
+            print("GGUF model or llama-cli path is not configured.")
+            return None
+
+        try:
+            if max_new_tokens is None:
+                max_new_tokens = 64
+            if max_new_tokens > 128:
+                max_new_tokens = 128
+
+            cmd = [
+                str(self._llama_cli_path),
+                "-m",
+                str(self._gguf_model_path),
+                "-p",
+                prompt,
+                "-st",
+                "--reasoning-budget",
+                "0",
+                "-n",
+                str(max_new_tokens),
+                "-c",
+                "1024",
+                "-t",
+                str(min(max((os.cpu_count() or 2) // 2, 1), 4)),
+                "--temp",
+                str(temperature),
+                "--top-k",
+                "20",
+                "--top-p",
+                "0.9",
+                "--simple-io",
+                "--no-display-prompt",
+                "--no-show-timings",
+                "--log-disable",
+            ]
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=180,
+                env=self._subprocess_env(),
+                check=False,
+            )
+            if result.returncode != 0:
+                raise RuntimeError(result.stderr.strip() or result.stdout.strip() or f"llama-cli exited {result.returncode}")
+            response = _clean_llama_cli_output(result.stdout)
+            return response or None
+        except Exception as e:
+            self._inference_failures += 1
+            if self._inference_failures >= self._max_failures:
+                self._failure_threshold_reached = True
+                print(f"Failure threshold ({self._max_failures}) reached. Disabling model.")
+            print(f"GGUF generation failed: {str(e)}")
+            return None
+
+    def _subprocess_env(self) -> Dict[str, str]:
+        env = os.environ.copy()
+        if self._llama_cli_path is None:
+            return env
+        bin_dir = str(self._llama_cli_path.parent.resolve())
+        env["PATH"] = f"{bin_dir}:{env.get('PATH', '')}"
+        ld_library = env.get("LD_LIBRARY_PATH", "")
+        env["LD_LIBRARY_PATH"] = f"{bin_dir}:{ld_library}" if ld_library else bin_dir
+        return env
 
     @eidosian()
     def query(
