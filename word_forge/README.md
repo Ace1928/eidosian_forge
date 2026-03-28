@@ -67,6 +67,7 @@ word_forge start intelligence consciousness --minutes 10 --workers 4
 - Incremental by source signature
 - Writes runtime status/history under `data/runtime/`
 - Publishes reports under `reports/word_forge_multilingual_ingest/`
+- Starter sample available at `word_forge/data/samples/multilingual_seed_wiktextract.jsonl`
 
 ### Bridge Audit
 

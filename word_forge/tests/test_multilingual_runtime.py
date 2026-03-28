@@ -36,6 +36,9 @@ def test_run_multilingual_ingest_writes_status_and_reports(tmp_path: Path) -> No
     assert result["report"]["deltas"]["lexeme_delta"] == 1
     assert result["report"]["deltas"]["translation_delta"] == 1
     assert result["report"]["deltas"]["base_aligned_delta"] == 1
+    from word_forge.database.database_manager import DBManager
+    db = DBManager(db_path=db_path)
+    assert db.get_word_id("hello") > 0
     assert (repo_root / "data" / "runtime" / "word_forge_multilingual_ingest_status.json").exists()
     assert (repo_root / "data" / "runtime" / "word_forge_multilingual_ingest_history.jsonl").exists()
     assert Path(result["artifacts"]["latest_json"]).exists()

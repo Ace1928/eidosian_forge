@@ -92,6 +92,7 @@ def ingest_wiktextract_jsonl(
             )
             if target_lang == base_lang:
                 manager.db.update_lexeme_base(lemma=lemma, lang=lang, base_term=target_term)
+                manager.ensure_base_word(target_term, definition=gloss, part_of_speech=pos)
 
         count += 1
         if limit and count >= limit:
@@ -157,6 +158,7 @@ def ingest_kaikki_jsonl(
                 )
                 if target_lang == base_lang:
                     manager.db.update_lexeme_base(lemma=lemma, lang=lang, base_term=target_term)
+                manager.ensure_base_word(target_term, definition=gloss, part_of_speech=pos)
 
         count += 1
         if limit and count >= limit:

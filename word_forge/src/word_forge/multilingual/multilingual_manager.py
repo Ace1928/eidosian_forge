@@ -66,6 +66,30 @@ class MultilingualManager:
         except TermNotFoundError:
             self.db.insert_or_update_lexeme(lemma=lemma, lang=lang, base_term=english_term)
 
+    def ensure_base_word(
+        self,
+        english_term: str,
+        *,
+        definition: str = "",
+        part_of_speech: str = "",
+    ) -> None:
+        """Ensure an English base term exists in the core Word Forge word table."""
+        term = str(english_term or "").strip()
+        if not term:
+            return
+        try:
+            self.db.get_word_id(term)
+            return
+        except TermNotFoundError:
+            pass
+        definition_text = definition.strip() or f"Base alignment imported for multilingual lexeme '{term}'."
+        self.db.insert_or_update_word(
+            term=term,
+            definition=definition_text,
+            part_of_speech=part_of_speech or "",
+            usage_examples=[],
+        )
+
     def ingest_translation_batch(
         self,
         lemma: str,

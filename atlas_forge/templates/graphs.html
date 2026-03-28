@@ -85,6 +85,9 @@
             <div class="filter-item"><input type="checkbox" id="filter-mem" checked onchange="updateFilters()"> <span class="legend-dot" style="background:#f472b6"></span> Memory</div>
             <div class="filter-item"><input type="checkbox" id="filter-file" checked onchange="updateFilters()"> <span class="legend-dot" style="background:#94a3b8"></span> Files</div>
             <div class="filter-item"><input type="checkbox" id="filter-word" onchange="toggleWordGraph()"> <span class="legend-dot" style="background:#fbbf24"></span> Lexicon (Word Forge)</div>
+            <div class="filter-item"><input type="checkbox" id="filter-multilingual" checked onchange="updateFilters()"> <span class="legend-dot" style="background:#60a5fa"></span> Multilingual Lexemes</div>
+            <div class="filter-item"><input type="checkbox" id="filter-translation" checked onchange="updateFilters()"> <span class="legend-dot" style="background:#34d399"></span> Translations</div>
+            <div class="filter-item"><input type="checkbox" id="filter-word-knowledge" checked onchange="updateFilters()"> <span class="legend-dot" style="background:#4fd1c5"></span> Word↔Knowledge Bridge</div>
         </div>
 
         <div class="control-group">
@@ -210,22 +213,40 @@
             btn.onclick = () => window.open(`/browse/forge/${path}`, '_blank');
             actions.appendChild(btn);
         }
+        if (node.id.startsWith('word:') || node.id.startsWith('lexeme:') || node.id.startsWith('translation:') || node.id.startsWith('kb:')) {
+            const btn = document.createElement('button');
+            btn.textContent = 'Expand Neighbors';
+            btn.style.width = '100%';
+            btn.onclick = () => expandNode(node.id);
+            actions.appendChild(btn);
+        }
     }
 
     function updateFilters() {
         const showKb = document.getElementById('filter-kb').checked;
         const showMem = document.getElementById('filter-mem').checked;
         const showFile = document.getElementById('filter-file').checked;
+        const showMultilingual = document.getElementById('filter-multilingual').checked;
+        const showTranslation = document.getElementById('filter-translation').checked;
+        const showWordKnowledge = document.getElementById('filter-word-knowledge').checked;
 
         const filteredNodes = rawData.nodes.filter(n => {
             if (n.id.startsWith('kb:') && !showKb) return false;
             if (n.id.startsWith('mem:') && !showMem) return false;
             if (n.id.startsWith('file:') && !showFile) return false;
+            if ((n.group === 'multilingual') && !showMultilingual) return false;
+            if ((n.group === 'translation') && !showTranslation) return false;
+            if (isWordGraph && n.id.startsWith('kb:') && !showWordKnowledge) return false;
             return true;
         });
 
+        const filteredIds = new Set(filteredNodes.map(n => n.id));
+        const filteredEdges = rawData.edges.filter(e => filteredIds.has(e.from) && filteredIds.has(e.to));
+
         currentNodes.clear();
+        currentEdges.clear();
         currentNodes.add(filteredNodes);
+        currentEdges.add(filteredEdges);
     }
 
     function toggleWordGraph() {

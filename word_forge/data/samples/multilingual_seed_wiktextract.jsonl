@@ -1,0 +1,11 @@
+{"word":"bonjour","lang":"fr","lang_code":"fr","pos":"interj","senses":[{"glosses":["hello"]}],"translations":[{"lang":"en","word":"hello"}]}
+{"word":"hola","lang":"es","lang_code":"es","pos":"interj","senses":[{"glosses":["hello"]}],"translations":[{"lang":"en","word":"hello"}]}
+{"word":"hallo","lang":"de","lang_code":"de","pos":"interj","senses":[{"glosses":["hello"]}],"translations":[{"lang":"en","word":"hello"}]}
+{"word":"adiós","lang":"es","lang_code":"es","pos":"interj","senses":[{"glosses":["goodbye"]}],"translations":[{"lang":"en","word":"goodbye"}]}
+{"word":"au revoir","lang":"fr","lang_code":"fr","pos":"phrase","senses":[{"glosses":["goodbye"]}],"translations":[{"lang":"en","word":"goodbye"}]}
+{"word":"horizonte","lang":"es","lang_code":"es","pos":"noun","senses":[{"glosses":["horizon"]}],"translations":[{"lang":"en","word":"horizon"}]}
+{"word":"integración","lang":"es","lang_code":"es","pos":"noun","senses":[{"glosses":["integration"]}],"translations":[{"lang":"en","word":"integration"}]}
+{"word":"preuve","lang":"fr","lang_code":"fr","pos":"noun","senses":[{"glosses":["proof"]}],"translations":[{"lang":"en","word":"proof"}]}
+{"word":"canalización","lang":"es","lang_code":"es","pos":"noun","senses":[{"glosses":["pipeline"]}],"translations":[{"lang":"en","word":"pipeline"}]}
+{"word":"archivo","lang":"es","lang_code":"es","pos":"noun","senses":[{"glosses":["archive"]}],"translations":[{"lang":"en","word":"archive"}]}
+{"word":"atlas","lang":"la","lang_code":"la","pos":"noun","senses":[{"glosses":["atlas"]}],"translations":[{"lang":"en","word":"atlas"}]}
