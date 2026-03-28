@@ -1,6 +1,6 @@
 # Word Forge Bridge Audit
 
-- Generated: `2026-03-28T22:52:10.257677+00:00`
+- Generated: `2026-03-28T23:14:29.624389+00:00`
 - Words: `3952`
 - Relationships: `1414`
 - Lexemes: `11`
@@ -9,20 +9,24 @@
 - Knowledge nodes: `4596`
 - Code provenance links: `3`
 - Code provenance registries: `3`
-- File Forge files: `81`
+- Code library units: `242753`
+- Code library files: `6253`
+- File Forge files: `951`
+- File Forge links: `2954`
+- File Forge relationships: `2802`
 
 ## Bridge Coverage
 
 - Word matches: `8`
 - Knowledge matches: `7`
-- Code matches: `1`
-- File matches: `1`
-- Fully bridged: `1`
-- Partially bridged: `7`
+- Code matches: `4`
+- File matches: `8`
+- Fully bridged: `4`
+- Partially bridged: `8`
 - Any bridged: `8`
 - Candidate terms: `8`
-- Full bridge ratio: `0.125`
-- Partial bridge ratio: `0.875`
+- Full bridge ratio: `0.5`
+- Partial bridge ratio: `1.0`
 - Any bridge ratio: `1.0`
 
 ## Top Bridged Terms
@@ -30,10 +34,10 @@
 | Term | Word | Knowledge | Code | File | Bridge Count |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | archive | 1 | 1 | 1 | 1 | 4 |
-| atlas | 1 | 1 | 0 | 0 | 2 |
-| hello | 1 | 1 | 0 | 0 | 2 |
-| horizon | 1 | 1 | 0 | 0 | 2 |
-| integration | 1 | 1 | 0 | 0 | 2 |
-| pipeline | 1 | 1 | 0 | 0 | 2 |
-| proof | 1 | 1 | 0 | 0 | 2 |
-| goodbye | 1 | 0 | 0 | 0 | 1 |
+| atlas | 1 | 1 | 1 | 1 | 4 |
+| integration | 1 | 1 | 1 | 1 | 4 |
+| pipeline | 1 | 1 | 1 | 1 | 4 |
+| hello | 1 | 1 | 0 | 1 | 3 |
+| horizon | 1 | 1 | 0 | 1 | 3 |
+| proof | 1 | 1 | 0 | 1 | 3 |
+| goodbye | 1 | 0 | 0 | 1 | 2 |

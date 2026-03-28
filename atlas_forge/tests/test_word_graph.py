@@ -168,3 +168,53 @@ def test_summarize_word_graph_communities_detects_multi_layer_anchor_terms(tmp_p
     assert "code" in top["layers"]
     assert "file" in top["layers"]
     assert "knowledge" in top["layers"]
+
+
+def test_build_word_graph_payload_uses_code_library_and_file_preview_fallbacks(tmp_path: Path) -> None:
+    db_path = tmp_path / "word_forge.sqlite"
+    _make_db(db_path)
+
+    code_db = tmp_path / "data" / "code_forge" / "library.sqlite"
+    code_db.parent.mkdir(parents=True, exist_ok=True)
+    with sqlite3.connect(str(code_db)) as conn:
+        conn.executescript(
+            """
+            CREATE TABLE code_units (
+                id TEXT PRIMARY KEY,
+                file_path TEXT NOT NULL,
+                qualified_name TEXT,
+                name TEXT,
+                language TEXT,
+                unit_type TEXT,
+                created_at TEXT
+            );
+            """
+        )
+        conn.execute(
+            "INSERT INTO code_units (id, file_path, qualified_name, name, language, unit_type, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            ("u1", str(tmp_path / "archive_pipeline.py"), "archive.pipeline.run", "run", "python", "function", "2026-03-28T00:00:00Z"),
+        )
+
+    payload = build_word_graph_payload(
+        db_path=db_path,
+        forge_root=tmp_path,
+        kb_payload={"nodes": {}},
+        code_report={"latest_entries": []},
+        file_summary={
+            "recent_files": [
+                {
+                    "file_path": str(tmp_path / "notes.md"),
+                    "kind": "document",
+                    "text_preview": "archive pipeline notes",
+                    "links": [{"forge": "knowledge_forge", "relation": "documents", "detail": {"topic": "archive"}}],
+                }
+            ]
+        },
+    )
+
+    groups = {node["group"] for node in payload["nodes"]}
+    labels = {edge["label"] for edge in payload["edges"]}
+    assert "code" in groups
+    assert "file" in groups
+    assert "code_provenance" in labels
+    assert "file_path" in labels

@@ -145,6 +145,8 @@ def get_word_forge_bridge_summary() -> Dict[str, Any]:
     latest_report = latest if isinstance(latest, dict) else {}
     bridge_counts = latest_report.get("bridge_counts", {}) if isinstance(latest_report.get("bridge_counts"), dict) else {}
     bridge_quality = latest_report.get("bridge_quality", {}) if isinstance(latest_report.get("bridge_quality"), dict) else {}
+    code_metrics = latest_report.get("code_metrics", {}) if isinstance(latest_report.get("code_metrics"), dict) else {}
+    file_metrics = latest_report.get("file_metrics", {}) if isinstance(latest_report.get("file_metrics"), dict) else {}
     return {
         "contract": "eidos.word_forge.bridge.summary.v1",
         "status": _read_json(WORD_FORGE_BRIDGE_AUDIT_STATUS, {"status": "idle"}),
@@ -152,6 +154,8 @@ def get_word_forge_bridge_summary() -> Dict[str, Any]:
         "latest_report": latest_report,
         "bridge_counts": bridge_counts,
         "bridge_quality": bridge_quality,
+        "code_metrics": code_metrics,
+        "file_metrics": file_metrics,
         "history_summary": {
             "run_count": len(history),
             "last_completed_at": latest_completed.get("finished_at") or latest_completed.get("generated_at") or "",

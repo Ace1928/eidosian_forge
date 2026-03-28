@@ -964,6 +964,8 @@ async function refreshWordForgeBridge() {
             document.getElementById('wf-bridge-any').textContent = counts.any_bridged ?? 0;
             document.getElementById('wf-bridge-ratio').textContent = quality.fully_bridged_ratio ?? 0;
             document.getElementById('wf-bridge-communities').textContent = communities.community_count ?? 0;
+            document.getElementById('wf-bridge-code-units').textContent = summary.code_metrics?.code_library_unit_count ?? 0;
+            document.getElementById('wf-bridge-file-links').textContent = summary.file_metrics?.link_count ?? 0;
             const body = document.getElementById('wf-bridge-history-body');
             if (body) {
                 body.innerHTML = (report.top_bridged_terms || []).slice(0, 10).map((row) => `

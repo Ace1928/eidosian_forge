@@ -1,18 +1,18 @@
 # Eidos Entity Proof Scorecard
 
-- Generated: `2026-03-28T22:52:37Z`
+- Generated: `2026-03-28T23:15:08Z`
 - Repo root: `/data/data/com.termux/files/home/eidosian_forge`
-- Git head: `eb30019563cc320665806d079dad5e3c49c0654f`
+- Git head: `b32bde1324131476709df436c882fd6cd933b419`
 - Worktree dirty: `None`
 - Overall status: `yellow`
-- Overall score: `0.737024`
+- Overall score: `0.782857`
 
 ## Categories
 
 | Category | Status | Score |
 | --- | --- | ---: |
 | external_validity | green | 0.95 |
-| lexical_bridge | red | 0.441667 |
+| lexical_bridge | yellow | 0.7625 |
 | identity_continuity | green | 1.0 |
 | governed_self_modification | green | 0.9 |
 | observability | green | 1.0 |
@@ -92,7 +92,7 @@
 ## Regression
 
 - `status`: `stable`
-- `overall_delta`: `-0.004762`
+- `overall_delta`: `0.0`
 
 ## Identity Continuity History
 
@@ -112,18 +112,18 @@
 
 ## Word Forge Bridge
 
-- `fully_bridged`: `1`
-- `partially_bridged`: `7`
+- `fully_bridged`: `4`
+- `partially_bridged`: `8`
 - `any_bridged`: `8`
 - `candidate_term_count`: `8`
-- `fully_bridged_ratio`: `0.125`
+- `fully_bridged_ratio`: `0.5`
 - `community_count`: `4`
 
 | Anchor | Layers | Neighbors |
 | --- | --- | ---: |
-| archive | knowledge, code, file, multilingual | 56 |
+| archive | knowledge, code, file, multilingual | 70 |
+| integration | knowledge, file, multilingual | 6 |
 | atlas | knowledge, multilingual | 6 |
-| integration | knowledge, multilingual | 5 |
 | pipeline | knowledge, multilingual | 3 |
 
 ## Session Bridge
@@ -143,18 +143,18 @@
 
 ## Proof History
 
-- `trend`: `stable`
-- `delta_from_previous`: `0.0`
+- `trend`: `improved`
+- `delta_from_previous`: `0.045833`
 - `sample_count`: `6`
 
 | Generated | Status | Score | Freshness | Regression |
 | --- | --- | ---: | --- | --- |
-| 2026-03-20T13:07:13Z | yellow | 0.78625 | yellow | stable |
-| 2026-03-20T13:08:15Z | yellow | 0.78625 | yellow | stable |
 | 2026-03-28T22:36:56Z | yellow | 0.78625 | yellow | stable |
 | 2026-03-28T22:39:50Z | yellow | 0.78625 | yellow | stable |
 | 2026-03-28T22:41:21Z | yellow | 0.741786 | yellow | regressed |
 | 2026-03-28T22:46:39Z | yellow | 0.741786 | yellow | stable |
+| 2026-03-28T22:52:37Z | yellow | 0.737024 | yellow | stable |
+| 2026-03-28T23:09:38Z | yellow | 0.782857 | yellow | improved |
 
 ## Continuity Metrics
 

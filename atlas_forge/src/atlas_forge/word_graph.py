@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import sqlite3
 from collections import Counter
 from pathlib import Path
@@ -121,6 +122,38 @@ def _coerce_code_entries(code_report: Optional[dict[str, Any]], forge_root: Path
                 return coerced[:limit]
         if len(coerced) >= limit:
             return coerced[:limit]
+
+    library_db = forge_root / "data" / "code_forge" / "library.sqlite"
+    if library_db.exists():
+        try:
+            with sqlite3.connect(str(library_db)) as conn:
+                conn.row_factory = sqlite3.Row
+                rows = conn.execute(
+                    """
+                    SELECT file_path, qualified_name, name, language, unit_type, created_at
+                    FROM code_units
+                    ORDER BY created_at DESC
+                    LIMIT 300
+                    """
+                ).fetchall()
+            for row in rows:
+                path_text = str(row["file_path"] or "")
+                if not path_text:
+                    continue
+                coerced.append(
+                    {
+                        "path": path_text,
+                        "root_path": str(forge_root),
+                        "stage": str(row["unit_type"] or row["language"] or "code_library"),
+                        "qualified_name": str(row["qualified_name"] or ""),
+                        "name": str(row["name"] or ""),
+                        "generated_at": str(row["created_at"] or ""),
+                    }
+                )
+                if len(coerced) >= limit:
+                    return coerced[:limit]
+        except Exception:
+            pass
     return coerced[:limit]
 
 
@@ -158,6 +191,9 @@ def _coerce_file_entries(
                     "updated_at": row.get("updated_at") or row.get("modified_ns") or "",
                     "size_bytes": int(row.get("size_bytes") or 0),
                     "content_hash": row.get("content_hash"),
+                    "text_preview": str(row.get("text_preview") or ""),
+                    "links": db.list_links(file_path),
+                    "relationships": db.list_relationships(file_path),
                 }
             )
             if len(entries) + len(matched) >= limit:
@@ -322,7 +358,7 @@ def build_word_graph_payload(
         path_text = str(entry.get("path") or entry.get("root_path") or f"code_entry_{index}")
         stage = str(entry.get("stage") or "code")
         code_id = f"code:{index}:{path_text}"
-        token_source = f"{path_text}\n{stage}"
+        token_source = f"{path_text}\n{stage}\n{entry.get('qualified_name') or ''}\n{entry.get('name') or ''}"
         shared_terms = sorted(term for term in bridge_terms if term in _tokenize(token_source))
         if not shared_terms:
             continue
@@ -347,7 +383,17 @@ def build_word_graph_payload(
         path_text = str(entry.get("file_path") or "")
         if not path_text:
             continue
-        shared_terms = sorted(term for term in bridge_terms if term in _tokenize(path_text))
+        token_source = [path_text, str(entry.get("text_preview") or "")]
+        for link in entry.get("links") or []:
+            if isinstance(link, dict):
+                token_source.append(str(link.get("forge") or ""))
+                token_source.append(str(link.get("relation") or ""))
+                token_source.append(json.dumps(link.get("detail") or {}, sort_keys=True))
+        for relationship in entry.get("relationships") or []:
+            if isinstance(relationship, dict):
+                token_source.append(str(relationship.get("dst_path") or ""))
+                token_source.append(str(relationship.get("rel_type") or ""))
+        shared_terms = sorted(term for term in bridge_terms if term in _tokenize("\n".join(token_source)))
         if not shared_terms:
             continue
         file_id = f"file:{path_text}"

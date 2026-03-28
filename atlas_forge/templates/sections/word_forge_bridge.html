@@ -32,6 +32,8 @@
             <div class="stat-label">Any bridged: <span id="wf-bridge-any">{{ word_forge_bridge.get('latest_report', {}).get('bridge_counts', {}).get('any_bridged', 0) }}</span></div>
             <div class="stat-label">Full ratio: <span id="wf-bridge-ratio">{{ word_forge_bridge.get('bridge_quality', {}).get('fully_bridged_ratio', 0.0) }}</span></div>
             <div class="stat-label">Bridge communities: <span id="wf-bridge-communities">{{ word_forge_bridge.get('community_summary', {}).get('community_count', 0) }}</span></div>
+            <div class="stat-label">Code units: <span id="wf-bridge-code-units">{{ word_forge_bridge.get('code_metrics', {}).get('code_library_unit_count', 0) }}</span></div>
+            <div class="stat-label">File links: <span id="wf-bridge-file-links">{{ word_forge_bridge.get('file_metrics', {}).get('link_count', 0) }}</span></div>
         </div>
     </div>
 

@@ -89,3 +89,72 @@ def test_run_bridge_audit_writes_runtime_and_latest_report(tmp_path: Path) -> No
     assert (repo_root / "data" / "runtime" / "word_forge_bridge_audit_history.jsonl").exists()
     assert Path(result["artifacts"]["latest_json"]).exists()
     assert Path(result["artifacts"]["latest_markdown"]).exists()
+
+
+def test_build_bridge_audit_uses_fileforge_semantic_tokens_and_code_library(tmp_path: Path) -> None:
+    repo_root = tmp_path / "repo"
+    db_path = repo_root / "word_forge" / "data" / "word_forge.sqlite"
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+
+    db = DBManager(db_path=db_path)
+    db.insert_or_update_word("pipeline", "A connected flow", "noun", ["pipeline route"])
+    db.insert_or_update_lexeme("pipeline", "en", base_term="pipeline", source="test")
+
+    kb_path = repo_root / "data" / "kb.json"
+    kb_path.parent.mkdir(parents=True, exist_ok=True)
+    kb_path.write_text(json.dumps({"nodes": {}, "concept_map": {}}), encoding="utf-8")
+
+    from file_forge.library import FileLibraryDB
+
+    file_db = FileLibraryDB(repo_root / "data" / "file_forge" / "library.sqlite")
+    file_db.upsert_file(
+        file_path=repo_root / "notes.txt",
+        payload=b"semantic notes",
+        size_bytes=len(b"semantic notes"),
+        modified_ns=1,
+        kind="document",
+        mime_type="text/plain",
+        encoding="utf-8",
+        text_preview="pipeline orchestration notes",
+        links=[{"forge": "knowledge_forge", "relation": "documents", "detail": {"topic": "pipeline"}}],
+    )
+
+    import sqlite3
+
+    code_db_path = repo_root / "data" / "code_forge" / "library.sqlite"
+    code_db_path.parent.mkdir(parents=True, exist_ok=True)
+    with sqlite3.connect(str(code_db_path)) as conn:
+        conn.executescript(
+            """
+            CREATE TABLE code_units (
+                id TEXT PRIMARY KEY,
+                file_path TEXT NOT NULL,
+                qualified_name TEXT,
+                name TEXT,
+                language TEXT,
+                unit_type TEXT,
+                created_at TEXT
+            );
+            CREATE TABLE file_records (
+                file_path TEXT PRIMARY KEY,
+                content_hash TEXT,
+                analysis_version INTEGER,
+                updated_at TEXT
+            );
+            """
+        )
+        conn.execute(
+            "INSERT INTO code_units (id, file_path, qualified_name, name, language, unit_type, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            ("u1", str(repo_root / "pipeline_runner.py"), "pipeline.runner.main", "main", "python", "function", "2026-03-28T00:00:00Z"),
+        )
+        conn.execute(
+            "INSERT INTO file_records (file_path, content_hash, analysis_version, updated_at) VALUES (?, ?, ?, ?)",
+            (str(repo_root / "pipeline_runner.py"), "abc", 1, "2026-03-28T00:00:00Z"),
+        )
+
+    report = build_bridge_audit(repo_root=repo_root, db_path=db_path)
+
+    assert report["bridge_counts"]["code"] == 1
+    assert report["bridge_counts"]["file"] == 1
+    assert report["code_metrics"]["code_library_unit_count"] == 1
+    assert report["file_metrics"]["link_count"] == 1

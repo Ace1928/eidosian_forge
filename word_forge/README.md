@@ -75,7 +75,7 @@ word_forge start intelligence consciousness --minutes 10 --workers 4
 ./eidosian_venv/bin/python scripts/word_forge_bridge_audit.py
 ```
 
-- Audits Word Forge links into multilingual base alignment, Knowledge Forge tags/content, and Code Forge provenance tokens
+- Audits Word Forge links into multilingual base alignment, Knowledge Forge tags/content, live Code Forge library/provenance tokens, and File Forge path/preview/link semantics
 - Publishes runtime status/history under `data/runtime/`
 - Publishes reports under `reports/word_forge_bridge_audit/`
 

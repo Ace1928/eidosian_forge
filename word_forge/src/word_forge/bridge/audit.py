@@ -112,7 +112,13 @@ def _load_knowledge_tokens(kb_path: Path) -> dict[str, Any]:
 def _load_file_tokens(repo_root: Path) -> dict[str, Any]:
     db_path = repo_root / "data" / "file_forge" / "library.sqlite"
     if not db_path.exists():
-        return {"file_count": 0, "path_tokens": set()}
+        return {
+            "file_count": 0,
+            "link_count": 0,
+            "relationship_count": 0,
+            "path_tokens": set(),
+            "semantic_tokens": set(),
+        }
     try:
         import sys
         file_forge_src = repo_root / "file_forge" / "src"
@@ -124,8 +130,11 @@ def _load_file_tokens(repo_root: Path) -> dict[str, Any]:
         from file_forge.library import FileLibraryDB  # type: ignore
 
         db = FileLibraryDB(db_path)
-        tokens: set[str] = set()
+        path_tokens: set[str] = set()
+        semantic_tokens: set[str] = set()
         count = 0
+        link_count = 0
+        relationship_count = 0
         for row in db.iter_file_records(limit=50000):
             if not isinstance(row, dict):
                 continue
@@ -133,10 +142,38 @@ def _load_file_tokens(repo_root: Path) -> dict[str, Any]:
             if not path_text:
                 continue
             count += 1
-            tokens.update(_tokenize(path_text))
-        return {"file_count": count, "path_tokens": tokens}
+            path_tokens.update(_tokenize(path_text))
+            semantic_tokens.update(_tokenize(str(row.get("text_preview") or "")))
+            try:
+                links = db.list_links(path_text)
+                relationships = db.list_relationships(path_text)
+            except Exception:
+                links = []
+                relationships = []
+            link_count += len(links)
+            relationship_count += len(relationships)
+            for link in links:
+                semantic_tokens.update(_tokenize(str(link.get("forge") or "")))
+                semantic_tokens.update(_tokenize(str(link.get("relation") or "")))
+                semantic_tokens.update(_tokenize(json.dumps(link.get("detail") or {}, sort_keys=True)))
+            for relationship in relationships:
+                semantic_tokens.update(_tokenize(str(relationship.get("dst_path") or "")))
+                semantic_tokens.update(_tokenize(str(relationship.get("rel_type") or "")))
+        return {
+            "file_count": count,
+            "link_count": link_count,
+            "relationship_count": relationship_count,
+            "path_tokens": path_tokens,
+            "semantic_tokens": semantic_tokens,
+        }
     except Exception:
-        return {"file_count": 0, "path_tokens": set()}
+        return {
+            "file_count": 0,
+            "link_count": 0,
+            "relationship_count": 0,
+            "path_tokens": set(),
+            "semantic_tokens": set(),
+        }
 
 
 def _load_code_tokens(repo_root: Path) -> dict[str, Any]:
@@ -180,9 +217,54 @@ def _load_code_tokens(repo_root: Path) -> dict[str, Any]:
                 value = row.get(field)
                 if isinstance(value, str):
                     tokens.update(token for token in _tokenize(value) if len(token) >= 3)
+            artifacts = payload.get("artifacts") if isinstance(payload.get("artifacts"), list) else []
+            for artifact in artifacts:
+                if not isinstance(artifact, dict):
+                    continue
+                artifact_path = artifact.get("path")
+                artifact_kind = artifact.get("artifact_kind")
+                if isinstance(artifact_path, str):
+                    tokens.update(token for token in _tokenize(artifact_path) if len(token) >= 3)
+                if isinstance(artifact_kind, str):
+                    tokens.update(token for token in _tokenize(artifact_kind) if len(token) >= 3)
+
+    library_db_path = repo_root / "data" / "code_forge" / "library.sqlite"
+    code_unit_count = 0
+    code_file_count = 0
+    if library_db_path.exists():
+        try:
+            with sqlite3.connect(str(library_db_path)) as conn:
+                conn.row_factory = sqlite3.Row
+                code_unit_count = int(conn.execute("SELECT COUNT(*) FROM code_units").fetchone()[0])
+                code_file_count = int(conn.execute("SELECT COUNT(*) FROM file_records").fetchone()[0])
+                rows = conn.execute(
+                    """
+                    SELECT file_path, qualified_name, name
+                    FROM code_units
+                    ORDER BY created_at DESC
+                    LIMIT 12000
+                    """
+                ).fetchall()
+                for row in rows:
+                    for field in ("file_path", "qualified_name", "name"):
+                        value = row[field]
+                        if isinstance(value, str):
+                            tokens.update(token for token in _tokenize(value) if len(token) >= 3)
+                file_rows = conn.execute(
+                    "SELECT file_path FROM file_records ORDER BY updated_at DESC LIMIT 6000"
+                ).fetchall()
+                for row in file_rows:
+                    value = row[0]
+                    if isinstance(value, str):
+                        tokens.update(token for token in _tokenize(value) if len(token) >= 3)
+        except Exception:
+            code_unit_count = 0
+            code_file_count = 0
     latest_entries.sort(key=lambda row: str(row.get("generated_at") or ""), reverse=True)
     report["stage_counts"] = dict(sorted(stage_counts.items()))
     report["latest_entries"] = latest_entries[:24]
+    report["code_library_unit_count"] = code_unit_count
+    report["code_library_file_count"] = code_file_count
     return {
         "provenance": report,
         "code_tokens": tokens,
@@ -202,7 +284,7 @@ def build_bridge_audit(repo_root: Path, db_path: Path | None = None) -> dict[str
     knowledge_tag_tokens = knowledge_metrics.get("tag_tokens", set())
     knowledge_content_tokens = knowledge_metrics.get("content_tokens", set())
     code_tokens = code_metrics.get("code_tokens", set())
-    file_tokens = file_metrics.get("path_tokens", set())
+    file_tokens = set(file_metrics.get("path_tokens", set())) | set(file_metrics.get("semantic_tokens", set()))
 
     per_term = []
     for term in base_terms:
@@ -263,10 +345,14 @@ def build_bridge_audit(repo_root: Path, db_path: Path | None = None) -> dict[str
             "provenance_link_file_count": (code_metrics.get("provenance") or {}).get("link_file_count", 0),
             "provenance_registry_file_count": (code_metrics.get("provenance") or {}).get("registry_file_count", 0),
             "provenance_stage_counts": (code_metrics.get("provenance") or {}).get("stage_counts", {}),
+            "code_library_unit_count": (code_metrics.get("provenance") or {}).get("code_library_unit_count", 0),
+            "code_library_file_count": (code_metrics.get("provenance") or {}).get("code_library_file_count", 0),
             "code_token_count": len(code_tokens),
         },
         "file_metrics": {
             "file_count": file_metrics.get("file_count", 0),
+            "link_count": file_metrics.get("link_count", 0),
+            "relationship_count": file_metrics.get("relationship_count", 0),
             "path_token_count": len(file_tokens),
         },
         "bridge_counts": dict(bridge_counts),
@@ -295,7 +381,11 @@ def render_bridge_audit_markdown(report: dict[str, Any]) -> str:
         f"- Knowledge nodes: `{knowledge_metrics.get('node_count', 0)}`",
         f"- Code provenance links: `{code_metrics.get('provenance_link_file_count', 0)}`",
         f"- Code provenance registries: `{code_metrics.get('provenance_registry_file_count', 0)}`",
+        f"- Code library units: `{code_metrics.get('code_library_unit_count', 0)}`",
+        f"- Code library files: `{code_metrics.get('code_library_file_count', 0)}`",
         f"- File Forge files: `{file_metrics.get('file_count', 0)}`",
+        f"- File Forge links: `{file_metrics.get('link_count', 0)}`",
+        f"- File Forge relationships: `{file_metrics.get('relationship_count', 0)}`",
         "",
         "## Bridge Coverage",
         "",
