@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional
 
 from eidosian_core import eidosian
 from word_forge.parser.language_model import ModelState
-from word_forge.parser.structured_validator import validated_query
+from word_forge.parser.structured_validator import ProsodySchema, validated_query
 
 LOGGER = logging.getLogger("word_forge.linguistics.prosody")
 
@@ -69,24 +69,21 @@ class ProsodyEngine:
 
     def _get_llm_prosody_priors(self, text: str, valence: float, arousal: float) -> Optional[Dict[str, Any]]:
         """Consult the LLM for nuanced prosody parameters."""
-        prompt = f"""Analyze the prosody for the phrase: '{text}'.
-Emotional State: Valence={valence}, Arousal={arousal}.
-
-Provide a JSON object with prosody parameters (multipliers around 1.0):
-{{
-  "pitch_multiplier": float,
-  "duration_multiplier": float,
-  "intensity_multiplier": float,
-  "pitch_contour": "rising|falling|flat|wavy",
-  "emphasis_indices": ["list of word indices to emphasize"]
-}}
-Return ONLY valid JSON."""
+        prompt = (
+            f"Task: analyze prosody for the phrase '{text}'.\n"
+            f"Emotional state: valence={valence}, arousal={arousal}.\n"
+            "Return only valid JSON using exactly this schema: "
+            '{"pitch_multiplier":float,"duration_multiplier":float,'
+            '"intensity_multiplier":float,"pitch_contour":"rising|falling|flat|wavy",'
+            '"emphasis_indices":[int]}'
+        )
         
         result = validated_query(
             model_state=self.llm_state,
             prompt=prompt,
             context_word=text,
-            max_retries=1
+            max_retries=1,
+            schema=ProsodySchema,
         )
         
         return result.unwrap() if result.is_success else None

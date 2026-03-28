@@ -51,7 +51,7 @@ from word_forge.linguistics.phonetics_manager import PhoneticsManager
 from word_forge.linguistics.prosody import ProsodyEngine
 from word_forge.parser.language_model import ModelState
 from word_forge.parser.lexical_functions import create_lexical_dataset
-from word_forge.parser.structured_validator import validated_query
+from word_forge.parser.structured_validator import PhraseExtractionSchema, validated_query
 from word_forge.phrases.phrase_manager import PhraseManager
 from word_forge.queue.queue_manager import QueueManager
 from word_forge.utils.nltk_utils import ensure_nltk_data
@@ -238,22 +238,17 @@ class TermExtractor:
     def _extract_llm_terms(self, text: str, term: str) -> Dict[str, List[str]]:
         """Extract domain-specific terms and entities using LLM."""
         prompt = (
-            f"Analyze the following text related to '{term}'.\n"
-            f"Text: {text}\n\n"
-            "Identify high-value domain-specific terminology, named entities, and complex idiomatic phrases.\n"
-            "Provide a JSON object with the following schema:\n"
-            "{\n"
-            '  "phrases": ["list of strings"],\n'
-            '  "entities": ["list of strings"]\n'
-            "}\n"
-            "Return ONLY valid JSON."
+            f"Task: extract salient lexical candidates related to '{term}'.\n"
+            'Return only valid JSON using exactly this schema: {"phrases":[string],"entities":[string]}.\n'
+            f"Text: {text}"
         )
         
         result = validated_query(
             model_state=self.llm_state,
             prompt=prompt,
             context_word=term,
-            max_retries=1
+            max_retries=1,
+            schema=PhraseExtractionSchema,
         )
         
         return result.unwrap() if result.is_success else {"phrases": [], "entities": []}

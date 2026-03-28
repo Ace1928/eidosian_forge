@@ -6,7 +6,7 @@ from typing import Dict, List, Optional, Protocol, Tuple
 
 from eidosian_core import eidosian
 from word_forge.parser.language_model import ModelState
-from word_forge.parser.structured_validator import validated_query
+from word_forge.parser.structured_validator import G2PSchema, validated_query
 
 LOGGER = logging.getLogger("word_forge.linguistics.g2p")
 
@@ -30,23 +30,18 @@ class LLMG2PProvider:
     def convert(self, text: str, context: Optional[str] = None) -> G2PResult:
         """Use LLM to generate high-fidelity phonetic transcriptions."""
         prompt = (
-            f"Transcribe the following term into IPA and Arpabet phonetics.\n"
-            f"Term: '{text}'\n"
-            f"Context: {context if context else 'General terminology'}\n\n"
-            "Provide a JSON object with the following schema:\n"
-            "{\n"
-            '  "ipa": "string (International Phonetic Alphabet)",\n'
-            '  "arpabet": "string (Arpabet representation)",\n'
-            '  "stress_pattern": "string (e.g., 1-0 for primary-none)"\n'
-            "}\n"
-            "Return ONLY valid JSON."
+            f'Task: transcribe the term "{text}" into IPA and Arpabet phonetics.\n'
+            f'Context: {context if context else "General terminology"}.\n'
+            'Return only valid JSON using exactly this schema: '
+            '{"ipa":"string","arpabet":"string","stress_pattern":"string"}'
         )
 
         result = validated_query(
             model_state=self.model_state,
             prompt=prompt,
             context_word=text,
-            max_retries=2
+            max_retries=2,
+            schema=G2PSchema,
         )
 
         if result.is_success:

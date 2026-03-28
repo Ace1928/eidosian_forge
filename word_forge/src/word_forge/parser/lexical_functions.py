@@ -39,7 +39,7 @@ from word_forge.configs.config_essentials import (
     WordnetEntry,
 )
 from word_forge.parser.language_model import ModelState
-from word_forge.parser.structured_validator import validated_query
+from word_forge.parser.structured_validator import EnrichmentSchema, validated_query
 from word_forge.utils.nltk_utils import ensure_nltk_data
 
 
@@ -503,7 +503,13 @@ def generate_comprehensive_enrichment(
         "Return ONLY valid JSON."
     )
 
-    result = validated_query(model_state=model_state, prompt=prompt, context_word=word, max_retries=2)
+    result = validated_query(
+        model_state=model_state,
+        prompt=prompt,
+        context_word=word,
+        max_retries=2,
+        schema=EnrichmentSchema,
+    )
 
     if result.is_success:
         return result.unwrap()

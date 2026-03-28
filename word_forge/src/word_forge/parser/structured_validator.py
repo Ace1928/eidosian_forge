@@ -98,6 +98,85 @@ class EnrichmentSchema(BaseModel):
         return data
 
 
+class PhraseExtractionSchema(BaseModel):
+    """Schema for LLM-extracted phrases and named entities."""
+
+    model_config = {"extra": "ignore"}
+
+    phrases: List[str] = Field(default_factory=list)
+    entities: List[str] = Field(default_factory=list)
+
+    @field_validator("phrases", "entities", mode="before")
+    @classmethod
+    def clean_lists(cls, v: Any) -> List[str]:
+        if isinstance(v, str):
+            return [s.strip() for s in re.split(r"[,\n;|]+", v) if s.strip()]
+        if isinstance(v, list):
+            return [str(s).strip() for s in v if str(s).strip()]
+        return []
+
+
+class G2PSchema(BaseModel):
+    """Schema for phonetic transcription requests."""
+
+    model_config = {"extra": "ignore"}
+
+    ipa: str = ""
+    arpabet: str = ""
+    stress_pattern: str = ""
+
+    @field_validator("ipa", "arpabet", "stress_pattern", mode="before")
+    @classmethod
+    def normalize_strings(cls, v: Any) -> str:
+        if v is None:
+            return ""
+        return str(v).strip()
+
+
+class ProsodySchema(BaseModel):
+    """Schema for prosody prior generation."""
+
+    model_config = {"extra": "ignore"}
+
+    pitch_multiplier: float = 1.0
+    duration_multiplier: float = 1.0
+    intensity_multiplier: float = 1.0
+    pitch_contour: str = "flat"
+    emphasis_indices: List[int] = Field(default_factory=list)
+
+    @field_validator("pitch_multiplier", "duration_multiplier", "intensity_multiplier", mode="before")
+    @classmethod
+    def coerce_float(cls, v: Any) -> float:
+        try:
+            return float(v)
+        except Exception:
+            return 1.0
+
+    @field_validator("pitch_contour", mode="before")
+    @classmethod
+    def normalize_contour(cls, v: Any) -> str:
+        value = str(v or "flat").strip().lower()
+        return value if value in {"rising", "falling", "flat", "wavy"} else "flat"
+
+    @field_validator("emphasis_indices", mode="before")
+    @classmethod
+    def coerce_indices(cls, v: Any) -> List[int]:
+        if isinstance(v, str):
+            parts = re.split(r"[,\n;|]+", v)
+            values = parts
+        elif isinstance(v, list):
+            values = v
+        else:
+            values = []
+        indices: List[int] = []
+        for item in values:
+            try:
+                indices.append(int(item))
+            except Exception:
+                continue
+        return indices
+
+
 class StructuredValidator:
     """
     Self-healing orchestrator for LLM outputs.
@@ -321,6 +400,30 @@ class StructuredValidator:
                 fixed[field] = str(fixed.get(field, "")).strip()
         return fixed
 
+    def _contains_placeholder_text(self, value: Any) -> bool:
+        if isinstance(value, str):
+            normalized = value.strip().lower()
+            if not normalized:
+                return False
+            placeholder_markers = (
+                "list of strings",
+                "string (",
+                "international phonetic alphabet",
+                "arpabet representation",
+                "e.g., 1-0",
+                "float",
+            )
+            return any(marker in normalized for marker in placeholder_markers)
+        if isinstance(value, list):
+            return any(self._contains_placeholder_text(item) for item in value)
+        if isinstance(value, dict):
+            return any(self._contains_placeholder_text(item) for item in value.values())
+        return False
+
+    def _is_semantically_valid(self, data: Dict[str, Any]) -> bool:
+        """Reject schema-echo payloads that pass shape checks but not substance."""
+        return not self._contains_placeholder_text(data)
+
     @eidosian()
     def validate(self, raw_text: str, context_word: Optional[str] = None) -> Result[Dict[str, Any]]:
         """
@@ -358,13 +461,21 @@ class StructuredValidator:
 
                 try:
                     validated_model = self.schema.model_validate(sanitized)
-                    return Result.success(validated_model.model_dump())
+                    validated_dump = validated_model.model_dump()
+                    if self._is_semantically_valid(validated_dump):
+                        return Result.success(validated_dump)
+                    last_error = "Validated payload echoed schema placeholders instead of real content."
+                    continue
                 except ValidationError as e:
                     self.logger.warning(f"Validation failed: {e}")
                     fixed = self._apply_error_fixes(sanitized, e.errors())
                     try:
                         validated_model = self.schema.model_validate(fixed)
-                        return Result.success(validated_model.model_dump())
+                        validated_dump = validated_model.model_dump()
+                        if self._is_semantically_valid(validated_dump):
+                            return Result.success(validated_dump)
+                        last_error = "Validated payload echoed schema placeholders instead of real content."
+                        continue
                     except ValidationError as e2:
                         last_error = str(e2)
                         continue
@@ -382,6 +493,7 @@ def validated_query(
     context_word: str,
     max_retries: int = 3,
     validator: Optional[StructuredValidator] = None,
+    schema: Optional[Type[BaseModel]] = None,
     backoff_base: float = 0.6,
     backoff_jitter: float = 0.2,
 ) -> Result[Dict[str, Any]]:
@@ -396,7 +508,7 @@ def validated_query(
     from word_forge.queue.queue_manager import Result
 
     if validator is None:
-        validator = StructuredValidator()
+        validator = StructuredValidator(schema=schema or EnrichmentSchema)
 
     current_prompt = prompt
     last_error = ""
