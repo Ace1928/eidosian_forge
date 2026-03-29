@@ -79,6 +79,27 @@ word_forge start intelligence consciousness --minutes 10 --workers 4
 - Publishes runtime status/history under `data/runtime/`
 - Publishes reports under `reports/word_forge_bridge_audit/`
 
+### FastText Aligned Vectors
+
+```bash
+./eidosian_venv/bin/python scripts/word_forge_fasttext_ingest.py \
+  --source-path word_forge/data/samples/fasttext_seed_en.vec \
+  --lang en \
+  --force
+
+./eidosian_venv/bin/python scripts/word_forge_fasttext_ingest.py \
+  --source-path word_forge/data/samples/fasttext_seed_es.vec \
+  --lang es \
+  --bootstrap-lang en \
+  --apply \
+  --force
+```
+
+- Ingests aligned `.vec` files into `data/word_forge_fasttext.sqlite`
+- Bootstraps cross-language translation candidates and can apply them into the main Word Forge lexeme/translation tables
+- Publishes runtime status/history under `data/runtime/`
+- Publishes reports under `reports/word_forge_fasttext_ingest/`
+
 ### Semantic Graph (Python)
 
 ```python

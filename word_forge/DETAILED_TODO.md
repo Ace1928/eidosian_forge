@@ -146,7 +146,8 @@ Item Format:
   - Status: Complete (March 27) - PhraseManager with novelty and realization tracking
 - [x] **`src/word_forge/parser/parser_refiner.py`** - Enhanced MWE and Entity discovery
   - Status: Complete (March 27) - LLM-based extraction pass in TermExtractor
-- [ ] **FastText Integration** - Implement aligned vector ingestion for translation bootstrapping
+- [x] **FastText Integration** - Implement aligned vector ingestion for translation bootstrapping
+  - Status: Complete (March 28) - `scripts/word_forge_fasttext_ingest.py` now ingests aligned `.vec` files into a governed FastText store, bootstraps translation candidates, and can apply them into Word Forge with runtime/report/Atlas surfaces
 - [x] **Incremental multilingual ingest runtime** - Add a governed ingest runner with status/history/report contracts
   - Status: Complete (March 28) - `scripts/word_forge_multilingual_ingest.py` now supports incremental Kaikki/Wiktextract ingestion with runtime artifacts and published reports
 - [x] **Cross-forge bridge audit** - Audit Word Forge alignment into Knowledge Forge, Code Forge, and File Forge surfaces

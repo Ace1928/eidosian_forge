@@ -1,11 +1,11 @@
 # Word Forge Bridge Audit
 
-- Generated: `2026-03-28T23:14:29.624389+00:00`
+- Generated: `2026-03-29T00:07:56.755642+00:00`
 - Words: `3952`
 - Relationships: `1414`
-- Lexemes: `11`
-- Translations: `11`
-- Base aligned: `11`
+- Lexemes: `14`
+- Translations: `15`
+- Base aligned: `14`
 - Knowledge nodes: `4596`
 - Code provenance links: `3`
 - Code provenance registries: `3`

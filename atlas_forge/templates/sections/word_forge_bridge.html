@@ -19,6 +19,15 @@
             <div class="stat-label">Base aligned: <span id="wf-multi-base">{{ word_forge_multilingual.get('latest_report', {}).get('after', {}).get('base_aligned_count', 0) }}</span></div>
         </div>
         <div class="card">
+            <h4 style="margin-top:0;">FastText Status</h4>
+            <div><strong id="wf-fasttext-status">{{ word_forge_fasttext.get('status', {}).get('status', 'idle') }}</strong></div>
+            <div class="stat-label" id="wf-fasttext-phase">{{ word_forge_fasttext.get('status', {}).get('phase', 'idle') }}</div>
+            <div class="stat-label">Vectors: <span id="wf-fasttext-vectors">{{ word_forge_fasttext.get('latest_report', {}).get('after', {}).get('fasttext', {}).get('vector_count', 0) }}</span></div>
+            <div class="stat-label">Candidates: <span id="wf-fasttext-candidates">{{ word_forge_fasttext.get('latest_report', {}).get('after', {}).get('fasttext', {}).get('candidate_count', 0) }}</span></div>
+            <div class="stat-label">Applied: <span id="wf-fasttext-applied">{{ word_forge_fasttext.get('latest_report', {}).get('after', {}).get('fasttext', {}).get('applied_count', 0) }}</span></div>
+            <div class="stat-label">Languages: <span id="wf-fasttext-languages">{{ word_forge_fasttext.get('latest_report', {}).get('after', {}).get('fasttext', {}).get('language_count', 0) }}</span></div>
+        </div>
+        <div class="card">
             <h4 style="margin-top:0;">Bridge Coverage</h4>
             <div><strong id="wf-bridge-status">{{ word_forge_bridge.get('status', {}).get('status', 'idle') }}</strong></div>
             <div class="stat-label" id="wf-bridge-phase">{{ word_forge_bridge.get('status', {}).get('phase', 'idle') }}</div>
@@ -53,6 +62,22 @@
         </div>
     </div>
 
+    <div class="card" style="margin-top:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+            <h4 style="margin:0;">FastText Aligned Vectors</h4>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                <input id="wf-fasttext-source-path" type="text" placeholder="/path/to/aligned.vec" style="min-width:240px;" />
+                <input id="wf-fasttext-lang" type="text" placeholder="lang" style="width:72px;" />
+                <input id="wf-fasttext-bootstrap-lang" type="text" placeholder="bootstrap" style="width:90px;" value="en" />
+                <input id="wf-fasttext-limit" type="number" min="1" step="1" placeholder="limit" style="width:90px;" />
+                <input id="wf-fasttext-min-score" type="number" min="0" max="1" step="0.01" placeholder="min" style="width:90px;" value="0.55" />
+                <label style="display:flex;align-items:center;gap:6px;"><input id="wf-fasttext-apply" type="checkbox" /> apply</label>
+                <label style="display:flex;align-items:center;gap:6px;"><input id="wf-fasttext-force" type="checkbox" /> force</label>
+                <button type="button" onclick="runWordForgeFastTextIngest()">Run FastText</button>
+            </div>
+        </div>
+    </div>
+
     <div class="grid" style="margin-top:12px;">
         <div class="card">
             <h4 style="margin-top:0;">Recent Ingest Runs</h4>
@@ -64,6 +89,22 @@
                         <td>{{ row.get('status', '') }}</td>
                         <td>{{ row.get('phase', '') }}</td>
                         <td>{{ row.get('lexeme_delta', 0) }}</td>
+                        <td>{{ row.get('finished_at', row.get('started_at', ''))[:19].replace('T', ' ') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="card">
+            <h4 style="margin-top:0;">Recent FastText Runs</h4>
+            <table>
+                <thead><tr><th>Status</th><th>Phase</th><th>Vectors Δ</th><th>Finished</th></tr></thead>
+                <tbody id="wf-fasttext-history-body">
+                    {% for row in word_forge_fasttext_history %}
+                    <tr>
+                        <td>{{ row.get('status', '') }}</td>
+                        <td>{{ row.get('phase', '') }}</td>
+                        <td>{{ row.get('vector_delta', 0) }}</td>
                         <td>{{ row.get('finished_at', row.get('started_at', ''))[:19].replace('T', ' ') }}</td>
                     </tr>
                     {% endfor %}

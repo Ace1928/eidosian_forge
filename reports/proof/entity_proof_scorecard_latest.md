@@ -1,8 +1,8 @@
 # Eidos Entity Proof Scorecard
 
-- Generated: `2026-03-28T23:15:08Z`
+- Generated: `2026-03-29T00:08:33Z`
 - Repo root: `/data/data/com.termux/files/home/eidosian_forge`
-- Git head: `b32bde1324131476709df436c882fd6cd933b419`
+- Git head: `6ef80e20d64c0f54bff7c8c13e1a8874bc3f3383`
 - Worktree dirty: `None`
 - Overall status: `yellow`
 - Overall score: `0.782857`
@@ -122,9 +122,9 @@
 | Anchor | Layers | Neighbors |
 | --- | --- | ---: |
 | archive | knowledge, code, file, multilingual | 70 |
-| integration | knowledge, file, multilingual | 6 |
-| atlas | knowledge, multilingual | 6 |
-| pipeline | knowledge, multilingual | 3 |
+| integration | knowledge, file, multilingual | 7 |
+| atlas | knowledge, multilingual | 7 |
+| pipeline | knowledge, multilingual | 4 |
 
 ## Session Bridge
 
@@ -143,18 +143,18 @@
 
 ## Proof History
 
-- `trend`: `improved`
-- `delta_from_previous`: `0.045833`
+- `trend`: `stable`
+- `delta_from_previous`: `0.0`
 - `sample_count`: `6`
 
 | Generated | Status | Score | Freshness | Regression |
 | --- | --- | ---: | --- | --- |
-| 2026-03-28T22:36:56Z | yellow | 0.78625 | yellow | stable |
 | 2026-03-28T22:39:50Z | yellow | 0.78625 | yellow | stable |
 | 2026-03-28T22:41:21Z | yellow | 0.741786 | yellow | regressed |
 | 2026-03-28T22:46:39Z | yellow | 0.741786 | yellow | stable |
 | 2026-03-28T22:52:37Z | yellow | 0.737024 | yellow | stable |
 | 2026-03-28T23:09:38Z | yellow | 0.782857 | yellow | improved |
+| 2026-03-28T23:15:08Z | yellow | 0.782857 | yellow | stable |
 
 ## Continuity Metrics
 

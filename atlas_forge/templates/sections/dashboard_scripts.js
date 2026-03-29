@@ -929,10 +929,12 @@ refreshCodeForgeProvenanceAuditHistory();
 
 async function refreshWordForgeBridge() {
     try {
-        const [multiRes, bridgeRes, multiHistRes, bridgeHistRes] = await Promise.all([
+        const [multiRes, fasttextRes, bridgeRes, multiHistRes, fasttextHistRes, bridgeHistRes] = await Promise.all([
             fetch('/api/word-forge/multilingual', {cache: 'no-store'}),
+            fetch('/api/word-forge/fasttext', {cache: 'no-store'}),
             fetch('/api/word-forge/bridge-audit', {cache: 'no-store'}),
             fetch('/api/word-forge/multilingual/history', {cache: 'no-store'}),
+            fetch('/api/word-forge/fasttext/history', {cache: 'no-store'}),
             fetch('/api/word-forge/bridge-audit/history', {cache: 'no-store'}),
         ]);
         if (multiRes.ok) {
@@ -945,6 +947,18 @@ async function refreshWordForgeBridge() {
             document.getElementById('wf-multi-translations').textContent = report.after?.translation_count ?? 0;
             document.getElementById('wf-multi-base').textContent = report.after?.base_aligned_count ?? 0;
         }
+        if (fasttextRes.ok) {
+            const payload = await fasttextRes.json();
+            const status = payload.status || {};
+            const report = payload.latest_report || {};
+            const after = report.after?.fasttext || {};
+            document.getElementById('wf-fasttext-status').textContent = status.status || 'idle';
+            document.getElementById('wf-fasttext-phase').textContent = status.phase || 'idle';
+            document.getElementById('wf-fasttext-vectors').textContent = after.vector_count ?? 0;
+            document.getElementById('wf-fasttext-candidates').textContent = after.candidate_count ?? 0;
+            document.getElementById('wf-fasttext-applied').textContent = after.applied_count ?? 0;
+            document.getElementById('wf-fasttext-languages').textContent = after.language_count ?? 0;
+        }
         if (bridgeRes.ok) {
             const payload = await bridgeRes.json();
             const status = payload.status || {};
@@ -952,6 +966,7 @@ async function refreshWordForgeBridge() {
             const counts = report.bridge_counts || {};
             const quality = payload.bridge_quality || report.bridge_quality || {};
             const communities = payload.community_summary || {};
+            const summary = payload || {};
             document.getElementById('wf-bridge-status').textContent = status.status || 'idle';
             document.getElementById('wf-bridge-phase').textContent = status.phase || 'idle';
             document.getElementById('wf-bridge-candidates').textContent = quality.candidate_term_count ?? 0;
@@ -1004,6 +1019,20 @@ async function refreshWordForgeBridge() {
                 `).join('');
             }
         }
+        if (fasttextHistRes.ok) {
+            const payload = await fasttextHistRes.json();
+            const body = document.getElementById('wf-fasttext-history-body');
+            if (body) {
+                body.innerHTML = (payload.entries || []).slice(0, 10).map((row) => `
+                    <tr>
+                        <td>${escapeHtml(row.status || '')}</td>
+                        <td>${escapeHtml(row.phase || '')}</td>
+                        <td>${escapeHtml(row.vector_delta ?? 0)}</td>
+                        <td>${escapeHtml(String(row.finished_at || row.started_at || '').slice(0, 19).replace('T', ' '))}</td>
+                    </tr>
+                `).join('');
+            }
+        }
         if (bridgeHistRes.ok) {
             const payload = await bridgeHistRes.json();
             const body = document.getElementById('wf-bridge-run-history-body');
@@ -1020,6 +1049,29 @@ async function refreshWordForgeBridge() {
         }
     } catch (err) {
         // ignore transient refresh failures
+    }
+}
+
+async function runWordForgeFastTextIngest() {
+    const sourcePath = document.getElementById('wf-fasttext-source-path')?.value?.trim();
+    const lang = document.getElementById('wf-fasttext-lang')?.value?.trim();
+    const bootstrapLang = document.getElementById('wf-fasttext-bootstrap-lang')?.value?.trim();
+    const limitValue = document.getElementById('wf-fasttext-limit')?.value?.trim();
+    const minScore = document.getElementById('wf-fasttext-min-score')?.value?.trim();
+    const apply = Boolean(document.getElementById('wf-fasttext-apply')?.checked);
+    const force = Boolean(document.getElementById('wf-fasttext-force')?.checked);
+    if (!sourcePath || !lang) return;
+    const params = new URLSearchParams({source_path: sourcePath, lang});
+    if (bootstrapLang) params.set('bootstrap_lang', bootstrapLang);
+    if (limitValue) params.set('limit', limitValue);
+    if (minScore) params.set('min_score', minScore);
+    if (apply) params.set('apply', 'true');
+    if (force) params.set('force', 'true');
+    try {
+        await fetch(`/api/word-forge/fasttext/run?${params.toString()}`, {method: 'POST'});
+    } finally {
+        await refreshWordForgeBridge();
+        await refreshRuntimeServices();
     }
 }
 

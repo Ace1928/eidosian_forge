@@ -9,8 +9,10 @@ from ..forge import (
     get_file_forge_summary,
     get_node_neighbors,
     get_word_forge_multilingual_summary,
+    get_word_forge_fasttext_summary,
     get_word_forge_bridge_summary,
     get_word_forge_multilingual_history,
+    get_word_forge_fasttext_history,
     get_word_forge_bridge_history,
     get_word_graph_communities,
 )
@@ -66,6 +68,16 @@ async def api_word_forge_multilingual_history(limit: int = 12):
     return {"entries": get_word_forge_multilingual_history(limit=max(1, min(limit, 60)))}
 
 
+@router.get("/word-forge/fasttext")
+async def api_word_forge_fasttext():
+    return get_word_forge_fasttext_summary()
+
+
+@router.get("/word-forge/fasttext/history")
+async def api_word_forge_fasttext_history(limit: int = 12):
+    return {"entries": get_word_forge_fasttext_history(limit=max(1, min(limit, 60)))}
+
+
 @router.post("/word-forge/multilingual/run")
 async def api_word_forge_multilingual_run(source_path: str, source_type: str, limit: int | None = None, force: bool = False):
     from word_forge.multilingual.runtime import run_multilingual_ingest
@@ -79,6 +91,37 @@ async def api_word_forge_multilingual_run(source_path: str, source_type: str, li
         source_type=source_type,
         db_path=WORD_FORGE_DB,
         limit=limit,
+        force=force,
+    )
+
+
+@router.post("/word-forge/fasttext/run")
+async def api_word_forge_fasttext_run(
+    source_path: str,
+    lang: str,
+    limit: int | None = None,
+    bootstrap_lang: str | None = None,
+    top_k: int = 1,
+    min_score: float = 0.55,
+    apply: bool = False,
+    force: bool = False,
+):
+    from word_forge.multilingual.fasttext_runtime import run_fasttext_ingest
+
+    path = Path(source_path).expanduser().resolve()
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="source path not found")
+    return run_fasttext_ingest(
+        repo_root=FORGE_ROOT,
+        source_path=path,
+        lang=lang,
+        db_path=WORD_FORGE_DB,
+        vector_db_path=FORGE_ROOT / "data" / "word_forge_fasttext.sqlite",
+        limit=limit,
+        bootstrap_lang=bootstrap_lang,
+        top_k=top_k,
+        min_score=min_score,
+        apply=apply,
         force=force,
     )
 
