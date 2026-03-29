@@ -301,7 +301,7 @@ def _load_file_tokens(repo_root: Path) -> dict[str, Any]:
         }
 
 
-def _load_code_tokens(repo_root: Path) -> dict[str, Any]:
+def _load_code_tokens(repo_root: Path, *, candidate_terms: list[str] | None = None) -> dict[str, Any]:
     candidate_roots = [
         repo_root / "data" / "code_forge",
         repo_root / "archive_forge",
@@ -312,6 +312,7 @@ def _load_code_tokens(repo_root: Path) -> dict[str, Any]:
         "registry_file_count": 0,
         "stage_counts": {},
         "latest_entries": [],
+        "term_hits": {},
     }
     stage_counts: Counter[str] = Counter()
     latest_entries: list[dict[str, Any]] = []
@@ -356,12 +357,19 @@ def _load_code_tokens(repo_root: Path) -> dict[str, Any]:
     library_db_path = repo_root / "data" / "code_forge" / "library.sqlite"
     code_unit_count = 0
     code_file_count = 0
+    term_hits: dict[str, list[dict[str, Any]]] = {}
     if library_db_path.exists():
         try:
             with sqlite3.connect(str(library_db_path)) as conn:
                 conn.row_factory = sqlite3.Row
-                code_unit_count = int(conn.execute("SELECT COUNT(*) FROM code_units").fetchone()[0])
-                code_file_count = int(conn.execute("SELECT COUNT(*) FROM file_records").fetchone()[0])
+                try:
+                    code_unit_count = int(conn.execute("SELECT COUNT(*) FROM code_units").fetchone()[0])
+                except Exception:
+                    code_unit_count = 0
+                try:
+                    code_file_count = int(conn.execute("SELECT COUNT(*) FROM file_records").fetchone()[0])
+                except Exception:
+                    code_file_count = 0
                 rows = conn.execute(
                     """
                     SELECT file_path, qualified_name, name
@@ -375,21 +383,76 @@ def _load_code_tokens(repo_root: Path) -> dict[str, Any]:
                         value = row[field]
                         if isinstance(value, str):
                             tokens.update(token for token in _tokenize(value) if len(token) >= 3)
-                file_rows = conn.execute(
-                    "SELECT file_path FROM file_records ORDER BY updated_at DESC LIMIT 6000"
-                ).fetchall()
+                try:
+                    file_rows = conn.execute(
+                        "SELECT file_path FROM file_records ORDER BY updated_at DESC LIMIT 6000"
+                    ).fetchall()
+                except Exception:
+                    file_rows = []
                 for row in file_rows:
                     value = row[0]
                     if isinstance(value, str):
                         tokens.update(token for token in _tokenize(value) if len(token) >= 3)
+                for term in sorted({item for item in (candidate_terms or []) if isinstance(item, str) and item.strip()}):
+                    lowered = term.strip().lower()
+                    if len(lowered) < 3:
+                        continue
+                    hits: list[dict[str, Any]] = []
+                    try:
+                        search_rows = conn.execute(
+                            """
+                            SELECT cu.file_path, cu.qualified_name, cu.name
+                            FROM code_units_fts fts
+                            JOIN code_units cu ON cu.id = fts.unit_id
+                            WHERE code_units_fts MATCH ?
+                            LIMIT 12
+                            """,
+                            (lowered,),
+                        ).fetchall()
+                    except Exception:
+                        search_rows = []
+                    if not search_rows:
+                        try:
+                            search_rows = conn.execute(
+                                """
+                                SELECT DISTINCT cu.file_path, cu.qualified_name, cu.name
+                                FROM code_units cu
+                                LEFT JOIN code_text ct ON ct.content_hash = cu.content_hash
+                                WHERE lower(cu.file_path) LIKE ?
+                                   OR lower(COALESCE(cu.qualified_name, '')) LIKE ?
+                                   OR lower(COALESCE(cu.name, '')) LIKE ?
+                                   OR lower(COALESCE(ct.content, '')) LIKE ?
+                                LIMIT 12
+                                """,
+                                tuple([f"%{lowered}%"] * 4),
+                            ).fetchall()
+                        except Exception:
+                            search_rows = []
+                    for row in search_rows:
+                        file_path = str(row["file_path"] or "")
+                        qualified_name = str(row["qualified_name"] or "")
+                        name = str(row["name"] or "")
+                        token_source = "\n".join(part for part in (file_path, qualified_name, name, lowered) if part)
+                        tokens.update(token for token in _tokenize(token_source) if len(token) >= 3)
+                        hits.append(
+                            {
+                                "file_path": file_path,
+                                "qualified_name": qualified_name,
+                                "name": name,
+                            }
+                        )
+                    if hits:
+                        term_hits[lowered] = hits[:8]
         except Exception:
             code_unit_count = 0
             code_file_count = 0
+            term_hits = {}
     latest_entries.sort(key=lambda row: str(row.get("generated_at") or ""), reverse=True)
     report["stage_counts"] = dict(sorted(stage_counts.items()))
     report["latest_entries"] = latest_entries[:24]
     report["code_library_unit_count"] = code_unit_count
     report["code_library_file_count"] = code_file_count
+    report["term_hits"] = term_hits
     return {
         "provenance": report,
         "code_tokens": tokens,
@@ -401,15 +464,16 @@ def build_bridge_audit(repo_root: Path, db_path: Path | None = None) -> dict[str
     kb_path = repo_root / "data" / "kb.json"
     word_metrics = _load_word_metrics(db_path)
     knowledge_metrics = _load_knowledge_tokens(kb_path)
-    code_metrics = _load_code_tokens(repo_root)
+    base_terms = word_metrics.get("base_terms", [])
+    code_metrics = _load_code_tokens(repo_root, candidate_terms=list(base_terms))
     file_metrics = _load_file_tokens(repo_root)
     morpheme_metrics = _load_morpheme_metrics(db_path)
 
-    base_terms = word_metrics.get("base_terms", [])
     word_terms = word_metrics.get("word_terms", set())
     knowledge_tag_tokens = knowledge_metrics.get("tag_tokens", set())
     knowledge_content_tokens = knowledge_metrics.get("content_tokens", set())
     code_tokens = code_metrics.get("code_tokens", set())
+    code_term_hits = (code_metrics.get("provenance") or {}).get("term_hits", {}) if isinstance(code_metrics.get("provenance"), dict) else {}
     file_tokens = set(file_metrics.get("path_tokens", set())) | set(file_metrics.get("semantic_tokens", set()))
     anchor_morphemes = morpheme_metrics.get("anchor_morphemes", {})
 
@@ -417,7 +481,8 @@ def build_bridge_audit(repo_root: Path, db_path: Path | None = None) -> dict[str
     for term in base_terms:
         word_match = term in word_terms
         knowledge_match = term in knowledge_tag_tokens or term in knowledge_content_tokens
-        code_match = term in code_tokens
+        code_examples = list(code_term_hits.get(term, [])) if isinstance(code_term_hits.get(term, []), list) else []
+        code_match = term in code_tokens or bool(code_examples)
         file_match = term in file_tokens
         morphemes = list(anchor_morphemes.get(term, []))
         morpheme_layer_matches = {
@@ -434,6 +499,7 @@ def build_bridge_audit(repo_root: Path, db_path: Path | None = None) -> dict[str
                 "word_match": word_match,
                 "knowledge_match": knowledge_match,
                 "code_match": code_match,
+                "code_examples": code_examples[:4],
                 "file_match": file_match,
                 "morpheme_match": morpheme_match,
                 "morphemes": morphemes,
@@ -496,6 +562,7 @@ def build_bridge_audit(repo_root: Path, db_path: Path | None = None) -> dict[str
             "code_library_unit_count": (code_metrics.get("provenance") or {}).get("code_library_unit_count", 0),
             "code_library_file_count": (code_metrics.get("provenance") or {}).get("code_library_file_count", 0),
             "code_token_count": len(code_tokens),
+            "term_hit_count": len(code_term_hits),
         },
         "file_metrics": {
             "file_count": file_metrics.get("file_count", 0),
@@ -540,6 +607,7 @@ def render_bridge_audit_markdown(report: dict[str, Any]) -> str:
         f"- Code provenance registries: `{code_metrics.get('provenance_registry_file_count', 0)}`",
         f"- Code library units: `{code_metrics.get('code_library_unit_count', 0)}`",
         f"- Code library files: `{code_metrics.get('code_library_file_count', 0)}`",
+        f"- Code term hits: `{code_metrics.get('term_hit_count', 0)}`",
         f"- File Forge files: `{file_metrics.get('file_count', 0)}`",
         f"- File Forge links: `{file_metrics.get('link_count', 0)}`",
         f"- File Forge relationships: `{file_metrics.get('relationship_count', 0)}`",
@@ -564,16 +632,16 @@ def render_bridge_audit_markdown(report: dict[str, Any]) -> str:
         "",
         "## Top Bridged Terms",
         "",
-        "| Term | Word | Knowledge | Code | File | Bridge Count |",
-        "| --- | ---: | ---: | ---: | ---: | ---: |",
+        "| Term | Word | Knowledge | Code | File | Code Hits | Bridge Count |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     if rows:
         for row in rows:
             lines.append(
-                f"| {row.get('term')} | {int(bool(row.get('word_match')))} | {int(bool(row.get('knowledge_match')))} | {int(bool(row.get('code_match')))} | {int(bool(row.get('file_match')))} | {row.get('bridge_count', 0)} |"
+                f"| {row.get('term')} | {int(bool(row.get('word_match')))} | {int(bool(row.get('knowledge_match')))} | {int(bool(row.get('code_match')))} | {int(bool(row.get('file_match')))} | {len(row.get('code_examples') or [])} | {row.get('bridge_count', 0)} |"
             )
     else:
-        lines.append("| none | 0 | 0 | 0 | 0 | 0 |")
+        lines.append("| none | 0 | 0 | 0 | 0 | 0 | 0 |")
     return "\n".join(lines) + "\n"
 
 

@@ -1,6 +1,6 @@
 # Word Forge Bridge Audit
 
-- Generated: `2026-03-29T01:05:53.643228+00:00`
+- Generated: `2026-03-29T01:25:00.464214+00:00`
 - Words: `3952`
 - Relationships: `1414`
 - Lexemes: `14`
@@ -13,6 +13,7 @@
 - Code provenance registries: `3`
 - Code library units: `242753`
 - Code library files: `6253`
+- Code term hits: `8`
 - File Forge files: `1192`
 - File Forge links: `3678`
 - File Forge relationships: `3405`
@@ -21,15 +22,15 @@
 
 - Word matches: `8`
 - Knowledge matches: `7`
-- Code matches: `4`
+- Code matches: `8`
 - File matches: `8`
 - Morpheme-supported: `7`
 - Morphologically linked: `6`
-- Fully bridged: `4`
+- Fully bridged: `7`
 - Partially bridged: `8`
 - Any bridged: `8`
 - Candidate terms: `8`
-- Full bridge ratio: `0.5`
+- Full bridge ratio: `0.875`
 - Partial bridge ratio: `1.0`
 - Any bridge ratio: `1.0`
 - Morpheme-supported ratio: `0.875`
@@ -37,13 +38,13 @@
 
 ## Top Bridged Terms
 
-| Term | Word | Knowledge | Code | File | Bridge Count |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| atlas | 1 | 1 | 1 | 1 | 4 |
-| archive | 1 | 1 | 1 | 1 | 4 |
-| integration | 1 | 1 | 1 | 1 | 4 |
-| pipeline | 1 | 1 | 1 | 1 | 4 |
-| hello | 1 | 1 | 0 | 1 | 3 |
-| horizon | 1 | 1 | 0 | 1 | 3 |
-| proof | 1 | 1 | 0 | 1 | 3 |
-| goodbye | 1 | 0 | 0 | 1 | 2 |
+| Term | Word | Knowledge | Code | File | Code Hits | Bridge Count |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| atlas | 1 | 1 | 1 | 1 | 4 | 4 |
+| archive | 1 | 1 | 1 | 1 | 4 | 4 |
+| hello | 1 | 1 | 1 | 1 | 4 | 4 |
+| horizon | 1 | 1 | 1 | 1 | 2 | 4 |
+| integration | 1 | 1 | 1 | 1 | 4 | 4 |
+| pipeline | 1 | 1 | 1 | 1 | 4 | 4 |
+| proof | 1 | 1 | 1 | 1 | 4 | 4 |
+| goodbye | 1 | 0 | 1 | 1 | 4 | 3 |

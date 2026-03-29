@@ -186,3 +186,55 @@ def test_build_bridge_audit_reports_recent_morpheme_decompositions(tmp_path: Pat
     assert report["morpheme_metrics"]["decomposed_lexeme_count"] == 1
     assert report["morpheme_metrics"]["recent_decompositions"][0]["term"] == "integration"
     assert report["top_bridged_terms"][0]["morphemes"] == ["integr", "acion"]
+
+
+
+def test_build_bridge_audit_uses_code_fts_term_hits(tmp_path: Path) -> None:
+    repo_root = tmp_path / "repo"
+    db_path = repo_root / "word_forge" / "data" / "word_forge.sqlite"
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    db = DBManager(db_path=db_path)
+    db.insert_or_update_word("proof", "Evidence", "noun", ["proof trail"])
+    db.insert_or_update_lexeme("proof", "en", base_term="proof", source="test")
+    (repo_root / "data").mkdir(parents=True, exist_ok=True)
+    (repo_root / "data" / "kb.json").write_text(json.dumps({"nodes": {}, "concept_map": {}}), encoding="utf-8")
+
+    code_db = repo_root / "data" / "code_forge" / "library.sqlite"
+    code_db.parent.mkdir(parents=True, exist_ok=True)
+    import sqlite3
+    with sqlite3.connect(str(code_db)) as conn:
+        conn.executescript(
+            """
+            CREATE TABLE code_units (
+                id TEXT PRIMARY KEY,
+                file_path TEXT NOT NULL,
+                qualified_name TEXT,
+                name TEXT,
+                content_hash TEXT,
+                created_at TEXT
+            );
+            CREATE TABLE code_text (
+                content_hash TEXT PRIMARY KEY,
+                content TEXT NOT NULL
+            );
+            CREATE VIRTUAL TABLE code_units_fts USING fts5(unit_id UNINDEXED, text);
+            """
+        )
+        conn.execute(
+            "INSERT INTO code_text (content_hash, content) VALUES (?, ?)",
+            ("h1", "This module builds proof bundles and proof validation summaries."),
+        )
+        conn.execute(
+            "INSERT INTO code_units (id, file_path, qualified_name, name, content_hash, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+            ("u1", "reports/proof_bundle.py", "reports.proof_bundle.build", "build", "h1", "2026-03-29T00:00:00Z"),
+        )
+        conn.execute(
+            "INSERT INTO code_units_fts (unit_id, text) VALUES (?, ?)",
+            ("u1", "reports proof bundle build proof validation summaries"),
+        )
+
+    report = build_bridge_audit(repo_root=repo_root, db_path=db_path)
+
+    assert report["bridge_counts"]["code"] == 1
+    assert report["code_metrics"]["term_hit_count"] == 1
+    assert report["top_bridged_terms"][0]["code_examples"][0]["file_path"] == "reports/proof_bundle.py"
