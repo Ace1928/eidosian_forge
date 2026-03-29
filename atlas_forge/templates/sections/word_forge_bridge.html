@@ -45,6 +45,8 @@
             <div class="stat-label">Knowledge matches: <span id="wf-bridge-knowledge">{{ word_forge_bridge.get('latest_report', {}).get('bridge_counts', {}).get('knowledge', 0) }}</span></div>
             <div class="stat-label">Code matches: <span id="wf-bridge-code">{{ word_forge_bridge.get('latest_report', {}).get('bridge_counts', {}).get('code', 0) }}</span></div>
             <div class="stat-label">File matches: <span id="wf-bridge-file">{{ word_forge_bridge.get('latest_report', {}).get('bridge_counts', {}).get('file', 0) }}</span></div>
+            <div class="stat-label">Morpheme-supported: <span id="wf-bridge-morpheme">{{ word_forge_bridge.get('latest_report', {}).get('bridge_counts', {}).get('morpheme', 0) }}</span></div>
+            <div class="stat-label">Morph-linked: <span id="wf-bridge-morph-linked">{{ word_forge_bridge.get('latest_report', {}).get('bridge_counts', {}).get('morphologically_linked', 0) }}</span></div>
             <div class="stat-label">Fully bridged: <span id="wf-bridge-full">{{ word_forge_bridge.get('latest_report', {}).get('bridge_counts', {}).get('fully_bridged', 0) }}</span></div>
             <div class="stat-label">Partially bridged: <span id="wf-bridge-partial">{{ word_forge_bridge.get('latest_report', {}).get('bridge_counts', {}).get('partially_bridged', 0) }}</span></div>
             <div class="stat-label">Any bridged: <span id="wf-bridge-any">{{ word_forge_bridge.get('latest_report', {}).get('bridge_counts', {}).get('any_bridged', 0) }}</span></div>

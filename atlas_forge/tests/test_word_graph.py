@@ -58,6 +58,23 @@ def _make_db(path: Path) -> None:
                 source TEXT,
                 last_refreshed REAL NOT NULL
             );
+            CREATE TABLE morphemes (
+                id INTEGER PRIMARY KEY,
+                text TEXT NOT NULL,
+                type TEXT,
+                meaning TEXT,
+                last_updated REAL
+            );
+            CREATE TABLE word_morphemes (
+                word_id INTEGER NOT NULL,
+                morpheme_id INTEGER NOT NULL,
+                position INTEGER NOT NULL
+            );
+            CREATE TABLE lexeme_morphemes (
+                lexeme_id INTEGER NOT NULL,
+                morpheme_id INTEGER NOT NULL,
+                position INTEGER NOT NULL
+            );
             """
         )
         conn.execute(
@@ -72,6 +89,12 @@ def _make_db(path: Path) -> None:
         conn.execute(
             "INSERT INTO translations (lexeme_id, target_lang, target_term, relation, source, last_refreshed) VALUES (1, 'en', 'archive', 'translation', 'test', 1)"
         )
+        conn.execute("INSERT INTO morphemes (id, text, type, meaning, last_updated) VALUES (1, 'arch', 'root', 'archive', 1)")
+        conn.execute("INSERT INTO morphemes (id, text, type, meaning, last_updated) VALUES (2, 'ive', 'suffix', 'state', 1)")
+        conn.execute("INSERT INTO word_morphemes (word_id, morpheme_id, position) VALUES (1, 1, 0)")
+        conn.execute("INSERT INTO word_morphemes (word_id, morpheme_id, position) VALUES (1, 2, 1)")
+        conn.execute("INSERT INTO lexeme_morphemes (lexeme_id, morpheme_id, position) VALUES (1, 1, 0)")
+        conn.execute("INSERT INTO lexeme_morphemes (lexeme_id, morpheme_id, position) VALUES (1, 2, 1)")
 
 
 def _sample_inputs(tmp_path: Path) -> dict[str, object]:
@@ -117,6 +140,7 @@ def test_build_word_graph_payload_includes_code_file_and_knowledge_bridges(tmp_p
     assert "knowledge" in groups
     assert "code" in groups
     assert "file" in groups
+    assert "morpheme" in groups
     assert "knowledge_tag" in labels
     assert "code_provenance" in labels
     assert "file_path" in labels
@@ -135,6 +159,7 @@ def test_build_word_graph_neighbor_payload_expands_code_and_file_nodes(tmp_path:
     )
     code_ids = {node["id"] for node in code_neighbors["nodes"]}
     assert "word:archive" in code_ids
+    assert "morpheme:arch" in code_ids
     assert "kb:k1" in code_ids
 
     file_node_id = f"file:{tmp_path / 'archive_notes.md'}"
@@ -146,6 +171,7 @@ def test_build_word_graph_neighbor_payload_expands_code_and_file_nodes(tmp_path:
     )
     file_ids = {node["id"] for node in file_neighbors["nodes"]}
     assert "word:archive" in file_ids
+    assert "morpheme:arch" in file_ids
     assert "code:0:archive_forge/archive_module.py" in file_ids
 
 
@@ -164,7 +190,8 @@ def test_summarize_word_graph_communities_detects_multi_layer_anchor_terms(tmp_p
     assert summary["community_count"] >= 1
     top = summary["top_communities"][0]
     assert top["anchor_term"] == "archive"
-    assert top["layer_count"] >= 3
+    assert top["layer_count"] >= 4
+    assert "morpheme" in top["layers"]
     assert "code" in top["layers"]
     assert "file" in top["layers"]
     assert "knowledge" in top["layers"]

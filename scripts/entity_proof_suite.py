@@ -1005,11 +1005,13 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
     lexical_bridge_strengths: list[str] = []
     lexical_bridge_gaps: list[str] = []
     lexical_bridge_paths: list[str] = []
+    bridge_counts = word_forge_bridge.get("bridge_counts") if isinstance(word_forge_bridge.get("bridge_counts"), dict) else {}
+    bridge_quality = word_forge_bridge.get("bridge_quality") if isinstance(word_forge_bridge.get("bridge_quality"), dict) else {}
+    morpheme_metrics = word_forge_bridge.get("morpheme_metrics") if isinstance(word_forge_bridge.get("morpheme_metrics"), dict) else {}
 
     if word_forge_bridge:
         lexical_bridge_paths.append(str(reports_root / "word_forge_bridge_audit" / "latest.json"))
-        bridge_counts = word_forge_bridge.get("bridge_counts") if isinstance(word_forge_bridge.get("bridge_counts"), dict) else {}
-        bridge_quality = word_forge_bridge.get("bridge_quality") if isinstance(word_forge_bridge.get("bridge_quality"), dict) else {}
+
         lexical_bridge_score += min(0.3, _safe_float(bridge_quality.get("fully_bridged_ratio")) * 0.3)
         lexical_bridge_score += min(0.2, _safe_float(bridge_quality.get("partially_bridged_ratio")) * 0.2)
         lexical_bridge_score += min(0.15, min(1.0, _safe_int(bridge_counts.get("code", 0)) / 3.0) * 0.15)
@@ -1030,6 +1032,16 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
         )
     else:
         lexical_bridge_gaps.append("No multi-layer Word Forge bridge communities surfaced.")
+    morpheme_supported_ratio = _safe_float(bridge_quality.get("morpheme_supported_ratio"))
+    morphologically_linked_ratio = _safe_float(bridge_quality.get("morphologically_linked_ratio"))
+    lexical_bridge_score += min(0.05, morpheme_supported_ratio * 0.05)
+    lexical_bridge_score += min(0.05, morphologically_linked_ratio * 0.05)
+    if morpheme_metrics.get("morpheme_count") or bridge_counts.get("morpheme"):
+        lexical_bridge_strengths.append(
+            f"Polyglot decomposition is feeding the bridge with `{_safe_int(bridge_counts.get('morpheme', 0))}` morpheme-supported terms and `{_safe_int(morpheme_metrics.get('decomposed_lexeme_count', 0))}` decomposed lexemes."
+        )
+    else:
+        lexical_bridge_gaps.append("No morpheme-aware bridge support surfaced from Word Forge polyglot decomposition.")
 
     categories = [
         _category("external_validity", benchmark_score, benchmark_strengths, benchmark_gaps, benchmark_paths),
@@ -1139,6 +1151,7 @@ def build_proof_report(repo_root: Path, window_days: int = 30) -> dict[str, Any]
         "word_forge_bridge": {
             "bridge_counts": (word_forge_bridge.get("bridge_counts") if isinstance(word_forge_bridge.get("bridge_counts"), dict) else {}),
             "bridge_quality": (word_forge_bridge.get("bridge_quality") if isinstance(word_forge_bridge.get("bridge_quality"), dict) else {}),
+            "morpheme_metrics": (word_forge_bridge.get("morpheme_metrics") if isinstance(word_forge_bridge.get("morpheme_metrics"), dict) else {}),
             "community_summary": bridge_communities,
             "top_bridged_terms": (word_forge_bridge.get("top_bridged_terms") if isinstance(word_forge_bridge.get("top_bridged_terms"), list) else [])[:8],
         },
@@ -1313,17 +1326,22 @@ def render_markdown(report: dict[str, Any]) -> str:
     bridge_counts = word_forge_bridge.get("bridge_counts") or {}
     bridge_quality = word_forge_bridge.get("bridge_quality") or {}
     community_summary = word_forge_bridge.get("community_summary") or {}
+    morpheme_metrics = word_forge_bridge.get("morpheme_metrics") or {}
     lines.append(f"- `fully_bridged`: `{bridge_counts.get('fully_bridged')}`")
     lines.append(f"- `partially_bridged`: `{bridge_counts.get('partially_bridged')}`")
     lines.append(f"- `any_bridged`: `{bridge_counts.get('any_bridged')}`")
     lines.append(f"- `candidate_term_count`: `{bridge_quality.get('candidate_term_count')}`")
     lines.append(f"- `fully_bridged_ratio`: `{bridge_quality.get('fully_bridged_ratio')}`")
+    lines.append(f"- `morpheme_supported_ratio`: `{bridge_quality.get('morpheme_supported_ratio')}`")
+    lines.append(f"- `morphologically_linked_ratio`: `{bridge_quality.get('morphologically_linked_ratio')}`")
+    lines.append(f"- `morpheme_count`: `{morpheme_metrics.get('morpheme_count')}`")
+    lines.append(f"- `decomposed_lexeme_count`: `{morpheme_metrics.get('decomposed_lexeme_count')}`")
     lines.append(f"- `community_count`: `{community_summary.get('community_count')}`")
     top_communities = community_summary.get("top_communities") if isinstance(community_summary.get("top_communities"), list) else []
     if top_communities:
-        lines.extend(["", "| Anchor | Layers | Neighbors |", "| --- | --- | ---: |",])
+        lines.extend(["", "| Anchor | Layers | Neighbors | Morphemes |", "| --- | --- | ---: | ---: |",])
         for row in top_communities[:6]:
-            lines.append(f"| {row.get('anchor_term')} | {', '.join(row.get('layers') or [])} | {row.get('neighbor_count')} |")
+            lines.append(f"| {row.get('anchor_term')} | {', '.join(row.get('layers') or [])} | {row.get('neighbor_count')} | {row.get('morpheme_nodes', 0)} |")
     session_bridge = report.get("session_bridge") or {}
     lines.extend(["", "## Session Bridge", ""])
     lines.append(f"- `last_sync_at`: `{session_bridge.get('last_sync_at')}`")

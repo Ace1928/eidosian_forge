@@ -87,6 +87,131 @@ def _load_word_metrics(db_path: Path) -> dict[str, Any]:
     }
 
 
+def _load_morpheme_metrics(db_path: Path) -> dict[str, Any]:
+    if not db_path.exists():
+        return {
+            "morpheme_count": 0,
+            "decomposed_word_count": 0,
+            "decomposed_lexeme_count": 0,
+            "morpheme_terms": set(),
+            "anchor_morphemes": {},
+            "recent_decompositions": [],
+        }
+    try:
+        with sqlite3.connect(str(db_path)) as conn:
+            conn.row_factory = sqlite3.Row
+            morpheme_count = int(conn.execute("SELECT COUNT(*) FROM morphemes").fetchone()[0])
+            decomposed_word_count = int(conn.execute("SELECT COUNT(DISTINCT word_id) FROM word_morphemes").fetchone()[0])
+            decomposed_lexeme_count = int(conn.execute("SELECT COUNT(DISTINCT lexeme_id) FROM lexeme_morphemes").fetchone()[0])
+            lexeme_rows = conn.execute(
+                """
+                SELECT COALESCE(NULLIF(l.base_term, ''), l.lemma) AS anchor_term,
+                       l.lemma,
+                       l.lang,
+                       m.text AS morpheme_text,
+                       lm.position
+                FROM lexemes l
+                JOIN lexeme_morphemes lm ON lm.lexeme_id = l.id
+                JOIN morphemes m ON m.id = lm.morpheme_id
+                ORDER BY l.last_refreshed DESC, l.id DESC, lm.position ASC
+                LIMIT 4000
+                """
+            ).fetchall()
+            word_rows = conn.execute(
+                """
+                SELECT w.term AS anchor_term,
+                       m.text AS morpheme_text,
+                       wm.position
+                FROM words w
+                JOIN word_morphemes wm ON wm.word_id = w.id
+                JOIN morphemes m ON m.id = wm.morpheme_id
+                ORDER BY w.last_refreshed DESC, w.id DESC, wm.position ASC
+                LIMIT 4000
+                """
+            ).fetchall()
+    except Exception:
+        return {
+            "morpheme_count": 0,
+            "decomposed_word_count": 0,
+            "decomposed_lexeme_count": 0,
+            "morpheme_terms": set(),
+            "anchor_morphemes": {},
+            "recent_decompositions": [],
+        }
+
+    anchor_morphemes: dict[str, list[str]] = {}
+    recent_decompositions: list[dict[str, Any]] = []
+    recent_keys: set[tuple[str, str, str]] = set()
+    morpheme_terms: set[str] = set()
+
+    for row in lexeme_rows:
+        anchor_term = str(row["anchor_term"] or "").strip().lower()
+        lemma = str(row["lemma"] or "").strip()
+        lang = str(row["lang"] or "").strip()
+        morpheme_text = str(row["morpheme_text"] or "").strip().lower()
+        if not anchor_term or not morpheme_text:
+            continue
+        morpheme_terms.add(morpheme_text)
+        anchor_morphemes.setdefault(anchor_term, []).append(morpheme_text)
+        key = (anchor_term, lemma, lang)
+        if key in recent_keys:
+            continue
+        morphemes = [
+            str(item["morpheme_text"] or "").strip().lower()
+            for item in lexeme_rows
+            if str(item["anchor_term"] or "").strip().lower() == anchor_term
+            and str(item["lemma"] or "").strip() == lemma
+            and str(item["lang"] or "").strip() == lang
+        ]
+        recent_decompositions.append(
+            {
+                "term": anchor_term,
+                "lemma": lemma,
+                "lang": lang,
+                "source_type": "lexeme",
+                "morphemes": [item for item in morphemes if item],
+            }
+        )
+        recent_keys.add(key)
+        if len(recent_decompositions) >= 24:
+            break
+
+    word_seen: set[str] = set()
+    for row in word_rows:
+        anchor_term = str(row["anchor_term"] or "").strip().lower()
+        morpheme_text = str(row["morpheme_text"] or "").strip().lower()
+        if not anchor_term or not morpheme_text:
+            continue
+        morpheme_terms.add(morpheme_text)
+        anchor_morphemes.setdefault(anchor_term, []).append(morpheme_text)
+        if anchor_term in word_seen or len(recent_decompositions) >= 24:
+            continue
+        morphemes = [
+            str(item["morpheme_text"] or "").strip().lower()
+            for item in word_rows
+            if str(item["anchor_term"] or "").strip().lower() == anchor_term
+        ]
+        recent_decompositions.append(
+            {
+                "term": anchor_term,
+                "lemma": anchor_term,
+                "lang": "",
+                "source_type": "word",
+                "morphemes": [item for item in morphemes if item],
+            }
+        )
+        word_seen.add(anchor_term)
+
+    return {
+        "morpheme_count": morpheme_count,
+        "decomposed_word_count": decomposed_word_count,
+        "decomposed_lexeme_count": decomposed_lexeme_count,
+        "morpheme_terms": morpheme_terms,
+        "anchor_morphemes": {key: list(dict.fromkeys(value)) for key, value in anchor_morphemes.items() if key and value},
+        "recent_decompositions": recent_decompositions,
+    }
+
+
 def _load_knowledge_tokens(kb_path: Path) -> dict[str, Any]:
     payload = _load_json(kb_path)
     nodes = payload.get("nodes") if isinstance(payload.get("nodes"), dict) else {}
@@ -278,6 +403,7 @@ def build_bridge_audit(repo_root: Path, db_path: Path | None = None) -> dict[str
     knowledge_metrics = _load_knowledge_tokens(kb_path)
     code_metrics = _load_code_tokens(repo_root)
     file_metrics = _load_file_tokens(repo_root)
+    morpheme_metrics = _load_morpheme_metrics(db_path)
 
     base_terms = word_metrics.get("base_terms", [])
     word_terms = word_metrics.get("word_terms", set())
@@ -285,6 +411,7 @@ def build_bridge_audit(repo_root: Path, db_path: Path | None = None) -> dict[str
     knowledge_content_tokens = knowledge_metrics.get("content_tokens", set())
     code_tokens = code_metrics.get("code_tokens", set())
     file_tokens = set(file_metrics.get("path_tokens", set())) | set(file_metrics.get("semantic_tokens", set()))
+    anchor_morphemes = morpheme_metrics.get("anchor_morphemes", {})
 
     per_term = []
     for term in base_terms:
@@ -292,6 +419,15 @@ def build_bridge_audit(repo_root: Path, db_path: Path | None = None) -> dict[str
         knowledge_match = term in knowledge_tag_tokens or term in knowledge_content_tokens
         code_match = term in code_tokens
         file_match = term in file_tokens
+        morphemes = list(anchor_morphemes.get(term, []))
+        morpheme_layer_matches = {
+            "word": sorted({item for item in morphemes if item in word_terms and item != term}),
+            "knowledge": sorted({item for item in morphemes if item in knowledge_tag_tokens or item in knowledge_content_tokens}),
+            "code": sorted({item for item in morphemes if item in code_tokens}),
+            "file": sorted({item for item in morphemes if item in file_tokens}),
+        }
+        morpheme_match = bool(morphemes)
+        morpheme_bridge_count = sum(1 for values in morpheme_layer_matches.values() if values)
         per_term.append(
             {
                 "term": term,
@@ -299,10 +435,15 @@ def build_bridge_audit(repo_root: Path, db_path: Path | None = None) -> dict[str
                 "knowledge_match": knowledge_match,
                 "code_match": code_match,
                 "file_match": file_match,
+                "morpheme_match": morpheme_match,
+                "morphemes": morphemes,
+                "morpheme_bridge_count": morpheme_bridge_count,
+                "morpheme_layer_matches": morpheme_layer_matches,
                 "bridge_count": int(word_match) + int(knowledge_match) + int(code_match) + int(file_match),
+                "extended_bridge_count": int(word_match) + int(knowledge_match) + int(code_match) + int(file_match) + int(morpheme_match),
             }
         )
-    per_term.sort(key=lambda row: (-int(row["bridge_count"]), row["term"]))
+    per_term.sort(key=lambda row: (-int(row["bridge_count"]), -int(row.get("morpheme_bridge_count", 0)), row["term"]))
 
     bridge_counts = Counter(
         {
@@ -310,6 +451,8 @@ def build_bridge_audit(repo_root: Path, db_path: Path | None = None) -> dict[str
             "knowledge": sum(1 for row in per_term if row["knowledge_match"]),
             "code": sum(1 for row in per_term if row["code_match"]),
             "file": sum(1 for row in per_term if row["file_match"]),
+            "morpheme": sum(1 for row in per_term if row.get("morpheme_match")),
+            "morphologically_linked": sum(1 for row in per_term if row.get("morpheme_bridge_count", 0) >= 1),
             "fully_bridged": sum(1 for row in per_term if row["bridge_count"] >= 4),
             "partially_bridged": sum(1 for row in per_term if row["bridge_count"] >= 2),
             "any_bridged": sum(1 for row in per_term if row["bridge_count"] >= 1),
@@ -321,6 +464,8 @@ def build_bridge_audit(repo_root: Path, db_path: Path | None = None) -> dict[str
         "fully_bridged_ratio": round((bridge_counts["fully_bridged"] / candidate_term_count), 4) if candidate_term_count else 0.0,
         "partially_bridged_ratio": round((bridge_counts["partially_bridged"] / candidate_term_count), 4) if candidate_term_count else 0.0,
         "any_bridged_ratio": round((bridge_counts["any_bridged"] / candidate_term_count), 4) if candidate_term_count else 0.0,
+        "morpheme_supported_ratio": round((bridge_counts["morpheme"] / candidate_term_count), 4) if candidate_term_count else 0.0,
+        "morphologically_linked_ratio": round((bridge_counts["morphologically_linked"] / candidate_term_count), 4) if candidate_term_count else 0.0,
     }
 
     return {
@@ -335,6 +480,9 @@ def build_bridge_audit(repo_root: Path, db_path: Path | None = None) -> dict[str
             "lexeme_count": word_metrics.get("lexeme_count", 0),
             "translation_count": word_metrics.get("translation_count", 0),
             "base_aligned_count": word_metrics.get("base_aligned_count", 0),
+            "morpheme_count": morpheme_metrics.get("morpheme_count", 0),
+            "decomposed_word_count": morpheme_metrics.get("decomposed_word_count", 0),
+            "decomposed_lexeme_count": morpheme_metrics.get("decomposed_lexeme_count", 0),
         },
         "knowledge_metrics": {
             "node_count": knowledge_metrics.get("node_count", 0),
@@ -357,6 +505,12 @@ def build_bridge_audit(repo_root: Path, db_path: Path | None = None) -> dict[str
         },
         "bridge_counts": dict(bridge_counts),
         "bridge_quality": bridge_quality,
+        "morpheme_metrics": {
+            "morpheme_count": morpheme_metrics.get("morpheme_count", 0),
+            "decomposed_word_count": morpheme_metrics.get("decomposed_word_count", 0),
+            "decomposed_lexeme_count": morpheme_metrics.get("decomposed_lexeme_count", 0),
+            "recent_decompositions": morpheme_metrics.get("recent_decompositions", [])[:12],
+        },
         "top_bridged_terms": per_term[:24],
     }
 
@@ -368,6 +522,7 @@ def render_bridge_audit_markdown(report: dict[str, Any]) -> str:
     file_metrics = report.get("file_metrics") or {}
     bridge_counts = report.get("bridge_counts") or {}
     bridge_quality = report.get("bridge_quality") or {}
+    morpheme_metrics = report.get("morpheme_metrics") or {}
     rows = report.get("top_bridged_terms") or []
     lines = [
         "# Word Forge Bridge Audit",
@@ -378,6 +533,8 @@ def render_bridge_audit_markdown(report: dict[str, Any]) -> str:
         f"- Lexemes: `{word_metrics.get('lexeme_count', 0)}`",
         f"- Translations: `{word_metrics.get('translation_count', 0)}`",
         f"- Base aligned: `{word_metrics.get('base_aligned_count', 0)}`",
+        f"- Morphemes: `{word_metrics.get('morpheme_count', 0)}`",
+        f"- Decomposed lexemes: `{word_metrics.get('decomposed_lexeme_count', 0)}`",
         f"- Knowledge nodes: `{knowledge_metrics.get('node_count', 0)}`",
         f"- Code provenance links: `{code_metrics.get('provenance_link_file_count', 0)}`",
         f"- Code provenance registries: `{code_metrics.get('provenance_registry_file_count', 0)}`",
@@ -393,6 +550,8 @@ def render_bridge_audit_markdown(report: dict[str, Any]) -> str:
         f"- Knowledge matches: `{bridge_counts.get('knowledge', 0)}`",
         f"- Code matches: `{bridge_counts.get('code', 0)}`",
         f"- File matches: `{bridge_counts.get('file', 0)}`",
+        f"- Morpheme-supported: `{bridge_counts.get('morpheme', 0)}`",
+        f"- Morphologically linked: `{bridge_counts.get('morphologically_linked', 0)}`",
         f"- Fully bridged: `{bridge_counts.get('fully_bridged', 0)}`",
         f"- Partially bridged: `{bridge_counts.get('partially_bridged', 0)}`",
         f"- Any bridged: `{bridge_counts.get('any_bridged', 0)}`",
@@ -400,6 +559,8 @@ def render_bridge_audit_markdown(report: dict[str, Any]) -> str:
         f"- Full bridge ratio: `{bridge_quality.get('fully_bridged_ratio', 0.0)}`",
         f"- Partial bridge ratio: `{bridge_quality.get('partially_bridged_ratio', 0.0)}`",
         f"- Any bridge ratio: `{bridge_quality.get('any_bridged_ratio', 0.0)}`",
+        f"- Morpheme-supported ratio: `{bridge_quality.get('morpheme_supported_ratio', 0.0)}`",
+        f"- Morphologically linked ratio: `{bridge_quality.get('morphologically_linked_ratio', 0.0)}`",
         "",
         "## Top Bridged Terms",
         "",

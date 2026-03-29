@@ -79,6 +79,35 @@ def _translation_rows(conn: sqlite3.Connection, *, limit: int = 260) -> list[sql
     ).fetchall()
 
 
+def _morpheme_rows(conn: sqlite3.Connection, *, limit: int = 320) -> list[sqlite3.Row]:
+    return conn.execute(
+        """
+        SELECT COALESCE(NULLIF(l.base_term, ''), l.lemma) AS anchor_term,
+               l.lemma,
+               l.lang,
+               m.text AS morpheme_text,
+               lm.position,
+               'lexeme' AS source_type
+        FROM lexemes l
+        JOIN lexeme_morphemes lm ON lm.lexeme_id = l.id
+        JOIN morphemes m ON m.id = lm.morpheme_id
+        UNION ALL
+        SELECT w.term AS anchor_term,
+               w.term AS lemma,
+               '' AS lang,
+               m.text AS morpheme_text,
+               wm.position,
+               'word' AS source_type
+        FROM words w
+        JOIN word_morphemes wm ON wm.word_id = w.id
+        JOIN morphemes m ON m.id = wm.morpheme_id
+        ORDER BY anchor_term ASC, source_type DESC, position ASC
+        LIMIT ?
+        """,
+        (int(limit),),
+    ).fetchall()
+
+
 def _coerce_code_entries(code_report: Optional[dict[str, Any]], forge_root: Path, *, limit: int = 20) -> list[dict[str, Any]]:
     latest_entries = (code_report or {}).get("latest_entries") or []
     coerced: list[dict[str, Any]] = []
@@ -221,12 +250,14 @@ def build_word_graph_payload(
         rels = _relationship_rows(conn)
         lexemes = _lexeme_rows(conn)
         translations = _translation_rows(conn)
+        morphemes = _morpheme_rows(conn)
 
     nodes: List[Dict[str, Any]] = []
     edges: List[Dict[str, Any]] = []
     node_ids: set[str] = set()
     seen_edges: set[tuple[str, str, str]] = set()
     bridge_terms: set[str] = set()
+    term_targets: dict[str, set[str]] = {}
 
     def add_node(node: Dict[str, Any]) -> None:
         node_id = str(node.get("id") or "")
@@ -243,9 +274,15 @@ def build_word_graph_payload(
         seen_edges.add(edge)
         edges.append({"from": src, "to": dst, "label": label})
 
+    def register_term_node(term: str, node_id: str) -> None:
+        normalized = str(term or "").strip().lower()
+        if not normalized:
+            return
+        term_targets.setdefault(normalized, set()).add(node_id)
+        bridge_terms.add(normalized)
+
     for row in words:
         term = str(row["term"])
-        bridge_terms.add(term.lower())
         valence = row["avg_valence"] or 0.0
         arousal = row["avg_arousal"] or 0.5
         red = int(255 * (1 - (valence + 1) / 2))
@@ -262,14 +299,14 @@ def build_word_graph_payload(
                 "metadata": dict(row),
             }
         )
+        register_term_node(term, f"word:{term}")
 
     for row in lexemes:
         lemma = str(row["lemma"])
         lang = str(row["lang"])
         base_term = str(row["base_term"] or "")
-        bridge_terms.add(lemma.lower())
         if base_term:
-            bridge_terms.add(base_term.lower())
+            register_term_node(base_term, f"word:{base_term}")
         lexeme_id = f"lexeme:{lang}:{lemma}"
         add_node(
             {
@@ -296,7 +333,37 @@ def build_word_graph_payload(
                         "metadata": {"term": base_term, "inferred": True},
                     }
                 )
+            register_term_node(base_term, word_id)
             add_edge(lexeme_id, word_id, "base_alignment")
+
+    for row in morphemes:
+        morpheme_text = str(row["morpheme_text"] or "").strip().lower()
+        if not morpheme_text:
+            continue
+        morpheme_id = f"morpheme:{morpheme_text}"
+        add_node(
+            {
+                "id": morpheme_id,
+                "label": morpheme_text,
+                "title": f"<b>Morpheme</b><br>{morpheme_text}",
+                "group": "morpheme",
+                "value": 8,
+                "color": {"background": "#fca5a5", "border": "#fecaca"},
+                "metadata": dict(row),
+            }
+        )
+        register_term_node(morpheme_text, morpheme_id)
+        anchor_term = str(row["anchor_term"] or "").strip().lower()
+        lang = str(row["lang"] or "").strip()
+        lemma = str(row["lemma"] or "").strip()
+        if lang and lemma:
+            lexeme_id = f"lexeme:{lang}:{lemma}"
+            if lexeme_id in node_ids:
+                add_edge(lexeme_id, morpheme_id, "has_morpheme")
+        word_id = f"word:{anchor_term}"
+        if anchor_term and word_id in node_ids:
+            add_edge(word_id, morpheme_id, "has_morpheme")
+
 
     for row in rels:
         src = f"word:{row['term1']}"
@@ -348,9 +415,9 @@ def build_word_graph_payload(
             }
         )
         for term in shared_terms[:3]:
-            src = f"word:{term}"
-            if src in node_ids:
-                add_edge(src, kb_node_id, "knowledge_tag")
+            for src in sorted(term_targets.get(term, set()))[:2]:
+                if src in node_ids:
+                    add_edge(src, kb_node_id, "knowledge_tag")
         matched_terms += 1
 
     latest_entries = _coerce_code_entries(code_report, forge_root, limit=40)
@@ -374,9 +441,9 @@ def build_word_graph_payload(
             }
         )
         for term in shared_terms[:2]:
-            src = f"word:{term}"
-            if src in node_ids:
-                add_edge(src, code_id, "code_provenance")
+            for src in sorted(term_targets.get(term, set()))[:2]:
+                if src in node_ids:
+                    add_edge(src, code_id, "code_provenance")
 
     recent_files = _coerce_file_entries(file_summary, forge_root, bridge_terms=bridge_terms, limit=48)
     for entry in recent_files[:48]:
@@ -409,9 +476,9 @@ def build_word_graph_payload(
             }
         )
         for term in shared_terms[:2]:
-            src = f"word:{term}"
-            if src in node_ids:
-                add_edge(src, file_id, "file_path")
+            for src in sorted(term_targets.get(term, set()))[:2]:
+                if src in node_ids:
+                    add_edge(src, file_id, "file_path")
 
     return {"nodes": nodes, "edges": edges}
 
@@ -460,7 +527,7 @@ def build_word_graph_neighbor_payload(
             collect_edge(edge)
             immediate_neighbors.add(str(edge.get("to") if edge.get("from") == node_id else edge.get("from")))
 
-    if node_id.startswith(("code:", "file:", "kb:")):
+    if node_id.startswith(("code:", "file:", "kb:", "morpheme:")):
         for edge in payload.get("edges", []):
             src = str(edge.get("from") or "")
             dst = str(edge.get("to") or "")
@@ -471,7 +538,7 @@ def build_word_graph_neighbor_payload(
                 other = src
             if not other:
                 continue
-            if other.startswith(("word:", "lexeme:", "translation:", "kb:", "code:", "file:")):
+            if other.startswith(("word:", "lexeme:", "translation:", "kb:", "code:", "file:", "morpheme:")):
                 collect_edge(edge)
 
     return {
@@ -495,7 +562,7 @@ def summarize_word_graph_communities(payload: dict[str, Any], *, limit: int = 12
 
     layer_totals: Counter[str] = Counter()
     communities: list[dict[str, Any]] = []
-    layer_order = ["knowledge", "code", "file", "multilingual", "translation"]
+    layer_order = ["knowledge", "code", "file", "morpheme", "multilingual", "translation"]
 
     for node_id, node in nodes_by_id.items():
         if not node_id.startswith("word:"):
@@ -523,6 +590,7 @@ def summarize_word_graph_communities(payload: dict[str, Any], *, limit: int = 12
                 "knowledge_nodes": len(layer_members["knowledge"]),
                 "code_nodes": len(layer_members["code"]),
                 "file_nodes": len(layer_members["file"]),
+                "morpheme_nodes": len(layer_members["morpheme"]),
                 "multilingual_nodes": len(layer_members["multilingual"]),
                 "translation_nodes": len(layer_members["translation"]),
                 "members": {layer: layer_members[layer][:8] for layer in active_layers},

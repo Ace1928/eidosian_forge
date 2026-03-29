@@ -194,6 +194,20 @@ def test_build_proof_report_tracks_freshness_regression_and_external_results(tmp
         {"winner": "qwen35@off"},
     )
     _write_json(
+        repo / "reports" / "word_forge_bridge_audit" / "latest.json",
+        {
+            "bridge_counts": {"fully_bridged": 2, "code": 2, "file": 2, "knowledge": 2, "morpheme": 3},
+            "bridge_quality": {
+                "fully_bridged_ratio": 0.4,
+                "partially_bridged_ratio": 0.6,
+                "morpheme_supported_ratio": 0.8,
+                "morphologically_linked_ratio": 0.5,
+            },
+            "morpheme_metrics": {"morpheme_count": 6, "decomposed_lexeme_count": 3},
+            "top_bridged_terms": [{"term": "integration", "morphemes": ["integr", "ation"]}],
+        },
+    )
+    _write_json(
         repo / "reports" / "graphrag" / "qualitative_assessment_20260320.json",
         {"aggregate": {"overall_score": 0.81}},
     )
@@ -238,6 +252,7 @@ def test_build_proof_report_tracks_freshness_regression_and_external_results(tmp
 
     assert report["external_benchmark_coverage"]["agentbench"] is True
     assert report["external_benchmark_results"][0]["suite"] == "agentbench"
+    assert report["word_forge_bridge"]["morpheme_metrics"]["decomposed_lexeme_count"] == 3
     assert report["external_benchmark_results"][0]["execution_mode"] == "imported_reference"
     assert report["identity_continuity_scorecard"]["overall_score"] == 0.77
     assert report["identity_continuity_history"]["trend"] == "stable"

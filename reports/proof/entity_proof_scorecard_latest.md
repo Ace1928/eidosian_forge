@@ -1,18 +1,18 @@
 # Eidos Entity Proof Scorecard
 
-- Generated: `2026-03-29T00:08:33Z`
+- Generated: `2026-03-29T00:45:37Z`
 - Repo root: `/data/data/com.termux/files/home/eidosian_forge`
-- Git head: `6ef80e20d64c0f54bff7c8c13e1a8874bc3f3383`
+- Git head: `e159f95d159b9483a6d903a8a4af39db94818222`
 - Worktree dirty: `None`
-- Overall status: `yellow`
-- Overall score: `0.782857`
+- Overall status: `green`
+- Overall score: `0.803393`
 
 ## Categories
 
 | Category | Status | Score |
 | --- | --- | ---: |
 | external_validity | green | 0.95 |
-| lexical_bridge | yellow | 0.7625 |
+| lexical_bridge | green | 0.90625 |
 | identity_continuity | green | 1.0 |
 | governed_self_modification | green | 0.9 |
 | observability | green | 1.0 |
@@ -117,14 +117,20 @@
 - `any_bridged`: `8`
 - `candidate_term_count`: `8`
 - `fully_bridged_ratio`: `0.5`
-- `community_count`: `4`
+- `morpheme_supported_ratio`: `0.875`
+- `morphologically_linked_ratio`: `0.5`
+- `morpheme_count`: `314`
+- `decomposed_lexeme_count`: `9`
+- `community_count`: `13`
 
-| Anchor | Layers | Neighbors |
-| --- | --- | ---: |
-| archive | knowledge, code, file, multilingual | 70 |
-| integration | knowledge, file, multilingual | 7 |
-| atlas | knowledge, multilingual | 7 |
-| pipeline | knowledge, multilingual | 4 |
+| Anchor | Layers | Neighbors | Morphemes |
+| --- | --- | ---: | ---: |
+| archive | knowledge, code, file, morpheme, multilingual | 71 | 1 |
+| integration | knowledge, file, morpheme, multilingual | 10 | 3 |
+| atlas | knowledge, morpheme, multilingual | 8 | 1 |
+| pipeline | knowledge, morpheme, multilingual | 7 | 3 |
+| cycle | file, morpheme | 25 | 1 |
+| duplicate | file, morpheme | 6 | 1 |
 
 ## Session Bridge
 
@@ -143,18 +149,18 @@
 
 ## Proof History
 
-- `trend`: `stable`
-- `delta_from_previous`: `0.0`
+- `trend`: `improved`
+- `delta_from_previous`: `0.020536`
 - `sample_count`: `6`
 
 | Generated | Status | Score | Freshness | Regression |
 | --- | --- | ---: | --- | --- |
-| 2026-03-28T22:39:50Z | yellow | 0.78625 | yellow | stable |
-| 2026-03-28T22:41:21Z | yellow | 0.741786 | yellow | regressed |
 | 2026-03-28T22:46:39Z | yellow | 0.741786 | yellow | stable |
 | 2026-03-28T22:52:37Z | yellow | 0.737024 | yellow | stable |
 | 2026-03-28T23:09:38Z | yellow | 0.782857 | yellow | improved |
 | 2026-03-28T23:15:08Z | yellow | 0.782857 | yellow | stable |
+| 2026-03-29T00:08:33Z | yellow | 0.782857 | yellow | stable |
+| 2026-03-29T00:41:36Z | green | 0.803393 | yellow | improved |
 
 ## Continuity Metrics
 

@@ -40,6 +40,7 @@ def test_atlas_word_forge_routes_return_payloads() -> None:
     bridge_payload = bridge.json()
     assert bridge_payload["contract"] == "eidos.word_forge.bridge.summary.v1"
     assert "community_summary" in bridge_payload
+    assert "morpheme_metrics" in bridge_payload
 
     services = client.get("/api/runtime/services")
     assert services.status_code == 200

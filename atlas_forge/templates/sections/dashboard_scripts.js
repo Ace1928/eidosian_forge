@@ -988,11 +988,15 @@ async function refreshWordForgeBridge() {
             document.getElementById('wf-bridge-knowledge').textContent = counts.knowledge ?? 0;
             document.getElementById('wf-bridge-code').textContent = counts.code ?? 0;
             document.getElementById('wf-bridge-file').textContent = counts.file ?? 0;
+            document.getElementById('wf-bridge-morpheme').textContent = counts.morpheme ?? 0;
+            document.getElementById('wf-bridge-morph-linked').textContent = counts.morphologically_linked ?? 0;
             document.getElementById('wf-bridge-full').textContent = counts.fully_bridged ?? 0;
             document.getElementById('wf-bridge-partial').textContent = counts.partially_bridged ?? 0;
             document.getElementById('wf-bridge-any').textContent = counts.any_bridged ?? 0;
             document.getElementById('wf-bridge-ratio').textContent = quality.fully_bridged_ratio ?? 0;
             document.getElementById('wf-bridge-communities').textContent = communities.community_count ?? 0;
+            document.getElementById('wf-bridge-morpheme-count').textContent = summary.morpheme_metrics?.morpheme_count ?? 0;
+            document.getElementById('wf-bridge-decomposed').textContent = summary.morpheme_metrics?.decomposed_lexeme_count ?? 0;
             document.getElementById('wf-bridge-code-units').textContent = summary.code_metrics?.code_library_unit_count ?? 0;
             document.getElementById('wf-bridge-file-links').textContent = summary.file_metrics?.link_count ?? 0;
             const body = document.getElementById('wf-bridge-history-body');
@@ -1004,6 +1008,7 @@ async function refreshWordForgeBridge() {
                         <td>${row.knowledge_match ? 1 : 0}</td>
                         <td>${row.code_match ? 1 : 0}</td>
                         <td>${row.file_match ? 1 : 0}</td>
+                        <td>${escapeHtml((row.morphemes || []).slice(0, 4).join(', '))}</td>
                     </tr>
                 `).join('');
             }
@@ -1014,6 +1019,7 @@ async function refreshWordForgeBridge() {
                         <td>${escapeHtml(row.anchor_term || '')}</td>
                         <td>${escapeHtml(String(row.layer_count ?? 0))}</td>
                         <td>${escapeHtml(String(row.neighbor_count ?? 0))}</td>
+                        <td>${escapeHtml(String(row.morpheme_nodes ?? 0))}</td>
                         <td>${escapeHtml((row.layers || []).join(', '))}</td>
                     </tr>
                 `).join('');

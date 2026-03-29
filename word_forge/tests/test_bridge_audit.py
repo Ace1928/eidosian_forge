@@ -5,6 +5,7 @@ from pathlib import Path
 
 from word_forge.bridge.audit import build_bridge_audit, run_bridge_audit
 from word_forge.database.database_manager import DBManager
+from word_forge.linguistics.morphology import MorphologyManager
 
 
 def test_build_bridge_audit_counts_word_knowledge_and_code_matches(tmp_path: Path) -> None:
@@ -15,6 +16,8 @@ def test_build_bridge_audit_counts_word_knowledge_and_code_matches(tmp_path: Pat
     db = DBManager(db_path=db_path)
     db.insert_or_update_word("hello", "A greeting", "noun", ["hello there"])
     db.insert_or_update_lexeme("bonjour", "fr", base_term="hello", gloss="hello", source="test")
+    morph = MorphologyManager(db)
+    morph.set_word_morphemes(db.get_word_id("hello"), [morph.upsert_morpheme("hel"), morph.upsert_morpheme("lo")])
     lexeme_id = db.get_lexeme_id("bonjour", "fr")
     db.add_translation(lexeme_id, "en", "hello", source="test")
 
@@ -65,6 +68,8 @@ def test_build_bridge_audit_counts_word_knowledge_and_code_matches(tmp_path: Pat
     assert report["bridge_counts"]["knowledge"] == 1
     assert report["bridge_counts"]["code"] == 1
     assert report["bridge_counts"]["file"] == 1
+    assert report["bridge_counts"]["morpheme"] == 1
+    assert report["bridge_quality"]["morpheme_supported_ratio"] == 1.0
     assert report["bridge_counts"]["fully_bridged"] == 1
     assert report["bridge_counts"]["partially_bridged"] == 1
     assert report["bridge_counts"]["any_bridged"] == 1
@@ -158,3 +163,26 @@ def test_build_bridge_audit_uses_fileforge_semantic_tokens_and_code_library(tmp_
     assert report["bridge_counts"]["file"] == 1
     assert report["code_metrics"]["code_library_unit_count"] == 1
     assert report["file_metrics"]["link_count"] == 1
+
+
+
+def test_build_bridge_audit_reports_recent_morpheme_decompositions(tmp_path: Path) -> None:
+    repo_root = tmp_path / "repo"
+    db_path = repo_root / "word_forge" / "data" / "word_forge.sqlite"
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    db = DBManager(db_path=db_path)
+    db.insert_or_update_word("integration", "A joining together", "noun", ["system integration"])
+    db.insert_or_update_lexeme("integracion", "es", base_term="integration", gloss="integration", source="test")
+    lexeme_id = db.get_lexeme_id("integracion", "es")
+    morph = MorphologyManager(db)
+    morph_ids = [morph.upsert_morpheme("integr"), morph.upsert_morpheme("acion")]
+    morph.set_lexeme_morphemes(lexeme_id, morph_ids)
+    (repo_root / "data").mkdir(parents=True, exist_ok=True)
+    (repo_root / "data" / "kb.json").write_text(json.dumps({"nodes": {}, "concept_map": {}}), encoding="utf-8")
+
+    report = build_bridge_audit(repo_root=repo_root, db_path=db_path)
+
+    assert report["morpheme_metrics"]["morpheme_count"] >= 2
+    assert report["morpheme_metrics"]["decomposed_lexeme_count"] == 1
+    assert report["morpheme_metrics"]["recent_decompositions"][0]["term"] == "integration"
+    assert report["top_bridged_terms"][0]["morphemes"] == ["integr", "acion"]
