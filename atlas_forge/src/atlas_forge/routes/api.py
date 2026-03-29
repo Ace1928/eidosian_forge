@@ -10,9 +10,11 @@ from ..forge import (
     get_node_neighbors,
     get_word_forge_multilingual_summary,
     get_word_forge_fasttext_summary,
+    get_word_forge_polyglot_summary,
     get_word_forge_bridge_summary,
     get_word_forge_multilingual_history,
     get_word_forge_fasttext_history,
+    get_word_forge_polyglot_history,
     get_word_forge_bridge_history,
     get_word_graph_communities,
 )
@@ -78,6 +80,16 @@ async def api_word_forge_fasttext_history(limit: int = 12):
     return {"entries": get_word_forge_fasttext_history(limit=max(1, min(limit, 60)))}
 
 
+@router.get("/word-forge/polyglot")
+async def api_word_forge_polyglot():
+    return get_word_forge_polyglot_summary()
+
+
+@router.get("/word-forge/polyglot/history")
+async def api_word_forge_polyglot_history(limit: int = 12):
+    return {"entries": get_word_forge_polyglot_history(limit=max(1, min(limit, 60)))}
+
+
 @router.post("/word-forge/multilingual/run")
 async def api_word_forge_multilingual_run(source_path: str, source_type: str, limit: int | None = None, force: bool = False):
     from word_forge.multilingual.runtime import run_multilingual_ingest
@@ -122,6 +134,19 @@ async def api_word_forge_fasttext_run(
         top_k=top_k,
         min_score=min_score,
         apply=apply,
+        force=force,
+    )
+
+
+@router.post("/word-forge/polyglot/run")
+async def api_word_forge_polyglot_run(lang: str | None = None, limit: int | None = None, force: bool = False):
+    from word_forge.multilingual.polyglot_runtime import run_polyglot_decomposition
+
+    return run_polyglot_decomposition(
+        repo_root=FORGE_ROOT,
+        db_path=WORD_FORGE_DB,
+        lang=lang,
+        limit=limit,
         force=force,
     )
 

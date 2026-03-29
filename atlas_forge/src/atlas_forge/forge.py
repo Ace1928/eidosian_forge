@@ -28,8 +28,9 @@ from .config import (
     CODE_FORGE_ARCHIVE_LIFECYCLE_HISTORY, HOME_ROOT, WORD_FORGE_DB,
     WORD_FORGE_MULTILINGUAL_INGEST_STATUS, WORD_FORGE_MULTILINGUAL_INGEST_HISTORY,
     WORD_FORGE_FASTTEXT_INGEST_STATUS, WORD_FORGE_FASTTEXT_INGEST_HISTORY,
+    WORD_FORGE_POLYGLOT_STATUS, WORD_FORGE_POLYGLOT_HISTORY,
     WORD_FORGE_BRIDGE_AUDIT_STATUS, WORD_FORGE_BRIDGE_AUDIT_HISTORY,
-    WORD_FORGE_MULTILINGUAL_REPORT_DIR, WORD_FORGE_FASTTEXT_REPORT_DIR, WORD_FORGE_BRIDGE_REPORT_DIR,
+    WORD_FORGE_MULTILINGUAL_REPORT_DIR, WORD_FORGE_FASTTEXT_REPORT_DIR, WORD_FORGE_POLYGLOT_REPORT_DIR, WORD_FORGE_BRIDGE_REPORT_DIR,
     WORD_FORGE_FASTTEXT_DB
 )
 from .utils import _read_json, _read_jsonl_rows, _resolve_operator_path
@@ -149,6 +150,16 @@ def get_word_forge_fasttext_summary() -> Dict[str, Any]:
         "vector_db_path": str(WORD_FORGE_FASTTEXT_DB),
     }
 
+def get_word_forge_polyglot_summary() -> Dict[str, Any]:
+    latest = _read_latest_report(WORD_FORGE_POLYGLOT_REPORT_DIR)
+    return {
+        "contract": "eidos.word_forge.polyglot.summary.v1",
+        "status": _read_json(WORD_FORGE_POLYGLOT_STATUS, {"status": "idle"}),
+        "history": _read_jsonl_rows(WORD_FORGE_POLYGLOT_HISTORY, 12),
+        "latest_report": latest,
+        "db_path": str(WORD_FORGE_DB),
+    }
+
 def get_word_forge_bridge_summary() -> Dict[str, Any]:
     latest = _read_latest_report(WORD_FORGE_BRIDGE_REPORT_DIR)
     history = _read_jsonl_rows(WORD_FORGE_BRIDGE_AUDIT_HISTORY, 12)
@@ -192,6 +203,9 @@ def get_word_forge_multilingual_history(limit: int = 12) -> List[Dict[str, Any]]
 
 def get_word_forge_fasttext_history(limit: int = 12) -> List[Dict[str, Any]]:
     return _read_jsonl_rows(WORD_FORGE_FASTTEXT_INGEST_HISTORY, limit)
+
+def get_word_forge_polyglot_history(limit: int = 12) -> List[Dict[str, Any]]:
+    return _read_jsonl_rows(WORD_FORGE_POLYGLOT_HISTORY, limit)
 
 def get_word_forge_bridge_history(limit: int = 12) -> List[Dict[str, Any]]:
     return _read_jsonl_rows(WORD_FORGE_BRIDGE_AUDIT_HISTORY, limit)
@@ -400,6 +414,7 @@ def get_runtime_snapshot() -> Dict[str, Any]:
         "file_forge_index_history": _read_jsonl_rows(FILE_FORGE_INDEX_HISTORY),
         "word_forge_multilingual": get_word_forge_multilingual_summary(),
         "word_forge_fasttext": get_word_forge_fasttext_summary(),
+        "word_forge_polyglot": get_word_forge_polyglot_summary(),
         "word_forge_bridge": get_word_forge_bridge_summary(),
         "shell": _shell_sessions_snapshot(),
         "archive_plan": _read_json(CODE_FORGE_ARCHIVE_PLAN_STATUS, {"status": "idle"}),
@@ -428,7 +443,7 @@ def get_runtime_snapshot_compact() -> Dict[str, Any]:
     compact: Dict[str, Any] = {}
     keys = (
         "scheduler", "local_agent", "qwenchat", "living_pipeline", "doc_processor",
-        "file_forge", "file_forge_index", "word_forge_multilingual", "word_forge_fasttext", "word_forge_bridge", "shell", "archive_plan", "archive_lifecycle",
+        "file_forge", "file_forge_index", "word_forge_multilingual", "word_forge_fasttext", "word_forge_polyglot", "word_forge_bridge", "shell", "archive_plan", "archive_lifecycle",
         "session_bridge", "identity_continuity", "boot", "capabilities",
         "docs_batch", "proof_summary", "coordinator", "identity_history"
     )
@@ -462,6 +477,7 @@ def get_runtime_services_snapshot() -> List[Dict[str, Any]]:
         _row("living_pipeline", LIVING_PIPELINE_STATUS),
         _row("word_forge_multilingual", WORD_FORGE_MULTILINGUAL_INGEST_STATUS),
         _row("word_forge_fasttext", WORD_FORGE_FASTTEXT_INGEST_STATUS),
+        _row("word_forge_polyglot", WORD_FORGE_POLYGLOT_STATUS),
         _row("word_forge_bridge", WORD_FORGE_BRIDGE_AUDIT_STATUS),
     ]
     shell_entries = _shell_sessions_snapshot().get("entries", [])

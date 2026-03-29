@@ -31,6 +31,10 @@ def test_atlas_word_forge_routes_return_payloads() -> None:
     assert fasttext.status_code == 200
     assert fasttext.json()["contract"] == "eidos.word_forge.fasttext.summary.v1"
 
+    polyglot = client.get("/api/word-forge/polyglot")
+    assert polyglot.status_code == 200
+    assert polyglot.json()["contract"] == "eidos.word_forge.polyglot.summary.v1"
+
     bridge = client.get("/api/word-forge/bridge-audit")
     assert bridge.status_code == 200
     bridge_payload = bridge.json()

@@ -28,6 +28,15 @@
             <div class="stat-label">Languages: <span id="wf-fasttext-languages">{{ word_forge_fasttext.get('latest_report', {}).get('after', {}).get('fasttext', {}).get('language_count', 0) }}</span></div>
         </div>
         <div class="card">
+            <h4 style="margin-top:0;">Polyglot Status</h4>
+            <div><strong id="wf-polyglot-status">{{ word_forge_polyglot.get('status', {}).get('status', 'idle') }}</strong></div>
+            <div class="stat-label" id="wf-polyglot-phase">{{ word_forge_polyglot.get('status', {}).get('phase', 'idle') }}</div>
+            <div class="stat-label">Processed: <span id="wf-polyglot-processed">{{ word_forge_polyglot.get('latest_report', {}).get('processed_lexemes', 0) }}</span></div>
+            <div class="stat-label">Multi-part: <span id="wf-polyglot-multipart">{{ word_forge_polyglot.get('latest_report', {}).get('multi_part_lexemes', 0) }}</span></div>
+            <div class="stat-label">Decomposed lexemes: <span id="wf-polyglot-decomposed">{{ word_forge_polyglot.get('latest_report', {}).get('after', {}).get('decomposed_lexeme_count', 0) }}</span></div>
+            <div class="stat-label">Morpheme rows: <span id="wf-polyglot-rows">{{ word_forge_polyglot.get('latest_report', {}).get('after', {}).get('lexeme_morpheme_count', 0) }}</span></div>
+        </div>
+        <div class="card">
             <h4 style="margin-top:0;">Bridge Coverage</h4>
             <div><strong id="wf-bridge-status">{{ word_forge_bridge.get('status', {}).get('status', 'idle') }}</strong></div>
             <div class="stat-label" id="wf-bridge-phase">{{ word_forge_bridge.get('status', {}).get('phase', 'idle') }}</div>
@@ -78,6 +87,18 @@
         </div>
     </div>
 
+    <div class="card" style="margin-top:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+            <h4 style="margin:0;">Polyglot Decomposition</h4>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                <input id="wf-polyglot-lang" type="text" placeholder="lang" style="width:72px;" />
+                <input id="wf-polyglot-limit" type="number" min="1" step="1" placeholder="limit" style="width:90px;" />
+                <label style="display:flex;align-items:center;gap:6px;"><input id="wf-polyglot-force" type="checkbox" /> force</label>
+                <button type="button" onclick="runWordForgePolyglot()">Run Polyglot</button>
+            </div>
+        </div>
+    </div>
+
     <div class="grid" style="margin-top:12px;">
         <div class="card">
             <h4 style="margin-top:0;">Recent Ingest Runs</h4>
@@ -105,6 +126,22 @@
                         <td>{{ row.get('status', '') }}</td>
                         <td>{{ row.get('phase', '') }}</td>
                         <td>{{ row.get('vector_delta', 0) }}</td>
+                        <td>{{ row.get('finished_at', row.get('started_at', ''))[:19].replace('T', ' ') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="card">
+            <h4 style="margin-top:0;">Recent Polyglot Runs</h4>
+            <table>
+                <thead><tr><th>Status</th><th>Phase</th><th>Decomposed Δ</th><th>Finished</th></tr></thead>
+                <tbody id="wf-polyglot-history-body">
+                    {% for row in word_forge_polyglot_history %}
+                    <tr>
+                        <td>{{ row.get('status', '') }}</td>
+                        <td>{{ row.get('phase', '') }}</td>
+                        <td>{{ row.get('decomposed_lexeme_delta', 0) }}</td>
                         <td>{{ row.get('finished_at', row.get('started_at', ''))[:19].replace('T', ' ') }}</td>
                     </tr>
                     {% endfor %}

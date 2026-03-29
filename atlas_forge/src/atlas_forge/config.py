@@ -76,6 +76,8 @@ WORD_FORGE_MULTILINGUAL_INGEST_STATUS = RUNTIME_DIR / "word_forge_multilingual_i
 WORD_FORGE_MULTILINGUAL_INGEST_HISTORY = RUNTIME_DIR / "word_forge_multilingual_ingest_history.jsonl"
 WORD_FORGE_FASTTEXT_INGEST_STATUS = RUNTIME_DIR / "word_forge_fasttext_ingest_status.json"
 WORD_FORGE_FASTTEXT_INGEST_HISTORY = RUNTIME_DIR / "word_forge_fasttext_ingest_history.jsonl"
+WORD_FORGE_POLYGLOT_STATUS = RUNTIME_DIR / "word_forge_polyglot_status.json"
+WORD_FORGE_POLYGLOT_HISTORY = RUNTIME_DIR / "word_forge_polyglot_history.jsonl"
 WORD_FORGE_BRIDGE_AUDIT_STATUS = RUNTIME_DIR / "word_forge_bridge_audit_status.json"
 WORD_FORGE_BRIDGE_AUDIT_HISTORY = RUNTIME_DIR / "word_forge_bridge_audit_history.jsonl"
 WORD_FORGE_FASTTEXT_DB = FORGE_ROOT / "data" / "word_forge_fasttext.sqlite"
@@ -96,6 +98,7 @@ CODE_FORGE_ARCHIVE_LIFECYCLE_REPORT_DIR = FORGE_ROOT / "reports" / "code_forge_a
 CODE_FORGE_ARCHIVE_RETIREMENTS_LATEST = FORGE_ROOT / "data" / "code_forge" / "archive_ingestion" / "latest" / "retirements" / "latest.json"
 WORD_FORGE_MULTILINGUAL_REPORT_DIR = FORGE_ROOT / "reports" / "word_forge_multilingual_ingest"
 WORD_FORGE_FASTTEXT_REPORT_DIR = FORGE_ROOT / "reports" / "word_forge_fasttext_ingest"
+WORD_FORGE_POLYGLOT_REPORT_DIR = FORGE_ROOT / "reports" / "word_forge_polyglot"
 WORD_FORGE_BRIDGE_REPORT_DIR = FORGE_ROOT / "reports" / "word_forge_bridge_audit"
 
 # --- Scripts & Logs ---

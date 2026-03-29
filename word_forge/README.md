@@ -100,6 +100,19 @@ word_forge start intelligence consciousness --minutes 10 --workers 4
 - Publishes runtime status/history under `data/runtime/`
 - Publishes reports under `reports/word_forge_fasttext_ingest/`
 
+### Polyglot Decomposition
+
+```bash
+./eidosian_venv/bin/python scripts/word_forge_polyglot.py \
+  --lang es \
+  --force
+```
+
+- Decomposes lexemes into morphemes using Morfessor when available and a multilingual heuristic fallback otherwise
+- Persists ordered lexeme↔morpheme mappings into `lexeme_morphemes` inside the main Word Forge DB
+- Publishes runtime status/history under `data/runtime/`
+- Publishes reports under `reports/word_forge_polyglot/`
+
 ### Semantic Graph (Python)
 
 ```python

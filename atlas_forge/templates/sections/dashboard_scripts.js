@@ -929,12 +929,14 @@ refreshCodeForgeProvenanceAuditHistory();
 
 async function refreshWordForgeBridge() {
     try {
-        const [multiRes, fasttextRes, bridgeRes, multiHistRes, fasttextHistRes, bridgeHistRes] = await Promise.all([
+        const [multiRes, fasttextRes, polyglotRes, bridgeRes, multiHistRes, fasttextHistRes, polyglotHistRes, bridgeHistRes] = await Promise.all([
             fetch('/api/word-forge/multilingual', {cache: 'no-store'}),
             fetch('/api/word-forge/fasttext', {cache: 'no-store'}),
+            fetch('/api/word-forge/polyglot', {cache: 'no-store'}),
             fetch('/api/word-forge/bridge-audit', {cache: 'no-store'}),
             fetch('/api/word-forge/multilingual/history', {cache: 'no-store'}),
             fetch('/api/word-forge/fasttext/history', {cache: 'no-store'}),
+            fetch('/api/word-forge/polyglot/history', {cache: 'no-store'}),
             fetch('/api/word-forge/bridge-audit/history', {cache: 'no-store'}),
         ]);
         if (multiRes.ok) {
@@ -958,6 +960,18 @@ async function refreshWordForgeBridge() {
             document.getElementById('wf-fasttext-candidates').textContent = after.candidate_count ?? 0;
             document.getElementById('wf-fasttext-applied').textContent = after.applied_count ?? 0;
             document.getElementById('wf-fasttext-languages').textContent = after.language_count ?? 0;
+        }
+        if (polyglotRes.ok) {
+            const payload = await polyglotRes.json();
+            const status = payload.status || {};
+            const report = payload.latest_report || {};
+            const after = report.after || {};
+            document.getElementById('wf-polyglot-status').textContent = status.status || 'idle';
+            document.getElementById('wf-polyglot-phase').textContent = status.phase || 'idle';
+            document.getElementById('wf-polyglot-processed').textContent = report.processed_lexemes ?? 0;
+            document.getElementById('wf-polyglot-multipart').textContent = report.multi_part_lexemes ?? 0;
+            document.getElementById('wf-polyglot-decomposed').textContent = after.decomposed_lexeme_count ?? 0;
+            document.getElementById('wf-polyglot-rows').textContent = after.lexeme_morpheme_count ?? 0;
         }
         if (bridgeRes.ok) {
             const payload = await bridgeRes.json();
@@ -1033,6 +1047,20 @@ async function refreshWordForgeBridge() {
                 `).join('');
             }
         }
+        if (polyglotHistRes.ok) {
+            const payload = await polyglotHistRes.json();
+            const body = document.getElementById('wf-polyglot-history-body');
+            if (body) {
+                body.innerHTML = (payload.entries || []).slice(0, 10).map((row) => `
+                    <tr>
+                        <td>${escapeHtml(row.status || '')}</td>
+                        <td>${escapeHtml(row.phase || '')}</td>
+                        <td>${escapeHtml(row.decomposed_lexeme_delta ?? 0)}</td>
+                        <td>${escapeHtml(String(row.finished_at || row.started_at || '').slice(0, 19).replace('T', ' '))}</td>
+                    </tr>
+                `).join('');
+            }
+        }
         if (bridgeHistRes.ok) {
             const payload = await bridgeHistRes.json();
             const body = document.getElementById('wf-bridge-run-history-body');
@@ -1049,6 +1077,22 @@ async function refreshWordForgeBridge() {
         }
     } catch (err) {
         // ignore transient refresh failures
+    }
+}
+
+async function runWordForgePolyglot() {
+    const lang = document.getElementById('wf-polyglot-lang')?.value?.trim();
+    const limitValue = document.getElementById('wf-polyglot-limit')?.value?.trim();
+    const force = Boolean(document.getElementById('wf-polyglot-force')?.checked);
+    const params = new URLSearchParams();
+    if (lang) params.set('lang', lang);
+    if (limitValue) params.set('limit', limitValue);
+    if (force) params.set('force', 'true');
+    try {
+        await fetch(`/api/word-forge/polyglot/run?${params.toString()}`, {method: 'POST'});
+    } finally {
+        await refreshWordForgeBridge();
+        await refreshRuntimeServices();
     }
 }
 
