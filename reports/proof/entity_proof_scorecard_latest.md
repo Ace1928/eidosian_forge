@@ -1,8 +1,8 @@
 # Eidos Entity Proof Scorecard
 
-- Generated: `2026-03-29T01:25:36Z`
+- Generated: `2026-03-29T02:12:32Z`
 - Repo root: `/data/data/com.termux/files/home/eidosian_forge`
-- Git head: `f15ed8d34d895921655cd8dc39279d119f65dfc1`
+- Git head: `ec4e060dc812036fbd6eec8e130f19586a8702a4`
 - Worktree dirty: `None`
 - Overall status: `green`
 - Overall score: `0.816786`
@@ -92,7 +92,7 @@
 ## Regression
 
 - `status`: `stable`
-- `overall_delta`: `0.011607`
+- `overall_delta`: `0.0`
 
 ## Identity Continuity History
 
@@ -112,13 +112,13 @@
 
 ## Word Forge Bridge
 
-- `fully_bridged`: `7`
-- `partially_bridged`: `8`
-- `any_bridged`: `8`
-- `candidate_term_count`: `8`
-- `fully_bridged_ratio`: `0.875`
-- `morpheme_supported_ratio`: `0.875`
-- `morphologically_linked_ratio`: `0.75`
+- `fully_bridged`: `8`
+- `partially_bridged`: `9`
+- `any_bridged`: `9`
+- `candidate_term_count`: `9`
+- `fully_bridged_ratio`: `0.8889`
+- `morpheme_supported_ratio`: `0.6667`
+- `morphologically_linked_ratio`: `0.5556`
 - `morpheme_count`: `314`
 - `decomposed_lexeme_count`: `9`
 - `community_count`: `13`
@@ -155,12 +155,12 @@
 
 | Generated | Status | Score | Freshness | Regression |
 | --- | --- | ---: | --- | --- |
-| 2026-03-28T23:15:08Z | yellow | 0.782857 | yellow | stable |
-| 2026-03-29T00:08:33Z | yellow | 0.782857 | yellow | stable |
-| 2026-03-29T00:41:36Z | green | 0.803393 | yellow | improved |
-| 2026-03-29T00:45:37Z | green | 0.803393 | yellow | stable |
-| 2026-03-29T01:00:44Z | green | 0.805179 | yellow | stable |
 | 2026-03-29T01:06:30Z | green | 0.805179 | yellow | stable |
+| 2026-03-29T01:25:36Z | green | 0.816786 | yellow | stable |
+| 2026-03-29T01:52:20Z | green | 0.816786 | yellow | stable |
+| 2026-03-29T01:54:14Z | green | 0.816786 | yellow | stable |
+| 2026-03-29T01:59:48Z | green | 0.816786 | yellow | stable |
+| 2026-03-29T02:01:29Z | green | 0.816786 | yellow | stable |
 
 ## Continuity Metrics
 

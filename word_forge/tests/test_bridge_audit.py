@@ -238,3 +238,85 @@ def test_build_bridge_audit_uses_code_fts_term_hits(tmp_path: Path) -> None:
     assert report["bridge_counts"]["code"] == 1
     assert report["code_metrics"]["term_hit_count"] == 1
     assert report["top_bridged_terms"][0]["code_examples"][0]["file_path"] == "reports/proof_bundle.py"
+
+
+def test_build_bridge_audit_filters_recent_terms_to_multi_substrate_anchors(tmp_path: Path) -> None:
+    repo_root = tmp_path / "repo"
+    db_path = repo_root / "word_forge" / "data" / "word_forge.sqlite"
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    db = DBManager(db_path=db_path)
+    db.insert_or_update_word("archive", "Archive system", "noun", ["archive plan"])
+    db.insert_or_update_word("agent", "Autonomous agent", "noun", ["agent loop"])
+    db.insert_or_update_word("ability", "A generic capability", "noun", ["ability overview"])
+    db.insert_or_update_lexeme("archivo", "es", base_term="archive", gloss="archive", source="test")
+
+    kb_path = repo_root / "data" / "kb.json"
+    kb_path.parent.mkdir(parents=True, exist_ok=True)
+    kb_path.write_text(
+        json.dumps(
+            {
+                "nodes": {
+                    "n1": {
+                        "id": "n1",
+                        "content": "agent orchestration for archive workflows",
+                        "metadata": {"tags": ["archive", "agent", "ability"]},
+                        "links": [],
+                    }
+                },
+                "concept_map": {},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    from file_forge.core import FileForge
+
+    forge = FileForge(base_path=repo_root)
+    files_root = repo_root / "archive_forge"
+    files_root.mkdir(parents=True, exist_ok=True)
+    (files_root / "agent_notes.txt").write_text("agent workflows", encoding="utf-8")
+    (files_root / "ability_notes.txt").write_text("ability overview", encoding="utf-8")
+    forge.index_directory(files_root, db_path=repo_root / "data" / "file_forge" / "library.sqlite")
+
+    code_db = repo_root / "data" / "code_forge" / "library.sqlite"
+    code_db.parent.mkdir(parents=True, exist_ok=True)
+    import sqlite3
+
+    with sqlite3.connect(str(code_db)) as conn:
+        conn.executescript(
+            """
+            CREATE TABLE code_units (
+                id TEXT PRIMARY KEY,
+                file_path TEXT NOT NULL,
+                qualified_name TEXT,
+                name TEXT,
+                content_hash TEXT,
+                created_at TEXT
+            );
+            CREATE TABLE code_text (
+                content_hash TEXT PRIMARY KEY,
+                content TEXT NOT NULL
+            );
+            CREATE VIRTUAL TABLE code_units_fts USING fts5(unit_id UNINDEXED, text);
+            """
+        )
+        conn.execute(
+            "INSERT INTO code_text (content_hash, content) VALUES (?, ?)",
+            ("h1", "The agent coordinates archive lifecycle tasks."),
+        )
+        conn.execute(
+            "INSERT INTO code_units (id, file_path, qualified_name, name, content_hash, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+            ("u1", "src/agent_runner.py", "runtime.agent.loop", "agent_loop", "h1", "2026-03-29T00:00:00Z"),
+        )
+        conn.execute(
+            "INSERT INTO code_units_fts (unit_id, text) VALUES (?, ?)",
+            ("u1", "agent coordinates archive lifecycle tasks"),
+        )
+
+    report = build_bridge_audit(repo_root=repo_root, db_path=db_path)
+
+    terms = {row["term"] for row in report["top_bridged_terms"]}
+    assert "archive" in terms
+    assert "agent" in terms
+    assert "ability" not in terms
+    assert report["candidate_count"] == 2
