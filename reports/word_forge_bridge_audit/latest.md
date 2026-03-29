@@ -1,6 +1,6 @@
 # Word Forge Bridge Audit
 
-- Generated: `2026-03-29T00:40:54.085342+00:00`
+- Generated: `2026-03-29T01:05:53.643228+00:00`
 - Words: `3952`
 - Relationships: `1414`
 - Lexemes: `14`
@@ -13,9 +13,9 @@
 - Code provenance registries: `3`
 - Code library units: `242753`
 - Code library files: `6253`
-- File Forge files: `951`
-- File Forge links: `2954`
-- File Forge relationships: `2802`
+- File Forge files: `1192`
+- File Forge links: `3678`
+- File Forge relationships: `3405`
 
 ## Bridge Coverage
 
@@ -24,7 +24,7 @@
 - Code matches: `4`
 - File matches: `8`
 - Morpheme-supported: `7`
-- Morphologically linked: `4`
+- Morphologically linked: `6`
 - Fully bridged: `4`
 - Partially bridged: `8`
 - Any bridged: `8`
@@ -33,7 +33,7 @@
 - Partial bridge ratio: `1.0`
 - Any bridge ratio: `1.0`
 - Morpheme-supported ratio: `0.875`
-- Morphologically linked ratio: `0.5`
+- Morphologically linked ratio: `0.75`
 
 ## Top Bridged Terms
 

@@ -164,8 +164,13 @@ def get_word_forge_bridge_summary() -> Dict[str, Any]:
     latest = _read_latest_report(WORD_FORGE_BRIDGE_REPORT_DIR)
     history = _read_jsonl_rows(WORD_FORGE_BRIDGE_AUDIT_HISTORY, 12)
     community_summary = summarize_word_graph_communities(get_word_graph(), limit=8)
-    latest_completed = next((row for row in reversed(history) if isinstance(row, dict) and row.get("status") == "completed"), {})
-    previous_completed = next((row for row in reversed(history[:-1]) if isinstance(row, dict) and row.get("status") == "completed"), {}) if len(history) > 1 else {}
+    completed_history = [row for row in history if isinstance(row, dict) and row.get("status") == "completed"]
+    completed_history.sort(
+        key=lambda row: str(row.get("finished_at") or row.get("generated_at") or row.get("started_at") or ""),
+        reverse=True,
+    )
+    latest_completed = completed_history[0] if completed_history else {}
+    previous_completed = completed_history[1] if len(completed_history) > 1 else {}
     latest_report = latest if isinstance(latest, dict) else {}
     bridge_counts = latest_report.get("bridge_counts", {}) if isinstance(latest_report.get("bridge_counts"), dict) else {}
     bridge_quality = latest_report.get("bridge_quality", {}) if isinstance(latest_report.get("bridge_quality"), dict) else {}
@@ -186,6 +191,10 @@ def get_word_forge_bridge_summary() -> Dict[str, Any]:
             "run_count": len(history),
             "last_completed_at": latest_completed.get("finished_at") or latest_completed.get("generated_at") or "",
             "previous_completed_at": previous_completed.get("finished_at") or previous_completed.get("generated_at") or "",
+            "delta_fully_bridged": (
+                int((latest_completed.get("fully_bridged") or 0)) - int((previous_completed.get("fully_bridged") or 0))
+                if latest_completed or previous_completed else 0
+            ),
         },
         "community_summary": community_summary,
     }
@@ -285,6 +294,8 @@ def get_proof_summary() -> Dict[str, Any]:
         if security_plan: break
 
     history = identity.get("history") if isinstance(identity.get("history"), dict) else {}
+    proof_categories = proof.get("categories") if isinstance(proof.get("categories"), list) else []
+    lexical_bridge = next((row for row in proof_categories if isinstance(row, dict) and row.get("category") == "lexical_bridge"), {})
     
     return {
         "contract": "eidos.proof.summary.v1",
@@ -308,6 +319,7 @@ def get_proof_summary() -> Dict[str, Any]:
         },
         "identity_trend": history.get("trend"),
         "identity_delta": history.get("delta_from_previous"),
+        "lexical_bridge": lexical_bridge,
     }
 
 def get_identity_continuity_history(limit: int = 12) -> List[Dict[str, Any]]:

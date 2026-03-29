@@ -991,6 +991,7 @@ async function refreshWordForgeBridge() {
             document.getElementById('wf-bridge-morpheme').textContent = counts.morpheme ?? 0;
             document.getElementById('wf-bridge-morph-linked').textContent = counts.morphologically_linked ?? 0;
             document.getElementById('wf-bridge-full').textContent = counts.fully_bridged ?? 0;
+            document.getElementById('wf-bridge-delta').textContent = summary.history_summary?.delta_fully_bridged ?? 0;
             document.getElementById('wf-bridge-partial').textContent = counts.partially_bridged ?? 0;
             document.getElementById('wf-bridge-any').textContent = counts.any_bridged ?? 0;
             document.getElementById('wf-bridge-ratio').textContent = quality.fully_bridged_ratio ?? 0;
@@ -1009,6 +1010,17 @@ async function refreshWordForgeBridge() {
                         <td>${row.code_match ? 1 : 0}</td>
                         <td>${row.file_match ? 1 : 0}</td>
                         <td>${escapeHtml((row.morphemes || []).slice(0, 4).join(', '))}</td>
+                    </tr>
+                `).join('');
+            }
+            const morphemeBody = document.getElementById('wf-bridge-morpheme-body');
+            if (morphemeBody) {
+                morphemeBody.innerHTML = (summary.morpheme_metrics?.recent_decompositions || []).slice(0, 10).map((row) => `
+                    <tr>
+                        <td>${escapeHtml(row.term || '')}</td>
+                        <td>${escapeHtml(row.lang || '')}</td>
+                        <td>${escapeHtml(row.source_type || '')}</td>
+                        <td>${escapeHtml((row.morphemes || []).join(', '))}</td>
                     </tr>
                 `).join('');
             }

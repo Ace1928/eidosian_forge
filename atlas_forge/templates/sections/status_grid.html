@@ -64,7 +64,9 @@
         <div class="stat-value">{{ runtime_snapshot.get('word_forge_bridge', {}).get('status', {}).get('status', 'idle')|upper }}</div>
         <div class="stat-label">{{ runtime_snapshot.get('word_forge_bridge', {}).get('status', {}).get('phase', 'idle') }}</div>
         <div class="stat-label">Fully bridged: {{ runtime_snapshot.get('word_forge_bridge', {}).get('bridge_counts', {}).get('fully_bridged', runtime_snapshot.get('word_forge_bridge', {}).get('latest_report', {}).get('bridge_counts', {}).get('fully_bridged', 0)) }}</div>
+        <div class="stat-label">Morpheme-supported: {{ runtime_snapshot.get('word_forge_bridge', {}).get('bridge_counts', {}).get('morpheme', runtime_snapshot.get('word_forge_bridge', {}).get('latest_report', {}).get('bridge_counts', {}).get('morpheme', 0)) }}</div>
         <div class="stat-label">Communities: {{ runtime_snapshot.get('word_forge_bridge', {}).get('community_summary', {}).get('community_count', 0) }}</div>
+        <div class="stat-label">Lexical bridge proof: {{ proof_summary.get('lexical_bridge', {}).get('status', 'unknown') }} · {{ proof_summary.get('lexical_bridge', {}).get('score', 0) }}</div>
     </div>
     <div class="card">
         <h3>Control Plane</h3>
