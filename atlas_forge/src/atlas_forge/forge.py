@@ -322,6 +322,72 @@ def get_proof_summary() -> Dict[str, Any]:
         "lexical_bridge": lexical_bridge,
     }
 
+
+def render_word_forge_metrics() -> str:
+    multilingual = get_word_forge_multilingual_summary()
+    fasttext = get_word_forge_fasttext_summary()
+    polyglot = get_word_forge_polyglot_summary()
+    bridge = get_word_forge_bridge_summary()
+    proof = get_proof_summary()
+
+    multilingual_report = multilingual.get("latest_report") if isinstance(multilingual.get("latest_report"), dict) else {}
+    fasttext_report = fasttext.get("latest_report") if isinstance(fasttext.get("latest_report"), dict) else {}
+    polyglot_report = polyglot.get("latest_report") if isinstance(polyglot.get("latest_report"), dict) else {}
+    bridge_counts = bridge.get("bridge_counts") if isinstance(bridge.get("bridge_counts"), dict) else {}
+    bridge_quality = bridge.get("bridge_quality") if isinstance(bridge.get("bridge_quality"), dict) else {}
+    community_summary = bridge.get("community_summary") if isinstance(bridge.get("community_summary"), dict) else {}
+    morpheme_metrics = bridge.get("morpheme_metrics") if isinstance(bridge.get("morpheme_metrics"), dict) else {}
+    lexical_bridge = proof.get("lexical_bridge") if isinstance(proof.get("lexical_bridge"), dict) else {}
+
+    metrics: list[tuple[str, float]] = [
+        ("eidos_word_forge_multilingual_lexemes", float(multilingual_report.get("lexeme_count") or 0)),
+        ("eidos_word_forge_multilingual_translations", float(multilingual_report.get("translation_count") or 0)),
+        ("eidos_word_forge_multilingual_base_aligned", float(multilingual_report.get("base_aligned_count") or 0)),
+        ("eidos_word_forge_fasttext_vector_delta", float(fasttext_report.get("vector_delta") or 0)),
+        ("eidos_word_forge_fasttext_candidate_delta", float(fasttext_report.get("candidate_delta") or 0)),
+        ("eidos_word_forge_fasttext_applied_delta", float(fasttext_report.get("applied_delta") or 0)),
+        ("eidos_word_forge_polyglot_morpheme_count", float(polyglot_report.get("morpheme_count") or morpheme_metrics.get("morpheme_count") or 0)),
+        ("eidos_word_forge_polyglot_decomposed_lexemes", float(polyglot_report.get("decomposed_lexeme_count") or morpheme_metrics.get("decomposed_lexeme_count") or 0)),
+        ("eidos_word_forge_bridge_candidate_terms", float(bridge_quality.get("candidate_term_count") or 0)),
+        ("eidos_word_forge_bridge_fully_bridged", float(bridge_counts.get("fully_bridged") or 0)),
+        ("eidos_word_forge_bridge_partially_bridged", float(bridge_counts.get("partially_bridged") or 0)),
+        ("eidos_word_forge_bridge_any_bridged", float(bridge_counts.get("any_bridged") or 0)),
+        ("eidos_word_forge_bridge_morpheme_supported_ratio", float(bridge_quality.get("morpheme_supported_ratio") or 0.0)),
+        ("eidos_word_forge_bridge_fully_bridged_ratio", float(bridge_quality.get("fully_bridged_ratio") or 0.0)),
+        ("eidos_word_forge_bridge_community_count", float(community_summary.get("community_count") or 0)),
+        ("eidos_word_forge_proof_lexical_bridge_score", float(lexical_bridge.get("score") or 0.0)),
+    ]
+
+    lines = [
+        "# HELP eidos_word_forge_multilingual_lexemes Current multilingual lexeme count in Word Forge.",
+        "# TYPE eidos_word_forge_multilingual_lexemes gauge",
+    ]
+    described: set[str] = {"eidos_word_forge_multilingual_lexemes"}
+    help_text = {
+        "eidos_word_forge_multilingual_translations": "Current multilingual translation count in Word Forge.",
+        "eidos_word_forge_multilingual_base_aligned": "Current multilingual base-aligned lexeme count in Word Forge.",
+        "eidos_word_forge_fasttext_vector_delta": "Vectors added by the latest Word Forge FastText ingest run.",
+        "eidos_word_forge_fasttext_candidate_delta": "Candidates discovered by the latest Word Forge FastText ingest run.",
+        "eidos_word_forge_fasttext_applied_delta": "Candidates applied by the latest Word Forge FastText ingest run.",
+        "eidos_word_forge_polyglot_morpheme_count": "Current morpheme inventory count available to Word Forge polyglot decomposition.",
+        "eidos_word_forge_polyglot_decomposed_lexemes": "Current decomposed lexeme count in Word Forge polyglot decomposition.",
+        "eidos_word_forge_bridge_candidate_terms": "Current audited lexical bridge candidate term count.",
+        "eidos_word_forge_bridge_fully_bridged": "Current fully bridged lexical anchor count across Word, Knowledge, Code, and File Forge.",
+        "eidos_word_forge_bridge_partially_bridged": "Current partially bridged lexical anchor count.",
+        "eidos_word_forge_bridge_any_bridged": "Current lexical anchors with any bridge support.",
+        "eidos_word_forge_bridge_morpheme_supported_ratio": "Current ratio of bridge candidates with informative morpheme support.",
+        "eidos_word_forge_bridge_fully_bridged_ratio": "Current ratio of fully bridged lexical anchors.",
+        "eidos_word_forge_bridge_community_count": "Current Word Forge bridge community count exposed by Atlas.",
+        "eidos_word_forge_proof_lexical_bridge_score": "Latest lexical bridge proof score from the entity proof suite.",
+    }
+    for name, value in metrics:
+        if name not in described:
+            lines.append(f"# HELP {name} {help_text.get(name, 'Word Forge metric.')}")
+            lines.append(f"# TYPE {name} gauge")
+            described.add(name)
+        lines.append(f"{name} {value}")
+    return "\n".join(lines) + "\n"
+
 def get_identity_continuity_history(limit: int = 12) -> List[Dict[str, Any]]:
     rows: List[Dict[str, Any]] = []
     for path in sorted(PROOF_REPORT_DIR.glob("identity_continuity_scorecard_*.json"), reverse=True):

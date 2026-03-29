@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import PlainTextResponse
 from ..system import get_system_stats
 from ..forge import (
     get_doc_snapshot,
@@ -17,6 +18,7 @@ from ..forge import (
     get_word_forge_polyglot_history,
     get_word_forge_bridge_history,
     get_word_graph_communities,
+    render_word_forge_metrics,
 )
 from ..jobs import _service_command, _scheduler_command
 from ..shell import (
@@ -159,6 +161,11 @@ async def api_word_forge_bridge_audit():
 @router.get("/word-forge/bridge-audit/history")
 async def api_word_forge_bridge_audit_history(limit: int = 12):
     return {"entries": get_word_forge_bridge_history(limit=max(1, min(limit, 60)))}
+
+
+@router.get("/metrics/word-forge", response_class=PlainTextResponse)
+async def api_word_forge_metrics():
+    return PlainTextResponse(render_word_forge_metrics(), media_type="text/plain; version=0.0.4; charset=utf-8")
 
 
 @router.post("/word-forge/bridge-audit/run")

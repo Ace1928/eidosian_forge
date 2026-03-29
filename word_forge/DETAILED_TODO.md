@@ -135,6 +135,7 @@ Item Format:
 - [ ] **DB Migration Research** - Evaluate PostgreSQL + pgvector vs Neo4j
 - [x] **WorkerManager Design** - Design unified thread/process lifecycle management
 - [~] **Prometheus Integration** - Implement basic throughput and error metrics
+  - Status: In progress (March 29) - Atlas now exports scrapeable Word Forge metrics for multilingual, FastText, polyglot, bridge, and lexical-bridge proof state via `/api/metrics/word-forge`
 
 ### 2.2 Linguistic & Phrase Foundation [P0-P1]
 

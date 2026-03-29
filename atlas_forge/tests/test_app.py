@@ -67,3 +67,14 @@ def test_atlas_word_graph_community_route_returns_payload() -> None:
     payload = response.json()
     assert payload["contract"] == "eidos.atlas.word_graph.communities.v1"
     assert "top_communities" in payload
+
+
+def test_atlas_word_forge_metrics_route_returns_prometheus_text() -> None:
+    module = import_module("atlas_forge.app")
+    client = TestClient(module.app)
+
+    response = client.get("/api/metrics/word-forge")
+    assert response.status_code == 200
+    assert "text/plain" in response.headers["content-type"]
+    assert "eidos_word_forge_bridge_candidate_terms" in response.text
+    assert "eidos_word_forge_proof_lexical_bridge_score" in response.text
